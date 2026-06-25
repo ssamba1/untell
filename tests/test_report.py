@@ -31,6 +31,22 @@ def test_render_is_ascii_safe_and_complete():
     assert "Thesis" in md
 
 
+def test_per_detector_has_beat_rate_and_hardest():
+    s = summarize(_by(), 0.30)
+    for st in s["strategies"].values():
+        pd = st["per_detector"]["perplexity_burstiness"]
+        assert 0.0 <= pd["beat_rate"] <= 1.0
+        assert "hardest_detector" in st
+    # with only the lite detector present, it must be the hardest
+    assert s["strategies"]["noop"]["hardest_detector"] == "perplexity_burstiness"
+
+
+def test_render_shows_beat_and_hardest():
+    md = render(_by(), 0.30)
+    assert "beat%" in md
+    assert "Hardest detector" in md
+
+
 def test_bypass_rate_empty_is_zero():
     assert _bypass_rate([], 0.30) == 0.0
 

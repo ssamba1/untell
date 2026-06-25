@@ -42,7 +42,18 @@ def main(argv: list[str] | None = None) -> int:
         help="comma-separated subset of: noop, single_pass, full_loop",
     )
     parser.add_argument("--out", help="write the markdown report to this path")
+    parser.add_argument(
+        "--enable-radar",
+        action="store_true",
+        help="include RADAR (paraphrase-robust, the hardest open detector) — requires --tier full and "
+        "the model download; RADAR is non-commercial licensed (research/eval only).",
+    )
     args = parser.parse_args(argv)
+
+    if args.enable_radar:
+        import os
+
+        os.environ["HUMANIZE_ENABLE_RADAR"] = "1"
 
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()]
     unknown = [s for s in strategies if s not in STRATEGIES]

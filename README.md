@@ -139,6 +139,22 @@ Success criterion: `full_loop` reaches a higher **bypass rate** than `single_pas
 equal-or-better similarity. (With only the lite tier installed the absolute numbers are weak; the
 *relative* comparison is the point — install `.[full]` for meaningful absolute rates.)
 
+### Adversarial eval (hardest detector + RAID)
+
+The report shows **per-detector beat-rates** and names the **hardest detector to beat**. To benchmark
+against the toughest open detector (**RADAR**, paraphrase-robust) on the **RAID** adversarial dataset:
+
+```bash
+pip install -e ".[full,eval]"
+python -m eval.benchmark --dataset raid --n 200 --tier full --enable-radar
+```
+
+`--enable-radar` adds RADAR (downloads `TrustSafeAI/RADAR-Vicuna-7B`, **non-commercial — research/eval
+only**). The report's "Hardest detector to beat" line is the honest headline: how often the loop gets
+the single toughest detector under threshold. For a broader cross-detector benchmark, the external
+[IMGTB](https://github.com/kinit-sk/IMGTB) harness + [RAID](https://github.com/liamdugan/raid) leaderboard
+are the standard references; our `eval/` runs the same idea (our ensemble over RAID samples).
+
 ## Repo layout
 
 ```
