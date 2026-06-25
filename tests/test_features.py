@@ -26,14 +26,17 @@ def test_mcp_module_imports_without_mcp_installed():
     assert callable(m.main)  # module imports even when `mcp` is absent (lazy import inside _server)
 
 
-def test_training_reward_prefers_human_over_ai():
+def test_training_reward_penalizes_meaning_drift():
+    # Deterministic regardless of which detector "lite" resolves to: a meaning-preserving rewrite
+    # (sim 1.0, no penalty, reward >= 0) must beat a meaning-broken one (low sim, big penalty, < 0).
     from training.reward import batch_rewards, humanness_reward
 
-    ai = "Furthermore, the system fundamentally utilizes numerous significant algorithms. Moreover, it operates predictably and uniformly throughout the entire process."
-    human = "It broke. Twice. Nobody knew why until Dave actually read the logs and found the dumb typo."
-    assert humanness_reward(human, human, tier="lite") > humanness_reward(ai, ai, tier="lite")
+    src = "The cat sat on the mat in the warm afternoon sun, perfectly content."
+    faithful = src
+    broken = "Quantum chromodynamics governs the strong nuclear interaction between quarks and gluons."
+    assert humanness_reward(src, faithful, tier="lite") > humanness_reward(src, broken, tier="lite")
     assert humanness_reward("x", "", tier="lite") == -1.0
-    assert len(batch_rewards(human, [human, ai], tier="lite")) == 2
+    assert len(batch_rewards(src, [faithful, broken], tier="lite")) == 2
 
 
 def test_loop_scrubs_hidden_chars(monkeypatch):
