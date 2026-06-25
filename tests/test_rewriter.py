@@ -22,6 +22,13 @@ def test_prompt_handles_no_detectors():
     assert "0.20" in p
 
 
+def test_prompt_includes_flagged_sentences():
+    sr = {"detectors": {"mage": 0.8}, "max": 0.8, "flagged_sentences": ["This sentence reads as AI."]}
+    p = build_rewrite_prompt("text", sr, threshold=0.30)
+    assert "This sentence reads as AI." in p
+    assert "REWRITE THESE" in p
+
+
 def test_available_false_without_key(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

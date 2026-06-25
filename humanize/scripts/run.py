@@ -74,6 +74,7 @@ def humanize_text(
     rewriter=None,
     browser: str | list[str] | None = None,
     margin: float = 0.0,
+    confirm: int = 0,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -126,6 +127,14 @@ def humanize_text(
         if _passed(best_score) and similarity(masked, best_masked) >= sim_bar:
             stopped = "passed"
             break
+        # Targeted feedback: name the specific sentences that read as AI (cheap lite scoring), so the
+        # rewriter fixes only those instead of re-rolling the whole text (fewer iters, less drift).
+        try:
+            from humanize.scripts.sentences import score_sentences
+
+            best_score = {**best_score, "flagged_sentences": score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"]}
+        except Exception:
+            pass
         try:
             candidate = rw.rewrite(best_masked, best_score, threshold)
         except Exception as exc:  # surface the failure rather than silently looping
@@ -136,6 +145,16 @@ def humanize_text(
         if _passed(best_score):
             stopped = "passed"
             break
+
+    # Reproducibility guard: re-score the winner a few times; detectors are noisy and a one-off pass
+    # can re-flag. Only keep "passed" if every confirmation pass also clears.
+    if stopped == "passed" and confirm > 0:
+        for _ in range(confirm):
+            rescore = score(best_masked)
+            if rescore["max"] >= threshold:
+                best_score = rescore
+                stopped = "passed_unconfirmed"
+                break
 
     final = restore(best_masked, mapping)
     return {
@@ -199,6 +218,13 @@ def main(argv: list[str] | None = None) -> int:
         help="safety headroom: only stop when max score < threshold - margin (e.g. 0.10), so a "
         "borderline pass a noisy detector might re-flag keeps iterating. Default 0.",
     )
+    parser.add_argument(
+        "--confirm",
+        type=int,
+        default=0,
+        help="after a pass, re-score the result N more times; keep 'passed' only if every re-scan "
+        "still clears (guards against a noisy detector re-flagging). Default 0.",
+    )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     args = parser.parse_args(argv)
 
@@ -220,6 +246,7 @@ def main(argv: list[str] | None = None) -> int:
         max_iters=args.max_iters,
         browser=args.browser,
         margin=args.margin,
+        confirm=args.confirm,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))

@@ -218,7 +218,13 @@ Run the whole loop standalone (lock → score → rewrite → restore → report
 humanize-loop "Your AI-sounding paragraph here." --tier full
 humanize-loop --file draft.txt --json     # full structured result
 humanize-loop "text" --browser zerogpt    # iterate against the REAL ZeroGPT web detector, no key (slow)
+humanize-loop "text" --confirm 2          # re-scan a pass twice; demote if a noisy detector re-flags
+humanize-sentences "text" --tier full     # per-sentence AI scores -> see exactly which sentences to fix
 ```
+
+The loop now does **per-sentence targeting**: each iteration it finds the sentences that read as AI
+and tells the rewriter to fix *those* the hardest (the trick that took a stuck 35% to 0% live) — fewer
+iterations, less meaning drift.
 
 `--browser zerogpt` makes the loop score each iteration against a live free web detector and keep
 rewriting until it clears — optimizing against a real checker for $0. (Measured live: a formulaic AI

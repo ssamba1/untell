@@ -70,6 +70,7 @@ humanize-score = "humanize.scripts.score:main"
 humanize-loop = "humanize.scripts.run:main"
 humanize-verify = "humanize.scripts.verify:main"
 humanize-prove = "eval.prove:main"
+humanize-sentences = "humanize.scripts.sentences:main"
 
 [tool.setuptools]
 packages = [

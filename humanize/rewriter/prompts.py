@@ -34,7 +34,7 @@ def _worst_detectors(score_result: dict, k: int = 3) -> list[tuple[str, float]]:
 
 
 def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30) -> str:
-    """Build the rewrite instruction, naming the detectors currently flagging the text."""
+    """Build the rewrite instruction, naming the detectors + the exact sentences flagging the text."""
     worst = _worst_detectors(score_result)
     if worst:
         flagged = ", ".join(f"{name} (P(AI)={val:.2f})" for name, val in worst)
@@ -45,5 +45,13 @@ def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30)
         )
     else:
         feedback = f"Lower the AI-detection probability below {threshold:.2f}."
+
+    flagged_sentences = score_result.get("flagged_sentences") or []
+    if flagged_sentences:
+        listed = "\n".join(f"  - {s}" for s in flagged_sentences[:8])
+        feedback += (
+            "\n\nThese specific sentences read most as AI — REWRITE THESE the hardest (vary their "
+            f"structure, break neat parallelism/aphorisms, add concrete specifics):\n{listed}"
+        )
 
     return f"{_RUBRIC}\n\n{feedback}\n\n--- TEXT ---\n{text}"

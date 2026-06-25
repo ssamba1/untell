@@ -3,6 +3,24 @@
 Apply this when producing each rewrite in the loop. Goal: raise perplexity and burstiness (the
 two signals detectors key on) **without** changing meaning, facts, or any `⟦HZxxxx⟧` sentinel.
 
+## The 6 AI signals to kill (check every rewrite against these)
+
+Detectors and the strongest competitors key on these. Neutralize each:
+
+1. **Cliché / overused phrases** — "in today's world", "plays a vital role", "navigate the
+   complexities", "it is worth noting". Cut or replace with specific wording.
+2. **Formulaic transitions** — "Moreover/Furthermore/Additionally/Overall/In conclusion". Remove or
+   make concrete.
+3. **Sentence-length uniformity** (low burstiness) — vary lengths hard; mix very short with long.
+4. **Vocabulary homogeneity** — AI reuses a flat, mid-frequency register. Add precise, varied,
+   occasionally unexpected word choices (without thesaurus-bombing).
+5. **Low perplexity** (predictable next word) — substantively rephrase the most-expected spans.
+6. **Neat parallelism / aphorisms** — tidy antithesis ("it's all of us, or none of us") and balanced
+   tricolons read as machine. Break the symmetry; make it a little uneven, like a person wrote it.
+
+If the loop gives you **specific flagged sentences**, rewrite *those* the hardest — that is where the
+detector's signal is concentrated.
+
 ## Hard constraints (never violate)
 
 1. **Preserve meaning.** Every claim, fact, and logical relationship in the original must survive.
@@ -42,10 +60,13 @@ AI text is rhythmically uniform. Break that:
 
 - **High `perplexity_burstiness`** → the text is too uniform/predictable. Push hardest on
   sentence-length variance and word-choice surprise.
-- **High `roberta_openai` / `mage`** (supervised) → break structural regularity: vary openings,
-  remove formulaic transitions, add concrete detail, restructure paragraphs.
+- **High `roberta_openai` / `mage` / `hc3_roberta`** (supervised) → break structural regularity: vary
+  openings, remove formulaic transitions, add concrete detail, restructure paragraphs.
 - **High `fast_detectgpt` / `binoculars`** → reduce token predictability: more substantive
   rephrasing of high-probability spans, not just surface swaps.
+- **High `radar`** (paraphrase-robust — the hardest) → surface paraphrasing won't move it. Restructure
+  at the idea level: reorder the argument, merge/split ideas, change the framing, add a genuinely human
+  aside. RADAR was trained against paraphrasers, so out-paraphrasing it fails; out-*thinking* it works.
 
 ## Don't
 

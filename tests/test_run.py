@@ -172,6 +172,30 @@ def test_margin_blocks_borderline_pass(monkeypatch):
     assert rm["stopped"] == "max_iters"
 
 
+def test_confirm_demotes_a_noisy_pass(monkeypatch):
+    import humanize.browser_check as bc
+    import humanize.scripts.run as run_mod
+
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _GoodRW())
+    seq = iter([0.05, 0.05, 0.9])  # pre passes, first confirm passes, second confirm re-flags
+
+    class _Chk:
+        def available(self):
+            return True
+
+        def check(self, text, **k):
+            try:
+                return next(seq)
+            except StopIteration:
+                return 0.9
+
+    monkeypatch.setattr(bc, "get_browser_checker", lambda name: _Chk())
+    res = humanize_text(
+        AI, tier="lite", browser="zerogpt", threshold=0.30, margin=0.0, max_iters=1, sim_bar=0.0, confirm=2
+    )
+    assert res["stopped"] == "passed_unconfirmed"
+
+
 def test_browser_scoring_unavailable_errors(monkeypatch):
     import humanize.browser_check as bc
     import humanize.scripts.run as run_mod

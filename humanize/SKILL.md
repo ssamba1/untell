@@ -71,8 +71,15 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
    report the similarity, and flag in the final note that quality was not reliably gated (full tier
    recommended). Also stop if you have reached the iteration cap (default 5).
 
+4b. **Target the flagged sentences.** Find which sentences read as AI, so you rewrite *those* the
+   hardest instead of re-rolling everything (far fewer iterations, less drift):
+   ```bash
+   python -m humanize.scripts.sentences "<current masked text>" --threshold 0.30
+   ```
+   Each line shows `[AI 0.xx]` or `[ok 0.xx]` per sentence. Focus your next rewrite on the `AI` ones.
+
 5. **Rewrite with feedback** (if not stopping). Apply `references/prompt-rubric.md`. Use the
-   per-detector scores to decide *what* to change:
+   per-detector scores AND the flagged sentences from step 4b to decide *what* to change:
    - High `perplexity_burstiness` ⇒ vary sentence length aggressively (mix very short with long,
      winding sentences); replace predictable phrasing with less expected word choices.
    - High supervised scores (`roberta_openai`, `mage`) ⇒ break uniform structure, vary openings,
