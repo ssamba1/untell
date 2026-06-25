@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "humanize-skill"
+version = "0.1.0"
+description = "Closed-loop, detector-feedback AI-text humanizer packaged as a Claude skill (research prototype + eval harness)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "humanize contributors" }]
+keywords = ["ai-detection", "humanizer", "claude-skill", "nlp", "research"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# Base install is intentionally zero-dependency: the "lite" tier runs on the
+# standard library alone so the skill installs with no model downloads.
+dependencies = []
+
+[project.optional-dependencies]
+# Real proxy-detector signal on CPU.
+full = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "sentence-transformers>=2.6",
+    "spacy>=3.7",
+]
+# Strongest proxy (Binoculars = 2x Falcon-7B). GPU recommended.
+heavy = [
+    "bitsandbytes>=0.43",
+    "accelerate>=0.30",
+]
+# Benchmark harness datasets (research only).
+eval = [
+    "datasets>=2.19",
+]
+dev = [
+    "pytest>=8",
+    "ruff>=0.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/ssamba1/humanize"
+Repository = "https://github.com/ssamba1/humanize"
+
+[project.scripts]
+humanize-score = "humanize.scripts.score:main"
+
+[tool.setuptools]
+packages = [
+    "humanize",
+    "humanize.scripts",
+    "humanize.detectors",
+    "eval",
+]
+
+[tool.setuptools.package-data]
+humanize = ["SKILL.md", "references/*.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
