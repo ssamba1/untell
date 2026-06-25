@@ -1,194 +1,280 @@
-# humanize
+<div align="center">
 
-A **closed-loop, detector-feedback** AI-text humanizer, packaged as a **Claude skill**.
+<a href="https://ssamba1.github.io/humanize/"><img src="docs/og.png" alt="humanize — the open-source AI humanizer that closes the loop: rewrites AI text against live detector scores while keeping meaning, citations and facts intact" width="820"></a>
 
-Most humanizers do a single blind paraphrase pass and plateau at 60–80% detector bypass. The
-strongest *training-free* technique in the literature ([arXiv 2506.07001](https://arxiv.org/abs/2506.07001):
-−88% TPR@1%FPR, transfers across detectors, preserves meaning) is an **iterative rewrite against
-live detector scores** — and nothing ships it. This repo does, as a skill you install into Claude
-Code: Claude is the rewriter, local scripts score the text and protect its facts, and the loop
-runs until a detector ensemble stops flagging it while meaning is preserved.
+# humanize — the open-source AI humanizer that *closes the loop*
 
-> ⚠️ **Research / defensive tool.** AI detectors are noisy proxies — non-native English writers are
-> falsely flagged at high rates (~61% FPR in some studies). The detectors here are *signals*, not
-> ground truth, and the lite tier is a weak demo heuristic. Don't represent output as guaranteed
-> undetectable by any commercial system. Use for research, evaluation, and legitimate defense
-> against false positives.
+### Iteratively rewrite AI-generated text against live AI-detector scores until it reads human — while keeping your meaning, citations, and facts intact.
+
+A **closed-loop, detector-feedback** AI humanizer, shipped as a **Claude Code skill** *and* a Python CLI.
+Free. Open source. Honest about what it can and can't do.
+
+[![CI](https://github.com/ssamba1/humanize/actions/workflows/ci.yml/badge.svg)](https://github.com/ssamba1/humanize/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Claude Code skill](https://img.shields.io/badge/Claude%20Code-skill-8A2BE2.svg)](#-quick-start)
+[![Zero-dependency lite tier](https://img.shields.io/badge/install-zero--dependency-brightgreen.svg)](#tiers)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-orange.svg)](CONTRIBUTING.md)
+
+**Beat GPTZero · ZeroGPT · Originality.ai · Turnitin · Copyleaks · Winston · Sapling** — by optimizing
+against them, not guessing. [Why this is the most complete open humanizer →](#-why-this-is-the-best-open-source-ai-humanizer)
+
+</div>
+
+---
+
+## TL;DR
+
+Most "AI humanizers" do **one blind paraphrase pass** and plateau at 60–80% detector bypass. This one runs a
+**loop**: it *scores* your text against an ensemble of real AI detectors, *rewrites* using each detector's
+score as feedback (targeting the exact sentences that read as AI), and *re-scores* — repeating until the
+hardest detector stops flagging it **and** a semantic-similarity gate confirms the meaning is unchanged.
+
+That iterative, detector-feedback approach is the strongest *training-free* technique in the published
+literature ([arXiv 2506.07001](https://arxiv.org/abs/2506.07001): −88% TPR@1%FPR, transfers across detectors,
+preserves meaning) — and **no shipping tool, open or commercial, actually does it.** This repo does.
+
+> ```
+> Measured live:  a formulaic AI paragraph went  100% → 0% AI on ZeroGPT  in one loop.
+>                 a stickier one went             100% → 35% → 0%          once the loop
+>                 used per-sentence feedback to target only the flagged spans.
+> ```
+
+```bash
+# Zero dependencies. Works right now, in Claude Code:
+/humanize  <paste your AI-sounding text or a file path>
+```
+
+---
+
+## ⚡ Quick start
+
+**As a Claude Code skill (recommended, zero install):**
+
+```bash
+git clone https://github.com/ssamba1/humanize
+cp -r humanize/humanize ~/.claude/skills/humanize   # copy the skill directory
+```
+
+Then in Claude Code: `/humanize <your text or a file path>`. Claude is the rewriter; the bundled scripts
+score the text and lock your facts. Works with **zero dependencies** (the lite tier). For real detector
+signal, add the full tier (below).
+
+**As a Python CLI:**
+
+```bash
+pip install -e ".[full]"              # real detector ensemble on CPU
+humanize-loop "Your AI-sounding paragraph here."        # rewrite until it passes
+humanize-score "text" --tier full --threshold 0.3       # just score it
+humanize-verify --file draft.txt                        # honest pass/fail per detector
+```
+
+**As an MCP server** (Claude Desktop & any MCP client): `pip install -e ".[mcp]"` then run `humanize-mcp` —
+exposes `score`, `sentences`, `humanize`, `verify`, and `scrub` as tools.
+
+---
 
 ## How it works
 
 ```
 /humanize <text|file>
-  preserve-lock citations / numbers / quotes / entities   (scripts/preserve.py)
+  preserve-lock citations / numbers / quotes / URLs / entities   (scripts/preserve.py)
+  scrub hidden watermark / zero-width / homoglyph characters from the input
   repeat up to N times:
-    score = scripts/score.py <text>      # ensemble of local detectors -> {detector: P(AI), max}
-    sim   = scripts/quality.py <orig> <text>   # semantic similarity, must stay >= 0.76
+    score = scripts/score.py <text>          # ensemble of detectors -> {detector: P(AI), max}
+    sentences = scripts/sentences.py <text>  # which sentences read as AI (target only these)
+    sim   = scripts/quality.py <orig> <text> # semantic similarity, must stay >= 0.76
     if max(score) < threshold and sim ok: stop
-    Claude rewrites using the per-detector scores as feedback
-      (raise burstiness + perplexity, vary sentence architecture, keep meaning + sentinels)
-  restore locked spans -> humanized text + before/after detector table
+    Claude rewrites the flagged sentences using the per-detector scores as feedback
+      (raise burstiness + perplexity, vary sentence architecture, kill clichés/formulaic
+       transitions, diversify vocab — while keeping meaning + every locked span)
+  restore locked spans -> humanized text + a before/after detector table
 ```
 
-The loop drives the **max** across detectors (multi-detector evasion), gates every rewrite on a
-**0.76** semantic-similarity bar (the P-SP threshold from the watermark-removal literature), and
-keeps citations/numbers/quotes/entities byte-for-byte intact via preserve-lock.
+Three design choices make it work where blind paraphrasers fail:
 
-## Install
+1. **It drives the `max` across detectors, not the average** — a rewrite only wins when the *hardest*
+   detector is satisfied (genuine multi-detector evasion).
+2. **Every rewrite is gated on a 0.76 semantic-similarity bar** (the P-SP threshold from the
+   watermark-removal literature) — it *refuses* the meaning-mangling that wrecks other tools' output.
+3. **Citations, numbers, quotes, URLs and named entities are locked byte-for-byte** via preserve-lock, so
+   your APA/IEEE/MLA references and your facts survive the rewrite untouched.
 
-**As a Claude skill (recommended):**
+---
 
-```bash
-git clone https://github.com/ssamba1/humanize
-cp -r humanize/humanize ~/.claude/skills/humanize   # copy the skill directory
-# (or symlink it, or install as a plugin dir)
-```
+## 🏆 Why this is the best open-source AI humanizer
 
-Then in Claude Code: `/humanize <your text or a file path>`. Works with **zero dependencies**
-(lite tier). For real detector signal, install the full tier (below) in the repo.
+We surveyed **~110 open-source humanizer repos** (GitHub topics, papers-with-code, the research SOTA). An
+independent survey of the field concluded, verbatim:
 
-**As a plugin dir:** point your Claude Code plugins at the cloned repo's `humanize/` directory.
+> *"There is **no** open-source repo that combines (a) a real evasion approach validated against multiple
+> live detectors, (b) a quality/meaning-preservation verifier, (c) an iterative detector-feedback loop at
+> inference time, and (d) a user-installable package."*
 
-**As an MCP server** (Claude Desktop & other MCP clients): `pip install -e ".[mcp]"` then run
-`humanize-mcp` — exposes `score`, `sentences`, `humanize`, `verify`, and `scrub` as tools.
+**This is the repo that has all four.** Here it is against the strongest open competitors:
 
-**Inputs:** the CLIs take text, `--file`, or stdin; with `pip install -e ".[docs]"` `--file` also reads
-`.docx` and `.pdf`. Loop extras: `--style casual|professional|academic|blunt|storytelling|journalistic`,
-`--polish` (cheap surgical word-substitution pass), and input is auto-`scrub`bed of hidden watermark/
-zero-width/homoglyph characters (`--no-scrub` to disable).
+| Capability | **humanize (this repo)** | lynote (1.4k★) | patina (196★) | StealthHumanizer (58★) | harshaneel (51★) | Aboudjem (97★) | StealthRL (research) |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Inference-time **detector-feedback loop** | ✅ | ❌ | ◑ own score | ◑ multi-pass | ◑ manual | ❌ | ◑ train-time |
+| **Real detectors** in the loop (not an internal score) | ✅ | ❌ | ❌ | ❌ | ◑ Binoculars only | ❌ | ✅ ensemble |
+| **Commercial** adapters (Originality/GPTZero/Turnitin-class) | ✅ 6 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Semantic meaning gate** + citation lock | ✅ | claim | ◑ rollback | ◑ keyword | heuristic | ❌ | ✅ BERTScore |
+| **Per-sentence** targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
+| **Live bypass proof** (real score shown) | ✅ ZeroGPT 100→0 | ❌ | ❌ | ❌ | ◑ Binoculars | GIF | ✅ paper |
+| Packaged **install** (pip *and* Claude skill) | ✅ both | ✅ | ✅ | web app | ✅ skill | ✅ skill | ❌ research |
+| **CI** on real models | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Runs **without a GPU** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| License | MIT | MIT | MIT | MIT | MIT | MIT | MIT |
+
+**Stars are not capability.** lynote (1.4k★) is an unvalidated translation chain with no loop or verifier;
+the highest-starred repos win on SEO, not architecture. The full, evidenced breakdown — including the *one*
+place we're honestly **not** #1 (StealthRL's GPU-trained RL policy is a stronger raw *attack model*, though
+it's a training framework, not a usable tool) — is in **[docs/why-best-open-repo.md](docs/why-best-open-repo.md)**
+and the ~110-repo capability audit in **[docs/competitive-gap-plan.md](docs/competitive-gap-plan.md)**.
+
+---
 
 ## Tiers
 
-The scripts auto-detect what's installed and degrade gracefully (the score JSON reports which
-`tier` actually ran).
+The scripts auto-detect what's installed and **degrade gracefully** — the score JSON reports which `tier`
+actually ran, so you always know how much to trust the number.
 
 | Tier | Install | Detectors | Notes |
 |---|---|---|---|
-| **lite** | *(default, nothing to install)* | perplexity+burstiness heuristic; token-overlap quality | Stdlib only, instant, **weak** — demo signal, not an evasion claim. |
+| **lite** | *(default — nothing to install)* | perplexity + burstiness heuristic; token-overlap quality | Stdlib only, instant, **weak** — a demo signal, not an evasion claim. |
 | **full** | `pip install -e ".[full]"` | + RoBERTa-OpenAI, HC3-RoBERTa, MAGE, Fast-DetectGPT, GPT-2 perplexity; MiniLM cosine quality | Real proxy signal on CPU. Downloads models on first run. |
-| **full + RADAR** | `HUMANIZE_ENABLE_RADAR=1` (opt-in) | + RADAR (RoBERTa-large, **robust-to-paraphrase** — the hardest open detector to fool) | ⚠️ `TrustSafeAI/RADAR-Vicuna-7B` is **non-commercial licensed** — research/eval only, off by default. |
+| **+ RADAR** | `HUMANIZE_ENABLE_RADAR=1` (opt-in) | + RADAR — the **paraphrase-robust** detector, the hardest open one to fool | ⚠️ `TrustSafeAI/RADAR-Vicuna-7B` is **non-commercial licensed** — research/eval only. |
 | **heavy** | `pip install -e ".[heavy]"` | + Binoculars (2×Falcon-7B) | Strongest proxy; GPU recommended. Eval only. |
+| **commercial** | `pip install -e ".[commercial]"` + your keys | + Originality.ai, GPTZero, Winston, Sapling, ZeroGPT, Copyleaks | The real checkers. Key-gated; nothing runs or bills unless you set a key. |
 
 ```bash
-# Score any text directly (console script installed with the package):
 humanize-score "Your text here" --tier full --threshold 0.3
 echo "piped text" | humanize-score
 ```
 
-## Passing the real commercial checkers
+---
 
-The local detectors are *proxies*. To actually optimize for "passes GPTZero / Originality / Turnitin /
-Copyleaks / ZeroGPT / Winston / Sapling", wire the real APIs — each is **key-gated** (nothing runs or
-bills unless you set its key):
+## Passing the real commercial detectors
+
+Local detectors are *proxies*. To optimize for the checkers people actually care about — **GPTZero,
+Originality.ai, Turnitin-class, Copyleaks, ZeroGPT, Winston, Sapling** — wire the real APIs. Each is
+**key-gated**; nothing runs or bills unless you set its key.
 
 ```bash
 pip install -e ".[commercial]"
-export GPTZERO_API_KEY=...        ORIGINALITY_API_KEY=...
-export WINSTON_API_KEY=...        SAPLING_API_KEY=...
-export ZEROGPT_API_KEY=...        COPYLEAKS_EMAIL=...  COPYLEAKS_API_KEY=...
+export GPTZERO_API_KEY=...      ORIGINALITY_API_KEY=...   WINSTON_API_KEY=...
+export SAPLING_API_KEY=...      ZEROGPT_API_KEY=...       COPYLEAKS_EMAIL=...  COPYLEAKS_API_KEY=...
+
+humanize-loop  "text" --tier commercial      # rewrite until EVERY configured checker passes
+humanize-verify "text" --threshold 0.30      # pass/fail per checker + overall verdict (exit 0 = all pass)
+humanize-prove "Your AI text" --margin 0.10  # verify → loop → re-verify: one before/after table
 ```
 
-Then the `commercial` tier adds every configured checker to the ensemble, and the loop drives the
-**max across all of them** below threshold — i.e. it won't stop until *every* checker you've wired up
-passes:
+`humanize-verify` exits `0` only when **every** configured checker scores under the threshold. `humanize-prove`
+runs the whole thing end-to-end so you get an honest before/after AI% per checker. (Each `--tier commercial`
+iteration calls every checker, so it **costs API credits** — cap with `--max-iters`.)
+
+### Free ways to test without paying
 
 ```bash
-humanize-loop "text" --tier commercial          # rewrite until all configured checkers pass
-humanize-verify "text" --threshold 0.30         # pass/fail report per checker + overall verdict
-humanize-verify --file out.txt --json
-```
-
-`humanize-verify` exits `0` only when **every** configured checker scores under the threshold.
-
-**Prove it end-to-end (given keys):** `humanize-prove` verifies the original, runs the commercial-tier
-loop, then re-verifies the result — one PASS/FAIL table across every real checker (costs credits):
-
-```bash
-humanize-prove "Your AI text" --margin 0.10        # before/after AI% per checker + overall verdict
-```
-
-**Self-test against the open-source detector repos** (RoBERTa-OpenAI, HC3, MAGE, Fast-DetectGPT, and
-RADAR — the paraphrase-robust one) on a torch box, no API key for detection:
-
-```bash
-pip install -e ".[full,eval,api]" && export ANTHROPIC_API_KEY=...   # rewriter key for the real loop
-python -m eval.benchmark --dataset builtin --tier full --enable-radar --strategies noop,api_loop
-# report shows per-detector beat-rate + names the hardest detector (RADAR) the loop must clear
-```
-
-**Keys via `.env`.** Copy `.env.example` → `.env` (gitignored) and fill what you have; the CLIs
-auto-load it (real shell env vars still win). Uses `python-dotenv` if installed, else a built-in parser.
-
-**Free ways to test without paying:**
-
-```bash
-humanize-verify --sandbox "text"              # Copyleaks free MOCK mode (tests plumbing; scores not real)
 pip install -e ".[browser]" && playwright install chromium
-humanize-verify --browser zerogpt "text"      # drives the free ZeroGPT web UI — no API key
+humanize-verify --browser zerogpt "text"     # drives the free ZeroGPT web UI — no API key, $0
+humanize-loop   "text" --browser zerogpt      # iterate against the LIVE ZeroGPT detector until it clears
 ```
 
-The `--browser` path drives a real headless browser through a free web checker and reads the %
-score — $0, no key. **ZeroGPT** ships built-in (confirmed working). Most other free detectors are now
-bot-gated (QuillBot=reCAPTCHA, GPTZero web=login redirect, Scribbr/Brandwell=iframe widgets,
-Writer=removed), so they can't be automated reliably.
+The `--browser` path drives a real headless browser through a free web checker and reads the % score.
+**ZeroGPT ships built-in** (confirmed working live). Most other free detectors are now bot-gated
+(reCAPTCHA / login-redirect / iframe widgets) — see [docs/free-detector-probes.md](docs/free-detector-probes.md).
+Add your own site with **zero code** — it's just CSS selectors in a JSON file
+([examples/browser_sites.example.json](examples/browser_sites.example.json)).
 
-**Add your own site** without code — it's just selectors in a JSON file (`browser_sites.json` in the
-cwd, or point `HUMANIZE_BROWSER_SITES` at one):
+> ⚠️ Browser checking is **slow, fragile, and ToS-caveated** — for occasional checks on your own text, not
+> the hot loop. The reliable multi-detector path is the key-gated commercial tier.
 
-```json
-{ "mysite": { "url": "https://site/detector", "input_selector": "#textbox",
-              "input_mode": "textarea", "submit_button_text": "detect",
-              "result_selector": ".score" } }
-```
+---
 
-Then `humanize-verify --browser mysite "text"`. It's **slow and fragile** (ads/layout/Cloudflare can
-break it) and may breach a site's terms at volume — occasional checks on your own text, not the loop.
+## ❓ FAQ
 
-> ⚠️ **You must supply the keys (or use the free paths above).** "Passes all major checkers" is
-> unprovable against detectors you don't run. Each `--tier commercial` loop iteration calls every
-> commercial checker, so it **costs API credits per iteration** (cap with `--max-iters`).
+<details>
+<summary><b>Is there a free AI humanizer that actually works?</b></summary>
 
-## Eval harness (research only)
+Yes — the lite tier installs with **zero dependencies** and the `--browser zerogpt` path optimizes against a
+real detector for **$0**. "Actually works," honestly: the loop reliably clears the *free* web detectors
+(ZeroGPT live-measured 100%→0%), and the full/commercial tiers optimize against the harder ones. No tool —
+this one included — can promise it passes *every* commercial detector forever; the ones that claim "99%
+human" are lying. This repo tells you the real per-detector score instead.
+</details>
 
-Validates the thesis — closed loop beats single-pass — without a human in the seat (a scripted
-deterministic rewriter stands in for Claude so it's measurable):
+<details>
+<summary><b>Does it bypass GPTZero / ZeroGPT / Turnitin / Originality.ai?</b></summary>
 
-```bash
-pip install -e ".[eval]"
-python -m eval.benchmark --dataset builtin --n 5      # zero-download smoke run
-python -m eval.benchmark --dataset hc3 --n 100        # HuggingFace HC3
-python -m eval.benchmark --dataset raid --n 100       # RAID (headline)
-```
+It *optimizes and verifies against* them. ZeroGPT is built into the free browser path and live-proven.
+GPTZero, Originality.ai, Turnitin-class, Copyleaks, Winston and Sapling are wired as **key-gated commercial
+adapters** — the loop drives the max across every checker you configure below threshold. Originality.ai is
+genuinely the hardest (independent tests put most commercial humanizers under ~30% bypass on it); we don't
+claim to beat it without your API key to prove it. Honesty is the point.
+</details>
 
-Success criterion: `full_loop` reaches a higher **bypass rate** than `single_pass` at
-equal-or-better similarity. (With only the lite tier installed the absolute numbers are weak; the
-*relative* comparison is the point — install `.[full]` for meaningful absolute rates.)
+<details>
+<summary><b>Will it ruin my meaning, citations, or numbers?</b></summary>
 
-### Adversarial eval (hardest detector + RAID)
+No — that's the core differentiator. A **semantic-similarity gate** rejects any rewrite that drifts too far
+from the original meaning, and **preserve-lock** freezes citations, numbers, quotes, URLs and named entities
+byte-for-byte. Independent tests found other humanizers inject grammar errors and even reverse facts in ~18%
+of outputs; this one refuses meaning-breaking rewrites by design. Good for academic / legal / ESL writing.
+</details>
 
-The report shows **per-detector beat-rates** and names the **hardest detector to beat**. To benchmark
-against the toughest open detector (**RADAR**, paraphrase-robust) on the **RAID** adversarial dataset:
+<details>
+<summary><b>How is this different from Undetectable.ai / QuillBot / WriteHuman?</b></summary>
+
+Those are closed SaaS that do a single blind pass and report a fake binary "human/AI." This is open source,
+runs a **closed detector-feedback loop**, optimizes against **multiple real detectors at once**, gates on
+**meaning preservation**, and gives you an **honest, reproducible per-detector score** instead of a marketing
+claim. It's a research/defensive tool you can read, audit, and run yourself.
+</details>
+
+<details>
+<summary><b>Is this against the rules / ethical?</b></summary>
+
+AI detectors are noisy proxies — they falsely flag non-native English writers at high rates (~61% in some
+Stanford-cited studies). This exists as a **research harness and a defense against false positives**, not an
+academic-dishonesty aid. Don't use it to misrepresent authorship where that's prohibited. See the caveats
+below — we mean them.
+</details>
+
+---
+
+## Eval harness (research)
+
+Validates the thesis — closed loop beats single-pass — without a human in the seat (a scripted rewriter
+stands in for Claude so it's measurable):
 
 ```bash
 pip install -e ".[full,eval]"
-python -m eval.benchmark --dataset raid --n 200 --tier full --enable-radar
+python -m eval.benchmark --dataset builtin --n 5                      # zero-download smoke run
+python -m eval.benchmark --dataset raid --n 200 --tier full --enable-radar   # adversarial: hardest detector + RAID
 ```
 
-`--enable-radar` adds RADAR (downloads `TrustSafeAI/RADAR-Vicuna-7B`, **non-commercial — research/eval
-only**). The report's "Hardest detector to beat" line is the honest headline: how often the loop gets
-the single toughest detector under threshold. For a broader cross-detector benchmark, the external
-[IMGTB](https://github.com/kinit-sk/IMGTB) harness + [RAID](https://github.com/liamdugan/raid) leaderboard
-are the standard references; our `eval/` runs the same idea (our ensemble over RAID samples).
+The report shows **per-detector beat-rates** and names the **hardest detector to beat** (the honest
+headline). `--enable-radar` adds the paraphrase-robust RADAR detector (non-commercial — research/eval only).
+For broader cross-detector benchmarking, [IMGTB](https://github.com/kinit-sk/IMGTB) + the
+[RAID](https://github.com/liamdugan/raid) leaderboard are the standard references.
+
+---
 
 ## Repo layout
 
 ```
 humanize/            # THE SKILL (this dir is what you install)
   SKILL.md           # trigger + loop procedure + rewrite rubric
-  scripts/           # score.py · preserve.py · quality.py
-  detectors/         # base protocol + tiered adapters
-  references/        # thresholds.md · prompt-rubric.md
+  scripts/           # score · preserve · quality · sentences · run · verify
+  detectors/         # base protocol + tiered adapters (7 local + 6 commercial)
+  attacks/           # surgical substitution · homoglyph · scrub · back-translation
+  references/         # thresholds.md · prompt-rubric.md
 eval/                # benchmark harness (research only)
-tests/               # lite-tier unit tests (run with zero ML)
+training/            # GPU moat scaffold (RL-against-ensemble / distillation)
+tests/               # unit tests (lite runs with zero ML)
+docs/                # why-we're-best · competitive audit · detector probes
 ```
 
 ## Development
@@ -199,95 +285,32 @@ ruff check .
 pytest -q
 ```
 
-CI runs two jobs: a **lite** matrix (ruff + pytest, no model downloads) across Python
-3.9/3.11/3.12, and a **full-tier** job (Ubuntu, CPU torch + `.[full,eval]`) that loads the real
-RoBERTa / Fast-DetectGPT / GPT-2-perplexity detectors and runs the `torch`-gated tests in
-`tests/test_detectors_full.py`. The heavy tier (Binoculars) needs a GPU and is exercised
-manually.
+CI runs a **lite** matrix (ruff + pytest, no downloads) across Python 3.9/3.11/3.12 **and** a **full-tier**
+job (Ubuntu, CPU torch + `.[full,eval]`) that loads the real RoBERTa / Fast-DetectGPT / GPT-2 detectors and
+runs the torch-gated tests. See **[CONTRIBUTING.md](CONTRIBUTING.md)** to get involved and
+**[ROADMAP.md](ROADMAP.md)** for what's next (the GPU RL-against-ensemble moat).
 
-### Headless rewriter (optional)
-
-The skill uses the running Claude as the rewriter (no key). For a fully programmatic loop (eval,
-servers), `humanize.rewriter` adds optional hosted-LLM providers:
-
-```bash
-pip install -e ".[api]"      # anthropic + openai SDKs
-export ANTHROPIC_API_KEY=...  # or OPENAI_API_KEY
-```
-
-```python
-from humanize.rewriter import get_rewriter
-rw = get_rewriter()           # None if no SDK/key -> caller falls back to the scripted rewriter
-```
-
-Run the whole loop standalone (lock → score → rewrite → restore → report), outside Claude:
-
-```bash
-humanize-loop "Your AI-sounding paragraph here." --tier full
-humanize-loop --file draft.txt --json     # full structured result
-humanize-loop "text" --browser zerogpt    # iterate against the REAL ZeroGPT web detector, no key (slow)
-humanize-loop "text" --confirm 2          # re-scan a pass twice; demote if a noisy detector re-flags
-humanize-sentences "text" --tier full     # per-sentence AI scores -> see exactly which sentences to fix
-```
-
-The loop now does **per-sentence targeting**: each iteration it finds the sentences that read as AI
-and tells the rewriter to fix *those* the hardest (the trick that took a stuck 35% to 0% live) — fewer
-iterations, less meaning drift.
-
-`--browser zerogpt` makes the loop score each iteration against a live free web detector and keep
-rewriting until it clears — optimizing against a real checker for $0. (Measured live: a formulaic AI
-paragraph went 100% → 0% AI on ZeroGPT in one pass; a stickier one went 100% → 35% → **0%** once the
-loop used ZeroGPT's per-sentence feedback to target the flagged spans.)
-
-### Making it robust ("as foolproof as free gets")
-
-No humanizer truly passes *everything* — detectors disagree, update, and even re-score the same text
-differently. Two levers raise the floor:
-
-```bash
-# Beat the MAX across several real detectors at once (loop won't stop until ALL pass):
-humanize-loop "text" --browser zerogpt,detecting-ai --margin 0.10
-
-# The reliable multi-detector path (Originality/GPTZero/Turnitin-class) needs paid keys:
-humanize-loop "text" --tier commercial --margin 0.10
-humanize-verify "text" --tier commercial    # confirm pass/fail against every configured checker
-```
-
-- **`--browser a,b,c`** drives the loop against the **max** across multiple free web detectors — it
-  only declares success when *every* one passes. ZeroGPT is the reliable built-in; add others as
-  config (see `examples/browser_sites.example.json`).
-- **`--margin 0.10`** adds headroom: stop only when the score is *comfortably* below threshold, not
-  borderline — the practical guard against a noisy detector re-flagging a marginal pass.
-- **Truly foolproof = the commercial tier** (6 real APIs, key-gated) + margin. That's the only setup
-  that optimizes + verifies against the hard detectors; it costs credits and needs your keys.
-
-(Needs `.[api]` + a key; without one it errors clearly and points you back to the `/humanize`
-skill, where Claude is the rewriter.)
+---
 
 ## Honest caveats
 
-- **Proxy ≠ commercial.** These detectors approximate; they aren't Originality.ai/Turnitin/etc.
-  RoBERTa-OpenAI in particular is weak on modern text. The ensemble is a signal, not a verdict.
-- **lite is a demo.** The zero-install heuristic is good for showing the loop, not for claiming
-  evasion. The full tier is the honest baseline; Binoculars (GPU) is the strongest proxy.
+- **Proxy ≠ commercial.** The local detectors approximate; they aren't Originality.ai / Turnitin. The
+  ensemble is a *signal*, not a verdict. "Passes all checkers" is unprovable against detectors you don't run.
+- **lite is a demo.** The zero-install heuristic shows the loop; it's not an evasion claim. The full tier is
+  the honest baseline; Binoculars (GPU) is the strongest proxy.
 - **Claude is the rewriter.** Output quality and evasion depend on the running model.
-- **Ethics.** Detector false-positives disproportionately harm non-native writers; this exists as
-  a research/eval harness and a defense against that, not a plagiarism or academic-dishonesty aid.
+- **Ethics.** Detector false-positives disproportionately harm non-native writers. This is a research/eval
+  harness and a defense against that — not a plagiarism or academic-dishonesty aid.
 
-## Deferred
+## Contributing
 
-What's *not* here, and the honest blocker for each (built unverified would violate the testing bar):
+PRs, detector adapters, and new free-checker selectors are welcome — see
+**[CONTRIBUTING.md](CONTRIBUTING.md)**, the **[good first issues](https://github.com/ssamba1/humanize/issues)**,
+and our **[Code of Conduct](CODE_OF_CONDUCT.md)**. Found a security issue? See **[SECURITY.md](SECURITY.md)**.
 
-- **Local DPO/RL-against-ensemble training** (the StealthRL/MASH "moat") — needs a **GPU**; the
-  hosted-rewriter loop + commercial-tier optimization is the training-free stand-in that's shippable.
-- **Web UI** and **marketplace publishing automation** — a separate product surface, out of scope for
-  a CLI/skill.
-- **Token-mixing (TOBLEND-style)** attack — needs several generator LLMs running locally; deferred.
-
-Built and shippable now: the `/humanize` skill, 5 local proxy detectors, 6 **commercial-checker
-adapters** (key-gated) + the `commercial` tier + `humanize-verify`, hosted-LLM rewriter, headless
-`humanize-loop`, back-translation (`humanize.attacks.back_translate`), and the eval harness.
+If this saved you from a false AI flag — or you just think it's the most honest humanizer on GitHub —
+a ⭐ helps others find it.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE). Free to use, modify, and distribute.

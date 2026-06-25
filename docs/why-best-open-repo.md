@@ -66,6 +66,13 @@ close the loop against real detectors with a verifier and an install.
 - **Skill-file repos** (harshaneel 51★, Aboudjem 96★) — pure-markdown heuristic skills (like our
   `SKILL.md`) but with **no detector backend, no loop, no tests**. Ours is a skill *backed by* a real
   detector ensemble + loop + verify + CI.
+- **peggywritesforyou** (~3★) — the *closest architecturally*: a real Python/Flask tool that independently
+  arrived at the same 5-pillar design (adversarial feedback loop, multi-detector cross-validation, targeted
+  prompting, per-sentence targeting, pivot-language rotation), using RoBERTa + Sapling + ZeroGPT. Credit
+  where due. We beat it on: **commercial-detector adapters** (Originality/Turnitin-class), a **semantic
+  meaning gate** (it relies on a human-in-the-loop review panel, not an automated similarity gate), a
+  **packaged pip + skill install**, **CI**, and **published live proof**. It's the one open repo that shares
+  our architecture — and we're the more complete, verifiable system.
 
 ---
 

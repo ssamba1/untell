@@ -1,0 +1,25 @@
+name: Feature request / new detector or checker
+description: Propose a feature, a detector adapter, or a free-checker selector
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: Describe the feature, the detector to add, or the site selector. Link the detector/paper if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it valuable?
+      description: Who does it help, and how would you verify it works (reproducible check)?
+    validations:
+      required: false
+  - type: checkboxes
+    id: alignment
+    attributes:
+      label: Alignment
+      options:
+        - label: This fits the project's research / defensive framing (not solely for misrepresenting authorship).
+          required: true

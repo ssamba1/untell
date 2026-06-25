@@ -1,0 +1,43 @@
+name: Bug report
+description: Something doesn't work as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report. Please fill in enough for us to reproduce it.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you run, what did you expect, what did you get?
+      placeholder: "I ran `humanize-loop ...` and ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Which tier?
+      options:
+        - lite (zero-dependency)
+        - full (.[full])
+        - heavy / RADAR / Binoculars
+        - commercial (API keys)
+        - browser (Playwright)
+        - "as a Claude Code skill (/humanize)"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact command(s). Redact any API keys.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "OS, Python version, output of `humanize-score --version` if relevant"
+    validations:
+      required: false

@@ -26,3 +26,4 @@ eval/outputs/
 
 # Playwright MCP probe artifacts
 .playwright-mcp/
+_private/

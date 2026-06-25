@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ssamba1/humanize/security/advisories/new
+    about: Please report security issues privately, not as a public issue.
+  - name: Question / discussion
+    url: https://github.com/ssamba1/humanize/discussions
+    about: Ask a question or share how you're using humanize.

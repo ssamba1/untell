@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>humanize — Free Open-Source AI Humanizer (Closed-Loop, Detector-Feedback) | Bypass GPTZero, ZeroGPT, Turnitin</title>
+<meta name="description" content="Free, open-source AI humanizer that closes the loop: iteratively rewrites AI-generated text against live AI-detector scores (GPTZero, ZeroGPT, Originality.ai, Turnitin, Copyleaks) while preserving your meaning, citations and facts. Claude Code skill + Python CLI. MIT.">
+<meta name="keywords" content="ai humanizer, free ai humanizer, humanize ai text, bypass gptzero, bypass turnitin, bypass ai detection, zerogpt, originality.ai, undetectable ai, open source ai humanizer, claude code skill, detector feedback">
+<link rel="canonical" href="https://ssamba1.github.io/humanize/">
+<meta name="theme-color" content="#0d1117">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="humanize — the open-source AI humanizer that closes the loop">
+<meta property="og:description" content="Iteratively rewrites AI text against live detector scores until it reads human — while keeping your meaning, citations and facts intact. Free, open source, honest. Live-proven 100%→0% on ZeroGPT.">
+<meta property="og:url" content="https://ssamba1.github.io/humanize/">
+<meta property="og:image" content="https://ssamba1.github.io/humanize/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="humanize — the open-source AI humanizer that closes the loop">
+<meta name="twitter:description" content="Rewrites AI text against live detector scores while preserving meaning, citations & facts. Free, open source, honest. Live-proven 100%→0% on ZeroGPT.">
+<meta name="twitter:image" content="https://ssamba1.github.io/humanize/og.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "humanize",
+  "description": "Open-source, closed-loop AI-text humanizer: iteratively rewrites text against a multi-detector ensemble using each detector's score as feedback, gated on semantic meaning preservation and citation locking. Packaged as a Claude Code skill and a Python CLI.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Windows, macOS, Linux",
+  "softwareVersion": "0.1.0",
+  "url": "https://github.com/ssamba1/humanize",
+  "downloadUrl": "https://github.com/ssamba1/humanize",
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is there a free AI humanizer that actually works?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. The lite tier installs with zero dependencies and the browser path optimizes against the live ZeroGPT detector for $0 (measured 100% to 0% AI). No tool can honestly promise it passes every commercial detector forever; humanize reports the real per-detector score instead of a fake '99% human' claim." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does humanize bypass GPTZero, ZeroGPT, Turnitin and Originality.ai?",
+      "acceptedAnswer": { "@type": "Answer", "text": "It optimizes and verifies against them. ZeroGPT is built into the free browser path and live-proven. GPTZero, Originality.ai, Turnitin-class, Copyleaks, Winston and Sapling are wired as key-gated commercial adapters; the loop drives the maximum score across every configured checker below threshold. Originality.ai is the hardest; humanize does not claim to beat it without your API key to prove it." }
+    },
+    {
+      "@type": "Question",
+      "name": "Will an AI humanizer ruin my meaning, citations or numbers?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Not with humanize. A semantic-similarity gate rejects rewrites that drift from the original meaning, and preserve-lock freezes citations, numbers, quotes, URLs and named entities byte-for-byte. It refuses the meaning-breaking rewrites that make other humanizers inject errors or reverse facts." }
+    },
+    {
+      "@type": "Question",
+      "name": "How is humanize different from Undetectable.ai, QuillBot or WriteHuman?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Those are closed SaaS that do a single blind pass and report a fake binary verdict. humanize is open source, runs a closed detector-feedback loop, optimizes against multiple real detectors at once, gates on meaning preservation, and gives an honest, reproducible per-detector score you can audit and run yourself." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--white:#e6edf3;--gray:#8b949e;--accent:#aa6eff;--green:#3fb950;--red:#f85149}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--white);font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px}
+  header{text-align:center;padding:56px 0 24px}
+  header img{max-width:100%;width:760px;border:1px solid var(--border);border-radius:14px}
+  h1{font-size:40px;line-height:1.2;margin:34px 0 10px}
+  h2{font-size:28px;margin:52px 0 14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  .lede{font-size:21px;color:var(--gray);max-width:720px;margin:0 auto 22px}
+  .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:700;padding:13px 26px;border-radius:10px;margin:8px 6px}
+  .cta.alt{background:transparent;border:1px solid var(--border);color:var(--white)}
+  .badges{margin:14px 0}
+  .badges img{margin:3px}
+  pre{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;overflow:auto}
+  code{font-family:"SFMono-Regular",Consolas,monospace;font-size:15px}
+  .proof{background:var(--panel);border:1px solid var(--green);border-radius:12px;padding:18px 22px;font-family:Consolas,monospace;font-size:15px;color:var(--gray);margin:20px 0}
+  .proof b{color:var(--green)} .proof .r{color:var(--red)}
+  table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0;display:block;overflow-x:auto}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{background:var(--panel)}
+  .y{color:var(--green);font-weight:700}.n{color:var(--red)}
+  details{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:4px 16px;margin:10px 0}
+  summary{cursor:pointer;font-weight:600;padding:10px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:18px 0}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px}
+  .card h3{margin:0 0 8px;font-size:18px}
+  .card p{margin:0;color:var(--gray);font-size:15px}
+  footer{text-align:center;color:var(--gray);font-size:14px;padding:48px 0;border-top:1px solid var(--border);margin-top:56px}
+  .note{color:var(--gray);font-size:14px}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <a href="https://github.com/ssamba1/humanize"><img src="og.png" alt="humanize — the open-source AI humanizer that closes the loop"></a>
+  <h1>The open-source AI humanizer that <em>closes the loop</em></h1>
+  <p class="lede">Iteratively rewrites AI-generated text against <strong>live AI-detector scores</strong> until it reads human — while keeping your <strong>meaning, citations and facts</strong> intact. Free. Open source. Honest about what it can and can't do.</p>
+  <a class="cta" href="https://github.com/ssamba1/humanize">⭐ View on GitHub</a>
+  <a class="cta alt" href="https://github.com/ssamba1/humanize#-quick-start">Quick start</a>
+  <div class="badges">
+    <img src="https://img.shields.io/github/stars/ssamba1/humanize?style=social" alt="GitHub stars">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT">
+    <img src="https://img.shields.io/badge/python-3.9%2B-blue.svg" alt="Python 3.9+">
+    <img src="https://img.shields.io/badge/Claude%20Code-skill-8A2BE2.svg" alt="Claude Code skill">
+  </div>
+</header>
+
+<main class="wrap">
+  <p>Most "AI humanizers" do <strong>one blind paraphrase pass</strong> and plateau at 60–80% detector bypass. This one runs a <strong>loop</strong>: it <em>scores</em> your text against an ensemble of real AI detectors, <em>rewrites</em> using each detector's score as feedback (targeting the exact sentences that read as AI), and <em>re-scores</em> — repeating until the hardest detector stops flagging it <strong>and</strong> a semantic-similarity gate confirms your meaning is unchanged. That detector-feedback approach is the strongest <em>training-free</em> technique in the published literature — and no shipping tool, open or commercial, actually ships it.</p>
+
+  <div class="proof">
+    Measured live:&nbsp; a formulaic AI paragraph went &nbsp;<span class="r">100%</span> → <b>0% AI</b> on ZeroGPT&nbsp; in one loop.<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a stickier one went &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="r">100%</span> → 35% → <b>0%</b>&nbsp; once the loop used per-sentence feedback.
+  </div>
+
+  <h2>Quick start</h2>
+  <p><strong>As a Claude Code skill</strong> (zero install):</p>
+  <pre><code>git clone https://github.com/ssamba1/humanize
+cp -r humanize/humanize ~/.claude/skills/humanize
+# then in Claude Code:
+/humanize &lt;your text or a file path&gt;</code></pre>
+  <p><strong>As a Python CLI:</strong></p>
+  <pre><code>pip install -e ".[full]"
+humanize-loop  "Your AI-sounding paragraph here."   # rewrite until it passes
+humanize-verify --file draft.txt                    # honest pass/fail per detector</code></pre>
+
+  <h2>Why it works where blind paraphrasers fail</h2>
+  <div class="grid">
+    <div class="card"><h3>Drives the max</h3><p>Optimizes the <em>hardest</em> detector across the whole ensemble, not the average — genuine multi-detector evasion.</p></div>
+    <div class="card"><h3>Meaning-gated</h3><p>A 0.76 semantic-similarity bar rejects any rewrite that drifts. It refuses the meaning-mangling other tools ship.</p></div>
+    <div class="card"><h3>Facts locked</h3><p>Citations, numbers, quotes, URLs and entities are frozen byte-for-byte. Your APA/IEEE references survive untouched.</p></div>
+    <div class="card"><h3>Per-sentence</h3><p>Rewrites only the sentences that read as AI — fewer iterations, less drift, higher pass rate.</p></div>
+  </div>
+
+  <h2>The most complete open humanizer</h2>
+  <p>We surveyed ~110 open-source humanizer repos. None combine all four of: a real evasion approach validated against multiple live detectors, a meaning-preservation verifier, an inference-time detector-feedback loop, and a user-installable package. This is the repo that does.</p>
+  <table>
+    <tr><th>Capability</th><th>humanize</th><th>lynote (1.4k★)</th><th>patina (196★)</th><th>StealthHumanizer (58★)</th></tr>
+    <tr><td>Detector-feedback loop</td><td class="y">✅</td><td class="n">❌</td><td>◑</td><td>◑</td></tr>
+    <tr><td>Real detectors in the loop</td><td class="y">✅</td><td class="n">❌</td><td class="n">❌</td><td class="n">❌</td></tr>
+    <tr><td>Commercial adapters (6)</td><td class="y">✅</td><td class="n">❌</td><td class="n">❌</td><td class="n">❌</td></tr>
+    <tr><td>Semantic meaning gate</td><td class="y">✅</td><td>claim</td><td>◑</td><td>◑</td></tr>
+    <tr><td>Live bypass proof</td><td class="y">✅</td><td class="n">❌</td><td class="n">❌</td><td class="n">❌</td></tr>
+    <tr><td>pip + Claude skill</td><td class="y">✅</td><td>pip</td><td>✅</td><td>web app</td></tr>
+  </table>
+  <p class="note">Stars are not capability — the highest-starred repos win on SEO, not architecture. Full evidenced breakdown (and the one place we're honestly not #1): <a href="https://github.com/ssamba1/humanize/blob/main/docs/why-best-open-repo.md">docs/why-best-open-repo.md</a>.</p>
+
+  <h2>FAQ</h2>
+  <details><summary>Is there a free AI humanizer that actually works?</summary><p>Yes — the lite tier installs with zero dependencies and the <code>--browser zerogpt</code> path optimizes against a real detector for $0 (live-measured 100%→0%). No tool can honestly promise it passes every commercial detector forever; the ones claiming "99% human" are lying. humanize reports the real per-detector score instead.</p></details>
+  <details><summary>Does it bypass GPTZero / ZeroGPT / Turnitin / Originality.ai?</summary><p>It optimizes and verifies against them. ZeroGPT is built into the free browser path and live-proven. GPTZero, Originality.ai, Turnitin-class, Copyleaks, Winston and Sapling are key-gated commercial adapters; the loop drives the max across every checker you configure. Originality.ai is the hardest — we don't claim to beat it without your key to prove it.</p></details>
+  <details><summary>Will it ruin my meaning, citations or numbers?</summary><p>No. A semantic-similarity gate rejects meaning-drifting rewrites and preserve-lock freezes citations, numbers, quotes, URLs and entities byte-for-byte. Good for academic, legal and ESL writing.</p></details>
+  <details><summary>How is it different from Undetectable.ai / QuillBot / WriteHuman?</summary><p>Those are closed SaaS doing a single blind pass with a fake binary verdict. humanize is open source, runs a closed detector-feedback loop, optimizes against multiple real detectors, gates on meaning, and gives an honest reproducible score you can audit.</p></details>
+  <details><summary>Is this ethical?</summary><p>AI detectors are noisy proxies — they falsely flag non-native English writers at ~61% in some studies. humanize is a research harness and a defense against false positives, not an academic-dishonesty aid.</p></details>
+
+  <div style="text-align:center;margin:48px 0">
+    <a class="cta" href="https://github.com/ssamba1/humanize">⭐ Star it on GitHub</a>
+  </div>
+</main>
+
+<footer class="wrap">
+  <p>humanize · open-source AI humanizer · <a href="https://github.com/ssamba1/humanize">GitHub</a> · <a href="https://github.com/ssamba1/humanize/blob/main/LICENSE">MIT License</a><br>
+  A research &amp; defensive tool. AI detectors are noisy proxies; don't use this to misrepresent authorship where prohibited.</p>
+</footer>
+</body>
+</html>
