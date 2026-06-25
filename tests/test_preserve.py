@@ -2,7 +2,20 @@
 
 from __future__ import annotations
 
+import json
+
 from humanize.scripts.preserve import lock, restore
+from humanize.scripts.preserve import main as preserve_main
+
+
+def test_cli_is_ascii_safe(capsys):
+    rc = preserve_main(["Smith (2020) reported 42% across [3] cases."])
+    assert rc == 0
+    out = capsys.readouterr().out
+    out.encode("ascii")  # sentinels escaped to \\u27e6 — never crash a Windows cp1252 stdout
+    parsed = json.loads(out)
+    assert "masked" in parsed and "mapping" in parsed
+    assert parsed["mapping"]  # something was locked
 
 
 def _roundtrip(text: str) -> None:

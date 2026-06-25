@@ -19,7 +19,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from humanize.scripts.quality import similarity
+from humanize.scripts.quality import recommended_bar, similarity
 from humanize.scripts.score import DEFAULT_THRESHOLD, score_text
 
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
@@ -138,10 +138,12 @@ def full_loop(
     text: str,
     tier: str = "lite",
     threshold: float = DEFAULT_THRESHOLD,
-    sim_bar: float = 0.76,
+    sim_bar: float | None = None,
     max_iters: int = 5,
 ) -> LoopResult:
     """Closed-loop rewrite: escalate strength while flagged and similarity holds."""
+    if sim_bar is None:  # bar appropriate to the active similarity metric (embedding vs token-overlap)
+        sim_bar = recommended_bar()
     pre = score_text(text, tier=tier, threshold=threshold)
     best_text = text
     best_score = pre

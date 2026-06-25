@@ -122,7 +122,9 @@ def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
     text = args[0] if args else sys.stdin.read()
     masked, mapping = lock(text)
-    print(json.dumps({"masked": masked, "mapping": mapping}, ensure_ascii=False, indent=2))
+    # ensure_ascii=True so the U+27E6 sentinels survive a non-UTF-8 (Windows cp1252) stdout;
+    # they decode back to the real characters when the skill json-parses this output.
+    print(json.dumps({"masked": masked, "mapping": mapping}, ensure_ascii=True, indent=2))
     return 0
 
 

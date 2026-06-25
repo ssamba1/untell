@@ -93,7 +93,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     result = score_text(text, tier=args.tier, threshold=args.threshold)
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # ensure_ascii=True: detector error strings may carry non-ASCII; never crash a Windows stdout.
+    print(json.dumps(result, ensure_ascii=True, indent=2))
     return 0
 
 
