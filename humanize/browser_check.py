@@ -3,21 +3,29 @@
 Some detectors have no affordable API but a free web checker. This drives a real browser
 (Playwright) to paste text into one and read the score — a $0 way to get a real-checker signal.
 
-Selectors for ZeroGPT were confirmed live (2026-06): input ``#textArea``, button
-``button.scoreButton`` ("Detect Text"), result ``.percentage-div`` (e.g. "100%AI GPT*"). A JS
-``.click()`` is used because ad overlays intercept normal pointer clicks.
+**Config-driven.** A site is just a ``SiteConfig`` (url + selectors). One built-in ships (ZeroGPT,
+confirmed live 2026-06: input ``#textArea``, "Detect Text" button clicked via JS to dodge an ad
+overlay, result ``.percentage-div`` → "100%AI GPT*"). Add your own sites without code via a JSON
+file — see ``get_browser_checker`` / ``HUMANIZE_BROWSER_SITES``.
 
-CAVEATS — read these:
-  * **Slow + fragile.** Page layouts/selectors change; ads/Cloudflare/captchas can block automation.
-    This is for occasional *verification*, NOT a step inside the rewrite loop.
-  * **Respect the site's terms.** Automating a free web UI may violate ToS. Use low volume on your
-    own content; do not hammer the service. You are responsible for how you use it.
-  * Optional: needs ``pip install -e ".[browser]"`` then ``playwright install chromium``.
+Reality check (probed 2026-06): most free detectors are now bot-gated and NOT automatable —
+QuillBot (reCAPTCHA), GPTZero web (redirects to a login app), Scribbr/Brandwell (iframe widgets),
+Writer (tool removed), Sapling (framework gauge, rate-limited). ZeroGPT is the clean one.
+
+CAVEATS:
+  * **Slow + fragile.** Selectors/layouts change; ads/Cloudflare/captchas can block automation.
+    For occasional *verification*, NOT a step inside the rewrite loop.
+  * **Respect each site's terms.** Automating a free web UI may violate ToS. Low volume, your own
+    content, your responsibility.
+  * Needs ``pip install -e ".[browser]"`` then ``playwright install chromium``.
 """
 
 from __future__ import annotations
 
+import json
+import os
 import re
+from dataclasses import dataclass, field
 
 from humanize.detectors.base import clamp01
 
@@ -38,9 +46,36 @@ def parse_ai_percent(text: str) -> float | None:
         return None
 
 
-class ZeroGPTChecker:
-    name = "zerogpt"
-    url = "https://www.zerogpt.com/"
+@dataclass
+class SiteConfig:
+    """How to drive one free web detector."""
+
+    name: str
+    url: str
+    input_selector: str
+    input_mode: str = "textarea"  # "textarea" | "contenteditable"
+    submit_button_text: str = "detect"  # JS-click the first <button> whose text matches (regex, i)
+    result_selector: str = ".result"
+    wait_s: float = 45.0
+    extra: dict = field(default_factory=dict)
+
+
+ZEROGPT = SiteConfig(
+    name="zerogpt",
+    url="https://www.zerogpt.com/",
+    input_selector="#textArea",
+    input_mode="textarea",
+    submit_button_text="detect",
+    result_selector=".percentage-div",
+)
+
+
+class WebUIChecker:
+    """Generic config-driven browser checker. ``check(text)`` returns P(AI) in [0, 1]."""
+
+    def __init__(self, config: SiteConfig):
+        self.config = config
+        self.name = config.name
 
     def available(self) -> bool:
         try:
@@ -49,36 +84,80 @@ class ZeroGPTChecker:
             return False
         return True
 
-    def check(self, text: str, headless: bool = True, timeout_s: float = 45.0) -> float:
-        """Drive a browser through the ZeroGPT web UI and return P(AI) in [0, 1]."""
+    def check(self, text: str, headless: bool = True) -> float:
         from playwright.sync_api import sync_playwright
 
+        c = self.config
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=headless)
             page = browser.new_page()
             try:
-                page.goto(self.url, wait_until="domcontentloaded", timeout=timeout_s * 1000)
-                page.fill("#textArea", text, timeout=timeout_s * 1000)
-                # JS click — ad overlays steal normal pointer events on this site.
+                page.goto(c.url, wait_until="domcontentloaded", timeout=c.wait_s * 1000)
+                if c.input_mode == "contenteditable":
+                    page.evaluate(
+                        "([sel, txt]) => { const e = document.querySelector(sel);"
+                        " if (e) { e.focus(); e.textContent = txt;"
+                        " e.dispatchEvent(new InputEvent('input', {bubbles: true})); } }",
+                        [c.input_selector, text],
+                    )
+                else:
+                    page.fill(c.input_selector, text, timeout=c.wait_s * 1000)
+                # JS-click the submit button (ad overlays steal normal pointer events on some sites).
                 page.evaluate(
-                    "() => { const b=[...document.querySelectorAll('button.scoreButton')]"
-                    ".find(x=>/detect/i.test(x.textContent||'')); if (b) b.click(); }"
+                    "(reText) => { const rx = new RegExp(reText, 'i');"
+                    " const b = [...document.querySelectorAll('button')]"
+                    ".find(x => rx.test((x.textContent || '').trim())); if (b) b.click(); }",
+                    c.submit_button_text,
                 )
-                page.wait_for_selector(".percentage-div", timeout=timeout_s * 1000)
-                pct = parse_ai_percent(page.inner_text(".percentage-div"))
+                page.wait_for_selector(c.result_selector, timeout=c.wait_s * 1000)
+                pct = parse_ai_percent(page.inner_text(c.result_selector))
                 return pct if pct is not None else 0.5
             finally:
                 browser.close()
 
 
-_CHECKERS = {"zerogpt": ZeroGPTChecker}
+class ZeroGPTChecker(WebUIChecker):
+    """Built-in ZeroGPT checker (kept as a named class for convenience)."""
+
+    url = ZEROGPT.url
+
+    def __init__(self):
+        super().__init__(ZEROGPT)
 
 
-def get_browser_checker(name: str):
-    """Return a browser checker instance for ``name``, or None if unknown."""
-    cls = _CHECKERS.get(name.lower())
-    return cls() if cls else None
+_BUILTINS: dict[str, SiteConfig] = {"zerogpt": ZEROGPT}
+
+
+def _user_sites() -> dict[str, SiteConfig]:
+    """Load user-defined sites from ``$HUMANIZE_BROWSER_SITES`` (a JSON path) or ``./browser_sites.json``.
+
+    JSON shape: ``{"sitename": {"url": ..., "input_selector": ..., "result_selector": ..., ...}}``.
+    """
+    path = os.environ.get("HUMANIZE_BROWSER_SITES") or "browser_sites.json"
+    try:
+        with open(path, encoding="utf-8") as fh:
+            raw = json.load(fh)
+    except Exception:
+        return {}
+    out: dict[str, SiteConfig] = {}
+    for name, cfg in (raw or {}).items():
+        try:
+            out[name.lower()] = SiteConfig(name=name.lower(), **cfg)
+        except Exception:
+            continue  # skip malformed entries rather than crash
+    return out
+
+
+def get_browser_checker(name: str) -> WebUIChecker | None:
+    """Return a checker for ``name`` (built-in or user-configured), or None if unknown."""
+    key = name.lower()
+    if key in _BUILTINS:
+        return WebUIChecker(_BUILTINS[key])
+    user = _user_sites()
+    if key in user:
+        return WebUIChecker(user[key])
+    return None
 
 
 def available_browser_checkers() -> list[str]:
-    return sorted(_CHECKERS)
+    return sorted(set(_BUILTINS) | set(_user_sites()))

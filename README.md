@@ -101,10 +101,22 @@ pip install -e ".[browser]" && playwright install chromium
 humanize-verify --browser zerogpt "text"      # drives the free ZeroGPT web UI — no API key
 ```
 
-The `--browser` path drives a real headless browser through a free web checker (ZeroGPT confirmed
-working) and reads the % score — $0, no key. It's **slow and fragile** (ads/layout/Cloudflare can
-break it) and may breach the site's terms at volume — use it for occasional checks on your own text,
-not inside the loop.
+The `--browser` path drives a real headless browser through a free web checker and reads the %
+score — $0, no key. **ZeroGPT** ships built-in (confirmed working). Most other free detectors are now
+bot-gated (QuillBot=reCAPTCHA, GPTZero web=login redirect, Scribbr/Brandwell=iframe widgets,
+Writer=removed), so they can't be automated reliably.
+
+**Add your own site** without code — it's just selectors in a JSON file (`browser_sites.json` in the
+cwd, or point `HUMANIZE_BROWSER_SITES` at one):
+
+```json
+{ "mysite": { "url": "https://site/detector", "input_selector": "#textbox",
+              "input_mode": "textarea", "submit_button_text": "detect",
+              "result_selector": ".score" } }
+```
+
+Then `humanize-verify --browser mysite "text"`. It's **slow and fragile** (ads/layout/Cloudflare can
+break it) and may breach a site's terms at volume — occasional checks on your own text, not the loop.
 
 > ⚠️ **You must supply the keys (or use the free paths above).** "Passes all major checkers" is
 > unprovable against detectors you don't run. Each `--tier commercial` loop iteration calls every

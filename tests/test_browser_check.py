@@ -7,6 +7,7 @@ import builtins
 import pytest
 
 from humanize.browser_check import (
+    WebUIChecker,
     ZeroGPTChecker,
     available_browser_checkers,
     get_browser_checker,
@@ -34,10 +35,43 @@ def test_parse_ai_percent_none_when_no_number():
     assert parse_ai_percent(None) is None
 
 
-def test_registry():
+def test_registry_builtin():
     assert "zerogpt" in available_browser_checkers()
-    assert isinstance(get_browser_checker("ZeroGPT"), ZeroGPTChecker)  # case-insensitive
+    chk = get_browser_checker("ZeroGPT")  # case-insensitive
+    assert isinstance(chk, WebUIChecker)
+    assert chk.name == "zerogpt"
+    assert chk.config.input_selector == "#textArea"
     assert get_browser_checker("nonexistent-site") is None
+
+
+def test_zerogpt_class_still_constructs():
+    z = ZeroGPTChecker()
+    assert isinstance(z, WebUIChecker)
+    assert z.name == "zerogpt"
+
+
+def test_user_defined_site_from_json(tmp_path, monkeypatch):
+    sites = tmp_path / "sites.json"
+    sites.write_text(
+        '{"mysite": {"url": "https://example.com/d", "input_selector": "#in", '
+        '"result_selector": ".out", "submit_button_text": "scan"}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(sites))
+    assert "mysite" in available_browser_checkers()
+    chk = get_browser_checker("mysite")
+    assert isinstance(chk, WebUIChecker)
+    assert chk.config.url == "https://example.com/d"
+    assert chk.config.result_selector == ".out"
+
+
+def test_malformed_user_site_is_skipped(tmp_path, monkeypatch):
+    sites = tmp_path / "sites.json"
+    sites.write_text('{"bad": {"no_url_field": true}, "ok": {"url": "u", "input_selector": "#i"}}', encoding="utf-8")
+    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(sites))
+    names = available_browser_checkers()
+    assert "ok" in names
+    assert "bad" not in names  # missing required field -> skipped, not a crash
 
 
 def test_available_false_without_playwright(monkeypatch):

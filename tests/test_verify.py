@@ -96,8 +96,8 @@ def test_cli_exit_codes(monkeypatch, capsys):
 def test_browser_checker_score_counts(monkeypatch):
     import humanize.browser_check as bc
 
-    monkeypatch.setattr(bc.ZeroGPTChecker, "available", lambda self: True)
-    monkeypatch.setattr(bc.ZeroGPTChecker, "check", lambda self, text, **k: 0.05)
+    monkeypatch.setattr(bc.WebUIChecker, "available", lambda self: True)
+    monkeypatch.setattr(bc.WebUIChecker, "check", lambda self, text, **k: 0.05)
     v = verify("text", threshold=0.30, browser=["zerogpt"])
     assert "zerogpt(web)" in v["results"]
     assert v["results"]["zerogpt(web)"]["passes"] is True
@@ -108,7 +108,7 @@ def test_browser_checker_score_counts(monkeypatch):
 def test_browser_checker_unavailable_is_a_fail(monkeypatch):
     import humanize.browser_check as bc
 
-    monkeypatch.setattr(bc.ZeroGPTChecker, "available", lambda self: False)
+    monkeypatch.setattr(bc.WebUIChecker, "available", lambda self: False)
     v = verify("text", browser=["zerogpt"])
     r = v["results"]["zerogpt(web)"]
     assert r["passes"] is False and r["error"]
