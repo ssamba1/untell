@@ -69,6 +69,7 @@ Repository = "https://github.com/ssamba1/humanize"
 humanize-score = "humanize.scripts.score:main"
 humanize-loop = "humanize.scripts.run:main"
 humanize-verify = "humanize.scripts.verify:main"
+humanize-prove = "eval.prove:main"
 
 [tool.setuptools]
 packages = [

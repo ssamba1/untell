@@ -91,6 +91,22 @@ humanize-verify --file out.txt --json
 
 `humanize-verify` exits `0` only when **every** configured checker scores under the threshold.
 
+**Prove it end-to-end (given keys):** `humanize-prove` verifies the original, runs the commercial-tier
+loop, then re-verifies the result — one PASS/FAIL table across every real checker (costs credits):
+
+```bash
+humanize-prove "Your AI text" --margin 0.10        # before/after AI% per checker + overall verdict
+```
+
+**Self-test against the open-source detector repos** (RoBERTa-OpenAI, HC3, MAGE, Fast-DetectGPT, and
+RADAR — the paraphrase-robust one) on a torch box, no API key for detection:
+
+```bash
+pip install -e ".[full,eval,api]" && export ANTHROPIC_API_KEY=...   # rewriter key for the real loop
+python -m eval.benchmark --dataset builtin --tier full --enable-radar --strategies noop,api_loop
+# report shows per-detector beat-rate + names the hardest detector (RADAR) the loop must clear
+```
+
 **Keys via `.env`.** Copy `.env.example` → `.env` (gitignored) and fill what you have; the CLIs
 auto-load it (real shell env vars still win). Uses `python-dotenv` if installed, else a built-in parser.
 
