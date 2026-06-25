@@ -74,6 +74,31 @@ def test_malformed_user_site_is_skipped(tmp_path, monkeypatch):
     assert "bad" not in names  # missing required field -> skipped, not a crash
 
 
+def test_underscore_comment_keys_are_tolerated(tmp_path, monkeypatch):
+    sites = tmp_path / "sites.json"
+    sites.write_text(
+        '{"_comment": "a note", "site1": {"url": "u", "input_selector": "#i", "_caveat": "weak"}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(sites))
+    names = available_browser_checkers()
+    assert "site1" in names  # loads despite the per-entry _caveat
+    assert "_comment" not in names  # top-level comment skipped, not crash
+    assert get_browser_checker("site1").config.url == "u"
+
+
+def test_shipped_example_file_parses(monkeypatch):
+    # The committed examples/browser_sites.example.json must load without error.
+    import os.path
+
+    p = os.path.join(os.path.dirname(__file__), "..", "examples", "browser_sites.example.json")
+    if not os.path.isfile(p):
+        return
+    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", p)
+    names = available_browser_checkers()
+    assert "decopy" in names and "detecting-ai" in names
+
+
 def test_available_false_without_playwright(monkeypatch):
     real_import = builtins.__import__
 

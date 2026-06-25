@@ -1,0 +1,23 @@
+{
+  "_comment": "Copy to browser_sites.json (cwd) or point $HUMANIZE_BROWSER_SITES at this file, then: humanize-verify --browser <name>. Selectors captured live 2026-06-25 (see docs/free-detector-probes.md). zerogpt is already built-in; the others are templates with known caveats.",
+
+  "decopy": {
+    "url": "https://decopy.ai/ai-detector/",
+    "input_selector": "#operate-input-textarea",
+    "input_mode": "textarea",
+    "submit_button_text": "detect text",
+    "result_selector": ".operate-report-chartdesc2",
+    "wait_s": 60,
+    "_caveat": "Clean input + no signup, but a WEAK detector (scored clearly-AI text 0% AI) and slow (~10s). Result selector is approximate."
+  },
+
+  "detecting-ai": {
+    "url": "https://detecting-ai.com/",
+    "input_selector": "textarea.form-control.text",
+    "input_mode": "textarea",
+    "submit_button_text": "detect ai",
+    "result_selector": ".result-percentage",
+    "wait_s": 45,
+    "_caveat": "Submit is an <a>, not a button (handled). Result % is mixed with marketing percentages; result_selector likely needs adjusting per the live DOM."
+  }
+}

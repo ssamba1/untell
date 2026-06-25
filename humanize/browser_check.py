@@ -102,11 +102,12 @@ class WebUIChecker:
                     )
                 else:
                     page.fill(c.input_selector, text, timeout=c.wait_s * 1000)
-                # JS-click the submit button (ad overlays steal normal pointer events on some sites).
+                # JS-click the submit control (ad overlays steal normal pointer events on some
+                # sites; some sites use <a> or <input> rather than <button>).
                 page.evaluate(
                     "(reText) => { const rx = new RegExp(reText, 'i');"
-                    " const b = [...document.querySelectorAll('button')]"
-                    ".find(x => rx.test((x.textContent || '').trim())); if (b) b.click(); }",
+                    " const b = [...document.querySelectorAll('button, a, input[type=submit]')]"
+                    ".find(x => rx.test((x.textContent || x.value || '').trim())); if (b) b.click(); }",
                     c.submit_button_text,
                 )
                 page.wait_for_selector(c.result_selector, timeout=c.wait_s * 1000)
@@ -141,8 +142,11 @@ def _user_sites() -> dict[str, SiteConfig]:
         return {}
     out: dict[str, SiteConfig] = {}
     for name, cfg in (raw or {}).items():
+        if name.startswith("_") or not isinstance(cfg, dict):
+            continue  # allow top-level "_comment" keys
+        clean = {k: v for k, v in cfg.items() if not k.startswith("_")}  # allow per-entry "_caveat"
         try:
-            out[name.lower()] = SiteConfig(name=name.lower(), **cfg)
+            out[name.lower()] = SiteConfig(name=name.lower(), **clean)
         except Exception:
             continue  # skip malformed entries rather than crash
     return out
