@@ -70,7 +70,9 @@ def train(
         num_generations=k,
         max_steps=steps,
         per_device_train_batch_size=2,
-        gradient_accumulation_steps=8,
+        # trl requires generation_batch_size (= per_device_batch * grad_accum) to be divisible by
+        # num_generations (=k). Tie grad_accum to k so any k stays valid (else: ValueError at init).
+        gradient_accumulation_steps=k,
         learning_rate=1e-5,
         bf16=True,
         logging_steps=10,
