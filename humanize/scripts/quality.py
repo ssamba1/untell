@@ -16,25 +16,30 @@ from __future__ import annotations
 
 import re
 
-DEFAULT_BAR = 0.76
+DEFAULT_BAR = 0.76  # semantic-cosine bar (P-SP threshold); only meaningful for the embedding metric
+TOKEN_BAR = 0.50  # token-overlap (Dice) bar; faithful paraphrases reword heavily and score lower
 _WORD = re.compile(r"[A-Za-z0-9']+")
 
-_model = None
+_UNSET = object()
+_model = _UNSET  # _UNSET = not yet probed; None = probed and unavailable; else the model
 
 
 def _st_model():
-    """Lazily load the MiniLM sentence-transformer, or return None if unavailable."""
+    """Lazily load the MiniLM sentence-transformer, or return None if unavailable.
+
+    The result (model *or* None) is cached so a missing/broken ``sentence-transformers`` is probed
+    only once — otherwise every ``similarity`` call re-attempts the slow import (and re-triggers a
+    broken torch DLL load), making the loop crawl.
+    """
     global _model
-    if _model is not None:
+    if _model is not _UNSET:
         return _model
     try:
         from sentence_transformers import SentenceTransformer
-    except Exception:
-        return None
-    try:
+
         _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
     except Exception:
-        return None
+        _model = None
     return _model
 
 
@@ -82,8 +87,28 @@ def method() -> str:
     return "embedding" if _st_model() is not None else "token_overlap"
 
 
-def passes(a: str, b: str, bar: float = DEFAULT_BAR) -> bool:
-    """True when the rewrite ``b`` preserves enough of ``a``'s meaning."""
+def confidence() -> str:
+    """How trustworthy the gate is: 'high' for semantic embeddings, 'low' for the lite fallback.
+
+    Token-overlap cannot tell a faithful paraphrase from an off-topic rewrite, so on the lite
+    tier the quality gate is advisory, not authoritative.
+    """
+    return "high" if method() == "embedding" else "low"
+
+
+def recommended_bar() -> float:
+    """The bar appropriate to the active metric (the two metrics live on different scales)."""
+    return DEFAULT_BAR if method() == "embedding" else TOKEN_BAR
+
+
+def passes(a: str, b: str, bar: float | None = None) -> bool:
+    """True when the rewrite ``b`` preserves enough of ``a``'s meaning.
+
+    ``bar=None`` selects the metric-appropriate bar (``recommended_bar``); pass an explicit
+    value to override.
+    """
+    if bar is None:
+        bar = recommended_bar()
     return similarity(a, b) >= bar
 
 
@@ -98,10 +123,17 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     a, b = args[0], args[1]
     sim = similarity(a, b)
+    bar = recommended_bar()
     print(
         json.dumps(
-            {"similarity": round(sim, 4), "method": method(), "bar": DEFAULT_BAR, "passes": sim >= DEFAULT_BAR},
-            ensure_ascii=False,
+            {
+                "similarity": round(sim, 4),
+                "method": method(),
+                "confidence": confidence(),
+                "bar": bar,
+                "passes": sim >= bar,
+            },
+            ensure_ascii=True,  # portable: never crash on a non-UTF-8 (e.g. Windows cp1252) stdout
         )
     )
     return 0

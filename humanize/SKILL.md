@@ -54,13 +54,22 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
    Read the JSON: `detectors` (per-detector P(AI)), `max` (the proxy you must push down),
    `flagged` (true ⇒ keep going), and `tier` (which detectors actually ran).
 
-4. **Check the stop condition.** Stop when **both** hold:
+4. **Check the stop condition.** Score similarity:
+   ```bash
+   python -m humanize.scripts.quality "<ORIG masked>" "<current masked text>"
+   ```
+   This returns `similarity`, `method`, `confidence`, `bar`, and `passes` (the bar is
+   metric-aware — `0.76` for semantic embeddings, `0.50` for the lite token-overlap fallback).
+   Stop when **both** hold:
    - `max < threshold` (not flagged), **and**
-   - similarity to `ORIG` is `>= 0.76`:
-     ```bash
-     python -m humanize.scripts.quality "<ORIG masked>" "<current masked text>"
-     ```
-   Also stop if you have reached the iteration cap (default 5).
+   - the quality check `passes` is `true`.
+
+   **Confidence matters:** when `confidence` is `high` (full tier, embedding metric), enforce the
+   quality gate strictly — never accept a rewrite where `passes` is false. When `confidence` is
+   `low` (lite tier, token-overlap), the gate is **advisory only**: token-overlap cannot judge
+   meaning, so do not loop endlessly chasing it — rely on your own judgment that meaning is intact,
+   report the similarity, and flag in the final note that quality was not reliably gated (full tier
+   recommended). Also stop if you have reached the iteration cap (default 5).
 
 5. **Rewrite with feedback** (if not stopping). Apply `references/prompt-rubric.md`. Use the
    per-detector scores to decide *what* to change:
@@ -87,11 +96,12 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
 
 ## Stop conditions (summary)
 
-- ✅ `max < threshold` **and** `similarity >= 0.76` → success, restore and report.
+- ✅ `max < threshold` **and** quality `passes` → success, restore and report.
 - 🔁 still `flagged` and under the iteration cap → rewrite again with feedback.
 - ⚠️ hit the iteration cap while still flagged → report best attempt, its scores, and that the
   cap was reached (do not silently claim success).
-- ⚠️ a rewrite drops similarity below the bar → revert that rewrite and try a gentler change.
+- ⚠️ a rewrite drops the quality gate (high confidence) → revert that rewrite and try a gentler
+  change. On low-confidence (lite) the gate is advisory — judge meaning yourself, do not loop on it.
 
 ## Notes
 
