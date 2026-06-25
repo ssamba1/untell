@@ -51,6 +51,7 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
         "detectors": scores,
         "max": round(mx, 4),
         "mean": round(mean, 4),
+        "ai_percent": round(mx * 100, 1),  # 0-100 AI-likelihood (the headline number competitors show)
         "threshold": threshold,
         "flagged": mx >= threshold,
     }

@@ -75,6 +75,9 @@ def humanize_text(
     browser: str | list[str] | None = None,
     margin: float = 0.0,
     confirm: int = 0,
+    scrub: bool = True,
+    polish: bool = False,
+    style: str | None = None,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -97,6 +100,11 @@ def humanize_text(
             "OPENAI_API_KEY, or use the /humanize Claude skill (Claude is the rewriter).",
             "final": text,
         }
+
+    if scrub:  # strip any hidden watermark / zero-width / homoglyph chars before we start
+        from humanize.attacks import scrub_hidden
+
+        text = scrub_hidden(text)
 
     masked, mapping = lock(text)
 
@@ -132,7 +140,11 @@ def humanize_text(
         try:
             from humanize.scripts.sentences import score_sentences
 
-            best_score = {**best_score, "flagged_sentences": score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"]}
+            best_score = {
+                **best_score,
+                "flagged_sentences": score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"],
+                "style": style,
+            }
         except Exception:
             pass
         try:
@@ -155,6 +167,18 @@ def humanize_text(
                 best_score = rescore
                 stopped = "passed_unconfirmed"
                 break
+
+    # Optional cheap CPU polish: surgical word-importance substitution to shave a bit more signal.
+    if polish:
+        try:
+            from humanize.attacks import surgical_substitute
+
+            polished = surgical_substitute(best_masked, tier="lite", threshold=threshold)["text"]
+            if score(polished)["max"] <= best_score["max"]:
+                best_masked = polished
+                best_score = score(best_masked)
+        except Exception:
+            pass
 
     final = restore(best_masked, mapping)
     return {
@@ -225,12 +249,20 @@ def main(argv: list[str] | None = None) -> int:
         help="after a pass, re-score the result N more times; keep 'passed' only if every re-scan "
         "still clears (guards against a noisy detector re-flagging). Default 0.",
     )
+    parser.add_argument("--no-scrub", action="store_true", help="skip stripping hidden watermark/unicode chars from input")
+    parser.add_argument("--polish", action="store_true", help="add a cheap surgical word-substitution polish pass at the end")
+    parser.add_argument(
+        "--style",
+        choices=["casual", "professional", "academic", "blunt", "storytelling", "journalistic"],
+        help="bias the rewrite toward a writing style/voice",
+    )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     args = parser.parse_args(argv)
 
     if args.file:
-        with open(args.file, encoding="utf-8") as fh:
-            text = fh.read()
+        from humanize.scripts.io_utils import read_file
+
+        text = read_file(args.file)  # .txt / .docx / .pdf
     elif args.text:
         text = args.text
     else:
@@ -247,6 +279,9 @@ def main(argv: list[str] | None = None) -> int:
         browser=args.browser,
         margin=args.margin,
         confirm=args.confirm,
+        scrub=not args.no_scrub,
+        polish=args.polish,
+        style=args.style,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))

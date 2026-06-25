@@ -46,6 +46,18 @@ def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30)
     else:
         feedback = f"Lower the AI-detection probability below {threshold:.2f}."
 
+    style = score_result.get("style")
+    _STYLES = {
+        "casual": "Write casually — contractions, everyday words, a relaxed conversational voice.",
+        "professional": "Write in a clear professional voice — direct, polished, no fluff.",
+        "academic": "Keep an academic register — precise, measured, but not formulaic.",
+        "blunt": "Be blunt and plain-spoken — short declaratives, no hedging.",
+        "storytelling": "Use a narrative, storytelling voice — concrete scenes, a human throughline.",
+        "journalistic": "Write like a journalist — lead with the point, concrete and specific.",
+    }
+    if style and style in _STYLES:
+        feedback += f"\n\nVoice: {_STYLES[style]}"
+
     flagged_sentences = score_result.get("flagged_sentences") or []
     if flagged_sentences:
         listed = "\n".join(f"  - {s}" for s in flagged_sentences[:8])

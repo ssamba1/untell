@@ -48,6 +48,14 @@ Then in Claude Code: `/humanize <your text or a file path>`. Works with **zero d
 
 **As a plugin dir:** point your Claude Code plugins at the cloned repo's `humanize/` directory.
 
+**As an MCP server** (Claude Desktop & other MCP clients): `pip install -e ".[mcp]"` then run
+`humanize-mcp` — exposes `score`, `sentences`, `humanize`, `verify`, and `scrub` as tools.
+
+**Inputs:** the CLIs take text, `--file`, or stdin; with `pip install -e ".[docs]"` `--file` also reads
+`.docx` and `.pdf`. Loop extras: `--style casual|professional|academic|blunt|storytelling|journalistic`,
+`--polish` (cheap surgical word-substitution pass), and input is auto-`scrub`bed of hidden watermark/
+zero-width/homoglyph characters (`--no-scrub` to disable).
+
 ## Tiers
 
 The scripts auto-detect what's installed and degrade gracefully (the score JSON reports which

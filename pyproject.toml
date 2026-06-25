@@ -55,6 +55,23 @@ commercial = [
 browser = [
     "playwright>=1.40",
 ]
+# .docx / .pdf input support
+docs = [
+    "python-docx>=1.1",
+    "pypdf>=4.0",
+]
+# MCP server (exposes humanize/score/verify as tools to Claude Desktop & other MCP clients)
+mcp = [
+    "mcp>=1.0",
+]
+# GPU training moat (RL-against-ensemble / alignment). Run on a GPU box; not used by CI.
+train = [
+    "trl>=0.12",
+    "peft>=0.13",
+    "transformers>=4.40",
+    "datasets>=2.19",
+    "accelerate>=0.30",
+]
 dev = [
     "pytest>=8",
     "ruff>=0.4",
@@ -71,6 +88,7 @@ humanize-loop = "humanize.scripts.run:main"
 humanize-verify = "humanize.scripts.verify:main"
 humanize-prove = "eval.prove:main"
 humanize-sentences = "humanize.scripts.sentences:main"
+humanize-mcp = "humanize.mcp_server:main"
 
 [tool.setuptools]
 packages = [
@@ -80,6 +98,7 @@ packages = [
     "humanize.rewriter",
     "humanize.attacks",
     "eval",
+    "training",
 ]
 
 [tool.setuptools.package-data]
