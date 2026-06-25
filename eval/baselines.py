@@ -172,4 +172,59 @@ def full_loop(
     )
 
 
-STRATEGIES = {"noop": noop, "single_pass": single_pass, "full_loop": full_loop}
+def api_loop(
+    text: str,
+    tier: str = "lite",
+    threshold: float = DEFAULT_THRESHOLD,
+    sim_bar: float | None = None,
+    max_iters: int = 5,
+) -> LoopResult:
+    """Closed loop driven by a real hosted-LLM rewriter when one is configured.
+
+    Identical control flow to ``full_loop`` but the rewrite step calls ``humanize.rewriter`` (the
+    actual Claude/OpenAI rewriter the skill would use) instead of the scripted stand-in. With no
+    SDK/key configured it transparently falls back to the scripted ``rewrite`` so the strategy is
+    always runnable (and the benchmark never hard-requires network).
+    """
+    if sim_bar is None:
+        sim_bar = recommended_bar()
+    from humanize.rewriter import get_rewriter
+
+    rw = get_rewriter()
+    pre = score_text(text, tier=tier, threshold=threshold)
+    best_text, best_score = text, pre
+    history = [pre["max"]]
+    iters = 0
+    for i in range(1, max_iters + 1):
+        iters = i
+        strength = min(1.0, 0.5 + 0.125 * (i - 1))
+        if rw is not None:
+            try:
+                candidate = rw.rewrite(best_text, best_score, threshold)
+            except Exception:  # any API failure -> deterministic fallback, never crash the loop
+                candidate = rewrite(text, strength=strength)
+        else:
+            candidate = rewrite(text, strength=strength)
+        cand_score = score_text(candidate, tier=tier, threshold=threshold)
+        cand_sim = similarity(text, candidate)
+        history.append(cand_score["max"])
+        if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:
+            best_text, best_score = candidate, cand_score
+        if not best_score["flagged"]:
+            break
+    return LoopResult(
+        text=best_text,
+        iterations=iters,
+        pre=pre,
+        post=best_score,
+        similarity=similarity(text, best_text),
+        history=history,
+    )
+
+
+STRATEGIES = {
+    "noop": noop,
+    "single_pass": single_pass,
+    "full_loop": full_loop,
+    "api_loop": api_loop,
+}
