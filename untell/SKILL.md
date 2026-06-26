@@ -149,3 +149,22 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
   *hardest* detector is satisfied (multi-detector evasion).
 - If `tier` is `lite`, say so in the report: the lite heuristic is a weak demo signal, not a real
   evasion guarantee. Recommend `pip install -e ".[full]"` for a meaningful score.
+
+### Critical: do NOT optimize the prose into a "humanizer voice" to chase a low score
+
+The local detectors are flawed proxies that **reward AI tells and penalize plain human writing** —
+they are *anti-correlated* with how human the text actually reads. Measured directly: a plain,
+natural rewrite scored ~99% AI locally, while an em-dash-laden, theatrically "varied" rewrite of the
+same text scored ~27% — yet the em-dash one was the one that read as AI to a person and came back
+**100% AI on GPTZero**. The loop, left to chase the number, drives the text *toward* the tells.
+
+So:
+
+- **Follow the rubric and write the way a real person would.** If a *more natural* phrasing scores
+  *higher* locally, keep the natural one anyway. Naturalness wins over the local number.
+- **Treat the local score as a weak hint, not the objective.** These proxies do not predict
+  GPTZero / Turnitin / Originality. Stop when meaning is intact and the text genuinely reads like a
+  person wrote it — even if a local detector is still elevated. Don't grind out extra iterations that
+  make the prose worse just to lower a number that doesn't mean what it claims.
+- **Be honest in the report:** state that local proxies ≠ commercial detectors, and that a low local
+  score is not a promise the text passes GPTZero (measured: it often does not).

@@ -1,75 +1,77 @@
 # Rewrite rubric
 
-Apply this when producing each rewrite in the loop. Goal: raise perplexity and burstiness (the
-two signals detectors key on) **without** changing meaning, facts, or any `⟦HZxxxx⟧` sentinel.
+Apply this when producing each rewrite in the loop. The goal is **not** to "raise burstiness/
+perplexity" by performing variation — that produces a recognizable *humanizer voice* that detectors
+(and people) catch. The goal is to make the text read like **an actual, slightly-careless person
+wrote it**, while changing no meaning, facts, or `⟦HZxxxx⟧` sentinel.
 
-## The 6 AI signals to kill (check every rewrite against these)
+> **Reality check.** The local detectors reward two surface things (sentence-length variance and
+> uncommon words). Gaming those manufactures tells — em dashes, staccato fragments, thesaurus words,
+> tidy aphorisms — and a strong detector like GPTZero is trained on exactly that "humanized" style.
+> When a plainer phrasing reads more human but scores slightly higher locally, **choose the plainer
+> phrasing.** Natural beats statistically-optimal.
 
-Detectors and the strongest competitors key on these. Neutralize each:
+## NEVER inject these — they are AI tells (this is the most important section)
 
-1. **Cliché / overused phrases** — "in today's world", "plays a vital role", "navigate the
-   complexities", "it is worth noting". Cut or replace with specific wording.
-2. **Formulaic transitions** — "Moreover/Furthermore/Additionally/Overall/In conclusion". Remove or
-   make concrete.
-3. **Sentence-length uniformity** (low burstiness) — vary lengths hard; mix very short with long.
-4. **Vocabulary homogeneity** — AI reuses a flat, mid-frequency register. Add precise, varied,
-   occasionally unexpected word choices (without thesaurus-bombing).
-5. **Low perplexity** (predictable next word) — substantively rephrase the most-expected spans.
-6. **Neat parallelism / aphorisms** — tidy antithesis ("it's all of us, or none of us") and balanced
-   tricolons read as machine. Break the symmetry; make it a little uneven, like a person wrote it.
+1. **Em dashes (`—`).** The single most recognizable AI signature. Do not add them. Use a period, a
+   comma, parentheses, or just rephrase. If the original had one, you may keep it, but never *add*.
+2. **Semicolons as a rhythm crutch.** A person writing casually rarely reaches for one. Use two
+   sentences.
+3. **The staccato + winding combo.** "Three words. Then a long subordinate-clause sentence that winds
+   on." That cadence is the humanizer fingerprint, not human writing. Don't engineer it.
+4. **Performed informality.** "not in a small way", "Powerful, then.", "Here's the thing", "And the
+   junk? It rides the same rails." Forced punchiness reads as AI imitating a human.
+5. **Balanced antithesis / tidy tricolons / aphoristic closers.** "it cuts both ways", "both benefits
+   and challenges", neat three-part lists, a quotable final line. Machines love symmetry. Break it.
+6. **Thesaurus reaches.** Swapping a normal word for a fancier "less predictable" one (reshaped,
+   rewired, hinges, underpins) is itself an AI tell. Ordinary words are more human.
 
-If the loop gives you **specific flagged sentences**, rewrite *those* the hardest — that is where the
-detector's signal is concentrated.
+## Kill the original AI tells too
+
+1. **Clichés / filler** — "in today's world", "plays a vital role", "it is worth noting", "navigate
+   the complexities". Cut them.
+2. **Formulaic transitions** — "Moreover / Furthermore / Additionally / However / In addition /
+   Overall / Ultimately / In conclusion". Delete, or use a plain "but / and / so / though".
+3. **Uniform sentence shape** — if every sentence is subject-verb-object of similar length, that's a
+   tell too. But fix it by writing *naturally uneven* prose (below), not by performing variation.
 
 ## Hard constraints (never violate)
 
-1. **Preserve meaning.** Every claim, fact, and logical relationship in the original must survive.
-   No new facts, no dropped facts.
-2. **Keep every sentinel verbatim.** `⟦HZ0003⟧` and friends are locked spans (citations, numbers,
-   quotes, entities). Carry each one through unchanged — same characters, same count, same place
-   relative to its surrounding clause.
-3. **Stay in the same language and register** the user expects (academic stays academic, etc.),
-   unless they asked otherwise.
+1. **Preserve meaning.** Every claim, fact, and logical relationship in the original must survive. No
+   new facts, no dropped facts. (Adding vivid invented detail to sound human breaks this — don't.)
+2. **Keep every sentinel verbatim.** `⟦HZ0003⟧` and friends are locked spans. Same characters, count,
+   and position.
+3. **Stay in the same language and register** the user expects. If the source is a plain essay, the
+   output is a plain essay — not a blog-style monologue.
 
-## Burstiness — vary sentence architecture
+## Write like a real person (this replaces "maximize burstiness")
 
-AI text is rhythmically uniform. Break that:
+Real human writing is uneven *by accident*, not by design. Aim for that:
 
-- Mix sentence lengths deliberately: follow a long, subordinate-clause-heavy sentence with a
-  short one. Three words. Then something that winds.
-- Vary sentence **openings** — don't start consecutive sentences the same way (subject-verb,
-  subject-verb, subject-verb reads as machine).
-- Occasionally restructure: split a compound sentence into two, or fuse two short ones.
+- **Plain words.** Say "changed", not "reshaped/rewired". "uses", not "leverages". Boring is human.
+- **Ordinary connectors.** "but", "and", "so", "though", "also" — the words people actually use.
+- **Mild, natural imperfection is fine and helps:** a small redundancy, a hedge ("probably", "kind
+  of", "more or less", "I think"), a slightly long sentence that a person wouldn't bother to trim, a
+  comma splice they'd write anyway.
+- **Don't make every sentence "earn its keep."** Humans write unremarkable, throwaway sentences.
+  A perfectly efficient paragraph where each line lands is an AI signature.
+- **Vary openings** only because real paragraphs naturally do — not by rotating through structures.
 
-## Perplexity — make word choice less predictable
+## Use the detector feedback — with the caveat
 
-- Replace the *most expected* next word with a precise, slightly less common synonym — but only
-  where it reads naturally. Do not thesaurus-bomb into awkwardness (that tanks the quality gate).
-- Cut formulaic connective tissue: "Moreover", "Furthermore", "In conclusion", "Overall",
-  "It is important to note that", "plays a crucial role". Replace with concrete transitions or
-  nothing.
-- Prefer concrete specifics over generic phrasing where the original implies them.
-
-## Human texture (use sparingly, only if register allows)
-
-- A mild aside, a measured hedge ("roughly", "in practice"), or a parenthetical can raise
-  perplexity naturally.
-- Light, non-uniform punctuation variety (an em dash, a colon) where it fits.
-
-## Use the detector feedback
-
-- **High `perplexity_burstiness`** → the text is too uniform/predictable. Push hardest on
-  sentence-length variance and word-choice surprise.
-- **High `roberta_openai` / `mage` / `hc3_roberta`** (supervised) → break structural regularity: vary
-  openings, remove formulaic transitions, add concrete detail, restructure paragraphs.
-- **High `fast_detectgpt` / `binoculars`** → reduce token predictability: more substantive
-  rephrasing of high-probability spans, not just surface swaps.
-- **High `radar`** (paraphrase-robust — the hardest) → surface paraphrasing won't move it. Restructure
-  at the idea level: reorder the argument, merge/split ideas, change the framing, add a genuinely human
-  aside. RADAR was trained against paraphrasers, so out-paraphrasing it fails; out-*thinking* it works.
+- **High supervised scores (`roberta_openai` / `hc3_roberta` / `mage`)** → the structure/phrasing is
+  too AI-regular. Rephrase substantively and plainly; don't just reach for fancier words.
+- **High `fast_detectgpt` / `binoculars`** → token choices are too predictable. Rephrase the
+  high-probability spans, but toward *plainer/normal* alternatives, not exotic ones.
+- **High `radar`** (paraphrase-robust) → surface paraphrase won't move it; reorder or reframe at the
+  idea level.
+- **But:** all of these are *local proxies that do not predict GPTZero.* Do not contort the prose to
+  satisfy a number. If meaning is intact and it genuinely reads like a person wrote it, that's the win
+  — report the honest scores and stop, even if some local detector is still mid.
 
 ## Don't
 
-- Don't pad length or add filler to change statistics — it hurts similarity and reads worse.
-- Don't introduce errors, typos, or unnatural phrasing as an evasion trick.
+- **Don't add em dashes, semicolons, or theatrical fragments.** (Repeated because it's the #1 mistake.)
+- Don't thesaurus-bomb or reach for "interesting" words to lower perplexity.
+- Don't pad length, invent detail, or inject typos/errors as an evasion trick.
 - Don't touch sentinels. Ever.
