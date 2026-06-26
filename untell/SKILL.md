@@ -66,12 +66,16 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
    `⟦HZ0003⟧` — **never modify, translate, split, or drop a sentinel**; carry each one through
    every rewrite exactly as-is.
 
-3. **Score the current text** (start with the masked original):
+3. **Score the current text — score the RESTORED text, never the masked one.** The `⟦HZ⟧`
+   sentinels are out-of-distribution tokens that *artificially lower* detector scores, so the loop
+   would under-read the AI signal and can stop too early on text that is still flagged. Restore the
+   sentinels back to real prose first, then score that copy (keep rewriting the masked version):
    ```bash
-   python scripts/score.py "<current masked text>" --threshold 0.30
+   python scripts/preserve.py --restore --mapping '<mapping json from step 2>' "<current masked text>" > /tmp/untell_scoring.txt
+   python scripts/score.py "$(cat /tmp/untell_scoring.txt)" --threshold 0.30
    ```
    Read the JSON: `detectors` (per-detector P(AI)), `max` (the proxy you must push down),
-   `flagged` (true ⇒ keep going), and `tier` (which detectors actually ran).
+   `flagged` (true ⇒ keep going), `tier`, and any `warning`/`failed_detectors` (say so honestly).
 
 4. **Check the stop condition.** Score similarity:
    ```bash
@@ -115,7 +119,14 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
    - The final humanized text.
    - A **before/after table**: each detector's P(AI) at iteration 0 vs final, the `max` proxy,
      final similarity, and the number of iterations used.
-   - A one-line honest caveat (local proxies, not commercial ground truth).
+   - **A loud, honest caveat (do not soften this).** These are *local proxy* detectors and they do
+     **not** predict commercial ones. **GPTZero / Originality / Turnitin can still rate this output
+     100% AI** even when the local `max` is low — GPTZero ships dedicated anti-humanizer ("AI
+     Paraphrasing") detection that flags AI-rewritten text. A low local score means "passed the weak
+     local proxies," NOT "undetectable." To actually optimize against a real checker, the user must
+     run `--tier commercial` with that detector's API key (e.g. `GPTZERO_API_KEY`) so the real
+     detector is in the loop (costs credits). Never claim this output will pass GPTZero/Turnitin
+     unless it was verified against the real thing.
 
 > **Restoring sentinels:** the mapping from step 2 is `sentinel -> original`. Replace each
 > `⟦HZxxxx⟧` in your final text with its mapped value. (Programmatically:
