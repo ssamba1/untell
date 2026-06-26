@@ -12,7 +12,15 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
 }
 
 Write-Host "Fetching untell..."
-git clone --depth 1 $repo $tmp 2>$null | Out-Null
+# Run git with ErrorActionPreference relaxed: PowerShell 5.1 turns git's stderr
+# progress ("Cloning into ...") into a terminating NativeCommandError otherwise.
+# The native exit code is the real success signal.
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+git clone --depth 1 --quiet $repo $tmp 2>&1 | Out-Null
+$cloneExit = $LASTEXITCODE
+$ErrorActionPreference = $prevEAP
+if ($cloneExit -ne 0) { Write-Error "git clone failed (exit $cloneExit)." }
 
 New-Item -ItemType Directory -Force (Split-Path $dest) | Out-Null
 if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }

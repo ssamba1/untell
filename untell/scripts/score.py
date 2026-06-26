@@ -27,6 +27,19 @@ import argparse
 import json
 import sys
 
+# Run-as-file support (zero-dep lite tier): when this file is executed directly
+# (`python scripts/score.py`) rather than imported as part of the `untell` package,
+# put the directory that *contains* the package on sys.path so `import untell`
+# resolves regardless of the current working directory.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    for _p in _Path(__file__).resolve().parents:
+        if (_p / "untell" / "__init__.py").exists():
+            _sys.path.insert(0, str(_p))
+            break
+
 from untell.detectors.base import load_detectors, resolved_tier
 
 DEFAULT_THRESHOLD = 0.30

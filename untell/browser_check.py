@@ -27,6 +27,18 @@ import os
 import re
 from dataclasses import dataclass, field
 
+# Run-as-file support (zero-dep lite tier): when this file is executed directly
+# rather than imported as part of the `untell` package, put the directory that
+# *contains* the package on sys.path so `import untell` resolves from any cwd.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    for _p in _Path(__file__).resolve().parents:
+        if (_p / "untell" / "__init__.py").exists():
+            _sys.path.insert(0, str(_p))
+            break
+
 from untell.detectors.base import clamp01
 
 _PCT = re.compile(r"([\d.]+)\s*%")
