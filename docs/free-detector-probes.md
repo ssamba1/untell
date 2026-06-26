@@ -10,7 +10,7 @@ Goal: find sites that (a) take pasted text without login/captcha, (b) return a p
 | decopy.ai/ai-detector | `#operate-input-textarea` | "Detect text" button | `.operate-report-chartdesc2` (no stable class on the number) | ⚠️ clean input but **weak detector** (scored clearly-AI text 0% AI) + noisy result DOM |
 | detecting-ai.com | `textarea.form-control.text` | `a.btn.btn-primary` "Detect AI" (anchor, not button) | result % mixed with marketing %s, no stable selector | ⚠️ works but result extraction unreliable |
 | sapling.ai/ai-content-detector | `#content-editor` (contenteditable) | "Check Again" button | framework gauge, no plain % | ⚠️ fragile + rate-limited |
-| gptzero.me | textarea (placeholder "Paste your text") | "Scan" button | — | ❌ scan redirects to login app (`app.gptzero.me`) |
+| gptzero.me | `[role=textbox]` (placeholder "Paste your text") | "Scan" button | "AI N%" via body regex on `app.gptzero.me` | ❌ **re-probed 2026-06-26:** the free scan *works for a human* with no login under 10k chars, BUT the result page `app.gptzero.me` is **Cloudflare bot-gated** ("Hang on while we verify your browser") — headless Playwright is blocked, so it is **not automatable**. Don't ship a `--browser gptzero`; real GPTZero in the loop needs the paid API (`GPTZERO_API_KEY`, `--tier commercial`). |
 | quillbot.com/ai-content-detector | `#aidr-input-editor` | "Detect AI" | — | ❌ reCAPTCHA-gated |
 | scribbr.com/ai-detector | — | — | — | ❌ tool is an iframe widget (no DOM access) |
 | brandwell.ai/ai-content-detector | — | — | — | ❌ iframe widget |
