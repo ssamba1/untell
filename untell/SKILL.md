@@ -1,10 +1,11 @@
 ---
 name: untell
 description: >-
-  Untell AI-generated text via a closed-loop, detector-feedback rewrite. Use when the user
-  wants to untell text, make writing sound more human, reduce AI-detection scores, bypass or
-  beat an AI detector (GPTZero, Turnitin, Originality, ZeroGPT), or lower the "AI probability"
-  of a passage or file. Research/defensive tool — preserves meaning, citations, and facts.
+  Humanize AI-generated text via a closed-loop, detector-feedback rewrite (the "untell" skill).
+  Use when the user wants to humanize text, make writing sound more human or less like AI, reduce
+  AI-detection scores, bypass or beat an AI detector (GPTZero, Turnitin, Originality, ZeroGPT), or
+  lower the "AI probability" of a passage or file. Research/defensive tool — preserves meaning,
+  citations, and facts.
 ---
 
 # untell
@@ -22,14 +23,17 @@ local scripts only score and protect text.
 
 ## When to run
 
-Trigger on requests like "untell this", "make this sound less like AI", "reduce the AI score",
+Trigger on requests like "humanize this", "make this sound less like AI", "reduce the AI score",
 "help this pass an AI detector". Input is either pasted text or a file path.
 
 ## Setup (once per session)
 
-All commands run from the skill directory. The scripts work with **zero dependencies** (lite
-tier). For stronger detector signal, the user may `pip install -e ".[full]"` — the scripts
-auto-detect and use it; you don't change anything.
+Run all commands **from the skill directory** (the folder that contains this `SKILL.md`); the
+`python scripts/<name>.py` paths below are relative to it. The scripts work with **zero
+dependencies** (lite tier) and self-resolve their own package, so no `pip install` or
+`PYTHONPATH` is needed. For stronger detector signal, the user may `pip install -e ".[full]"` —
+the scripts auto-detect and use it; you don't change anything. (If `pip install`ed, the
+`untell-score` / `untell-sentences` / `untell-verify` console commands also work from any cwd.)
 
 ## The loop
 
@@ -41,7 +45,7 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
 2. **Preserve-lock.** Protect citations, numbers, quotes, URLs, and named entities so your
    rewrite cannot alter them:
    ```bash
-   python -m untell.scripts.preserve "<ORIG>"
+   python scripts/preserve.py "<ORIG>"
    ```
    This returns `{"masked": ..., "mapping": ...}`. Work on `masked`. The sentinels look like
    `⟦HZ0003⟧` — **never modify, translate, split, or drop a sentinel**; carry each one through
@@ -49,14 +53,14 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
 
 3. **Score the current text** (start with the masked original):
    ```bash
-   python -m untell.scripts.score "<current masked text>" --threshold 0.30
+   python scripts/score.py "<current masked text>" --threshold 0.30
    ```
    Read the JSON: `detectors` (per-detector P(AI)), `max` (the proxy you must push down),
    `flagged` (true ⇒ keep going), and `tier` (which detectors actually ran).
 
 4. **Check the stop condition.** Score similarity:
    ```bash
-   python -m untell.scripts.quality "<ORIG masked>" "<current masked text>"
+   python scripts/quality.py "<ORIG masked>" "<current masked text>"
    ```
    This returns `similarity`, `method`, `confidence`, `bar`, and `passes` (the bar is
    metric-aware — `0.76` for semantic embeddings, `0.50` for the lite token-overlap fallback).
@@ -74,7 +78,7 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
 4b. **Target the flagged sentences.** Find which sentences read as AI, so you rewrite *those* the
    hardest instead of re-rolling everything (far fewer iterations, less drift):
    ```bash
-   python -m untell.scripts.sentences "<current masked text>" --threshold 0.30
+   python scripts/sentences.py "<current masked text>" --threshold 0.30
    ```
    Each line shows `[AI 0.xx]` or `[ok 0.xx]` per sentence. Focus your next rewrite on the `AI` ones.
 
@@ -89,7 +93,7 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
 6. **Restore + report.** Once stopped, restore the protected spans — substitute each sentinel
    back to its original using the `mapping` from step 2:
    ```bash
-   python -m untell.scripts.preserve --restore --mapping '<mapping json from step 2>' "<final masked text>"
+   python scripts/preserve.py --restore --mapping '<mapping json from step 2>' "<final masked text>"
    ```
    (or `--mapping-file path.json`). This prints the final text with every `⟦HZxxxx⟧` replaced.
    Then present:
