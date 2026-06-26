@@ -73,10 +73,11 @@ score the text and lock your facts. Zero dependencies (lite tier).
 /plugin install untell@untell
 ```
 
-**As a Python package:**
+**As a Python package** (from source today; `pip install untell` once the first PyPI release lands):
 
 ```bash
-pip install "untell[full]"                       # real detector ensemble on CPU
+git clone https://github.com/ssamba1/untell && cd untell
+pip install -e ".[full]"                          # real detector ensemble on CPU
 untell-loop "Your AI-sounding paragraph here."    # rewrite until it passes
 untell-score "text" --tier full --threshold 0.3   # just score it
 untell-verify --file draft.txt                    # honest pass/fail per detector
