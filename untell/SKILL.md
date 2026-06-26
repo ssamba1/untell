@@ -53,7 +53,8 @@ interpreter lacks a working ML stack — re-run with a venv python that has `.[f
 ## The loop
 
 Defaults live in `references/thresholds.md` (threshold `0.30`, similarity bar `0.76`, max `5`
-iterations). Load `references/prompt-rubric.md` before your first rewrite.
+iterations). Load `references/prompt-rubric.md` **and** `references/ai-tells.md` before your first
+rewrite — `ai-tells.md` is the full catalog of patterns the output must never contain.
 
 1. **Read the input.** If given a file path, read it. Keep the original text verbatim as `ORIG`.
 
@@ -101,12 +102,17 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
    ```
    Each line shows `[AI 0.xx]` or `[ok 0.xx]` per sentence. Focus your next rewrite on the `AI` ones.
 
-5. **Rewrite with feedback** (if not stopping). Apply `references/prompt-rubric.md`. Use the
-   per-detector scores AND the flagged sentences from step 4b to decide *what* to change:
-   - High `perplexity_burstiness` ⇒ vary sentence length aggressively (mix very short with long,
-     winding sentences); replace predictable phrasing with less expected word choices.
-   - High supervised scores (`roberta_openai`, `mage`) ⇒ break uniform structure, vary openings,
-     add concrete specifics, remove formulaic transitions ("Moreover", "Furthermore", "Overall").
+5. **Rewrite with feedback** (if not stopping). Apply `references/prompt-rubric.md` and inject NONE of
+   the tells in `references/ai-tells.md` (em-dashes, AI vocabulary, tricolons, negated contrast,
+   formulaic transitions, inflated copula, …). Use the per-detector scores AND the flagged sentences
+   from step 4b to decide *what* to change — but always fix toward **plainer, naturally uneven human
+   prose**, never by gaming a score:
+   - High `perplexity_burstiness` ⇒ the rhythm/word choice is too uniform. Rewrite into ordinary,
+     unevenly-paced prose with plain words. Do NOT engineer a staccato-fragment-plus-winding-clause
+     cadence or reach for fancier words — both are humanizer fingerprints detectors are trained on.
+   - High supervised scores (`roberta_openai`, `mage`) ⇒ break uniform structure and vary openings;
+     remove formulaic transitions ("Moreover", "Furthermore", "Overall"). Don't add facts the source
+     didn't state.
    Preserve meaning and **every sentinel**. Produce the new masked text. **Before continuing, verify
    every sentinel from step 2 still appears in the new text** — if any `⟦HZxxxx⟧` is missing you dropped
    a locked span (a citation, number, quote, or fact); redo the rewrite to put it back. Then go to step 3.

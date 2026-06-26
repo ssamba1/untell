@@ -13,6 +13,10 @@ wrote it**, while changing no meaning, facts, or `⟦HZxxxx⟧` sentinel.
 
 ## NEVER inject these — they are AI tells (this is the most important section)
 
+> The exhaustive, sourced catalog is **`ai-tells.md`** — load it too. The items below are the
+> highest-frequency tells a rewrite most often *adds*; `ai-tells.md` has the full list (banned
+> vocabulary, phrases, structures, formatting, and Claude's own fingerprint) with plain replacements.
+
 1. **Em dashes (`—`).** The single most recognizable AI signature. Do not add them. Use a period, a
    comma, parentheses, or just rephrase. If the original had one, you may keep it, but never *add*.
 2. **Semicolons as a rhythm crutch.** A person writing casually rarely reaches for one. Use two

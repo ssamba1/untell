@@ -14,7 +14,9 @@ def test_prompt_names_worst_detectors_and_threshold():
     assert "0.30" in p  # target threshold
     assert "sentinel" in p.lower()  # preserve-sentinel instruction
     assert "Some flagged text here." in p  # the text itself
-    assert "burstiness" in p.lower() and "perplexity" in p.lower()
+    # the instruction forbids injecting AI tells and pushes plain prose (not score-gaming)
+    assert "em-dash" in p.lower()
+    assert "plain" in p.lower()
 
 
 def test_prompt_handles_no_detectors():
