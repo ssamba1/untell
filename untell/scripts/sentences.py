@@ -36,18 +36,39 @@ def split_sentences(text: str) -> list[str]:
     return [s.strip() for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
 
 
-def score_sentences(text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD) -> dict:
-    """Score each sentence; return per-sentence P(AI) and the flagged (>= threshold) sentence texts."""
+def score_sentences(
+    text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, top: int | None = None
+) -> dict:
+    """Score each sentence; flag the WORST ones to rewrite first.
+
+    Per-sentence scores are noisy — short sentences especially, where signals like burstiness are
+    undefined — so this targets the worst sentences **relative to the rest** (capped) rather than
+    every sentence over an absolute threshold, which floods short text with false positives. The
+    ``flagged`` list is "rewrite these first", not an absolute per-sentence verdict.
+    """
     sents = split_sentences(text)
-    rows = []
+    scored = [(s, float(score_text(s, tier=tier, threshold=threshold)["max"])) for s in sents]
+    n = len(scored)
+    if top is None:
+        top = max(1, (n + 2) // 3)  # the worst ~third, at least one
+    # Rank by score (desc); flag the worst `top` that are also at/above threshold.
+    order = sorted(range(n), key=lambda i: scored[i][1], reverse=True)
+    flag_idx = {i for i in order[:top] if scored[i][1] >= threshold}
+    rows: list[dict] = []
     flagged: list[str] = []
-    for s in sents:
-        ai = float(score_text(s, tier=tier, threshold=threshold)["max"])
-        is_flagged = ai >= threshold
+    for i, (s, ai) in enumerate(scored):
+        is_flagged = i in flag_idx
         rows.append({"text": s, "ai": round(ai, 4), "flagged": is_flagged})
         if is_flagged:
             flagged.append(s)
-    return {"tier": tier, "threshold": threshold, "sentences": rows, "flagged": flagged}
+    return {
+        "tier": tier,
+        "threshold": threshold,
+        "sentences": rows,
+        "flagged": flagged,
+        "note": "per-sentence scores are noisy (esp. short sentences); 'flagged' = the worst "
+        "sentences to rewrite first, not an absolute verdict",
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -59,6 +80,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--file", "-f")
     parser.add_argument("--tier", default="lite", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=None,
+        help="Flag at most this many of the worst sentences (default: ~the worst third).",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -73,14 +100,15 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty input"}))
         return 2
 
-    result = score_sentences(text, tier=args.tier, threshold=args.threshold)
+    result = score_sentences(text, tier=args.tier, threshold=args.threshold, top=args.top)
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))
     else:
         for row in result["sentences"]:
             mark = "AI " if row["flagged"] else "ok "
             print(f"[{mark}{row['ai']:.2f}] {row['text']}")
-        print(f"\n{len(result['flagged'])}/{len(result['sentences'])} sentences flagged (>= {args.threshold}).")
+        print(f"\n{len(result['flagged'])}/{len(result['sentences'])} sentences flagged to rewrite first.")
+        print(f"note: {result['note']}")
     return 0
 
 

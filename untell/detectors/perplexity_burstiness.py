@@ -72,14 +72,22 @@ def lite_score(text: str) -> float:
     if not text or not text.strip():
         return 0.5
     sents = _sentences(text)
-    burst = _burstiness(sents)            # ~0.0 (uniform) .. ~0.8+ (varied human prose)
+    nonempty = [s for s in sents if _WORD.findall(s)]
     common = _common_ratio(text)          # ~0.3 (varied) .. ~0.6 (formulaic)
-
-    # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
-    # CV around 0.5 is typical human prose; below ~0.25 reads as machine-uniform.
-    burst_signal = clamp01((0.55 - burst) / 0.55)
     # Map common-word ratio: above ~0.45 trends AI-formulaic.
     common_signal = clamp01((common - 0.30) / 0.30)
+
+    # Burstiness needs >= 2 sentences to mean anything. On a single sentence/fragment it is
+    # *undefined* (the CV of one length is 0), so treating that as low-burstiness wrongly scored
+    # every short sentence as ~AI — the degeneracy that flooded per-sentence targeting. Use a neutral
+    # burst contribution there and lean on the common-word signal instead.
+    if len(nonempty) < 2:
+        burst_signal = 0.5
+    else:
+        burst = _burstiness(sents)        # ~0.0 (uniform) .. ~0.8+ (varied human prose)
+        # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
+        # CV around 0.5 is typical human prose; below ~0.25 reads as machine-uniform.
+        burst_signal = clamp01((0.55 - burst) / 0.55)
 
     # Blend (burstiness weighted higher — it's the stronger of the two weak signals).
     return clamp01(0.6 * burst_signal + 0.4 * common_signal)
