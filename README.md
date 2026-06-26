@@ -82,8 +82,10 @@ score the text and lock your facts. Zero dependencies (lite tier).
 git clone https://github.com/ssamba1/untell && cd untell
 pip install -e ".[full]"                          # real detector ensemble on CPU
 untell-loop "Your AI-sounding paragraph here."    # rewrite until it passes
+untell-loop "text" --best-of 3                     # draw 3 rewrites/round, keep the best valid one
 untell-score "text" --tier full --threshold 0.3   # just score it
 untell-verify --file draft.txt                    # honest pass/fail per detector
+untell-ceiling                                     # measure the loop's evasion vs the local detectors
 ```
 
 <details>

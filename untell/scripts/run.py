@@ -90,6 +90,7 @@ def untell_text(
     scrub: bool = True,
     polish: bool = False,
     style: str | None = None,
+    best_of: int = 1,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -160,21 +161,31 @@ def untell_text(
             }
         except Exception:
             pass
-        try:
-            candidate = rw.rewrite(best_masked, best_score, threshold)
-        except Exception as exc:  # surface the failure rather than silently looping
-            return {"error": f"rewriter failed: {type(exc).__name__}: {str(exc)[:160]}", "final": restore(best_masked, mapping)}
-        rewrites += 1
-        cand_score = score(candidate)
-        # Accept only if the rewrite (a) keeps EVERY sentinel intact — a dropped or altered sentinel
-        # would silently lose a locked citation/number/fact on restore, defeating the whole lock —
-        # (b) holds the meaning-similarity gate, and (c) does not worsen the detector max.
-        if (
-            find_sentinels(candidate) == set(mapping)
-            and similarity(masked, candidate) >= sim_bar
-            and cand_score["max"] <= best_score["max"]
-        ):
-            best_masked, best_score = candidate, cand_score
+        # Best-of-N: draw `best_of` candidates this round and keep the strongest VALID one. A
+        # candidate is valid only if it (a) keeps EVERY sentinel intact — a dropped/altered sentinel
+        # would silently lose a locked citation/number on restore, defeating the whole lock — and
+        # (b) holds the meaning-similarity gate. Among the valid ones, pick the lowest detector max,
+        # and only adopt it if it does not worsen the running best.
+        cand_best, cand_best_score = None, None
+        drew = 0
+        for _ in range(max(1, best_of)):
+            try:
+                candidate = rw.rewrite(best_masked, best_score, threshold)
+            except Exception as exc:  # surface the failure rather than silently looping
+                if drew == 0:
+                    return {"error": f"rewriter failed: {type(exc).__name__}: {str(exc)[:160]}", "final": restore(best_masked, mapping)}
+                break  # a later draw failed; use the candidates we already have
+            drew += 1
+            rewrites += 1
+            if find_sentinels(candidate) != set(mapping):
+                continue  # dropped/altered a locked span — reject outright
+            cscore = score(candidate)
+            if similarity(masked, candidate) >= sim_bar and (
+                cand_best_score is None or cscore["max"] < cand_best_score["max"]
+            ):
+                cand_best, cand_best_score = candidate, cscore
+        if cand_best is not None and cand_best_score["max"] <= best_score["max"]:
+            best_masked, best_score = cand_best, cand_best_score
         if _passed(best_score):
             stopped = "passed"
             break
@@ -283,6 +294,13 @@ def main(argv: list[str] | None = None) -> int:
         choices=["casual", "professional", "academic", "blunt", "storytelling", "journalistic"],
         help="bias the rewrite toward a writing style/voice",
     )
+    parser.add_argument(
+        "--best-of",
+        type=int,
+        default=1,
+        help="draw N candidate rewrites per iteration and keep the best valid one (sentinels intact + "
+        "meaning gate, lowest detector max). Default 1.",
+    )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     args = parser.parse_args(argv)
 
@@ -309,6 +327,7 @@ def main(argv: list[str] | None = None) -> int:
         scrub=not args.no_scrub,
         polish=args.polish,
         style=args.style,
+        best_of=args.best_of,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))

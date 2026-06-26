@@ -232,3 +232,30 @@ def test_loop_rejects_sentinel_dropping_rewrite(monkeypatch):
     # ...and rejected every time, so the locked facts survive into the final output.
     assert "Smith (2020)" in res["final"]
     assert "47%" in res["final"]
+
+
+def test_best_of_n_draws_multiple_candidates_and_keeps_facts(monkeypatch):
+    import untell.scripts.run as run_mod
+
+    calls = {"n": 0}
+
+    class _MultiRW:
+        name = "multi"
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score_result, threshold=0.30):
+            import re
+
+            calls["n"] += 1
+            sentinels = re.findall(r"⟦HZ\d{4}⟧", text)
+            tail = (" " + " ".join(sentinels)) if sentinels else ""
+            return f"It shifted, and people noticed. Variant {calls['n']}.{tail}"
+
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _MultiRW())
+    # threshold=0.0 forces a rewrite; best_of=3 => exactly three candidates drawn in the one iteration.
+    res = untell_text(AI, tier="lite", threshold=0.0, max_iters=1, best_of=3)
+    assert "error" not in res
+    assert calls["n"] == 3
+    assert "Smith (2020)" in res["final"] and "47%" in res["final"]  # facts survive best-of selection
