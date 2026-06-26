@@ -40,34 +40,62 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
-from untell.detectors.base import load_detectors, resolved_tier
+from untell.detectors.base import _TIER_RANK, load_detectors, resolved_tier
 
 DEFAULT_THRESHOLD = 0.30
 
 
 def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHOLD) -> dict:
-    """Score ``text`` with the available detector ensemble; return the result dict."""
+    """Score ``text`` with the available detector ensemble; return the result dict.
+
+    A detector that fails to load or score (e.g. a broken ML env) is **excluded** from the
+    aggregate — it is never folded in as a neutral ``0.5``, which would silently pin ``max`` at
+    a meaningless value. The reported ``tier`` reflects the detectors that actually produced a
+    number, so a full-tier run whose ML stack is broken honestly reports ``lite`` (plus a
+    ``warning`` and a ``failed_detectors`` list), instead of looking like a real full-tier score.
+    """
     detectors = load_detectors(tier)
     scores: dict[str, float | None] = {}
+    live = []  # detectors that produced a genuine numeric score
     for d in detectors:
         try:
-            scores[d.name] = round(float(d.score(text)), 4)
-        except Exception as exc:  # a flaky detector must not crash the loop
+            val = d.score(text)
+        except Exception as exc:  # a flaky/broken detector must not crash or skew the loop
             scores[d.name] = None  # type: ignore[assignment]
-            scores[f"{d.name}__error"] = str(exc)[:120]  # type: ignore[assignment]
+            scores[f"{d.name}__error"] = str(exc)[:140]  # type: ignore[assignment]
+            continue
+        if val is None:  # detector explicitly produced no signal -> exclude, don't fake a 0.5
+            scores[d.name] = None  # type: ignore[assignment]
+            continue
+        scores[d.name] = round(float(val), 4)
+        live.append(d)
 
     numeric = [v for v in scores.values() if isinstance(v, (int, float))]
-    mx = max(numeric) if numeric else 0.5
-    mean = sum(numeric) / len(numeric) if numeric else 0.5
-    return {
-        "tier": resolved_tier(detectors),
+    mx = max(numeric) if numeric else 0.0
+    mean = sum(numeric) / len(numeric) if numeric else 0.0
+    effective = resolved_tier(live) if live else "lite"
+    failed = [k[: -len("__error")] for k in scores if k.endswith("__error")]
+    result: dict = {
+        "tier": effective,
+        "tier_requested": tier,
         "detectors": scores,
         "max": round(mx, 4),
         "mean": round(mean, 4),
         "ai_percent": round(mx * 100, 1),  # 0-100 AI-likelihood (the headline number competitors show)
         "threshold": threshold,
-        "flagged": mx >= threshold,
+        "flagged": bool(numeric) and mx >= threshold,
     }
+    if failed:
+        result["failed_detectors"] = failed
+    # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
+    if _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
+        result["warning"] = (
+            f"requested tier '{tier}' but only '{effective}' produced scores"
+            + (f"; failed to load: {', '.join(failed)}" if failed else "")
+            + f". The reported numbers reflect the '{effective}' tier only "
+            "(commonly a NumPy 2.x / torch mismatch — see the README troubleshooting section)."
+        )
+    return result
 
 
 def _read_input(args: argparse.Namespace) -> str:

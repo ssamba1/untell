@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Dead detectors no longer pin the score at a fake `0.5`.** `mage`/`hc3_roberta` previously swallowed
+  a load failure and returned a neutral `0.5`, which silently pinned the ensemble `max` and made the
+  loop's signal meaningless on a broken ML env. Failed detectors are now **excluded** from the
+  aggregate (like `roberta_openai`/`fast_detectgpt` already were), surfaced under `failed_detectors`,
+  and `score` reports the **effective tier that actually produced numbers** plus a `warning` on
+  downgrade — so a full-tier run with a broken stack honestly reports `lite`, not a fake `full`.
+- **Fail-fast on load errors.** A detector that fails to load is disabled for the rest of the process
+  instead of re-attempting the heavy import on every call (fixes the "took forever" on broken envs).
+- Added a **Troubleshooting** section (NumPy 2.x / `torch` mismatch, `mage` `id2label`, full-tier speed).
+
 ### Changed
 - **Renamed the project to `untell`** (was `humanize`) to avoid the namespace collision with the popular
   PyPI/GitHub `humanize` library and for a distinct, collision-free brand. Package/import is now `untell`,

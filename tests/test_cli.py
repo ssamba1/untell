@@ -87,4 +87,9 @@ def test_score_text_survives_detector_exception(monkeypatch):
     r = score_mod.score_text("hello", tier="lite")
     assert r["detectors"]["boom"] is None
     assert "boom__error" in r["detectors"]
-    assert r["max"] == 0.5  # no numeric scores -> neutral default, no crash
+    # No numeric scores -> the loop must NOT be handed a fake 0.5 (the real-world bug that pinned
+    # max when detectors silently died). max is 0.0, the run is not-flagged, and the failure is
+    # surfaced explicitly instead of masked.
+    assert r["max"] == 0.0
+    assert r["flagged"] is False
+    assert "boom" in r["failed_detectors"]

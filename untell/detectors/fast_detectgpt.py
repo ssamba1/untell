@@ -27,6 +27,8 @@ class FastDetectGPTDetector:
 
     _model = None
     _tokenizer = None
+    _dead = False
+    _warned = False
 
     def available(self) -> bool:
         try:
@@ -44,16 +46,32 @@ class FastDetectGPTDetector:
             FastDetectGPTDetector._model = AutoModelForCausalLM.from_pretrained(_SCORING_MODEL).eval()
         return FastDetectGPTDetector._tokenizer, FastDetectGPTDetector._model
 
-    def score(self, text: str) -> float:
-        if not self.available() or not text.strip():
-            return 0.5
-        import torch
+    def score(self, text: str) -> float | None:
+        if FastDetectGPTDetector._dead:
+            raise RuntimeError("fast_detectgpt disabled after a prior load failure")
+        if not text.strip():
+            return None
+        try:
+            import torch
 
-        tok, model = self._load()
+            tok, model = self._load()
+        except Exception as exc:
+            FastDetectGPTDetector._dead = True
+            if not FastDetectGPTDetector._warned:
+                import sys
+
+                print(
+                    f"[untell] fast_detectgpt failed to load and was EXCLUDED from the ensemble "
+                    f"({type(exc).__name__}: {str(exc)[:140]}). "
+                    "Often a NumPy 2.x / torch mismatch — see README troubleshooting.",
+                    file=sys.stderr,
+                )
+                FastDetectGPTDetector._warned = True
+            raise
         enc = tok(text, return_tensors="pt", truncation=True, max_length=512)
         ids = enc["input_ids"]
         if ids.shape[1] < 2:
-            return 0.5
+            return None
         with torch.no_grad():
             logits = model(ids).logits[:, :-1, :]
             labels = ids[:, 1:]

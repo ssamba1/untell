@@ -17,6 +17,8 @@ class RobertaOpenAIDetector:
     tier = "full"
 
     _pipe = None
+    _dead = False
+    _warned = False
 
     def available(self) -> bool:
         try:
@@ -41,10 +43,26 @@ class RobertaOpenAIDetector:
             )
         return RobertaOpenAIDetector._pipe
 
-    def score(self, text: str) -> float:
-        if not self.available() or not text.strip():
-            return 0.5
-        pipe = self._load()
+    def score(self, text: str) -> float | None:
+        if RobertaOpenAIDetector._dead:
+            raise RuntimeError("roberta_openai disabled after a prior load failure")
+        if not text.strip():
+            return None
+        try:
+            pipe = self._load()
+        except Exception as exc:
+            RobertaOpenAIDetector._dead = True
+            if not RobertaOpenAIDetector._warned:
+                import sys
+
+                print(
+                    f"[untell] roberta_openai failed to load and was EXCLUDED from the ensemble "
+                    f"({type(exc).__name__}: {str(exc)[:140]}). "
+                    "Often a NumPy 2.x / torch mismatch — see README troubleshooting.",
+                    file=sys.stderr,
+                )
+                RobertaOpenAIDetector._warned = True
+            raise
         out = pipe(text)
         # `top_k=None` => list[list[{label, score}]]; labels are "Real"/"Fake" (Fake == AI).
         scores = out[0] if isinstance(out[0], list) else out

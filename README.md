@@ -315,6 +315,30 @@ runs the torch-gated tests. See **[CONTRIBUTING.md](CONTRIBUTING.md)** to get in
 
 ---
 
+## Troubleshooting
+
+**Full-tier detectors come back as `null`, you see `failed_detectors`, or a "NumPy 2.x" warning.**
+The supervised detectors load `torch`/`transformers`; older builds of those were compiled against
+NumPy 1.x and crash on import when NumPy 2.x is present. untell **excludes** any detector that fails to
+load — it never fakes a neutral `0.5` that would silently pin your score — lists it under
+`failed_detectors`, and honestly downgrades the reported `tier` (so a broken full-tier run reports
+`lite`, not a fake `full`). To get the full ensemble back, align the versions, ideally in a fresh venv:
+
+```bash
+python -m venv .venv && . .venv/Scripts/activate     # (. .venv/bin/activate on macOS/Linux)
+pip install -e ".[full]"            # pulls torch/transformers matched to your NumPy
+# …or pin NumPy down in an existing env:
+pip install "numpy<2"
+```
+
+**`mage` is always `null`.** `yaful/MAGE` ships a config current `huggingface_hub` rejects (`id2label`
+validation). It's auto-excluded and the rest of the ensemble runs normally — nothing you need to fix.
+
+**Full tier feels slow.** Each `untell-score` call loads the models fresh, and the first run downloads
+~0.5 GB of weights (cached after that). For a multi-iteration run prefer the single-process headless
+loop — `untell-loop` loads the models once — over many one-off score calls. The **lite** tier and the
+[in-browser demo](https://ssamba1.github.io/untell/demo.html) need no downloads at all.
+
 ## Honest caveats
 
 - **Proxy ≠ commercial.** The local detectors approximate; they aren't Originality.ai / Turnitin. The
