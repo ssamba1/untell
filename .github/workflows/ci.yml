@@ -110,4 +110,4 @@ jobs:
           $json = $out | ConvertFrom-Json
           if ($json.tier -ne "lite") { throw "expected lite tier (zero-dep), got '$($json.tier)'" }
           if ($null -eq $json.max)   { throw "score output has no 'max' field" }
-          Write-Host "OK: zero-dep lite score ran from $($PWD.Path) — tier=$($json.tier) max=$($json.max)"
+          Write-Host "OK: zero-dep lite score ran from $($PWD.Path) - tier=$($json.tier) max=$($json.max)"
