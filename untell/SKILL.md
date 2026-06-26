@@ -107,7 +107,9 @@ iterations). Load `references/prompt-rubric.md` before your first rewrite.
      winding sentences); replace predictable phrasing with less expected word choices.
    - High supervised scores (`roberta_openai`, `mage`) ⇒ break uniform structure, vary openings,
      add concrete specifics, remove formulaic transitions ("Moreover", "Furthermore", "Overall").
-   Preserve meaning and **every sentinel**. Produce the new masked text, then go to step 3.
+   Preserve meaning and **every sentinel**. Produce the new masked text. **Before continuing, verify
+   every sentinel from step 2 still appears in the new text** — if any `⟦HZxxxx⟧` is missing you dropped
+   a locked span (a citation, number, quote, or fact); redo the rewrite to put it back. Then go to step 3.
 
 6. **Restore + report.** Once stopped, restore the protected spans — substitute each sentinel
    back to its original using the `mapping` from step 2:

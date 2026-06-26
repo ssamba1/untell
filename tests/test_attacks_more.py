@@ -56,3 +56,13 @@ def test_scrub_removes_zero_width_and_controls():
 
 def test_homoglyph_rate_zero_is_noop():
     assert homoglyph_substitute("hello", rate=0.0) == "hello"
+
+
+def test_scrub_preserves_legitimate_unicode():
+    # Regression: scrub must not corrupt legitimate Unicode (emoji ZWJ sequences, variation
+    # selectors, superscripts) while still stripping watermark carriers.
+    family = "\U0001f468‍\U0001f469‍\U0001f467‍\U0001f466"  # family emoji
+    assert scrub_hidden(family) == family                  # structural ZWJ kept
+    assert scrub_hidden("❤️") == "❤️"  # heart keeps its VS16 emoji presentation
+    assert scrub_hidden("E=mc²") == "E=mc²"      # superscript survives (NFC, not NFKC)
+    assert scrub_hidden("wor‍ld") == "world"          # but an orphan ZWJ watermark is removed

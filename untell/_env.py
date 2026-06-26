@@ -19,7 +19,8 @@ def load_env(path: str | None = None) -> bool:
     try:
         from dotenv import load_dotenv  # python-dotenv, if installed
 
-        return bool(load_dotenv(path, override=False))
+        # utf-8-sig so a BOM-prefixed .env (common from Windows editors) doesn't corrupt the first key.
+        return bool(load_dotenv(path, override=False, encoding="utf-8-sig"))
     except Exception:
         pass
 
@@ -27,12 +28,14 @@ def load_env(path: str | None = None) -> bool:
     if not p.is_file():
         return False
     try:
-        for raw in p.read_text(encoding="utf-8").splitlines():
+        for raw in p.read_text(encoding="utf-8-sig").splitlines():  # utf-8-sig strips a leading BOM
             line = raw.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, _, val = line.partition("=")
             key = key.strip()
+            if key.startswith("export "):  # tolerate `export KEY=VALUE` shell syntax
+                key = key[len("export "):].strip()
             val = val.strip().strip('"').strip("'")
             if key and key not in os.environ:  # real env wins
                 os.environ[key] = val

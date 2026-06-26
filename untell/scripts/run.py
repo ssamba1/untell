@@ -29,7 +29,7 @@ if __package__ in (None, ""):
             break
 
 from untell.rewriter import get_rewriter
-from untell.scripts.preserve import lock, restore
+from untell.scripts.preserve import find_sentinels, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 
@@ -141,6 +141,7 @@ def untell_text(
     pre = score(masked)
     best_masked, best_score = masked, pre
     iters = 0
+    rewrites = 0
     stopped = "max_iters"
     for i in range(1, max_iters + 1):
         iters = i
@@ -163,8 +164,16 @@ def untell_text(
             candidate = rw.rewrite(best_masked, best_score, threshold)
         except Exception as exc:  # surface the failure rather than silently looping
             return {"error": f"rewriter failed: {type(exc).__name__}: {str(exc)[:160]}", "final": restore(best_masked, mapping)}
+        rewrites += 1
         cand_score = score(candidate)
-        if similarity(masked, candidate) >= sim_bar and cand_score["max"] <= best_score["max"]:
+        # Accept only if the rewrite (a) keeps EVERY sentinel intact — a dropped or altered sentinel
+        # would silently lose a locked citation/number/fact on restore, defeating the whole lock —
+        # (b) holds the meaning-similarity gate, and (c) does not worsen the detector max.
+        if (
+            find_sentinels(candidate) == set(mapping)
+            and similarity(masked, candidate) >= sim_bar
+            and cand_score["max"] <= best_score["max"]
+        ):
             best_masked, best_score = candidate, cand_score
         if _passed(best_score):
             stopped = "passed"
@@ -175,7 +184,7 @@ def untell_text(
     if stopped == "passed" and confirm > 0:
         for _ in range(confirm):
             rescore = score(best_masked)
-            if rescore["max"] >= threshold:
+            if rescore["max"] >= threshold - margin:  # same headroom as the pass test (_passed)
                 best_score = rescore
                 stopped = "passed_unconfirmed"
                 break
@@ -186,9 +195,15 @@ def untell_text(
             from untell.attacks import surgical_substitute
 
             polished = surgical_substitute(best_masked, tier="lite", threshold=threshold)["text"]
-            if score(polished)["max"] <= best_score["max"]:
-                best_masked = polished
-                best_score = score(best_masked)
+            polished_score = score(polished)
+            # Polish must clear the same gates as a rewrite: sentinels intact, meaning preserved,
+            # detector max not worse. (Reuse polished_score; don't re-score and risk detector noise.)
+            if (
+                find_sentinels(polished) == set(mapping)
+                and similarity(masked, polished) >= sim_bar
+                and polished_score["max"] <= best_score["max"]
+            ):
+                best_masked, best_score = polished, polished_score
         except Exception:
             pass
 
@@ -196,6 +211,7 @@ def untell_text(
     return {
         "final": final,
         "iterations": iters,
+        "rewrites": rewrites,
         "pre": pre,
         "post": best_score,
         "similarity": similarity(masked, best_masked),

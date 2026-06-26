@@ -130,6 +130,16 @@ def restore(masked: str, mapping: dict[str, str]) -> str:
     return _SENTINEL_RE.sub(_sub, masked)
 
 
+def find_sentinels(text: str) -> set[str]:
+    """Return the set of sentinel tokens (``⟦HZxxxx⟧``) present in ``text``.
+
+    Used by the loop to mechanically enforce the lock: a rewrite is only accepted if it still
+    contains *exactly* the sentinels it was given — neither dropping one (which would silently
+    lose a locked citation/number/fact on restore) nor inventing one.
+    """
+    return set(_SENTINEL_RE.findall(text))
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI for lock (default) and restore.
 
@@ -161,6 +171,13 @@ def main(argv: list[str] | None = None) -> int:
                 mapping = json.load(fh)
         elif args.mapping:
             mapping = json.loads(args.mapping)
+        missing = set(mapping) - find_sentinels(text)
+        if missing:  # a locked span was dropped during rewriting — make it loud, don't lose it silently
+            print(
+                f"[preserve] WARNING: {len(missing)} locked span(s) are missing from the text and will "
+                f"NOT appear in the output (dropped during rewriting): {', '.join(sorted(missing))}",
+                file=sys.stderr,
+            )
         print(restore(text, mapping))
         return 0
 

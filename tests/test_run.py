@@ -204,3 +204,31 @@ def test_browser_scoring_unavailable_errors(monkeypatch):
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: None)
     res = untell_text(AI, tier="lite", browser="zerogpt")
     assert "error" in res and "no browser checker available" in res["error"]
+
+
+class _DropRW:
+    """A rewriter that lowers the signal but DROPS the locked sentinels — the exact failure the
+    quality gate must catch, so a citation/number is never silently lost on restore."""
+
+    name = "drop"
+
+    def available(self):
+        return True
+
+    def rewrite(self, text, score_result, threshold=0.30):
+        import re
+
+        return re.sub(r"⟦HZ\d{4}⟧", "", "It shifted fast, and nobody saw it coming at all.")
+
+
+def test_loop_rejects_sentinel_dropping_rewrite(monkeypatch):
+    import untell.scripts.run as run_mod
+
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _DropRW())
+    # threshold=0.0 forces the rewriter to be invoked every iteration (max >= 0 always flags).
+    res = untell_text(AI, tier="lite", threshold=0.0, max_iters=3)
+    assert "error" not in res
+    assert res["rewrites"] >= 1  # the sentinel-dropping rewrite was actually attempted...
+    # ...and rejected every time, so the locked facts survive into the final output.
+    assert "Smith (2020)" in res["final"]
+    assert "47%" in res["final"]

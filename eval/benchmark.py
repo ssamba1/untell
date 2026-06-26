@@ -53,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.enable_radar:
         import os
 
-        os.environ["HUMANIZE_ENABLE_RADAR"] = "1"
+        os.environ["UNTELL_ENABLE_RADAR"] = "1"
 
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()]
     unknown = [s for s in strategies if s not in STRATEGIES]
