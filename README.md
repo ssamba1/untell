@@ -137,6 +137,43 @@ Three design choices make it work where blind paraphrasers fail:
 
 ---
 
+## 📉 The measured free ceiling
+
+*How far does $0 actually get you? We measured it.* Most humanizers sell a fantasy ("99% human, undetectable!"). We did the opposite: we **measured** the
+real ceiling of a free, training-free loop and published the numbers, the method, and the limits.
+The published state of the art (92–97.6% attack success) **needs GPU fine-tuning**; the literature had
+**no data point** for the inference-only regime this tool runs in. With a working local detector stack we
+produced it — see **[`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)** (research:
+**[`docs/free-ceiling-report.md`](docs/free-ceiling-report.md)**).
+
+Reproduce it yourself, no API key, on CPU:
+
+```bash
+untell-ceiling --rewriter surgical --tier full      # ~90s; deterministic; $0
+```
+
+| Free, no-key rewrite vs the local open ensemble (n=10) | before | after |
+|---|---|---|
+| flagged rate (max P(AI) ≥ 0.30) | 0.90 | **0.60** |
+| mean max P(AI) | 0.87 | **0.68** |
+
+Two findings, both measured and both the *opposite* of the marketing:
+
+- **Surface edits strip the lexical tell but not the content tell.** Word-substitution moves the
+  perplexity detector (0.32 → 0.20) and RoBERTa-OpenAI (0.52 → 0.36), but a **content/genre** detector
+  (HC3-RoBERTa) barely budges (0.73 → 0.67). No meaning-preserving rewrite can move it — *the content is
+  the tell.*
+- **The local proxies partly anti-correlate with human-ness.** A rewrite that reads *obviously* more human
+  scored **higher** on the proxy (0.578 → 0.918). So a low local score means "passed the weak local
+  proxies," not "reads human" and **not** "beats GPTZero." That's exactly why the loop treats the local
+  score as a weak hint and gates hard on meaning instead.
+
+**The honest ceiling:** for free you can reliably strip the lexical/perplexity tells and clear the *free*
+web checkers; you cannot strip the content tell, and clearing the local proxies does not imply clearing
+GPTZero / Originality / Turnitin (which need their API in the loop — paid). The tool says so, everywhere.
+
+---
+
 ## 🏆 Why this is the best open-source AI humanizer
 
 We surveyed **~110 open-source humanizer repos** (GitHub topics, papers-with-code, the research SOTA) as part
@@ -180,7 +217,7 @@ actually ran, so you always know how much to trust the number.
 | **full** | `pip install -e ".[full]"` | + RoBERTa-OpenAI, HC3-RoBERTa, MAGE, Fast-DetectGPT, GPT-2 perplexity; MiniLM cosine quality | Real proxy signal on CPU. Downloads models on first run. |
 | **+ RADAR** | `UNTELL_ENABLE_RADAR=1` (opt-in) | + RADAR — the **paraphrase-robust** detector, the hardest open one to fool | ⚠️ `TrustSafeAI/RADAR-Vicuna-7B` is **non-commercial licensed** — research/eval only. |
 | **heavy** | `pip install -e ".[heavy]"` | + Binoculars (2×Falcon-7B) | Strongest proxy; GPU recommended. Eval only. |
-| **commercial** | `pip install -e ".[commercial]"` + your keys | + Originality.ai, GPTZero, Winston, Sapling, ZeroGPT, Copyleaks | The real checkers. Key-gated; nothing runs or bills unless you set a key. |
+| **commercial** | `pip install -e ".[commercial]"` + your keys | + Originality.ai, GPTZero, Winston, Sapling, ZeroGPT, Copyleaks, **LLM-as-judge** | The real checkers. Key-gated; nothing runs or bills unless you set a key. LLM-as-judge = a frontier model rates AI-likelihood against the ai-tells catalog (often the best free-of-proxy signal). |
 
 ```bash
 untell-score "Your text here" --tier full --threshold 0.3
@@ -212,10 +249,20 @@ iteration calls every checker, so it **costs API credits** — cap with `--max-i
 ### Free ways to test without paying
 
 ```bash
+# No key at all — deterministic CPU word-substitution rewriter drives the loop ($0, no SDK):
+untell-loop "text" --rewriter surgical --tier full
+untell-ceiling --rewriter surgical --tier full     # measure the loop vs the local ensemble
+
+# Optimize against a REAL detector for free via its web UI (slow, needs a browser):
 pip install -e ".[browser]" && playwright install chromium
 untell-verify --browser zerogpt "text"     # drives the free ZeroGPT web UI — no API key, $0
 untell-loop   "text" --browser zerogpt      # iterate against the LIVE ZeroGPT detector until it clears
 ```
+
+The **`--rewriter surgical`** path makes the whole loop runnable with **no API key, no GPU, no model
+download** — the bundled deterministic rewriter (PWWS/TextFooler-style word-importance substitution)
+stands in for the hosted LLM. Weaker than Claude-as-rewriter, but it's what makes the free measurement
+above reproducible. (In Claude Code, `/untell` uses Claude itself as the rewriter — also free.)
 
 The `--browser` path drives a real headless browser through a free web checker and reads the % score.
 **ZeroGPT ships built-in** (confirmed working live). Most other free detectors are now bot-gated
@@ -288,10 +335,16 @@ stands in for Claude so it's measurable):
 pip install -e ".[full,eval]"
 python -m eval.benchmark --dataset builtin --n 5                      # zero-download smoke run
 python -m eval.benchmark --dataset raid --n 200 --tier full --enable-radar   # adversarial: hardest detector + RAID
+
+untell-ceiling --rewriter surgical --tier full       # measure free inference-only evasion (no key, $0)
+untell-eval-policy --policy out/rl-humanizer --vs-base   # A/B a trained LoRA policy vs the untuned base
 ```
 
 The report shows **per-detector beat-rates** and names the **hardest detector to beat** (the honest
-headline). `--enable-radar` adds the paraphrase-robust RADAR detector (non-commercial — research/eval only).
+headline). `untell-ceiling` measures how far the free loop moves the local ensemble (see the
+[measured ceiling](#-the-measured-free-ceiling)); `untell-eval-policy`
+scores the optional GPU-trained single-pass policy (`training/`) against held-out text.
+`--enable-radar` adds the paraphrase-robust RADAR detector (non-commercial — research/eval only).
 For broader cross-detector benchmarking, [IMGTB](https://github.com/kinit-sk/IMGTB) + the
 [RAID](https://github.com/liamdugan/raid) leaderboard are the standard references.
 
@@ -303,13 +356,14 @@ For broader cross-detector benchmarking, [IMGTB](https://github.com/kinit-sk/IMG
 untell/            # THE SKILL (this dir is what you install)
   SKILL.md           # trigger + loop procedure + rewrite rubric
   scripts/           # score · preserve · quality · sentences · run · verify
-  detectors/         # base protocol + tiered adapters (7 local + 6 commercial)
+  detectors/         # base protocol + tiered adapters (7 local + commercial incl. LLM-as-judge)
+  rewriter/          # optional rewriters: hosted (Anthropic/OpenAI) · surgical (no-key) · local LoRA policy
   attacks/           # surgical substitution · homoglyph · scrub · back-translation
-  references/         # thresholds.md · prompt-rubric.md
-eval/                # benchmark harness (research only)
-training/            # GPU moat scaffold (RL-against-ensemble / distillation)
+  references/         # thresholds.md · prompt-rubric.md · ai-tells.md
+eval/                # benchmark · ceiling (measure free evasion) · eval_policy (A/B the RL policy)
+training/            # GPU moat: RL-against-ensemble (GRPO+LoRA) · surrogate distillation
 tests/               # unit tests (lite runs with zero ML)
-docs/                # why-we're-best · competitive audit · detector probes
+docs/                # free-ceiling report + measured numbers · why-we're-best · competitive audit
 ```
 
 ## Development
