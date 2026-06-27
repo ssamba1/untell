@@ -94,6 +94,7 @@ untell-sentences = "untell.scripts.sentences:main"
 untell-mcp = "untell.mcp_server:main"
 untell-distill = "training.distill:main"
 untell-surrogate = "training.surrogate:main"
+untell-eval-policy = "eval.eval_policy:main"
 
 [tool.setuptools]
 packages = [
