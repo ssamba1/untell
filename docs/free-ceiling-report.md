@@ -29,7 +29,7 @@ actively counter-detect humanized text.
 
 | Tier | Free-reachable? | Evidenced ceiling |
 |---|---|---|
-| **Local open-source** (RoBERTa-OpenAI, Fast-DetectGPT, Binoculars, MAGE) | Yes — runs locally on CPU/GPU | **Trained:** 97.6% ASR, mean TPR@1%FPR → 0.024 (StealthRL). **Inference-only (untell's regime): unmeasured in the literature** — somewhere between the ~1% one-shot-style floor and the 97.6% trained ceiling. |
+| **Local open-source** (RoBERTa-OpenAI, Fast-DetectGPT, Binoculars, MAGE) | Yes — runs locally on CPU/GPU | **Trained:** 97.6% ASR, mean TPR@1%FPR → 0.024 (StealthRL). **Inference-only (untell's regime): now MEASURED** — see [`free-ceiling-measured.md`](free-ceiling-measured.md): a modest, unreliable drop (mean max P(AI) 0.86 → ~0.74–0.76), far below the trained ceiling, with content-locked detectors immovable by any meaning-preserving rewrite. |
 | **Free web UI** (ZeroGPT, others still automatable) | Yes, but slow (~10 s/check) and increasingly bot-gated | In-loop optimization works in principle. ZeroGPT is **not** established as uselessly inaccurate (that claim was refuted 0-3). |
 | **Commercial API** (GPTZero, Originality.ai) | No — paid API only | Beating them needs them **inside the training reward**: AuthorMist drove GPTZero 88% → 12%, but only because GPTZero was the reward signal; training on GPTZero alone left WinstonAI at 30%. |
 | **Turnitin** | No — **no public API at all** | Out of reach of any automated loop, free or paid. |

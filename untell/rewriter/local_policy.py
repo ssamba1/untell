@@ -61,9 +61,11 @@ class LocalPolicyRewriter:
         if self.use_adapter and (not self.adapter_dir or not os.path.isdir(self.adapter_dir)):
             return False
         try:
-            import peft  # noqa: F401
             import torch  # noqa: F401
             import transformers  # noqa: F401
+
+            if self.use_adapter:  # peft is only needed to load the adapter; base-only eval doesn't use it
+                import peft  # noqa: F401
         except Exception:
             return False
         return True
@@ -76,6 +78,13 @@ class LocalPolicyRewriter:
 
         kw: dict[str, Any] = {}
         if os.environ.get("UNTELL_POLICY_4BIT") == "1":
+            if not torch.cuda.is_available():
+                # bitsandbytes 4-bit needs CUDA; without it from_pretrained dies with an opaque BNB
+                # error. Fail with a clear message instead.
+                raise RuntimeError(
+                    "UNTELL_POLICY_4BIT=1 requires a CUDA GPU (bitsandbytes 4-bit). "
+                    "Unset it to load on CPU."
+                )
             from transformers import BitsAndBytesConfig
 
             kw["quantization_config"] = BitsAndBytesConfig(
@@ -106,7 +115,10 @@ class LocalPolicyRewriter:
         self._load()
         messages = [{"role": "user", "content": _TRAIN_PROMPT.format(text=text)}]
         prompt = self._tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = self._tok(prompt, return_tensors="pt").to(self._model.device)
+        # Use a real parameter's device, not self._model.device: when accelerate dispatches the model
+        # across devices (device_map="auto" with >1 GPU or CPU offload) there is no single .device.
+        device = next(self._model.parameters()).device
+        inputs = self._tok(prompt, return_tensors="pt").to(device)
         with torch.no_grad():
             out = self._model.generate(
                 **inputs,

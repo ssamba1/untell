@@ -92,6 +92,21 @@ def test_cli_no_rewriter_exits_nonzero(monkeypatch, capsys):
     assert "ERROR" in capsys.readouterr().out
 
 
+def test_cli_rewriter_surgical_runs_with_no_key(monkeypatch, capsys):
+    # The whole point of --rewriter surgical: the loop runs at $0 with NO API key and NO policy dir,
+    # instead of the "no rewriter configured" error path. (lite tier keeps it fast and offline.)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("UNTELL_POLICY_DIR", raising=False)
+    rc = main(["--tier", "lite", "--rewriter", "surgical", "--json", AI])
+    assert rc == 0
+    parsed = json.loads(capsys.readouterr().out)
+    assert "error" not in parsed
+    assert "final" in parsed
+    # Locked facts still survive the surgical rewriter path.
+    assert "Smith (2020)" in parsed["final"] and "47%" in parsed["final"]
+
+
 def test_cli_empty_input_returns_2(capsys):
     rc = main(["--tier", "lite", "   "])
     assert rc == 2

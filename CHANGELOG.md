@@ -5,6 +5,31 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Measured the free inference-only evasion ceiling** — the data point the literature is missing.
+  With a working local `torch`/`transformers` stack the full open-detector ensemble runs on CPU, so
+  [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) reports the actual before→after
+  movement of a training-free, $0 rewrite: flagged 0.90 → 0.60, mean max P(AI) 0.87 → 0.68 (n=10),
+  with content-locked detectors immovable by any meaning-preserving rewrite — confirming the project's
+  honest stance rather than any "undetectable" claim.
+- **`SurgicalRewriter` (no-key, CPU) and `--rewriter surgical`** for `untell-loop` and `untell-ceiling`.
+  PWWS/TextFooler-style word-importance substitution wrapped as a `Rewriter`, so the closed loop runs
+  with no API key, no GPU, and no model download — which is what makes the free measurement possible.
+- **`untell-ceiling`** harness (measure the loop's evasion vs the local ensemble), the **LLM-as-judge**
+  detector (`commercial` tier), **best-of-N** rewriting, and the **local LoRA-policy** rewriter +
+  A/B eval (`untell-eval-policy`), consolidated onto one branch.
+
+### Fixed
+- **RL adapter-save guard was checking the wrong bytes.** `rl_humanizer` summed `rglob("*")` (which
+  includes `out/checkpoint-*/` dirs), so the "<1MB = save misfired" guard could pass even when the
+  final adapter never saved. It now verifies `adapter_model.safetensors`/`.bin` directly, and wraps
+  `train()`/`save_model()` in `try/finally` so an interrupted GPU session still flushes an adapter.
+- **`LocalPolicyRewriter`** no longer imports `peft` for the base-only eval path, raises a clear error
+  for `UNTELL_POLICY_4BIT` on a CPU box (instead of an opaque bitsandbytes failure), and reads the
+  generation device from a real parameter (multi-GPU/CPU-offload safe).
+- **`LLMJudgeDetector`** percentage disambiguation (`>=2.0`, so a stray "1.5" clamps to ~1.0 instead
+  of becoming 0.015); `Detector.score` protocol typed `float | None` to match the None-exclusion path.
+
 ### Fixed
 - **Dead detectors no longer pin the score at a fake `0.5`.** `mage`/`hc3_roberta` previously swallowed
   a load failure and returned a neutral `0.5`, which silently pinned the ensemble `max` and made the

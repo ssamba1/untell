@@ -96,11 +96,18 @@ class OpenAIRewriter:
 def get_rewriter(prefer: str | None = None) -> Rewriter | None:
     """Return the first available rewriter, or ``None`` if none are configured.
 
-    ``prefer`` (``"anthropic"`` | ``"openai"`` | ``"local"``) forces a provider order. A trained local
-    policy (``UNTELL_POLICY_DIR`` set + adapter present) is preferred by default — it's the moat:
-    local, no key, single forward pass.
+    ``prefer`` (``"anthropic"`` | ``"openai"`` | ``"local"`` | ``"surgical"``) forces a provider
+    order. A trained local policy (``UNTELL_POLICY_DIR`` set + adapter present) is preferred by
+    default — it's the moat: local, no key, single forward pass. ``prefer="surgical"`` returns the
+    deterministic no-key ``SurgicalRewriter`` (word-importance substitution) — the only rewriter that
+    is *always* available, so it makes the loop runnable at $0 (used by the ceiling harness).
     """
     from .local_policy import LocalPolicyRewriter
+
+    if prefer == "surgical":
+        from .surgical import SurgicalRewriter
+
+        return SurgicalRewriter()
 
     local = LocalPolicyRewriter()
     candidates = [AnthropicRewriter(), OpenAIRewriter()]

@@ -154,6 +154,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--max-iters", type=int, default=5)
     parser.add_argument("--best-of", type=int, default=1)
+    parser.add_argument(
+        "--rewriter",
+        choices=["auto", "surgical"],
+        default="auto",
+        help="'auto' uses a hosted-LLM rewriter if a key is set (else baseline only); 'surgical' uses "
+        "the deterministic no-key word-substitution rewriter so the loop runs at $0 (free measurement).",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -164,8 +171,18 @@ def main(argv: list[str] | None = None) -> int:
     if not texts:
         print(json.dumps({"error": "empty corpus"}))
         return 2
+    rewriter = None
+    if args.rewriter == "surgical":
+        from untell.rewriter import get_rewriter
+
+        rewriter = get_rewriter(prefer="surgical")
     result = measure_ceiling(
-        texts, tier=args.tier, threshold=args.threshold, max_iters=args.max_iters, best_of=args.best_of
+        texts,
+        tier=args.tier,
+        threshold=args.threshold,
+        max_iters=args.max_iters,
+        best_of=args.best_of,
+        rewriter=rewriter,
     )
     print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
     return 0

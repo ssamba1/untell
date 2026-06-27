@@ -89,6 +89,6 @@ class LLMJudgeDetector:
         if not m:
             return None
         val = float(m.group(0))
-        if val > 1.0:  # the model answered as a percentage (e.g. "73")
-            val /= 100.0
+        if val >= 2.0:  # answered as a percentage (e.g. "73"). Values in (1.0, 2.0) are just slightly
+            val /= 100.0  # out-of-range probabilities and should clamp to ~1.0, not become 0.01-0.02.
         return clamp01(val)

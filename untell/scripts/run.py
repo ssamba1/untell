@@ -65,7 +65,7 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
                 scores[f"{name}__error"] = str(exc)[:120]
         numeric = [v for v in scores.values() if isinstance(v, (int, float))]
         mx = max(numeric) if numeric else 0.5
-        return {
+        out = {
             "tier": label,
             "detectors": scores,
             "max": round(mx, 4),
@@ -73,6 +73,9 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
             "threshold": threshold,
             "flagged": mx >= threshold,
         }
+        if not numeric:  # every checker errored this round — 0.5 is a placeholder, not a real signal
+            out["all_checkers_failed"] = True
+        return out
 
     return _score
 
@@ -205,7 +208,10 @@ def untell_text(
         try:
             from untell.attacks import surgical_substitute
 
-            polished = surgical_substitute(best_masked, tier="lite", threshold=threshold)["text"]
+            # Optimize against the SAME signal the loop scored against (so the swaps target the real
+            # objective), except in browser mode whose composite tier isn't directly scoreable -> lite.
+            polish_tier = "lite" if browser_score is not None else tier
+            polished = surgical_substitute(best_masked, tier=polish_tier, threshold=threshold)["text"]
             polished_score = score(polished)
             # Polish must clear the same gates as a rewrite: sentinels intact, meaning preserved,
             # detector max not worse. (Reuse polished_score; don't re-score and risk detector noise.)
@@ -287,6 +293,14 @@ def main(argv: list[str] | None = None) -> int:
         help="after a pass, re-score the result N more times; keep 'passed' only if every re-scan "
         "still clears (guards against a noisy detector re-flagging). Default 0.",
     )
+    parser.add_argument(
+        "--rewriter",
+        choices=["auto", "surgical"],
+        default="auto",
+        help="'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR); "
+        "'surgical' = deterministic no-key word-substitution rewriter, so the loop runs at $0 "
+        "(weaker, CPU-only).",
+    )
     parser.add_argument("--no-scrub", action="store_true", help="skip stripping hidden watermark/unicode chars from input")
     parser.add_argument("--polish", action="store_true", help="add a cheap surgical word-substitution polish pass at the end")
     parser.add_argument(
@@ -316,11 +330,17 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty input"}))
         return 2
 
+    rewriter = None
+    if args.rewriter == "surgical":
+        from untell.rewriter import get_rewriter
+
+        rewriter = get_rewriter(prefer="surgical")
     result = untell_text(
         text,
         tier=args.tier,
         threshold=args.threshold,
         max_iters=args.max_iters,
+        rewriter=rewriter,
         browser=args.browser,
         margin=args.margin,
         confirm=args.confirm,

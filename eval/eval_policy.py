@@ -79,6 +79,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if a.vs_base:
         base = LocalPolicyRewriter(adapter_dir=a.policy, use_adapter=False)
+        if not base.available():  # same clean exit as the policy guard, instead of an ImportError in _load
+            print(
+                "base model unavailable for --vs-base: needs torch+transformers (`pip install -e .[train]`).",
+                file=sys.stderr,
+            )
+            return 2
         out["base"] = _eval(base, samples, a.tier)
         lines.append(_summary("base", out["base"], a.threshold))
 

@@ -23,9 +23,14 @@ import os
 from training.model_utils import load_model as _load_model
 from training.reward import humanness_reward
 
+# Single source of truth for the rewrite instruction: the LOCAL inference path (LocalPolicyRewriter)
+# must feed the trained model the EXACT prompt it was trained on, or every inference is
+# out-of-distribution. Import it here so the two can never silently diverge. (untell is always
+# installed when training runs — reward.py already imports it.)
+from untell.rewriter.local_policy import _TRAIN_PROMPT as _PROMPT
+
 DEFAULT_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 SMOKE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
-_PROMPT = "Rewrite the following text so it reads as natural human writing while preserving its exact meaning:\n\n{text}"
 
 
 def build_dataset(name: str = "builtin", n: int = 2000):
@@ -101,19 +106,37 @@ def train(
     )
     lora = LoraConfig(r=32, lora_alpha=64, target_modules="all-linear", task_type="CAUSAL_LM")
     trainer = GRPOTrainer(model=model, reward_funcs=reward_fn, args=cfg, train_dataset=dataset, peft_config=lora)
-    trainer.train()
-    trainer.save_model(out)
+    # Always attempt the final save, even if training dies mid-way (OOM, KeyboardInterrupt, or the
+    # GPU-host wall-clock cap) — a partially-trained adapter on disk beats nothing. The save is itself
+    # guarded so a save failure can't mask the original training error.
+    try:
+        trainer.train()
+    finally:
+        try:
+            trainer.save_model(out)
+        except Exception as exc:  # noqa: BLE001
+            print(f"WARNING: trainer.save_model failed: {type(exc).__name__}: {exc}")
 
-    # Report the ABSOLUTE path + on-disk size. A real 3B LoRA adapter is ~100MB+; a KiB-scale number
-    # here means the save misfired (the trap that produced a useless 76KiB tarball last run) — surface
-    # it loudly instead of printing a cheerful "saved" and moving on.
+    # Verify the FINAL adapter specifically. A real LoRA adapter is ~100MB+; a KiB-scale number means
+    # the save misfired (the trap that produced a useless 76KiB tarball last run). Measure only the
+    # adapter file in `out` — NOT a recursive sum, which would count the out/checkpoint-*/ dirs and let
+    # the guard pass even when the final save never ran.
     import pathlib
 
     abs_out = os.path.abspath(out)
-    size_mb = sum(f.stat().st_size for f in pathlib.Path(out).rglob("*") if f.is_file()) / 1e6
-    print(f"saved policy -> {abs_out}  ({size_mb:.1f} MB on disk)")
-    if size_mb < 1.0:
-        print("WARNING: saved adapter is <1MB — the LoRA weights likely did NOT save. Do not trust it.")
+    out_dir = pathlib.Path(out)
+    adapter = next(
+        (out_dir / n for n in ("adapter_model.safetensors", "adapter_model.bin") if (out_dir / n).exists()),
+        None,
+    )
+    size_mb = adapter.stat().st_size / 1e6 if adapter else 0.0
+    print(f"saved policy -> {abs_out}  (adapter {size_mb:.1f} MB on disk)")
+    if adapter is None or size_mb < 1.0:
+        print(
+            "WARNING: no final LoRA adapter (adapter_model.safetensors/.bin) >=1MB in the output dir — "
+            "the save likely misfired or training never reached it. Do not trust this run; use the "
+            "latest out/checkpoint-* instead if one exists."
+        )
 
     if hub_id:  # push off the ephemeral host so a dying session can't lose the weights
         from huggingface_hub import HfApi

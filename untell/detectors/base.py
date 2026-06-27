@@ -40,8 +40,10 @@ class Detector(Protocol):
         """True when this detector can actually score (deps importable, models loadable)."""
         ...
 
-    def score(self, text: str) -> float:
-        """Return P(AI-generated) in [0, 1]."""
+    def score(self, text: str) -> float | None:
+        """Return P(AI-generated) in [0, 1], or ``None`` to opt out of the ensemble for this text
+        (empty/too-short input, or this detector produced no usable signal). ``score_text`` excludes
+        a ``None`` from the max/mean rather than folding it in as a fake neutral 0.5."""
         ...
 
 

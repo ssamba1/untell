@@ -83,10 +83,17 @@ git clone https://github.com/ssamba1/untell && cd untell
 pip install -e ".[full]"                          # real detector ensemble on CPU
 untell-loop "Your AI-sounding paragraph here."    # rewrite until it passes
 untell-loop "text" --best-of 3                     # draw 3 rewrites/round, keep the best valid one
+untell-loop "text" --rewriter surgical             # NO key needed: deterministic CPU word-substitution
 untell-score "text" --tier full --threshold 0.3   # just score it
 untell-verify --file draft.txt                    # honest pass/fail per detector
-untell-ceiling                                     # measure the loop's evasion vs the local detectors
+untell-ceiling --rewriter surgical --tier full     # measure the loop's evasion vs the local detectors ($0)
 ```
+
+> **How far does free actually go?** We measured it. The training-free, no-key loop drops the local
+> open-detector ensemble from ~90% flagged to ~60% (mean max P(AI) 0.87 → 0.68) — and is
+> **powerless against content-locked detectors**, which no meaning-preserving rewrite can move. The
+> full numbers, method, and honest limits are in [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)
+> (the report: [`docs/free-ceiling-report.md`](docs/free-ceiling-report.md)).
 
 <details>
 <summary>Manual / MCP install</summary>
