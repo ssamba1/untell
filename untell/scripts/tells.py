@@ -3,8 +3,10 @@
 The detector ensemble answers "does a *classifier* think this is AI"; this answers a different,
 complementary question: **does it read like AI to a human** — how many of the catalogued AI tells
 (``untell/references/ai-tells.md``) actually appear in the text. It is a transparent, deterministic,
-stdlib-only count (em-dashes, the "delve" vocabulary cluster, formulaic transitions, negated contrast,
-vague attribution, clichés, sycophancy, chatbot artifacts) plus a burstiness read.
+stdlib-only count (em-dashes, the "delve" vocabulary cluster, formulaic transitions, reader-steering
+openers, negated contrast, participial trailers, vague attribution, clichés, sycophancy, chatbot
+artifacts, inflated copula, hedge-stacking, false-range breadth, rule-of-three staccato, markdown
+artifacts, semicolon crutch) plus a burstiness read.
 
 Why it matters: the local detectors *anti-correlate* with human-ness on some text (a plainer, more
 human rewrite can score *higher* on the proxy — measured, see ``docs/free-ceiling-measured.md``). A
@@ -53,6 +55,10 @@ _AI_VOCAB = [
     "illuminate", "cultivate", "catalyze", "galvanize", "augment", "elucidate", "interplay",
     "underpin", "compelling", "unprecedented", "exceptional", "remarkable", "sophisticated",
     "invaluable", "unwavering", "scalable", "bespoke",
+    # second cluster (ai-tells.md §1/§2 promo set)
+    "showcasing", "showcase", "reimagine", "reimagining", "world-class", "cutting-edge",
+    "state-of-the-art", "best-in-class", "top-tier", "next-level", "turnkey", "supercharge",
+    "unparalleled", "trailblazing",
 ]
 _AI_VOCAB_RE = re.compile(r"\b(" + "|".join(_AI_VOCAB) + r")\b", re.IGNORECASE)
 
@@ -135,6 +141,28 @@ _ARTIFACT_RE = re.compile(
 # Inflated copula (§15) — "serves as", "boasts" etc. used for plain is/has.
 _INFLATED_COPULA_RE = re.compile(r"\b(serves as|boasts|epitomizes|exemplifies)\b", re.IGNORECASE)
 
+# Hedge stacking (§4) — modal + vague adverb piled together ("could potentially", "may eventually").
+_HEDGE_STACK_RE = re.compile(
+    r"\b(?:could|can|may|might|would|will)\s+(?:potentially|eventually|ultimately|possibly|"
+    r"conceivably|arguably|likely|perhaps)\b",
+    re.IGNORECASE,
+)
+
+# False-range / unearned breadth (§17) — "whether you're a X or a Y", "from X to Y" sweeping scope.
+_FALSE_RANGE_RE = re.compile(
+    r"\bwhether you'?re\s+(?:an?\s+)?\w+[^.!?]{0,40}\bor\s+(?:an?\s+)?\w+"
+    r"|\bfrom\s+(?:ancient|the everyday|the mundane|individual|small|humble)\b[^.!?]{0,50}\bto\s+the\b",
+    re.IGNORECASE,
+)
+
+# Distinctly-AI markdown artifacts (§7/§12) — NOT plain headings/bullets (those have honest uses), only
+# the structure prose almost never adds itself: TL;DR / Key Takeaways blocks and emoji section headers.
+_MARKDOWN_ARTIFACT_RE = re.compile(
+    r"^\s*(?:#{1,6}\s*)?(?:key takeaways?|key points?|tl;?dr|in a nutshell)\b"
+    r"|^#{1,6}\s.*[\U0001F300-\U0001FAFF✅✨]",  # TL;DR/Key-Takeaways blocks, or emoji headers
+    re.MULTILINE | re.IGNORECASE,
+)
+
 
 _CATEGORIES: list[tuple[str, re.Pattern]] = [
     ("ai_vocab", _AI_VOCAB_RE),
@@ -148,7 +176,34 @@ _CATEGORIES: list[tuple[str, re.Pattern]] = [
     ("meta_closer", _META_CLOSER_RE),
     ("chatbot_artifact", _ARTIFACT_RE),
     ("inflated_copula", _INFLATED_COPULA_RE),
+    ("hedge_stacking", _HEDGE_STACK_RE),
+    ("false_range", _FALSE_RANGE_RE),
+    ("markdown_artifact", _MARKDOWN_ARTIFACT_RE),
 ]
+
+
+def _rule_of_three_runs(text: str) -> int:
+    """Count runs of 3+ consecutive very-short sentences — the staccato 'Fast. Simple. Effective.'
+    tricolon cadence that is a distinctive AI/marketing tell (and rare in ordinary prose). Each run of
+    >=3 short (<=3-word) sentences counts once. Conservative on purpose: the comma tricolon
+    ('fast, simple, and effective') is skipped because it collides with ordinary noun lists."""
+    sents = _sentences(text)
+    runs, streak = 0, 0
+    for s in sents:
+        if len(_WORD.findall(s)) <= 3:
+            streak += 1
+            if streak == 3:  # count the run once, when it first reaches three
+                runs += 1
+        else:
+            streak = 0
+    return runs
+
+
+def _semicolon_crutch(text: str) -> int:
+    """Semicolons used as a rhythm crutch (§6). One is ordinary; 2+ in a passage is the tell. Returns
+    the count only when it crosses that bar, else 0 (so a single legitimate semicolon never flags)."""
+    n = text.count(";")
+    return n if n >= 2 else 0
 
 
 def _sentences(text: str) -> list[str]:
@@ -189,6 +244,14 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
             by_category[name] = len(found)
             if include_matches:
                 matches[name] = [m if isinstance(m, str) else next((g for g in m if g), "") for m in found]
+
+    # Two tells that aren't a simple findall:
+    rot = _rule_of_three_runs(text)
+    if rot:
+        by_category["rule_of_three"] = rot
+    semi = _semicolon_crutch(text)
+    if semi:
+        by_category["semicolon_crutch"] = semi
 
     total = sum(by_category.values())
     cv = _burstiness_cv(text)

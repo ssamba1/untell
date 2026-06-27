@@ -99,6 +99,49 @@ def test_em_dash_spaced_hyphen_between_words_still_counts():
     assert r["by_category"].get("em_dash", 0) == 1
 
 
+def test_catches_hedge_stacking():
+    r = score_tells("This could potentially work and it might eventually help in many real cases.")
+    assert r["by_category"].get("hedge_stacking", 0) >= 2
+
+
+def test_catches_false_range():
+    r = score_tells("Whether you're a beginner or a seasoned pro, the tool fits your workflow nicely.")
+    assert r["by_category"].get("false_range", 0) >= 1
+
+
+def test_catches_rule_of_three_staccato():
+    r = score_tells("The launch went well. Fast. Simple. Effective. Everyone on the team was pleased.")
+    assert r["by_category"].get("rule_of_three", 0) == 1
+
+
+def test_rule_of_three_needs_three_in_a_row():
+    # Only two short sentences in a row must NOT trigger the tricolon tell.
+    r = score_tells("Fast. Simple. The rest of this sentence is comfortably long and ordinary prose.")
+    assert "rule_of_three" not in r["by_category"]
+
+
+def test_catches_markdown_artifact():
+    r = score_tells("## Key Takeaways\nThe project shipped on time and under budget this past quarter.")
+    assert r["by_category"].get("markdown_artifact", 0) >= 1
+
+
+def test_semicolon_crutch_needs_two():
+    one = score_tells("He ran fast; then he stopped to catch his breath near the old wooden bridge.")
+    two = score_tells("He ran fast; she ran faster; they both made it home before the rain came down.")
+    assert "semicolon_crutch" not in one["by_category"]  # a single semicolon is ordinary
+    assert two["by_category"].get("semicolon_crutch", 0) == 2
+
+
+def test_new_vocabulary_terms():
+    r = score_tells("Our world-class, cutting-edge, state-of-the-art platform showcasing next-level wins.")
+    assert r["by_category"].get("ai_vocab", 0) >= 5
+
+
+def test_no_new_category_double_counts_clean_text():
+    # A plain human sentence must still score zero across ALL categories (no new false positives).
+    assert score_tells("The cat knocked a mug off the table and then stared at me without any guilt.")["tells"] == 0
+
+
 def test_cli_json_ascii_safe(capsys):
     rc = main(["--json", "Furthermore, we leverage robust and seamless solutions here today now."])
     assert rc == 0

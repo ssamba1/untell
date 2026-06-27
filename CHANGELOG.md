@@ -13,9 +13,13 @@ All notable changes to this project are documented here. The format is based on
   mechanism that drives the AI-tells rate to **zero while preserving meaning**, and that the free tools'
   "99% bypass" claims don't survive independent testing (Originality flags the top "free" tool at 100% AI).
 - **`untell tells` / `tells.py`** — a mechanical, detector-*independent* AI-tells scorer (em-dashes, the
-  "delve" vocabulary, formulaic transitions, negated contrast, vague attribution, clichés, chatbot
-  artifacts, burstiness). Unlike the detectors (which anti-correlate with human-ness on some text), fewer
-  tells is unambiguously more human-reading — the right yardstick for "is this output more natural."
+  "delve" vocabulary, formulaic transitions, reader-steering openers, negated contrast, participial
+  trailers, vague attribution, clichés, sycophancy, chatbot artifacts, inflated copula, **hedge-stacking,
+  false-range breadth, rule-of-three staccato, markdown artifacts, semicolon crutch**, burstiness).
+  Unlike the detectors (which anti-correlate with human-ness on some text), fewer tells is unambiguously
+  more human-reading — the right yardstick for "is this output more natural." Honest scope: it mechanizes
+  the regex-able readable tells, not the semantic ones (no-concrete-particulars, false both-sides
+  balance, over-comprehensiveness) or the statistical ones only a trained detector sees.
 - **`untell compare` / `eval/compare_humanizers.py`** — runs a fixed corpus through the humanizer
   technique classes (synonym-swap, back-translation, our loop) and scores all three ways.
 - **Unified `untell <subcommand>` CLI** (`untell humanize|score|tells|verify|compare|ceiling|…`) — one
