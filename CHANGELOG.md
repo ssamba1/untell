@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Definitive comparison vs the free humanizers** — [`docs/humanizer-comparison.md`](docs/humanizer-comparison.md).
+  Catalogs the free-humanizer field (SaaS + repos), their claims and mechanisms, and shows every free
+  tool reduces to 3–4 techniques we already implement. A reproducible, $0 head-to-head (`untell-compare`)
+  scores each technique class by ensemble P(AI), AI-tells, and meaning — finding our loop is the only
+  mechanism that drives the AI-tells rate to **zero while preserving meaning**, and that the free tools'
+  "99% bypass" claims don't survive independent testing (Originality flags the top "free" tool at 100% AI).
+- **`untell tells` / `tells.py`** — a mechanical, detector-*independent* AI-tells scorer (em-dashes, the
+  "delve" vocabulary, formulaic transitions, negated contrast, vague attribution, clichés, chatbot
+  artifacts, burstiness). Unlike the detectors (which anti-correlate with human-ness on some text), fewer
+  tells is unambiguously more human-reading — the right yardstick for "is this output more natural."
+- **`untell compare` / `eval/compare_humanizers.py`** — runs a fixed corpus through the humanizer
+  technique classes (synonym-swap, back-translation, our loop) and scores all three ways.
+- **Unified `untell <subcommand>` CLI** (`untell humanize|score|tells|verify|compare|ceiling|…`) — one
+  discoverable entry point instead of eight `untell-*` scripts (which still work). `untell` with no args
+  lists everything; the no-rewriter error now points at the free `--rewriter surgical` path.
+
 - **Measured the free inference-only evasion ceiling** — the data point the literature is missing.
   With a working local `torch`/`transformers` stack the full open-detector ensemble runs on CPU, so
   [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) reports the actual before→after

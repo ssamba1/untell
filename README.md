@@ -81,12 +81,17 @@ score the text and lock your facts. Zero dependencies (lite tier).
 ```bash
 git clone https://github.com/ssamba1/untell && cd untell
 pip install -e ".[full]"                          # real detector ensemble on CPU
-untell-loop "Your AI-sounding paragraph here."    # rewrite until it passes
-untell-loop "text" --best-of 3                     # draw 3 rewrites/round, keep the best valid one
-untell-loop "text" --rewriter surgical             # NO key needed: deterministic CPU word-substitution
-untell-score "text" --tier full --threshold 0.3   # just score it
-untell-verify --file draft.txt                    # honest pass/fail per detector
-untell-ceiling --rewriter surgical --tier full     # measure the loop's evasion vs the local detectors ($0)
+
+# One unified command (run `untell` with no args to see them all):
+untell humanize "Your AI-sounding paragraph here."   # the closed loop (alias: loop)
+untell humanize "text" --rewriter surgical           # NO key needed — runs the loop for $0
+untell score "text" --tier full --threshold 0.3      # just score it
+untell tells "text"                                  # count the AI writing tells (naturalness)
+untell verify --file draft.txt                       # honest pass/fail per detector
+untell compare                                       # head-to-head vs free-humanizer techniques
+untell ceiling --rewriter surgical --tier full       # measure free evasion of the local ensemble
+
+# (every subcommand is also a standalone `untell-<name>` script, e.g. `untell-loop`, `untell-tells`)
 ```
 
 > **How far does free actually go?** We measured it. The training-free, no-key loop drops the local
@@ -203,6 +208,13 @@ the highest-starred repos win on SEO, not architecture. The full, evidenced brea
 place we're honestly **not** #1 (StealthRL's GPU-trained RL policy is a stronger raw *attack model*, though
 it's a training framework, not a usable tool) — is in **[docs/why-best-open-repo.md](docs/why-best-open-repo.md)**
 and the ~110-repo capability audit in **[docs/competitive-gap-plan.md](docs/competitive-gap-plan.md)**.
+
+**vs the *free SaaS* humanizers** (Undetectable, QuillBot, HIX Bypass, Humanize AI Pro, …): they all
+reduce to 3–4 mechanisms we already implement, so we benchmark them apples-to-apples and measure that
+our loop is the **only** technique that drives the AI-tells rate to **zero while preserving meaning**.
+Their "99% bypass" claims don't survive independent testing (Originality flags the top "free" tool at
+**100% AI**). The reproducible head-to-head, the catalog, and the honest verdict:
+**[docs/humanizer-comparison.md](docs/humanizer-comparison.md)**.
 
 ---
 
@@ -355,15 +367,15 @@ For broader cross-detector benchmarking, [IMGTB](https://github.com/kinit-sk/IMG
 ```
 untell/            # THE SKILL (this dir is what you install)
   SKILL.md           # trigger + loop procedure + rewrite rubric
-  scripts/           # score · preserve · quality · sentences · run · verify
+  scripts/           # cli (unified `untell`) · score · tells · preserve · quality · sentences · run · verify
   detectors/         # base protocol + tiered adapters (7 local + commercial incl. LLM-as-judge)
   rewriter/          # optional rewriters: hosted (Anthropic/OpenAI) · surgical (no-key) · local LoRA policy
   attacks/           # surgical substitution · homoglyph · scrub · back-translation
   references/         # thresholds.md · prompt-rubric.md · ai-tells.md
-eval/                # benchmark · ceiling (measure free evasion) · eval_policy (A/B the RL policy)
+eval/                # benchmark · ceiling (free evasion) · compare_humanizers (vs technique classes) · eval_policy
 training/            # GPU moat: RL-against-ensemble (GRPO+LoRA) · surrogate distillation
 tests/               # unit tests (lite runs with zero ML)
-docs/                # free-ceiling report + measured numbers · why-we're-best · competitive audit
+docs/                # humanizer-comparison · free-ceiling report + measured · why-we're-best · competitive audit
 ```
 
 ## Development

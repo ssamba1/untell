@@ -112,8 +112,9 @@ def untell_text(
     rw = rewriter if rewriter is not None else get_rewriter()
     if rw is None:
         return {
-            "error": "no rewriter configured — install .[api] and set ANTHROPIC_API_KEY or "
-            "OPENAI_API_KEY, or use the /untell Claude skill (Claude is the rewriter).",
+            "error": "no rewriter configured — pass --rewriter surgical for a no-key $0 run, or install "
+            ".[api] and set ANTHROPIC_API_KEY / OPENAI_API_KEY, or use the /untell Claude skill "
+            "(Claude is the rewriter).",
             "final": text,
         }
 
