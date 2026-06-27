@@ -63,6 +63,19 @@ Neither free rewriter is reliably better than the other on the proxies (both lan
 max, both clear 1 of 3). That is the honest inference-only picture: **a modest, unreliable drop —
 nowhere near the 88–98% ASR the *trained* literature reports, and against the wrong target anyway.**
 
+**Reproduced via the shipped CLI** (`untell-ceiling --rewriter surgical --tier full`, ~90 s on CPU),
+the per-detector mean P(AI) before → after pins down *which* signal moves and which doesn't:
+
+| detector | before → after | what it keys on |
+|---|---|---|
+| `perplexity_burstiness` | 0.319 → **0.197** | surface predictability — moves most |
+| `roberta_openai` | 0.523 → **0.361** | lexical/stylistic — moves |
+| `hc3_roberta` | 0.725 → **0.670** | content/genre — **barely budges** |
+| `fast_detectgpt` | 0.312 → 0.306 | curvature — flat on this corpus |
+
+The content/genre detector (`hc3_roberta`) is the one a meaning-preserving rewrite cannot move — the
+measured face of *"the content is the tell."*
+
 ## Result 2 — surgical floor on a larger sample (n=10, full tier)
 
 The deterministic, reproducible, no-key path (`untell-ceiling --rewriter surgical --tier full`) on 10
