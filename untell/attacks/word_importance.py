@@ -109,11 +109,11 @@ def surgical_substitute(
     pre = _max(cur, tier)
     subs = 0
     for word, drop in importance(text, tier=tier):
-        if subs >= max_subs or _max(cur, tier) < threshold:
+        cur_score = _max(cur, tier)  # score once per word; reused for the break-guard and the swap test
+        if subs >= max_subs or cur_score < threshold:
             break
         if drop <= 0:
             continue
-        cur_score = _max(cur, tier)
         for syn in synonyms(word):
             cand = re.sub(rf"\b{re.escape(word)}\b", syn, cur, count=1)
             if _max(cand, tier) < cur_score:

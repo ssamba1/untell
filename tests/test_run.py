@@ -92,6 +92,52 @@ def test_cli_no_rewriter_exits_nonzero(monkeypatch, capsys):
     assert "ERROR" in capsys.readouterr().out
 
 
+def test_deterministic_rewriter_stops_early_on_stall(monkeypatch):
+    import untell.scripts.run as run_mod
+
+    class _Det:
+        name = "det"
+        deterministic = True  # identical input -> identical output
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score_result, threshold=0.30):
+            return text  # identity: keeps sentinels, sim 1.0, never improves -> must stall iter 1
+
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _Det())
+    # threshold=0.0 => never "passes" (max >= 0 always), so only the stall guard can stop the loop.
+    res = untell_text(AI, tier="lite", threshold=0.0, max_iters=5)
+    assert res["stopped"] == "stalled"
+    assert res["iterations"] == 1  # a deterministic no-op rewrite is caught on the first pass
+
+
+def test_stochastic_rewriter_does_not_stall(monkeypatch):
+    import untell.scripts.run as run_mod
+
+    # _GoodRW has no `deterministic` flag, so the stall guard must never fire for it: it runs the
+    # full budget (or passes), never stopping with "stalled".
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _GoodRW())
+    res = untell_text(AI, tier="lite", threshold=0.0, max_iters=3)
+    assert res["stopped"] != "stalled"
+    assert res["iterations"] == 3
+
+
+def test_cli_rewriter_surgical_runs_with_no_key(monkeypatch, capsys):
+    # The whole point of --rewriter surgical: the loop runs at $0 with NO API key and NO policy dir,
+    # instead of the "no rewriter configured" error path. (lite tier keeps it fast and offline.)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("UNTELL_POLICY_DIR", raising=False)
+    rc = main(["--tier", "lite", "--rewriter", "surgical", "--json", AI])
+    assert rc == 0
+    parsed = json.loads(capsys.readouterr().out)
+    assert "error" not in parsed
+    assert "final" in parsed
+    # Locked facts still survive the surgical rewriter path.
+    assert "Smith (2020)" in parsed["final"] and "47%" in parsed["final"]
+
+
 def test_cli_empty_input_returns_2(capsys):
     rc = main(["--tier", "lite", "   "])
     assert rc == 2
@@ -232,3 +278,30 @@ def test_loop_rejects_sentinel_dropping_rewrite(monkeypatch):
     # ...and rejected every time, so the locked facts survive into the final output.
     assert "Smith (2020)" in res["final"]
     assert "47%" in res["final"]
+
+
+def test_best_of_n_draws_multiple_candidates_and_keeps_facts(monkeypatch):
+    import untell.scripts.run as run_mod
+
+    calls = {"n": 0}
+
+    class _MultiRW:
+        name = "multi"
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score_result, threshold=0.30):
+            import re
+
+            calls["n"] += 1
+            sentinels = re.findall(r"⟦HZ\d{4}⟧", text)
+            tail = (" " + " ".join(sentinels)) if sentinels else ""
+            return f"It shifted, and people noticed. Variant {calls['n']}.{tail}"
+
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _MultiRW())
+    # threshold=0.0 forces a rewrite; best_of=3 => exactly three candidates drawn in the one iteration.
+    res = untell_text(AI, tier="lite", threshold=0.0, max_iters=1, best_of=3)
+    assert "error" not in res
+    assert calls["n"] == 3
+    assert "Smith (2020)" in res["final"] and "47%" in res["final"]  # facts survive best-of selection

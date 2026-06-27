@@ -18,13 +18,19 @@ style — costs credits) for the strongest, transfer-robust policy.
 from __future__ import annotations
 
 import argparse
+import os
 
 from training.model_utils import load_model as _load_model
 from training.reward import humanness_reward
 
+# Single source of truth for the rewrite instruction: the LOCAL inference path (LocalPolicyRewriter)
+# must feed the trained model the EXACT prompt it was trained on, or every inference is
+# out-of-distribution. Import it here so the two can never silently diverge. (untell is always
+# installed when training runs — reward.py already imports it.)
+from untell.rewriter.local_policy import _TRAIN_PROMPT as _PROMPT
+
 DEFAULT_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 SMOKE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
-_PROMPT = "Rewrite the following text so it reads as natural human writing while preserving its exact meaning:\n\n{text}"
 
 
 def build_dataset(name: str = "builtin", n: int = 2000):
@@ -43,10 +49,13 @@ def train(
     out: str = "out/rl-humanizer",
     smoke: bool = False,
     load_4bit: bool = False,
+    hub_id: str | None = None,
 ):
     """GRPO-train the policy. Heavy deps imported here so this module stays importable without a GPU.
 
     ``load_4bit`` = QLoRA: load the base model in 4-bit so a 3B model fits a free 16GB T4 (Colab/Kaggle).
+    ``hub_id`` = push the adapter to this HF Hub repo right after saving (needs ``HF_TOKEN`` /
+    ``huggingface-cli login``). Use it so an ephemeral GPU host can die without losing the weights.
     """
     import torch  # noqa: F401  (fail loudly here if the env can't do training)
     from datasets import Dataset
@@ -55,6 +64,16 @@ def train(
 
     if smoke:  # prove the pipeline runs: tiny model, 2 steps, cheap lite reward, few samples
         model_id, tier, steps, k, out = SMOKE_MODEL, "lite", 2, 4, "out/rl-smoke"
+
+    # Loud guard: without a surrogate the reward is the LOCAL ensemble, which does NOT transfer to
+    # GPTZero/Originality (measured: RADAR 0.008 vs GPTZero 100% same text). Catching this here saves a
+    # multi-hour run aimed at the wrong target — exactly the failure that wastes a free-GPU session.
+    if not smoke and not os.environ.get("UNTELL_SURROGATE_DIR"):
+        print(
+            f"WARNING: UNTELL_SURROGATE_DIR is not set -> reward = LOCAL ensemble (tier={tier}). This "
+            "does NOT transfer to commercial detectors. Train a surrogate (training.surrogate) and set "
+            "UNTELL_SURROGATE_DIR first, or this run optimizes the wrong target."
+        )
 
     model = _load_model(model_id, load_4bit)
     rows = build_dataset(n=16 if smoke else 2000)
@@ -87,8 +106,44 @@ def train(
     )
     lora = LoraConfig(r=32, lora_alpha=64, target_modules="all-linear", task_type="CAUSAL_LM")
     trainer = GRPOTrainer(model=model, reward_funcs=reward_fn, args=cfg, train_dataset=dataset, peft_config=lora)
-    trainer.train()
-    trainer.save_model(out)
+    # Always attempt the final save, even if training dies mid-way (OOM, KeyboardInterrupt, or the
+    # GPU-host wall-clock cap) — a partially-trained adapter on disk beats nothing. The save is itself
+    # guarded so a save failure can't mask the original training error.
+    try:
+        trainer.train()
+    finally:
+        try:
+            trainer.save_model(out)
+        except Exception as exc:  # noqa: BLE001
+            print(f"WARNING: trainer.save_model failed: {type(exc).__name__}: {exc}")
+
+    # Verify the FINAL adapter specifically. A real LoRA adapter is ~100MB+; a KiB-scale number means
+    # the save misfired (the trap that produced a useless 76KiB tarball last run). Measure only the
+    # adapter file in `out` — NOT a recursive sum, which would count the out/checkpoint-*/ dirs and let
+    # the guard pass even when the final save never ran.
+    import pathlib
+
+    abs_out = os.path.abspath(out)
+    out_dir = pathlib.Path(out)
+    adapter = next(
+        (out_dir / n for n in ("adapter_model.safetensors", "adapter_model.bin") if (out_dir / n).exists()),
+        None,
+    )
+    size_mb = adapter.stat().st_size / 1e6 if adapter else 0.0
+    print(f"saved policy -> {abs_out}  (adapter {size_mb:.1f} MB on disk)")
+    if adapter is None or size_mb < 1.0:
+        print(
+            "WARNING: no final LoRA adapter (adapter_model.safetensors/.bin) >=1MB in the output dir — "
+            "the save likely misfired or training never reached it. Do not trust this run; use the "
+            "latest out/checkpoint-* instead if one exists."
+        )
+
+    if hub_id:  # push off the ephemeral host so a dying session can't lose the weights
+        from huggingface_hub import HfApi
+
+        HfApi().create_repo(hub_id, repo_type="model", exist_ok=True, private=True)
+        HfApi().upload_folder(folder_path=out, repo_id=hub_id, repo_type="model")
+        print(f"pushed adapter -> https://huggingface.co/{hub_id}")
     return out
 
 
@@ -101,9 +156,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", default="out/rl-humanizer")
     parser.add_argument("--smoke", action="store_true", help="tiny model + 2 steps + lite reward (proves it runs)")
     parser.add_argument("--load-4bit", action="store_true", help="QLoRA 4-bit load so 3B fits a free 16GB T4")
+    parser.add_argument("--hub-id", help="push the adapter to this HF Hub repo after save (needs HF_TOKEN) so an ephemeral host can't lose it")
     args = parser.parse_args(argv)
     path = train(
-        model_id=args.model, tier=args.tier, steps=args.steps, k=args.k, out=args.out, smoke=args.smoke, load_4bit=args.load_4bit
+        model_id=args.model, tier=args.tier, steps=args.steps, k=args.k, out=args.out, smoke=args.smoke, load_4bit=args.load_4bit, hub_id=args.hub_id
     )
     print(f"saved policy -> {path}")
     return 0

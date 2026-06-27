@@ -11,5 +11,6 @@ from __future__ import annotations
 
 from .base import Rewriter, get_rewriter
 from .prompts import build_rewrite_prompt
+from .surgical import SurgicalRewriter
 
-__all__ = ["Rewriter", "get_rewriter", "build_rewrite_prompt"]
+__all__ = ["Rewriter", "get_rewriter", "build_rewrite_prompt", "SurgicalRewriter"]

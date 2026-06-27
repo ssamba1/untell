@@ -22,7 +22,10 @@ from __future__ import annotations
 
 import re
 
-_SENTINEL_RE = re.compile(r"⟦HZ\d{4}⟧")
+# 4-OR-MORE digits: lock() numbers sentinels with f"⟦HZ{i:04d}⟧" (minimum width 4), which overflows
+# to 5 digits past 9999 locked spans. Matching exactly \d{4} would make restore()/find_sentinels miss
+# those, silently dropping the locked citation/fact on restore — so the round-trip must accept \d{4,}.
+_SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
 
 # Ordered, non-overlapping patterns. Earlier patterns win on overlap (handled by interval merge).
 _PATTERNS: list[tuple[str, re.Pattern]] = [

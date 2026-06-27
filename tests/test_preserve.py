@@ -67,3 +67,20 @@ def test_empty_text():
     assert masked == ""
     assert mapping == {}
     assert restore(masked, mapping) == ""
+
+
+def test_sentinel_regex_handles_5plus_digit_overflow():
+    # lock() numbers sentinels f"⟦HZ{i:04d}⟧" (min width 4) -> 5 digits once a doc has >9999 locked
+    # spans. restore()/find_sentinels MUST still match those, or the locked span is silently dropped.
+    from untell.scripts.preserve import _SENTINEL_RE, find_sentinels
+
+    assert _SENTINEL_RE.fullmatch("⟦HZ10000⟧")  # 5 digits
+    assert _SENTINEL_RE.fullmatch("⟦HZ0007⟧")  # 4 digits still ok
+    masked = "alpha ⟦HZ10000⟧ omega ⟦HZ12345⟧ end"
+    assert find_sentinels(masked) == {"⟦HZ10000⟧", "⟦HZ12345⟧"}
+    assert restore(masked, {"⟦HZ10000⟧": "A", "⟦HZ12345⟧": "B"}) == "alpha A omega B end"
+
+
+def test_roundtrip_input_containing_literal_5digit_sentinel():
+    # A literal 5-digit sentinel already in the INPUT must be locked and survive verbatim.
+    _roundtrip("Keep this exact token ⟦HZ10000⟧ intact through the rewrite.")

@@ -65,7 +65,7 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
                 scores[f"{name}__error"] = str(exc)[:120]
         numeric = [v for v in scores.values() if isinstance(v, (int, float))]
         mx = max(numeric) if numeric else 0.5
-        return {
+        out = {
             "tier": label,
             "detectors": scores,
             "max": round(mx, 4),
@@ -73,6 +73,9 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
             "threshold": threshold,
             "flagged": mx >= threshold,
         }
+        if not numeric:  # every checker errored this round — 0.5 is a placeholder, not a real signal
+            out["all_checkers_failed"] = True
+        return out
 
     return _score
 
@@ -90,6 +93,7 @@ def untell_text(
     scrub: bool = True,
     polish: bool = False,
     style: str | None = None,
+    best_of: int = 1,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -160,23 +164,41 @@ def untell_text(
             }
         except Exception:
             pass
-        try:
-            candidate = rw.rewrite(best_masked, best_score, threshold)
-        except Exception as exc:  # surface the failure rather than silently looping
-            return {"error": f"rewriter failed: {type(exc).__name__}: {str(exc)[:160]}", "final": restore(best_masked, mapping)}
-        rewrites += 1
-        cand_score = score(candidate)
-        # Accept only if the rewrite (a) keeps EVERY sentinel intact — a dropped or altered sentinel
-        # would silently lose a locked citation/number/fact on restore, defeating the whole lock —
-        # (b) holds the meaning-similarity gate, and (c) does not worsen the detector max.
-        if (
-            find_sentinels(candidate) == set(mapping)
-            and similarity(masked, candidate) >= sim_bar
-            and cand_score["max"] <= best_score["max"]
-        ):
-            best_masked, best_score = candidate, cand_score
+        # Best-of-N: draw `best_of` candidates this round and keep the strongest VALID one. A
+        # candidate is valid only if it (a) keeps EVERY sentinel intact — a dropped/altered sentinel
+        # would silently lose a locked citation/number on restore, defeating the whole lock — and
+        # (b) holds the meaning-similarity gate. Among the valid ones, pick the lowest detector max,
+        # and only adopt it if it does not worsen the running best.
+        prev_masked = best_masked  # to detect a stalled (no-op) iteration below
+        cand_best, cand_best_score = None, None
+        drew = 0
+        for _ in range(max(1, best_of)):
+            try:
+                candidate = rw.rewrite(best_masked, best_score, threshold)
+            except Exception as exc:  # surface the failure rather than silently looping
+                if drew == 0:
+                    return {"error": f"rewriter failed: {type(exc).__name__}: {str(exc)[:160]}", "final": restore(best_masked, mapping)}
+                break  # a later draw failed; use the candidates we already have
+            drew += 1
+            rewrites += 1
+            if find_sentinels(candidate) != set(mapping):
+                continue  # dropped/altered a locked span — reject outright
+            cscore = score(candidate)
+            if similarity(masked, candidate) >= sim_bar and (
+                cand_best_score is None or cscore["max"] < cand_best_score["max"]
+            ):
+                cand_best, cand_best_score = candidate, cscore
+        if cand_best is not None and cand_best_score["max"] <= best_score["max"]:
+            best_masked, best_score = cand_best, cand_best_score
         if _passed(best_score):
             stopped = "passed"
+            break
+        # A deterministic rewriter (e.g. surgical word-substitution) fed identical input produces
+        # identical output, so once an iteration leaves the working text unchanged, every remaining
+        # iteration is a guaranteed no-op. Stop instead of re-running the (often expensive) rewrite
+        # for the rest of max_iters. Stochastic rewriters (LLM/policy) have no such flag and keep going.
+        if getattr(rw, "deterministic", False) and best_masked == prev_masked:
+            stopped = "stalled"
             break
 
     # Reproducibility guard: re-score the winner a few times; detectors are noisy and a one-off pass
@@ -194,7 +216,10 @@ def untell_text(
         try:
             from untell.attacks import surgical_substitute
 
-            polished = surgical_substitute(best_masked, tier="lite", threshold=threshold)["text"]
+            # Optimize against the SAME signal the loop scored against (so the swaps target the real
+            # objective), except in browser mode whose composite tier isn't directly scoreable -> lite.
+            polish_tier = "lite" if browser_score is not None else tier
+            polished = surgical_substitute(best_masked, tier=polish_tier, threshold=threshold)["text"]
             polished_score = score(polished)
             # Polish must clear the same gates as a rewrite: sentinels intact, meaning preserved,
             # detector max not worse. (Reuse polished_score; don't re-score and risk detector noise.)
@@ -276,12 +301,27 @@ def main(argv: list[str] | None = None) -> int:
         help="after a pass, re-score the result N more times; keep 'passed' only if every re-scan "
         "still clears (guards against a noisy detector re-flagging). Default 0.",
     )
+    parser.add_argument(
+        "--rewriter",
+        choices=["auto", "surgical"],
+        default="auto",
+        help="'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR); "
+        "'surgical' = deterministic no-key word-substitution rewriter, so the loop runs at $0 "
+        "(weaker, CPU-only).",
+    )
     parser.add_argument("--no-scrub", action="store_true", help="skip stripping hidden watermark/unicode chars from input")
     parser.add_argument("--polish", action="store_true", help="add a cheap surgical word-substitution polish pass at the end")
     parser.add_argument(
         "--style",
         choices=["casual", "professional", "academic", "blunt", "storytelling", "journalistic"],
         help="bias the rewrite toward a writing style/voice",
+    )
+    parser.add_argument(
+        "--best-of",
+        type=int,
+        default=1,
+        help="draw N candidate rewrites per iteration and keep the best valid one (sentinels intact + "
+        "meaning gate, lowest detector max). Default 1.",
     )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     args = parser.parse_args(argv)
@@ -298,17 +338,24 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty input"}))
         return 2
 
+    rewriter = None
+    if args.rewriter == "surgical":
+        from untell.rewriter import get_rewriter
+
+        rewriter = get_rewriter(prefer="surgical")
     result = untell_text(
         text,
         tier=args.tier,
         threshold=args.threshold,
         max_iters=args.max_iters,
+        rewriter=rewriter,
         browser=args.browser,
         margin=args.margin,
         confirm=args.confirm,
         scrub=not args.no_scrub,
         polish=args.polish,
         style=args.style,
+        best_of=args.best_of,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))

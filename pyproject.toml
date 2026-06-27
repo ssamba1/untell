@@ -92,8 +92,10 @@ untell-verify = "untell.scripts.verify:main"
 untell-prove = "eval.prove:main"
 untell-sentences = "untell.scripts.sentences:main"
 untell-mcp = "untell.mcp_server:main"
+untell-ceiling = "eval.ceiling:main"
 untell-distill = "training.distill:main"
 untell-surrogate = "training.surrogate:main"
+untell-eval-policy = "eval.eval_policy:main"
 
 [tool.setuptools]
 packages = [
