@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 
-# Run-as-file support (zero-dep lite tier): when this file is executed directly
+from untell._env import load_env
+
+# Run-as-file support
 # rather than imported as part of the `untell` package, put the directory that
 # *contains* the package on sys.path so `import untell` resolves from any cwd.
 if __package__ in (None, ""):
@@ -30,8 +33,7 @@ if __package__ in (None, ""):
             break
 
 from untell.detectors.base import clamp01
-from untell.detectors.commercial import CopyleaksDetector, commercial_detectors
-from untell.scripts.score import DEFAULT_THRESHOLD
+from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 
 
 def verify(
@@ -39,6 +41,7 @@ def verify(
     threshold: float = DEFAULT_THRESHOLD,
     sandbox: bool = False,
     browser: list[str] | None = None,
+    tier: str | None = None,
 ) -> dict:
     """Score ``text`` against every configured commercial checker; return a verdict dict.
 
@@ -46,6 +49,9 @@ def verify(
     ``browser`` is a list of free-web-UI checker names (e.g. ``["zerogpt"]``) to drive via Playwright
     (no API key, but slow/fragile — see untell.browser_check).
     """
+    # Lazy import: commercial adapters pull in requests (and may fail on broken installs).
+    from untell.detectors.commercial import CopyleaksDetector, commercial_detectors
+
     detectors = commercial_detectors()
     if sandbox:
         for d in detectors:
@@ -54,10 +60,26 @@ def verify(
     results: dict[str, dict] = {}
     names: list[str] = []
 
+    # Local ensemble scores first (when a tier is requested — default is full unless commercial-only).
+    if tier is not None:
+        local = score_text(text, tier=tier, threshold=threshold)
+        for det_name, val in (local.get("detectors") or {}).items():
+            if isinstance(val, (int, float)):
+                key = f"local:{det_name}"
+                names.append(key)
+                results[key] = {"ai": round(val, 4), "passes": val < threshold}
+        key = f"local:max ({local['tier']})"
+        names.append(key)
+        results[key] = {"ai": round(local["max"], 4), "passes": local["max"] < threshold, "tier": local["tier"]}
+
     for d in (d for d in detectors if d.available()):
         names.append(d.name)
         try:
-            ai = clamp01(float(d.score(text)))
+            raw = d.score(text)
+            if raw is None:
+                results[d.name] = {"ai": None, "passes": False, "error": "no signal (empty/unavailable for this text)"}
+                continue
+            ai = clamp01(float(raw))
             results[d.name] = {"ai": round(ai, 4), "passes": ai < threshold}
         except Exception as exc:  # surface per-checker failure rather than crashing the verdict
             results[d.name] = {"ai": None, "passes": False, "error": str(exc)[:160]}
@@ -93,19 +115,20 @@ def verify(
 
 
 def _render(v: dict) -> str:
-    if not v["configured"]:
+    if not v["results"]:
         return (
-            "No commercial checkers configured. Set API keys (ORIGINALITY_API_KEY, GPTZERO_API_KEY, "
+            "No checkers ran. Use --tier to select a local detector tier (lite/full/heavy) "
+            "or set commercial API keys (ORIGINALITY_API_KEY, GPTZERO_API_KEY, "
             "WINSTON_API_KEY, SAPLING_API_KEY, ZEROGPT_API_KEY, COPYLEAKS_EMAIL+COPYLEAKS_API_KEY) "
-            "and install .[commercial]. Cannot verify 'passes all checkers' without them."
+            "and install .[commercial]."
         )
     lines = [f"AI-checker verification (threshold {v['threshold']}: AI prob must be below it)", ""]
     for name, r in v["results"].items():
         if r.get("error"):
-            lines.append(f"  {name:12} ERROR: {r['error']}")
+            lines.append(f"  {name:24} ERROR: {r['error']}")
         else:
             mark = "PASS" if r["passes"] else "FAIL"
-            lines.append(f"  {name:12} AI={r['ai']:.3f}  [{mark}]")
+            lines.append(f"  {name:24} AI={r['ai']:.3f}  [{mark}]")
     lines.append("")
     lines.append(
         f"PASSES ALL {v['n_configured']} CHECKERS"
@@ -116,17 +139,22 @@ def _render(v: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
-    from untell._env import load_env
-
-    load_env()  # pick up keys from a .env file if present
-    parser = argparse.ArgumentParser(prog="untell-verify", description="Verify text against commercial AI checkers.")
+    load_env()  # pick up ANTHROPIC_API_KEY / commercial keys from a .env file if present
+    parser = argparse.ArgumentParser(prog="untell-verify", description="Verify text against AI detectors (local ensemble + commercial checkers).")
     parser.add_argument("text", nargs="?", help="text to verify (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--tier",
+        default="full",
+        choices=["lite", "full", "heavy", "commercial"],
+        help="Local detector tier (default: full). Pass 'commercial' or set --tier '' for commercial-only.",
+    )
     parser.add_argument(
         "--sandbox",
         action="store_true",
@@ -141,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
     browser = [s.strip() for s in args.browser.split(",")] if args.browser else None
 
     if args.file:
-        with open(args.file, encoding="utf-8") as fh:
+        with open(args.file, encoding="utf-8", errors="replace") as fh:
             text = fh.read()
     elif args.text:
         text = args.text
@@ -151,9 +179,15 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty input"}))
         return 2
 
-    v = verify(text, threshold=args.threshold, sandbox=args.sandbox, browser=browser)
+    # Map --tier: 'commercial' or empty string means local-skip (commercial-only).
+    tier_arg: str | None = None if (args.tier or "").lower() in ("commercial", "") else args.tier
+    v = verify(text, threshold=args.threshold, sandbox=args.sandbox, browser=browser, tier=tier_arg)
     print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))
-    # exit 0 only when there is at least one checker AND all pass
+    # exit  0 if all configured checkers pass
+    #       1 if any checker fails (reported)
+    #       0 if nothing ran (the user just got the empty report)
+    if not v["results"]:
+        return 0
     return 0 if v["passes_all"] else 1
 
 

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 
 if __package__ in (None, ""):
     import sys as _sys
@@ -145,12 +146,13 @@ def _render(r: dict) -> str:
 
 
 def _read_corpus(path: str) -> list[str]:
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8", errors="replace") as fh:
         blocks = [b.strip() for b in fh.read().split("\n\n")]
     return [b for b in blocks if b]
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()

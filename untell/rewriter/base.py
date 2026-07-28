@@ -11,6 +11,8 @@ from __future__ import annotations
 import os
 from typing import Protocol, runtime_checkable
 
+from untell._retry import retry
+
 from .prompts import build_rewrite_prompt
 
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
@@ -54,10 +56,10 @@ class AnthropicRewriter:
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         prompt = build_rewrite_prompt(text, score_result, threshold)
-        resp = self._client().messages.create(
-            model=self.model,
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
+        resp = retry(
+            self._client().messages.create,
+            kw={"model": self.model, "max_tokens": 2048, "messages": [{"role": "user", "content": prompt}]},
+            max_attempts=3,
         )
         # content is a list of blocks; concatenate the text blocks.
         parts = [getattr(b, "text", "") for b in resp.content]
@@ -86,9 +88,10 @@ class OpenAIRewriter:
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         prompt = build_rewrite_prompt(text, score_result, threshold)
-        resp = self._client().chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+        resp = retry(
+            self._client().chat.completions.create,
+            kw={"model": self.model, "messages": [{"role": "user", "content": prompt}]},
+            max_attempts=3,
         )
         return (resp.choices[0].message.content or "").strip()
 
@@ -96,24 +99,45 @@ class OpenAIRewriter:
 def get_rewriter(prefer: str | None = None) -> Rewriter | None:
     """Return the first available rewriter, or ``None`` if none are configured.
 
-    ``prefer`` (``"anthropic"`` | ``"openai"`` | ``"local"`` | ``"surgical"``) forces a provider
-    order. A trained local policy (``UNTELL_POLICY_DIR`` set + adapter present) is preferred by
+    ``prefer`` (``"anthropic"`` | ``"openai"`` | ``"local"`` | ``"surgical"`` |
+    ``"structural"`` | ``"composite"``) forces a provider order.
+
+    * ``"surgical"`` — deterministic word-substitution rewriter (always available, $0).
+    * ``"structural"`` — sentence-level structural rewriter (always available, $0).
+    * ``"composite"`` — structural + surgical chained (always available, $0).
+    * ``"local"`` — trained LoRA policy if available.
+    * ``"anthropic"`` or ``"openai"`` — hosted LLM (needs API key).
+
+    A trained local policy (``UNTELL_POLICY_DIR`` set + adapter present) is preferred by
     default — it's the moat: local, no key, single forward pass. ``prefer="surgical"`` returns the
-    deterministic no-key ``SurgicalRewriter`` (word-importance substitution) — the only rewriter that
-    is *always* available, so it makes the loop runnable at $0 (used by the ceiling harness).
+    deterministic no-key word-substitution rewriter, making the loop runnable at $0.
     """
+    from .composite import CompositeRewriter
     from .local_policy import LocalPolicyRewriter
+    from .structural import StructuralRewriter
+    from .surgical import SurgicalRewriter
 
+    # Always-available free rewriters.
     if prefer == "surgical":
-        from .surgical import SurgicalRewriter
-
         return SurgicalRewriter()
+    if prefer == "structural":
+        return StructuralRewriter()
+    if prefer == "composite":
+        return CompositeRewriter()
+    if prefer == "mt_pivot":
+        from .mt_pivot import MTPivotRewriter
 
+        rw = MTPivotRewriter()
+        return rw if rw.available() else None
+
+    # Hosted / local-policy rewriters.
     local = LocalPolicyRewriter()
     candidates = [AnthropicRewriter(), OpenAIRewriter()]
     if prefer == "openai":
         candidates = [OpenAIRewriter(), AnthropicRewriter()]
-    if prefer == "local" or local.available():
+    if prefer == "local":
+        candidates = [local, *candidates]
+    elif local.available() and prefer is None:
         candidates = [local, *candidates]
     for rw in candidates:
         if rw.available():

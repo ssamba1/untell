@@ -1,5 +1,5 @@
 {
-  "_comment": "Copy to browser_sites.json (cwd) or point $HUMANIZE_BROWSER_SITES at this file, then: untell-verify --browser <name>. Selectors captured live 2026-06-25 (see docs/free-detector-probes.md). zerogpt is already built-in; the others are templates with known caveats.",
+  "_comment": "Copy to browser_sites.json (cwd) or point $UNTELL_BROWSER_SITES at this file, then: untell-verify --browser <name>. Selectors captured live 2026-06-25 (see docs/free-detector-probes.md). zerogpt is already built-in; the others are templates with known caveats.",
 
   "decopy": {
     "url": "https://decopy.ai/ai-detector/",

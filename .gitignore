@@ -5,9 +5,11 @@ __pycache__/
 .eggs/
 build/
 dist/
-.venv/
-venv/
+.venv*/
+venv*/
 .env
+.pytest_cache/
+*.pytest_cache
 
 # Data & model caches (gitignored — pulled at runtime)
 data/
@@ -15,7 +17,9 @@ data/
 .cache/
 models/
 
-# Eval outputs
+# Training/output
+out/
+training/out/
 eval/outputs/
 *.report.json
 
@@ -27,3 +31,7 @@ eval/outputs/
 # Playwright MCP probe artifacts
 .playwright-mcp/
 _private/
+
+# Audit artifacts
+audit_report*.md
+delegation-*

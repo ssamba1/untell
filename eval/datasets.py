@@ -13,6 +13,10 @@ Supported names:
 
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 # A few machine-flavored paragraphs (formulaic transitions, uniform cadence) for zero-download
 # runs. Intentionally "AI-sounding" so the lite detector flags them.
 _BUILTIN: list[str] = [
@@ -74,6 +78,7 @@ def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
     try:
         from datasets import load_dataset
     except Exception:
+        logger.warning("could not import `datasets` package")
         return _builtin(n)
 
     try:
@@ -112,10 +117,9 @@ def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
                 if len(texts) >= n:
                     break
             return texts[:n] or _builtin(n)
-    except Exception:
+    except Exception as exc:
+        logger.warning("failed to load dataset '%s': %s", name, exc)
         return _builtin(n)
 
-    import sys
-
-    print(f"[untell-eval] unknown dataset '{dataset}'; using builtin samples.", file=sys.stderr)
+    logger.warning("unknown dataset '%s'; using builtin samples.", dataset)
     return _builtin(n)

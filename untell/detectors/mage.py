@@ -7,7 +7,11 @@ across many generators/domains. Guarded: unavailable unless ``transformers``+``t
 
 from __future__ import annotations
 
+import logging
+
 from .base import clamp01
+
+logger = logging.getLogger(__name__)
 
 _MODEL_ID = "yaful/MAGE"
 
@@ -45,7 +49,7 @@ class MageDetector:
 
     def score(self, text: str) -> float | None:
         if MageDetector._dead:
-            raise RuntimeError("mage disabled after a prior load failure")
+            return None
         if not text.strip():
             return None
         try:
@@ -56,13 +60,10 @@ class MageDetector:
             # detector — never fold in a fake neutral 0.5 that would silently pin the ensemble max.
             MageDetector._dead = True
             if not MageDetector._warned:
-                import sys
-
-                print(
-                    f"[untell] mage failed to load and was EXCLUDED from the ensemble "
-                    f"({type(exc).__name__}: {str(exc)[:140]}). "
-                    "Often a NumPy 2.x / huggingface_hub mismatch - see README troubleshooting.",
-                    file=sys.stderr,
+                logger.warning(
+                    "mage failed to load and was EXCLUDED from the ensemble "
+                    "(%s: %s). Often a NumPy 2.x / huggingface_hub mismatch - see README troubleshooting.",
+                    type(exc).__name__, str(exc)[:140],
                 )
                 MageDetector._warned = True
             raise

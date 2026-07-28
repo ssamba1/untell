@@ -9,7 +9,11 @@ P(AI) = ``softmax(logits)[0, 1]`` (config id2label: 0 = Human, 1 = ChatGPT).
 
 from __future__ import annotations
 
+import logging
+
 from .base import clamp01
+
+logger = logging.getLogger(__name__)
 
 _MODEL_ID = "Hello-SimpleAI/chatgpt-detector-roberta"
 
@@ -41,7 +45,7 @@ class HC3RobertaDetector:
 
     def score(self, text: str) -> float | None:
         if HC3RobertaDetector._dead:
-            raise RuntimeError("hc3_roberta disabled after a prior load failure")
+            return None
         if not text.strip():
             return None
         try:
@@ -53,13 +57,10 @@ class HC3RobertaDetector:
             # Disable + EXCLUDE (never a fake neutral 0.5 that would pin the ensemble max).
             HC3RobertaDetector._dead = True
             if not HC3RobertaDetector._warned:
-                import sys
-
-                print(
-                    f"[untell] hc3_roberta failed to load and was EXCLUDED from the ensemble "
-                    f"({type(exc).__name__}: {str(exc)[:140]}). "
-                    "Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
-                    file=sys.stderr,
+                logger.warning(
+                    "hc3_roberta failed to load and was EXCLUDED from the ensemble "
+                    "(%s: %s). Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
+                    type(exc).__name__, str(exc)[:140],
                 )
                 HC3RobertaDetector._warned = True
             raise

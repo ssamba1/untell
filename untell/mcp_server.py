@@ -1,14 +1,15 @@
 """MCP server — expose the humanizer as tools to Claude Desktop and other MCP clients.
 
 Run: ``untell-mcp`` (after ``pip install -e ".[mcp]"``). Register it in your MCP client's config.
-Tools: ``score`` (AI-likelihood + per-detector), ``sentences`` (per-sentence flags), ``untell``
-(run the loop), ``verify`` (pass/fail vs commercial checkers), ``scrub`` (strip hidden watermarks).
+Tools: ``score``, ``sentences``, ``tells``, ``untell``, ``verify``, ``compare``, ``ceiling``, ``scrub``.
 
 The ``mcp`` package is imported lazily so this module imports fine without it (the server build needs
 it). Keeping logic thin: each tool delegates to the same functions the CLIs use.
 """
 
 from __future__ import annotations
+
+import logging
 
 
 def _server():
@@ -18,39 +19,147 @@ def _server():
     from untell.scripts.run import untell_text
     from untell.scripts.score import score_text
     from untell.scripts.sentences import score_sentences
+    from untell.scripts.tells import score_tells
     from untell.scripts.verify import verify
 
     server = FastMCP("untell")
 
     @server.tool()
     def score(text: str, tier: str = "lite") -> dict:
-        """Score text for AI-likelihood (max + ai_percent 0-100 + per-detector)."""
+        """Score text for AI-likelihood: max + ai_percent 0-100 + per-detector breakdown."""
         return score_text(text, tier=tier)
 
     @server.tool()
-    def sentences(text: str, tier: str = "lite") -> dict:
-        """Per-sentence AI scores and the list of sentences flagged as AI."""
-        return score_sentences(text, tier=tier)
+    def sentences(text: str, tier: str = "lite", threshold: float = 0.30) -> dict:
+        """Per-sentence AI scores and the list of sentences flagged as AI (the worst ~third)."""
+        return score_sentences(text, tier=tier, threshold=threshold)
 
     @server.tool()
-    def untell(text: str, tier: str = "lite", style: str | None = None, max_iters: int = 5) -> dict:
-        """Run the closed untell loop (needs an LLM rewriter key, or use the /untell skill)."""
-        return untell_text(text, tier=tier, style=style, max_iters=max_iters)
+    def tells(text: str, include_matches: bool = False) -> dict:
+        """Count AI writing tells (the machine-writing catalog). Lower is more human-reading.
+        Returns tells total, tells_per_100w, burstiness_cv, and per-category breakdown."""
+        return score_tells(text, include_matches=include_matches)
 
     @server.tool()
-    def verify_commercial(text: str, threshold: float = 0.30) -> dict:
-        """Pass/fail vs every configured commercial checker (needs API keys)."""
-        return verify(text, threshold=threshold)
+    def untell(
+        text: str,
+        tier: str = "lite",
+        threshold: float = 0.30,
+        style: str | None = None,
+        max_iters: int = 5,
+        rewriter: str = "auto",
+        best_of: int = 1,
+        margin: float = 0.0,
+    ) -> dict:
+        """Run the closed untell loop: score -> rewrite -> re-score until the hardest
+        detector passes or max_iters is hit. Needs an LLM rewriter key, or pass
+        rewriter='surgical' for the free deterministic word-substitution rewriter ($0, no key).
+
+        Args:
+            text: The AI-sounding text to humanize.
+            tier: Detector tier (lite, full, heavy, commercial).
+            threshold: Max P(AI) to pass (default 0.30).
+            style: Optional voice (casual, professional, academic, blunt, storytelling, journalistic).
+            max_iters: Max rewrite iterations (default 5).
+            rewriter: 'auto' (hosted LLM if key set, else fail) or 'surgical' (free, no key).
+            best_of: Draw N candidates per iteration, keep the best-scoring one.
+            margin: Safety margin below threshold for a comfortable pass.
+        """
+        from untell.rewriter import get_rewriter
+
+        rw = None
+        if rewriter == "surgical":
+            rw = get_rewriter(prefer="surgical")
+        return untell_text(
+            text,
+            tier=tier,
+            threshold=threshold,
+            style=style,
+            max_iters=max_iters,
+            rewriter=rw,
+            best_of=best_of,
+            margin=margin,
+        )
+
+    @server.tool()
+    def verify_commercial(
+        text: str,
+        threshold: float = 0.30,
+        tier: str = "full",
+        sandbox: bool = False,
+        browser: str | None = None,
+    ) -> dict:
+        """Pass/fail vs every configured commercial checker (needs API keys) plus the
+        local detector ensemble. Returns per-checker scores and overall verdict.
+
+        Args:
+            text: Text to check.
+            threshold: Max P(AI) to pass.
+            tier: Local detector tier to include (default full; pass 'commercial' for API-only).
+            sandbox: Use Copyleaks free mock mode (not real scores).
+            browser: Comma-separated free-web-UI checkers (e.g. 'zerogpt').
+        """
+        browser_list = [s.strip() for s in browser.split(",")] if browser else None
+        tier_arg: str | None = None if (tier or "").lower() in ("commercial", "") else tier
+        return verify(text, threshold=threshold, sandbox=sandbox, browser=browser_list, tier=tier_arg)
+
+    @server.tool()
+    def ceiling(
+        tier: str = "full",
+        threshold: float = 0.30,
+        max_iters: int = 5,
+        rewriter: str = "surgical",
+        best_of: int = 1,
+        n: int = 3,
+    ) -> dict:
+        """Measure untell's inference-only evasion ceiling against the LOCAL detector ensemble.
+        Reports before/after flagged rate and mean max P(AI).
+
+        Args:
+            tier: Detector tier.
+            threshold: Pass threshold.
+            max_iters: Max iterations per sample.
+            rewriter: 'surgical' (free, default) or 'auto' (needs API key).
+            best_of: Candidates per iteration.
+            n: Number of test paragraphs (from the built-in sample).
+        """
+        from eval.ceiling import measure_ceiling
+        from untell.rewriter import get_rewriter
+
+        rw = None
+        if rewriter == "surgical":
+            rw = get_rewriter(prefer="surgical")
+            if rw is None:
+                return {"error": "surgical rewriter unavailable"}
+        return measure_ceiling(
+            None,
+            tier=tier,
+            threshold=threshold,
+            max_iters=max_iters,
+            rewriter=rw,
+            best_of=best_of,
+        )
+
+    @server.tool()
+    def compare(tier: str = "lite") -> dict:
+        """Head-to-head comparison of humanizer techniques: synonym-swap vs back-translation
+        vs blind paraphrase vs the closed loop. Returns per-technique scores and AI-tell counts.
+        """
+        from eval.compare_humanizers import compare
+
+        return compare(tier=tier)
 
     @server.tool()
     def scrub(text: str) -> dict:
-        """Strip hidden watermark / zero-width / homoglyph characters from text."""
+        """Strip hidden watermark / zero-width / homoglyph characters from text, returning
+        the cleaned text and the count of characters removed."""
         return {"clean": scrub_hidden(text), "hidden_chars_removed": count_hidden(text)}
 
     return server
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     _server().run()
     return 0
 

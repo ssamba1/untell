@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 import sys
 
@@ -27,7 +28,7 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
-from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+from untell.scripts.score import DEFAULT_THRESHOLD, batch_score_texts
 
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
@@ -47,7 +48,10 @@ def score_sentences(
     ``flagged`` list is "rewrite these first", not an absolute per-sentence verdict.
     """
     sents = split_sentences(text)
-    scored = [(s, float(score_text(s, tier=tier, threshold=threshold)["max"])) for s in sents]
+    # Score all sentences in one batch so the detector ensemble loads once for the whole
+    # paragraph rather than once per sentence (the hot path on the full tier).
+    results = batch_score_texts(sents, tier=tier, threshold=threshold)
+    scored = [(s, float(r["max"])) for s, r in zip(sents, results)]
     n = len(scored)
     if top is None:
         top = max(1, (n + 2) // 3)  # the worst ~third, at least one
@@ -72,6 +76,7 @@ def score_sentences(
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
@@ -90,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.file:
-        with open(args.file, encoding="utf-8") as fh:
+        with open(args.file, encoding="utf-8", errors="replace") as fh:
             text = fh.read()
     elif args.text:
         text = args.text

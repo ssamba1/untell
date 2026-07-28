@@ -1,118 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Free AI Detector — instant AI-tell score (untell) | runs in your browser, no signup</title>
-<meta name="description" content="Free, no-signup AI content detector. Paste text and get an instant AI-tell score in your browser — nothing is uploaded. The same perplexity + burstiness heuristic untell's loop uses, honest about being a weak proxy. Then humanize it with the untell skill.">
-<meta name="keywords" content="free ai detector, ai content detector, ai text detector, check ai text, perplexity, burstiness, untell, ai humanizer">
-<link rel="canonical" href="https://ssamba1.github.io/untell/demo.html">
-<meta name="theme-color" content="#0d1117">
-<meta property="og:title" content="Free AI Detector — instant AI-tell score (untell)">
-<meta property="og:description" content="Paste text, get an instant AI-tell score in your browser. No signup, nothing uploaded.">
-<meta property="og:url" content="https://ssamba1.github.io/untell/demo.html">
-<meta property="og:image" content="https://ssamba1.github.io/untell/og.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>untell — AI Text Humanizer Demo</title>
 <style>
-  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--white:#e6edf3;--gray:#8b949e;--accent:#aa6eff;--green:#3fb950;--amber:#d29922;--red:#f85149}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--white);font:17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:760px;margin:0 auto;padding:40px 24px 64px}
-  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
-  h1{font-size:32px;margin:8px 0 6px}
-  .lede{color:var(--gray);margin:0 0 22px}
-  textarea{width:100%;min-height:200px;background:var(--panel);color:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;font:15px/1.6 inherit;resize:vertical}
-  .row{display:flex;gap:12px;align-items:center;margin:14px 0}
-  button{background:var(--accent);color:#fff;font-weight:700;border:0;border-radius:10px;padding:12px 22px;font-size:16px;cursor:pointer}
-  button.ghost{background:transparent;border:1px solid var(--border);color:var(--white)}
-  .count{color:var(--gray);font-size:14px;margin-left:auto}
-  .result{display:none;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;margin-top:18px}
-  .result.show{display:block}
-  .score{font-size:54px;font-weight:800;line-height:1}
-  .verdict{font-size:18px;font-weight:600;margin-top:4px}
-  .bar{height:12px;border-radius:6px;background:#21262d;overflow:hidden;margin:16px 0}
-  .bar>span{display:block;height:100%;border-radius:6px;transition:width .4s}
-  .sub{display:flex;gap:20px;color:var(--gray);font-size:14px;margin-top:10px;flex-wrap:wrap}
-  .note{color:var(--gray);font-size:13px;margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
-  .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:700;padding:11px 22px;border-radius:10px;margin-top:14px}
-  header nav{font-size:14px;color:var(--gray);margin-bottom:18px}
-  code{font-family:Consolas,monospace;background:var(--panel);padding:2px 6px;border-radius:5px;font-size:14px}
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e4e6f0;
+    --text-dim: #8b8fa3;
+    --accent: #7c5cfc;
+    --accent-hover: #9b7eff;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --radius: 12px;
+    --font: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; width: 100%; flex: 1; }
+
+  header { text-align: center; padding: 40px 0 24px; }
+  header h1 { font-size: 2rem; font-weight: 700; color: #fff; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--text-dim); margin-top: 8px; font-size: 0.95rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    background: #0a0c12;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 0.9rem;
+    font-family: var(--font);
+    line-height: 1.7;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .controls select {
+    background: #0a0c12;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+  }
+  .controls select:focus { border-color: var(--accent); }
+
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button:hover { background: var(--accent-hover); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  @media (max-width: 640px) { .results-grid { grid-template-columns: 1fr; } }
+
+  .result-box { background: #0a0c12; border-radius: 8px; padding: 14px; min-height: 100px; }
+  .result-box h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); margin-bottom: 8px; }
+  .result-box .label { font-size: 0.85rem; margin-bottom: 4px; }
+  .result-box .value { font-size: 2rem; font-weight: 700; font-family: var(--font); }
+
+  .diff-box {
+    background: #0a0c12;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 12px;
+    font-family: var(--font);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .diff-removed { background: rgba(248, 113, 113, 0.15); color: var(--red); text-decoration: line-through; }
+  .diff-added { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+
+  .score-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .score-bar .fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .error { color: var(--red); font-size: 0.9rem; margin-top: 8px; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .badge.human { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .badge.ai { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .badge.mixed { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+
+  footer { text-align: center; padding: 24px 0; color: var(--text-dim); font-size: 0.8rem; }
+  footer a { color: var(--accent); }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="container">
   <header>
-    <nav><a href="./">untell</a> &nbsp;/&nbsp; Free AI detector</nav>
-    <h1>Free AI-detector — instant AI-tell score</h1>
-    <p class="lede">Paste text, get an AI-tell score <strong>instantly, in your browser</strong>. Nothing is uploaded — this runs the exact lite perplexity + burstiness heuristic that <a href="https://github.com/ssamba1/untell">untell</a>'s loop uses. It's an <em>honest weak proxy</em>, not a commercial detector — high score = reads machine-like, worth humanizing.</p>
+    <h1><span>untell</span> — AI Text Humanizer</h1>
+    <p>Paste AI-generated text below. See it rewritten to read human — with live before/after scores.</p>
   </header>
 
-  <textarea id="t" placeholder="Paste AI-generated (or any) text here…"></textarea>
-  <div class="row">
-    <button onclick="run()">Score it</button>
-    <button class="ghost" onclick="sample()">Try a sample</button>
-    <span class="count" id="c">0 words</span>
-  </div>
-
-  <div class="result" id="r">
-    <div class="score" id="pct">—</div>
-    <div class="verdict" id="v"></div>
-    <div class="bar"><span id="b"></span></div>
-    <div class="sub">
-      <span>Burstiness (sentence-length variation): <b id="bu">—</b></span>
-      <span>Common-word ratio: <b id="cw">—</b></span>
+  <div class="card">
+    <h2>Input</h2>
+    <textarea id="input" placeholder="Paste AI-generated text here...">Furthermore, artificial intelligence has fundamentally transformed numerous industries in recent years. Moreover, organizations increasingly leverage these technologies to optimize operational efficiency and drive innovation. Overall, the transformative impact continues to expand across various sectors.</textarea>
+    <div class="controls">
+      <select id="style">
+        <option value="">Default style</option>
+        <option value="casual">Casual</option>
+        <option value="professional">Professional</option>
+        <option value="academic">Academic</option>
+        <option value="blunt">Blunt</option>
+        <option value="storytelling">Storytelling</option>
+        <option value="journalistic">Journalistic</option>
+      </select>
+      <select id="rewriter">
+        <option value="surgical">Free (surgical)</option>
+        <option value="structural">Structural</option>
+        <option value="composite">Composite (best free)</option>
+      </select>
+      <button id="humanizeBtn" onclick="humanize()">Humanize ✦</button>
     </div>
-    <div class="note" id="hint"></div>
-    <a class="cta" href="https://github.com/ssamba1/untell#-quick-start">Reads AI? Humanize it with untell →</a>
+    <div id="error" class="error"></div>
   </div>
 
-  <p class="note">This is the zero-dependency <code>lite</code> tier — a deliberately weak demo signal. The real ensemble (RoBERTa, MAGE, Fast-DetectGPT, RADAR, Binoculars + commercial APIs) runs in the installed tool. No tool, including this one, is a ground-truth detector; detectors are noisy and falsely flag non-native English writers at high rates. Use as a signal, not a verdict.</p>
+  <div id="results" style="display:none;">
+    <div class="card">
+      <h2>Results</h2>
+      <div class="results-grid">
+        <div class="result-box">
+          <h3>Before</h3>
+          <div class="label">AI Probability</div>
+          <div class="value" id="beforeScore" style="color:var(--red)">—</div>
+          <div class="score-bar"><div class="fill" id="beforeBar" style="width:0%;background:var(--red)"></div></div>
+          <div style="margin-top:8px"><span class="badge" id="beforeBadge">—</span></div>
+        </div>
+        <div class="result-box">
+          <h3>After</h3>
+          <div class="label">AI Probability</div>
+          <div class="value" id="afterScore" style="color:var(--green)">—</div>
+          <div class="score-bar"><div class="fill" id="afterBar" style="width:0%;background:var(--green)"></div></div>
+          <div style="margin-top:8px"><span class="badge" id="afterBadge">—</span></div>
+        </div>
+      </div>
+      <div class="diff-box" id="diffOutput">Results will appear here...</div>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/ssamba1/untell" target="_blank">untell</a> — open source (MIT).
+    Runs entirely in your browser for scoring; humanization calls the API server.
+  </footer>
 </div>
 
 <script>
-const COMMON = new Set(["the","be","to","of","and","a","in","that","have","i","it","for","not","on","with","he","as","you","do","at","this","but","his","by","from","they","we","say","her","she","or","an","will","my","one","all","would","there","their","what","so","up","out","if","about","who","get","which","go","me","when","make","can","like","time","no","just","him","know","take","people","into","year","your","good","some","could","them","see","other","than","then","now","look","only","come","its","over","think","also","back","after","use","two","how","our","work","first","well","way","even","new","want","because","any","these","give","day","most","us","is","are","was","were","been","has","had","more","very","such","additionally","moreover","furthermore","however","therefore","thus","overall"]);
-const clamp01 = x => Math.max(0, Math.min(1, x));
-const words = s => (s.match(/[A-Za-z']+/g) || []);
-const sentences = s => s.split(/[.!?]+(?:\s+|$)/).map(x=>x.trim()).filter(Boolean);
-function burstiness(sents){
-  let lens = sents.map(s=>words(s).length).filter(n=>n>0);
-  if(lens.length < 2) return 0;
-  let mean = lens.reduce((a,b)=>a+b,0)/lens.length;
-  if(mean === 0) return 0;
-  let v = lens.reduce((a,n)=>a+(n-mean)**2,0)/lens.length;
-  return Math.sqrt(v)/mean;
+const API = window.location.origin;
+
+async function humanize() {
+  const btn = document.getElementById('humanizeBtn');
+  const error = document.getElementById('error');
+  const results = document.getElementById('results');
+  const input = document.getElementById('input').value.trim();
+  const style = document.getElementById('style').value;
+  const rewriter = document.getElementById('rewriter').value;
+
+  if (!input) { error.textContent = 'Please enter some text.'; return; }
+  error.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+
+  try {
+    // First score the original
+    const preRes = await fetch(`${API}/score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: input, tier: 'lite' })
+    });
+    const pre = await preRes.json();
+
+    // Then humanize
+    const body = { text: input, tier: 'lite', rewriter };
+    if (style) body.style = style;
+    const hRes = await fetch(`${API}/humanize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const h = await hRes.json();
+
+    if (h.error) { error.textContent = h.error; btn.disabled = false; btn.textContent = 'Humanize ✦'; return; }
+
+    // Score the result
+    const postRes = await fetch(`${API}/score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: h.final || h.text || h.result, tier: 'lite' })
+    });
+    const post = await postRes.json();
+
+    const beforePct = (pre.max * 100).toFixed(0);
+    const afterPct = (post.max * 100).toFixed(0);
+
+    // Update display
+    results.style.display = 'block';
+
+    document.getElementById('beforeScore').textContent = `${beforePct}%`;
+    document.getElementById('afterScore').textContent = `${afterPct}%`;
+    document.getElementById('beforeBar').style.width = `${beforePct}%`;
+    document.getElementById('afterBar').style.width = `${afterPct}%`;
+
+    const classify = (pct) => {
+      if (pct < 30) return { text: 'Human', cls: 'human' };
+      if (pct < 60) return { text: 'Mixed', cls: 'mixed' };
+      return { text: 'AI', cls: 'ai' };
+    };
+    const bc = classify(beforePct);
+    const ac = classify(afterPct);
+    document.getElementById('beforeBadge').textContent = bc.text;
+    document.getElementById('beforeBadge').className = `badge ${bc.cls}`;
+    document.getElementById('afterBadge').textContent = ac.text;
+    document.getElementById('afterBadge').className = `badge ${ac.cls}`;
+
+    const final = h.final || h.text || h.result || input;
+    document.getElementById('diffOutput').innerHTML = simpleDiff(input, final);
+
+  } catch (e) {
+    error.textContent = 'API error — is the server running? (' + e.message + ')';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Humanize ✦';
 }
-function commonRatio(text){
-  let ws = words(text).map(w=>w.toLowerCase());
-  if(!ws.length) return 0;
-  return ws.filter(w=>COMMON.has(w)).length/ws.length;
+
+function simpleDiff(a, b) {
+  // Highlight words removed/added
+  const aWords = a.split(/\s+/);
+  const bWords = b.split(/\s+/);
+  let html = '';
+  let bi = 0;
+  for (let ai = 0; ai < aWords.length; ai++) {
+    if (bi < bWords.length && aWords[ai] === bWords[bi]) {
+      html += escapeHtml(bWords[bi]) + ' ';
+      bi++;
+    } else {
+      // Word was removed from original
+      html += `<span class="diff-removed">${escapeHtml(aWords[ai])}</span> `;
+    }
+  }
+  // Remaining words are additions
+  while (bi < bWords.length) {
+    html += `<span class="diff-added">${escapeHtml(bWords[bi])}</span> `;
+    bi++;
+  }
+  return html;
 }
-function liteScore(text){
-  if(!text.trim()) return {p:0.5,b:0,c:0};
-  let s = sentences(text), b = burstiness(s), c = commonRatio(text);
-  let bs = clamp01((0.55-b)/0.55), cs = clamp01((c-0.30)/0.30);
-  return {p: clamp01(0.6*bs+0.4*cs), b, c};
-}
-const t = document.getElementById('t');
-t.addEventListener('input', ()=>{ document.getElementById('c').textContent = words(t.value).length + ' words'; });
-function run(){
-  const {p,b,c} = liteScore(t.value);
-  const pct = Math.round(p*100);
-  document.getElementById('r').classList.add('show');
-  document.getElementById('pct').textContent = pct + '% AI';
-  const col = pct>=66 ? 'var(--red)' : pct>=33 ? 'var(--amber)' : 'var(--green)';
-  document.getElementById('pct').style.color = col;
-  const bar = document.getElementById('b');
-  bar.style.width = pct + '%'; bar.style.background = col;
-  document.getElementById('v').textContent = pct>=66 ? 'Reads machine-like — worth humanizing.' : pct>=33 ? 'Mixed signal.' : 'Reads fairly human (on this weak proxy).';
-  document.getElementById('bu').textContent = b.toFixed(2) + (b<0.25 ? ' (uniform → AI-like)' : '');
-  document.getElementById('cw').textContent = (c*100).toFixed(0) + '%' + (c>0.45 ? ' (formulaic)' : '');
-  document.getElementById('hint').textContent = pct>=33
-    ? 'To lower this: vary sentence length (mix short + long), cut formulaic transitions ("Moreover", "Overall"), and use less predictable word choices — exactly what untell\'s loop automates.'
-    : 'Low AI-tell on the lite proxy — but commercial detectors are stronger. Verify with the full tier before trusting it.';
-}
-function sample(){
-  t.value = "There are many benefits to this approach. First, it is easy to use. Second, it is very fast. Third, it is also quite cheap. In addition, it works well for everyone.";
-  t.dispatchEvent(new Event('input')); run();
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
 </body>

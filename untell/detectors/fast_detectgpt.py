@@ -11,9 +11,12 @@ calibration constants to land a probability in [0, 1].
 
 from __future__ import annotations
 
+import logging
 import math
 
 from .base import clamp01
+
+logger = logging.getLogger(__name__)
 
 _SCORING_MODEL = "EleutherAI/gpt-neo-125m"
 # Logistic calibration: curvature ~ N(0,1)-ish for human, shifted positive for AI.
@@ -48,7 +51,7 @@ class FastDetectGPTDetector:
 
     def score(self, text: str) -> float | None:
         if FastDetectGPTDetector._dead:
-            raise RuntimeError("fast_detectgpt disabled after a prior load failure")
+            return None
         if not text.strip():
             return None
         try:
@@ -58,13 +61,10 @@ class FastDetectGPTDetector:
         except Exception as exc:
             FastDetectGPTDetector._dead = True
             if not FastDetectGPTDetector._warned:
-                import sys
-
-                print(
-                    f"[untell] fast_detectgpt failed to load and was EXCLUDED from the ensemble "
-                    f"({type(exc).__name__}: {str(exc)[:140]}). "
-                    "Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
-                    file=sys.stderr,
+                logger.warning(
+                    "fast_detectgpt failed to load and was EXCLUDED from the ensemble "
+                    "(%s: %s). Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
+                    type(exc).__name__, str(exc)[:140],
                 )
                 FastDetectGPTDetector._warned = True
             raise

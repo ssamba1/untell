@@ -16,6 +16,8 @@ from __future__ import annotations
 import os
 import re
 
+from untell._retry import retry
+
 from .base import clamp01
 
 _NUM = re.compile(r"\d*\.\d+|\d+")
@@ -66,18 +68,26 @@ class LLMJudgeDetector:
             except Exception:
                 anthropic = None
             if anthropic is not None:
-                resp = anthropic.Anthropic().messages.create(
-                    model=self.model or "claude-sonnet-4-6",
-                    max_tokens=8,
-                    messages=[{"role": "user", "content": prompt}],
+                resp = retry(
+                    anthropic.Anthropic().messages.create,
+                    kw={
+                        "model": self.model or "claude-sonnet-4-6",
+                        "max_tokens": 8,
+                        "messages": [{"role": "user", "content": prompt}],
+                    },
+                    max_attempts=3,
                 )
                 return "".join(getattr(b, "text", "") for b in resp.content)
         import openai
 
-        resp = openai.OpenAI().chat.completions.create(
-            model=self.model or "gpt-4o-mini",
-            max_tokens=8,
-            messages=[{"role": "user", "content": prompt}],
+        resp = retry(
+            openai.OpenAI().chat.completions.create,
+            kw={
+                "model": self.model or "gpt-4o-mini",
+                "max_tokens": 8,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            max_attempts=3,
         )
         return resp.choices[0].message.content or ""
 

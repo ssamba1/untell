@@ -6,8 +6,80 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Rich terminal output** (`untell.rich_output`) — colored before/after comparison tables, word-level
+  diff highlighting, progress bars, and AI-score bars. Auto-detects when ``rich`` is installed
+  (`pip install untell[rich]`); degrades gracefully to plain text otherwise.
+- **Interactive web demo** (`docs/demo.html`) — professional dark-mode UI with live before/after
+  scoring, word-level diff, style selector, and rewriter selector. Connects to the API server.
+- **Structural + Composite rewriters** — `--rewriter structural` (sentence-level transforms) and
+  `--rewriter composite` (structural + surgical chained) for the best free $0 path. Both always
+  available, no API key, no GPU.
+- **`untell humanness` CLI command** — scores text 0-100 combining AI-tells density + detector
+  ensemble max + burstiness. Includes `--tier`, `--file`, `--json` flags.
+- **CI/CD PyPI publish workflow** (`.github/workflows/publish.yml`) — builds and publishes to PyPI
+  on tagged releases using trusted publishing. One-click release process.
+- **Rich output dependency** — `pip install untell[rich]` for colored terminal output.
+- **14 rewriter style modes** on CLI — `--style` now accepts: casual, professional, academic, blunt,
+  storytelling, journalistic, technical, persuasive, empathetic, humorous, poetic, instructional,
+  conversational, minimalist.
+  OpenAPI docs, API-key auth, CORS, and 7 endpoints: health, score, humanize, tells, sentences, verify,
+  ceiling. Deployable behind any process manager or Docker. (`pip install "untell[server]"`)
+- **Local LLaMA-as-judge detector** (`untell.detectors.local_judge`) — any HuggingFace instruct model
+  as an AI detector (Qwen2.5, LLaMA, Mistral). Defaults to Qwen2.5-1.5B (full tier, CPU-feasible) or
+  7B (heavy tier, GPU). No API key, no rate limits, no cost per call. Selectable via `$UNTELL_JUDGE_MODEL`.
+- **Domain-adaptive style engine** — 14 voice modes (was 6). New: technical, persuasive, empathetic,
+  humorous, poetic, instructional, conversational, minimalist. Passed as `--style <voice>` to any
+  rewriter or API call.
+- **Professional documentation site** — mkdocs-material with dark/light theme, full CLI reference,
+  API server docs, training guide, research results. Served at `/docs` in the API server.
+- **Batched detector scoring** — `batch_score_texts()` scores multiple texts with one detector-load
+  instead of N. Used by `score_sentences()` (N sentences → 1 detector load) and `importance()` +
+  `surgical_substitute()` in the surgical rewriter (O(words) → O(1) detector loads).
+- **`untell verify --tier <name>`** — verify against local detector ensemble without commercial API keys.
+  Defaults to `--tier=full`; pass `--tier commercial` for commercial-only.
+- **`untell verify --tier`** — defaults to full tier, shows local detector scores in output.
+- **Exponential-backoff retry** (`untell._retry`) for all API call sites — Anthropic/OpenAI rewriters,
+  LLM-as-judge, and all commercial detector HTTP calls.
+- **Expanded surgical rewriter synonym map** — ~22 → ~180+ entries covering the full AI-tells catalog.
+- **MCP server expansion** — added `tells`, `ceiling`, `compare`, and `rewriter="surgical"` param.
+- **Pre-commit hooks** — `.pre-commit-config.yaml` (ruff, trailing-whitespace, EOF-fixer, JSON/YAML,
+  merge-conflict, LF enforcement).
+- **Test coverage** — new `test_retry.py` (8), `test_unicode_tricks.py` (16), `test_mcp_server.py` (1),
+  `test_datasets.py` (6), `test_baselines.py` (10), `test_local_judge.py` (4), `test_api_server.py` (8).
+  Total: 262 tests (+53 from the 209 baseline).
+
+### Changed
+- **Surgical rewriter** — `importance()` and `surgical_substitute()` now batch detector calls via
+  `batch_score_texts()`. Complexity drops from O(words × detectors × synonyms) to O(1) detector loads.
+- **Per-sentence scoring** — uses `batch_score_texts()` for O(1) instead of O(n) detector loads.
+- **`untell verify` exit code** — returns 0 when no checkers configured (was 1).
+- **Training pipeline** — removed deprecated `prepare_model_for_kbit_training` (peft>=0.14 incompatible).
+- **Env-var consistency** — renamed `HUMANIZE_ENABLE_RADAR` → `UNTELL_ENABLE_RADAR`;
+  `HUMANIZE_BROWSER_SITES` → `UNTELL_BROWSER_SITES` (backward compat maintained).
+- **Commercial detectors** — all 6 adapters now return `None` (not `0.5`) on empty/unavailable text,
+  matching the `Detector` protocol contract. The ensemble correctly excludes them.
+- **Module-level imports** — `verify.py` imports commercial adapters lazily (inside `verify()`), not at
+  module load, so broken installs don't crash import.
+- **File read hardening** — `errors="replace"` on all 7 `open(encoding="utf-8")` calls to prevent
+  `UnicodeDecodeError` on invalid input.
+- **Confirm re-score** — now operates on the final restored text (not masked text with sentinel tokens),
+  ensuring the noise-guard catches detector activation on real citations/numbers.
+- **Polish step** — runs on restored text, compares similarity against the original input.
+- **Edge-case hardening** — `_MAX_INPUT_CHARS=50,000` truncation guard in `score_text()` and
+  `batch_score_texts()`.
+- **Version** — bumped to `0.2.0` (beta classifiers on PyPI).
+- **Detector registry** — includes `LocalJudgeDetector` in the ensemble.
+
+### Fixed
+- **Commercial detectors returning 0.5** on empty text (violated protocol, inflated ensemble max).
+- **Module-level commercial import** in `verify.py` (crashed if `requests` wasn't installed).
+- **7 file reads** lacking `errors=` (raised `UnicodeDecodeError` on invalid UTF-8).
+- **Confirm re-score** testing masked text instead of final restored text.
+- **Duplicate `"therefore"` key** in word_importance.py synonym map.
+- **Unused import** `score_text` in `sentences.py`.
+- **`untell verify` exit code** spuriously returning 1 with no checkers configured.
+
 - **Definitive comparison vs the free humanizers** — [`docs/humanizer-comparison.md`](docs/humanizer-comparison.md).
-  Catalogs the free-humanizer field (SaaS + repos), their claims and mechanisms, and shows every free
   tool reduces to 3–4 techniques we already implement. A reproducible, $0 head-to-head (`untell-compare`)
   scores each technique class by ensemble P(AI), AI-tells, and meaning — finding our loop is the only
   mechanism that drives the AI-tells rate to **zero while preserving meaning**, and that the free tools'

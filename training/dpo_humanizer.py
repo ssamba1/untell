@@ -12,6 +12,7 @@ text over AI text. Run distill first (needs a rewriter/teacher key), then DPO.
 from __future__ import annotations
 
 import argparse
+import logging
 
 SMOKE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 _PROMPT = "Rewrite the following text so it reads as natural human writing while preserving its exact meaning:\n\n{text}"
@@ -80,6 +81,7 @@ def train(
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     parser = argparse.ArgumentParser(prog="training.dpo_humanizer", description=__doc__)
     parser.add_argument("--model", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--dataset", default="builtin")
@@ -89,6 +91,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--smoke", action="store_true", help="tiny model + 2 steps + synthetic pairs (proves it runs)")
     parser.add_argument("--load-4bit", action="store_true", help="QLoRA 4-bit load so 3B fits a free 16GB T4")
     args = parser.parse_args(argv)
+    from untell._env import load_env
+
+    load_env()
     path = train(
         model_id=args.model, dataset=args.dataset, n=args.n, tier=args.tier, out=args.out, smoke=args.smoke, load_4bit=args.load_4bit
     )

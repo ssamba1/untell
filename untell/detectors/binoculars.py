@@ -65,7 +65,8 @@ class BinocularsDetector:
         import torch
 
         tok, observer, performer = self._load()
-        enc = tok(text, return_tensors="pt", truncation=True, max_length=512).to("cuda")
+        device = next(observer.parameters()).device
+        enc = tok(text, return_tensors="pt", truncation=True, max_length=512).to(device)
         ids = enc["input_ids"]
         if ids.shape[1] < 2:
             return None

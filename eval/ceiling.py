@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 
 # Run-as-file support: put the package parent on sys.path when executed directly.
 if __package__ in (None, ""):
@@ -60,7 +61,7 @@ def _mean(xs: list[float]) -> float | None:
 
 
 def measure_ceiling(
-    texts: list[str],
+    texts: list[str] | None = None,
     tier: str = "full",
     threshold: float = DEFAULT_THRESHOLD,
     max_iters: int = 5,
@@ -68,6 +69,8 @@ def measure_ceiling(
     best_of: int = 1,
 ) -> dict:
     """Score each text, run the loop, and aggregate the before/after detector movement."""
+    if texts is None:
+        texts = list(_SAMPLE)
     pre_max: list[float] = []
     post_max: list[float] = []
     per_pre: dict[str, list[float]] = {}
@@ -138,13 +141,14 @@ def _render(r: dict) -> str:
 
 
 def _read_corpus(path: str) -> list[str]:
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8", errors="replace") as fh:
         raw = fh.read()
     blocks = [b.strip() for b in raw.split("\n\n")]
     return [b for b in blocks if b]
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()
@@ -156,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--best-of", type=int, default=1)
     parser.add_argument(
         "--rewriter",
-        choices=["auto", "surgical"],
+        choices=["auto", "surgical", "structural", "composite"],
         default="auto",
         help="'auto' uses a hosted-LLM rewriter if a key is set (else baseline only); 'surgical' uses "
         "the deterministic no-key word-substitution rewriter so the loop runs at $0 (free measurement).",

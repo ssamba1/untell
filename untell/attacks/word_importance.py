@@ -25,42 +25,151 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
-from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+from untell.scripts.score import DEFAULT_THRESHOLD, batch_score_texts, score_text
 
 _WORD = re.compile(r"[A-Za-z]+")
 
 # Formulaic AI vocabulary -> plainer human alternatives (the words detectors + competitors target).
+# Each entry must be a single word or short phrase that is a natural, less-AI-sounding replacement.
+# Keep entries lowercased. Phrases with spaces are matched as whole tokens via \b anchors.
 _SYN: dict[str, list[str]] = {
-    "numerous": ["many", "plenty of", "lots of"],
-    "significant": ["real", "major", "big"],
-    "significantly": ["sharply", "a lot", "hugely"],
-    "fundamentally": ["deeply", "at root", "basically"],
-    "various": ["different", "all sorts of", "assorted"],
-    "crucial": ["key", "vital", "central"],
-    "essential": ["needed", "key", "necessary"],
+    # --- Tells-catalog AI vocab (ai-tells.md §1-2) ---
+    "delve": ["dig", "look", "go deep"],
+    "leverage": ["use", "lean on", "tap into"],
     "utilize": ["use"],
     "utilizing": ["using"],
-    "leverage": ["use", "lean on"],
-    "facilitate": ["help", "ease"],
-    "demonstrate": ["show"],
-    "enhance": ["improve", "boost"],
-    "optimize": ["tune", "sharpen"],
-    "robust": ["solid", "sturdy"],
-    "comprehensive": ["full", "thorough"],
-    "innovative": ["new", "fresh"],
-    "paradigm": ["model", "pattern"],
-    "myriad": ["countless", "tons of"],
-    "pivotal": ["key", "central"],
-    "seamless": ["smooth"],
-    "delve": ["dig", "look"],
-    "realm": ["area", "space"],
-    "furthermore": ["also", "and"],
-    "moreover": ["also", "on top of that"],
-    "additionally": ["also", "plus"],
-    "consequently": ["so", "as a result"],
-    "therefore": ["so"],
-    "however": ["but", "though"],
-    "overall": ["in the end", "all told"],
+    "robust": ["solid", "sturdy", "strong"],
+    "seamless": ["smooth", "easy"],
+    "seamlessly": ["smoothly", "easily"],
+    "tapestry": ["mix", "array", "range"],
+    "testament": ["proof", "sign", "mark"],
+    "realm": ["area", "space", "field"],
+    "landscape": ["scene", "setting", "field"],
+    "underscore": ["show", "highlight", "stress"],
+    "underscores": ["shows", "highlights"],
+    "underscoring": ["showing", "highlighting"],
+    "pivotal": ["key", "central", "critical"],
+    "crucial": ["key", "vital", "central", "critical"],
+    "vital": ["key", "essential", "needed"],
+    "foster": ["build", "grow", "encourage"],
+    "fostering": ["building", "growing", "encouraging"],
+    "garner": ["get", "win", "earn"],
+    "garnered": ["got", "won", "earned"],
+    "bolster": ["boost", "strengthen", "prop up"],
+    "elevate": ["raise", "lift", "boost"],
+    "embark": ["start", "begin", "set out"],
+    "harness": ["use", "tap", "put to work"],
+    "harnessing": ["using", "tapping", "putting to work"],
+    "unlock": ["open", "release", "free up"],
+    "unleash": ["release", "let loose", "unleash"],
+    "spearhead": ["lead", "head", "drive"],
+    "paramount": ["key", "top", "critical"],
+    "plethora": ["wealth", "lots", "many"],
+    "myriad": ["countless", "many", "scores of"],
+    "multifaceted": ["many-sided", "complex", "varied"],
+    "nuanced": ["subtle", "fine-grained", "careful"],
+    "intricate": ["complex", "detailed", "elaborate"],
+    "intricacies": ["details", "complexities", "workings"],
+    "meticulous": ["careful", "thorough", "painstaking"],
+    "meticulously": ["carefully", "thoroughly", "closely"],
+    "comprehensive": ["full", "broad", "wide-ranging"],
+    "vibrant": ["lively", "bright", "active"],
+    "bustling": ["busy", "lively", "humming"],
+    "noteworthy": ["notable", "striking", "worth noting"],
+    "groundbreaking": ["pioneering", "pivotal", "landmark"],
+    "transformative": ["game-changing", "powerful", "far-reaching"],
+    "innovative": ["new", "fresh", "original"],
+    "boasts": ["has", "offers", "can claim"],
+    "nestled": ["set", "situated", "tucked"],
+    "profound": ["deep", "far-reaching", "major"],
+    "holistic": ["whole-picture", "full-spectrum", "broad"],
+    "actionable": ["usable", "practical", "concrete"],
+    "impactful": ["powerful", "striking", "meaningful"],
+    "streamline": ["simplify", "smooth", "speed up"],
+    "empower": ["enable", "help", "equip"],
+    "empowering": ["enabling", "helpful", "freeing"],
+    "revolutionize": ["transform", "overhaul", "shake up"],
+    "resonate": ["connect", "ring true", "strike a chord"],
+    "encompass": ["cover", "span", "include"],
+    "paradigm": ["model", "pattern", "framework"],
+    "cornerstone": ["foundation", "bedrock", "base"],
+    "burgeoning": ["growing", "expanding", "rising"],
+    "quintessential": ["typical", "classic", "perfect example of"],
+    "overarching": ["overall", "central", "blanket"],
+    "synergy": ["collaboration", "combined effect", "teamwork"],
+    "endeavor": ["effort", "undertaking", "pursuit"],
+    "commence": ["start", "begin", "kick off"],
+    "illuminate": ["clarify", "shed light on", "explain"],
+    "cultivate": ["develop", "build", "grow"],
+    "catalyze": ["spark", "trigger", "set off"],
+    "galvanize": ["rally", "rouse", "jolt"],
+    "augment": ["boost", "add to", "supplement"],
+    "elucidate": ["clarify", "explain", "spell out"],
+    "interplay": ["interaction", "exchange", "give-and-take"],
+    "underpin": ["support", "undergird", "back"],
+    "compelling": ["powerful", "convincing", "strong"],
+    "unprecedented": ["unmatched", "unheard-of", "record"],
+    "exceptional": ["outstanding", "remarkable", "top-notch"],
+    "remarkable": ["striking", "impressive", "notable"],
+    "sophisticated": ["advanced", "refined", "polished"],
+    "invaluable": ["priceless", "indispensable", "vital"],
+    "unwavering": ["steady", "firm", "constant"],
+    "scalable": ["expandable", "growable", "adaptable"],
+    "bespoke": ["custom", "tailored", "made-to-order"],
+    "showcasing": ["showing", "highlighting", "presenting"],
+    "showcase": ["show", "highlight", "present"],
+    "reimagine": ["rethink", "recast", "re-envision"],
+    "reimagining": ["rethinking", "recasting"],
+    "world-class": ["top-class", "elite", "first-rate"],
+    "cutting-edge": ["leading", "advanced", "frontier"],
+    "state-of-the-art": ["advanced", "modern", "top of the line"],
+    "best-in-class": ["top", "leading", "finest"],
+    "top-tier": ["top-level", "elite", "premier"],
+    "next-level": ["higher", "better", "step up"],
+    "turnkey": ["ready-made", "pre-built", "ready to use"],
+    "supercharge": ["boost", "turbocharge", "ramp up"],
+    "unparalleled": ["unmatched", "peerless", "second-to-none"],
+    "trailblazing": ["pioneering", "path-breaking", "trendsetting"],
+    # --- Transition words (§3, §8) ---
+    "furthermore": ["also", "and", "plus"],
+    "moreover": ["also", "what is more", "and"],
+    "additionally": ["also", "plus", "on top of that"],
+    "consequently": ["so", "as a result", "because of that"],
+    "therefore": ["so", "thus", "that is why"],
+    "accordingly": ["so", "thus", "in line with that"],
+    "hence": ["so", "thus", "for that reason"],
+    "subsequently": ["later", "next", "afterward"],
+    "nevertheless": ["still", "even so", "yet"],
+    "nonetheless": ["still", "even so", "yet"],
+    "notably": ["especially", "in particular", "most notably"],
+    "importantly": ["mostly", "above all", "significantly"],
+    "ultimately": ["in the end", "finally", "eventually"],
+    "overall": ["in the end", "all told", "on the whole"],
+    "essentially": ["basically", "at bottom", "in essence"],
+    "arguably": ["possibly", "debatably", "one could say"],
+    # --- High-signal verbs to flatten ---
+    "numerous": ["many", "plenty of", "lots of"],
+    "significant": ["real", "major", "big"],
+    "significantly": ["sharply", "a lot", "greatly"],
+    "fundamentally": ["deeply", "at root", "basically"],
+    "various": ["different", "all sorts of", "assorted"],
+    "essential": ["needed", "key", "necessary"],
+    "facilitate": ["help", "ease", "aid"],
+    "facilitates": ["helps", "eases", "aids"],
+    "demonstrate": ["show", "prove", "display"],
+    "demonstrates": ["shows", "proves", "displays"],
+    "enhance": ["improve", "boost", "strengthen"],
+    "enhances": ["improves", "boosts", "strengthens"],
+    "optimize": ["tune", "sharpen", "improve"],
+    "optimizes": ["tunes", "sharpens", "improves"],
+    "represents": ["is", "stands for", "means"],
+    "represents a": ["is a", "marks a"],
+    "enables": ["lets", "allows", "makes possible"],
+    "enabled": ["let", "allowed", "made possible"],
+    "increasingly": ["more and more", "ever more"],
+    # --- Clichés that collapse to a single word ---
+    "however": ["but", "though", "on the other hand"],
+    "thus": ["so", "this way", "in this way"],
 }
 
 
@@ -87,36 +196,63 @@ def synonyms(word: str) -> list[str]:
     return deduped[:6]
 
 
-def _max(text: str, tier: str) -> float:
+def _score_max(text: str, tier: str) -> float:
     return float(score_text(text, tier=tier)["max"]) if text.strip() else 0.0
 
 
 def importance(text: str, tier: str = "lite") -> list[tuple[str, float]]:
-    """Rank unique words by how much removing them drops the detector score (descending)."""
-    base = _max(text, tier)
-    scored: list[tuple[str, float]] = []
-    for w in dict.fromkeys(m.group(0) for m in _WORD.finditer(text)):  # unique, order-preserving
-        stripped = re.sub(rf"\b{re.escape(w)}\b", "", text)
-        scored.append((w, base - _max(stripped, tier)))
+    """Rank unique words by how much removing them drops the detector score (descending).
+
+    Batches all word-removed variants through the detector ensemble in one call — O(1) detector
+    loads instead of O(unique_words), which is the hot path on the full tier.
+    """
+    if not text.strip():
+        return []
+    base = _score_max(text, tier)
+    # Batch score all word-removed texts with one detector-load.
+    unique_words = list(dict.fromkeys(m.group(0) for m in _WORD.finditer(text)))
+    stripped_variants = [re.sub(rf"\b{re.escape(w)}\b", "", text) for w in unique_words]
+    stripped_scores = batch_score_texts(stripped_variants, tier=tier)
+    scored = [(w, base - float(s["max"])) for w, s in zip(unique_words, stripped_scores)]
     return sorted(scored, key=lambda kv: -kv[1])
 
 
 def surgical_substitute(
     text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, max_subs: int = 8
 ) -> dict:
-    """Swap the highest-importance words for score-lowering synonyms. Returns text + stats."""
+    """Swap the highest-importance words for score-lowering synonyms. Returns text + stats.
+
+    Optimised via batched scoring: importance ranks are computed with one detector load,
+    and each round of synonym candidates is scored together in a single batch.
+    """
+    if not text.strip():
+        return {"text": text, "substitutions": 0, "pre": 0.0, "post": 0.0}
+    pre = _score_max(text, tier)
     cur = text
-    pre = _max(cur, tier)
     subs = 0
-    for word, drop in importance(text, tier=tier):
-        cur_score = _max(cur, tier)  # score once per word; reused for the break-guard and the swap test
+    # Compute importance with one detector load (batched inside the function).
+    word_ranks = importance(text, tier=tier)
+    # NOTE: ``word_ranks`` is computed ONCE from the original text. After a substitution changes
+    # the text, subsequent drop values are stale — a word's true importance may differ in the
+    # modified text. This is a performance caveat (we may try an already-deflated word), not a
+    # correctness bug: every synonym candidate is verified against the CURRENT ``cur_score`` via
+    # batch scoring below, so no bad substitution goes through.
+    for word, drop in word_ranks:
+        cur_score = _score_max(cur, tier)
         if subs >= max_subs or cur_score < threshold:
             break
         if drop <= 0:
             continue
+        # Generate all synonym candidates for this word and batch-score them.
+        candidates = []
         for syn in synonyms(word):
             cand = re.sub(rf"\b{re.escape(word)}\b", syn, cur, count=1)
-            if _max(cand, tier) < cur_score:
+            candidates.append(cand)
+        if not candidates:
+            continue
+        cand_scores = batch_score_texts(candidates, tier=tier)
+        for cand, s in zip(candidates, cand_scores):
+            if float(s["max"]) < cur_score:
                 cur, subs = cand, subs + 1
                 break
-    return {"text": cur, "substitutions": subs, "pre": round(pre, 4), "post": round(_max(cur, tier), 4)}
+    return {"text": cur, "substitutions": subs, "pre": round(pre, 4), "post": round(_score_max(cur, tier), 4)}

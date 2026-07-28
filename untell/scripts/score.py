@@ -25,9 +25,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 
-# Run-as-file support (zero-dep lite tier): when this file is executed directly
+from untell.detectors.base import _TIER_RANK, load_detectors, resolved_tier
+
+logger = logging.getLogger(__name__)
 # (`python scripts/score.py`) rather than imported as part of the `untell` package,
 # put the directory that *contains* the package on sys.path so `import untell`
 # resolves regardless of the current working directory.
@@ -40,9 +43,34 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
-from untell.detectors.base import _TIER_RANK, load_detectors, resolved_tier
 
 DEFAULT_THRESHOLD = 0.30
+
+
+_MAX_INPUT_CHARS = 50_000  # detectors truncate at 512 tokens anyway; cap input length to avoid OOM
+
+
+def batch_score_texts(
+    texts: list[str],
+    tier: str = "full",
+    threshold: float = DEFAULT_THRESHOLD,
+) -> list[dict]:
+    """Score multiple texts with the detector ensemble, loading detectors ONCE for the batch.
+
+    Each text gets the same result dict shape as ``score_text``. Use this when you have many
+    short texts (e.g. sentences) to score — avoids re-initialising detectors per call.
+    """
+    if not texts:
+        return []
+    detectors = load_detectors(tier)
+    return [_score_with_detectors(detectors, _truncate(t), tier, threshold) for t in texts]
+
+
+def _truncate(text: str) -> str:
+    """Truncate absurdly long input so detectors don't OOM on the full tier."""
+    if len(text) > _MAX_INPUT_CHARS:
+        return text[:_MAX_INPUT_CHARS]
+    return text
 
 
 def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHOLD) -> dict:
@@ -54,7 +82,16 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
     number, so a full-tier run whose ML stack is broken honestly reports ``lite`` (plus a
     ``warning`` and a ``failed_detectors`` list), instead of looking like a real full-tier score.
     """
-    detectors = load_detectors(tier)
+    return _score_with_detectors(load_detectors(tier), _truncate(text), tier, threshold)
+
+
+def _score_with_detectors(
+    detectors: list,
+    text: str,
+    tier: str = "full",
+    threshold: float = DEFAULT_THRESHOLD,
+) -> dict:
+    """Score ``text`` against a *pre-loaded* detector list (avoids re-initialisation)."""
     scores: dict[str, float | None] = {}
     live = []  # detectors that produced a genuine numeric score
     for d in detectors:
@@ -100,7 +137,7 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 
 def _read_input(args: argparse.Namespace) -> str:
     if args.file:
-        with open(args.file, encoding="utf-8") as fh:
+        with open(args.file, encoding="utf-8", errors="replace") as fh:
             return fh.read()
     if args.text:
         return args.text
@@ -108,6 +145,7 @@ def _read_input(args: argparse.Namespace) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
@@ -143,7 +181,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     result = score_text(text, tier=args.tier, threshold=args.threshold)
-    # Log which tier actually ran to stderr (stdout stays pure JSON for the skill to parse).
+    # Log which tier actually ran to stderr (stdout stays pure JSON for the skill to parse). A direct
+    # stderr write (not logging) so it survives the root logger sitting at WARNING and is captured by
+    # the current sys.stderr under test.
     print(f"[untell-score] tier requested={args.tier} ran={result['tier']}", file=sys.stderr)
     # ensure_ascii=True: detector error strings may carry non-ASCII; never crash a Windows stdout.
     print(json.dumps(result, ensure_ascii=True, indent=2))

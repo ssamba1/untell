@@ -58,6 +58,7 @@ def all_detectors() -> list[Detector]:
     from .fast_detectgpt import FastDetectGPTDetector
     from .hc3_roberta import HC3RobertaDetector
     from .llm_judge import LLMJudgeDetector
+    from .local_judge import LocalJudgeDetector
     from .mage import MageDetector
     from .perplexity_burstiness import PerplexityBurstinessDetector
     from .radar import RadarDetector
@@ -71,6 +72,7 @@ def all_detectors() -> list[Detector]:
         FastDetectGPTDetector(),
         RadarDetector(),  # opt-in (UNTELL_ENABLE_RADAR=1); robust-to-paraphrase, non-commercial
         BinocularsDetector(),
+        LocalJudgeDetector(),  # open LLM as a detector (full/heavy tier); no API key
         LLMJudgeDetector(),  # commercial tier: the frontier LLM as a detector (key-gated); strong free signal
         *commercial_detectors(),
     ]

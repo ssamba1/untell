@@ -14,7 +14,7 @@ def read_file(path: str) -> str:
         from pypdf import PdfReader
 
         return "\n".join((page.extract_text() or "") for page in PdfReader(path).pages)
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8", errors="replace") as fh:
         return fh.read()
 
 

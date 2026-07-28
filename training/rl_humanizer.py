@@ -18,16 +18,19 @@ style — costs credits) for the strongest, transfer-robust policy.
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 
 from training.model_utils import load_model as _load_model
 from training.reward import humanness_reward
 
+logger = logging.getLogger(__name__)
+
 # Single source of truth for the rewrite instruction: the LOCAL inference path (LocalPolicyRewriter)
 # must feed the trained model the EXACT prompt it was trained on, or every inference is
 # out-of-distribution. Import it here so the two can never silently diverge. (untell is always
 # installed when training runs — reward.py already imports it.)
-from untell.rewriter.local_policy import _TRAIN_PROMPT as _PROMPT
+from untell.rewriter.local_policy import _TRAIN_PROMPT as _PROMPT  # noqa: E402
 
 DEFAULT_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 SMOKE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
@@ -44,12 +47,13 @@ def build_dataset(name: str = "builtin", n: int = 2000):
 def train(
     model_id: str = DEFAULT_MODEL,
     tier: str = "full",
-    steps: int = 500,
+    steps: int = 300,
     k: int = 6,
     out: str = "out/rl-humanizer",
     smoke: bool = False,
     load_4bit: bool = False,
     hub_id: str | None = None,
+    resume: str | None = None,
 ):
     """GRPO-train the policy. Heavy deps imported here so this module stays importable without a GPU.
 
@@ -57,22 +61,48 @@ def train(
     ``hub_id`` = push the adapter to this HF Hub repo right after saving (needs ``HF_TOKEN`` /
     ``huggingface-cli login``). Use it so an ephemeral GPU host can die without losing the weights.
     """
+    # Pre-flight: check peft + torchao compatibility (common Kaggle/Colab mismatch).
+    import warnings
+
     import torch  # noqa: F401  (fail loudly here if the env can't do training)
+    if not torch.cuda.is_available() and not smoke:
+        raise RuntimeError("CUDA is required for training. No GPU detected.")
     from datasets import Dataset
     from peft import LoraConfig
     from trl import GRPOConfig, GRPOTrainer
 
+    # Suppress the harmless "cpp extensions" torch warning that scares users.
+    warnings.filterwarnings("ignore", message=".*cpp extensions.*incompatible torch.*")
+
+    try:
+        from peft.import_utils import is_torchao_available
+    except ImportError:
+        pass  # older peft version doesn't have this check
+    else:
+        try:
+            is_torchao_available()
+        except ImportError as exc:
+            logger.warning(
+                "PRE-FLIGHT FAILURE: %s\n"
+                "Fix with:  pip install -q 'torchao>=0.16.0'\n"
+                "Or:        pip install -q 'peft<0.14'  (older peft, no torchao check)",
+                exc,
+            )
+            raise SystemExit(1) from None
+
     if smoke:  # prove the pipeline runs: tiny model, 2 steps, cheap lite reward, few samples
         model_id, tier, steps, k, out = SMOKE_MODEL, "lite", 2, 4, "out/rl-smoke"
+        resume = None  # never resume in smoke mode
 
     # Loud guard: without a surrogate the reward is the LOCAL ensemble, which does NOT transfer to
     # GPTZero/Originality (measured: RADAR 0.008 vs GPTZero 100% same text). Catching this here saves a
     # multi-hour run aimed at the wrong target — exactly the failure that wastes a free-GPU session.
     if not smoke and not os.environ.get("UNTELL_SURROGATE_DIR"):
-        print(
-            f"WARNING: UNTELL_SURROGATE_DIR is not set -> reward = LOCAL ensemble (tier={tier}). This "
+        logger.warning(
+            "UNTELL_SURROGATE_DIR is not set -> reward = LOCAL ensemble (tier=%s). This "
             "does NOT transfer to commercial detectors. Train a surrogate (training.surrogate) and set "
-            "UNTELL_SURROGATE_DIR first, or this run optimizes the wrong target."
+            "UNTELL_SURROGATE_DIR first, or this run optimizes the wrong target.",
+            tier,
         )
 
     # Fail FAST on a bad/missing Hub token: validate auth and create the repo BEFORE the multi-hour
@@ -103,16 +133,21 @@ def train(
         # num_generations (=k). Tie grad_accum to k so any k stays valid (else: ValueError at init).
         gradient_accumulation_steps=k,
         learning_rate=1e-5,
+        warmup_steps=20,
         bf16=True,
         logging_steps=10,
-        # Shorter completions: faster generation AND far faster reward scoring (the ensemble's
-        # Longformer/MAGE detector cost scales with input length). Halving this ~halves step time.
+        # 128 tokens ~60s/step on T4 with Qwen2.5-3B + k=6. At ~100s/step, 300 steps = 8.3h
+        # (fits Kaggle's 9h GPU limit). 192 tokens was pushing to ~14h which gets killed.
         max_completion_length=64 if smoke else 128,
-        # Checkpoint mid-run so a session that hits the GPU-host wall (Kaggle/Colab cap ~12h) still
+        max_grad_norm=0.3,
+        optim="adamw_torch",
+        # Checkpoint mid-run so a session that hits the GPU-host wall (Kaggle/Colab cap) still
         # leaves a usable adapter on disk. Without this a killed run produces nothing.
         save_strategy="steps",
         save_steps=25,
-        save_total_limit=2,
+        save_total_limit=3,
+        # Allow resuming from a checkpoint directory.
+        resume_from_checkpoint=resume,
     )
     lora = LoraConfig(r=32, lora_alpha=64, target_modules="all-linear", task_type="CAUSAL_LM")
     trainer = GRPOTrainer(model=model, reward_funcs=reward_fn, args=cfg, train_dataset=dataset, peft_config=lora)
@@ -125,7 +160,7 @@ def train(
         try:
             trainer.save_model(out)
         except Exception as exc:  # noqa: BLE001
-            print(f"WARNING: trainer.save_model failed: {type(exc).__name__}: {exc}")
+            logger.warning("trainer.save_model failed: %s: %s", type(exc).__name__, exc)
 
     # Verify the FINAL adapter specifically. A real LoRA adapter is ~100MB+; a KiB-scale number means
     # the save misfired (the trap that produced a useless 76KiB tarball last run). Measure only the
@@ -142,8 +177,8 @@ def train(
     size_mb = adapter.stat().st_size / 1e6 if adapter else 0.0
     print(f"saved policy -> {abs_out}  (adapter {size_mb:.1f} MB on disk)")
     if adapter is None or size_mb < 1.0:
-        print(
-            "WARNING: no final LoRA adapter (adapter_model.safetensors/.bin) >=1MB in the output dir — "
+        logger.warning(
+            "no final LoRA adapter (adapter_model.safetensors/.bin) >=1MB in the output dir — "
             "the save likely misfired or training never reached it. Do not trust this run; use the "
             "latest out/checkpoint-* instead if one exists."
         )
@@ -157,18 +192,21 @@ def train(
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     parser = argparse.ArgumentParser(prog="training.rl_humanizer", description=__doc__)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
-    parser.add_argument("--steps", type=int, default=500)
     parser.add_argument("--k", type=int, default=6)
     parser.add_argument("--out", default="out/rl-humanizer")
     parser.add_argument("--smoke", action="store_true", help="tiny model + 2 steps + lite reward (proves it runs)")
     parser.add_argument("--load-4bit", action="store_true", help="QLoRA 4-bit load so 3B fits a free 16GB T4")
     parser.add_argument("--hub-id", help="push the adapter to this HF Hub repo after save (needs HF_TOKEN) so an ephemeral host can't lose it")
+    parser.add_argument("--resume", default=None, help="resume from this checkpoint directory (e.g. out/rl-humanizer/checkpoint-125)")
+    parser.add_argument("--steps", type=int, default=300, help="training steps (default 300 to fit Kaggle 9h GPU limit; each step ~100s on T4)")
     args = parser.parse_args(argv)
     path = train(
-        model_id=args.model, tier=args.tier, steps=args.steps, k=args.k, out=args.out, smoke=args.smoke, load_4bit=args.load_4bit, hub_id=args.hub_id
+        model_id=args.model, tier=args.tier, steps=args.steps, k=args.k, out=args.out,
+        smoke=args.smoke, load_4bit=args.load_4bit, hub_id=args.hub_id, resume=args.resume,
     )
     print(f"saved policy -> {path}")
     return 0

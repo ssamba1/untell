@@ -7,7 +7,11 @@ contributes ensemble diversity. Guarded: unavailable unless ``transformers``+``t
 
 from __future__ import annotations
 
+import logging
+
 from .base import clamp01
+
+logger = logging.getLogger(__name__)
 
 _MODEL_ID = "openai-community/roberta-base-openai-detector"
 
@@ -45,7 +49,7 @@ class RobertaOpenAIDetector:
 
     def score(self, text: str) -> float | None:
         if RobertaOpenAIDetector._dead:
-            raise RuntimeError("roberta_openai disabled after a prior load failure")
+            return None
         if not text.strip():
             return None
         try:
@@ -53,13 +57,10 @@ class RobertaOpenAIDetector:
         except Exception as exc:
             RobertaOpenAIDetector._dead = True
             if not RobertaOpenAIDetector._warned:
-                import sys
-
-                print(
-                    f"[untell] roberta_openai failed to load and was EXCLUDED from the ensemble "
-                    f"({type(exc).__name__}: {str(exc)[:140]}). "
-                    "Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
-                    file=sys.stderr,
+                logger.warning(
+                    "roberta_openai failed to load and was EXCLUDED from the ensemble "
+                    "(%s: %s). Often a NumPy 2.x / torch mismatch - see README troubleshooting.",
+                    type(exc).__name__, str(exc)[:140],
                 )
                 RobertaOpenAIDetector._warned = True
             raise

@@ -43,6 +43,22 @@ def test_untell_text_runs_loop_and_restores(monkeypatch):
     assert "47%" in res["final"]
 
 
+def test_per_detector_threshold_blocks_pass(monkeypatch):
+    """An impossible per-detector threshold forces the loop to run even when the global bar passes."""
+    import untell.scripts.run as run_mod
+
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _GoodRW())
+    res = untell_text(
+        AI,
+        tier="lite",
+        threshold=1.0,  # global bar passes
+        max_iters=2,
+        detector_thresholds={"perplexity_burstiness": 0.0},  # can never be satisfied (score >= 0)
+    )
+    assert res["stopped"] == "max_iters"
+    assert res["iterations"] == 2
+
+
 def test_untell_text_no_rewriter_returns_error(monkeypatch):
     import untell.scripts.run as run_mod
 
@@ -87,7 +103,8 @@ def test_cli_no_rewriter_exits_nonzero(monkeypatch, capsys):
     import untell.scripts.run as run_mod
 
     monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: None)
-    rc = main(["--tier", "lite", "some text to untell here please"])
+    # Explicitly request 'auto' rewriter (which fails without a key)
+    rc = main(["--rewriter", "auto", "--tier", "lite", "some text to untell here please"])
     assert rc == 1
     assert "ERROR" in capsys.readouterr().out
 

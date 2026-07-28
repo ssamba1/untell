@@ -30,13 +30,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import logging
 import os
 import random
-import sys
 
-DEFAULT_BASE = "distilroberta-base"
-# Smoke reuses the real base (RoBERTa BPE tokenizer loads fast with no sentencepiece), just with tiny
-# data + 1 epoch — reliability over a few MB saved, since some "tiny" models ship only slow tokenizers.
+logger = logging.getLogger(__name__)
+DEFAULT_BASE = "FacebookAI/roberta-base"
 SMOKE_BASE = "distilroberta-base"
 
 # Tiny labeled fallback so `--smoke` and no-`datasets` boxes still exercise the full path.
@@ -61,7 +60,7 @@ _BUILTIN_HUMAN = [
 def _builtin_labeled(n: int) -> list[tuple[str, float]]:
     rows = [(t, 1.0) for t in _BUILTIN_AI] + [(t, 0.0) for t in _BUILTIN_HUMAN]
     out = []
-    while len(out) < max(n, len(rows)):
+    while len(out) < n:
         out.extend(rows)
     return out[:n] if n <= len(out) else out
 
@@ -69,7 +68,7 @@ def _builtin_labeled(n: int) -> list[tuple[str, float]]:
 def _load_csv(path: str) -> list[tuple[str, float]]:
     """Load (text, score) from a CSV with `text` and `score` columns (GPTZero-labeled path)."""
     rows: list[tuple[str, float]] = []
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8", errors="replace") as fh:
         reader = csv.DictReader(fh)
         for r in reader:
             txt = (r.get("text") or "").strip()
@@ -99,6 +98,7 @@ def load_labeled(dataset: str = "hc3", n: int = 2000, seed: int = 0) -> list[tup
     try:
         from datasets import load_dataset
     except Exception:
+        logger.warning("dataset load failed; falling back to built-in samples.")
         return _builtin_labeled(n)
 
     rows = []
@@ -126,10 +126,10 @@ def load_labeled(dataset: str = "hc3", n: int = 2000, seed: int = 0) -> list[tup
                 if len(rows) >= n * 1.3:
                     break
         else:
-            print(f"[untell-surrogate] unknown dataset '{dataset}'; using builtin.", file=sys.stderr)
+            logger.warning("unknown dataset '%s'; using builtin.", dataset)
             return _builtin_labeled(n)
     except Exception as exc:
-        print(f"[untell-surrogate] dataset load failed ({type(exc).__name__}); using builtin.", file=sys.stderr)
+        logger.warning("dataset load failed (%s); using builtin.", type(exc).__name__)
         return _builtin_labeled(n)
 
     # Balance the two classes so the surrogate isn't biased by corpus skew.
@@ -190,7 +190,7 @@ def train_surrogate(
             opt.step()
             total += float(loss)
             steps += 1
-        print(f"[untell-surrogate] epoch {ep + 1}/{epochs}  loss {total / max(steps, 1):.4f}  (n={len(data)})", file=sys.stderr)
+        logger.info("epoch %d/%d  loss %.4f  (n=%d)", ep + 1, epochs, total / max(steps, 1), len(data))
 
     os.makedirs(out_dir, exist_ok=True)
     model.save_pretrained(out_dir)
@@ -227,6 +227,7 @@ class SurrogateDetector:
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     ap = argparse.ArgumentParser(
         prog="untell-surrogate",
         description="Train a local surrogate of a target AI detector (the RL reward's real target).",

@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from untell.scripts.quality import (
+    BERTSCORE_BAR,
     DEFAULT_BAR,
     TOKEN_BAR,
     confidence,
@@ -17,6 +20,15 @@ from untell.scripts.quality import (
 from untell.scripts.quality import (
     main as quality_main,
 )
+
+
+def _bertscore_ready() -> bool:
+    try:
+        from bert_score import BERTScorer  # noqa: F401
+
+        return True
+    except Exception:
+        return False
 
 
 def test_identical_text_is_max_similarity():
@@ -70,5 +82,35 @@ def test_quality_cli_is_ascii_safe(capsys):
     out = capsys.readouterr().out
     out.encode("ascii")  # must not raise — portable on a non-UTF-8 (Windows cp1252) stdout
     parsed = json.loads(out)
-    assert parsed["method"] in ("embedding", "token_overlap")
+    assert parsed["method"] in ("embedding", "token_overlap", "bertscore")
     assert "confidence" in parsed and "bar" in parsed and "passes" in parsed
+
+
+def test_bar_is_consistent_with_active_method():
+    """recommended_bar() must match whichever backend method() reports — no scale mismatch."""
+    m = method()
+    bar = recommended_bar()
+    if m == "bertscore":
+        assert bar == BERTSCORE_BAR
+    elif m == "embedding":
+        assert bar == DEFAULT_BAR
+    else:
+        assert bar == TOKEN_BAR
+
+
+def test_bertscore_not_active_when_uninstalled():
+    if not _bertscore_ready():
+        assert method() != "bertscore"
+
+
+@pytest.mark.skipif(not _bertscore_ready(), reason="bert-score not installed")
+def test_bertscore_backend_active_when_installed():
+    assert method() == "bertscore"
+    assert recommended_bar() == BERTSCORE_BAR
+
+
+@pytest.mark.skipif(not _bertscore_ready(), reason="bert-score not installed")
+def test_bertscore_paraphrase_above_bar():
+    a = "The new system significantly improved response time."
+    b = "Response time improved a lot with the new system."
+    assert passes(a, b)  # faithful paraphrase clears the BERTScore bar

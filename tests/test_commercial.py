@@ -92,6 +92,7 @@ def test_copyleaks_token_is_cached(monkeypatch):
 
 
 def test_empty_text_is_neutral(monkeypatch):
+    """Empty text must return None (excluded from ensemble), not a fake 0.5 that inflates the max."""
     monkeypatch.setenv("SAPLING_API_KEY", "k")
     monkeypatch.setattr(C, "_post_json", lambda *a, **k: {"score": 0.9})
-    assert C.SaplingDetector().score("   ") == 0.5
+    assert C.SaplingDetector().score("   ") is None

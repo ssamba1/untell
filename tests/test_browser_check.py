@@ -57,7 +57,7 @@ def test_user_defined_site_from_json(tmp_path, monkeypatch):
         '"result_selector": ".out", "submit_button_text": "scan"}}',
         encoding="utf-8",
     )
-    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(sites))
+    monkeypatch.setenv("UNTELL_BROWSER_SITES", str(sites))
     assert "mysite" in available_browser_checkers()
     chk = get_browser_checker("mysite")
     assert isinstance(chk, WebUIChecker)
@@ -68,7 +68,7 @@ def test_user_defined_site_from_json(tmp_path, monkeypatch):
 def test_malformed_user_site_is_skipped(tmp_path, monkeypatch):
     sites = tmp_path / "sites.json"
     sites.write_text('{"bad": {"no_url_field": true}, "ok": {"url": "u", "input_selector": "#i"}}', encoding="utf-8")
-    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(sites))
+    monkeypatch.setenv("UNTELL_BROWSER_SITES", str(sites))
     names = available_browser_checkers()
     assert "ok" in names
     assert "bad" not in names  # missing required field -> skipped, not a crash
@@ -80,7 +80,7 @@ def test_underscore_comment_keys_are_tolerated(tmp_path, monkeypatch):
         '{"_comment": "a note", "site1": {"url": "u", "input_selector": "#i", "_caveat": "weak"}}',
         encoding="utf-8",
     )
-    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(sites))
+    monkeypatch.setenv("UNTELL_BROWSER_SITES", str(sites))
     names = available_browser_checkers()
     assert "site1" in names  # loads despite the per-entry _caveat
     assert "_comment" not in names  # top-level comment skipped, not crash
@@ -94,7 +94,7 @@ def test_shipped_example_file_parses(monkeypatch):
     p = os.path.join(os.path.dirname(__file__), "..", "examples", "browser_sites.example.json")
     if not os.path.isfile(p):
         return
-    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", p)
+    monkeypatch.setenv("UNTELL_BROWSER_SITES", p)
     names = available_browser_checkers()
     assert "decopy" in names and "detecting-ai" in names
 

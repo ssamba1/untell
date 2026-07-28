@@ -12,6 +12,7 @@ is built to show; install ``.[full]`` for meaningful absolute bypass rates.
 from __future__ import annotations
 
 import argparse
+import logging
 
 from eval.baselines import STRATEGIES
 from eval.datasets import load_samples
@@ -31,6 +32,10 @@ def run(dataset: str, n: int, tier: str, threshold: float, strategies: list[str]
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    from untell.scripts.io_utils import configure_utf8_io
+
+    configure_utf8_io()
     parser = argparse.ArgumentParser(prog="eval.benchmark", description=__doc__)
     parser.add_argument("--dataset", default="builtin", help="builtin | hc3 | raid")
     parser.add_argument("--n", type=int, default=5, help="number of samples")

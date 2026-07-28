@@ -79,15 +79,17 @@ def test_checker_error_is_a_fail(monkeypatch):
 
 
 def test_cli_exit_codes(monkeypatch, capsys):
-    # no keys -> non-zero + clear message
+    # no keys, default tier=full -> local ensemble runs, output shows local results
     rc = main(["some text"])
-    assert rc == 1
-    assert "No commercial checkers configured" in capsys.readouterr().out
+    assert rc == 1  # local ensemble flagged it
+    out = capsys.readouterr().out
+    assert "local:" in out
+    assert "FAIL" in out
 
-    # all-pass -> exit 0, JSON well-formed
+    # all-pass -> exit 0, JSON well-formed (commercial-only to isolate from local ensemble)
     monkeypatch.setenv("SAPLING_API_KEY", "k")
     monkeypatch.setattr(C, "_post_json", lambda *a, **k: {"score": 0.02})
-    rc = main(["--json", "text"])
+    rc = main(["--tier", "commercial", "--json", "text"])
     assert rc == 0
     parsed = json.loads(capsys.readouterr().out)
     assert parsed["passes_all"] is True

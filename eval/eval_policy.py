@@ -16,8 +16,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import statistics
-import sys
+
+logger = logging.getLogger(__name__)
 
 
 def _eval(rw, samples: list[str], tier: str) -> list[dict]:
@@ -30,7 +32,7 @@ def _eval(rw, samples: list[str], tier: str) -> list[dict]:
         out = rw.rewrite(s, {"detectors": {}}, threshold=0.30)
         post = float(score_text(out, tier=tier)["max"])
         rows.append({"pre": pre, "post": post, "sim": similarity(s, out)})
-        print(f"  [{rw.name}] {i + 1}/{len(samples)}  P(AI) {pre:.2f} -> {post:.2f}", file=sys.stderr)
+        logger.info("[%s] %d/%d  P(AI) %.2f -> %.2f", rw.name, i + 1, len(samples), pre, post)
     return rows
 
 
@@ -48,6 +50,7 @@ def _summary(name: str, rows: list[dict], threshold: float) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()
@@ -66,10 +69,9 @@ def main(argv: list[str] | None = None) -> int:
 
     policy = LocalPolicyRewriter(adapter_dir=a.policy)
     if not policy.available():
-        print(
+        logger.error(
             "policy unavailable: set --policy / $UNTELL_POLICY_DIR to a real adapter dir and "
-            "`pip install -e .[train]` (needs torch+transformers+peft).",
-            file=sys.stderr,
+            "`pip install -e .[train]` (needs torch+transformers+peft)."
         )
         return 2
 
@@ -80,9 +82,8 @@ def main(argv: list[str] | None = None) -> int:
     if a.vs_base:
         base = LocalPolicyRewriter(adapter_dir=a.policy, use_adapter=False)
         if not base.available():  # same clean exit as the policy guard, instead of an ImportError in _load
-            print(
-                "base model unavailable for --vs-base: needs torch+transformers (`pip install -e .[train]`).",
-                file=sys.stderr,
+            logger.error(
+                "base model unavailable for --vs-base: needs torch+transformers (`pip install -e .[train]`)."
             )
             return 2
         out["base"] = _eval(base, samples, a.tier)

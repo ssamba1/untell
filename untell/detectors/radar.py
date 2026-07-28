@@ -6,7 +6,7 @@ detector to fool, which makes it the most valuable target to optimize our loop a
 
 ⚠️ LICENSE: ``TrustSafeAI/RADAR-Vicuna-7B`` inherits Vicuna's **NON-COMMERCIAL** license. We do not
 redistribute the weights — you download them yourself, and only if you opt in. Because of the
-license, RADAR is **opt-in**: set ``HUMANIZE_ENABLE_RADAR=1`` to include it. Use for research /
+license, RADAR is **opt-in**: set ``UNTELL_ENABLE_RADAR=1`` to include it. Use for research /
 evaluation, not in a commercial product path.
 
 The detector is RoBERTa-large (~355M params, CPU-feasible but slow); the "7B" in the name refers to
@@ -16,9 +16,12 @@ the Vicuna paraphraser it was trained against, not the detector. P(AI) = ``softm
 
 from __future__ import annotations
 
+import logging
 import os
 
 from .base import clamp01
+
+logger = logging.getLogger(__name__)
 
 _MODEL_ID = "TrustSafeAI/RADAR-Vicuna-7B"
 
@@ -33,7 +36,7 @@ class RadarDetector:
 
     def available(self) -> bool:
         if not (os.environ.get("UNTELL_ENABLE_RADAR") or os.environ.get("HUMANIZE_ENABLE_RADAR")):
-            return False  # opt-in only (non-commercial license); HUMANIZE_ENABLE_RADAR kept as a legacy alias
+            return False  # opt-in only (non-commercial license)
         try:
             import torch  # noqa: F401
             import transformers  # noqa: F401
@@ -56,12 +59,9 @@ class RadarDetector:
         if not self.available() or not text.strip():
             return None
         if not RadarDetector._warned:
-            import sys
-
-            print(
-                "[untell] RADAR enabled - TrustSafeAI/RADAR-Vicuna-7B is NON-COMMERCIAL licensed; "
-                "research/evaluation use only.",
-                file=sys.stderr,
+            logger.info(
+                "RADAR enabled - TrustSafeAI/RADAR-Vicuna-7B is NON-COMMERCIAL licensed; "
+                "research/evaluation use only."
             )
             RadarDetector._warned = True
         import torch

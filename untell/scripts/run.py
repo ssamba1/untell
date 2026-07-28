@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 
 # Run-as-file support (zero-dep lite tier): when this file is executed directly
@@ -94,6 +95,7 @@ def untell_text(
     polish: bool = False,
     style: str | None = None,
     best_of: int = 1,
+    detector_thresholds: dict[str, float] | None = None,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -112,9 +114,8 @@ def untell_text(
     rw = rewriter if rewriter is not None else get_rewriter()
     if rw is None:
         return {
-            "error": "no rewriter configured — pass --rewriter surgical for a no-key $0 run, or install "
-            ".[api] and set ANTHROPIC_API_KEY / OPENAI_API_KEY, or use the /untell Claude skill "
-            "(Claude is the rewriter).",
+            "error": "no rewriter configured — run with --rewriter composite (free, $0, no key), or "
+            "set ANTHROPIC_API_KEY / OPENAI_API_KEY / UNTELL_POLICY_DIR",
             "final": text,
         }
 
@@ -140,6 +141,15 @@ def untell_text(
         return score_text(masked_text, tier=tier, threshold=threshold)
 
     def _passed(s: dict) -> bool:
+        # Per-detector gate (optional): every named detector must be below its own threshold.
+        # Different detectors calibrate differently, so a single global max is a blunt instrument;
+        # `detector_thresholds` lets a caller require e.g. mage<0.40 AND roberta_openai<0.25.
+        if detector_thresholds:
+            dets = s.get("detectors", {})
+            for name, t in detector_thresholds.items():
+                v = dets.get(name)
+                if isinstance(v, (int, float)) and v >= t:
+                    return False
         # Comfortable pass: below threshold by the safety margin (headroom vs detector noise).
         return s["max"] < threshold - margin
 
@@ -202,12 +212,16 @@ def untell_text(
             stopped = "stalled"
             break
 
-    # Reproducibility guard: re-score the winner a few times; detectors are noisy and a one-off pass
-    # can re-flag. Only keep "passed" if every confirmation pass also clears.
+    # Restore sentinels to get the final human-readable text before any confirm/polish/return.
+    final = restore(best_masked, mapping)
+
+    # Reproducibility guard: re-score the winner a few times on the FINAL (restored) text;
+    # detectors are noisy and a one-off pass on masked text can re-flag once sentinels are
+    # replaced by the real citations/numbers/URLs the detector might key on.
     if stopped == "passed" and confirm > 0:
         for _ in range(confirm):
-            rescore = score(best_masked)
-            if rescore["max"] >= threshold - margin:  # same headroom as the pass test (_passed)
+            rescore = score(final)
+            if rescore["max"] >= threshold - margin:
                 best_score = rescore
                 stopped = "passed_unconfirmed"
                 break
@@ -220,20 +234,18 @@ def untell_text(
             # Optimize against the SAME signal the loop scored against (so the swaps target the real
             # objective), except in browser mode whose composite tier isn't directly scoreable -> lite.
             polish_tier = "lite" if browser_score is not None else tier
-            polished = surgical_substitute(best_masked, tier=polish_tier, threshold=threshold)["text"]
+            polished = surgical_substitute(final, tier=polish_tier, threshold=threshold)["text"]
             polished_score = score(polished)
-            # Polish must clear the same gates as a rewrite: sentinels intact, meaning preserved,
-            # detector max not worse. (Reuse polished_score; don't re-score and risk detector noise.)
+            # Polish on the restored (final) text: verify meaning preserved (vs the original masked
+            # text) and score not worse. Sentinel check is irrelevant — text is already restored.
             if (
-                find_sentinels(polished) == set(mapping)
-                and similarity(masked, polished) >= sim_bar
-                and polished_score["max"] <= best_score["max"]
+                polished_score["max"] <= best_score["max"]
+                and similarity(text, polished) >= sim_bar
             ):
-                best_masked, best_score = polished, polished_score
+                final, best_score = polished, polished_score
         except Exception:
             pass
 
-    final = restore(best_masked, mapping)
     return {
         "final": final,
         "iterations": iters,
@@ -270,18 +282,29 @@ def _render(result: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
-    configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
-    from untell._env import load_env
-
-    load_env()  # pick up ANTHROPIC_API_KEY / commercial keys from a .env file if present
+    configure_utf8_io()
     parser = argparse.ArgumentParser(prog="untell-loop", description="Run the headless untell loop.")
     parser.add_argument("text", nargs="?", help="text to untell (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--max-iters", type=int, default=5)
+    parser.add_argument(
+        "--max-rounds",
+        type=int,
+        default=None,
+        help="alias for --max-iters (rounds of rewrite). Overrides --max-iters when set.",
+    )
+    parser.add_argument(
+        "--detector-thresholds",
+        default=None,
+        help='per-detector pass gate as a JSON object, e.g. \'{"mage":0.40,"roberta_openai":0.25}\'. '
+        "Every named detector must fall below its own threshold to declare a pass (in addition to "
+        "the global --threshold). Lets you hold the hardest detectors to a stricter bar.",
+    )
     parser.add_argument(
         "--browser",
         help="score each iteration against free web detector(s) instead of local proxies — "
@@ -304,18 +327,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--rewriter",
-        choices=["auto", "surgical"],
-        default="auto",
-        help="'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR); "
-        "'surgical' = deterministic no-key word-substitution rewriter, so the loop runs at $0 "
-        "(weaker, CPU-only).",
+        choices=["auto", "surgical", "structural", "composite", "mt_pivot", "base"],
+        default="composite",
+        help="'composite' = structural + surgical chained ($0, best free path, DEFAULT); "
+        "'structural' = sentence-level transforms ($0); "
+        "'surgical' = word-substitution rewriter ($0); "
+        "'mt_pivot' = round-trip machine translation (needs .[full]; best on watermarked input); "
+        "'base' = untuned base model, no LoRA adapter (A/B baseline; needs .[full] + UNTELL_POLICY_BASE); "
+        "'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR).",
     )
     parser.add_argument("--no-scrub", action="store_true", help="skip stripping hidden watermark/unicode chars from input")
     parser.add_argument("--polish", action="store_true", help="add a cheap surgical word-substitution polish pass at the end")
     parser.add_argument(
         "--style",
-        choices=["casual", "professional", "academic", "blunt", "storytelling", "journalistic"],
-        help="bias the rewrite toward a writing style/voice",
+        choices=["casual", "professional", "academic", "blunt", "storytelling", "journalistic",
+                 "technical", "persuasive", "empathetic", "humorous", "poetic",
+                 "instructional", "conversational", "minimalist"],
+        help="bias the rewrite toward a writing style/voice (14 modes)",
     )
     parser.add_argument(
         "--best-of",
@@ -340,15 +368,40 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     rewriter = None
-    if args.rewriter == "surgical":
+    if args.rewriter in ("surgical", "structural", "composite", "mt_pivot"):
         from untell.rewriter import get_rewriter
 
-        rewriter = get_rewriter(prefer="surgical")
+        rewriter = get_rewriter(prefer=args.rewriter)
+        if rewriter is None:
+            print(
+                f"ERROR: --rewriter {args.rewriter} is unavailable — it needs the '.[full]' extra "
+                "(pip install -e '.[full]'). Try --rewriter composite for the zero-dependency path."
+            )
+            return 1
+    elif args.rewriter == "base":
+        from untell.rewriter.local_policy import LocalPolicyRewriter
+
+        rewriter = LocalPolicyRewriter(use_adapter=False)
+        if not rewriter.available():
+            print(
+                "ERROR: --rewriter base needs torch + transformers (pip install -e '.[full]'); "
+                "set UNTELL_POLICY_BASE to a HF model id to override the default base."
+            )
+            return 1
+
+    detector_thresholds = None
+    if args.detector_thresholds:
+        try:
+            detector_thresholds = {k: float(v) for k, v in json.loads(args.detector_thresholds).items()}
+        except (ValueError, AttributeError) as exc:
+            print(f"ERROR: --detector-thresholds must be a JSON object of name:number pairs ({exc}).")
+            return 2
+
     result = untell_text(
         text,
         tier=args.tier,
         threshold=args.threshold,
-        max_iters=args.max_iters,
+        max_iters=args.max_rounds if args.max_rounds is not None else args.max_iters,
         rewriter=rewriter,
         browser=args.browser,
         margin=args.margin,
@@ -357,11 +410,27 @@ def main(argv: list[str] | None = None) -> int:
         polish=args.polish,
         style=args.style,
         best_of=args.best_of,
+        detector_thresholds=detector_thresholds,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))
+    elif "error" in result:
+        print(f"ERROR: {result['error']}")
     else:
-        print(_render(result))
+        # Rich output when available, otherwise the standard render
+        try:
+            from untell.rich_output import print_humanize_result
+
+            print_humanize_result(
+                original=text,
+                final=result.get("final", ""),
+                pre_score=result.get("pre", {}),
+                post_score=result.get("post", {}),
+                iterations=result.get("iterations", 0),
+                stopped=result.get("stopped", "unknown"),
+            )
+        except Exception:
+            print(_render(result))
     return 1 if "error" in result else 0
 
 

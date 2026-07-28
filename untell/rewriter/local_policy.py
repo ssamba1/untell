@@ -114,11 +114,21 @@ class LocalPolicyRewriter:
 
         self._load()
         messages = [{"role": "user", "content": _TRAIN_PROMPT.format(text=text)}]
-        prompt = self._tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        # UNTELL_POLICY_NO_SYSTEM=1 suppresses the tokenizer's default system turn (e.g. Qwen's
+        # "You are a helpful assistant") — some base models read as more human without it. Not every
+        # template accepts the kwarg, so fall back to the plain call on any failure.
+        tmpl_kw = {"tokenize": False, "add_generation_prompt": True}
+        if os.environ.get("UNTELL_POLICY_NO_SYSTEM") == "1":
+            try:
+                prompt = self._tok.apply_chat_template(messages, system_prompt="", **tmpl_kw)
+            except (TypeError, ValueError):
+                prompt = self._tok.apply_chat_template(messages, **tmpl_kw)
+        else:
+            prompt = self._tok.apply_chat_template(messages, **tmpl_kw)
         # Use a real parameter's device, not self._model.device: when accelerate dispatches the model
         # across devices (device_map="auto" with >1 GPU or CPU offload) there is no single .device.
         device = next(self._model.parameters()).device
-        inputs = self._tok(prompt, return_tensors="pt").to(device)
+        inputs = self._tok(prompt, return_tensors="pt", truncation=True, max_length=2048).to(device)
         with torch.no_grad():
             out = self._model.generate(
                 **inputs,

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 import sys
 
@@ -284,6 +285,7 @@ def _render(r: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()

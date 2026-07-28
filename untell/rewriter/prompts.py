@@ -65,6 +65,14 @@ def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30)
         "blunt": "Be blunt and plain-spoken — short declaratives, no hedging.",
         "storytelling": "Use a narrative, storytelling voice — concrete scenes, a human throughline.",
         "journalistic": "Write like a journalist — lead with the point, concrete and specific.",
+        "technical": "Write with technical precision — specific jargon is fine, keep it concise and factual.",
+        "persuasive": "Write persuasively — confident claims, clear reasoning, a compelling through-line.",
+        "empathetic": "Write with warmth and empathy — show you understand the reader's perspective.",
+        "humorous": "Write with light humour — conversational, playful, natural asides.",
+        "poetic": "Write with a lyrical, evocative quality — vivid imagery, rhythm, sensory language.",
+        "instructional": "Write as a clear instructor — step by step, direct, no ambiguity.",
+        "conversational": "Write like you're talking to a friend — natural back-and-forth rhythm, contractions.",
+        "minimalist": "Write minimally — short sentences, only essential words, maximum signal.",
     }
     if style and style in _STYLES:
         feedback += f"\n\nVoice: {_STYLES[style]}"

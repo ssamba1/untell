@@ -17,10 +17,13 @@ demo zero-install, not a ground-truth detector. See README caveats.
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 
 from .base import clamp01
+
+logger = logging.getLogger(__name__)
 
 _SENT_SPLIT = re.compile(r"[.!?]+(?:\s+|$)")
 _WORD = re.compile(r"[A-Za-z']+")
@@ -148,11 +151,8 @@ class PerplexityBurstinessDetector:
             try:
                 return clamp01(self._full_score(text))
             except Exception as exc:  # model/load failure -> heuristic, but say so (don't fail silently)
-                import sys
-
-                print(
-                    f"[untell] perplexity_burstiness full path failed ({type(exc).__name__}: "
-                    f"{str(exc)[:120]}); falling back to lite heuristic.",
-                    file=sys.stderr,
+                logger.warning(
+                    "perplexity_burstiness full path failed (%s: %s); falling back to lite heuristic.",
+                    type(exc).__name__, str(exc)[:120],
                 )
         return lite_score(text)

@@ -65,8 +65,8 @@ def test_new_detectors_registered():
 
 
 def test_radar_is_opt_in_gated(monkeypatch):
-    # RADAR is non-commercial licensed -> excluded unless HUMANIZE_ENABLE_RADAR is set, even with torch.
+    # RADAR is non-commercial licensed -> excluded unless UNTELL_ENABLE_RADAR is set, even with torch.
     from untell.detectors.radar import RadarDetector
 
-    monkeypatch.delenv("HUMANIZE_ENABLE_RADAR", raising=False)
+    monkeypatch.delenv("UNTELL_ENABLE_RADAR", raising=False)
     assert RadarDetector().available() is False

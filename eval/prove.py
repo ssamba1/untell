@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 
 from untell._env import load_env
@@ -67,6 +68,7 @@ def _render(v: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
@@ -81,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.file:
-        with open(args.file, encoding="utf-8") as fh:
+        with open(args.file, encoding="utf-8", errors="replace") as fh:
             text = fh.read()
     elif args.text:
         text = args.text

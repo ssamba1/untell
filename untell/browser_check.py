@@ -146,7 +146,7 @@ def _user_sites() -> dict[str, SiteConfig]:
 
     JSON shape: ``{"sitename": {"url": ..., "input_selector": ..., "result_selector": ..., ...}}``.
     """
-    path = os.environ.get("UNTELL_BROWSER_SITES") or os.environ.get("HUMANIZE_BROWSER_SITES") or "browser_sites.json"
+    path = os.environ.get("UNTELL_BROWSER_SITES") or "browser_sites.json"
     try:
         with open(path, encoding="utf-8") as fh:
             raw = json.load(fh)

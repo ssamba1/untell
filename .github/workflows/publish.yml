@@ -1,0 +1,40 @@
+name: publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to publish (tag or branch)"
+        required: true
+        default: main
+
+jobs:
+  pypi:
+    name: Build & publish to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # for PyPI trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build
+        run: pip install build
+
+      - name: Build wheel + sdist
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Uses trusted publishing — configure at pypi.org first.
+        # Falls back to a token if PYPI_API_TOKEN is set as a secret.
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}

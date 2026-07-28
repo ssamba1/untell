@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 
 _PROMPT = "Rewrite the following text so it reads as natural human writing while preserving its exact meaning:\n\n{text}"
 
@@ -36,12 +37,17 @@ def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshol
 
 
 def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     parser = argparse.ArgumentParser(prog="training.distill", description=__doc__)
     parser.add_argument("--dataset", default="builtin")
     parser.add_argument("--n", type=int, default=200)
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--out", default="data/sft.jsonl")
     args = parser.parse_args(argv)
+
+    from untell._env import load_env
+
+    load_env()
 
     out = distill(dataset=args.dataset, n=args.n, tier=args.tier)
     import os

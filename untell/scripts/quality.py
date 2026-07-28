@@ -14,14 +14,19 @@ API:
 
 from __future__ import annotations
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_BAR = 0.76  # semantic-cosine bar (P-SP threshold); only meaningful for the embedding metric
 TOKEN_BAR = 0.50  # token-overlap (Dice) bar; faithful paraphrases reword heavily and score lower
+BERTSCORE_BAR = 0.88  # BERTScore-F1 bar (rescaled-with-baseline); faithful paraphrases land ~0.88-0.92
 _WORD = re.compile(r"[A-Za-z0-9']+")
 
 _UNSET = object()
 _model = _UNSET  # _UNSET = not yet probed; None = probed and unavailable; else the model
+_bs_model = _UNSET  # BERTScore scorer cache (same _UNSET/None/model convention)
 
 
 def _st_model():
@@ -38,9 +43,42 @@ def _st_model():
         from sentence_transformers import SentenceTransformer
 
         _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    except Exception:
+    except (ImportError, OSError):
         _model = None
     return _model
+
+
+def _bs_scorer():
+    """Lazily load the BERTScore scorer, or return None if unavailable (cached like _st_model)."""
+    global _bs_model
+    if _bs_model is not _UNSET:
+        return _bs_model
+    try:
+        from bert_score import BERTScorer
+
+        # rescale_with_baseline maps raw F1 onto a calibrated [0,1] scale where 0.88 is a
+        # meaningful faithful-paraphrase bar (raw F1 would sit ~0.93+ and need a different bar).
+        _bs_model = BERTScorer(lang="en", rescale_with_baseline=True)
+    except Exception:
+        _bs_model = None
+    return _bs_model
+
+
+def _bert_score_similarity(a: str, b: str) -> float | None:
+    """BERTScore F1 of rewrite ``b`` against reference ``a``, or None if unavailable.
+
+    BERTScore *recall* catches propositional drift in the prose (dropped claims, altered causal
+    structure) that a single sentence-embedding cosine can average away — the genuine upgrade over
+    the MiniLM path. Facts/numbers/citations are already covered by the sentinel lock.
+    """
+    scorer = _bs_scorer()
+    if scorer is None:
+        return None
+    try:
+        _p, _r, f1 = scorer.score([b], [a])  # ([candidate], [reference])
+        return float(f1.mean())
+    except Exception:
+        return None
 
 
 def _tokens(text: str) -> list[str]:
@@ -81,6 +119,10 @@ def similarity(a: str, b: str) -> float:
     a_empty, b_empty = not a.strip(), not b.strip()
     if a_empty or b_empty:
         return 1.0 if (a_empty and b_empty) else 0.0
+    bs = _bert_score_similarity(a, b)
+    if bs is not None:
+        # BERTScore F1 (rescaled) — the highest-fidelity backend when bert-score is installed.
+        return max(0.0, min(1.0, bs))
     cos = _cosine_similarity(a, b)
     if cos is not None:
         # Clamp raw cosine into [0, 1]; the 0.76 bar lives on this raw-cosine scale.
@@ -89,7 +131,9 @@ def similarity(a: str, b: str) -> float:
 
 
 def method() -> str:
-    """Report which backend `similarity` will use: 'embedding' or 'token_overlap'."""
+    """Report which backend `similarity` will use: 'bertscore', 'embedding', or 'token_overlap'."""
+    if _bs_scorer() is not None:
+        return "bertscore"
     return "embedding" if _st_model() is not None else "token_overlap"
 
 
@@ -103,8 +147,11 @@ def confidence() -> str:
 
 
 def recommended_bar() -> float:
-    """The bar appropriate to the active metric (the two metrics live on different scales)."""
-    return DEFAULT_BAR if method() == "embedding" else TOKEN_BAR
+    """The bar appropriate to the active metric (each metric lives on a different scale)."""
+    m = method()
+    if m == "bertscore":
+        return BERTSCORE_BAR
+    return DEFAULT_BAR if m == "embedding" else TOKEN_BAR
 
 
 def passes(a: str, b: str, bar: float | None = None) -> bool:
@@ -120,12 +167,13 @@ def passes(a: str, b: str, bar: float | None = None) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     """CLI: ``python -m untell.scripts.quality "<orig>" "<rewrite>"`` -> JSON."""
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     import json
     import sys
 
     args = argv if argv is not None else sys.argv[1:]
     if len(args) < 2:
-        print('usage: quality.py "<original>" "<rewrite>"', file=sys.stderr)
+        logger.error('usage: quality.py "<original>" "<rewrite>"')
         return 2
     a, b = args[0], args[1]
     sim = similarity(a, b)

@@ -8,4 +8,4 @@ The ``lite`` tier runs on the standard library alone (no model downloads); ``ful
 ``heavy`` tiers activate automatically when their optional dependencies are installed.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"

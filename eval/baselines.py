@@ -202,9 +202,9 @@ def api_loop(
             try:
                 candidate = rw.rewrite(best_text, best_score, threshold)
             except Exception:  # any API failure -> deterministic fallback, never crash the loop
-                candidate = rewrite(text, strength=strength)
+                candidate = rewrite(best_text, strength=strength)
         else:
-            candidate = rewrite(text, strength=strength)
+            candidate = rewrite(best_text, strength=strength)
         cand_score = score_text(candidate, tier=tier, threshold=threshold)
         cand_sim = similarity(text, candidate)
         history.append(cand_score["max"])

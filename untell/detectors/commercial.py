@@ -20,19 +20,28 @@ import hashlib
 import os
 import time
 
+from untell._retry import retry
+
 from .base import clamp01
 
 
 def _post_json(url: str, headers: dict, body: dict, timeout: float = 45.0) -> dict:
-    """POST JSON and return parsed JSON. Isolated so tests can monkeypatch it (no network)."""
+    """POST JSON and return parsed JSON. Isolated so tests can monkeypatch it (no network).
+    Raises on HTTP/network errors; caller handles.
+    """
     import requests
 
-    resp = requests.post(url, headers={"Content-Type": "application/json", **headers}, json=body, timeout=timeout)
+    resp = retry(
+        requests.post,
+        kw={"url": url, "headers": {"Content-Type": "application/json", **headers}, "json": body, "timeout": timeout},
+        max_attempts=3,
+    )
     resp.raise_for_status()
     return resp.json()
 
 
 def _has(*env_vars: str) -> bool:
+    """True when ``requests`` is importable and all named env vars are set and non-empty."""
     try:
         import requests  # noqa: F401
     except Exception:
@@ -47,15 +56,18 @@ class OriginalityDetector:
     def available(self) -> bool:
         return _has("ORIGINALITY_API_KEY")
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
         if not self.available() or not text.strip():
-            return 0.5
-        data = _post_json(
-            "https://api.originality.ai/api/v1/scan/ai",
-            {"X-OAI-API-KEY": os.environ["ORIGINALITY_API_KEY"], "Accept": "application/json"},
-            {"content": text, "aiModelVersion": "1"},
-        )
-        return clamp01(float(data["score"]["ai"]))  # 0-1, higher = more AI
+            return None
+        try:
+            data = _post_json(
+                "https://api.originality.ai/api/v1/scan/ai",
+                {"X-OAI-API-KEY": os.environ["ORIGINALITY_API_KEY"], "Accept": "application/json"},
+                {"content": text, "aiModelVersion": "1"},
+            )
+            return clamp01(float(data["score"]["ai"]))
+        except (KeyError, TypeError, ValueError):
+            return None
 
 
 class WinstonDetector:
@@ -65,16 +77,18 @@ class WinstonDetector:
     def available(self) -> bool:
         return _has("WINSTON_API_KEY")
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
         if not self.available() or not text.strip():
-            return 0.5
-        data = _post_json(
-            "https://api.gowinston.ai/v2/ai-content-detection",
-            {"Authorization": f"Bearer {os.environ['WINSTON_API_KEY']}"},
-            {"text": text, "sentences": False, "language": "auto"},
-        )
-        # `score` is a 0-100 *human* likelihood; AI probability is the complement.
-        return clamp01((100.0 - float(data["score"])) / 100.0)
+            return None
+        try:
+            data = _post_json(
+                "https://api.gowinston.ai/v2/ai-content-detection",
+                {"Authorization": f"Bearer {os.environ['WINSTON_API_KEY']}"},
+                {"text": text, "sentences": False, "language": "auto"},
+            )
+            return clamp01((100.0 - float(data["score"])) / 100.0)
+        except (KeyError, TypeError, ValueError):
+            return None
 
 
 class GPTZeroDetector:
@@ -84,19 +98,25 @@ class GPTZeroDetector:
     def available(self) -> bool:
         return _has("GPTZERO_API_KEY")
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
         if not self.available() or not text.strip():
-            return 0.5
-        data = _post_json(
-            "https://api.gptzero.me/v2/predict/text",
-            {"x-api-key": os.environ["GPTZERO_API_KEY"], "Accept": "application/json"},
-            {"document": text},
-        )
-        doc = data["documents"][0]
-        ai = doc.get("class_probabilities", {}).get("ai")
-        if ai is None:
-            ai = doc.get("completely_generated_prob", 0.5)
-        return clamp01(float(ai))
+            return None
+        try:
+            data = _post_json(
+                "https://api.gptzero.me/v2/predict/text",
+                {"x-api-key": os.environ["GPTZERO_API_KEY"], "Accept": "application/json"},
+                {"document": text},
+            )
+            docs = data.get("documents", [])
+            if not docs:
+                return None
+            doc = docs[0]
+            ai = doc.get("class_probabilities", {}).get("ai")
+            if ai is None:
+                ai = doc.get("completely_generated_prob", 0.5)
+            return clamp01(float(ai))
+        except (KeyError, TypeError, ValueError, IndexError):
+            return None
 
 
 class SaplingDetector:
@@ -106,15 +126,18 @@ class SaplingDetector:
     def available(self) -> bool:
         return _has("SAPLING_API_KEY")
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
         if not self.available() or not text.strip():
-            return 0.5
-        data = _post_json(
-            "https://api.sapling.ai/api/v1/aidetect",
-            {},
-            {"key": os.environ["SAPLING_API_KEY"], "text": text, "sent_scores": False},
-        )
-        return clamp01(float(data["score"]))  # 0-1, overall AI probability
+            return None
+        try:
+            data = _post_json(
+                "https://api.sapling.ai/api/v1/aidetect",
+                {},
+                {"key": os.environ["SAPLING_API_KEY"], "text": text, "sent_scores": False},
+            )
+            return clamp01(float(data["score"]))
+        except (KeyError, TypeError, ValueError):
+            return None
 
 
 class ZeroGPTDetector:
@@ -124,15 +147,22 @@ class ZeroGPTDetector:
     def available(self) -> bool:
         return _has("ZEROGPT_API_KEY")
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
         if not self.available() or not text.strip():
-            return 0.5
-        data = _post_json(
-            "https://api.zerogpt.com/api/v1/detectText",
-            {"Authorization": f"Bearer {os.environ['ZEROGPT_API_KEY']}"},
-            {"input_text": text},
-        )
-        return clamp01(float(data["data"]["is_gpt_generated"]) / 100.0)  # 0-100 -> 0-1
+            return None
+        try:
+            data = _post_json(
+                "https://api.zerogpt.com/api/v1/detectText",
+                {"Authorization": f"Bearer {os.environ['ZEROGPT_API_KEY']}"},
+                {"input_text": text},
+            )
+            # ZeroGPT response has nested structure
+            score_data = data.get("data", {})
+            if isinstance(score_data, dict):
+                return clamp01(float(score_data.get("is_gpt_generated", 50)) / 100.0)
+            return None
+        except (TypeError, ValueError):
+            return None
 
 
 # Copyleaks needs a 2-step auth: login (email+key) -> 48h Bearer token -> detect.
@@ -164,17 +194,20 @@ class CopyleaksDetector:
     def available(self) -> bool:
         return _has("COPYLEAKS_EMAIL", "COPYLEAKS_API_KEY")
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
         if not self.available() or not text.strip():
-            return 0.5
-        token = _copyleaks_token()
-        scan_id = "hz" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:20]
-        data = _post_json(
-            f"https://api.copyleaks.com/v2/writer-detector/{scan_id}/check",
-            {"Authorization": f"Bearer {token}"},
-            {"text": text, "sandbox": self.sandbox},
-        )
-        return clamp01(float(data["summary"]["ai"]))  # 0-1
+            return None
+        try:
+            token = _copyleaks_token()
+            scan_id = "hz" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:20]
+            data = _post_json(
+                f"https://api.copyleaks.com/v2/writer-detector/{scan_id}/check",
+                {"Authorization": f"Bearer {token}"},
+                {"text": text, "sandbox": self.sandbox},
+            )
+            return clamp01(float(data["summary"]["ai"]))  # 0-1
+        except (KeyError, TypeError, ValueError):
+            return None
 
 
 def commercial_detectors() -> list:

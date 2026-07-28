@@ -20,7 +20,10 @@ verbatim instead of being rewritten by ``restore`` (asserted in tests).
 
 from __future__ import annotations
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 # 4-OR-MORE digits: lock() numbers sentinels with f"⟦HZ{i:04d}⟧" (minimum width 4), which overflows
 # to 5 digits past 9999 locked spans. Matching exactly \d{4} would make restore()/find_sentinels miss
@@ -63,22 +66,22 @@ def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
     """Return (start, end) spans for named entities via spaCy, or [] if spaCy is absent."""
     try:
         import spacy
-    except Exception:
+    except (ImportError, OSError):
         return []
     try:
         nlp = _spacy_entity_spans._nlp  # type: ignore[attr-defined]
     except AttributeError:
         try:
             nlp = spacy.load("en_core_web_sm")
-        except Exception:
+        except (ImportError, OSError):
             try:
                 nlp = spacy.blank("en")  # no NER pipeline -> yields nothing, but stays safe
-            except Exception:
+            except (ImportError, OSError):
                 return []
         _spacy_entity_spans._nlp = nlp  # type: ignore[attr-defined]
     try:
         doc = nlp(text)
-    except Exception:
+    except (ImportError, OSError):
         return []
     keep = {"PERSON", "ORG", "GPE", "LOC", "WORK_OF_ART", "LAW", "PRODUCT", "EVENT", "NORP", "FAC"}
     return [(e.start_char, e.end_char) for e in getattr(doc, "ents", []) if e.label_ in keep]
@@ -150,6 +153,7 @@ def main(argv: list[str] | None = None) -> int:
     Restore: ``python -m untell.scripts.preserve --restore --mapping '<json>' "masked text"``
              (or ``--mapping-file path.json``) -> the restored text
     """
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     import argparse
     import json
     import sys
@@ -176,10 +180,10 @@ def main(argv: list[str] | None = None) -> int:
             mapping = json.loads(args.mapping)
         missing = set(mapping) - find_sentinels(text)
         if missing:  # a locked span was dropped during rewriting — make it loud, don't lose it silently
-            print(
-                f"[preserve] WARNING: {len(missing)} locked span(s) are missing from the text and will "
-                f"NOT appear in the output (dropped during rewriting): {', '.join(sorted(missing))}",
-                file=sys.stderr,
+            logger.warning(
+                "%d locked span(s) are missing from the text and will "
+                "NOT appear in the output (dropped during rewriting): %s",
+                len(missing), ", ".join(sorted(missing)),
             )
         print(restore(text, mapping))
         return 0

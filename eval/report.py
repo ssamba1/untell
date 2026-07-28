@@ -27,8 +27,8 @@ def _per_detector(results: list, threshold: float) -> dict[str, dict[str, float]
                 names.append(k)
     out: dict[str, dict[str, float]] = {}
     for name in names:
-        pre_vals = [r.pre["detectors"][name] for r in results if isinstance(r.pre["detectors"].get(name), (int, float))]
-        post_vals = [r.post["detectors"][name] for r in results if isinstance(r.post["detectors"].get(name), (int, float))]
+        pre_vals = [r.pre["detectors"][name] for r in results if name in r.pre.get("detectors", {}) and isinstance(r.pre["detectors"][name], (int, float))]
+        post_vals = [r.post["detectors"][name] for r in results if name in r.post.get("detectors", {}) and isinstance(r.post["detectors"][name], (int, float))]
         beat = [1.0 if v < threshold else 0.0 for v in post_vals]
         out[name] = {"pre": _mean(pre_vals), "post": _mean(post_vals), "beat_rate": _mean(beat)}
     return out
