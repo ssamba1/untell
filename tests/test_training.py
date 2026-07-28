@@ -19,6 +19,40 @@ def test_reward_penalizes_degenerate_and_meaning_drift():
     assert humanness_reward(src, "", tier="lite") == -1.0
 
 
+def test_free_ensemble_score_in_range():
+    from training.reward import free_ensemble_score
+
+    s = free_ensemble_score("Furthermore, we leverage robust synergies to optimize outcomes.", tier="lite")
+    assert 0.0 <= s <= 1.0
+
+
+def test_hard_sim_gate_rejects_offtopic():
+    # An off-topic rewrite (meaning destroyed) must earn -1.0 outright, no evasion credit.
+    src = "The committee approved the annual budget on Tuesday afternoon."
+    offtopic = "Photosynthesis converts sunlight into chemical energy inside plant chloroplasts."
+    assert humanness_reward(src, offtopic, tier="lite") == -1.0
+
+
+def test_hard_length_gate_rejects_content_deletion():
+    # High word-overlap but <50% length (content deleted) -> gated to -1.0 even below the sim floor.
+    src = "The committee approved the annual budget after a long discussion on Tuesday afternoon here."
+    truncated = "The committee approved the annual"  # every token is in src, but far too short
+    assert humanness_reward(src, truncated, tier="lite", sim_floor=0.3) == -1.0
+
+
+def test_build_pairs_human_fallback_without_datasets(monkeypatch):
+    # With `datasets` unavailable, the free HC3 pair builder must fall back to smoke pairs (no network)
+    # and still return well-formed {prompt, chosen, rejected} rows.
+    import sys
+
+    import training.dpo_humanizer as dpo
+
+    monkeypatch.setitem(sys.modules, "datasets", None)  # `from datasets import ...` -> ImportError
+    pairs = dpo.build_pairs_human(n=4)
+    assert isinstance(pairs, list) and len(pairs) >= 1
+    assert set(pairs[0]) >= {"prompt", "chosen", "rejected"}
+
+
 def test_distill_keeps_passing_samples(monkeypatch):
     import untell.scripts.run as run_mod
 

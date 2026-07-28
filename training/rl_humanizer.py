@@ -54,6 +54,8 @@ def train(
     load_4bit: bool = False,
     hub_id: str | None = None,
     resume: str | None = None,
+    dpo_init: str | None = None,
+    reward_sim_floor: float = 0.76,
 ):
     """GRPO-train the policy. Heavy deps imported here so this module stays importable without a GPU.
 
@@ -94,14 +96,15 @@ def train(
         model_id, tier, steps, k, out = SMOKE_MODEL, "lite", 2, 4, "out/rl-smoke"
         resume = None  # never resume in smoke mode
 
-    # Loud guard: without a surrogate the reward is the LOCAL ensemble, which does NOT transfer to
-    # GPTZero/Originality (measured: RADAR 0.008 vs GPTZero 100% same text). Catching this here saves a
-    # multi-hour run aimed at the wrong target — exactly the failure that wastes a free-GPU session.
+    # Free-path note (not a warning): without a surrogate the reward is the FREE weighted open-detector
+    # ensemble — the intended $0 path. It reaches the open-detector ceiling (StealthRL-style) and
+    # transfers to held-out OPEN detectors, but does NOT *guarantee* beating commercial detectors. To
+    # target those, distill a surrogate (training.surrogate, needs paid keys) and set UNTELL_SURROGATE_DIR.
     if not smoke and not os.environ.get("UNTELL_SURROGATE_DIR"):
-        logger.warning(
-            "UNTELL_SURROGATE_DIR is not set -> reward = LOCAL ensemble (tier=%s). This "
-            "does NOT transfer to commercial detectors. Train a surrogate (training.surrogate) and set "
-            "UNTELL_SURROGATE_DIR first, or this run optimizes the wrong target.",
+        logger.info(
+            "No UNTELL_SURROGATE_DIR -> reward = FREE weighted open-detector ensemble (tier=%s). $0 "
+            "path: reaches the open-detector ceiling and transfers to held-out open detectors; does not "
+            "guarantee commercial (GPTZero/Originality) transfer. Set UNTELL_SURROGATE_DIR to target those.",
             tier,
         )
 
@@ -116,13 +119,30 @@ def train(
         print(f"HF auth OK as {who['name']} -> will push adapter to {hub_id} after training")
 
     model = _load_model(model_id, load_4bit)
+
+    # Optional DPO warm-start: merge a DPO LoRA into the base before GRPO wraps a fresh LoRA on top,
+    # so RL starts from a semantically better policy (fewer steps, less quality drift). merge_and_unload
+    # produces a full-precision copy — on a 16GB T4 the merge peaks ~12GB, feasible but tight.
+    if dpo_init and not smoke:
+        import transformers
+        from peft import PeftModel
+
+        base = model if not isinstance(model, str) else transformers.AutoModelForCausalLM.from_pretrained(
+            model, torch_dtype="auto", device_map="auto"
+        )
+        model = PeftModel.from_pretrained(base, dpo_init).merge_and_unload()
+        logger.info("merged DPO adapter %s into base before GRPO", dpo_init)
+
     rows = build_dataset(n=16 if smoke else 2000)
     source_by_prompt = {r["prompt"]: r["source"] for r in rows}
     dataset = Dataset.from_list([{"prompt": r["prompt"]} for r in rows])
 
     def reward_fn(prompts, completions, **_):
-        # GRPO calls with batched prompts/completions; score each against our ensemble.
-        return [humanness_reward(source_by_prompt.get(p, p), c, tier=tier) for p, c in zip(prompts, completions)]
+        # GRPO calls with batched prompts/completions; score each against the (free ensemble) reward.
+        return [
+            humanness_reward(source_by_prompt.get(p, p), c, tier=tier, sim_floor=reward_sim_floor)
+            for p, c in zip(prompts, completions)
+        ]
 
     cfg = GRPOConfig(
         output_dir=out,
@@ -203,10 +223,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hub-id", help="push the adapter to this HF Hub repo after save (needs HF_TOKEN) so an ephemeral host can't lose it")
     parser.add_argument("--resume", default=None, help="resume from this checkpoint directory (e.g. out/rl-humanizer/checkpoint-125)")
     parser.add_argument("--steps", type=int, default=300, help="training steps (default 300 to fit Kaggle 9h GPU limit; each step ~100s on T4)")
+    parser.add_argument("--dpo-init", default=None, help="path to a DPO LoRA adapter to merge into the base before GRPO (warm-start)")
+    parser.add_argument("--reward-sim-floor", type=float, default=0.76, help="hard meaning gate: rewrites below this similarity earn -1.0 (default 0.76)")
     args = parser.parse_args(argv)
     path = train(
         model_id=args.model, tier=args.tier, steps=args.steps, k=args.k, out=args.out,
         smoke=args.smoke, load_4bit=args.load_4bit, hub_id=args.hub_id, resume=args.resume,
+        dpo_init=args.dpo_init, reward_sim_floor=args.reward_sim_floor,
     )
     print(f"saved policy -> {path}")
     return 0

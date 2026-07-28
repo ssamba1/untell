@@ -18,16 +18,60 @@ import re
 
 from untell.scripts.quality import similarity
 from untell.scripts.score import score_text
+from untell.scripts.tells import score_tells
 
 _W = re.compile(r"[A-Za-z']+")
 
 _SURROGATE = None  # lazily-loaded SurrogateDetector when UNTELL_SURROGATE_DIR is set
 
+# Free open-detector ensemble weights (NO paid API, NO commercial surrogate). The reward is a
+# WEIGHTED mean over whichever detectors the active tier actually produced (renormalized), rather
+# than the plain max: a smoother GRPO gradient, and the adversarially-trained detectors (MAGE, RADAR)
+# — the ones that don't collapse under naive paraphrase — carry the most weight so the policy has to
+# beat the *hard* detectors, not just the weakest link. This is the StealthRL "free ensemble reward"
+# regime: it reaches ~97% on open detectors and transfers to held-out ones, with zero API cost.
+_FREE_WEIGHTS = {
+    "mage": 0.35,
+    "radar": 0.20,
+    "hc3_roberta": 0.18,
+    "fast_detectgpt": 0.15,
+    "roberta_openai": 0.10,
+    "binoculars": 0.10,
+    "perplexity_burstiness": 0.02,
+}
+
+# Quality-guard weights (applied on top of the evasion term).
+_TELLS_W = 0.015  # per AI-tell-per-100-words; typical AI text 10-30, human 0-3 -> up to ~0.30-0.45
+_BURST_W = 0.10  # flat penalty when sentence lengths are uniform (a burstiness tell)
+
+
+def free_ensemble_score(text: str, tier: str = "full", weights: dict[str, float] | None = None) -> float:
+    """Weighted-mean P(AI) over the FREE open detectors the active tier produced (renormalized).
+
+    No commercial API, no surrogate — this is the $0 training target. Detectors absent at the active
+    tier (e.g. everything but perplexity_burstiness on lite) simply drop out and the weights of those
+    present are renormalized, so the same call works on lite/full/heavy without special-casing.
+    """
+    weights = weights or _FREE_WEIGHTS
+    res = score_text(text, tier=tier)
+    dets = res.get("detectors", {})
+    present = {
+        k: float(v)
+        for k, v in dets.items()
+        if isinstance(v, (int, float)) and not k.endswith("__error")
+    }
+    if not present:
+        return float(res["max"])
+    w = {k: weights.get(k, 0.03) for k in present}
+    total = sum(w.values()) or 1.0
+    return float(sum(w[k] * present[k] for k in present) / total)
+
 
 def target_ai_score(text: str, tier: str = "full") -> float:
-    """P(AI) from the training target: a GPTZero-mimicking surrogate if `UNTELL_SURROGATE_DIR` is set,
-    else the local detector ensemble (max). Optimizing the surrogate is the only path that transfers
-    to the commercial detector it was distilled from."""
+    """P(AI) from the training target: a commercial-mimicking surrogate if ``UNTELL_SURROGATE_DIR`` is
+    set (the paid-key path), else the FREE weighted open-detector ensemble (the $0 path). Training on
+    the free ensemble reaches the open-detector ceiling; it does not *guarantee* commercial transfer,
+    but it costs nothing and is the regime StealthRL used for its 97.6% ASR."""
     sd = os.environ.get("UNTELL_SURROGATE_DIR")
     if sd:
         global _SURROGATE
@@ -36,7 +80,7 @@ def target_ai_score(text: str, tier: str = "full") -> float:
 
             _SURROGATE = SurrogateDetector(sd)
         return float(_SURROGATE.score(text))
-    return float(score_text(text, tier=tier)["max"])
+    return free_ensemble_score(text, tier=tier)
 
 
 def fluency(text: str) -> float:
@@ -56,23 +100,36 @@ def humanness_reward(
     sim_floor: float = 0.76,
     w_quality: float = 0.25,
 ) -> float:
-    """Multi-objective reward: evasion + meaning + quality.
+    """Multi-objective reward: evasion + meaning + quality, with HARD meaning/length gates.
 
-    reward = (1 - max P(AI) across our ensemble)            # evade every detector incl. the hard ones
-             - meaning_drift_penalty (below the sim floor)   # don't mangle meaning
-             - w_quality * (1 - fluency)                     # don't degenerate into repetition/garbage
+    reward = (1 - P(AI) from the target)                    # evade the detectors (weighted ensemble)
+             - _TELLS_W * tells_per_100w                     # strip the catalogued AI writing patterns
+             - _BURST_W * low_burstiness                     # vary sentence length like a human
+             - w_quality * (1 - fluency)                     # don't degenerate into repetition
 
-    Targeting all three at once is the impossibility-triangle win competitors miss (they reward only
-    evasion, so quality rots). Reward against ``tier="full"`` (RADAR + ensemble) or ``"commercial"``.
+    HARD gates (return -1.0 outright, no evasion credit):
+      * meaning drift below ``sim_floor`` — the policy cannot buy evasion by drifting off-topic
+      * output shorter than half the input — nor by deleting content
+
+    The hard gates are the DEPO-style fix for the StealthRL quality-collapse failure mode (2.5/5):
+    a soft penalty lets a big evasion reward pay for a small meaning loss every step until the text is
+    unrecognizable; a hard gate makes meaning non-negotiable. Targeting evasion + meaning + tells at
+    once is the impossibility-triangle win competitors miss (they reward only evasion, so quality rots).
     """
     if not candidate.strip():
         return -1.0
-    ai = target_ai_score(candidate, tier=tier)  # surrogate if UNTELL_SURROGATE_DIR set, else ensemble
-    sim = similarity(original, candidate)
+    # Hard gates first — a gated candidate earns nothing regardless of how well it evades.
+    if similarity(original, candidate) < sim_floor:
+        return -1.0
+    if len(candidate) < 0.5 * len(original):
+        return -1.0
+    ai = target_ai_score(candidate, tier=tier)  # surrogate if UNTELL_SURROGATE_DIR set, else free ensemble
     evade = 1.0 - ai
-    meaning_penalty = 0.0 if sim >= sim_floor else (sim_floor - sim) * 2.0
+    tells = score_tells(candidate)
+    tells_penalty = _TELLS_W * float(tells.get("tells_per_100w", 0.0))
+    burst_penalty = _BURST_W if tells.get("low_burstiness") else 0.0
     quality_penalty = w_quality * (1.0 - fluency(candidate))
-    return round(evade - meaning_penalty - quality_penalty, 4)
+    return round(evade - tells_penalty - burst_penalty - quality_penalty, 4)
 
 
 def batch_rewards(original: str, candidates: list[str], *, tier: str = "full", sim_floor: float = 0.76) -> list[float]:

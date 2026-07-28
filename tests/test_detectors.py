@@ -70,3 +70,21 @@ def test_radar_is_opt_in_gated(monkeypatch):
 
     monkeypatch.delenv("UNTELL_ENABLE_RADAR", raising=False)
     assert RadarDetector().available() is False
+
+
+def test_mage_direct_load_scores():
+    # Heavy: downloads yaful/MAGE (~600MB). Opt-in via UNTELL_TEST_MAGE=1. Verifies the pipeline-free
+    # direct load works on a modern transformers/numpy stack (the fix that un-breaks MAGE).
+    import os
+
+    import pytest
+
+    if os.environ.get("UNTELL_TEST_MAGE") != "1":
+        pytest.skip("set UNTELL_TEST_MAGE=1 to load yaful/MAGE (~600MB)")
+    from untell.detectors.mage import MageDetector
+
+    MageDetector._dead = False  # reset any prior-session failure latch
+    d = MageDetector()
+    s = d.score("Furthermore, this underscores a pivotal and transformative paradigm shift.")
+    assert s is not None and 0.0 <= s <= 1.0
+    assert MageDetector._dead is False
