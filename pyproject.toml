@@ -129,7 +129,6 @@ untell-server = "untell.api_server:main"
 untell-humanness = "untell.humanness:main"
 
 [tool.setuptools]
-exclude = ["eval*", "training*"]
 packages = [
     "untell",
     "untell.scripts",
