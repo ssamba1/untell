@@ -67,11 +67,27 @@ def free_ensemble_score(text: str, tier: str = "full", weights: dict[str, float]
     return float(sum(w[k] * present[k] for k in present) / total)
 
 
+def _fast_ai_estimate(text: str) -> float:
+    """Zero-model P(AI) estimate from stdlib signals only (AI-tells density + burstiness).
+
+    The transformer detectors (RoBERTa/GPT-2/Fast-DetectGPT) run on CPU here and, called per GRPO
+    candidate, stall training on a free T4 (repeated model loads, no step progress). This gives a
+    fast, model-free reward signal so GRPO actually runs: dense AI-tells and uniform sentence length
+    read as AI. Weaker than the detector reward but real and instant. Gate with UNTELL_REWARD_FAST=1.
+    """
+    t = score_tells(text)
+    tells_est = min(1.0, float(t.get("tells_per_100w", 0.0)) / 15.0)  # ~15 tells/100w -> fully AI
+    burst_pen = 0.15 if t.get("low_burstiness") else 0.0
+    return float(min(1.0, tells_est + burst_pen))
+
+
 def target_ai_score(text: str, tier: str = "full") -> float:
-    """P(AI) from the training target: a commercial-mimicking surrogate if ``UNTELL_SURROGATE_DIR`` is
-    set (the paid-key path), else the FREE weighted open-detector ensemble (the $0 path). Training on
-    the free ensemble reaches the open-detector ceiling; it does not *guarantee* commercial transfer,
-    but it costs nothing and is the regime StealthRL used for its 97.6% ASR."""
+    """P(AI) from the training target: the model-free stdlib estimate if ``UNTELL_REWARD_FAST`` is set
+    (fast $0 path that runs on a T4), a commercial-mimicking surrogate if ``UNTELL_SURROGATE_DIR`` is
+    set (paid), else the FREE weighted open-detector ensemble. The free ensemble reaches the
+    open-detector ceiling but is heavy on CPU; the fast path trades some reward fidelity for speed."""
+    if os.environ.get("UNTELL_REWARD_FAST") == "1":
+        return _fast_ai_estimate(text)
     sd = os.environ.get("UNTELL_SURROGATE_DIR")
     if sd:
         global _SURROGATE
