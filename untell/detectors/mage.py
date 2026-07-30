@@ -26,6 +26,15 @@ class MageDetector:
     _dead = False  # set once a load fails so we never re-attempt the heavy import per call
 
     def available(self) -> bool:
+        # Opt-in: MAGE is a Longformer (1024-token, ~600MB) that runs on CPU here, ~50-100x slower
+        # than the base-size detectors. Loading it into a per-candidate RL reward stalls training on a
+        # free T4. Gate it behind UNTELL_ENABLE_MAGE=1 so it's a held-out eval detector by default
+        # (the StealthRL setup: train on RoBERTa + Fast-DetectGPT, test transfer to MAGE). Set the
+        # env var to include it in scoring/eval when you have the compute.
+        import os
+
+        if os.environ.get("UNTELL_ENABLE_MAGE") != "1":
+            return False
         try:
             import torch  # noqa: F401
             import transformers  # noqa: F401
