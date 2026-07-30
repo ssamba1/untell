@@ -154,7 +154,7 @@ def train(
         gradient_accumulation_steps=k,
         learning_rate=1e-5,
         warmup_steps=20,
-        bf16=True,
+        bf16=torch.cuda.is_available(),  # bf16 needs a GPU; on CPU (no accelerator) fall back to fp32
         logging_steps=10,
         # 128 tokens ~60s/step on T4 with Qwen2.5-3B + k=6. At ~100s/step, 300 steps = 8.3h
         # (fits Kaggle's 9h GPU limit). 192 tokens was pushing to ~14h which gets killed.

@@ -116,7 +116,7 @@ def train(
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
         learning_rate=5e-6,
-        bf16=True,
+        bf16=torch.cuda.is_available(),  # bf16 needs a GPU; fp32 on CPU
         max_steps=2 if smoke else -1,
         num_train_epochs=1,
         logging_steps=10,
