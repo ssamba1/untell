@@ -121,6 +121,10 @@ def train(
         num_train_epochs=1,
         logging_steps=10,
         beta=0.1,
+        # Compute the reference-model log-probs once up front, then free the reference model, instead
+        # of keeping a second full copy loaded during training. This avoids the double model-load that
+        # stalls DPO on a small (4-bit T4) setup.
+        precompute_ref_log_probs=True,
         # Checkpoint mid-run so a killed session (Kaggle/Colab wall) still leaves a usable adapter.
         save_strategy="steps",
         save_steps=25,
