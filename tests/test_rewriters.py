@@ -33,6 +33,22 @@ class TestStructuralRewriter:
         # Should not contain the full "not X, it's Y" pattern
         assert "not about" not in result.lower() or "about the people" in result.lower()
 
+    def test_injects_contractions(self):
+        from untell.rewriter.structural import _inject_contractions
+
+        assert _inject_contractions("It is not clear.") == "It isn't clear."
+        assert _inject_contractions("They do not agree.") == "They don't agree."
+        assert _inject_contractions("We cannot win.") == "We can't win."
+        assert _inject_contractions("that is right") == "that's right"
+        # Sentence-initial capital preserved.
+        assert _inject_contractions("Do not stop.") == "Don't stop."
+
+    def test_structural_rewrite_contracts(self):
+        out = structural_rewrite(
+            "The system does not fail. We are ready. It is fine.", intensity=0.0, seed=1
+        )
+        assert "does not" not in out and "doesn't" in out
+
     def test_empty_input(self):
         assert structural_rewrite("", intensity=1.0) == ""
 

@@ -89,6 +89,46 @@ _HEDGE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Contraction injection. AI text contracts far less than human writing (a strong, cheap function-word
+# / formality signal). Each (pattern -> contraction) is applied case-preserving for a sentence-initial
+# capital. Ordered longest-first so "it is not" contracts the negation before "it is". Verb+not forms
+# are safe; ambiguous ones ("she's" = she is / she has) are left out to avoid changing meaning.
+_CONTRACTIONS: list[tuple[re.Pattern, str]] = [
+    (re.compile(r"\b(can)not\b", re.I), r"\1't"),      # cannot -> can't (special: one word)
+    (re.compile(r"\bdo not\b", re.I), "don't"),
+    (re.compile(r"\bdoes not\b", re.I), "doesn't"),
+    (re.compile(r"\bdid not\b", re.I), "didn't"),
+    (re.compile(r"\bis not\b", re.I), "isn't"),
+    (re.compile(r"\bare not\b", re.I), "aren't"),
+    (re.compile(r"\bwas not\b", re.I), "wasn't"),
+    (re.compile(r"\bwere not\b", re.I), "weren't"),
+    (re.compile(r"\bwill not\b", re.I), "won't"),
+    (re.compile(r"\bwould not\b", re.I), "wouldn't"),
+    (re.compile(r"\bshould not\b", re.I), "shouldn't"),
+    (re.compile(r"\bcould not\b", re.I), "couldn't"),
+    (re.compile(r"\bcan not\b", re.I), "can't"),
+    (re.compile(r"\bhave not\b", re.I), "haven't"),
+    (re.compile(r"\bhas not\b", re.I), "hasn't"),
+    (re.compile(r"\bhad not\b", re.I), "hadn't"),
+    (re.compile(r"\bit is\b", re.I), "it's"),
+    (re.compile(r"\bthat is\b", re.I), "that's"),
+    (re.compile(r"\bthere is\b", re.I), "there's"),
+    (re.compile(r"\bhere is\b", re.I), "here's"),
+    (re.compile(r"\bwhat is\b", re.I), "what's"),
+    (re.compile(r"\bwho is\b", re.I), "who's"),
+    (re.compile(r"\bthey are\b", re.I), "they're"),
+    (re.compile(r"\bwe are\b", re.I), "we're"),
+    (re.compile(r"\byou are\b", re.I), "you're"),
+    (re.compile(r"\bthey will\b", re.I), "they'll"),
+    (re.compile(r"\bwe will\b", re.I), "we'll"),
+    (re.compile(r"\byou will\b", re.I), "you'll"),
+    (re.compile(r"\bit will\b", re.I), "it'll"),
+    (re.compile(r"\blet us\b", re.I), "let's"),
+    (re.compile(r"\bI am\b"), "I'm"),
+    (re.compile(r"\bI will\b"), "I'll"),
+    (re.compile(r"\bI have\b"), "I've"),
+]
+
 # ---------------------------------------------------------------------------
 # Structural transforms
 # ---------------------------------------------------------------------------
@@ -213,6 +253,25 @@ def _flatten_negated_contrast(text: str) -> str:
     return _NEGATED_CONTRAST_RE.sub(_replace, text)
 
 
+def _inject_contractions(text: str, rate: float = 1.0) -> str:
+    """Contract formal verb phrases ("do not" -> "don't", "it is" -> "it's"). Case-preserving.
+
+    AI text contracts far less than human writing; injecting contractions shifts the function-word /
+    formality distribution toward human. ``rate`` in [0, 1] applies to each candidate match.
+    """
+    for pat, repl in _CONTRACTIONS:
+        def _sub(m: re.Match, _repl: str = repl) -> str:
+            if rate < 1.0 and random.random() > rate:
+                return m.group(0)
+            out = m.expand(_repl)
+            if m.group(0)[:1].isupper():
+                out = out[0].upper() + out[1:]
+            return out
+
+        text = pat.sub(_sub, text)
+    return text
+
+
 def _flatten_copula(text: str) -> str:
     """Replace 'serves as', 'boasts', etc. with plain 'is'."""
     text = _INFLATED_COPULA_RE.sub("is", text)
@@ -236,7 +295,7 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     for s in sentences:
         if random.random() < rate:
             first_word = s.split()[0] if s.split() else ""
-            if first_word not in subjects and first_word[0].isupper() if first_word else False:
+            if first_word and first_word[0].isupper() and first_word not in subjects:
                 # Add a varied opener
                 s = f"{random.choice(openers)} {s[0].lower() + s[1:]}"
         out.append(s)
@@ -271,6 +330,9 @@ def structural_rewrite(text: str, intensity: float = 0.5, seed: int | None = Non
 
     # 5. Hedge removal — always, these are pure tell
     text = _HEDGE_RE.sub(r"\1", text)
+
+    # 5b. Contraction injection — always (pure human-signal function-word shift)
+    text = _inject_contractions(text)
 
     # 6. Semicolon → period (semiconductors are a tell)
     text = _SEMICOLON_RE.sub(". ", text)
