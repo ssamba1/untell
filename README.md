@@ -273,7 +273,7 @@ actually ran, so you always know how much to trust the number.
 | **lite** | *(default — nothing to install)* | perplexity + burstiness heuristic; token-overlap quality | Stdlib only, **weak** — a demo signal, not an evasion claim. Instant on a clean install; if `torch` happens to be present it silently upgrades to GPT-2 perplexity (better math, ~11s first call). `UNTELL_LITE_NO_TORCH=1` forces the genuinely-instant stdlib path (0.2s). |
 | **full** | `pip install -e ".[full]"` | + RoBERTa-OpenAI, HC3-RoBERTa, MAGE, Fast-DetectGPT, GPT-2 perplexity; MiniLM cosine quality | Real proxy signal on CPU. Downloads models on first run. |
 | **+ RADAR** | `UNTELL_ENABLE_RADAR=1` (opt-in) | + RADAR — the **paraphrase-robust** detector, the hardest open one to fool | ⚠️ `TrustSafeAI/RADAR-Vicuna-7B` is **non-commercial licensed** — research/eval only. |
-| **heavy** | `pip install -e ".[heavy]"` | + Binoculars (2×Falcon-7B) | Strongest proxy; GPU recommended. Eval only. |
+| **heavy** | `pip install -e ".[heavy]"` | + Binoculars (2×Falcon-7B), local LLM-as-judge (Qwen2.5) | Strongest proxy; GPU recommended. Eval only. The local judge is here rather than in `full` on measurement: **3.7s per call** against 0.03–0.06s for every other detector, for **AUROC 0.514** on labelled pairs — a coin flip at a hundred times the cost. |
 | **commercial** | `pip install -e ".[commercial]"` + your keys | + Originality.ai, GPTZero, Winston, Sapling, ZeroGPT, Copyleaks, **LLM-as-judge** | The real checkers. Key-gated; nothing runs or bills unless you set a key. LLM-as-judge = a frontier model rates AI-likelihood against the ai-tells catalog (often the best free-of-proxy signal). |
 
 ```bash
@@ -313,6 +313,11 @@ iteration calls every checker, so it **costs API credits** — cap with `--max-i
 # No key at all — deterministic CPU word-substitution rewriter drives the loop ($0, no SDK):
 untell-loop "text" --rewriter surgical --tier full
 untell-ceiling --rewriter composite --tier full --best-of 3 --repeats 3   # vs the local ensemble
+
+# Check the detectors themselves before trusting a number any of them produced:
+untell-detector-audit                # fast smoke test — catches a dead or inverted detector
+untell-detector-audit --pairs 100    # the real measurement: AUROC on labelled human/AI pairs
+                                     # (needs .[eval]; only this mode supports a discrimination claim)
 
 # Optimize against a REAL detector for free via its web UI (slow, needs a browser):
 pip install -e ".[browser]" && playwright install chromium
