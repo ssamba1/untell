@@ -145,3 +145,41 @@ def test_browser_failure_is_excluded_from_the_ensemble_not_averaged_in(monkeypat
     out = scorer("some text")
     assert out["detectors"]["zerogpt"] is None       # excluded, not 0.5
     assert out.get("all_checkers_failed") is True    # and the failure is signalled
+
+
+PARSE_CASES = [
+    # (page text, expected P(AI))
+    ("100% AI GPT*", 1.0),
+    ("55% AI Generated", 0.55),
+    ("0% AI", 0.0),
+    ("AI Score: 87.5%", 0.875),
+    ("  73 % ai  ", 0.73),
+    ("12.345% AI", 0.12345),
+    ("AI: 60% Human: 40%", 0.60),          # AI figure comes first — use it
+    # Must refuse rather than guess:
+    ("Human: 45%", None),                   # INVERTED — 45% human is 55% AI
+    ("45% Human Written", None),
+    ("150% AI", 1.0),                       # clamped — over-stating AI is safe
+    ("-10% AI", None),                      # sign was silently dropped -> read as 0.10
+    ("Analyzing...", None),
+    ("Hang on while we verify your browser", None),
+    ("", None),
+]
+
+
+@pytest.mark.parametrize("text,expected", PARSE_CASES)
+def test_parse_ai_percent_refuses_untrustworthy_readouts(text, expected):
+    """A misparse here becomes a real detector verdict the loop optimises against.
+
+    "Human: 45%" is the dangerous one: it means 45% HUMAN (55% AI), and returning 0.45 hands the
+    loop a score wrong in the direction that looks like success. "-10% AI" was read as 0.10 because
+    the digit-only pattern cannot see a leading sign — the same sign-dropping bug found in the
+    preserve-lock. Both now return None, so check() raises and the checker is EXCLUDED rather than
+    contributing a fabricated number."""
+    from untell.browser_check import parse_ai_percent
+
+    got = parse_ai_percent(text)
+    if expected is None:
+        assert got is None, f"{text!r} should be refused, got {got!r}"
+    else:
+        assert got is not None and abs(got - expected) < 0.02, f"{text!r} -> {got!r}, want {expected}"

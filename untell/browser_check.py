@@ -47,15 +47,43 @@ _PCT = re.compile(r"([\d.]+)\s*%")
 def parse_ai_percent(text: str) -> float | None:
     """Pull the first percentage out of a result string and return it as P(AI) in [0, 1].
 
-    e.g. "100%AI GPT*" -> 1.0, "55% AI Generated" -> 0.55. Returns None if no percentage found.
+    e.g. "100%AI GPT*" -> 1.0, "55% AI Generated" -> 0.55. Returns None when no percentage is found,
+    or when the one found cannot be trusted to mean *P(AI)*.
+
+    Two guards, both for cases this parser silently got wrong:
+
+    * A **human-labelled** percentage is the INVERSE of what we want. "Human: 45%" means the page
+      judged the text 45% human — i.e. 55% AI — and returning 0.45 hands the loop a verdict that is
+      wrong in the dangerous direction (it reads as *more human* than reality). Sites word their
+      output differently and can change it without notice, so an ambiguous readout is refused rather
+      than guessed at; check() then excludes the checker instead of scoring against a fabricated number.
+    * A **negative** percentage. The digit-only pattern cannot see a leading sign, so "-10% AI" was
+      read as 0.10 — a low score, i.e. "looks human".
+
+    The rule is deliberately asymmetric, because the two error directions are not equally bad here.
+    A reading that OVER-states AI is safe: the loop simply keeps rewriting. One that UNDER-states it
+    is how text ships believing it passed. So a value above 100 is still clamped to 1.0 (conservative,
+    and the pre-existing documented behaviour), while an inverted or negative reading — both of which
+    under-state AI — is refused outright.
     """
-    m = _PCT.search(text or "")
+    raw = text or ""
+    m = _PCT.search(raw)
     if not m:
         return None
+    # Look just around the match for a human/real label; those readouts are inverted, not AI scores.
+    window = raw[max(0, m.start() - 24): m.end() + 24].lower()
+    if ("human" in window or "real" in window) and "ai" not in window.replace("real", ""):
+        return None
+    # The digit pattern cannot see a leading sign, so check the source text for one.
+    if m.start() and raw[m.start() - 1] in "-−":
+        return None
     try:
-        return clamp01(float(m.group(1)) / 100.0)
+        pct = float(m.group(1))
     except ValueError:
         return None
+    if pct < 0.0:
+        return None  # under-states AI — refuse rather than report "looks human"
+    return clamp01(pct / 100.0)  # above 100 clamps to 1.0: over-stating AI is the safe direction
 
 
 @dataclass
