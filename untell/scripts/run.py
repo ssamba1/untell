@@ -31,6 +31,7 @@ if __package__ in (None, ""):
             break
 
 from untell.rewriter import get_rewriter
+from untell.rewriter.prompts import STYLE_NAMES
 from untell.scripts.entailment import meaning_preserved
 from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
@@ -416,10 +417,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--polish", action="store_true", help="add a cheap surgical word-substitution polish pass at the end")
     parser.add_argument(
         "--style",
-        choices=["casual", "professional", "academic", "blunt", "storytelling", "journalistic",
-                 "technical", "persuasive", "empathetic", "humorous", "poetic",
-                 "instructional", "conversational", "minimalist"],
-        help="bias the rewrite toward a writing style/voice (14 modes)",
+        # Derived from the single source in rewriter/prompts.py rather than restated — this list
+        # was one of three hand-maintained copies, and the MCP one had already drifted.
+        choices=STYLE_NAMES,
+        help=f"bias the rewrite toward a writing style/voice ({len(STYLE_NAMES)} modes)",
     )
     parser.add_argument(
         "--best-of",

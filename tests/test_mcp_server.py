@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 
 def test_server_tools_registered():
     """The _server() function registers tools without error and returns a FastMCP instance."""
@@ -37,3 +39,33 @@ def test_server_tools_registered():
             f"Expected at least 5 tools registered, got {len(mock_fastmcp_instance.tool.call_args_list)}"
         )
         assert result is mock_fastmcp_instance
+
+
+def test_mcp_advertises_every_style_the_cli_accepts():
+    """The MCP tool docstring is what a client reads to learn valid `style` values.
+
+    It was hand-copied and had drifted to 6 of the 14 styles, so eight were invisible to every
+    MCP caller. It is now generated from the same table `--style` uses.
+
+    Registration order matters: `server.tool()` snapshots __doc__ as the advertised description,
+    so patching the list in after an inline decorator had no effect on what a client sees.
+    """
+    import asyncio
+
+    pytest.importorskip("mcp")
+    from untell.mcp_server import _server
+    from untell.rewriter.prompts import STYLE_NAMES
+
+    tools = asyncio.run(_server().list_tools())
+    described = next(t for t in tools if t.name == "untell").description or ""
+    missing = [s for s in STYLE_NAMES if s not in described]
+    assert not missing, f"MCP does not advertise these styles: {missing}"
+
+
+def test_cli_style_choices_come_from_the_same_table():
+    from untell.rewriter.prompts import STYLE_NAMES
+    from untell.scripts.run import main as run_main
+
+    with pytest.raises(SystemExit):
+        run_main(["--style", "definitely-not-a-style", "text"])
+    assert len(STYLE_NAMES) == 14

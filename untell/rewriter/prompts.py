@@ -12,6 +12,32 @@ _SENTINEL_NOTE = (
     "never modify, translate, split, reorder the characters of, or drop one."
 )
 
+# The voices `--style` accepts, and the ONLY place the list is written down.
+#
+# It used to live inside build_rewrite_prompt() as a function-local dict, with the names duplicated
+# by hand in run.py's argparse choices and again in the MCP tool docstring. The MCP copy had drifted
+# to six entries out of fourteen — and that docstring is what an MCP client reads to learn the valid
+# values, so eight of the styles were invisible to every MCP caller. Module-level, so the other two
+# derive from it instead of restating it.
+STYLES: dict[str, str] = {
+    "casual": "Write casually — contractions, everyday words, a relaxed conversational voice.",
+    "professional": "Write in a clear professional voice — direct, polished, no fluff.",
+    "academic": "Keep an academic register — precise, measured, but not formulaic.",
+    "blunt": "Be blunt and plain-spoken — short declaratives, no hedging.",
+    "storytelling": "Use a narrative, storytelling voice — concrete scenes, a human throughline.",
+    "journalistic": "Write like a journalist — lead with the point, concrete and specific.",
+    "technical": "Write with technical precision — specific jargon is fine, keep it concise and factual.",
+    "persuasive": "Write persuasively — confident claims, clear reasoning, a compelling through-line.",
+    "empathetic": "Write with warmth and empathy — show you understand the reader's perspective.",
+    "humorous": "Write with light humour — conversational, playful, natural asides.",
+    "poetic": "Write with a lyrical, evocative quality — vivid imagery, rhythm, sensory language.",
+    "instructional": "Write as a clear instructor — step by step, direct, no ambiguity.",
+    "conversational": "Write like you're talking to a friend — natural back-and-forth rhythm, contractions.",
+    "minimalist": "Write minimally — short sentences, only essential words, maximum signal.",
+}
+
+STYLE_NAMES: list[str] = list(STYLES)
+
 _RUBRIC = (
     "Rewrite the text so it reads like an actual, slightly-careless person wrote it, while keeping "
     "its exact meaning, every fact, and every sentinel.\n"
@@ -58,24 +84,8 @@ def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30)
         feedback = f"Lower the AI-detection probability below {threshold:.2f}."
 
     style = score_result.get("style")
-    _STYLES = {
-        "casual": "Write casually — contractions, everyday words, a relaxed conversational voice.",
-        "professional": "Write in a clear professional voice — direct, polished, no fluff.",
-        "academic": "Keep an academic register — precise, measured, but not formulaic.",
-        "blunt": "Be blunt and plain-spoken — short declaratives, no hedging.",
-        "storytelling": "Use a narrative, storytelling voice — concrete scenes, a human throughline.",
-        "journalistic": "Write like a journalist — lead with the point, concrete and specific.",
-        "technical": "Write with technical precision — specific jargon is fine, keep it concise and factual.",
-        "persuasive": "Write persuasively — confident claims, clear reasoning, a compelling through-line.",
-        "empathetic": "Write with warmth and empathy — show you understand the reader's perspective.",
-        "humorous": "Write with light humour — conversational, playful, natural asides.",
-        "poetic": "Write with a lyrical, evocative quality — vivid imagery, rhythm, sensory language.",
-        "instructional": "Write as a clear instructor — step by step, direct, no ambiguity.",
-        "conversational": "Write like you're talking to a friend — natural back-and-forth rhythm, contractions.",
-        "minimalist": "Write minimally — short sentences, only essential words, maximum signal.",
-    }
-    if style and style in _STYLES:
-        feedback += f"\n\nVoice: {_STYLES[style]}"
+    if style and style in STYLES:
+        feedback += f"\n\nVoice: {STYLES[style]}"
 
     flagged_sentences = score_result.get("flagged_sentences") or []
     if flagged_sentences:

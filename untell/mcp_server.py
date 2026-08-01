@@ -23,6 +23,7 @@ def _server():
     from mcp.server.fastmcp import FastMCP
 
     from untell.attacks import count_hidden, scrub_hidden
+    from untell.rewriter.prompts import STYLE_NAMES
     from untell.scripts.run import untell_text
     from untell.scripts.score import score_text
     from untell.scripts.sentences import score_sentences
@@ -47,7 +48,9 @@ def _server():
         Returns tells total, tells_per_100w, burstiness_cv, and per-category breakdown."""
         return score_tells(text, include_matches=include_matches)
 
-    @server.tool()
+    # NOT decorated inline: `server.tool()` snapshots __doc__ as the advertised description at
+    # registration time, so patching the style list in afterwards had no effect on what a client
+    # actually sees. Patch first, register second.
     def untell(
         text: str,
         tier: str = "lite",
@@ -66,7 +69,10 @@ def _server():
             text: The AI-sounding text to humanize.
             tier: Detector tier (lite, full, heavy, commercial).
             threshold: Max P(AI) to pass (default 0.30).
-            style: Optional voice (casual, professional, academic, blunt, storytelling, journalistic).
+            style: Optional voice. See STYLE_NAMES — the list is appended to this docstring at
+                import time rather than written out here, because the hand-copied version had
+                drifted to 6 of the 14 and this docstring is what an MCP client reads to learn
+                the valid values.
             max_iters: Max rewrite iterations (default 5).
             rewriter: free no-key backend ('composite' best default, 'neural' = T5+structural+surgical
                 strongest but needs .[full], 'surgical'/'structural'/'t5_paraphrase'/'mt_pivot'), or
@@ -101,6 +107,14 @@ def _server():
             best_of=best_of,
             margin=margin,
         )
+
+    # Put the real style list into the tool's advertised description. Generated, not restated, so
+    # it cannot drift out of sync with `--style` the way the hand-written list did.
+    if untell.__doc__:
+        untell.__doc__ = untell.__doc__.replace(
+            "See STYLE_NAMES", f"one of {', '.join(STYLE_NAMES)}"
+        )
+    server.tool()(untell)
 
     @server.tool()
     def verify_commercial(
