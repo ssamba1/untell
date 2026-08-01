@@ -11,6 +11,13 @@ Turnitin — those cannot be queried for free and are out of scope by constructi
 It measures exactly one thing: **how far a free, training-free rewrite moves the local open-detector
 ensemble that untell can actually put in its loop.**
 
+> **Read [Result 3](#result-3--superseding-update-the-content-wall-was-largely-a-selection-limit)
+> first.** Results 1–2 were measured with the then-default `best_of=1`. Re-measuring with best-of-3
+> selection cut mean max P(AI) roughly in half again (0.683 → **0.290**) and falsified this
+> document's original claim that the content/genre detector cannot be moved (`hc3_roberta`
+> 0.725 → **0.036–0.064**, replicated). Earlier sections are kept for the record with corrections
+> marked inline.
+
 ## Setup
 
 - **Detector ensemble (full tier, `max` aggregation):** `roberta_openai`
@@ -92,25 +99,82 @@ against the content-locked ones** (0.999 → 0.999 on three of them). 3 of 10 cr
 was already under it. The surgical lever is real but bounded: **it strips the lexical tell and stops
 at the content tell** — a ~0.19 absolute drop in mean max P(AI), nowhere near the trained 97.6% ASR.
 
+## Result 3 — SUPERSEDING UPDATE: the content wall was largely a *selection* limit
+
+**The conclusions in Results 1–2 below are now known to understate the free ceiling substantially.**
+They were measured with `best_of=1` — a single rewrite draw per iteration — which was the shipped
+default at the time. It is not any more, and the difference is not small.
+
+Re-measured with **best-of-3 selection against the same tier the loop scores on**, 3 repeats
+(9 loop runs total, full tier minus `mage`, `--max-iters 2`), run twice independently:
+
+| Metric | Results 1–2 (`best_of=1`) | Re-measured (`best_of=3`), run A | run B |
+|---|---|---|---|
+| flagged rate (max P(AI) ≥ 0.30) | 0.90 → 0.60 | 1.00 → **0.111** | 1.00 → **0.222** |
+| mean max P(AI) | 0.870 → 0.683 | 0.859 → **0.290 ± 0.018** | 0.859 → **0.297 ± 0.018** |
+
+Per-detector mean P(AI), before → after (both runs):
+
+| detector | before | run A after | run B after | earlier claim |
+|---|---|---|---|---|
+| `perplexity_burstiness` | 0.319 | 0.068 | 0.104 | moves most ✓ |
+| `roberta_openai` | 0.523 | 0.097 | 0.104 | moves ✓ |
+| **`hc3_roberta`** | 0.725 | **0.064** | **0.036** | *"barely budges"* ✗ **falsified** |
+| `fast_detectgpt` | 0.312 | 0.282 | 0.284 | flat ✓ |
+
+**The headline correction:** Results 1–2 concluded that `hc3_roberta` — the content/genre detector —
+*"is the one a meaning-preserving rewrite cannot move,"* the measured face of *"the content is the
+tell."* With best-of-N selection it drops to **0.036–0.064**. That wall was mostly a **selection**
+limitation, not a structural one: a single draw rarely finds a phrasing that clears a content
+detector, but three draws scored against that detector usually do. The lever was never a better
+rewriter — it was *choosing among rewrites against the signal you actually care about*, and that was
+shipped disabled.
+
+Two honest caveats that keep this from being a "solved" claim:
+
+1. **`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is untouched
+   by everything measured here. One wall fell; another did not.
+2. **This is still the local proxy ensemble.** Nothing here says anything about GPTZero / Originality
+   / Turnitin, and the separately established anti-correlation result (a rewrite that reads *more*
+   human can score *worse* locally) is unchanged. A low local score still does not mean "passes a
+   commercial detector."
+
+*Reproduce:* `UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 3
+--max-iters 2 --repeats 3 --json`. Use `--repeats ≥ 3`: the free rewriters are randomized, and a
+single pass is not evidence — the same config moved a mean from 0.080 to 0.144 across two runs before
+repeats existed. The harness also reports `mean_similarity` / `min_similarity` so an evasion number
+can never be read without the meaning fidelity it cost.
+
 ## What this establishes
 
+> **Superseded in part — read Result 3 first.** The bullets below were written from the `best_of=1`
+> measurements and their central claim about the content detector has since been **falsified by
+> replicated measurement**. They are kept for the record, with the corrections marked.
+
 - The free, training-free inference regime sits **far below** the published trained ceiling
-  (StealthRL 97.6% ASR), exactly as the report predicted, and the gap is not a tuning problem —
-  it is structural (content-locked detectors + a non-transferring proxy).
-- The single most reliable free lever measured here is **surgical word substitution on the
-  perplexity-driven portion of the signal** (paragraph 1: 0.578 → 0.280). It does nothing for the
-  content-locked portion (paragraphs 2, 3).
-- **No free rewrite — surgical, back-translation, or frontier-LLM-in-loop — reliably clears the
-  local ensemble on content-heavy formulaic text**, and clearing the local ensemble would not imply
-  clearing GPTZero anyway (separately established: RADAR 0.008 vs GPTZero 100% on the same text).
+  (StealthRL 97.6% ASR), exactly as the report predicted. ~~The gap is structural (content-locked
+  detectors + a non-transferring proxy).~~ **Correction:** the *content-locked* half of that
+  explanation did not survive. With best-of-N selection `hc3_roberta` falls 0.725 → 0.036–0.064. The
+  non-transferring-proxy half stands, and `fast_detectgpt` remains unmoved.
+- The single most reliable free lever measured here is ~~surgical word substitution~~ **selecting
+  among several rewrite draws against the tier you actually score on** (best-of-N). That, not any
+  individual rewriter, produced the entire difference between "the content tell is immovable" and
+  hc3 at 0.036.
+- ~~**No free rewrite reliably clears the local ensemble on content-heavy formulaic text.**~~
+  **Correction:** best-of-3 clears it on 78–89% of samples (flagged rate 1.00 → 0.11–0.22). What
+  remains true, and is the part that matters: **clearing the local ensemble does not imply clearing
+  GPTZero** (separately established: RADAR 0.008 vs GPTZero 100% on the same text).
 
-The ceiling, measured and stated plainly: **for free you can reliably strip the lexical/perplexity
-tells, you cannot strip the content tell, and the local proxies are a noisy and partly
-anti-correlated stand-in for the commercial detectors you actually care about.** The honest product
-stance the rest of the repo already takes is the correct one.
+The ceiling, restated from the replicated numbers: **for free you can strip the lexical/perplexity
+tells AND — with best-of-N selection — most of the content/genre signal too; the curvature signal
+(`fast_detectgpt`) still does not move; and the local proxies remain a noisy, partly anti-correlated
+stand-in for the commercial detectors you actually care about.** The honest product stance is
+unchanged: a low local score is not a claim about GPTZero, Originality, or Turnitin.
 
-*Numbers produced on **CPU** with the project's own detector ensemble and rewriters; reproduce with
-`untell-ceiling --rewriter surgical --tier full` and `eval/ceiling.py`. Run on CPU for reproducibility —
+*Numbers produced on **CPU** with the project's own detector ensemble and rewriters; reproduce the
+current (Result 3) figures with `UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full
+--best-of 3 --max-iters 2 --repeats 3`, and the historical Results 1–2 with
+`untell-ceiling --rewriter surgical --tier full`. Run on CPU for reproducibility —
 GPU float ops are not bit-exact, so the perplexity detector can drift run-to-run. The surgical rewriter
 is deterministic, so the loop converges in one effective pass and stops early (`stopped: "stalled"`)
 rather than burning all iterations. n is small and the corpus is formulaic by design; treat these as
