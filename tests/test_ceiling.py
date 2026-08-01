@@ -86,3 +86,27 @@ def test_repeats_default_is_single_run_without_spread():
     assert C._stdev([0.5]) is None       # a single sample has no spread
     assert C._stdev([]) is None
     assert C._stdev([0.2, 0.4]) == 0.1   # population stdev
+
+
+def test_reports_meaning_similarity_alongside_evasion(monkeypatch):
+    """A ceiling number is meaningless without the fidelity it cost: a rewrite that destroys the
+    text trivially beats every detector. mean/min similarity must be reported and rendered."""
+    import eval.ceiling as C
+
+    def _fake_score(t, tier="full", threshold=0.3):
+        m = 0.9 if "REW" not in t else 0.1
+        return {"max": m, "mean": m, "detectors": {"d": m}, "tier": tier,
+                "threshold": threshold, "flagged": m >= threshold}
+
+    def _fake_run(t, **kw):
+        out = t + " REW"
+        return {"final": out, "pre": _fake_score(t), "post": _fake_score(out),
+                "similarity": 0.93, "stopped": "passed"}
+
+    monkeypatch.setattr(C, "score_text", _fake_score)
+    monkeypatch.setattr(C, "untell_text", _fake_run)
+
+    r = C.measure_ceiling(["para one", "para two"], repeats=2)
+    assert r["mean_similarity"] == 0.93
+    assert r["min_similarity"] == 0.93
+    assert "meaning preserved" in C._render(r)

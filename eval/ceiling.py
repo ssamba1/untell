@@ -88,6 +88,7 @@ def measure_ceiling(
     if texts is None:
         texts = list(_SAMPLE)
     run_post_means: list[float] = []
+    sims: list[float] = []
     pre_max: list[float] = []
     post_max: list[float] = []
     per_pre: dict[str, list[float]] = {}
@@ -113,6 +114,11 @@ def measure_ceiling(
                 for k, v in _numeric(post).items():
                     per_post.setdefault(k, []).append(v)
                 rewrote += 1
+                # Evasion without meaning preservation is worthless — a rewrite that destroys the
+                # text trivially "beats" every detector. Report it alongside, so a ceiling number
+                # can never be read without the fidelity it cost.
+                if isinstance(res.get("similarity"), (int, float)):
+                    sims.append(float(res["similarity"]))
         if run_posts:
             run_post_means.append(round(sum(run_posts) / len(run_posts), 4))
 
@@ -129,6 +135,8 @@ def measure_ceiling(
         "run_post_means": run_post_means or None,
         "post_mean_max_stdev": _stdev(run_post_means),
         "rewrote": rewrote,
+        "mean_similarity": _mean(sims),
+        "min_similarity": round(min(sims), 4) if sims else None,
         "rewriter_available": rewrote > 0,
         "pre_flagged_rate": flagged_rate(pre_max),
         "post_flagged_rate": flagged_rate(post_max),
@@ -156,6 +164,12 @@ def _render(r: dict) -> str:
             lines.append(
                 f"  across {r['repeats']} runs: per-run mean max = {r['run_post_means']}   "
                 f"stdev = {r['post_mean_max_stdev']}"
+            )
+        if r.get("mean_similarity") is not None:
+            # A ceiling number is meaningless without the fidelity it cost.
+            lines.append(
+                f"  meaning preserved: mean similarity {r['mean_similarity']}   "
+                f"worst {r['min_similarity']}"
             )
         lines.append("")
         lines.append("  per-detector mean P(AI)  before -> after:")
