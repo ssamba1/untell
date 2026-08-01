@@ -18,8 +18,15 @@ available member once and let the OUTER loop's best-of pick against the true sig
 
 from __future__ import annotations
 
+import logging
+
 from .base import Rewriter
 from .composite import CompositeRewriter
+
+logger = logging.getLogger(__name__)
+
+# Members that have raised at least once — so the warning fires once, not per rewrite.
+_MEMBER_FAILED: set[str] = set()
 
 # Detector-max noise band: candidates whose max is within this of the best are ranked by the
 # whole-ensemble mean instead, so a near-tie on the peak detector is resolved toward the candidate
@@ -84,7 +91,18 @@ class EnsembleRewriter(Rewriter):
         for _name, member in self._members:
             try:
                 cand = member.rewrite(text, score_result, threshold)
-            except Exception:
+            except Exception as exc:
+                # Say it once. This class claims to be ">= its best member on every input"; a
+                # member that always raises quietly shrinks the pool that claim is made over, and
+                # the ensemble then looks like it is simply not helping.
+                if _name not in _MEMBER_FAILED:
+                    _MEMBER_FAILED.add(_name)
+                    logger.warning(
+                        "ensemble member %r failed and is being skipped (%s: %s); the ensemble is "
+                        "now selecting over %d of %d members.",
+                        _name, type(exc).__name__, str(exc)[:120],
+                        len(self._members) - len(_MEMBER_FAILED), len(self._members),
+                    )
                 continue
             if not cand.strip() or cand == text:
                 continue
