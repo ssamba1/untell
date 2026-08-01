@@ -133,3 +133,28 @@ def test_zerogpt_reads_a_real_percentage(monkeypatch):
     monkeypatch.setenv("ZEROGPT_API_KEY", "k")
     monkeypatch.setattr(c, "_post_json", lambda *a, **k: {"data": {"is_gpt_generated": 85}})
     assert c.ZeroGPTDetector().score("some text") == 0.85
+
+
+def test_unreadable_commercial_response_is_logged_once(monkeypatch, caplog):
+    """Returning None on an unreadable response is right - a fabricated score is worse than no
+    score - but doing it SILENTLY means a provider changing its response shape shows up as the
+    detector quietly vanishing from the ensemble, on a service the user is being billed for.
+    Every other component that disables itself says so once; these did not.
+    """
+    import logging
+
+    import untell.detectors.commercial as c
+
+    c._SHAPE_WARNED.clear()
+    monkeypatch.setenv("SAPLING_API_KEY", "test-key")
+    monkeypatch.setattr(c, "_post_json", lambda *a, **k: {"unexpected": "shape"})
+
+    det = c.SaplingDetector()
+    with caplog.at_level(logging.WARNING, logger="untell.detectors.commercial"):
+        assert det.score("some text to score here") is None
+        assert det.score("more text to score here") is None
+
+    warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert len(warnings) == 1, f"expected exactly one warning, got {len(warnings)}"
+    assert "sapling" in warnings[0].getMessage()
+    assert "unexpected" in warnings[0].getMessage(), "the observed keys should be reported"

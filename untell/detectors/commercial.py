@@ -17,12 +17,39 @@ Env vars:
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import time
 
 from untell._retry import retry
 
 from .base import clamp01
+
+logger = logging.getLogger(__name__)
+
+_SHAPE_WARNED: set[str] = set()
+
+
+def _unusable(name: str, data, exc: Exception | None = None) -> None:
+    """Say once that a paid API's response could not be read.
+
+    Returning ``None`` on an unreadable response is correct — a fabricated score is worse than no
+    score — but doing it *silently* means a provider changing its response shape shows up as the
+    detector quietly vanishing from the ensemble, on a service the user is being billed for. Every
+    other component in this package that disables itself says so once; these did not.
+    """
+    if name in _SHAPE_WARNED:
+        return
+    _SHAPE_WARNED.add(name)
+    keys = sorted(data)[:8] if isinstance(data, dict) else type(data).__name__
+    logger.warning(
+        "%s returned a response this adapter cannot read, and was EXCLUDED from the ensemble "
+        "(%s%s). Top-level keys: %s. The API may have changed its response shape.",
+        name,
+        type(exc).__name__ if exc else "missing score field",
+        f": {str(exc)[:100]}" if exc else "",
+        keys,
+    )
 
 
 def _post_json(url: str, headers: dict, body: dict, timeout: float = 45.0) -> dict:
@@ -65,8 +92,10 @@ class OriginalityDetector:
                 {"X-OAI-API-KEY": os.environ["ORIGINALITY_API_KEY"], "Accept": "application/json"},
                 {"content": text, "aiModelVersion": "1"},
             )
+            data_seen = data
             return clamp01(float(data["score"]["ai"]))
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError) as exc:
+            _unusable(self.name, locals().get("data_seen"), exc)
             return None
 
 
@@ -86,8 +115,10 @@ class WinstonDetector:
                 {"Authorization": f"Bearer {os.environ['WINSTON_API_KEY']}"},
                 {"text": text, "sentences": False, "language": "auto"},
             )
+            data_seen = data
             return clamp01((100.0 - float(data["score"])) / 100.0)
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError) as exc:
+            _unusable(self.name, locals().get("data_seen"), exc)
             return None
 
 
@@ -119,9 +150,11 @@ class GPTZeroDetector:
                 # this detector is EXCLUDED — the same rule already applied to mage/hc3/perplexity.
                 ai = doc.get("completely_generated_prob")
             if ai is None:
+                _unusable(self.name, doc)
                 return None
             return clamp01(float(ai))
-        except (KeyError, TypeError, ValueError, IndexError):
+        except (KeyError, TypeError, ValueError, IndexError) as exc:
+            _unusable(self.name, locals().get("data"), exc)
             return None
 
 
@@ -141,8 +174,10 @@ class SaplingDetector:
                 {},
                 {"key": os.environ["SAPLING_API_KEY"], "text": text, "sent_scores": False},
             )
+            data_seen = data
             return clamp01(float(data["score"]))
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError) as exc:
+            _unusable(self.name, locals().get("data_seen"), exc)
             return None
 
 
@@ -169,10 +204,13 @@ class ZeroGPTDetector:
                 # become a fabricated 0.5 in the ensemble (see GPTZeroDetector above).
                 raw = score_data.get("is_gpt_generated")
                 if raw is None:
+                    _unusable(self.name, score_data)
                     return None
                 return clamp01(float(raw) / 100.0)
+            _unusable(self.name, data)
             return None
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as exc:
+            _unusable(self.name, locals().get("data"), exc)
             return None
 
 
@@ -217,7 +255,8 @@ class CopyleaksDetector:
                 {"text": text, "sandbox": self.sandbox},
             )
             return clamp01(float(data["summary"]["ai"]))  # 0-1
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError) as exc:
+            _unusable(self.name, locals().get("data"), exc)
             return None
 
 
