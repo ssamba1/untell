@@ -91,23 +91,56 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
 ]
 
 
+_WARNED_NO_NER = False
+
+
+def _warn_no_ner() -> None:
+    """Say once that named-entity locking is off, and how to turn it on."""
+    global _WARNED_NO_NER
+    if not _WARNED_NO_NER:
+        logger.warning(
+            "spaCy is installed but the 'en_core_web_sm' model is not, so NAMED ENTITIES "
+            "(people, organisations, places) are NOT being locked — only citations, numbers, "
+            "quotes and URLs are. Enable it with: python -m spacy download en_core_web_sm"
+        )
+        _WARNED_NO_NER = True
+
+
 def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
     """Return (start, end) spans for named entities via spaCy, or [] if spaCy is absent."""
     try:
-        import spacy
-    except (ImportError, OSError):
-        return []
-    try:
         nlp = _spacy_entity_spans._nlp  # type: ignore[attr-defined]
     except AttributeError:
+        # Check for the MODEL before importing spacy. `import spacy` alone costs ~5s, and without
+        # en_core_web_sm it buys nothing — so the common install (spacy present, model absent) was
+        # paying five seconds of first-call latency for zero locked entities. find_spec is a cheap
+        # path lookup; the model ships as an ordinary importable package.
+        import importlib.util
+
+        if importlib.util.find_spec("en_core_web_sm") is None:
+            _warn_no_ner()
+            _spacy_entity_spans._nlp = None  # type: ignore[attr-defined]
+            return []
+        try:
+            import spacy
+        except (ImportError, OSError):
+            _spacy_entity_spans._nlp = None  # type: ignore[attr-defined]
+            return []
         try:
             nlp = spacy.load("en_core_web_sm")
         except (ImportError, OSError):
-            try:
-                nlp = spacy.blank("en")  # no NER pipeline -> yields nothing, but stays safe
-            except (ImportError, OSError):
-                return []
+            # DO NOT fall back to spacy.blank("en"). A blank pipeline has no NER component at all
+            # (pipe_names == []), so it returns zero entities — while still costing ~4 seconds to
+            # construct on first use. Measured, that was the entire cost/benefit: 4.26s of startup
+            # latency buying nothing, and named-entity locking silently inert even though the README
+            # promises entities are locked byte-for-byte. Skip spaCy entirely and say so once, so the
+            # gap is visible and fixable instead of invisible and slow.
+            _warn_no_ner()
+            _spacy_entity_spans._nlp = None  # type: ignore[attr-defined]
+            return []
         _spacy_entity_spans._nlp = nlp  # type: ignore[attr-defined]
+    if nlp is None:  # cached "unavailable" — don't retry the failed load per call
+        return []
     try:
         doc = nlp(text)
     except (ImportError, OSError):
