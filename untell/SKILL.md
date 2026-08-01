@@ -72,9 +72,13 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    would under-read the AI signal and can stop too early on text that is still flagged. Restore the
    sentinels back to real prose first, then score that copy (keep rewriting the masked version):
    ```bash
-   python scripts/preserve.py --restore --mapping '<mapping json from step 2>' "<current masked text>" > /tmp/untell_scoring.txt
-   python scripts/score.py "$(cat /tmp/untell_scoring.txt)" --threshold 0.30
+   python scripts/preserve.py --restore --mapping '<mapping json from step 2>' "<current masked text>" | python scripts/score.py --threshold 0.30
    ```
+   `score.py` reads stdin, so pipe straight into it — no temp file. (This step used to write to
+   `/tmp/untell_scoring.txt` and read it back with `$(cat ...)`. That works under bash — including
+   Git Bash on Windows, which provides `/tmp` — but not in PowerShell, where `/tmp` does not
+   exist; step 1 of this same skill already branches on Windows for the interpreter path. The pipe
+   needs no temp file, so it also cannot leave a stale scoring file behind between iterations.)
    Read the JSON: `detectors` (per-detector P(AI)), `max` (the proxy you must push down),
    `flagged` (true ⇒ keep going), `tier`, and any `warning`/`failed_detectors` (say so honestly).
 
