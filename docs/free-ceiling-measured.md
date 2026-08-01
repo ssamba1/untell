@@ -11,8 +11,13 @@ Turnitin — those cannot be queried for free and are out of scope by constructi
 It measures exactly one thing: **how far a free, training-free rewrite moves the local open-detector
 ensemble that untell can actually put in its loop.**
 
+> **Read [Result 6](#result-6--re-measured-on-a-working-perplexity_burstiness-supersedes-result-5s-table)
+> for the current numbers.** Every earlier result was measured while `perplexity_burstiness` — the
+> one detector present at every tier — was anti-correlated and saturating. The corrected figure is
+> **0.859 → 0.247 ± 0.015, flagged rate 1.00 → 0.00.**
+
 > **Read [Result 3](#result-3--superseding-update-the-content-wall-was-largely-a-selection-limit)
-> first.** Results 1–2 were measured with the then-default `best_of=1`. Re-measuring with best-of-3
+> next.** Results 1–2 were measured with the then-default `best_of=1`. Re-measuring with best-of-3
 > selection cut mean max P(AI) roughly in half again (0.683 → **0.290**) and falsified this
 > document's original claim that the content/genre detector cannot be moved (`hc3_roberta`
 > 0.725 → **0.036–0.064**, replicated). Earlier sections are kept for the record with corrections
@@ -23,8 +28,12 @@ ensemble that untell can actually put in its loop.**
 - **Detector ensemble (full tier, `max` aggregation):** `roberta_openai`
   (`openai-community/roberta-base-openai-detector`), `hc3_roberta`
   (`Hello-SimpleAI/chatgpt-detector-roberta`), `fast_detectgpt` (EleutherAI/gpt-neo-125m), and the
-  lite `perplexity_burstiness` heuristic. `mage` (`yaful/MAGE`) is excluded — its `id2label` config
-  is rejected by current `huggingface_hub` (a known, documented dead detector).
+  lite `perplexity_burstiness` heuristic. `mage` (`yaful/MAGE`) is excluded via
+  `UNTELL_DISABLE_MAGE=1` — for **speed**, not because it is broken. That exclusion note used to
+  read "a known, documented dead detector, its `id2label` config is rejected by current
+  `huggingface_hub`"; the adapter has since normalised that config on load and MAGE runs (measured
+  gap +0.666 on the audit probes). It is a Longformer and is roughly 50–100× slower on CPU than the
+  base-size detectors, which is why the reproduce command still leaves it out.
 - **Threshold:** `0.30` (untell's default — aggressive; most formulaic text flags).
 - **Metric:** `max` P(AI) across the live detectors (the proxy untell drives down), reported as the
   per-corpus mean (`mean_max`) and the fraction still at/above threshold (`flagged_rate`).
@@ -263,6 +272,48 @@ Two honest caveats that keep this from being a "solved" claim:
    / Turnitin, and the separately established anti-correlation result (a rewrite that reads *more*
    human can score *worse* locally) is unchanged. A low local score still does not mean "passes a
    commercial detector."
+
+### Result 6 — re-measured on a *working* `perplexity_burstiness` (supersedes Result 5's table)
+
+Result 5's numbers were taken while the lite detector — the one detector present at every tier —
+was itself broken. It scored each sentence **in isolation** and averaged, discarding the context
+that makes generated text predictable, and its linear clamps floored a large class of ordinary
+input to exactly `0.0`. Measured on paragraph-length text it was *anti-correlated*: AI text scored
+**below** human text (gap −0.198). Rewritten as a single in-context pass with logistic calibration
+fitted to labelled HC3 pairs (AUROC **0.999** on 200 held-out pairs, nothing saturated), the same
+config re-run — `best-of 3`, `max-iters 2`, 3 repeats, 9 loop runs:
+
+| detector | before (Result 5) | **before (live detector)** | after (Result 5) | **after (live detector)** |
+|---|---|---|---|---|
+| `perplexity_burstiness` | 0.319 | **0.604** | 0.028 | **0.140** |
+| `roberta_openai` | 0.523 | 0.523 | 0.051 | **0.100** |
+| `hc3_roberta` | 0.725 | 0.725 | 0.020 | **0.003** |
+| `fast_detectgpt` | 0.630 | 0.630 | 0.214 | **0.206** |
+
+| Metric | Result 5 | **re-measured** |
+|---|---|---|
+| flagged rate | 1.00 → 0.111 | 1.00 → **0.000** |
+| mean max P(AI) | 0.859 → 0.214 ± 0.012 | 0.859 → **0.247 ± 0.015** |
+| meaning similarity (cosine) | 0.944 / 0.900 worst | 0.916 / 0.815 worst |
+
+**The headline moved twice, in opposite directions, and both matter.** The *baseline* for
+`perplexity_burstiness` was understated by nearly half (0.319 → 0.604): a broken detector had been
+reporting formulaic AI text as barely suspicious, so the "before" picture flattered the corpus. And
+the *after* figure is worse than Result 5 claimed (0.214 → 0.247), because the 0.028 it recorded for
+that detector was a number the loop never really had to earn. Against that, the flagged rate is now
+**0.000** — every sample finished below threshold in all nine runs, where Result 5 left one in nine
+flagged.
+
+So the corrected free-path figure is **0.859 → 0.247 ± 0.015, flagged 1.00 → 0.00**. Slightly higher
+mean, materially more consistent, and — for the first time — measured with every detector in the
+ensemble demonstrably responding to its input.
+
+The cosine similarity figure falls again (0.944 → 0.916 mean, 0.900 → 0.815 worst). The same caveat
+as Result 5 applies and is now stronger: fidelity is enforced by the NLI gate plus a
+**predicate-argument veto** (`scripts/roles.py`) that rejects rewrites permuting who did what to
+whom — a class NLI scores at 0.99 entailment and lets straight through. On the fixed probe set the
+gate now admits **0 of 13** meaning-changing rewrites (was 4 of 13) while still admitting 8 of 8
+faithful ones. Cosine is a reporting metric here, not the guarantee.
 
 *Reproduce:* `UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 3
 --max-iters 2 --repeats 3 --json`. Use `--repeats ≥ 3`: the free rewriters are randomized, and a
