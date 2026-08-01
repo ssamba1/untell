@@ -178,7 +178,8 @@ def test_browser_scoring_loop_converges(monkeypatch):
 
     monkeypatch.setattr(bc, "get_browser_checker", lambda name: _FakeChk())
     # sim_bar=0.0 isolates the browser-scoring behaviour from the lite token-overlap quality gate.
-    res = untell_text(AI, tier="lite", browser="zerogpt", threshold=0.30, max_iters=3, sim_bar=0.0)
+    res = untell_text(AI, tier="lite", browser="zerogpt", threshold=0.30, max_iters=3, sim_bar=0.0,
+                      veto_contradictions=False)
     assert "error" not in res
     assert res["tier"] == "browser:zerogpt"
     assert res["post"]["max"] <= 0.30

@@ -491,7 +491,8 @@ def test_loop_vetoes_a_meaning_inverting_rewrite(monkeypatch):
                 "threshold": threshold, "flagged": m >= 0.3}
 
     monkeypatch.setattr(run_mod, "score_text", _score)
-    monkeypatch.setattr(run_mod, "contradicts", lambda a, b: b.strip() == inverted)
+    monkeypatch.setattr(run_mod, "meaning_preserved",
+                        lambda src, cand, sim, bar: cand.strip() != inverted)
 
     class _Inv:
         name = "inv"
@@ -524,7 +525,7 @@ def test_veto_can_be_disabled(monkeypatch):
                 "threshold": threshold, "flagged": m >= 0.3}
 
     monkeypatch.setattr(run_mod, "score_text", _score)
-    monkeypatch.setattr(run_mod, "contradicts", lambda a, b: True)  # would veto everything
+    monkeypatch.setattr(run_mod, "meaning_preserved", lambda *a, **k: False)  # would reject all
 
     class _Inv:
         name = "inv"

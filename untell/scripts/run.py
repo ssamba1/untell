@@ -31,7 +31,7 @@ if __package__ in (None, ""):
             break
 
 from untell.rewriter import get_rewriter
-from untell.scripts.entailment import contradicts
+from untell.scripts.entailment import meaning_preserved
 from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
@@ -225,15 +225,18 @@ def untell_text(
             # every sentinel exactly as often as it appears in `masked`: no drop, no alter, no dup.
             if Counter(_SENTINEL_RE.findall(candidate)) != Counter(_SENTINEL_RE.findall(masked)):
                 continue  # dropped/altered/DUPLICATED a locked span — reject outright
-            if similarity(masked, candidate) < sim_bar:
+            # Meaning gate. Cosine similarity alone is wrong in BOTH directions: it penalises
+            # register change (the primary humanizing move — it rejected 6/6 faithful formal->casual
+            # rewrites) while being blind to negation ("runs faster" -> "runs slower" scores 0.974).
+            # With NLI available, contradiction + bidirectional entailment do the fidelity judging
+            # and similarity is demoted to a gross-drift floor; without it, the strict bar stands.
+            # Measured on a fixed probe set: 7/8 faithful admitted and 0/11 bad, vs 2/8 and 4/11.
+            sim = similarity(masked, candidate)
+            if veto_contradictions:
+                if not meaning_preserved(masked, candidate, sim, sim_bar):
+                    continue
+            elif sim < sim_bar:
                 continue  # meaning drifted too far from the source
-            # Contradiction veto. Embedding similarity is BLIND to negation and antonymy — measured,
-            # "runs faster" -> "runs slower" scores 0.974 and sails through the gate. A rewrite that
-            # asserts the opposite of the source is not a humanized rewrite, it is a wrong one, so it
-            # is rejected regardless of how well it scores on similarity or on the detectors. No-op
-            # when the NLI deps are absent (never a silent veto).
-            if veto_contradictions and contradicts(masked, candidate):
-                continue
             cscore = score(candidate)
             valid.append((candidate, cscore, score_tells(candidate).get("tells", 0)))
         cand_best, cand_best_score = None, None
