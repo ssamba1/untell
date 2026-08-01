@@ -199,6 +199,28 @@ _SYN: dict[str, list[str]] = {
     "align": ["match", "fit", "line up"],
     "aligns": ["matches", "fits", "lines up"],
     "aligned": ["matched", "in step", "lined up"],
+    # --- Formal -> plain simplifications (raise perplexity toward the human range; research Pri-6).
+    # Single words only: the surgical path ranks/replaces one token at a time, so multi-word keys
+    # would never match — they belong in a phrase-level transform, not here. ---
+    "obtain": ["get", "gain"],
+    "obtained": ["got", "gained"],
+    "purchase": ["buy"],
+    "purchased": ["bought"],
+    "assist": ["help", "aid"],
+    "require": ["need"],
+    "requires": ["needs"],
+    "attempt": ["try"],
+    "terminate": ["end", "stop"],
+    "sufficient": ["enough"],
+    "additional": ["more", "extra"],
+    "approximately": ["about", "around", "roughly"],
+    "regarding": ["about", "on"],
+    "prioritize": ["favor", "put first", "focus on"],
+    "endeavour": ["effort", "try"],
+    "ascertain": ["find out", "learn", "check"],
+    "utilise": ["use"],
+    "commencing": ["starting", "beginning"],
+    "aforesaid": ["earlier", "that"],
 }
 
 
