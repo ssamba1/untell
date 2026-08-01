@@ -29,6 +29,7 @@ See the ``/docs`` page for full schemas.
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -87,7 +88,9 @@ _API_KEY = os.environ.get("UNTELL_API_KEY", "").strip()
 def _verify_key(x_api_key: str | None = None) -> bool:
     if not _API_KEY:
         return True  # no key configured = open access
-    return x_api_key == _API_KEY
+    # Constant-time: `==` on strings short-circuits at the first differing byte, so response time
+    # leaks how long a supplied prefix matched and the key can be recovered a character at a time.
+    return bool(x_api_key) and hmac.compare_digest(x_api_key, _API_KEY)
 
 
 def _check_auth(authorization: str | None, x_api_key: str | None) -> str | None:
