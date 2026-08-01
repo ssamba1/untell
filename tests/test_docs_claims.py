@@ -1,0 +1,82 @@
+"""Docs must not claim a detector count the registry does not back.
+
+Four documents advertised the ensemble size and no two of them agreed: README said "7 local +
+commercial", docs/index.md said "7 local + 6 commercial", why-best-open-repo.md said "7 local +
+6 commercial", competitive-gap-plan.md said "8 local + 6 commercial". The registry had 8 local and
+7 commercial. Nothing checked, so every detector added after the docs were written silently made
+them wronger — and the ensemble size is the headline claim of the project.
+
+These tests read the counts back out of the prose and compare them to `all_detectors()`, so the
+next detector added fails here instead of quietly aging the docs.
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+import pytest
+
+from untell.detectors.base import all_detectors
+
+REPO = Path(__file__).resolve().parent.parent
+
+# Files whose counts describe the CURRENT build. Dated artefacts are excluded on purpose: a
+# changelog entry or a measurement report records what was true when written, and rewriting
+# history to match today's registry would destroy the record rather than fix anything.
+_HISTORICAL = re.compile(r"CHANGELOG|report|measured|buildplan", re.IGNORECASE)
+
+_LOCAL_CLAIM = re.compile(r"(\d+)\s+local\b")
+_COMMERCIAL_CLAIM = re.compile(r"(\d+)\s+commercial\b")
+
+
+def _live_docs() -> list[Path]:
+    return [
+        p
+        for p in REPO.rglob("*.md")
+        if not _HISTORICAL.search(p.name)
+        and ".venv" not in p.parts
+        and "node_modules" not in p.parts
+        and "site" not in p.parts
+    ]
+
+
+def _registry_counts() -> tuple[int, int]:
+    dets = all_detectors()
+    commercial = sum(1 for d in dets if d.tier == "commercial")
+    return len(dets) - commercial, commercial
+
+
+def test_registry_has_both_kinds():
+    """Guard the guard: if the registry ever returns 0/0, the claim tests below pass vacuously."""
+    local, commercial = _registry_counts()
+    assert local > 0 and commercial > 0, f"registry looks broken: {local} local, {commercial} commercial"
+
+
+@pytest.mark.parametrize(
+    ("pattern", "kind"),
+    [(_LOCAL_CLAIM, "local"), (_COMMERCIAL_CLAIM, "commercial")],
+    ids=["local", "commercial"],
+)
+def test_documented_detector_counts_match_registry(pattern, kind):
+    local, commercial = _registry_counts()
+    expected = local if kind == "local" else commercial
+
+    wrong: list[str] = []
+    for doc in _live_docs():
+        text = doc.read_text(encoding="utf-8", errors="replace")
+        for m in pattern.finditer(text):
+            claimed = int(m.group(1))
+            if claimed != expected:
+                line = text[: m.start()].count("\n") + 1
+                wrong.append(f"{doc.relative_to(REPO)}:{line} claims {claimed} {kind}, registry has {expected}")
+
+    assert not wrong, "detector counts in docs are stale:\n  " + "\n  ".join(wrong)
+
+
+def test_claims_are_actually_being_found():
+    """A regex that matches nothing would make the count test pass no matter how wrong the docs are."""
+    hits = sum(
+        len(_LOCAL_CLAIM.findall(d.read_text(encoding="utf-8", errors="replace"))) for d in _live_docs()
+    )
+    assert hits > 0, "no '<n> local' claims found — the pattern or the doc set is wrong, not the docs"

@@ -19,7 +19,7 @@ Our own deep-research survey of the open-source humanizer field (`humanizer-rese
 
 | Gap criterion | This repo |
 |---|---|
-| (a) validated vs **multiple live detectors** | 7 local (incl. RADAR, Binoculars, Fast-DetectGPT, MAGE, HC3) + **6 commercial API adapters** + browser checkers; **live-proven 100%→0% on ZeroGPT** |
+| (a) validated vs **multiple live detectors** | 8 local (incl. RADAR, Binoculars, Fast-DetectGPT, MAGE, HC3) + **7 commercial API adapters** + browser checkers; **live-proven 100%→0% on ZeroGPT** |
 | (b) quality/meaning **verifier** | semantic-similarity gate + preserve-lock (citations/numbers/entities) + `untell-verify` |
 | (c) **iterative detector-feedback loop at inference** | the core loop + **per-sentence targeting** (rewrite only the flagged sentences) |
 | (d) **user-installable package** | `pip install` + 5 console scripts (`untell-score/loop/verify/prove/sentences`) **and** a Claude skill |
