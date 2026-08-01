@@ -46,22 +46,45 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     ("url", re.compile(r"https?://\S+|doi:\s*\S+", re.IGNORECASE)),
     # Quoted spans (straight or curly double quotes)
     ("quote", re.compile(r"[\"“][^\"”]{1,400}[\"”]")),
-    # Significant numbers only — avoid locking bare single digits ("5 days" locks via the unit, but
-    # a lone "5" does not). Matches currency, decimals, comma-grouped thousands, number+unit, and
-    # integers of 2+ digits: $5, 3.14, 1,000, 42%, 10kg, 2020.
+    # Email addresses — a fact a rewrite must never "tidy".
+    ("email", re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")),
+    # Significant numbers. Avoids locking bare single digits (a lone "5" stays rewritable; "5 days"
+    # locks via its unit).
+    #
+    # ORDER IS LOAD-BEARING: alternation is first-match-wins, so every COMPOUND form must precede the
+    # plain-number forms that would otherwise consume its prefix. Measured before this ordering
+    # existed, 7 of 28 fact types locked only PARTIALLY — the worst possible outcome, because a
+    # sentinel appears and the span looks protected while the rest stays mutable:
+    #   "-15"        -> locked "15", dropping the MINUS SIGN (restores as a positive number)
+    #   "p<0.05"     -> locked "0.05", leaving "<" free to become ">" (inverts the claim)
+    #   "3.5%"       -> locked "3.5", leaving "%" free to become " percent"
+    #   "9:30"       -> locked "30" only, so the hour was rewritable
+    #   "2024-03-15" -> locked "2024", "03", "15" as three spans, so the date could be reordered
+    #   "v2.1.3"     -> locked "1.3"
+    #   "10-20"      -> locked the endpoints separately, so the range could be flipped
     (
         "number",
         re.compile(
-            r"[$€£]\s?\d[\d,]*(?:\.\d+)?"  # currency
+            r"\bv\d+(?:\.\d+)+\b"  # semantic version: v2.1.3
+            r"|\b\d{4}-\d{2}-\d{2}\b"  # ISO date: 2024-03-15
+            r"|\b\d+(?:\.\d+)?[eE][+-]?\d+\b"  # scientific notation: 1.5e10
+            r"|\b\d{1,3}:\d{1,3}(?::\d{2})?\b"  # time or ratio: 9:30, 3:1, 1:02:33
+            r"|\b\d+\s*/\s*\d+\b"  # fraction: 2/3
+            # Comparison against a number: p<0.05, n >= 30. The operator must be inside the lock or a
+            # rewrite can invert the assertion while the sentinel survives intact.
+            r"|\b[A-Za-z]{1,3}\s*[<>≤≥]=?\s*[-−]?\d[\d,]*(?:\.\d+)?"
+            r"|[<>≤≥]=?\s*[-−]?\d[\d,]*(?:\.\d+)?"
+            r"|[-−]?[$€£]\s?\d[\d,]*(?:\.\d+)?"  # currency, optionally negative
+            # Number + unit, allowing a decimal and a leading sign. The terminator is (?!\w), NOT \b:
+            # `\b` requires a word character on one side, and "%" / bare "°" are non-word, so a
+            # trailing `\b` could only succeed when the symbol was followed by a letter or digit —
+            # which never happens in prose. That made "5%" match nothing at all and "42%" lock only
+            # its digits.
+            r"|[-−]?\b\d[\d,]*(?:\.\d+)?\s*(?:%|kg|km|cm|mm|mol|°[CF]?|years?|days?|hours?|minutes?)(?!\w)"
+            r"|\b\d+\s*[-–—]\s*\d+\b"  # numeric range: 10-20
+            r"|[-−]\d[\d,]*(?:\.\d+)?\b"  # negative number: -15, -3.2
             r"|\b\d[\d,]*\.\d+\b"  # decimals
             r"|\b\d{1,3}(?:,\d{3})+\b"  # comma-grouped thousands
-            # Number + unit. The terminator is (?!\w), NOT \b: `\b` requires a word character on one
-            # side, and `%` / bare `°` are non-word, so a trailing `\b` could only succeed when the
-            # symbol was followed by a letter or digit — which never happens in prose. The effect was
-            # that "5%" matched nothing at all (the 2+-digit fallback needs two digits) and "42%"
-            # locked only the digits, leaving "%" as raw text a rewriter could turn into " percent"
-            # while keeping the sentinel intact and passing the integrity check.
-            r"|\b\d+\s*(?:%|kg|km|cm|mm|mol|°[CF]?|years?|days?|hours?|minutes?)(?!\w)"  # number + unit
             r"|\b\d{2,}\b"  # standalone integers of 2+ digits
         ),
     ),
