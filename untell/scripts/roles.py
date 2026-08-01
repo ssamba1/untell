@@ -219,8 +219,16 @@ def role_swap(a: str, b: str) -> bool | None:
             } == {v for _, v in pairs_b}:
                 return True
 
-        # 3. A load-bearing connective class was dropped, added, or replaced.
-        if _connectives(da) != _connectives(db):
+        # 3. A load-bearing connective class present in the source is MISSING from the rewrite.
+        #
+        # Direction matters, and vetoing any difference was measured to starve the loop. Dropping
+        # or replacing a connective loses or changes a relation the source asserted ("failed
+        # because the cache was stale" -> "failed and the cache was stale"; if -> because;
+        # before -> after) and all three still veto, because the source class is gone either way.
+        # ADDING one is the structural rewriter's main burstiness move — joining two sentences with
+        # "though" or "while" is how it varies architecture — and blocking that rejected every
+        # candidate it produced, leaving the loop unable to rewrite anything at all.
+        if _connectives(da) - _connectives(db):
             return True
         return False
     except Exception as exc:
