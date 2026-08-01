@@ -99,3 +99,104 @@ def test_real_model_vetoes_inversion_but_not_register_shift():
     assert ok_score < 0.5, f"faithful register shift wrongly vetoed (got {ok_score})"
     assert entailment.contradicts(*inverted) is True
     assert entailment.contradicts(*faithful) is False
+
+
+# --------------------------------------------------------------------------- entailment / gate
+def test_entailment_takes_min_of_both_directions(monkeypatch):
+    """min() is what makes this meaning-PRESERVATION rather than one-way implication: a truncation
+    entails its source in one direction only."""
+    monkeypatch.setattr(entailment, "available", lambda: True)
+    monkeypatch.setattr(entailment._NLI, "dead", False)
+    monkeypatch.setattr(entailment._NLI, "label_idx", {"contradiction": 0, "entailment": 1, "neutral": 2})
+    monkeypatch.setattr(entailment, "_load", lambda: (None, None))
+
+    calls = {"n": 0}
+
+    def _fake(premise, hypothesis):
+        calls["n"] += 1
+        # forward entails strongly, backward does not (information was dropped)
+        return [0.01, 0.95, 0.04] if calls["n"] == 1 else [0.02, 0.03, 0.95]
+
+    monkeypatch.setattr(entailment, "_pair_probs", _fake)
+    assert entailment.entailment_score("a", "b") == pytest.approx(0.03)
+
+
+def test_gate_falls_back_to_strict_similarity_without_nli(monkeypatch):
+    """No NLI means nothing to lean on — loosening the bar would be pure risk, since the metric that
+    would have to catch bad rewrites is the one measured to be blind to them."""
+    monkeypatch.setattr(entailment, "available", lambda: False)
+    assert entailment.meaning_preserved("a", "b", sim=0.80, strict_sim_bar=0.76) is True
+    assert entailment.meaning_preserved("a", "b", sim=0.50, strict_sim_bar=0.76) is False
+
+
+def test_gate_falls_back_to_strict_when_model_dies_midrun(monkeypatch):
+    """A model that dies mid-run must not silently become a permissive gate."""
+    monkeypatch.setattr(entailment, "available", lambda: True)
+    monkeypatch.setattr(entailment, "contradiction_score", lambda a, b: None)
+    monkeypatch.setattr(entailment, "entailment_score", lambda a, b: None)
+    assert entailment.meaning_preserved("a", "b", sim=0.50, strict_sim_bar=0.76) is False
+
+
+def test_gate_admits_faithful_register_shift_and_rejects_inversion(monkeypatch):
+    monkeypatch.setattr(entailment, "available", lambda: True)
+
+    # Faithful: low similarity (register changed) but no contradiction and real entailment.
+    monkeypatch.setattr(entailment, "contradiction_score", lambda a, b: 0.006)
+    monkeypatch.setattr(entailment, "entailment_score", lambda a, b: 0.858)
+    assert entailment.meaning_preserved("a", "b", sim=0.578, strict_sim_bar=0.76) is True
+
+    # Inverted: high similarity but a clear contradiction.
+    monkeypatch.setattr(entailment, "contradiction_score", lambda a, b: 0.997)
+    monkeypatch.setattr(entailment, "entailment_score", lambda a, b: 0.001)
+    assert entailment.meaning_preserved("a", "b", sim=0.974, strict_sim_bar=0.76) is False
+
+
+def test_gate_rejects_information_loss_that_is_not_a_contradiction(monkeypatch):
+    """Truncation contradicts nothing (contra 0.060) but does not entail (ent 0.002)."""
+    monkeypatch.setattr(entailment, "available", lambda: True)
+    monkeypatch.setattr(entailment, "contradiction_score", lambda a, b: 0.060)
+    monkeypatch.setattr(entailment, "entailment_score", lambda a, b: 0.002)
+    assert entailment.meaning_preserved("a", "b", sim=0.556, strict_sim_bar=0.76) is False
+
+
+def test_gate_still_rejects_gross_topic_drift(monkeypatch):
+    """NLI can rate an unrelated sentence merely 'neutral', so the relaxed similarity floor remains
+    as the gross-drift catch."""
+    monkeypatch.setattr(entailment, "available", lambda: True)
+    monkeypatch.setattr(entailment, "contradiction_score", lambda a, b: 0.01)
+    monkeypatch.setattr(entailment, "entailment_score", lambda a, b: 0.90)
+    assert entailment.meaning_preserved("a", "b", sim=0.05, strict_sim_bar=0.76) is False
+
+
+def test_real_model_gate_beats_similarity_alone_on_both_axes():
+    """The headline claim, against the real model: more faithful rewrites admitted AND fewer bad."""
+    pytest.importorskip("torch")
+    pytest.importorskip("transformers")
+    if not entailment.available():
+        pytest.skip("NLI stack unavailable")
+
+    from untell.scripts.quality import similarity
+
+    good = [
+        ("Organizations use these tools to improve operational efficiency.",
+         "Companies rely on this stuff to run things better."),
+        ("Furthermore, adoption rates continue to increase steadily.",
+         "Also, more people keep signing up."),
+    ]
+    bad = [
+        ("The build runs significantly faster after the change.",
+         "The build runs significantly slower after the change."),
+        ("The cat sat on the mat and watched the rain fall outside.",
+         "The cat sat somewhere."),
+    ]
+    try:
+        new_good = sum(1 for a, b in good if entailment.meaning_preserved(a, b, similarity(a, b), 0.76))
+        new_bad = sum(1 for a, b in bad if entailment.meaning_preserved(a, b, similarity(a, b), 0.76))
+    except Exception:
+        pytest.skip("NLI model failed to load")
+
+    old_bad = sum(1 for a, b in bad if similarity(a, b) >= 0.76)
+
+    assert new_good == len(good), "faithful register shifts must be admitted"
+    assert new_bad == 0, "no meaning-lost rewrite may pass"
+    assert old_bad > 0, "probe set must actually contain a case the old gate let through"

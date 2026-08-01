@@ -112,6 +112,39 @@ def contradiction_score(a: str, b: str) -> float | None:
         return None
 
 
+def entailment_score(a: str, b: str) -> float | None:
+    """Bidirectional entailment: min(P(a entails b), P(b entails a)). None if unavailable.
+
+    The contradiction veto catches meaning INVERSION but is blind to meaning *loss*: dropping half a
+    sentence contradicts nothing. Measured, "The cat sat on the mat and watched the rain fall
+    outside." -> "The cat sat somewhere." scores contradiction 0.060 (innocent) yet bidirectional
+    entailment 0.002 — because the truncation does not entail the source.
+
+    Taking the MIN of both directions is what makes this a meaning-preservation test rather than a
+    one-way implication test: b must say everything a says, and a must say everything b says.
+    Measured, faithful register-shifting paraphrases land at 0.016-0.921 while meaning-lost or
+    inverted rewrites sit at 0.000-0.002.
+    """
+    if not available() or not a.strip() or not b.strip():
+        return None
+    try:
+        forward = _pair_probs(a, b)
+        idx = (_NLI.label_idx or {}).get("entailment")  # resolved during the first load
+        if idx is None:
+            return None
+        backward = _pair_probs(b, a)
+        return min(float(forward[idx]), float(backward[idx]))
+    except Exception as exc:
+        _NLI.dead = True
+        if not _NLI.warned:
+            logger.warning(
+                "entailment check unavailable (%s: %s); meaning loss will NOT be caught.",
+                type(exc).__name__, str(exc)[:140],
+            )
+            _NLI.warned = True
+        return None
+
+
 def contradicts(a: str, b: str, bar: float = DEFAULT_CONTRADICTION_BAR) -> bool:
     """True only when the model positively asserts a contradiction.
 
@@ -121,3 +154,50 @@ def contradicts(a: str, b: str, bar: float = DEFAULT_CONTRADICTION_BAR) -> bool:
     """
     score = contradiction_score(a, b)
     return score is not None and score >= bar
+
+
+# Entailment floor for the relaxed gate. Measured, meaning-lost/inverted rewrites sit at
+# 0.000-0.002 and faithful register shifts at 0.016-0.921, so 0.005 sits in an 8x-wide empty gap.
+DEFAULT_ENTAILMENT_FLOOR = 0.005
+# Similarity floor used only when NLI is carrying the meaning check. It exists to catch gross topic
+# drift that NLI might rate as merely "neutral", not to judge fidelity — NLI does that far better.
+RELAXED_SIM_BAR = 0.30
+
+
+def meaning_preserved(
+    source: str,
+    candidate: str,
+    sim: float,
+    strict_sim_bar: float,
+    relaxed_sim_bar: float = RELAXED_SIM_BAR,
+    contradiction_bar: float = DEFAULT_CONTRADICTION_BAR,
+    entailment_floor: float = DEFAULT_ENTAILMENT_FLOOR,
+) -> bool:
+    """Decide whether ``candidate`` preserves ``source``'s meaning, adaptively.
+
+    Cosine similarity alone is a poor meaning test in BOTH directions. Measured on a fixed probe
+    set, the shipped ``sim >= 0.76`` rule admitted only 2 of 8 faithful formal->casual rewrites (it
+    penalises register change, which is exactly what humanizing does) while admitting 4 of 11
+    meaning-lost or inverted ones (it is blind to negation).
+
+    With NLI available, similarity stops being the fidelity judge and becomes only a gross-topic-drift
+    floor, while contradiction and bidirectional entailment do the real work:
+
+        sim >= relaxed_sim_bar  AND  contradiction < bar  AND  bidirectional entailment >= floor
+
+    That combination admitted 7 of 8 faithful rewrites and 0 of 11 bad ones on the same probe set —
+    simultaneously more permissive to genuine paraphrase and strictly safer.
+
+    Without NLI, there is nothing to lean on, so this falls back to the original strict similarity
+    bar. Loosening the bar in that case would be pure risk: the metric that would have to catch the
+    bad rewrites is the very one measured to be blind to them.
+    """
+    if not available():
+        return sim >= strict_sim_bar
+
+    con = contradiction_score(source, candidate)
+    ent = entailment_score(source, candidate)
+    if con is None or ent is None:  # model died mid-run -> strict behaviour, never a silent pass
+        return sim >= strict_sim_bar
+
+    return sim >= relaxed_sim_bar and con < contradiction_bar and ent >= entailment_floor
