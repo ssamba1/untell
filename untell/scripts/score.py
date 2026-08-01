@@ -191,6 +191,12 @@ def main(argv: list[str] | None = None) -> int:
         "(default: full). 'commercial' adds the paid API checkers whose keys are set.",
     )
     parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="suppress the stderr progress/tier notices (stdout JSON is unaffected)",
+    )
+    parser.add_argument(
         "--threshold",
         "-t",
         type=float,
@@ -208,11 +214,23 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty input"}))
         return 2
 
+    # Say what is about to happen BEFORE it happens. The full tier loads real transformer models —
+    # measured at ~19s cold on CPU — during which the only output is raw HuggingFace weight-loading
+    # bars and HF Hub warnings. That reads as a hang, and nothing told the user there is an instant
+    # alternative. stderr keeps stdout pure JSON for the skill to parse.
+    if args.tier in ("full", "heavy") and not args.quiet:
+        print(
+            f"[untell-score] loading the '{args.tier}' detector tier — real models, ~20s on first "
+            "run (cached after). Use --tier lite for an instant zero-dependency heuristic.",
+            file=sys.stderr,
+        )
+
     result = score_text(text, tier=args.tier, threshold=args.threshold)
     # Log which tier actually ran to stderr (stdout stays pure JSON for the skill to parse). A direct
     # stderr write (not logging) so it survives the root logger sitting at WARNING and is captured by
     # the current sys.stderr under test.
-    print(f"[untell-score] tier requested={args.tier} ran={result['tier']}", file=sys.stderr)
+    if not args.quiet:
+        print(f"[untell-score] tier requested={args.tier} ran={result['tier']}", file=sys.stderr)
     # ensure_ascii=True: detector error strings may carry non-ASCII; never crash a Windows stdout.
     print(json.dumps(result, ensure_ascii=True, indent=2))
     return 0

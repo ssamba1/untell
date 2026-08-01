@@ -115,6 +115,17 @@ class PerplexityBurstinessDetector:
         return True
 
     def _torch_ready(self) -> bool:
+        # UNTELL_LITE_NO_TORCH=1 forces the stdlib heuristic even when torch is importable.
+        #
+        # This detector silently upgrades to GPT-2 perplexity whenever torch is present — better
+        # math, but MEASURED at 10.6s on the first call. That makes `--tier lite` take ~12s on any
+        # machine with torch installed, while the tier is documented and marketed as the instant,
+        # zero-dependency path. The upgrade is worth keeping (it is a genuinely better signal), but
+        # "lite" must have a way to actually be lite.
+        import os
+
+        if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+            return False
         try:
             import torch  # noqa: F401
             import transformers  # noqa: F401
