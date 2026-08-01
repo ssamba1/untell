@@ -266,3 +266,39 @@ def test_tells_tiebreak_never_loses_a_better_adoptable_candidate(monkeypatch):
         orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
     )
     assert out["final"] == a_text  # the 0.295 improvement is kept, not lost to B's fewer tells
+
+
+def test_selection_breaks_ties_on_ensemble_mean(monkeypatch):
+    """Two candidates tie on max and tells -> prefer the one that also improves the OTHER detectors.
+
+    `max` alone is blind to a candidate that guts every detector below the max; the ensemble mean
+    captures that, so a genuinely better-everywhere rewrite wins the tie."""
+    import untell.scripts.run as run_mod
+
+    orig = "Original AI paragraph here to rewrite right now."
+    flat = "We use tools."      # same max, high mean (other detectors unmoved)
+    deep = "We use gear."       # same max, LOW mean (other detectors also improved)
+    table = {orig: (0.30, 0.30), flat: (0.20, 0.60), deep: (0.20, 0.10)}
+
+    def _fake_score(text, tier="full", threshold=0.3):
+        mx, mn = table.get(text, (0.30, 0.30))
+        return {"tier": tier, "detectors": {"a": mx, "b": mn}, "max": mx, "mean": mn,
+                "threshold": threshold, "flagged": mx >= 0.3}
+
+    monkeypatch.setattr(run_mod, "score_text", _fake_score)
+    draws = iter([flat, deep])
+
+    class _RW:
+        name = "tw"
+        deterministic = False
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            return next(draws)
+
+    out = run_mod.untell_text(
+        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
+    )
+    assert out["final"] == deep  # tie on max+tells -> lower ensemble mean wins

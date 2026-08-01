@@ -233,7 +233,12 @@ def untell_text(
             # Among candidates within the detector noise band of the best, prefer the fewest AI tells
             # (then lowest score as the final deterministic tiebreak).
             near = [v for v in pool if v[1]["max"] <= min_score + _TELLS_EPS]
-            cand_best, cand_best_score, _ = min(near, key=lambda v: (v[2], v[1]["max"]))
+            # Within the band: fewest AI tells, then lowest ensemble MEAN (a candidate that also
+            # improves the detectors below the max is genuinely better, and `max` alone is blind to
+            # that), then lowest max as the final deterministic tiebreak.
+            cand_best, cand_best_score, _ = min(
+                near, key=lambda v: (v[2], v[1].get("mean", v[1]["max"]), v[1]["max"])
+            )
         if cand_best is not None and cand_best_score["max"] <= best_score["max"]:
             best_masked, best_score = cand_best, cand_best_score
         if _passed(best_score):
