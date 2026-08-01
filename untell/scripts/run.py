@@ -34,6 +34,12 @@ from untell.rewriter import get_rewriter
 from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+from untell.scripts.tells import score_tells
+
+# Detector-score noise band. Among best-of-N candidates whose detector max is within this of each
+# other, prefer the one with FEWER AI tells — a strictly more human-reading rewrite at no cost to
+# evasion. Detectors anti-correlate with human-ness on some text, so tells are the better tie-breaker.
+_TELLS_EPS = 0.02
 
 
 def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
@@ -193,7 +199,7 @@ def untell_text(
         # (b) holds the meaning-similarity gate. Among the valid ones, pick the lowest detector max,
         # and only adopt it if it does not worsen the running best.
         prev_masked = best_masked  # to detect a stalled (no-op) iteration below
-        cand_best, cand_best_score = None, None
+        cand_best, cand_best_score, cand_best_tells = None, None, None
         drew = 0
         for _ in range(max(1, best_of)):
             try:
@@ -210,10 +216,18 @@ def untell_text(
             if Counter(_SENTINEL_RE.findall(candidate)) != Counter(_SENTINEL_RE.findall(masked)):
                 continue  # dropped/altered/DUPLICATED a locked span — reject outright
             cscore = score(candidate)
-            if similarity(masked, candidate) >= sim_bar and (
-                cand_best_score is None or cscore["max"] < cand_best_score["max"]
-            ):
-                cand_best, cand_best_score = candidate, cscore
+            if similarity(masked, candidate) >= sim_bar:
+                # Primary objective: lowest detector max. Secondary (within the noise band): fewer
+                # AI tells, so a near-tie is resolved toward the more human-reading candidate.
+                cand_tells = score_tells(candidate).get("tells", 0)
+                if cand_best_score is None:
+                    cand_best, cand_best_score, cand_best_tells = candidate, cscore, cand_tells
+                else:
+                    delta = cscore["max"] - cand_best_score["max"]
+                    if delta < -_TELLS_EPS or (
+                        abs(delta) <= _TELLS_EPS and cand_tells < cand_best_tells
+                    ):
+                        cand_best, cand_best_score, cand_best_tells = candidate, cscore, cand_tells
         if cand_best is not None and cand_best_score["max"] <= best_score["max"]:
             best_masked, best_score = cand_best, cand_best_score
         if _passed(best_score):

@@ -202,3 +202,32 @@ def test_t5_duplicate_sentinel_falls_back(monkeypatch):
     monkeypatch.setattr(rw, "_paraphrase_one", lambda s: f"{s} {s}")
     masked = "AI changed ⟦HZ0000⟧ dramatically."
     assert rw.rewrite(masked, {}) == masked
+
+
+# --------------------------------------------------------------------------- tells-aware selection
+def test_tells_tiebreak_prefers_fewer_tells(monkeypatch):
+    """Among best-of-N candidates that tie on detector score, keep the more human-reading one."""
+    import untell.scripts.run as run_mod
+
+    # Both candidates score identically -> the tie-break must decide on AI tells.
+    monkeypatch.setattr(run_mod, "score_text", _num_score(0.50))
+
+    tell_heavy = "Moreover, it is important to note that we leverage robust synergies across verticals."
+    tell_light = "We use a few tools."
+    draws = iter([tell_heavy, tell_light])
+
+    class _RW:
+        name = "tw"
+        deterministic = False
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            return next(draws)
+
+    out = run_mod.untell_text(
+        "Some AI paragraph to rewrite here now.",
+        tier="lite", threshold=0.3, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
+    )
+    assert out["final"] == tell_light  # equal detector score -> fewer-tells candidate wins
