@@ -191,6 +191,13 @@ def meaning_preserved(
     Without NLI, there is nothing to lean on, so this falls back to the original strict similarity
     bar. Loosening the bar in that case would be pure risk: the metric that would have to catch the
     bad rewrites is the very one measured to be blind to them.
+
+    NLI has one blind spot of its own, and :mod:`untell.scripts.roles` covers it: rewrites that keep
+    every content word and only permute the *roles* ("the company sued the regulator" -> "the
+    regulator sued the company") score as near-perfect paraphrases, because as bags of tokens they
+    are. Four of the thirteen bad rewrites in the probe set had that shape and all four passed. The
+    predicate-argument veto catches 9 of 9 role permutations with 0 false vetoes on 13 faithful
+    rewrites, and is skipped entirely when spaCy's model is absent.
     """
     if not available():
         return sim >= strict_sim_bar
@@ -200,4 +207,11 @@ def meaning_preserved(
     if con is None or ent is None:  # model died mid-run -> strict behaviour, never a silent pass
         return sim >= strict_sim_bar
 
-    return sim >= relaxed_sim_bar and con < contradiction_bar and ent >= entailment_floor
+    if not (sim >= relaxed_sim_bar and con < contradiction_bar and ent >= entailment_floor):
+        return False
+
+    # Positive evidence only: `role_swap` returns None when the parser is unavailable, and an
+    # unavailable check must not become a veto.
+    from untell.scripts.roles import role_swap
+
+    return role_swap(source, candidate) is not True
