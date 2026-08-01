@@ -47,7 +47,11 @@ if __package__ in (None, ""):
 DEFAULT_THRESHOLD = 0.30
 
 
-_MAX_INPUT_CHARS = 50_000  # detectors truncate at 512 tokens anyway; cap input length to avoid OOM
+# Cap input length to avoid OOM. This used to be justified with "detectors truncate at 512 tokens
+# anyway" — that was true, and it was the bug: the detectors now WINDOW long text instead of
+# discarding it (see detectors/base.py `windowed_max`), so this cap is the only truncation left and
+# it bounds cost rather than hiding content.
+_MAX_INPUT_CHARS = 50_000
 
 
 def batch_score_texts(

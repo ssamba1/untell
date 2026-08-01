@@ -25,8 +25,9 @@ All notable changes to this project are documented here. The format is based on
   OpenAPI docs, API-key auth, CORS, and 7 endpoints: health, score, humanize, tells, sentences, verify,
   ceiling. Deployable behind any process manager or Docker. (`pip install "untell[server]"`)
 - **Local LLaMA-as-judge detector** (`untell.detectors.local_judge`) — any HuggingFace instruct model
-  as an AI detector (Qwen2.5, LLaMA, Mistral). Defaults to Qwen2.5-1.5B (full tier, CPU-feasible) or
-  7B (heavy tier, GPU). No API key, no rate limits, no cost per call. Selectable via `$UNTELL_JUDGE_MODEL`.
+  as an AI detector (Qwen2.5, LLaMA, Mistral). Defaults to Qwen2.5-1.5B. **Heavy tier at every model
+  size**: measured at 3.7s per call against 0.03–0.06s for the rest of the full tier, for AUROC 0.514
+  on labelled pairs. No API key, no rate limits, no cost per call. Selectable via `$UNTELL_JUDGE_MODEL`.
 - **Domain-adaptive style engine** — 14 voice modes (was 6). New: technical, persuasive, empathetic,
   humorous, poetic, instructional, conversational, minimalist. Passed as `--style <voice>` to any
   rewriter or API call.
@@ -71,6 +72,38 @@ All notable changes to this project are documented here. The format is based on
 - **Detector registry** — includes `LocalJudgeDetector` in the ensemble.
 
 ### Fixed
+- **`perplexity_burstiness` was anti-correlated and saturating.** The always-available lite detector
+  scored every sentence *in isolation* and averaged, discarding the context that makes AI text
+  predictable — measured gap −0.198 (AI text scoring *below* human text) at paragraph length — and
+  its linear clamps floored a realistic technical document to exactly **0.0**, so the loop declared
+  it human and rewrote nothing. Rewritten as one in-context pass with logistic calibration fitted to
+  labelled data: **AUROC 0.999** on 200 held-out HC3 pairs, nothing saturated. Long documents are now
+  walked in overlapping windows instead of truncated at GPT-2's 1024 tokens (1023 → 4088 tokens
+  scored on a 3918-word document).
+- **`local_judge` raised on every call** — it passed `device_map=`, which hard-requires `accelerate`,
+  an undeclared dependency, while `available()` reported True. Moved to the **heavy** tier once it
+  worked: 3.7s per call against 0.03–0.06s for every other detector, for AUROC 0.514.
+- **Meaning gate admitted role swaps.** "The company sued the regulator" → "The regulator sued the
+  company" scored 0.987 bidirectional entailment. A new predicate-argument veto
+  (`untell.scripts.roles`) catches 9/9 role permutations with 0/13 false vetoes; the gate now admits
+  **0 of 13** meaning-changing rewrites (was 4).
+- **Preserve-lock covered 25 of 57 fact types**; 16 more locked only *partially*, which reads as
+  protected while the rest stays mutable ("16 GB" locked "16"; "March 15, 2024" left the month
+  rewritable; "5 mg" locked nothing). Now 55/57 full, 0 partial — including fenced and inline code.
+- **40 of 51 invisible-watermark carriers passed through `scrub_hidden`** while `count_hidden`
+  reported the text clean. Bidi controls and variation selectors are now stripped where they are
+  payload and kept where they are load-bearing (RTL text, emoji).
+- **A browser readout showing both figures returned the HUMAN percentage as P(AI)**
+  ("Human 45% / AI 55%" → 0.45).
+- **A NaN from any detector reported the text as human**, in invalid JSON; a non-numeric score
+  crashed `score_text` outright.
+- **`humanness()` scored text MORE human when the detector stack was dead** (71.1 vs 60.2), reading
+  the unscored placeholder as a confident "not AI".
+- **`untell-ceiling --dataset hc3` silently measured five canned paragraphs** — HC3's hub repo ships
+  a loading script that `datasets>=3` rejects, and the failure was caught and logged.
+- **Rewriter output quality**: "Dr. Smith published" came out as "Dr, though smith published";
+  clause joins stacked conjunctions ("and plus,", "while and,"); substitutions dropped the original
+  capitalisation ("Furthermore," → "also,").
 - **Commercial detectors returning 0.5** on empty text (violated protocol, inflated ensemble max).
 - **Module-level commercial import** in `verify.py` (crashed if `requests` wasn't installed).
 - **7 file reads** lacking `errors=` (raised `UnicodeDecodeError` on invalid UTF-8).

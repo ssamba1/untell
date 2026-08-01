@@ -95,9 +95,12 @@ untell ceiling --rewriter composite --best-of 3 --repeats 3  # measure free evas
 # (every subcommand is also a standalone `untell-<name>` script, e.g. `untell-loop`, `untell-tells`)
 ```
 
-> **How far does free actually go?** We measured it, then re-measured it when the first answer turned
-> out to be wrong. The training-free, no-key loop drops the local open-detector ensemble from 100%
-> flagged to **22%** (mean max P(AI) **0.86 → 0.26**), with meaning held by an NLI gate. An earlier
+> **How far does free actually go?** We measured it, then re-measured it twice when the first two
+> answers turned out to be wrong. The training-free, no-key loop drops the local open-detector
+> ensemble from **100% flagged to 0%** (mean max P(AI) **0.86 → 0.25 ± 0.02**, 9 runs), with meaning
+> held by an NLI gate plus a predicate-argument veto. The most recent correction was the largest: the
+> one detector present at every tier was itself anti-correlated and saturating, so every previous
+> number on this page had been measured through it. An earlier
 > version of this README claimed the loop was "powerless against content-locked detectors" — that was
 > measured with a single rewrite draw and a miscalibrated detector, and **it did not survive
 > re-measurement**. Full numbers, method, superseded claims and honest limits:
@@ -179,9 +182,9 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 
 
 | Free, no-key rewrite vs the local open ensemble (3 repeats = 9 loop runs) | before | after |
 |---|---|---|
-| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.22** (`--best-of 3`) |
-| mean max P(AI) | 0.86 | **0.26 ± 0.03** |
-| meaning similarity | — | **0.96 mean, 0.93 worst** |
+| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.00** (`--best-of 3`) |
+| mean max P(AI) | 0.86 | **0.25 ± 0.02** |
+| meaning similarity (cosine; the gate is NLI + roles) | — | **0.92 mean, 0.82 worst** |
 
 ¹ The `--best-of 8` figure was measured before the `fast_detectgpt` calibration fix, so treat it as
 indicative rather than directly comparable to the row above it.
@@ -194,10 +197,10 @@ Per-detector, before → after (two independent replications):
 
 | detector | before | after |
 |---|---|---|
-| `perplexity_burstiness` | 0.60 | **0.17** |
-| `roberta_openai` | 0.52 | **0.13** |
-| `hc3_roberta` (content/genre) | 0.73 | **0.04** |
-| `fast_detectgpt` (curvature) | 0.63 | **0.20** |
+| `perplexity_burstiness` | 0.60 | **0.14** |
+| `roberta_openai` | 0.52 | **0.10** |
+| `hc3_roberta` (content/genre) | 0.73 | **0.00** |
+| `fast_detectgpt` (curvature) | 0.63 | **0.21** |
 
 Three findings, all measured, and one of them overturned this project's own earlier conclusion:
 
