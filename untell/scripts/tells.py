@@ -88,11 +88,22 @@ _STEER_RE = re.compile(
 )
 
 # Negated contrast (§4).
+#
+# Two gaps measured on the tell probe set, both letting the *same* construction through:
+#   - the first alternative required a CONTRACTION ("it's not X, it's Y"), so the uncontracted
+#     "It is not just a tool, it is a philosophy" — which models write at least as often — matched
+#     nothing at all;
+#   - the "not just" alternative required a literal "but", so the far more common punctuated form
+#     ("not just a tool, it is a philosophy" / "not merely X — it is Y") was missed.
+# The subject is also not always "it": "That's not a bug, that's a feature" is the identical move.
+_SUBJ = r"(?:it|that|this)(?:'?s|\s+is|\s+was)"
 _NEGATED_CONTRAST_RE = re.compile(
-    r"\b(?:it'?s not\s+\w+[^.,;]{0,40},?\s+it'?s\s+\w+"
-    r"|not only\b[^.]{0,60}\bbut also\b"
-    r"|isn'?t about\b[^.;]{0,50};?\s+it'?s about\b"
-    r"|not\s+just\b[^.]{0,40}\bbut\b)",
+    rf"\b(?:{_SUBJ}\s+not\s+(?:just|merely|simply|only|about)?\s*\w+[^.;!?]{{0,60}}"
+    rf"[,;—–-]\s*(?:but\s+)?{_SUBJ}\s+"
+    r"|not only\b[^.]{0,60}\bbut(?:\s+also)?\b"
+    rf"|(?:isn'?t|aren'?t|is not|are not)\s+about\b[^.;]{{0,50}}[;,]?\s*{_SUBJ}\s+about\b"
+    r"|not\s+(?:just|merely|simply)\b[^.;!?]{0,50}[,;—–]\s*(?:but\b|it|that|this)"
+    r"|not\s+(?:just|merely|simply)\b[^.]{0,40}\bbut\b)",
     re.IGNORECASE,
 )
 

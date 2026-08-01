@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from untell.scripts.tells import main, score_tells
 
 
@@ -179,3 +181,44 @@ def test_standalone_vocab_still_counts_when_no_richer_pattern_matches():
     trailer, so it must still be counted as AI vocabulary."""
     r = score_tells("Our platform showcasing next-level wins.")
     assert r["by_category"].get("ai_vocab", 0) >= 1
+
+
+NEGATED_CONTRAST_FIRES = [
+    "It is not just a tool, it is a philosophy.",
+    "It's not just a tool, it's a philosophy.",
+    "That's not a bug, that's a feature.",
+    "This is not merely an upgrade — it is a rethink.",
+    "It isn't about speed; it's about consistency.",
+    "The change is not only faster but also cheaper.",
+    "Not just a refactor, but a rewrite.",
+    "It was not simply a delay, it was a failure.",
+]
+
+NEGATED_CONTRAST_QUIET = [
+    "It is not clear whether the change helped.",
+    "That is not what I meant at all.",
+    "The build did not just fail once.",
+    "I could not find the file, so I made a new one.",
+    "It was not raining when we left the house.",
+    "This is not the version we shipped last week.",
+    "Not everyone agreed with the decision.",
+    "It is not about to change any time soon.",
+]
+
+
+@pytest.mark.parametrize("text", NEGATED_CONTRAST_FIRES)
+def test_negated_contrast_is_counted(text):
+    """The pattern used to require a contraction ("it's not X, it's Y") and a literal "but", so the
+    uncontracted and punctuated forms - which models write at least as often - matched nothing."""
+    assert score_tells(text)["by_category"].get("negated_contrast"), (
+        f"negated contrast not counted in {text!r}"
+    )
+
+
+@pytest.mark.parametrize("text", NEGATED_CONTRAST_QUIET)
+def test_ordinary_negation_is_not_a_tell(text):
+    """A plain negated sentence is not the rhetorical construction. Widening the pattern must not
+    turn every "not" into a tell, or the tie-break starts steering rewrites away from normal prose."""
+    assert not score_tells(text)["by_category"].get("negated_contrast"), (
+        f"ordinary negation falsely counted in {text!r}"
+    )
