@@ -75,6 +75,15 @@ jobs:
           assert "roberta_openai" in names and "mage" in names, names
           PY
 
+      # Loading is not the same as working. fast_detectgpt loaded fine, scored fine, and returned a
+      # near-constant ~0.30 for EVERY input for months — a dead detector that the project's own docs
+      # then described as an "immovable wall" precisely because it never moved. The sanity step above
+      # would have passed the whole time. This one scores known-human and known-AI probes through
+      # every detector and fails the build if any is DEAD (no dynamic range) or INVERTED (human
+      # scoring above AI).
+      - name: Detector integrity — no dead or inverted detectors
+        run: untell detector-audit
+
       - name: Test (full tier)
         run: pytest -q
 
