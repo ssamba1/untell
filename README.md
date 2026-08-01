@@ -160,8 +160,13 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 
 
 | Free, no-key rewrite vs the local open ensemble (3 repeats = 9 loop runs) | before | after |
 |---|---|---|
-| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.11 – 0.22** |
-| mean max P(AI) | 0.86 | **0.29 ± 0.02** |
+| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.11 – 0.22** (`--best-of 3`) → **0.00** (`--best-of 8`) |
+| mean max P(AI) | 0.86 | **0.29 ± 0.02** → **0.28 ± 0.01** |
+| meaning similarity | — | **0.96 mean, 0.93 worst** |
+
+More draws buy **reliability, not a lower average**: 3 → 8 barely moves the mean but halves the
+run-to-run spread and clears every sample. Meaning is measured alongside, so a good evasion number
+can't hide a mangled rewrite.
 
 Per-detector, before → after (two independent replications):
 

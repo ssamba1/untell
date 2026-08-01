@@ -130,6 +130,30 @@ detector, but three draws scored against that detector usually do. The lever was
 rewriter — it was *choosing among rewrites against the signal you actually care about*, and that was
 shipped disabled.
 
+### How far does selection scale? (best-of-3 vs best-of-8)
+
+Same corpus, same 3 repeats, only `--best-of` changed:
+
+| Metric | `best_of=1` | `best_of=3` (A / B) | `best_of=8` |
+|---|---|---|---|
+| flagged rate | 0.60 | 0.111 / 0.222 | **0.000** |
+| mean max P(AI) | 0.683 | 0.290 / 0.297 | **0.281** |
+| stdev across runs | — | 0.018 | **0.009** |
+| mean similarity | — | — | **0.959** (worst 0.927) |
+
+**Selection buys reliability, not a lower average.** Going 3 → 8 barely moved the mean (0.29 → 0.28)
+but *halved the run-to-run spread* and took the flagged rate to **zero** — every sample cleared the
+threshold in all three runs. The mean is near its floor; what more draws fix is the tail, i.e. the
+occasional paragraph that a small sample of drafts fails to find a good rewrite for.
+
+Meaning held throughout: **0.959 mean similarity, 0.927 worst case** — this is not evasion bought by
+mangling the text.
+
+The cost is linear: `best_of=8` runs 8 rewrites and 8 full-tier detector passes per iteration. The
+shipped default is **3** as the reliability/cost knee; use `--best-of 8` when it matters and you can
+spend the CPU. (Deterministic rewriters short-circuit to a single draw — extra draws would be
+byte-identical.)
+
 Two honest caveats that keep this from being a "solved" claim:
 
 1. **`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is untouched
