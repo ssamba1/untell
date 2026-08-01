@@ -259,7 +259,7 @@ actually ran, so you always know how much to trust the number.
 
 | Tier | Install | Detectors | Notes |
 |---|---|---|---|
-| **lite** | *(default — nothing to install)* | perplexity + burstiness heuristic; token-overlap quality | Stdlib only, instant, **weak** — a demo signal, not an evasion claim. |
+| **lite** | *(default — nothing to install)* | perplexity + burstiness heuristic; token-overlap quality | Stdlib only, **weak** — a demo signal, not an evasion claim. Instant on a clean install; if `torch` happens to be present it silently upgrades to GPT-2 perplexity (better math, ~11s first call). `UNTELL_LITE_NO_TORCH=1` forces the genuinely-instant stdlib path (0.2s). |
 | **full** | `pip install -e ".[full]"` | + RoBERTa-OpenAI, HC3-RoBERTa, MAGE, Fast-DetectGPT, GPT-2 perplexity; MiniLM cosine quality | Real proxy signal on CPU. Downloads models on first run. |
 | **+ RADAR** | `UNTELL_ENABLE_RADAR=1` (opt-in) | + RADAR — the **paraphrase-robust** detector, the hardest open one to fool | ⚠️ `TrustSafeAI/RADAR-Vicuna-7B` is **non-commercial licensed** — research/eval only. |
 | **heavy** | `pip install -e ".[heavy]"` | + Binoculars (2×Falcon-7B) | Strongest proxy; GPU recommended. Eval only. |
@@ -268,6 +268,10 @@ actually ran, so you always know how much to trust the number.
 ```bash
 untell-score "Your text here" --tier full --threshold 0.3
 echo "piped text" | untell-score
+
+# The full tier loads real models (~20s on first run, cached after) — the CLI says so before it
+# starts. Add -q/--quiet to silence the notice; stdout stays pure JSON either way.
+UNTELL_LITE_NO_TORCH=1 untell-score --tier lite -q "instant, stdlib-only, no network"
 ```
 
 ---
