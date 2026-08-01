@@ -5,6 +5,8 @@ torch-gated test, because the whole point of this module is a property of the ac
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from untell.scripts import entailment
@@ -200,3 +202,48 @@ def test_real_model_gate_beats_similarity_alone_on_both_axes():
     assert new_good == len(good), "faithful register shifts must be admitted"
     assert new_bad == 0, "no meaning-lost rewrite may pass"
     assert old_bad > 0, "probe set must actually contain a case the old gate let through"
+
+
+class TestEntailmentCLI:
+    """The CLI exists so SKILL.md can reach this gate; the skill path previously had no meaning
+    check at all and gated on cosine similarity alone."""
+
+    def test_help_exits_zero(self, capsys):
+        assert entailment.main(["--help"]) == 0
+        assert "usage" in capsys.readouterr().out.lower()
+
+    def test_missing_args_is_usage_error(self):
+        # 2, not 1 — a caller must be able to tell "you called me wrong" from "meaning changed".
+        assert entailment.main([]) == 2
+        assert entailment.main(["only one"]) == 2
+
+    def test_output_is_valid_json_with_required_keys(self, capsys):
+        entailment.main(["The cat sat on the mat.", "A cat was sitting on the mat."])
+        payload = json.loads(capsys.readouterr().out)
+        assert {"available", "contradiction", "entailment", "preserved"} <= set(payload)
+        assert isinstance(payload["preserved"], bool)
+
+    def test_exit_code_matches_preserved_field(self, capsys):
+        """The exit code is the contract for shell callers — it must not disagree with the JSON."""
+        for a, b in [
+            ("The cat sat on the mat.", "A cat was sitting on the mat."),
+            ("The build runs faster.", "The build runs slower."),
+        ]:
+            code = entailment.main([a, b])
+            payload = json.loads(capsys.readouterr().out)
+            assert code == (0 if payload["preserved"] else 1)
+
+    def test_unavailable_model_skips_rather_than_rejects(self, capsys, monkeypatch):
+        """No model must mean "cannot judge", not "reject everything" — otherwise installing fewer
+        extras would silently block every rewrite the skill proposes."""
+        monkeypatch.setattr(entailment, "contradiction_score", lambda a, b: None)
+        monkeypatch.setattr(entailment, "entailment_score", lambda a, b: None)
+        assert entailment.main(["anything", "anything else"]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["available"] is False and payload["preserved"] is True
+
+    @pytest.mark.skipif(not entailment.available(), reason="NLI model not installed")
+    def test_rejects_inversion_that_similarity_accepts(self, capsys):
+        """The reason this gate exists: cosine scores this pair ~0.97, above the 0.76 bar."""
+        assert entailment.main(["The build runs faster.", "The build runs slower."]) == 1
+        assert json.loads(capsys.readouterr().out)["contradiction"] > 0.5

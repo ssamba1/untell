@@ -215,3 +215,51 @@ def meaning_preserved(
     from untell.scripts.roles import role_swap
 
     return role_swap(source, candidate) is not True
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI: ``python -m untell.scripts.entailment "<original>" "<rewrite>"`` -> JSON.
+
+    Exists so the SKILL.md workflow can reach this check. The headless loop got the NLI meaning gate
+    (contradiction veto + bidirectional entailment); the skill path — where Claude is the rewriter,
+    and which is the flagship product — had no way to call it and was still gating on cosine
+    similarity alone. That is the metric measured to pass meaning INVERSIONS at 0.974 ("runs faster"
+    -> "runs slower" against a 0.76 bar) while rejecting 6 of 8 faithful register shifts.
+
+    Exit code is the verdict, so a shell step can branch on it without parsing:
+      0 = meaning preserved, 1 = rejected (contradiction or no entailment), 2 = usage error.
+    """
+    import json as _json
+    import sys as _sys
+
+    args = argv if argv is not None else _sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(
+            'usage: entailment.py "<original>" "<rewrite>"\n\n'
+            "Prints JSON: contradiction, entailment, available, preserved.\n"
+            "Exit 0 if meaning is preserved, 1 if the rewrite contradicts or fails to entail the\n"
+            "original, 2 on usage error. Needs the .[full] extra; without it `available` is false\n"
+            "and the check is skipped rather than guessed (exit 0)."
+        )
+        return 0
+    if len(args) < 2:
+        logger.error('usage: entailment.py "<original>" "<rewrite>"')
+        return 2
+
+    a, b = args[0], args[1]
+    con = contradiction_score(a, b)
+    ent = entailment_score(a, b)
+    if con is None or ent is None:
+        # Unknown is NOT a failure: without the model there is nothing to judge with, and refusing
+        # every rewrite would be worse than falling back to the similarity gate the skill already runs.
+        print(_json.dumps({"available": False, "contradiction": None, "entailment": None,
+                           "preserved": True, "note": "NLI unavailable — install .[full] to enable"}))
+        return 0
+    preserved = con < DEFAULT_CONTRADICTION_BAR and ent >= DEFAULT_ENTAILMENT_FLOOR
+    print(_json.dumps({"available": True, "contradiction": round(con, 4),
+                       "entailment": round(ent, 4), "preserved": preserved}))
+    return 0 if preserved else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

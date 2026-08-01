@@ -83,10 +83,27 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    python scripts/quality.py "<ORIG masked>" "<current masked text>"
    ```
    This returns `similarity`, `method`, `confidence`, `bar`, and `passes` (the bar is
-   metric-aware — `0.76` for semantic embeddings, `0.50` for the lite token-overlap fallback).
-   Stop when **both** hold:
+   metric-aware — `0.88` for BERTScore, `0.76` for semantic embeddings, `0.50` for the lite
+   token-overlap fallback; each metric lives on its own scale, so compare `similarity` to the
+   returned `bar`, never to a bar you remember).
+
+   Then run the **meaning gate** — similarity alone is not sufficient and must not be your only
+   check:
+   ```bash
+   python -m untell.scripts.entailment "<ORIG masked>" "<current masked text>"
+   ```
+   Exit `0` = meaning preserved, `1` = rejected. Cosine similarity was measured to score a direct
+   inversion ("runs faster" → "runs slower") at **0.974**, sailing past the 0.76 bar, while
+   rejecting faithful register shifts that merely reword heavily. Entailment separates the two:
+   the same inversion scores contradiction `0.998` and is rejected. **Discard any rewrite this
+   step rejects, no matter how good its detector score is** — a lower AI score bought with
+   altered meaning is not a win. If `available` is `false` (no `.[full]` extra) the check is
+   skipped and you fall back to similarity plus your own reading.
+
+   Stop when **all** hold:
    - `max < threshold` (not flagged), **and**
-   - the quality check `passes` is `true`.
+   - the quality check `passes` is `true`, **and**
+   - the meaning gate exits `0` (or is unavailable).
 
    **Confidence matters:** when `confidence` is `high` (full tier, embedding metric), enforce the
    quality gate strictly — never accept a rewrite where `passes` is false. When `confidence` is
