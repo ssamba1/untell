@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from .base import clamp01
+from .base import clamp01, windowed_max
 
 logger = logging.getLogger(__name__)
 
@@ -64,15 +64,23 @@ class RobertaOpenAIDetector:
                 )
                 RobertaOpenAIDetector._warned = True
             raise
-        out = pipe(text)
-        # `top_k=None` => list[list[{label, score}]]; labels are "Real"/"Fake" (Fake == AI).
-        scores = out[0] if isinstance(out[0], list) else out
-        fake = next(
-            (s["score"] for s in scores if str(s["label"]).lower() in ("fake", "label_1", "ai")),
-            None,
-        )
-        if fake is None:
-            # Fall back: 1 - P(real) if only the real label is present.
-            real = next((s["score"] for s in scores if str(s["label"]).lower() in ("real", "label_0")), 0.5)
-            fake = 1.0 - real
-        return clamp01(fake)
+        def _one(window: str) -> float:
+            out = pipe(window)
+            # `top_k=None` => list[list[{label, score}]]; labels are "Real"/"Fake" (Fake == AI).
+            scores = out[0] if isinstance(out[0], list) else out
+            fake = next(
+                (s["score"] for s in scores if str(s["label"]).lower() in ("fake", "label_1", "ai")),
+                None,
+            )
+            if fake is None:
+                # Fall back: 1 - P(real) if only the real label is present.
+                real = next(
+                    (s["score"] for s in scores if str(s["label"]).lower() in ("real", "label_0")), 0.5
+                )
+                fake = 1.0 - real
+            return fake
+
+        # Windowed: the pipeline truncates at 512 tokens, so everything past ~380 words was
+        # invisible — a long document was scored on its opening paragraph alone.
+        fake = windowed_max(text, _one)
+        return None if fake is None else clamp01(fake)

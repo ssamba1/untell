@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-from .base import clamp01
+from .base import clamp01, windowed_max
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,12 @@ class HC3RobertaDetector:
                 )
                 HC3RobertaDetector._warned = True
             raise
-        inputs = tok(text, return_tensors="pt", truncation=True, max_length=512)
-        with torch.no_grad():
-            p_ai = F.softmax(model(**inputs).logits, dim=-1)[0, 1].item()  # index 1 = ChatGPT (AI)
-        return clamp01(float(p_ai))
+        def _one(window: str) -> float:
+            inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)
+            with torch.no_grad():
+                # index 1 = ChatGPT (AI)
+                return F.softmax(model(**inputs).logits, dim=-1)[0, 1].item()
+
+        # Windowed: truncation at 512 tokens made everything past ~380 words invisible.
+        p_ai = windowed_max(text, _one)
+        return None if p_ai is None else clamp01(float(p_ai))

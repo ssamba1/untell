@@ -151,3 +151,76 @@ def test_score_is_finite_and_in_range_for_a_long_document():
             "It reduces the risk of chronic disease and improves mood. ") * 90
     s = det.score(text)
     assert s is not None and 0.0 <= s <= 1.0 and s == s
+
+
+def test_windowed_max_scores_the_whole_document():
+    """Pure logic, no model: windows cover every sentence and the highest score wins."""
+    from untell.detectors.base import windowed_max
+
+    seen = []
+
+    def fake(window):
+        seen.append(window)
+        return 0.9 if "MARKER" in window else 0.1
+
+    long_text = " ".join(f"This is filler sentence number {i}." for i in range(200))
+    long_text += " MARKER sentence sits right at the very end of the document."
+    assert windowed_max(long_text, fake, window_words=50) == 0.9
+    assert len(seen) > 1, "long text was not split into windows"
+    assert any("MARKER" in w for w in seen), "the tail was never scored"
+
+    short = "One short sentence only."
+    seen.clear()
+    assert windowed_max(short, fake, window_words=50) == 0.1
+    assert seen == [short], "short text must be scored in a single call, unchanged"
+
+
+def test_windowed_max_ignores_none_windows():
+    from untell.detectors.base import windowed_max
+
+    text = " ".join(f"Sentence number {i} here." for i in range(120))
+    assert windowed_max(text, lambda w: None, window_words=20) is None
+    calls = {"n": 0}
+
+    def sometimes(w):
+        calls["n"] += 1
+        return None if calls["n"] % 2 else 0.42
+
+    assert windowed_max(text, sometimes, window_words=20) == 0.42
+
+
+@pytest.mark.parametrize("name", ["roberta_openai", "hc3_roberta", "fast_detectgpt"])
+def test_long_document_tail_is_not_invisible(name):
+    """Every supervised adapter truncates at 512 tokens - roughly the first 380 words.
+
+    Measured before windowing, appending 1113 words of AI text to 797 words of human text moved
+    nothing at all:
+
+        roberta_openai   human alone 0.000   human + AI 0.000
+        hc3_roberta      human alone 0.000   human + AI 0.000
+        fast_detectgpt   human alone 0.418   human + AI 0.418
+
+    An essay with a human-written opening scored clean whatever followed it.
+    """
+    pytest.importorskip("torch")
+    pytest.importorskip("transformers")
+    det = next((d for d in load_detectors("full") if d.name == name), None)
+    if det is None:
+        pytest.skip(f"{name} unavailable")
+
+    prefix = ("I went to the store yesterday and forgot my wallet again, third time this month. "
+              "The guy at the counter waved me off and said bring it next time. ") * 30
+    ai = ("Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
+          "Moreover, organizations increasingly leverage these technologies to optimize efficiency. "
+          "In conclusion, this represents a pivotal shift in the modern business landscape. ") * 30
+
+    # The invariant, independent of how AI-ish the prefix happens to read: a section cannot be
+    # hidden by putting other text in front of it. Under truncation the tail scored 0.000 while the
+    # same text alone scored 1.000.
+    ai_alone = det.score(ai)
+    with_prefix = det.score(prefix + " " + ai)
+    assert ai_alone is not None and with_prefix is not None
+    assert with_prefix >= ai_alone - 0.05, (
+        f"{name}: {len(ai.split())} words of AI text scored {ai_alone:.3f} alone but only "
+        f"{with_prefix:.3f} behind a {len(prefix.split())}-word prefix — the tail is invisible"
+    )

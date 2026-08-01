@@ -29,6 +29,56 @@ def clamp01(x: float) -> float:
     return 0.0 if x < 0.0 else 1.0 if x > 1.0 else float(x)
 
 
+# Words per scoring window. The supervised adapters cap at 512 word-piece tokens, which is roughly
+# 380 English words; 320 leaves headroom for tokenizer expansion on punctuation and rare words.
+WINDOW_WORDS = 320
+
+
+def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> float | None:
+    """Score long text in windows and return the HIGHEST window score.
+
+    Every supervised adapter passes ``truncation=True, max_length=512``, so it reads roughly the
+    first 380 words and silently discards the rest. MEASURED, that is not a rounding error — it is
+    the difference between seeing a document and seeing its opening paragraph:
+
+        1113 words of AI text appended to 797 words of human text
+          roberta_openai   human alone 0.000   human + AI 0.000
+          hc3_roberta      human alone 0.000   human + AI 0.000
+          fast_detectgpt   human alone 0.418   human + AI 0.418
+
+    Identical to three decimal places. An essay with a human-written opening scored clean no matter
+    what followed it, and the loop's "passed" verdict meant nothing for anything longer than a few
+    paragraphs — which is the primary use case.
+
+    ``max`` is the right aggregate here and matches how the ensemble already combines detectors: if
+    any part of the document reads as machine-written, the document does. A mean would let a long
+    human preamble dilute an AI section below threshold, which is exactly the failure above.
+
+    Windows break on sentence boundaries so no window starts mid-clause. Text short enough to fit is
+    scored in a single call, so nothing changes for ordinary input.
+    """
+    from untell.text_split import split_sentences
+
+    if len(text.split()) <= window_words:
+        return score_window(text)
+
+    windows: list[str] = []
+    current: list[str] = []
+    count = 0
+    for sentence in split_sentences(text) or [text]:
+        n = len(sentence.split())
+        if current and count + n > window_words:
+            windows.append(" ".join(current))
+            current, count = [], 0
+        current.append(sentence)
+        count += n
+    if current:
+        windows.append(" ".join(current))
+
+    scores = [s for s in (score_window(w) for w in windows if w.strip()) if s is not None]
+    return max(scores) if scores else None
+
+
 @runtime_checkable
 class Detector(Protocol):
     """Structural type every detector adapter satisfies."""

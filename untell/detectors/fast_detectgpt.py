@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import math
 
-from .base import clamp01
+from .base import clamp01, windowed_max
 
 logger = logging.getLogger(__name__)
 
@@ -77,21 +77,26 @@ class FastDetectGPTDetector:
                 )
                 FastDetectGPTDetector._warned = True
             raise
-        enc = tok(text, return_tensors="pt", truncation=True, max_length=512)
-        ids = enc["input_ids"]
-        if ids.shape[1] < 2:
-            return None
-        with torch.no_grad():
-            logits = model(ids).logits[:, :-1, :]
-            labels = ids[:, 1:]
-            lprobs = torch.log_softmax(logits, dim=-1)
-            # Log-prob the model assigns to the *actual* next tokens.
-            actual = lprobs.gather(-1, labels.unsqueeze(-1)).squeeze(-1)
-            # Expected log-prob and its variance under the model's own distribution.
-            probs = lprobs.exp()
-            mean_ref = (probs * lprobs).sum(-1)
-            var_ref = (probs * (lprobs - mean_ref.unsqueeze(-1)) ** 2).sum(-1)
-            # Conditional-probability curvature (Fast-DetectGPT discrepancy).
-            discrepancy = ((actual - mean_ref) / torch.sqrt(var_ref + 1e-8)).mean().item()
-        # Higher discrepancy => more AI-like; squash to [0, 1].
-        return clamp01(1.0 / (1.0 + math.exp(-(discrepancy - _CAL_MID) / _CAL_SCALE)))
+        def _one(window: str) -> float | None:
+            enc = tok(window, return_tensors="pt", truncation=True, max_length=512)
+            ids = enc["input_ids"]
+            if ids.shape[1] < 2:
+                return None
+            with torch.no_grad():
+                logits = model(ids).logits[:, :-1, :]
+                labels = ids[:, 1:]
+                lprobs = torch.log_softmax(logits, dim=-1)
+                # Log-prob the model assigns to the *actual* next tokens.
+                actual = lprobs.gather(-1, labels.unsqueeze(-1)).squeeze(-1)
+                # Expected log-prob and its variance under the model's own distribution.
+                probs = lprobs.exp()
+                mean_ref = (probs * lprobs).sum(-1)
+                var_ref = (probs * (lprobs - mean_ref.unsqueeze(-1)) ** 2).sum(-1)
+                # Conditional-probability curvature (Fast-DetectGPT discrepancy).
+                discrepancy = ((actual - mean_ref) / torch.sqrt(var_ref + 1e-8)).mean().item()
+            # Higher discrepancy => more AI-like; squash to [0, 1].
+            return 1.0 / (1.0 + math.exp(-(discrepancy - _CAL_MID) / _CAL_SCALE))
+
+        # Windowed: truncation at 512 tokens made everything past ~380 words invisible.
+        score = windowed_max(text, _one)
+        return None if score is None else clamp01(score)

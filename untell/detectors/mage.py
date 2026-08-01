@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from .base import clamp01
+from .base import clamp01, windowed_max
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +96,13 @@ class MageDetector:
             raise
         import torch
 
-        inputs = tok(text, return_tensors="pt", truncation=True, max_length=1024)
-        with torch.no_grad():
-            probs = torch.softmax(model(**inputs).logits, dim=-1)[0]
+        # Windowed at 1024 tokens (~750 words) for the same reason as the other adapters: past its
+        # limit the text was silently discarded, so a long document was scored on its opening.
+        def _probs(window: str):
+            inputs = tok(window, return_tensors="pt", truncation=True, max_length=1024)
+            with torch.no_grad():
+                return torch.softmax(model(**inputs).logits, dim=-1)[0]
+
         id2label = model.config.id2label  # str-keyed after _load()
         # MAGE label convention: "machine-generated" (or LABEL_0 in some exports) == AI.
         ai_idx = next(
@@ -120,5 +124,7 @@ class MageDetector:
             )
             if human_idx is None:
                 return None
-            return clamp01(1.0 - float(probs[human_idx]))
-        return clamp01(float(probs[ai_idx]))
+            p = windowed_max(text, lambda w: 1.0 - float(_probs(w)[human_idx]), 700)
+            return None if p is None else clamp01(p)
+        p = windowed_max(text, lambda w: float(_probs(w)[ai_idx]), 700)
+        return None if p is None else clamp01(p)
