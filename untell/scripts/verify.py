@@ -174,6 +174,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Local detector tier (default: full). Pass 'commercial' or set --tier '' for commercial-only.",
     )
     parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="suppress the stderr progress notice (stdout is unaffected)",
+    )
+    parser.add_argument(
         "--sandbox",
         action="store_true",
         help="Copyleaks free mock mode — tests the pipeline at no cost (scores are NOT real).",
@@ -199,6 +205,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # Map --tier: 'commercial' or empty string means local-skip (commercial-only).
     tier_arg: str | None = None if (args.tier or "").lower() in ("commercial", "") else args.tier
+    # Same courtesy as untell-score: say what is loading BEFORE the ~17s of silent model loading,
+    # during which the only output is raw HuggingFace progress bars. stdout stays pure JSON.
+    if tier_arg in ("full", "heavy") and not args.quiet:
+        print(
+            f"[untell-verify] loading the '{tier_arg}' detector tier — real models, ~20s on first "
+            "run (cached after). Use --tier lite for an instant zero-dependency check.",
+            file=sys.stderr,
+        )
     v = verify(text, threshold=args.threshold, sandbox=args.sandbox, browser=browser, tier=tier_arg)
     print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))
     # exit  0 if all configured checkers pass
