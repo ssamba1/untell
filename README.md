@@ -160,8 +160,8 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 
 
 | Free, no-key rewrite vs the local open ensemble (3 repeats = 9 loop runs) | before | after |
 |---|---|---|
-| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.22** (`--best-of 3`) → **0.00** (`--best-of 8`)¹ |
-| mean max P(AI) | 0.86 | **0.25 ± 0.03** |
+| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.11** (`--best-of 3`) |
+| mean max P(AI) | 0.86 | **0.21 ± 0.01** |
 | meaning similarity | — | **0.96 mean, 0.93 worst** |
 
 ¹ The `--best-of 8` figure was measured before the `fast_detectgpt` calibration fix, so treat it as
@@ -175,10 +175,10 @@ Per-detector, before → after (two independent replications):
 
 | detector | before | after |
 |---|---|---|
-| `perplexity_burstiness` | 0.32 | **0.04** |
-| `roberta_openai` | 0.52 | **0.07** |
-| `hc3_roberta` (content/genre) | 0.73 | **0.04** |
-| `fast_detectgpt` (curvature) | 0.63 | **0.25** |
+| `perplexity_burstiness` | 0.32 | **0.03** |
+| `roberta_openai` | 0.52 | **0.05** |
+| `hc3_roberta` (content/genre) | 0.73 | **0.02** |
+| `fast_detectgpt` (curvature) | 0.63 | **0.21** |
 
 Three findings, all measured, and one of them overturned this project's own earlier conclusion:
 

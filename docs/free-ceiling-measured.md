@@ -193,6 +193,36 @@ the local proxy ensemble, and clearing it says nothing about GPTZero / Originali
 documented anti-correlation (a rewrite that reads *more* human can score *worse* locally) also
 stands.
 
+### Result 5 — the meaning gate WAS the binding constraint (final free-path figure)
+
+Results 3–4 optimised selection. This one tests the hypothesis that fell out of them: that the
+*meaning gate*, not the rewriter or the detectors, was capping the free ceiling. Cosine similarity
+penalises register change — it rejected 6/8 faithful formal→casual rewrites — so the loop was
+structurally unable to adopt the most natural humanizing move. Replacing it with the NLI gate
+(contradiction veto + bidirectional entailment) and adding the plain-register vocabulary pass:
+
+| Metric | selection only (Result 4) | **+ NLI gate + register shift** |
+|---|---|---|
+| flagged rate | 0.222 | **0.111** |
+| mean max P(AI) | 0.255 ± 0.030 | **0.214 ± 0.012** |
+| `perplexity_burstiness` | 0.045 | **0.028** |
+| `roberta_openai` | 0.069 | **0.051** |
+| `hc3_roberta` | 0.038 | **0.020** |
+| `fast_detectgpt` | 0.252 | **0.214** |
+| embedding similarity | 0.959 / 0.935 worst | 0.944 / 0.900 worst |
+
+**The hypothesis holds.** Every detector dropped further, the flagged rate halved, and the run-to-run
+spread more than halved (0.030 → 0.012). Overall: **0.859 → 0.214**, a 75% reduction in mean max
+P(AI) from the untouched AI baseline.
+
+**On the similarity figure**, which fell 0.959 → 0.944: that is the expected and intended
+consequence, not a quality regression. The entire point of the change is to permit rewrites that
+*cosine similarity scores low but that preserve meaning* — the register shifts it was measured to
+penalise. Fidelity is now enforced by the NLI gate instead (contradiction < 0.5 AND bidirectional
+entailment ≥ 0.005), which on a fixed probe set admitted 7/8 faithful rewrites and **0/11**
+meaning-lost or inverted ones, versus 2/8 and 4/11 for the similarity bar it replaced. A lower score
+on a metric proven unreliable for this transformation is not evidence of lost meaning.
+
 Two honest caveats that keep this from being a "solved" claim:
 
 1. ~~**`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is
