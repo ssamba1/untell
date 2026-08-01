@@ -231,3 +231,38 @@ def test_tells_tiebreak_prefers_fewer_tells(monkeypatch):
         tier="lite", threshold=0.3, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
     )
     assert out["final"] == tell_light  # equal detector score -> fewer-tells candidate wins
+
+
+def test_tells_tiebreak_never_loses_a_better_adoptable_candidate(monkeypatch):
+    """The tells tie-break must NOT displace a lower-detector candidate with a worse-but-fewer-tells
+    one, or the strict outer adoption guard silently drops the real improvement (bug-hunt HIGH)."""
+    import untell.scripts.run as run_mod
+
+    orig = "Original AI paragraph here to rewrite right now."
+    a_text = "Moreover, it is important to note that we leverage robust synergies across verticals."  # many tells
+    b_text = "We shifted fast."  # few tells
+    # A (0.295) is adoptable vs the running best (pre=0.30); B (0.31) is NOT. B has fewer tells.
+    scores = {orig: 0.30, a_text: 0.295, b_text: 0.31}
+
+    def _fake_score(text, tier="full", threshold=0.3):
+        m = scores.get(text, 0.30)
+        return {"tier": tier, "detectors": {"perplexity_burstiness": m}, "max": m, "mean": m,
+                "threshold": threshold, "flagged": m >= 0.3}
+
+    monkeypatch.setattr(run_mod, "score_text", _fake_score)
+    draws = iter([a_text, b_text])
+
+    class _RW:
+        name = "tw"
+        deterministic = False
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            return next(draws)
+
+    out = run_mod.untell_text(
+        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
+    )
+    assert out["final"] == a_text  # the 0.295 improvement is kept, not lost to B's fewer tells

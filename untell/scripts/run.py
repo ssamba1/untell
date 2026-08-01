@@ -199,7 +199,11 @@ def untell_text(
         # (b) holds the meaning-similarity gate. Among the valid ones, pick the lowest detector max,
         # and only adopt it if it does not worsen the running best.
         prev_masked = best_masked  # to detect a stalled (no-op) iteration below
-        cand_best, cand_best_score, cand_best_tells = None, None, None
+        # Collect every VALID draw (sentinels intact + meaning gate held), then select — collecting
+        # first is what lets the tells tie-break be applied WITHOUT ever displacing a lower-detector
+        # candidate (an online single-best tracker could keep a slightly-worse-but-fewer-tells draw
+        # that the strict outer adoption guard then rejects, silently losing a real improvement).
+        valid: list[tuple[str, dict, int]] = []  # (candidate, score, tells)
         drew = 0
         for _ in range(max(1, best_of)):
             try:
@@ -217,17 +221,19 @@ def untell_text(
                 continue  # dropped/altered/DUPLICATED a locked span — reject outright
             cscore = score(candidate)
             if similarity(masked, candidate) >= sim_bar:
-                # Primary objective: lowest detector max. Secondary (within the noise band): fewer
-                # AI tells, so a near-tie is resolved toward the more human-reading candidate.
-                cand_tells = score_tells(candidate).get("tells", 0)
-                if cand_best_score is None:
-                    cand_best, cand_best_score, cand_best_tells = candidate, cscore, cand_tells
-                else:
-                    delta = cscore["max"] - cand_best_score["max"]
-                    if delta < -_TELLS_EPS or (
-                        abs(delta) <= _TELLS_EPS and cand_tells < cand_best_tells
-                    ):
-                        cand_best, cand_best_score, cand_best_tells = candidate, cscore, cand_tells
+                valid.append((candidate, cscore, score_tells(candidate).get("tells", 0)))
+        cand_best, cand_best_score = None, None
+        if valid:
+            # Primary objective: lowest detector max. Restrict the tells tie-break to the ADOPTABLE
+            # set (candidates that would pass the outer guard) so it can never cost a real adoption;
+            # if none is adoptable, fall back to the whole set for progress/stall detection.
+            adoptable = [v for v in valid if v[1]["max"] <= best_score["max"]]
+            pool = adoptable or valid
+            min_score = min(v[1]["max"] for v in pool)
+            # Among candidates within the detector noise band of the best, prefer the fewest AI tells
+            # (then lowest score as the final deterministic tiebreak).
+            near = [v for v in pool if v[1]["max"] <= min_score + _TELLS_EPS]
+            cand_best, cand_best_score, _ = min(near, key=lambda v: (v[2], v[1]["max"]))
         if cand_best is not None and cand_best_score["max"] <= best_score["max"]:
             best_masked, best_score = cand_best, cand_best_score
         if _passed(best_score):
