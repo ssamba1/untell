@@ -83,8 +83,9 @@ git clone https://github.com/ssamba1/untell && cd untell
 pip install -e ".[full]"                          # real detector ensemble on CPU
 
 # One unified command (run `untell` with no args to see them all):
-untell humanize "Your AI-sounding paragraph here."   # the closed loop (alias: loop)
+untell humanize "Your AI-sounding paragraph here."   # the closed loop (alias: loop); default $0 composite
 untell humanize "text" --rewriter surgical           # NO key needed — runs the loop for $0
+untell humanize "text" --rewriter ensemble           # strongest free path: composite + mt + neural, pick best (.[full])
 untell score "text" --tier full --threshold 0.3      # just score it
 untell tells "text"                                  # count the AI writing tells (naturalness)
 untell verify --file draft.txt                       # honest pass/fail per detector
@@ -275,6 +276,14 @@ The **`--rewriter surgical`** path makes the whole loop runnable with **no API k
 download** — the bundled deterministic rewriter (PWWS/TextFooler-style word-importance substitution)
 stands in for the hosted LLM. Weaker than Claude-as-rewriter, but it's what makes the free measurement
 above reproducible. (In Claude Code, `/untell` uses Claude itself as the rewriter — also free.)
+
+Free rewriter backends, weakest → strongest (all no-key): **`surgical`** (word swaps, zero-dep) →
+**`structural`** (sentence-level transforms) → **`composite`** (structural + surgical, the default) →
+**`neural`** (T5 best-of-N paraphrase + composite; needs `.[full]`) → **`ensemble`** / **`max`** (runs
+composite + mt_pivot + neural and keeps the per-input detector-lowest — `>=` any single method).
+T5-base paraphrase is high-variance on its own (a single draw can *raise* a detector score), so the
+neural path samples several and keeps the best, and the ensemble only ever adopts a rewrite that beats
+the original — see [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md).
 
 The `--browser` path drives a real headless browser through a free web checker and reads the % score.
 **ZeroGPT ships built-in** (confirmed working live). Most other free detectors are now bot-gated
