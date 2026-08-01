@@ -428,3 +428,55 @@ class TestCompositeIntensitySweep:
         )
         rw.rewrite("Some AI text to rewrite.", {"tier": "lite"})
         assert rw._structural.intensity == 0.7
+
+
+class TestPlainRegister:
+    def test_swaps_formal_vocabulary_for_plain_words(self):
+        from untell.rewriter.structural import _plain_register
+
+        out = _plain_register(
+            "Organizations utilize robust methodologies to demonstrate significant improvements.",
+            intensity=1.0,
+        )
+        assert "utilize" not in out and "robust" not in out
+        assert "demonstrate" not in out and "significant" not in out
+
+    def test_never_touches_locked_spans(self):
+        """A word-level substitution must not reach inside a sentinel."""
+        from untell.rewriter.structural import _plain_register
+        from untell.scripts.preserve import find_sentinels
+
+        masked = "We utilize ⟦HZ0000⟧ to leverage ⟦HZ0001⟧ robust results."
+        out = _plain_register(masked, intensity=1.0)
+        assert find_sentinels(out) == {"⟦HZ0000⟧", "⟦HZ0001⟧"}
+
+    def test_preserves_sentence_initial_capitalisation(self):
+        from untell.rewriter.structural import _plain_register
+
+        out = _plain_register("Utilize the tool.", intensity=1.0)
+        assert out[0].isupper(), out
+
+    def test_intensity_zero_is_a_noop(self):
+        from untell.rewriter.structural import _plain_register
+
+        src = "Organizations utilize robust methodologies."
+        assert _plain_register(src, intensity=0.0) == src
+
+    def test_empty_input_is_safe(self):
+        from untell.rewriter.structural import _plain_register
+
+        assert _plain_register("") == ""
+        assert _plain_register("   ") == "   "
+
+    def test_reduces_ai_tells_end_to_end(self):
+        """The point of the transform: measurably more human-reading output."""
+        from untell.rewriter.structural import structural_rewrite
+        from untell.scripts.tells import score_tells
+
+        src = (
+            "Organizations utilize robust methodologies to leverage seamless integration. "
+            "Furthermore, this demonstrates significant improvements across numerous verticals."
+        )
+        before = score_tells(src)["tells"]
+        after = score_tells(structural_rewrite(src, intensity=1.0, seed=7))["tells"]
+        assert after < before, f"tells did not drop: {before} -> {after}"

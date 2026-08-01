@@ -296,6 +296,54 @@ def _strip_filler_openers(text: str) -> str:
     return re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), out)
 
 
+# Sentinel spans (⟦HZxxxx⟧) must never be touched by a word-level substitution.
+_SENTINEL_SPAN_RE = re.compile(r"⟦HZ\d{4,}⟧")
+
+
+def _plain_register(text: str, intensity: float = 1.0) -> str:
+    """Swap formal / AI-inflected vocabulary for the words people actually use.
+
+    A 180-entry formal->plain map already existed, but only the *surgical* rewriter used it, ranked
+    by detector-importance and capped by ``max_subs`` — so most swaps never fired, and the ones that
+    did were chosen to move a score rather than to change register.
+
+    Register change is the single most natural humanizing move ("utilize" -> "use", "demonstrates"
+    -> "shows"), and until now the loop could not use it at all: the meaning gate scored cosine
+    similarity, which PENALISES register change, and rejected 6/6 faithful formal->casual rewrites.
+    With the NLI gate carrying fidelity instead, those rewrites are finally adoptable — so it is
+    worth making them wholesale rather than incidentally.
+
+    ``intensity`` scales how many eligible words are swapped, which also gives best-of-N draws real
+    diversity instead of near-identical variants.
+    """
+    if not text.strip():
+        return text
+    from untell.attacks.word_importance import _SYN
+
+    # Protect locked spans: mask them out, substitute, then restore.
+    spans: list[str] = []
+
+    def _stash(m: re.Match) -> str:
+        spans.append(m.group(0))
+        return f"\x00{len(spans) - 1}\x00"
+
+    masked = _SENTINEL_SPAN_RE.sub(_stash, text)
+
+    def _swap(m: re.Match) -> str:
+        word = m.group(0)
+        options = _SYN.get(word.lower())
+        if not options or random.random() > intensity:
+            return word
+        choice = random.choice(options)
+        # Preserve the original capitalisation so sentence starts survive the swap.
+        if word[:1].isupper():
+            choice = choice[:1].upper() + choice[1:]
+        return choice
+
+    masked = re.sub(r"[A-Za-z]+", _swap, masked)
+    return re.sub(r"\x00(\d+)\x00", lambda m: spans[int(m.group(1))], masked)
+
+
 def _flatten_copula(text: str) -> str:
     """Flatten inflated copulas: 'serves as'/'represents'/... → 'is', and 'boasts' → 'has'."""
     text = _BOASTS_RE.sub("has", text)
@@ -462,6 +510,9 @@ def structural_rewrite(text: str, intensity: float = 0.5, seed: int | None = Non
 
     # 5b. Contraction injection — always (pure human-signal function-word shift)
     text = _inject_contractions(text)
+
+    # 5c. Plain-register vocabulary — formal/AI-inflected words to the words people actually use.
+    text = _plain_register(text, intensity=intensity)
 
     # 6. Semicolon → period (semiconductors are a tell)
     text = _SEMICOLON_RE.sub(". ", text)
