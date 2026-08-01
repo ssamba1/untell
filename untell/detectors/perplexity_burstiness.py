@@ -28,6 +28,33 @@ logger = logging.getLogger(__name__)
 _SENT_SPLIT = re.compile(r"[.!?]+(?:\s+|$)")
 _WORD = re.compile(r"[A-Za-z']+")
 
+# Calibration for the full (GPT-2) path. `_NLL_*` govern mean token surprisal over the whole
+# passage; `_SPREAD_*` govern the standard deviation of per-sentence mean surprisal. Lower on both
+# axes => more machine-like.
+#
+# MEASURED on 120 HC3 human/ChatGPT paragraph pairs (`untell-detector-audit --pairs 120`):
+#   mean surprisal   human 3.87 +- 0.40   ai 2.21 +- 0.23
+#   sentence spread  human 0.72 +- 0.33   ai 0.53 +- 0.17
+# Each midpoint sits between the class means and each scale spans the observed spread, so the
+# logistic stays responsive across the whole range instead of saturating at the ends. The
+# constants it replaced (mean per-sentence perplexity < 60, variance < 400) sat far outside the
+# range those quantities take, which pinned a large class of ordinary input to exactly 0.0.
+_NLL_MID = 3.036
+_NLL_SCALE = 0.315
+_SPREAD_MID = 0.625
+_SPREAD_SCALE = 0.250
+# Perplexity carries most of the signal (AUROC 1.00 alone on HC3 vs 0.70 for spread), but the
+# blend keeps burstiness contributing: it is an independent axis, so a rewriter that lowers only
+# perplexity cannot walk the whole score down on its own.
+_PPL_WEIGHT = 0.55
+# Held out from the fit: AUROC 0.999 over 200 unseen HC3 pairs, nothing saturated at 0.0 or 1.0.
+#
+# CAVEAT, and it is a real one: HC3's machine side is 2022-era ChatGPT, whose register is far more
+# distinctive than a current model's. Spot-checked against modern formal AI prose the classes
+# overlap substantially, so 0.999 is a statement about this dataset, not a general accuracy claim.
+# It does establish the thing that matters here — the detector responds in the correct direction
+# across the range instead of anti-correlating and pinning to a constant.
+
 # A tiny stop/common-word list. High coverage by these high-frequency tokens correlates with
 # low perplexity (predictable text). This is a heuristic stand-in for a real LM, not lexicon.
 _COMMON = {
@@ -133,8 +160,12 @@ class PerplexityBurstinessDetector:
             return False
         return True
 
-    def _full_score(self, text: str) -> float:
-        """True GPT-2 perplexity + per-sentence perplexity variance -> P(AI)."""
+    def _token_nll(self, text: str):
+        """Per-token negative log-likelihood under GPT-2, **in context**, plus token offsets.
+
+        Returns ``(nll, offsets)`` where ``nll[i]`` is the surprisal of the token spanning
+        ``offsets[i]`` given every token before it. One forward pass over the whole passage.
+        """
         import torch
         from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
@@ -145,23 +176,74 @@ class PerplexityBurstinessDetector:
         tok = PerplexityBurstinessDetector._tokenizer
         model = PerplexityBurstinessDetector._model
 
-        def ppl(s: str) -> float:
-            enc = tok(s, return_tensors="pt", truncation=True, max_length=512)
-            ids = enc["input_ids"]
-            if ids.shape[1] < 2:
-                return 100.0
-            with torch.no_grad():
-                out = model(ids, labels=ids)
-            return float(torch.exp(out.loss))
+        enc = tok(text, return_tensors="pt", truncation=True, max_length=1024,
+                  return_offsets_mapping=True)
+        ids = enc["input_ids"]
+        if ids.shape[1] < 2:
+            return None, None
+        with torch.no_grad():
+            logits = model(ids).logits
+        lp = torch.log_softmax(logits[:, :-1, :].float(), dim=-1)
+        targets = ids[:, 1:]
+        nll = -lp.gather(-1, targets.unsqueeze(-1)).squeeze(-1)[0]
+        # offsets align with `targets`, i.e. tokens 1..T-1 — the first token has no prediction.
+        offsets = enc["offset_mapping"][0][1:].tolist()
+        return nll, offsets
 
-        sents = _sentences(text)
-        ppls = [ppl(s) for s in sents] or [ppl(text)]
-        mean_ppl = sum(ppls) / len(ppls)
-        # Low mean perplexity + low variance across sentences => AI-like.
-        var = (sum((p - mean_ppl) ** 2 for p in ppls) / len(ppls)) if len(ppls) > 1 else 0.0
-        ppl_signal = clamp01((60.0 - mean_ppl) / 60.0)          # ppl<60 trends AI
-        var_signal = clamp01((400.0 - var) / 400.0)             # low variance trends AI
-        return clamp01(0.7 * ppl_signal + 0.3 * var_signal)
+    def _full_score(self, text: str) -> float:
+        """GPT-2 perplexity + per-sentence perplexity variance -> P(AI).
+
+        Both quantities are read off ONE in-context forward pass over the whole passage.
+        The previous implementation re-encoded every sentence **in isolation** and averaged the
+        resulting perplexities, which discards exactly the signal it was trying to measure:
+        predictability comes from context, and a sentence scored alone has none. Measured, that
+        made the detector anti-correlated at paragraph length — formulaic AI prose read as
+        *surprising* while a long, repetitive human sentence read as predictable — and the linear
+        clamps below saturated it to exactly 0.0 on a large class of ordinary input, so the loop
+        declared such text human and rewrote nothing at all.
+        """
+        import math
+
+        nll, offsets = self._token_nll(text)
+        if nll is None:
+            return lite_score(text)
+
+        mean_nll = float(nll.mean())
+
+        # Burstiness = spread of per-sentence mean surprisal, grouped from the same in-context
+        # pass via character offsets. Human prose varies (some sentences land, some surprise);
+        # generated prose holds a near-constant surprisal.
+        bounds = []
+        pos = 0
+        for s in _sentences(text):
+            idx = text.find(s, pos)
+            if idx < 0:
+                continue
+            bounds.append((idx, idx + len(s)))
+            pos = idx + len(s)
+        per_sent: list[float] = []
+        for start, end in bounds:
+            vals = [float(v) for v, (a, b) in zip(nll, offsets) if a >= start and b <= end and b > a]
+            if len(vals) >= 3:
+                per_sent.append(sum(vals) / len(vals))
+        if len(per_sent) >= 2:
+            m = sum(per_sent) / len(per_sent)
+            spread = math.sqrt(sum((x - m) ** 2 for x in per_sent) / len(per_sent))
+        else:
+            # One sentence: no burstiness information. Lean entirely on perplexity rather than
+            # substituting a fixed "neutral" that would pin the score to a constant band.
+            spread = None
+
+        # Logistic calibration, not a linear clamp. A clamp maps everything outside its window to
+        # exactly 0.0 or 1.0, which is how the old constants (mean_ppl < 60, variance < 400 — both
+        # far outside the range these quantities actually take) turned the detector into a
+        # near-constant. Midpoints and scales below are fitted to the measured GPT-2 distribution
+        # over paragraph-length human/AI pairs; see eval/detector_audit.py for the harness.
+        ppl_signal = 1.0 / (1.0 + math.exp((mean_nll - _NLL_MID) / _NLL_SCALE))
+        if spread is None:
+            return clamp01(ppl_signal)
+        burst_signal = 1.0 / (1.0 + math.exp((spread - _SPREAD_MID) / _SPREAD_SCALE))
+        return clamp01(_PPL_WEIGHT * ppl_signal + (1.0 - _PPL_WEIGHT) * burst_signal)
 
     def score(self, text: str) -> float | None:
         # Empty/whitespace input carries no signal. The Detector protocol (base.py) requires None
