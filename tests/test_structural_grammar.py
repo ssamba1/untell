@@ -5,19 +5,25 @@ natural-sounding output — not regex artifacts like wrong verb tense or fragmen
 """
 from __future__ import annotations
 
-from untell.rewriter.structural import structural_rewrite
+from untell.rewriter.structural import _flatten_participial_trailers, structural_rewrite
 
 
 class TestParticipialTrailerGrammar:
     """Verify that participial trailers are converted with correct verb tense."""
 
     def test_underscoring_becomes_underscores(self):
+        """Verb tense is asserted at the UNIT level, because a later pipeline stage legitimately
+        changes the verb: "underscores" is itself AI vocabulary, so the plain-register pass swaps it
+        for "shows". Asserting the exact verb survives the whole pipeline would pin an intermediate
+        artifact and block that intended plainening."""
+        text = "The system evolved rapidly, underscoring its importance in modern computing."
+        assert "underscores its" in _flatten_participial_trailers(text)
+
+    def test_underscoring_trailer_is_gone_after_full_pipeline(self):
+        """The invariant that must survive EVERY stage: no dangling "-ing" trailer remains."""
         text = "The system evolved rapidly, underscoring its importance in modern computing."
         result = structural_rewrite(text, intensity=1.0)
-        # Must use correct present tense
-        assert "underscores its" in result, f"Wrong verb tense: {result}"
-        # Must NOT keep the -ing form (that's ungrammatical)
-        assert ", underscoring" not in result
+        assert ", underscoring" not in result, f"trailer survived: {result}"
 
     def test_highlighting_becomes_highlights(self):
         text = "The data supports this view, highlighting the need for reform."

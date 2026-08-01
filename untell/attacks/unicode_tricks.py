@@ -126,7 +126,18 @@ def homoglyph_substitute(text: str, rate: float = 0.15) -> str:
 
 
 def count_hidden(text: str) -> int:
-    """How many invisible/homoglyph chars are present — a quick 'is this watermarked?' check."""
+    """How many invisible/homoglyph chars are present — a quick 'is this watermarked?' check.
+
+    MUST stay in sync with what ``scrub_hidden`` actually removes. Any carrier this misses but the
+    scrubber strips produces the worst possible report: the caller is told the text is clean while a
+    watermark is silently discarded (or, if they only counted, left in place). The MCP ``scrub`` tool
+    returns this as ``hidden_chars_removed``, so a mismatch is user-visible and wrong.
+
+    Orphan ZWJ is the subtle case: U+200D is deliberately absent from ``_WATERMARK_CHARS`` because it
+    is structural inside emoji sequences, so it can only be counted the same way it is scrubbed — by
+    diffing against ``_strip_orphan_zwj``.
+    """
     invisible = len(_WATERMARK_CHARS.findall(text))
     homoglyphs = sum(1 for ch in text if ch in _UNHOMOGLYPH)
-    return invisible + homoglyphs
+    orphan_zwj = len(text) - len(_strip_orphan_zwj(text))
+    return invisible + homoglyphs + orphan_zwj
