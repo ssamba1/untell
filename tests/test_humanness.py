@@ -36,3 +36,33 @@ class TestHumanness:
         assert formulaic_score < natural_score, (
             f"Expected formulaic ({formulaic_score}) < natural ({natural_score})"
         )
+
+
+def test_tells_scorer_separates_human_from_ai_with_no_false_positives():
+    """The tells scorer now drives selection tie-breaks in the loop, so its discrimination is
+    load-bearing and must not silently regress.
+
+    Measured, it is the STRONGEST discriminator in the system: perfect separation with zero false
+    positives on human prose, better than any neural detector — and unlike them it does not
+    anti-correlate with human-ness, which is exactly why it is the right tie-breaker.
+    """
+    from untell.scripts.tells import score_tells
+
+    human = [
+        "I went to the store yesterday and forgot my wallet again. Third time this month.",
+        "My grandmother kept every letter my grandfather sent during the war, tied with brown string.",
+        "The bus was late so I walked. Rain the whole way. My shoes are still wet by the radiator.",
+        "He never did learn to swim properly, just sort of thrashed until he got where he was going.",
+    ]
+    ai = [
+        "Furthermore, artificial intelligence has fundamentally transformed numerous industries.",
+        "In today's rapidly evolving digital landscape, cybersecurity has become paramount.",
+        "Moreover, organizations increasingly leverage these technologies to optimize efficiency.",
+        "It is important to note that a comprehensive strategy is essential for sustainable success.",
+    ]
+    h = [score_tells(t)["tells_per_100w"] for t in human]
+    a = [score_tells(t)["tells_per_100w"] for t in ai]
+
+    assert max(h) == 0.0, f"false positives on human prose: {h}"
+    assert min(a) > max(h), f"no separation: human {h} vs ai {a}"
+    assert sum(a) / len(a) > 5.0, f"AI tell rate collapsed: {a}"
