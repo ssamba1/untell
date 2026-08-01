@@ -66,3 +66,51 @@ def test_tells_scorer_separates_human_from_ai_with_no_false_positives():
     assert max(h) == 0.0, f"false positives on human prose: {h}"
     assert min(a) > max(h), f"no separation: human {h} vs ai {a}"
     assert sum(a) / len(a) > 5.0, f"AI tell rate collapsed: {a}"
+
+
+def test_dead_detectors_do_not_inflate_the_humanness_score(monkeypatch):
+    """`.get("max", 0.5)` could never fire — score_text ALWAYS returns a "max" key, and when
+    nothing scored that key is a 0.0 PLACEHOLDER. At weight 0.50 that reads as "no detector
+    thinks this is AI" and lifted the score by fifty points, so a broken ML stack reported
+    formulaic AI text as MORE human than a working one did:
+
+        working ML stack   60.2
+        dead ML stack      71.1   <- the failure looked like a better result
+
+    score_text sets `scored: False` for exactly this case. The detector weight is now
+    redistributed across the signals that did produce something.
+    """
+    import untell.humanness as h
+
+    ai_text = (
+        "Furthermore, we leverage robust solutions to optimize efficiency across various "
+        "sectors. Moreover, the results demonstrate significant improvements across all "
+        "measured dimensions."
+    )
+    working = h.humanness(ai_text, tier="lite")
+
+    monkeypatch.setattr(h, "score_text", lambda text, tier="full", threshold=0.30: {
+        "detectors": {}, "max": 0.0, "mean": 0.0, "ai_percent": 0.0,
+        "threshold": threshold, "flagged": False, "scored": False,
+        "warning": "no detector produced a score",
+    })
+    dead = h.humanness(ai_text, tier="lite")
+    assert dead <= working, (
+        f"a dead detector stack scored {dead} against {working} working — the placeholder is "
+        f"being read as a human verdict"
+    )
+
+
+def test_documented_bands_match_the_implementation():
+    """The docstring advertised 80 / 50-80 / 30-50 / 30; classification() implements
+    80 / 55 / 35 / 15. A score of 40 was "likely AI" by the docs and "mixed" by the code."""
+    from untell.humanness import classification
+
+    assert classification(80) == "human"
+    assert classification(79.9) == "mostly human"
+    assert classification(55) == "mostly human"
+    assert classification(54.9) == "mixed"
+    assert classification(35) == "mixed"
+    assert classification(34.9) == "likely AI"
+    assert classification(15) == "likely AI"
+    assert classification(14.9) == "AI"
