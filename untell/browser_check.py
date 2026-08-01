@@ -42,6 +42,28 @@ if __package__ in (None, ""):
 from untell.detectors.base import clamp01
 
 _PCT = re.compile(r"([\d.]+)\s*%")
+# Word-bounded, so "again" and "available" stop counting as an AI label and "really" as a human one
+# — the old check was a bare `"ai" in window` / `"human" in window` substring test.
+# Longest alternative first: the alternation is first-match-wins, so `\bai\b` ahead of
+# `ai-generated` would match only "ai" and leave "-generated" outside the label span, throwing off
+# every distance measured from it.
+_AI_LABEL = re.compile(
+    r"ai[-\s]?(?:generated|written|content|score|probability)|machine[-\s]?generated"
+    r"|artificial[-\s]?intelligence|chatgpt|artificial|\bai\b|\bgpt\b|\bbot\b"
+)
+_HUMAN_LABEL = re.compile(r"human[-\s]?(?:written|generated)|\bhuman\b|\breal\b|\bperson\b|\borganic\b")
+
+
+def _label_spans(raw: str) -> list[tuple[int, int, bool]]:
+    """(start, end, is_ai) for every AI/human label in ``raw``."""
+    spans = [(m.start(), m.end(), True) for m in _AI_LABEL.finditer(raw)]
+    spans += [(m.start(), m.end(), False) for m in _HUMAN_LABEL.finditer(raw)]
+    return sorted(spans)
+
+
+def _gap(a_start: int, a_end: int, b_start: int, b_end: int) -> int:
+    """Character distance between two spans (0 when they touch or overlap)."""
+    return max(0, max(a_start - b_end, b_start - a_end))
 
 
 def parse_ai_percent(text: str) -> float | None:
@@ -67,23 +89,74 @@ def parse_ai_percent(text: str) -> float | None:
     under-state AI — is refused outright.
     """
     raw = text or ""
-    m = _PCT.search(raw)
-    if not m:
-        return None
-    # Look just around the match for a human/real label; those readouts are inverted, not AI scores.
-    window = raw[max(0, m.start() - 24): m.end() + 24].lower()
-    if ("human" in window or "real" in window) and "ai" not in window.replace("real", ""):
-        return None
-    # The digit pattern cannot see a leading sign, so check the source text for one.
-    if m.start() and raw[m.start() - 1] in "-−":
-        return None
-    try:
-        pct = float(m.group(1))
-    except ValueError:
-        return None
-    if pct < 0.0:
-        return None  # under-states AI — refuse rather than report "looks human"
-    return clamp01(pct / 100.0)  # above 100 clamps to 1.0: over-stating AI is the safe direction
+    lowered = raw.lower()
+    numbers = list(_PCT.finditer(raw))
+    labels = _label_spans(lowered)
+
+    # Assign each LABEL to its nearest number, rather than asking each number what words happen to
+    # sit near it. "Human 45% / AI 55%" puts both words within reach of both figures, which
+    # satisfied the old "...and no 'ai' nearby" escape hatch on the first match and returned 0.45 —
+    # the human figure delivered as P(AI), wrong in the direction that ships text believing it
+    # passed. Assigning labels to numbers is unambiguous whichever side the label sits on, so
+    # "Human: 45%", "45% human" and "Human-written: 45%  AI-generated: 55%" all read correctly.
+    # Which side of its number does this page put the label on? "AI: 60% Human: 40%" and
+    # "45% human, 55% ai" are both unambiguous to a reader and both defeat a pure nearest-neighbour
+    # rule, because in each case some label sits marginally closer to the WRONG number. The layout
+    # is consistent within a page, so infer it from the tightly-adjacent pairs and let that break
+    # the near-ties.
+    before = after = 0
+    for lstart, lend, _ in labels:
+        for m in numbers:
+            if lend <= m.start() and m.start() - lend <= 3:
+                before += 1
+            elif m.end() <= lstart and lstart - m.end() <= 3:
+                after += 1
+    dominant = None if before == after else (before > after)  # True = labels precede their number
+
+    kinds: dict[int, set[bool]] = {}
+    for lstart, lend, is_ai in labels:
+        if not numbers:
+            break
+
+        def cost(m, _ls=lstart, _le=lend):
+            gap = _gap(_ls, _le, m.start(), m.end())
+            if dominant is None:
+                return gap
+            precedes = _le <= m.start()
+            return gap + (0 if precedes is dominant else 3)
+
+        nearest = min(numbers, key=cost)
+        if _gap(lstart, lend, nearest.start(), nearest.end()) <= 24:
+            kinds.setdefault(nearest.start(), set()).add(is_ai)
+
+    ai_labelled = None
+    unlabelled = None
+    saw_human = any(False in v for v in kinds.values())
+
+    for m in numbers:
+        kind = kinds.get(m.start(), set())
+        # The digit pattern cannot see a leading sign, so check the source text for one.
+        negative = bool(m.start()) and raw[m.start() - 1] in "-−"
+        try:
+            pct = float(m.group(1))
+        except ValueError:
+            continue
+        if negative or pct < 0.0:
+            continue  # under-states AI — refuse rather than report "looks human"
+        if kind == {True} and ai_labelled is None:
+            ai_labelled = pct
+        elif not kind and unlabelled is None:
+            unlabelled = pct
+
+    if ai_labelled is not None:
+        # above 100 clamps to 1.0: over-stating AI is the safe direction
+        return clamp01(ai_labelled / 100.0)
+    if unlabelled is not None and not saw_human:
+        return clamp01(unlabelled / 100.0)
+    # Either the only readings were human-labelled (inverted, not an AI score) or the page is
+    # ambiguous. Refuse rather than guess; check() then excludes the checker instead of scoring
+    # the loop against a fabricated number.
+    return None
 
 
 @dataclass

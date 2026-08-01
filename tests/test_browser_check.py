@@ -183,3 +183,41 @@ def test_parse_ai_percent_refuses_untrustworthy_readouts(text, expected):
         assert got is None, f"{text!r} should be refused, got {got!r}"
     else:
         assert got is not None and abs(got - expected) < 0.02, f"{text!r} -> {got!r}, want {expected}"
+
+
+# Layouts that report BOTH figures. The old parser took the first percentage and asked only whether
+# the words around it mentioned humans; with both words in range that escape hatch let the HUMAN
+# figure through as P(AI) - wrong in the direction that ships text believing it passed.
+BOTH_FIGURE_LAYOUTS = [
+    ("Human 45% / AI 55%", 0.55),
+    ("AI 55% / Human 45%", 0.55),
+    ("AI: 60% Human: 40%", 0.60),
+    ("Human-written: 45%   AI-generated: 55%", 0.55),
+    ("45% human, 55% ai", 0.55),
+    ("Human 20% | AI 80%", 0.80),
+]
+
+
+@pytest.mark.parametrize("readout,expected", BOTH_FIGURE_LAYOUTS)
+def test_both_figures_reported_reads_the_ai_one(readout, expected):
+    got = parse_ai_percent(readout)
+    assert got is not None and abs(got - expected) < 1e-9, f"{readout!r} -> {got!r}, want {expected}"
+
+
+@pytest.mark.parametrize(
+    "readout",
+    ["It is available 40%", "Certainly 25% again", "Retained 30% of the detail", "Contains 15%"],
+)
+def test_words_containing_ai_or_real_are_not_labels(readout):
+    """The label test was a bare substring check, so "available" read as an AI label and "really"
+    as a human one. Either misreading silently re-points the number at the wrong class."""
+    got = parse_ai_percent(readout)
+    assert got is not None, f"{readout!r} was refused because a word was mistaken for a label"
+
+
+@pytest.mark.parametrize("readout", ["100% Human", "0% Human", "Human: 45%", "Real: 30%",
+                                     "98% Human Written", "Likely human, 20%"])
+def test_human_only_readout_is_still_refused(readout):
+    """A human-labelled percentage is the inverse of what the loop needs, and there is no AI figure
+    to fall back to. Refusing excludes the checker; guessing hands the loop a backwards verdict."""
+    assert parse_ai_percent(readout) is None
