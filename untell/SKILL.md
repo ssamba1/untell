@@ -119,9 +119,9 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
 
    **5b. Write 3 genuinely different drafts, score each, keep the best.** This is the single
    highest-leverage step in the whole loop — measured, it is worth more than any individual rewriting
-   technique. Selecting among 3 drafts (instead of committing to the first) took the local ensemble's
-   mean max P(AI) from 0.68 to **0.29**, and dropped the content/genre detector — previously believed
-   immovable — from 0.73 to **0.04** (`docs/free-ceiling-measured.md`).
+   technique. Selecting among 3 drafts (instead of committing to the first) is most of what took the
+   local ensemble's mean max P(AI) from 0.86 to **0.21**, and dropped the content/genre detector —
+   previously believed immovable — from 0.73 to **0.02** (`docs/free-ceiling-measured.md`).
 
    Make the drafts *actually different* (different sentence order, different level of detail, a
    different opening move) rather than three near-copies; near-copies score near-identically and waste
