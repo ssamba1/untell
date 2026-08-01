@@ -165,6 +165,6 @@ def test_auth_failure_is_not_retried(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "requests", fake)
     monkeypatch.setattr(r.time, "sleep", lambda _s: None)
 
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError, match="401"):
         c._post_json("http://x", {}, {})
     assert calls["n"] == 1, f"a 401 was retried {calls['n']} times"
