@@ -156,8 +156,22 @@ byte-identical.)
 
 Two honest caveats that keep this from being a "solved" claim:
 
-1. **`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is untouched
-   by everything measured here. One wall fell; another did not.
+1. ~~**`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is
+   untouched by everything measured here. One wall fell; another did not.~~
+   **RETRACTED — it was a broken detector, not a wall.** Investigating why this one number never
+   budged in *any* configuration turned up the cause: its logistic calibration constants
+   (`_CAL_MID = 1.0`) assumed a curvature range the model never produces. Measured, the discrepancy
+   lands in ~[-0.20, 0.38], so the midpoint sat outside the entire observed range and **squashed
+   every input to ~0.30 regardless of content**. It never moved because it never responded to
+   anything. Recalibrated in `925beaf` (`_CAL_MID = -0.03`, `_CAL_SCALE = 0.12`); the output now
+   spans 0.20–0.97.
+   **Consequence for the numbers above:** every per-detector and ensemble figure in this document
+   was computed with that detector contributing a constant ~0.30 to a `max`/`mean` aggregation. The
+   `hc3_roberta` and `roberta_openai` movements are unaffected (they were measured directly), but
+   the *ensemble* means are stale and are being re-measured.
+   Its own honest limitation remains: even recalibrated, the curvature distributions overlap so
+   heavily at paragraph length with a 125m scoring model that the human/AI direction flips on small
+   samples. It is a weak signal, now at least a *live* one.
 2. **This is still the local proxy ensemble.** Nothing here says anything about GPTZero / Originality
    / Turnitin, and the separately established anti-correlation result (a rewrite that reads *more*
    human can score *worse* locally) is unchanged. A low local score still does not mean "passes a

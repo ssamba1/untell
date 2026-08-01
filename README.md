@@ -185,8 +185,12 @@ Three findings, all measured, and one of them overturned this project's own earl
   you actually score on**, it drops to **0.04**. The lever was never a cleverer rewriter — it was
   choosing among several drafts against the real signal. See
   [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) for the falsified claim in full.
-- **One wall did not fall.** `fast_detectgpt`'s curvature signal is untouched by everything here
-  (0.31 → 0.28 in both runs). "Most detectors move" is not "detection is solved."
+- **The one "immovable" detector turned out to be broken.** `fast_detectgpt` never moved in any
+  configuration (0.31 → 0.28) — because its calibration constants assumed a curvature range the
+  model never produces, pinning **every** input to ~0.30 regardless of content. Recalibrated; it now
+  spans 0.20–0.97. Ensemble figures measured before that fix included a constant and are being
+  re-measured. ("Most detectors move" still isn't "detection is solved" — this one remains a weak
+  signal whose human/AI direction flips on small samples.)
 - **The local proxies partly anti-correlate with human-ness.** A rewrite that reads *obviously* more human
   scored **higher** on the proxy (0.578 → 0.918). So a low local score means "passed the weak local
   proxies," not "reads human" and **not** "beats GPTZero." That's exactly why the loop treats the local
