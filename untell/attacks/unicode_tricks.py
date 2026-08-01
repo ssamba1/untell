@@ -52,7 +52,28 @@ _WATERMARK_CHARS = re.compile(
     # therefore ideal invisible carriers, and they were surviving scrub_hidden untouched while
     # count_hidden reported 0.
     "|[⁡-⁤]"
+    # Characters that RENDER AS NOTHING (or as blank space) and have no role in English prose.
+    # Every one of these is a documented steganography carrier — they are what "invisible character"
+    # generators emit — and none is covered by the bidi/variation-selector rationale above, which is
+    # about characters that ARE load-bearing. Measured, all of them passed through scrub_hidden
+    # untouched while count_hidden reported 0.
+    "|­"              # SOFT HYPHEN — invisible unless the renderer breaks the line
+    "|͏"              # COMBINING GRAPHEME JOINER — no visible effect anywhere
+    "|؜"              # ARABIC LETTER MARK — bidi-adjacent but invisible in Latin prose
+    "|᠎"              # MONGOLIAN VOWEL SEPARATOR — deprecated, zero width
+    "|⠀"              # BRAILLE PATTERN BLANK — renders as blank, not a space
+    "|[ᅟᅠㅤﾠ]"  # Hangul fillers — render as blank
+    "|[឴឵]"      # Khmer inherent vowels — invisible
+    "|[￹-￻]"     # interlinear annotation anchors
 )
+
+# Whitespace variants that render like a space but are distinct codepoints. Width-encoded
+# steganography uses exactly these, so they are NORMALISED to U+0020 rather than deleted: the text
+# still reads identically and no content is lost, but the carrier channel closes.
+#
+# The trade-off is deliberate and narrow — U+00A0 loses its non-breaking behaviour. For prose being
+# fed to a detector that is the right call: unusual whitespace is itself something detectors flag.
+_EXOTIC_SPACE = re.compile("[   -   　]")
 
 
 def _is_emoji_adjacent(ch: str) -> bool:
@@ -68,6 +89,40 @@ def _is_emoji_adjacent(ch: str) -> bool:
         or 0xFE00 <= o <= 0xFE0F       # variation selectors (sit between an emoji base and the ZWJ)
         or o in (0x2640, 0x2642, 0x2695, 0x2696, 0x2708, 0x2764, 0x2122, 0x00A9, 0x00AE, 0x203C, 0x2049)
     )
+
+
+# Bidirectional format controls. Load-bearing ONLY in text that actually contains a right-to-left
+# script; in an all-Latin passage they are pure invisible payload (and the Trojan-Source vector).
+_BIDI_CONTROLS = re.compile("[‎‏‪-‮⁦-⁩]")
+# Ranges whose presence means bidi controls may be doing real layout work: Hebrew, Arabic, Syriac,
+# Thaana, N'Ko, Samaritan, Mandaic, Arabic Supplement/Extended, and the presentation forms.
+_RTL_CHARS = re.compile(
+    "[֐-׿؀-ۿ܀-ݏހ-޿߀-߿"
+    "ࠀ-࠿ࡀ-࡟ࢠ-ࣿיִ-﷿ﹰ-﻿]"
+)
+# Variation selectors. VS16 after an emoji base is load-bearing; the same codepoint between two
+# Latin letters is a carrier — the "variation-selector smuggling" trick. Treated exactly like ZWJ:
+# kept when it sits next to something emoji-ish, dropped when it does not.
+_VARIATION_SELECTORS = re.compile("[︀-️\U000e0100-\U000e01ef]")
+
+
+def _strip_orphan_variation_selectors(text: str) -> str:
+    """Drop variation selectors that are not attached to an emoji base."""
+    if not _VARIATION_SELECTORS.search(text):
+        return text
+    out = []
+    for i, ch in enumerate(text):
+        if _VARIATION_SELECTORS.fullmatch(ch) and not _is_emoji_adjacent(text[i - 1] if i else ""):
+            continue
+        out.append(ch)
+    return "".join(out)
+
+
+def _strip_orphan_bidi(text: str) -> str:
+    """Drop bidi format controls unless the text actually contains a right-to-left script."""
+    if _RTL_CHARS.search(text):
+        return text  # real RTL content — the controls may be doing layout work, leave them alone
+    return _BIDI_CONTROLS.sub("", text)
 
 
 def _strip_orphan_zwj(text: str) -> str:
@@ -98,7 +153,10 @@ def scrub_hidden(text: str) -> str:
     so legitimate Unicode (emoji, superscripts, ligatures, RTL layout) is preserved.
     """
     text = _WATERMARK_CHARS.sub("", text)
+    text = _EXOTIC_SPACE.sub(" ", text)
     text = _strip_orphan_zwj(text)
+    text = _strip_orphan_variation_selectors(text)
+    text = _strip_orphan_bidi(text)
     # Drop C0/C1 control characters (category Cc) except common whitespace; KEEP format characters
     # (category Cf) such as bidi marks, which carry layout meaning.
     text = "".join(ch for ch in text if ch in "\t\n\r" or unicodedata.category(ch) != "Cc")
@@ -138,10 +196,17 @@ def count_hidden(text: str) -> int:
     diffing against ``_strip_orphan_zwj``.
     """
     invisible = len(_WATERMARK_CHARS.findall(text))
+    # Exotic spaces are SUBSTITUTED, not deleted, so they change nothing about the length — the same
+    # shape as a homoglyph. Counting them by length diff would report zero.
+    exotic_spaces = len(_EXOTIC_SPACE.findall(text))
     homoglyphs = sum(1 for ch in text if ch in _UNHOMOGLYPH)
     orphan_zwj = len(text) - len(_strip_orphan_zwj(text))
+    # Same treatment for the two other context-dependent classes: they can only be counted the way
+    # they are scrubbed, by diffing against the function that does the scrubbing.
+    orphan_vs = len(text) - len(_strip_orphan_variation_selectors(text))
+    orphan_bidi = len(text) - len(_strip_orphan_bidi(text))
     # C0/C1 controls are stripped by scrub_hidden too (everything in category Cc except tab, newline
     # and carriage return), so they must be counted here or the same under-report recurs — this is
     # the third carrier class to go missing from this function.
     controls = sum(1 for ch in text if ch not in "\t\n\r" and unicodedata.category(ch) == "Cc")
-    return invisible + homoglyphs + orphan_zwj + controls
+    return invisible + exotic_spaces + homoglyphs + orphan_zwj + orphan_vs + orphan_bidi + controls
