@@ -56,6 +56,14 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
 
     Windows break on sentence boundaries so no window starts mid-clause. Text short enough to fit is
     scored in a single call, so nothing changes for ordinary input.
+
+    COST, measured at full tier: scoring is now linear in document length rather than flat —
+    207 words 0.87s, 552 words 2.41s, 896 words 4.17s, where before every length cost the same as
+    the first window. That is the price of reading the document instead of its opening, and it is
+    paid per candidate inside the rewrite loop, so long inputs are markedly slower end to end.
+    A worthwhile follow-up: during candidate evaluation a substitution changes exactly one window,
+    so the other windows' scores could be cached and reused. Not done here because it needs its own
+    correctness check — the ensemble max may come from a window the edit never touched.
     """
     from untell.text_split import split_sentences
 
