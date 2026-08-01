@@ -1,6 +1,8 @@
 """Tests for the structural, composite, and surgical rewriters."""
 from __future__ import annotations
 
+import pytest
+
 from untell.rewriter import get_rewriter
 from untell.rewriter.composite import CompositeRewriter
 from untell.rewriter.structural import StructuralRewriter, structural_rewrite
@@ -535,3 +537,42 @@ class TestStyleProfiles:
         assert style_profile(None) == neutral
         assert style_profile("not-a-real-style") == neutral
         assert style_profile("ACADEMIC")["contractions"] is False  # case-insensitive
+
+
+ABBREVIATION_SPLITS = [
+    ("title", "Dr. Smith published the results in 2020. The study enrolled 240 patients.", 2),
+    ("figure", "See Fig. 3 for detail. The trend is clear.", 2),
+    ("country", "The U.S. economy grew steadily. Inflation fell.", 2),
+    ("plain", "Plain one. Plain two. Plain three.", 3),
+]
+
+
+@pytest.mark.parametrize("label,text,expected", ABBREVIATION_SPLITS, ids=[c[0] for c in ABBREVIATION_SPLITS])
+def test_abbreviation_is_not_split_into_its_own_sentence(label, text, expected):
+    """A naive split made "Dr. " a sentence, and in THIS module that is worse than cosmetic: each
+    fragment is independently SCORED and independently REWRITTEN. A one-word fragment gets a
+    confident meaningless score (a single word scores 0.998 on roberta_openai), so it clears the
+    min_score gate on nothing and is handed to the rewriter."""
+    from untell.rewriter.targeted import split_sentences
+
+    parts = split_sentences(text)
+    assert len(parts) == expected, f"{label}: {parts}"
+    assert "".join(parts) == text, "the split must round-trip byte-for-byte"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Dr. Smith published. The study ran.",
+        "Plain one. Plain two.",
+        "Trailing space at end.   ",
+        "Line one.\nLine two.\n\nLine three.",
+        "",
+        "No terminator at all",
+    ],
+)
+def test_split_round_trips_exactly(text):
+    """The module reassembles the document from these pieces, so any lost byte is corruption."""
+    from untell.rewriter.targeted import split_sentences
+
+    assert "".join(split_sentences(text)) == text

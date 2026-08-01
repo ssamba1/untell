@@ -28,14 +28,35 @@ _SENT_SPLIT = re.compile(r"(?<=[.!?])(\s+)")
 
 
 def split_sentences(text: str) -> list[str]:
-    """Split into sentences, preserving the exact whitespace so a join round-trips the input."""
+    """Split into sentences, preserving the exact whitespace so a join round-trips the input.
+
+    Abbreviation-aware. A naive split on ".\\s" made "Dr. Smith published the results" into the
+    fragments "Dr. " and "Smith published the results", and in THIS module that is worse than a
+    cosmetic split: each fragment is independently scored and independently rewritten. A one- or
+    two-word fragment gets a confident, meaningless detector score (measured: a single word scores
+    0.998 on roberta_openai), so "Dr. " clears the min_score gate on nothing, is handed to the inner
+    rewriter, and is accepted whenever the mangled version scores lower — which for noise is easy.
+    It also spends a full detector pass per fragment.
+
+    Kept as its own splitter rather than reusing untell.text_split.split_sentences because that one
+    normalises whitespace, and this module must reassemble the text byte-for-byte.
+    """
+    from untell.text_split import ends_with_abbreviation
+
     parts = _SENT_SPLIT.split(text)
-    out: list[str] = []
+    chunks: list[str] = []
     for i in range(0, len(parts), 2):
         sent = parts[i]
         sep = parts[i + 1] if i + 1 < len(parts) else ""
         if sent or sep:
-            out.append(sent + sep)
+            chunks.append(sent + sep)
+
+    out: list[str] = []
+    for chunk in chunks:
+        if out and ends_with_abbreviation(out[-1]):
+            out[-1] += chunk
+        else:
+            out.append(chunk)
     return out
 
 
