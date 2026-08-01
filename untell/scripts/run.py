@@ -452,6 +452,18 @@ def main(argv: list[str] | None = None) -> int:
     ):
         from untell.rewriter import get_rewriter
 
+        # --style is honoured only by the hosted-LLM rewriter, which receives it in its prompt
+        # (rewriter/prompts.py). The free rule-based backends never read it: structural, targeted and
+        # ensemble contain zero references to `style`, and composite's only match is inside a
+        # comment. So `--style casual --rewriter composite` silently did nothing while the CLI
+        # advertised 14 style modes. Say so rather than accept a flag that has no effect.
+        if args.style:
+            print(
+                f"[untell] --style {args.style!r} is ignored by --rewriter {args.rewriter}: the free "
+                "rule-based rewriters do not read it. Style is applied only by the hosted-LLM "
+                "rewriter (--rewriter auto, needs an API key) or by Claude in the /untell skill.",
+                file=sys.stderr,
+            )
         rewriter = get_rewriter(prefer=args.rewriter)
         if rewriter is None:
             print(

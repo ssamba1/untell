@@ -93,3 +93,24 @@ def test_score_text_survives_detector_exception(monkeypatch):
     assert r["max"] == 0.0
     assert r["flagged"] is False
     assert "boom" in r["failed_detectors"]
+
+
+def test_style_flag_warns_when_the_chosen_rewriter_ignores_it(capsys):
+    """--style is honoured only by the hosted-LLM rewriter (it goes into the prompt). The free
+    rule-based backends never read it — structural/targeted/ensemble contain zero references to
+    `style`, and composite's only match is in a comment. Accepting a documented flag and silently
+    doing nothing with it is the same class of defect as a detector returning a fabricated score."""
+    from untell.scripts.run import main
+
+    main(["Moreover we utilize robust solutions today.", "--rewriter", "composite",
+          "--style", "casual", "--tier", "lite", "--max-iters", "1"])
+    err = capsys.readouterr().err
+    assert "--style" in err and "ignored" in err
+
+
+def test_no_style_warning_when_style_not_requested(capsys):
+    from untell.scripts.run import main
+
+    main(["Moreover we utilize robust solutions today.", "--rewriter", "composite",
+          "--tier", "lite", "--max-iters", "1"])
+    assert "is ignored" not in capsys.readouterr().err
