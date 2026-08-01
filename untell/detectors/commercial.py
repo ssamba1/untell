@@ -21,7 +21,7 @@ import logging
 import os
 import time
 
-from untell._retry import retry
+from untell._retry import _RETRYABLE_HTTP, retry
 
 from .base import clamp01
 
@@ -58,13 +58,24 @@ def _post_json(url: str, headers: dict, body: dict, timeout: float = 45.0) -> di
     """
     import requests
 
-    resp = retry(
-        requests.post,
-        kw={"url": url, "headers": {"Content-Type": "application/json", **headers}, "json": body, "timeout": timeout},
-        max_attempts=3,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    def _once():
+        resp = requests.post(
+            url=url,
+            headers={"Content-Type": "application/json", **headers},
+            json=body,
+            timeout=timeout,
+        )
+        # raise_for_status INSIDE the retried callable. It used to sit after `retry(...)` returned,
+        # so only connection-level exceptions were ever retried — a rate-limit or 503 comes back as
+        # a perfectly successful `requests.post` with a 429/503 status, and was raised once, on the
+        # last attempt, having never been retried. That is the exact case this module exists for,
+        # and `_RETRYABLE_HTTP` was dead code confirming nobody had wired it up.
+        if resp.status_code in _RETRYABLE_HTTP:
+            raise RuntimeError(f"retryable HTTP {resp.status_code} from {url}")
+        resp.raise_for_status()
+        return resp.json()
+
+    return retry(_once, max_attempts=3)
 
 
 def _has(*env_vars: str) -> bool:

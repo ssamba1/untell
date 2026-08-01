@@ -98,3 +98,73 @@ def test_retry_detects_api_keywords_in_message():
 
     with pytest.raises(RuntimeError):  # re-raised after exhausting retries
         retry(flaky, max_attempts=2, base_delay=0.01)
+
+
+def test_rate_limited_response_is_retried(monkeypatch):
+    """A 429 comes back as a perfectly successful requests.post with a 429 status.
+
+    raise_for_status() used to sit AFTER retry() returned, so only connection-level exceptions
+    were ever retried - the exact case this retry wrapper exists for was raised once, on the last
+    attempt, having never been retried. _RETRYABLE_HTTP was dead code confirming it.
+    """
+    import types
+
+    import untell._retry as r
+    import untell.detectors.commercial as c
+
+    class _Resp:
+        def __init__(self, code):
+            self.status_code = code
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise RuntimeError(f"HTTP {self.status_code}")
+
+        def json(self):
+            return {"score": 0.9}
+
+    calls = {"n": 0}
+
+    def flaky(**kw):
+        calls["n"] += 1
+        return _Resp(429) if calls["n"] < 3 else _Resp(200)
+
+    fake = types.ModuleType("requests")
+    fake.post = flaky
+    monkeypatch.setitem(__import__("sys").modules, "requests", fake)
+    monkeypatch.setattr(r.time, "sleep", lambda _s: None)
+
+    assert c._post_json("http://x", {}, {}) == {"score": 0.9}
+    assert calls["n"] == 3, "the 429s were not retried"
+
+
+def test_auth_failure_is_not_retried(monkeypatch):
+    """A 401 is not transient. Retrying it three times wastes time and hammers the provider."""
+    import types
+
+    import untell._retry as r
+    import untell.detectors.commercial as c
+
+    class _Resp:
+        status_code = 401
+
+        def raise_for_status(self):
+            raise RuntimeError("HTTP 401")
+
+        def json(self):
+            return {}
+
+    calls = {"n": 0}
+
+    def unauthorized(**kw):
+        calls["n"] += 1
+        return _Resp()
+
+    fake = types.ModuleType("requests")
+    fake.post = unauthorized
+    monkeypatch.setitem(__import__("sys").modules, "requests", fake)
+    monkeypatch.setattr(r.time, "sleep", lambda _s: None)
+
+    with pytest.raises(Exception):
+        c._post_json("http://x", {}, {})
+    assert calls["n"] == 1, f"a 401 was retried {calls['n']} times"
