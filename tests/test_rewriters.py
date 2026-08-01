@@ -49,6 +49,26 @@ class TestStructuralRewriter:
         )
         assert "does not" not in out and "doesn't" in out
 
+    def test_burstiness_targeting_raises_cv(self):
+        from untell.rewriter.structural import _target_burstiness, _cv
+
+        # Uniform ~9-word sentences (low burstiness, an AI tell).
+        sents = [
+            "Artificial intelligence has transformed many industries in recent years.",
+            "Organizations use it to improve their operational efficiency greatly.",
+            "Machine learning models can analyze large amounts of data quickly.",
+            "The impact of these systems continues to grow across sectors.",
+        ]
+        before = _cv([len(s.split()) for s in sents])
+        after_sents = _target_burstiness(sents)
+        after = _cv([len(s.split()) for s in after_sents])
+        assert after > before
+        # No content lost: every content word survives (redistribution only).
+        import re as _re
+        w = lambda ss: sorted(x.lower() for x in _re.findall(r"[a-z]+", " ".join(ss).lower()))
+        # allow the injected "and" connector
+        assert set(w(sents)) - set(w(after_sents)) == set()
+
     def test_empty_input(self):
         assert structural_rewrite("", intensity=1.0) == ""
 

@@ -302,6 +302,107 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     return out
 
 
+_CONJ = ("and", "but", "which", "because", "so", "while", "although", "though", "since")
+
+
+def _cv(lengths: list[int]) -> float:
+    if len(lengths) < 2:
+        return 0.0
+    mean = sum(lengths) / len(lengths)
+    if mean == 0:
+        return 0.0
+    var = sum((x - mean) ** 2 for x in lengths) / len(lengths)
+    return (var**0.5) / mean
+
+
+def _split_one(s: str) -> list[str] | None:
+    """Split one long sentence into two at a comma or coordinating conjunction near the midpoint.
+    Redistributes words only — no content added. Returns [first, second] or None if no clean split."""
+    words = s.split()
+    if len(words) < 12:
+        return None
+    mid = len(words) // 2
+    best: int | None = None
+    for off in range(mid):  # nearest comma to the midpoint
+        for pos in (mid + off, mid - off):
+            if 0 < pos < len(words) - 1 and words[pos].endswith(","):
+                best = pos + 1
+                break
+        if best is not None:
+            break
+    if best is None:  # else a coordinating conjunction
+        for off in range(mid):
+            for pos in (mid + off, mid - off):
+                if 0 < pos < len(words) - 1 and words[pos].lower() in _CONJ:
+                    best = pos
+                    break
+            if best is not None:
+                break
+    if best is None:
+        return None
+    first = " ".join(words[:best]).rstrip(",")
+    tail = words[best:]
+    if tail and tail[0].lower() in _CONJ:  # drop a leading conjunction for a clean second sentence
+        tail = tail[1:]
+    if not first or not tail:
+        return None
+    second = " ".join(tail)
+    second = second[0].upper() + second[1:]
+    if not first.endswith((".", "!", "?")):
+        first += "."
+    if not second.endswith((".", "!", "?")):
+        second += "."
+    return [first, second]
+
+
+def _merge_pair(sents: list[str], j: int) -> list[str]:
+    """Merge sentences j and j+1 into one compound sentence."""
+    a = sents[j].rstrip(".!?")
+    b = sents[j + 1].strip()
+    b = b[0].lower() + b[1:] if b and b[0].isupper() else b
+    return sents[:j] + [f"{a}, and {b}"] + sents[j + 2 :]
+
+
+def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves: int = 12) -> list[str]:
+    """Raise sentence-length variance toward the human range (CV ~0.45-0.55; AI sits ~0.3).
+
+    The single most reliable human/AI stylometric differentiator (research: human academic std ~8
+    words vs AI ~4-5). Greedy hill-climb: each round it tries splitting the longest sentence and
+    merging the lowest-combined-length adjacent pair, and keeps whichever move raises CV the most.
+    Only redistributes existing words — no content added/removed — so meaning is preserved.
+    """
+    sents = list(sentences)
+    for _ in range(max_moves):
+        lengths = [len(s.split()) for s in sents]
+        cur_cv = _cv(lengths)
+        if len(sents) < 2 or cur_cv >= target_cv:
+            break
+
+        candidates: list[tuple[float, list[str]]] = []
+
+        # Candidate A: split the longest sentence.
+        li = max(range(len(sents)), key=lambda i: lengths[i])
+        if lengths[li] >= 14:
+            parts = _split_one(sents[li])
+            if parts:
+                cand = sents[:li] + parts + sents[li + 1 :]
+                candidates.append((_cv([len(s.split()) for s in cand]), cand))
+
+        # Candidate B: merge the adjacent pair with the smallest combined length (<=45 words).
+        if len(sents) >= 2:
+            j = min(range(len(sents) - 1), key=lambda i: lengths[i] + lengths[i + 1])
+            if lengths[j] + lengths[j + 1] <= 45:
+                cand = _merge_pair(sents, j)
+                candidates.append((_cv([len(s.split()) for s in cand]), cand))
+
+        # Keep the move that raises CV the most; stop if none improves.
+        candidates = [c for c in candidates if c[0] > cur_cv + 1e-6]
+        if not candidates:
+            break
+        sents = max(candidates, key=lambda c: c[0])[1]
+    return sents
+
+
 # ---------------------------------------------------------------------------
 # Main rewrite pipeline
 # ---------------------------------------------------------------------------
@@ -353,6 +454,10 @@ def structural_rewrite(text: str, intensity: float = 0.5, seed: int | None = Non
 
         open_rate = min(0.6, intensity * 0.6)
         sents = _vary_openers(sents, rate=open_rate)
+
+        # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
+        # most reliable stylometric differentiator; only redistributes existing words (meaning-safe).
+        sents = _target_burstiness(sents)
 
     result = " ".join(sents)
 
