@@ -24,10 +24,28 @@ def test_help_flag_prints_usage(capsys):
     assert "Commands:" in capsys.readouterr().out
 
 
-def test_unknown_arg_is_treated_as_humanize_shortcut(capsys):
-    """Unknown args are treated as humanize shortcut (text to humanize)."""
+def test_unknown_arg_is_treated_as_humanize_shortcut(monkeypatch, capsys):
+    """Unknown args are treated as a humanize shortcut (text to humanize).
+
+    This asserts ROUTING, so it stubs the humanize entry point rather than executing it. Running the
+    real pipeline here cost 578 SECONDS — 99.9% of this file's entire runtime — to verify that an
+    argument reaches the right function. The stub checks the same contract (routed to
+    untell.scripts.run:main, with the text forwarded) in milliseconds.
+    """
+    import untell.scripts.run as run_mod
+
+    seen = {}
+
+    def _spy(argv=None):
+        seen["argv"] = argv
+        return 0
+
+    monkeypatch.setattr(run_mod, "main", _spy)
+
     rc = main(["frobnicate"])
     assert rc == 0
+    assert seen.get("argv") is not None, "unknown arg did not reach the humanize entry point"
+    assert "frobnicate" in seen["argv"], f"text not forwarded: {seen['argv']}"
 
 
 def test_dispatch_routes_to_subcommand(capsys):
