@@ -21,6 +21,11 @@ from __future__ import annotations
 from .base import Rewriter
 from .composite import CompositeRewriter
 
+# Detector-max noise band: candidates whose max is within this of the best are ranked by the
+# whole-ensemble mean instead, so a near-tie on the peak detector is resolved toward the candidate
+# that improved the others too.
+_RANK_EPS = 0.02
+
 
 class EnsembleRewriter(Rewriter):
     """Best-of-all-free-methods selector. ``available()`` is always True (composite always is)."""
@@ -64,8 +69,18 @@ class EnsembleRewriter(Rewriter):
             # Non-scoreable tier: run the richest member once; outer loop selects against the real signal.
             return self._members[-1][1].rewrite(text, score_result, threshold)
 
-        base = float(score_text(text, tier=tier)["max"])
-        best_text, best_score = text, base
+        # Rank on (max, mean), not max alone. MEASURED: `max` aggregation is dominated by whichever
+        # detector is highest — typically the content/genre one that a meaning-preserving rewrite
+        # cannot move. Selecting on it alone let a member that nudged `max` by a hair while WRECKING
+        # a lower detector win: on one sample the max-only ensemble returned a candidate scoring
+        # roberta 0.933 where a member had reached 0.002. Ranking by the whole-ensemble mean once the
+        # max ties (within the noise band) picks the candidate that is better everywhere, not just at
+        # its peak — the same fix applied to the loop's best-of-N selection.
+        def _rank(s: dict) -> tuple[float, float]:
+            return (float(s["max"]), float(s.get("mean", s["max"])))
+
+        base = score_text(text, tier=tier)
+        scored: list[tuple[tuple[float, float], str]] = [(_rank(base), text)]
         for _name, member in self._members:
             try:
                 cand = member.rewrite(text, score_result, threshold)
@@ -73,7 +88,10 @@ class EnsembleRewriter(Rewriter):
                 continue
             if not cand.strip() or cand == text:
                 continue
-            cand_score = float(score_text(cand, tier=tier)["max"])
-            if cand_score < best_score:
-                best_text, best_score = cand, cand_score
-        return best_text
+            scored.append((_rank(score_text(cand, tier=tier)), cand))
+
+        # Among everything within the noise band of the best max (including the ORIGINAL, so a
+        # rewrite is only adopted when it genuinely helps), take the lowest mean.
+        best_max = min(r[0] for r, _ in scored)
+        near = [(r, t) for r, t in scored if r[0] <= best_max + _RANK_EPS]
+        return min(near, key=lambda rt: (rt[0][1], rt[0][0]))[1]

@@ -302,3 +302,38 @@ def test_selection_breaks_ties_on_ensemble_mean(monkeypatch):
         orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
     )
     assert out["final"] == deep  # tie on max+tells -> lower ensemble mean wins
+
+
+def test_ensemble_does_not_trade_away_a_lower_detector(monkeypatch):
+    """MEASURED failure: max-only ranking let a member that nudged `max` while wrecking a lower
+    detector win (roberta 0.002 -> 0.933 on one sample). Rank on (max, mean) instead."""
+    from untell.rewriter.ensemble import EnsembleRewriter
+
+    rw = EnsembleRewriter()
+
+    class _M:
+        def __init__(self, out):
+            self._out = out
+
+        def rewrite(self, text, score_result, threshold=0.30):
+            return self._out
+
+    good = "member A output"   # same max, much better across the rest of the ensemble
+    bad = "member B output"    # same max, wrecks the lower detector
+    rw._members = [("a", _M(good)), ("b", _M(bad))]
+
+    import untell.scripts.score as score_mod
+
+    table = {
+        "orig text here": (0.90, 0.90),
+        good: (0.700, 0.10),   # max ties with bad, mean far lower
+        bad: (0.695, 0.65),    # microscopically lower max, much worse mean
+    }
+
+    def _fake_score(text, tier="lite", threshold=0.30):
+        mx, mn = table.get(text, (0.99, 0.99))
+        return {"max": mx, "mean": mn, "detectors": {"a": mx, "b": mn}, "tier": tier}
+
+    monkeypatch.setattr(score_mod, "score_text", _fake_score)
+    out = rw.rewrite("orig text here", {"tier": "lite"})
+    assert out == good  # within the max noise band -> the better-everywhere candidate wins
