@@ -422,3 +422,54 @@ def test_polish_declines_when_it_does_not_help(monkeypatch):
         polish=True, scrub=False, sim_bar=0.0,
     )
     assert out["final"] == src  # unpolished text kept
+
+
+def test_deterministic_rewriter_draws_once_regardless_of_best_of(monkeypatch):
+    """Best-of-N on a deterministic rewriter is pure waste: identical draws, but a full detector
+    pass each. It must draw exactly once no matter what --best-of says."""
+    import untell.scripts.run as run_mod
+
+    monkeypatch.setattr(run_mod, "score_text", _num_score(0.9))
+    calls = {"n": 0}
+
+    class _Det:
+        name = "det"
+        deterministic = True
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            calls["n"] += 1
+            return "a deterministic rewrite of the input text"
+
+    run_mod.untell_text(
+        "Some AI paragraph to rewrite here now.",
+        tier="lite", threshold=0.3, max_iters=1, best_of=8, rewriter=_Det(), scrub=False, sim_bar=0.0,
+    )
+    assert calls["n"] == 1  # not 8
+
+
+def test_randomized_rewriter_still_draws_best_of_n(monkeypatch):
+    """The short-circuit must not disable best-of-N for randomized rewriters."""
+    import untell.scripts.run as run_mod
+
+    monkeypatch.setattr(run_mod, "score_text", _num_score(0.9))
+    calls = {"n": 0}
+
+    class _Rand:
+        name = "rand"
+        deterministic = False
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            calls["n"] += 1
+            return f"variant number {calls['n']} of the rewritten text"
+
+    run_mod.untell_text(
+        "Some AI paragraph to rewrite here now.",
+        tier="lite", threshold=0.3, max_iters=1, best_of=4, rewriter=_Rand(), scrub=False, sim_bar=0.0,
+    )
+    assert calls["n"] == 4

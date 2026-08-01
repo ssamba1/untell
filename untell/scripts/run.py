@@ -205,7 +205,11 @@ def untell_text(
         # that the strict outer adoption guard then rejects, silently losing a real improvement).
         valid: list[tuple[str, dict, int]] = []  # (candidate, score, tells)
         drew = 0
-        for _ in range(max(1, best_of)):
+        # A deterministic rewriter returns byte-identical output for identical input, so extra draws
+        # are pure waste — and the waste is the EXPENSIVE part (a full-tier detector pass per draw).
+        # Best-of-N only buys anything when the draws actually differ.
+        draws = 1 if getattr(rw, "deterministic", False) else max(1, best_of)
+        for _ in range(draws):
             try:
                 candidate = rw.rewrite(best_masked, best_score, threshold)
             except Exception as exc:  # surface the failure rather than silently looping
