@@ -251,17 +251,22 @@ def _score_max(text: str, tier: str) -> float:
     return float(score_text(text, tier=tier)["max"]) if text.strip() else 0.0
 
 
-def importance(text: str, tier: str = "lite") -> list[tuple[str, float]]:
+def importance(text: str, tier: str = "lite", only: set[str] | None = None) -> list[tuple[str, float]]:
     """Rank unique words by how much removing them drops the detector score (descending).
 
     Batches all word-removed variants through the detector ensemble in one call — O(1) detector
-    loads instead of O(unique_words), which is the hot path on the full tier.
+    *loads* instead of O(unique_words). It is still O(unique_words) forward PASSES, which is the
+    real cost on the full tier, so ``only`` restricts the ranking to a caller-supplied word set.
     """
     if not text.strip():
         return []
     base = _score_max(text, tier)
     # Batch score all word-removed texts with one detector-load.
     unique_words = list(dict.fromkeys(m.group(0) for m in _WORD.finditer(text)))
+    if only is not None:
+        unique_words = [w for w in unique_words if w.lower() in only]
+    if not unique_words:
+        return []
     stripped_variants = [re.sub(rf"\b{re.escape(w)}\b", "", text) for w in unique_words]
     stripped_scores = batch_score_texts(stripped_variants, tier=tier)
     scored = [(w, base - float(s["max"])) for w, s in zip(unique_words, stripped_scores)]
@@ -297,15 +302,24 @@ def surgical_substitute(
     pre = _score_max(text, tier)
     cur = text
     subs = 0
-    # Compute importance with one detector load (batched inside the function).
-    word_ranks = importance(text, tier=tier)
+    # Rank ONLY the words a substitution could ever touch. Ranking is a leave-one-out detector pass
+    # per unique word, and a word with no synonym can never be substituted no matter how important
+    # it turns out to be — so every pass spent on one is pure waste. On a 207-word paragraph at full
+    # tier this was the difference between 57s and a few seconds, with identical output.
+    substitutable = {w.lower() for w in dict.fromkeys(m.group(0) for m in _WORD.finditer(text))
+                     if synonyms(w)}
+    word_ranks = importance(text, tier=tier, only=substitutable)
     # NOTE: ``word_ranks`` is computed ONCE from the original text. After a substitution changes
     # the text, subsequent drop values are stale — a word's true importance may differ in the
     # modified text. This is a performance caveat (we may try an already-deflated word), not a
     # correctness bug: every synonym candidate is verified against the CURRENT ``cur_score`` via
     # batch scoring below, so no bad substitution goes through.
+    # `cur` only changes when a substitution is ACCEPTED, so re-scoring it at the top of every
+    # iteration repeated an identical full-tier detector pass once per ranked word. Carry the score
+    # forward instead and refresh it only when the text actually changes — same values, same
+    # decisions, one pass instead of one per word.
+    cur_score = pre
     for word, drop in word_ranks:
-        cur_score = _score_max(cur, tier)
         if subs >= max_subs or cur_score < threshold:
             break
         if drop <= 0:
@@ -320,6 +334,6 @@ def surgical_substitute(
         cand_scores = batch_score_texts(candidates, tier=tier)
         for cand, s in zip(candidates, cand_scores):
             if float(s["max"]) < cur_score:
-                cur, subs = cand, subs + 1
+                cur, subs, cur_score = cand, subs + 1, float(s["max"])
                 break
-    return {"text": cur, "substitutions": subs, "pre": round(pre, 4), "post": round(_score_max(cur, tier), 4)}
+    return {"text": cur, "substitutions": subs, "pre": round(pre, 4), "post": round(cur_score, 4)}

@@ -220,3 +220,24 @@ def test_substitution_carries_the_original_capitalisation(original, synonym, exp
     from untell.attacks.word_importance import _match_case
 
     assert _match_case(original, synonym) == expected
+
+
+SAFE_WORD_CASES = [
+    ("The", "", True), ("Organizations", "", True), ("Artificial", "", True),
+    ("Machine", "", True), ("Results", "", True), ("Regular", "", True),
+    ("Smith", "", False), ("Jones", "", False), ("NASA", "", False),
+    ("iPhone", "", False), ("McDonald", "", False), ("Tokyo", "", False),
+    # Evidence from context: a word used in lower case elsewhere is an ordinary word.
+    ("Widget", "the widget was replaced twice", True),
+    ("Kowalski", "the report by Kowalski was late", False),
+]
+
+
+@pytest.mark.parametrize("word,context,expected", SAFE_WORD_CASES)
+def test_safe_to_lowercase_separates_ordinary_words_from_names(word, context, expected):
+    """Merging a sentence into a clause lowercases its first word, so this decides whether a
+    merge may happen at all. Too strict and the burstiness lever stops firing; too loose and
+    "Smith led the team" becomes "smith led the team"."""
+    from untell.rewriter.structural import _safe_to_lowercase
+
+    assert _safe_to_lowercase(word, context) is expected, f"{word!r} in {context!r}"
