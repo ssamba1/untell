@@ -123,8 +123,21 @@ class WebUIChecker:
                     c.submit_button_text,
                 )
                 page.wait_for_selector(c.result_selector, timeout=c.wait_s * 1000)
-                pct = parse_ai_percent(page.inner_text(c.result_selector))
-                return pct if pct is not None else 0.5
+                raw = page.inner_text(c.result_selector)
+                pct = parse_ai_percent(raw)
+                if pct is None:
+                    # NEVER fabricate 0.5 here. wait_for_selector can return the moment a
+                    # placeholder element exists in the initial DOM, before the real score lands, so
+                    # an unparseable result is a genuine FAILURE, not a "neutral" reading. Returning
+                    # a number would feed a fake score into the loop: it enters the numeric list,
+                    # drives max(), and suppresses the all_checkers_failed flag that exists to signal
+                    # exactly this situation — the loop would then optimise against, and declare a
+                    # pass on, a score no detector ever produced. Same bug class already fixed in the
+                    # mage/hc3/perplexity adapters: a failed detector must be EXCLUDED, not neutral.
+                    raise RuntimeError(
+                        f"{c.name}: could not parse an AI percentage from {raw.strip()[:80]!r}"
+                    )
+                return pct
             finally:
                 browser.close()
 

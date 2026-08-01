@@ -109,3 +109,39 @@ def test_available_false_without_playwright(monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
     assert ZeroGPTChecker().available() is False
+
+
+def test_unparseable_result_raises_instead_of_returning_a_fake_score(monkeypatch):
+    """An unparseable result is a FAILURE, not a neutral 0.5.
+
+    wait_for_selector can return the moment a placeholder element exists in the initial DOM, before
+    the real score lands. Returning 0.5 there fed a fabricated score into the loop: it entered the
+    numeric list, drove max(), and suppressed the all_checkers_failed flag that exists to signal
+    exactly this case — so the loop would optimise against, and declare a pass on, a score no
+    detector ever produced. Same bug class already fixed in the mage/hc3/perplexity adapters.
+    """
+    from untell.browser_check import parse_ai_percent
+
+    # The parser itself must report "no percentage here" rather than guessing.
+    assert parse_ai_percent("Hang on while we verify your browser") is None
+    assert parse_ai_percent("") is None
+    assert parse_ai_percent("Analyzing...") is None
+
+
+def test_browser_failure_is_excluded_from_the_ensemble_not_averaged_in(monkeypatch):
+    """The loop must treat a failed checker as absent, and flag the all-failed case."""
+    import untell.browser_check as bc
+    import untell.scripts.run as run_mod
+
+    class _Broken:
+        def available(self):
+            return True
+
+        def check(self, text, **k):
+            raise RuntimeError("could not parse an AI percentage from 'Analyzing...'")
+
+    monkeypatch.setattr(bc, "get_browser_checker", lambda name: _Broken())
+    scorer = run_mod._browser_scorer(["zerogpt"], {}, 0.30)
+    out = scorer("some text")
+    assert out["detectors"]["zerogpt"] is None       # excluded, not 0.5
+    assert out.get("all_checkers_failed") is True    # and the failure is signalled
