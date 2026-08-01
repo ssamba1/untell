@@ -97,8 +97,10 @@ untell ceiling --rewriter composite --best-of 3 --repeats 3  # measure free evas
 
 > **How far does free actually go?** We measured it, then re-measured it twice when the first two
 > answers turned out to be wrong. The training-free, no-key loop drops the local open-detector
-> ensemble from **100% flagged to 0%** (mean max P(AI) **0.86 → 0.25 ± 0.02**, 9 runs), with meaning
-> held by an NLI gate plus a predicate-argument veto. The most recent correction was the largest: the
+> ensemble from 100% flagged to **0–44%** (mean max P(AI) **0.86 → 0.25–0.33** across two
+> independent runs), with meaning held by an NLI gate plus a predicate-argument veto. The tighter
+> figure an earlier draft of this line quoted did not replicate — see the note under the table. The
+> largest correction was the detector itself: the
 > one detector present at every tier was itself anti-correlated and saturating, so every previous
 > number on this page had been measured through it. An earlier
 > version of this README claimed the loop was "powerless against content-locked detectors" — that was
@@ -182,12 +184,20 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 
 
 | Free, no-key rewrite vs the local open ensemble (3 repeats = 9 loop runs) | before | after |
 |---|---|---|
-| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.00** (`--best-of 3`) |
-| mean max P(AI) | 0.86 | **0.25 ± 0.02** |
+| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.00–0.44** (`--best-of 3`, see note) |
+| mean max P(AI) | 0.86 | **0.25–0.33** (two runs; see note) |
 | meaning similarity (cosine; the gate is NLI + roles) | — | **0.92 mean, 0.82 worst** |
 
 ¹ The `--best-of 8` figure was measured before the `fast_detectgpt` calibration fix, so treat it as
 indicative rather than directly comparable to the row above it.
+
+**Note on the range.** Two independent 3-repeat runs of the identical command gave 0.247 ± 0.015
+(flagged 0.00) and 0.330 ± 0.118 (flagged 0.44). Two of the second run's three repeats matched the
+first; the third nearly doubled. The direction and magnitude are solid — the baseline is 0.86 and
+every detector moves substantially — but a **±0.02 error bar was not real**, and neither point
+estimate should be quoted on its own. The binding constraint is corpus size (`n=3`): `--repeats`
+multiplies loop runs but every repeat draws from the same three paragraphs. See
+[`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md).
 
 More draws buy **reliability, not a lower average**: 3 → 8 barely moves the mean but halves the
 run-to-run spread and clears every sample. Meaning is measured alongside, so a good evasion number

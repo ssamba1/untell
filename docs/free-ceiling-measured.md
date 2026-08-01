@@ -13,8 +13,12 @@ ensemble that untell can actually put in its loop.**
 
 > **Read [Result 6](#result-6--re-measured-on-a-working-perplexity_burstiness-supersedes-result-5s-table)
 > for the current numbers.** Every earlier result was measured while `perplexity_burstiness` — the
-> one detector present at every tier — was anti-correlated and saturating. The corrected figure is
-> **0.859 → 0.247 ± 0.015, flagged rate 1.00 → 0.00.**
+> one detector present at every tier — was anti-correlated and saturating.
+>
+> ⚠️ **The corrected figure did not replicate, and is being re-measured.** One 3-repeat run gave
+> 0.859 → 0.247 ± 0.015 with flagged rate 0.00; an independent 3-repeat run of the same command
+> gave **0.330 ± 0.118, flagged 0.44**, with one of the three runs at 0.496. Treat *both* as single
+> noisy draws until the wider run below lands. See [Result 6](#result-6--re-measured-on-a-working-perplexity_burstiness-supersedes-result-5s-table).
 
 > **Read [Result 3](#result-3--superseding-update-the-content-wall-was-largely-a-selection-limit)
 > next.** Results 1–2 were measured with the then-default `best_of=1`. Re-measuring with best-of-3
@@ -304,9 +308,29 @@ that detector was a number the loop never really had to earn. Against that, the 
 **0.000** — every sample finished below threshold in all nine runs, where Result 5 left one in nine
 flagged.
 
-So the corrected free-path figure is **0.859 → 0.247 ± 0.015, flagged 1.00 → 0.00**. Slightly higher
-mean, materially more consistent, and — for the first time — measured with every detector in the
-ensemble demonstrably responding to its input.
+⚠️ **That figure did not replicate — read this before quoting it.** Running the identical command a
+second time on the same corpus:
+
+| 3-repeat run | mean max P(AI) | stdev | flagged rate | per-run means |
+|---|---|---|---|---|
+| first | **0.247** | 0.015 | 0.000 | 0.265 / 0.248 / 0.228 |
+| second | **0.330** | 0.118 | 0.444 | 0.252 / **0.496** / 0.241 |
+
+Two of the second run's three repeats land right where the first run did; the third nearly doubles.
+So the difference is not a regression between the two — it is that **three repeats over a
+three-paragraph corpus is not enough to pin this number**, and the first run happened to draw three
+low values in a row. This document has said since Result 3 that "a single pass is not evidence";
+nine loop runs turns out not to be evidence either, at this corpus size, for a *tight interval* —
+it is enough to establish direction and magnitude, not a ±0.015 error bar.
+
+What survives both runs: the baseline is 0.859, every detector moves substantially, and the mean
+lands in the **0.25–0.33** band. What does not survive is the precision either run claimed on its
+own, and the "flagged 0.00" result in particular — the second run flagged 4 of 9.
+
+A wider re-measurement is the fix, and the honest interim statement is the band, not either point
+estimate. The corpus itself (`n=3`) is the binding constraint: `--repeats` multiplies loop runs but
+every repeat draws from the same three paragraphs, so it cannot average away a paragraph that is
+simply harder than the others.
 
 The cosine similarity figure falls again (0.944 → 0.916 mean, 0.900 → 0.815 worst). The same caveat
 as Result 5 applies and is now stronger: fidelity is enforced by the NLI gate plus a
