@@ -26,8 +26,18 @@ _HOMOGLYPH = {
     "y": "у", "A": "А", "B": "В", "C": "С", "E": "Е", "H": "Н",
     "K": "К", "M": "М", "O": "О", "P": "Р", "T": "Т", "X": "Х",
 }
-# Reverse map (+ a few extra confusables) for scrubbing back to ASCII.
+# Reverse map for scrubbing back to ASCII. The SCRUB direction must be wider than the attack
+# direction: we only emit Cyrillic confusables, but an adversary (or another humanizer) can use
+# Greek ones just as easily, and the docstring already promised "Cyrillic/Greek". Measured, the
+# Greek set was entirely absent — "aοc" (Greek omicron) survived scrub_hidden untouched.
 _UNHOMOGLYPH = {v: k for k, v in _HOMOGLYPH.items()}
+_UNHOMOGLYPH.update({
+    "ο": "o", "α": "a", "ε": "e", "ρ": "p", "χ": "x", "υ": "y", "ι": "i", "κ": "k", "ν": "v",
+    "Α": "A", "Β": "B", "Ε": "E", "Ζ": "Z", "Η": "H", "Ι": "I", "Κ": "K", "Μ": "M", "Ν": "N",
+    "Ο": "O", "Ρ": "P", "Τ": "T", "Υ": "Y", "Χ": "X",
+    # Cyrillic confusables we never emit ourselves but must still strip on the way in.
+    "і": "i", "ѕ": "s", "ј": "j", "һ": "h", "ԁ": "d", "Ѕ": "S", "Ј": "J", "І": "I",
+})
 
 # Genuinely invisible watermark/steganography carriers with no legitimate role in prose.
 # NOTE: U+200D (ZWJ) and the variation selectors (incl. U+FE0F) are deliberately NOT listed — they
@@ -36,6 +46,12 @@ _UNHOMOGLYPH = {v: k for k, v in _HOMOGLYPH.items()}
 _WATERMARK_CHARS = re.compile(
     "[​‌⁠﻿]"  # zero-width space / non-joiner / word-joiner / BOM (ZWNBSP)
     "|[\U000e0000-\U000e007f]"  # Unicode tag chars (used for invisible-tag watermarks)
+    # Invisible math operators (U+2061 FUNCTION APPLICATION .. U+2064 INVISIBLE PLUS). These are
+    # category Cf, so the "keep Cf for bidi layout" rule below was blanket-preserving them — but
+    # unlike bidi marks they have NO legitimate role in prose, only in mathematical markup. They are
+    # therefore ideal invisible carriers, and they were surviving scrub_hidden untouched while
+    # count_hidden reported 0.
+    "|[⁡-⁤]"
 )
 
 
