@@ -90,7 +90,7 @@ untell score "text" --tier full --threshold 0.3      # just score it
 untell tells "text"                                  # count the AI writing tells (naturalness)
 untell verify --file draft.txt                       # honest pass/fail per detector
 untell compare                                       # head-to-head vs free-humanizer techniques
-untell ceiling --rewriter surgical --tier full       # measure free evasion of the local ensemble
+untell ceiling --rewriter composite --best-of 3 --repeats 3  # measure free evasion (with error bars)
 
 # (every subcommand is also a standalone `untell-<name>` script, e.g. `untell-loop`, `untell-tells`)
 ```
@@ -297,7 +297,7 @@ iteration calls every checker, so it **costs API credits** — cap with `--max-i
 ```bash
 # No key at all — deterministic CPU word-substitution rewriter drives the loop ($0, no SDK):
 untell-loop "text" --rewriter surgical --tier full
-untell-ceiling --rewriter surgical --tier full     # measure the loop vs the local ensemble
+untell-ceiling --rewriter composite --tier full --best-of 3 --repeats 3   # vs the local ensemble
 
 # Optimize against a REAL detector for free via its web UI (slow, needs a browser):
 pip install -e ".[browser]" && playwright install chromium
@@ -390,7 +390,7 @@ pip install -e ".[full,eval]"
 python -m eval.benchmark --dataset builtin --n 5                      # zero-download smoke run
 python -m eval.benchmark --dataset raid --n 200 --tier full --enable-radar   # adversarial: hardest detector + RAID
 
-untell-ceiling --rewriter surgical --tier full       # measure free inference-only evasion (no key, $0)
+untell-ceiling --rewriter composite --best-of 3 --repeats 3   # free inference-only evasion (no key, $0)
 untell-eval-policy --policy out/rl-humanizer --vs-base   # A/B a trained LoRA policy vs the untuned base
 ```
 
