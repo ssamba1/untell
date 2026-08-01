@@ -123,11 +123,14 @@ pip install -e ".[mcp]" && untell-mcp     # (pip install "untell[mcp]" once on P
 ```
 /untell <text|file>
   preserve-lock citations / numbers / quotes / URLs / entities   (scripts/preserve.py)
-  scrub hidden watermark / zero-width / homoglyph characters from the input
+  scrub hidden watermark characters — zero-width, tag, control, blank-rendering and
+    homoglyph carriers, plus orphaned ZWJ / variation selectors / bidi marks (kept where
+    emoji or right-to-left text makes them load-bearing)   (attacks/unicode_tricks.py)
   repeat up to N times:
     score = scripts/score.py <text>          # ensemble of detectors -> {detector: P(AI), max}
     sentences = scripts/sentences.py <text>  # which sentences read as AI (target only these)
     meaning = NLI gate: no contradiction AND bidirectional entailment  (scripts/entailment.py)
+              + predicate-argument check: roles not permuted            (scripts/roles.py)
     if max(score) < threshold and sim ok: stop
     Claude rewrites the flagged sentences using the per-detector scores as feedback
       (raise burstiness + perplexity, vary sentence architecture, kill clichés/formulaic
@@ -143,9 +146,17 @@ Three design choices make it work where blind paraphrasers fail:
    meaning-mangling that wrecks other tools' output. Cosine similarity alone was measured to fail in
    **both** directions: it passed rewrites that INVERT the source ("runs faster" → "runs slower"
    scores 0.974 against a 0.76 bar) while rejecting 6 of 8 faithful formal→casual rewrites, because
-   it penalises register change — exactly what humanizing does. The gate now requires no
+   it penalises register change — exactly what humanizing does. The gate requires no
    contradiction *and* bidirectional entailment: 7/8 faithful rewrites admitted, **0/11**
    meaning-lost ones, versus 2/8 and 4/11 for the similarity bar it replaced.
+
+   NLI has a blind spot of its own, so a **predicate-argument check** sits behind it. Rewrites that
+   keep every content word and only permute the roles — "the company sued the regulator" → "the
+   regulator sued the company" — score 0.99 entailment, because as bags of tokens they are identical.
+   Word order cannot separate those from a faithful voice change, so `scripts/roles.py` compares
+   parsed (subject, verb, object) structure with the passive normalised into active order:
+   **9/9 role permutations caught, 0/13 faithful rewrites falsely vetoed.** End to end the gate now
+   admits **0 of 13** meaning-changing rewrites.
 3. **Citations, numbers, quotes, URLs and named entities are locked byte-for-byte** via preserve-lock, so
    your APA/IEEE/MLA references and your facts survive the rewrite untouched.
 

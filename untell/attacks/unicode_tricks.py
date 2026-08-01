@@ -3,11 +3,18 @@
 Two sub-semantic operations several competitor repos have and we didn't:
 
 - ``scrub_hidden`` (defense, recommended): strip invisible LLM watermarks / steganography — zero-width
-  steganography carriers, Unicode tag chars, and C0/C1 control chars — then map a conservative set of
-  confusable homoglyphs back to ASCII. It deliberately PRESERVES emoji ZWJ sequences, variation
-  selectors, and bidirectional format marks (stripping those corrupts legitimate text), and uses NFC
-  (not NFKC) so superscripts/ligatures/full-width forms survive. Cleans embedded watermarks without
-  mangling real content.
+  carriers, Unicode tag chars, C0/C1 controls, and every other character that renders as nothing or as
+  blank space (soft hyphen, combining grapheme joiner, Hangul fillers, braille blank, Mongolian vowel
+  separator, interlinear annotation anchors) — normalize the exotic space variants to U+0020, then map
+  a conservative set of confusable homoglyphs back to ASCII. Uses NFC (not NFKC) so
+  superscripts/ligatures/full-width forms survive.
+
+  Three classes are **context-dependent**, kept where they are load-bearing and stripped where they
+  are payload: structural ZWJ inside emoji sequences, variation selectors following an emoji base,
+  and bidirectional format marks in text that actually contains a right-to-left script. Outside
+  those contexts all three are invisible carriers (bidi controls are also the Trojan-Source vector),
+  and a blanket "preserve" left 11 + 16 codepoints of channel open. Cleans embedded watermarks
+  without mangling real content.
 - ``homoglyph_substitute`` (attack, OPT-IN, caveated): replace a fraction of ASCII letters with
   visually identical Cyrillic/Greek homoglyphs to disrupt detector tokenization (silverspeak,
   arXiv 2406.11239). **Caveats:** invisible to humans but breaks copy-paste/search, is removed by any
