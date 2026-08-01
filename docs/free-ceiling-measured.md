@@ -35,6 +35,11 @@ ensemble that untell can actually put in its loop.**
 
 ## Result 1 — three free rewriters, head to head (n=3, full tier)
 
+> ⚠️ **SUPERSEDED — historical, kept for the record.** Everything in this section was measured with
+> `best_of=1` (the then-shipped default) and with `fast_detectgpt` emitting a constant. Its central
+> conclusion — that no free rewriter reliably beats the proxies and that content-locked detectors
+> cannot be moved — **did not survive re-measurement.** Current figures: [Result 5](#result-5--the-meaning-gate-was-the-binding-constraint-final-free-path-figure).
+
 | Rewriter | Key needed? | flagged before → after | mean max P(AI) before → after |
 |---|---|---|---|
 | **surgical** (PWWS-style word substitution) | No | 1.00 → 0.67 | 0.859 → 0.759 |
