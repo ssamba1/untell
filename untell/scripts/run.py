@@ -396,9 +396,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--best-of",
         type=int,
-        default=1,
+        default=3,
         help="draw N candidate rewrites per iteration and keep the best valid one (sentinels intact + "
-        "meaning gate, lowest detector max). Default 1.",
+        "meaning gate, lowest detector max, fewest AI tells within the noise band). Default 3 — the "
+        "free rewriters are randomized, so extra draws are pure upside: measured, best-of-3 selection "
+        "took roberta 0.523->0.080 mean where a single draw reached only ~0.30. Use 1 for speed.",
     )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     args = parser.parse_args(argv)
