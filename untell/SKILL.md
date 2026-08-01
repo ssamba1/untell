@@ -91,6 +91,17 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    token-overlap fallback; each metric lives on its own scale, so compare `similarity` to the
    returned `bar`, never to a bar you remember).
 
+   **Which similarity bar applies depends on whether the meaning gate below is available**, and
+   this mirrors what the headless loop does in `meaning_preserved()`:
+   - **Meaning gate available** → similarity is only a *drift floor*: require `similarity >= 0.30`
+     and let entailment + roles decide. The strict bar was measured to reject **6 of 8 faithful**
+     rewrites — heavy rewording is what humanizing *is*, and scoring it as meaning loss stalls the
+     loop. Relaxing the floor while adding the NLI and role gates admitted 7 of 8 faithful rewrites
+     and **0 of 11 bad** ones: simultaneously more permissive and strictly safer.
+   - **Meaning gate unavailable** → fall back to the strict `passes` from `quality.py`. There is
+     nothing else to lean on, and loosening the bar precisely when the checks that would catch a
+     bad rewrite are missing would be pure risk.
+
    Then run the **meaning gate** — similarity alone is not sufficient and must not be your only
    check:
    ```bash
@@ -120,12 +131,16 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
 
    Stop when **all** hold:
    - `max < threshold` (not flagged), **and**
-   - the quality check `passes` is `true`, **and**
+   - similarity clears the bar that applies (drift floor `0.30` when the meaning gate ran, else
+     the strict `passes` from `quality.py`), **and**
    - the meaning gate exits `0` (or is unavailable), **and**
    - the predicate-argument check exits `0` (or is unavailable).
 
-   **Confidence matters:** when `confidence` is `high` (full tier, embedding metric), enforce the
-   quality gate strictly — never accept a rewrite where `passes` is false. When `confidence` is
+   **Confidence matters:** when `confidence` is `high` (full tier, semantic metric) **and the
+   meaning gate did not run**, enforce the quality gate strictly — never accept a rewrite where
+   `passes` is false. When the meaning gate *did* run, entailment and roles are the authority and
+   similarity is the drift floor above; a `passes: false` with both gates clear is a heavy reword,
+   which is the goal, not a failure. When `confidence` is
    `low` (lite tier, token-overlap), the gate is **advisory only**: token-overlap cannot judge
    meaning, so do not loop endlessly chasing it — rely on your own judgment that meaning is intact,
    report the similarity, and flag in the final note that quality was not reliably gated (full tier
