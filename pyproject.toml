@@ -115,6 +115,10 @@ Repository = "https://github.com/ssamba1/untell"
 untell = "untell.scripts.cli:main"
 untell-score = "untell.scripts.score:main"
 untell-loop = "untell.scripts.run:main"
+# `humanize` is the PRIMARY name for the loop (`loop` is its alias), but only the alias had a
+# standalone script — so `untell-humanize` was "command not found" while the README promised that
+# every subcommand has one.
+untell-humanize = "untell.scripts.run:main"
 untell-verify = "untell.scripts.verify:main"
 untell-prove = "eval.prove:main"
 untell-sentences = "untell.scripts.sentences:main"

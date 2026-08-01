@@ -117,3 +117,47 @@ def test_every_free_backend_is_reachable_from_every_surface():
     api_src = (root / "untell/api_server.py").read_text(encoding="utf-8")
     for name in free:
         assert f'"{name}"' in api_src, f"{name} missing from api _FREE_REWRITERS"
+
+
+def test_every_subcommand_has_a_standalone_console_script():
+    """The README promises "every subcommand is also a standalone untell-<name> script".
+
+    That was false for `humanize` — the PRIMARY name for the loop — because only its alias `loop`
+    had an entry point, so `untell-humanize` was "command not found". A documented promise that
+    nobody re-checks decays the same way an unmeasured claim does."""
+    import re
+    from pathlib import Path
+
+    from untell.scripts.cli import _COMMANDS
+
+    py = (Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+    scripts = set(re.findall(r"^(untell[\w-]*)\s*=", py, re.M))
+
+    missing = [name for name in _COMMANDS if f"untell-{name}" not in scripts]
+    assert not missing, f"subcommands with no standalone console script: {missing}"
+
+
+def test_every_console_script_target_resolves():
+    """A typo'd entry point only fails at install time, not in tests."""
+    import importlib
+    import re
+    from pathlib import Path
+
+    py = (Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+    targets = dict(re.findall(r'^(untell[\w-]*)\s*=\s*"([^"]+)"', py, re.M))
+    assert targets, "no console scripts found — did the pyproject layout change?"
+
+    for script, target in targets.items():
+        module_name, _, func_name = target.partition(":")
+        try:
+            mod = importlib.import_module(module_name)
+        except ModuleNotFoundError as exc:
+            # An entry point may live behind an optional extra (untell-server needs fastapi from
+            # .[server]). A MISSING THIRD-PARTY dep is fine; a missing untell module is a typo.
+            missing = (exc.name or "").split(".")[0]
+            if missing in {"untell", "eval", "training"}:
+                raise AssertionError(f"{script} -> {target}: module does not exist") from exc
+            continue
+        assert callable(getattr(mod, func_name, None)), (
+            f"{script} -> {target}: module imports but has no callable {func_name!r}"
+        )
