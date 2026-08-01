@@ -73,17 +73,26 @@ nowhere near the 88–98% ASR the *trained* literature reports, and against the 
 **Reproduced via the shipped CLI** (`untell-ceiling --rewriter surgical --tier full`, ~90 s on CPU),
 the per-detector mean P(AI) before → after pins down *which* signal moves and which doesn't:
 
+> ⚠️ **SUPERSEDED — see [Result 4](#result-4--re-measured-with-a-live-fast_detectgpt-supersedes-the-per-detector-table-above).**
+> This table was measured with `best_of=1` AND with `fast_detectgpt` emitting a constant. Both of its
+> conclusions were later falsified: `hc3_roberta` reaches **0.038** with best-of-N selection, and
+> `fast_detectgpt` was not "flat" — it was broken, and moves 0.630 → 0.252 once calibrated.
+
 | detector | before → after | what it keys on |
 |---|---|---|
 | `perplexity_burstiness` | 0.319 → **0.197** | surface predictability — moves most |
 | `roberta_openai` | 0.523 → **0.361** | lexical/stylistic — moves |
-| `hc3_roberta` | 0.725 → **0.670** | content/genre — **barely budges** |
-| `fast_detectgpt` | 0.312 → 0.306 | curvature — flat on this corpus |
+| `hc3_roberta` | 0.725 → **0.670** | content/genre — ~~**barely budges**~~ *(falsified: 0.038)* |
+| `fast_detectgpt` | 0.312 → 0.306 | curvature — ~~flat~~ *(falsified: detector was dead)* |
 
-The content/genre detector (`hc3_roberta`) is the one a meaning-preserving rewrite cannot move — the
-measured face of *"the content is the tell."*
+~~The content/genre detector (`hc3_roberta`) is the one a meaning-preserving rewrite cannot move — the
+measured face of *"the content is the tell."*~~ **This conclusion did not survive re-measurement:**
+with best-of-N selection `hc3_roberta` drops to 0.038. See Results 3 and 4.
 
 ## Result 2 — surgical floor on a larger sample (n=10, full tier)
+
+> ⚠️ **SUPERSEDED — historical.** Measured with `best_of=1` (the then-default) and a broken
+> `fast_detectgpt`. Kept for the record; the current figures are in Results 3 and 4.
 
 The deterministic, reproducible, no-key path (`untell-ceiling --rewriter surgical --tier full`) on 10
 formulaic AI paragraphs:
