@@ -1,11 +1,12 @@
 """Dataset loading for the benchmark.
 
-Pulls AI-generated samples to untell. Uses HuggingFace ``datasets`` when the ``[eval]`` extra
-is installed; otherwise falls back to a small built-in bootstrap sample so the harness still
-runs (and tests pass) with zero downloads.
+Pulls AI-generated samples to untell — and, via :func:`load_pairs`, the matching *human* answers,
+which is what any statement about a detector actually discriminating requires. Uses HuggingFace
+``datasets`` when the ``[eval]`` extra is installed; otherwise falls back to a small built-in
+bootstrap sample so the harness still runs (and tests pass) with zero downloads.
 
 Supported names:
-  - ``hc3``   -> Hello-SimpleAI/HC3 ChatGPT answers
+  - ``hc3``   -> Hello-SimpleAI/HC3 (human answers AND ChatGPT answers to the same question)
   - ``raid``  -> liamdugan/raid machine-generated split
   - ``mage``  -> yaful/MAGE machine-generated (label 0) samples
   - ``builtin`` (default fallback) -> packaged sample paragraphs
@@ -13,6 +14,7 @@ Supported names:
 
 from __future__ import annotations
 
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,6 +67,55 @@ def _builtin(n: int) -> list[str]:
     return out[:n]
 
 
+def _hc3_rows() -> list[dict]:
+    """Read HC3 straight from its data file.
+
+    ``load_dataset("Hello-SimpleAI/HC3", "all")`` cannot work on any current install: the repo
+    ships a loading *script* (``HC3.py``) and ``datasets`` >= 3 refuses it outright with
+    "Dataset scripts are no longer supported". That exception was caught and logged at warning
+    level, so every caller asking for HC3 silently received the five packaged bootstrap
+    paragraphs instead — a benchmark quietly measuring nothing. The data file itself is plain
+    JSONL and needs no script.
+    """
+    from huggingface_hub import hf_hub_download
+
+    path = hf_hub_download("Hello-SimpleAI/HC3", "all.jsonl", repo_type="dataset")
+    rows = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def load_pairs(dataset: str = "hc3", n: int = 50, min_words: int = 60) -> list[tuple[str, str]]:
+    """Return ``(human_text, ai_text)`` pairs answering the same prompt.
+
+    Paired data is the only way to say whether a detector *discriminates* rather than merely
+    *responds*. Without it every check reduces to "the score changed", which a detector emitting
+    noise also passes. Returns ``[]`` when the data is unavailable — callers should say so rather
+    than substitute unlabelled text.
+    """
+    if dataset.lower() != "hc3":
+        logger.warning("paired human/AI data is only wired up for 'hc3'; got %r", dataset)
+        return []
+    try:
+        rows = _hc3_rows()
+    except Exception as exc:
+        logger.warning("could not load HC3 pairs: %s: %s", type(exc).__name__, exc)
+        return []
+    pairs: list[tuple[str, str]] = []
+    for row in rows:
+        humans = [a for a in (row.get("human_answers") or []) if a and len(a.split()) >= min_words]
+        bots = [a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) >= min_words]
+        if humans and bots:
+            pairs.append((humans[0].strip(), bots[0].strip()))
+        if len(pairs) >= n:
+            break
+    return pairs
+
+
 def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
     """Return up to ``n`` AI-generated text samples for the named dataset.
 
@@ -83,9 +134,9 @@ def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
 
     try:
         if name == "hc3":
-            ds = load_dataset("Hello-SimpleAI/HC3", "all", split="train")
+            # Read the JSONL directly — the hub repo's loading script is rejected by datasets >= 3.
             texts: list[str] = []
-            for row in ds:
+            for row in _hc3_rows():
                 answers = row.get("chatgpt_answers") or []
                 for a in answers:
                     if a and len(a.split()) > 30:
