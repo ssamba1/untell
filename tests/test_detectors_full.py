@@ -73,3 +73,42 @@ def test_embedding_quality_path_active():
     assert recommended_bar() == 0.76
     # Identical text ~1.0; a faithful paraphrase should still clear the semantic bar comfortably.
     assert similarity("The cat sat on the mat.", "The cat sat on the mat.") >= 0.99
+
+
+def test_fast_detectgpt_actually_discriminates():
+    """The inherited calibration (_CAL_MID=1.0) sat outside the observed curvature range and pinned
+    EVERY input to ~0.30 — a detector contributing no signal while looking like an immovable wall in
+    the ceiling measurements. Pin that it now responds to input and points the right way."""
+    import pytest
+
+    torch = pytest.importorskip("torch")  # noqa: F841
+    pytest.importorskip("transformers")
+
+    from untell.detectors.fast_detectgpt import FastDetectGPTDetector
+
+    det = FastDetectGPTDetector()
+    if not det.available():
+        pytest.skip("fast_detectgpt unavailable")
+
+    human = [
+        "I went to the store yesterday and forgot my wallet again. Third time this month.",
+        "The bus was late so I walked. Rain the whole way. My shoes are still wet by the radiator.",
+    ]
+    ai = [
+        "Furthermore, artificial intelligence has fundamentally transformed numerous industries.",
+        "Moreover, organizations increasingly leverage these technologies to optimize efficiency.",
+    ]
+    try:
+        h = [det.score(t) for t in human]
+        a = [det.score(t) for t in ai]
+    except Exception:
+        pytest.skip("fast_detectgpt failed to load")
+
+    assert all(s is not None for s in h + a)
+    # The ONLY property that is honestly assertable here: the detector must respond to its input
+    # rather than emitting a constant. It must NOT assert that AI scores above human — measured, the
+    # curvature distributions overlap so heavily at paragraph length with gpt-neo-125m that the
+    # direction flips on small samples (5+5 gave AI 0.577 vs human 0.387, but individual 2+2 subsets
+    # reverse it). That weakness is real and documented; the calibration fix only restored the
+    # detector's dynamic range, it did not make the statistic discriminative at this size.
+    assert max(h + a) - min(h + a) > 0.05

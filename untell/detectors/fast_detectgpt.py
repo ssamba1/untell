@@ -19,9 +19,18 @@ from .base import clamp01
 logger = logging.getLogger(__name__)
 
 _SCORING_MODEL = "EleutherAI/gpt-neo-125m"
-# Logistic calibration: curvature ~ N(0,1)-ish for human, shifted positive for AI.
-_CAL_MID = 1.0
-_CAL_SCALE = 1.2
+# Logistic calibration. The inherited constants (_CAL_MID = 1.0, _CAL_SCALE = 1.2) assumed a
+# curvature that is ~N(0,1) for human text and shifted positive for AI. MEASURED with this scoring
+# model on paragraph-length text, the discrepancy actually lands in roughly [-0.20, 0.38] — so a
+# midpoint of 1.0 sat far outside the entire observed range and squashed EVERY input to ~0.30,
+# regardless of content. The detector was emitting a near-constant and contributing no signal to the
+# ensemble (which is why it appeared to be an "immovable" 0.31 -> 0.28 wall in the ceiling
+# measurements: it never moved because it never responded to anything).
+#
+# Re-centred on the observed distribution: human mean ~ -0.10, AI mean ~ +0.04 (n=10, this model,
+# paragraph-length inputs), so the midpoint sits between them and the scale spans the range.
+_CAL_MID = -0.03
+_CAL_SCALE = 0.12
 
 
 class FastDetectGPTDetector:
