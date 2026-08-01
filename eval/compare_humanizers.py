@@ -98,18 +98,33 @@ def compare(texts: list[str], tier: str = "full", threshold: float = DEFAULT_THR
     rows: dict[str, dict] = {}
     for name, fn in _techniques(tier, threshold).items():
         ai_scores, tell_rates, tell_counts, sims = [], [], [], []
+        changed_any = False
         for t in texts:
             try:
                 out = fn(t)
             except Exception as exc:  # a missing optional dep (e.g. marian) -> skip that technique
                 rows[name] = {"error": f"{type(exc).__name__}: {str(exc)[:120]}"}
                 break
+            if out.strip() != t.strip():
+                changed_any = True
             ai_scores.append(_ai_max(out, tier))
             tl = score_tells(out)
             tell_rates.append(tl["tells_per_100w"])
             tell_counts.append(tl["tells"])
             sims.append(similarity(t, out) if name != "none (raw AI)" else 1.0)
         else:
+            if not changed_any and name != "none (raw AI)":
+                # The technique returned its input unchanged on EVERY sample. That is not a result,
+                # it is an unavailable technique: back_translate (and the other optional-dep paths)
+                # degrade to a silent no-op rather than raising when transformers/torch/sentencepiece
+                # are missing, so the `except` guard above never fires. Recording the numbers anyway
+                # publishes the raw-AI baseline — sim_mean 1.0, identical ai/tells — as if it were a
+                # real measurement of the technique, which is exactly what the docs then quote.
+                rows[name] = {
+                    "error": "technique made NO change to any sample — treated as unavailable "
+                    "(optional dependency missing?), not as a measurement"
+                }
+                continue
             n = len(texts)
             rows[name] = {
                 "ai_max_mean": round(sum(ai_scores) / n, 4),

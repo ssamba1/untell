@@ -74,3 +74,33 @@ def test_compare_records_error_for_failing_technique(monkeypatch):
     r = compare(["some text here"], tier="lite")
     assert "error" in r["techniques"]["boom"]
     assert "dep missing" in r["techniques"]["boom"]["error"]
+
+
+def test_silent_noop_technique_is_not_published_as_a_measurement(monkeypatch):
+    """back_translate degrades to a SILENT no-op (returns its input, no exception) when
+    transformers/torch/sentencepiece are missing, so the `except` guard never fires.
+
+    Recording the numbers anyway publishes the raw-AI baseline — sim_mean 1.0, ai and tells
+    identical to the untouched text — as if it were a real measurement of the technique. Those
+    numbers then get quoted in the docs as the technique's performance."""
+    import eval.compare_humanizers as c
+
+    monkeypatch.setattr(c, "_ai_max", lambda out, tier: 0.5)
+    monkeypatch.setattr(
+        c, "_techniques",
+        lambda tier, threshold: {
+            "none (raw AI)": lambda t: t,
+            "noop_technique": lambda t: t,          # the missing-dep case
+            "real_technique": lambda t: t.replace("AI", "stuff"),
+        },
+    )
+
+    r = c.compare(["AI text one here.", "AI text two here."], tier="lite")
+    rows = r.get("techniques", r)
+
+    assert "error" in rows["noop_technique"]
+    assert "NO change" in rows["noop_technique"]["error"]
+    # The baseline is legitimately unchanged and must still be measured.
+    assert "ai_max_mean" in rows["none (raw AI)"]
+    # A technique that genuinely rewrites still reports numbers.
+    assert "ai_max_mean" in rows["real_technique"]
