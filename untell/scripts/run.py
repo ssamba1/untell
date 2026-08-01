@@ -16,6 +16,7 @@ import argparse
 import json
 import logging
 import sys
+from collections import Counter
 
 # Run-as-file support (zero-dep lite tier): when this file is executed directly
 # rather than imported as part of the `untell` package, put the directory that
@@ -30,7 +31,7 @@ if __package__ in (None, ""):
             break
 
 from untell.rewriter import get_rewriter
-from untell.scripts.preserve import find_sentinels, lock, restore
+from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 
@@ -150,6 +151,17 @@ def untell_text(
                 v = dets.get(name)
                 if isinstance(v, (int, float)) and v >= t:
                     return False
+        # Never declare a pass on a vacuous score: if EVERY detector errored this round there is no
+        # real signal, and ``max`` is a placeholder (0.5 in browser mode, whatever the ensemble
+        # defaulted to locally). Treating that as "passed" would ship un-scored text as clean.
+        if s.get("all_checkers_failed"):
+            return False
+        dets = s.get("detectors", {})
+        has_signal = any(
+            isinstance(v, (int, float)) for k, v in dets.items() if not str(k).endswith("__error")
+        )
+        if not has_signal:
+            return False
         # Comfortable pass: below threshold by the safety margin (headroom vs detector noise).
         return s["max"] < threshold - margin
 
@@ -192,8 +204,11 @@ def untell_text(
                 break  # a later draw failed; use the candidates we already have
             drew += 1
             rewrites += 1
-            if find_sentinels(candidate) != set(mapping):
-                continue  # dropped/altered a locked span — reject outright
+            # Multiset compare against the masked source's own sentinels — NOT Counter(mapping), whose
+            # dict values ("Smith (2020)", "47") would be read as counts. A valid rewrite reproduces
+            # every sentinel exactly as often as it appears in `masked`: no drop, no alter, no dup.
+            if Counter(_SENTINEL_RE.findall(candidate)) != Counter(_SENTINEL_RE.findall(masked)):
+                continue  # dropped/altered/DUPLICATED a locked span — reject outright
             cscore = score(candidate)
             if similarity(masked, candidate) >= sim_bar and (
                 cand_best_score is None or cscore["max"] < cand_best_score["max"]
@@ -227,6 +242,7 @@ def untell_text(
                 break
 
     # Optional cheap CPU polish: surgical word-importance substitution to shave a bit more signal.
+    polished_applied = False
     if polish:
         try:
             from untell.attacks import surgical_substitute
@@ -243,6 +259,7 @@ def untell_text(
                 and similarity(text, polished) >= sim_bar
             ):
                 final, best_score = polished, polished_score
+                polished_applied = True
         except Exception:
             pass
 
@@ -252,7 +269,10 @@ def untell_text(
         "rewrites": rewrites,
         "pre": pre,
         "post": best_score,
-        "similarity": similarity(masked, best_masked),
+        # Report meaning-preservation vs the true final output. Pre-polish, ``best_masked`` restores to
+        # ``final`` so the locked-text similarity is exact; polish rewrites the restored text (sentinels
+        # already gone), so compare the scrubbed original against the actual final instead of stale.
+        "similarity": similarity(text, final) if polished_applied else similarity(masked, best_masked),
         "tier": best_score.get("tier", tier),
         "sim_bar": sim_bar,
         "quality_metric": method(),

@@ -14,6 +14,7 @@ degrades to a safe no-op when unavailable, exactly like the other optional rewri
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 from untell.attacks.back_translation import BackTranslator
 
@@ -59,6 +60,6 @@ class MTPivotRewriter:
         # Verify every sentinel survived; otherwise fall back to the original (the loop's own
         # sentinel check would reject a lossy candidate anyway, but returning the input keeps the
         # loop moving instead of wasting the draw).
-        if set(_SENTINEL_RE.findall(translated)) != set(sentinels):
-            return text
+        if Counter(_SENTINEL_RE.findall(translated)) != Counter(sentinels):
+            return text  # a sentinel was dropped OR duplicated by MT -> safe no-op
         return translated

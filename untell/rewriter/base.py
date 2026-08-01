@@ -129,6 +129,11 @@ def get_rewriter(prefer: str | None = None) -> Rewriter | None:
 
         rw = MTPivotRewriter()
         return rw if rw.available() else None
+    if prefer == "t5_paraphrase":
+        from .t5_paraphrase import T5ParaphraseRewriter
+
+        rw = T5ParaphraseRewriter()
+        return rw if rw.available() else None
 
     # Hosted / local-policy rewriters.
     local = LocalPolicyRewriter()

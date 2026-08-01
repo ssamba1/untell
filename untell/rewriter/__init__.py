@@ -23,6 +23,7 @@ from .mt_pivot import MTPivotRewriter
 from .prompts import build_rewrite_prompt
 from .structural import StructuralRewriter
 from .surgical import SurgicalRewriter
+from .t5_paraphrase import T5ParaphraseRewriter
 
 __all__ = [
     "Rewriter",
@@ -32,4 +33,5 @@ __all__ = [
     "SurgicalRewriter",
     "CompositeRewriter",
     "MTPivotRewriter",
+    "T5ParaphraseRewriter",
 ]

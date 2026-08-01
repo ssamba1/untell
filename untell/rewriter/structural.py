@@ -63,11 +63,15 @@ _NEGATED_CONTRAST_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-# Inflated copula: "serves as", "marks", "represents", "boasts" used for plain "is"/"has".
+# Inflated copula: verbs an AI reaches for where plain "is" would do. "marks" is dropped — it is
+# usually a genuine transitive verb ("marks the score"/"marks the spot"), not a copula, so flattening
+# it to "is" corrupts meaning. "boasts" flattens to "has", not "is" ("the city boasts a museum" ->
+# "the city has a museum", never "is a museum") and is handled separately below.
 _INFLATED_COPULA_RE = re.compile(
-    r"\b(serves as|marks|represents|boasts|epitomizes|exemplifies)\b",
+    r"\b(serves as|represents|epitomizes|exemplifies)\b",
     re.IGNORECASE,
 )
+_BOASTS_RE = re.compile(r"\bboasts\b", re.IGNORECASE)
 
 # Vague attribution: "studies show", "research suggests".
 _VAGUE_ATTR_RE = re.compile(
@@ -226,10 +230,10 @@ def _flatten_participial_trailers(text: str) -> str:
     def _replace(m: re.Match) -> str:
         verb_ing = m.group(1).lower()  # e.g. "underscoring"
         present = _PARTICIPIAL_VERBS.get(verb_ing, verb_ing.rstrip("ing") + "s")
-        rest = m.group(0)
-        # Extract the object after the verb: ", underscoring its importance." → " its importance."
-        after = rest[len(f", {verb_ing}"):]  # " its importance." — note the leading space
-        after = after.strip(".")              # " its importance" — keep leading space
+        # Everything after the participial verb, sliced by the match's own group offsets so any amount
+        # of whitespace (", underscoring", ",  underscoring", ",\nunderscoring") is handled correctly.
+        after = m.group(0)[m.end(1) - m.start(0):]  # " its importance." — keeps the leading space
+        after = after.rstrip(".!?")                 # drop the trailing terminator, keep leading space
         return f". This {present}{after}."
 
     return _PARTICIPIAL_RE.sub(_replace, text)
@@ -293,7 +297,8 @@ def _strip_filler_openers(text: str) -> str:
 
 
 def _flatten_copula(text: str) -> str:
-    """Replace 'serves as', 'boasts', etc. with plain 'is'."""
+    """Flatten inflated copulas: 'serves as'/'represents'/... → 'is', and 'boasts' → 'has'."""
+    text = _BOASTS_RE.sub("has", text)
     text = _INFLATED_COPULA_RE.sub("is", text)
     return text
 
