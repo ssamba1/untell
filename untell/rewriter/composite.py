@@ -29,23 +29,31 @@ class CompositeRewriter(Rewriter):
     name = "composite"
 
     def __init__(
-        self, intensity: float = 0.7, max_subs: int = 12, best_of: int = 3, use_t5: bool = False
+        self,
+        intensity: float = 0.7,
+        max_subs: int = 12,
+        best_of: int = 3,
+        use_t5: bool = False,
+        t5_best_of: int = 4,
     ):
         self._structural = StructuralRewriter(intensity=intensity)
         self._surgical = SurgicalRewriter(max_subs=max_subs)
         self.best_of = best_of
-        # Optional neural front-stage (``prefer="neural"``). A T5 paraphrase moves detectors far more
-        # than any rule-based transform (DIPPER-class paraphrasing drove DetectGPT 70%->4.6%), but is
-        # heavy (CPU, per-sentence generation) and non-deterministic — so it is OFF by default and the
-        # plain composite stays the always-available, deterministic $0 path. It is sentinel-safe: the
-        # paraphraser restores every locked span or falls back per sentence, and the outer loop's
-        # multiset check is the final net.
+        self.t5_best_of = t5_best_of
+        # Optional neural front-stage (``prefer="neural"``). A neural paraphrase moves detectors far
+        # more than any rule-based transform (DIPPER-class paraphrasing drove DetectGPT 70%->4.6%),
+        # but T5-base is heavy (CPU, per-sentence generation) and HIGH-VARIANCE — one draw can crush a
+        # detector (0.97->0.07) while another backfires (0.02->0.99). So it is OFF by default (the
+        # plain composite stays the always-available, deterministic $0 path), and when ON it is used
+        # as a best-of-N SAMPLER: draw ``t5_best_of`` diverse paraphrases and keep the lowest-scoring
+        # one that also beats the original — turning the variance into an advantage. Sentinel-safe:
+        # the paraphraser restores every locked span or falls back per sentence.
         self._t5 = None
         if use_t5:
             try:
                 from .t5_paraphrase import T5ParaphraseRewriter
 
-                t5 = T5ParaphraseRewriter()
+                t5 = T5ParaphraseRewriter(sample=True)  # diverse draws for best-of-N selection
                 self._t5 = t5 if t5.available() else None
             except Exception:
                 self._t5 = None
@@ -58,17 +66,39 @@ class CompositeRewriter(Rewriter):
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         from untell.scripts.score import score_text
 
-        # Neural front-stage (opt-in): one expensive paraphrase pass, then the cheap rule-based
-        # best-of polishes it. Run once (not per best_of attempt) since T5 dominates the cost.
+        tier = score_result.get("tier", "lite")
+        _scoreable = tier in ("lite", "full", "heavy", "commercial")
+
+        # Neural front-stage (opt-in): BEST-OF-N sampling. T5-base paraphrase quality is high-variance
+        # — measured, one draw crushes a detector (roberta 0.973->0.066) while another backfires
+        # (0.017->0.999) because its own paraphrase style can read MORE AI. So draw several diverse
+        # sampled paraphrases and keep the LOWEST-scoring one that also beats the original; if none
+        # beats it, keep the original and let the rule-based chain work on it. On a non-scoreable tier
+        # we can't select here, so take a single draw and rely on the OUTER loop's best-of (run.py only
+        # adopts a candidate that beats the running best) as the safety net.
         if self._t5 is not None:
             try:
-                text = self._t5.rewrite(text, score_result, threshold)
+                if not _scoreable:
+                    para = self._t5.rewrite(text, score_result, threshold)
+                    if para.strip() and para != text:
+                        text = para
+                else:
+                    base = float(score_text(text, tier=tier)["max"])
+                    best_para, best_para_score = None, base
+                    for _ in range(max(1, self.t5_best_of)):
+                        para = self._t5.rewrite(text, score_result, threshold)
+                        if not para.strip() or para == text:
+                            continue
+                        ps = float(score_text(para, tier=tier)["max"])
+                        if ps < best_para_score:
+                            best_para, best_para_score = para, ps
+                    if best_para is not None:
+                        text = best_para  # a sampled paraphrase beat the original signal
             except Exception:
                 pass  # any neural failure -> fall through to the rule-based chain unchanged
 
         # Score the (possibly paraphrased) text to establish baseline.
-        tier = score_result.get("tier", "lite")
-        if tier not in ("lite", "full", "heavy", "commercial"):
+        if not _scoreable:
             # Non-scoreable tier (e.g. "browser:zerogpt"): score_text can't reproduce the real
             # signal the outer loop uses, and silently falling back to "lite" would make this
             # internal best-of optimize the WRONG objective — picking the lite-best candidate to

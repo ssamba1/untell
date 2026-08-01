@@ -128,6 +128,12 @@ def get_rewriter(prefer: str | None = None) -> Rewriter | None:
         # Neural composite: T5 paraphrase front-stage + structural + surgical. Falls back to the
         # plain rule-based composite when T5's deps (.[full]) are absent, so it is never None.
         return CompositeRewriter(use_t5=True)
+    if prefer in ("ensemble", "max"):
+        # Best-of-all-free-methods selector: runs composite + mt_pivot + neural (whichever are
+        # available) and keeps the per-input detector-lowest. Strongest free path; never None.
+        from .ensemble import EnsembleRewriter
+
+        return EnsembleRewriter()
     if prefer == "mt_pivot":
         from .mt_pivot import MTPivotRewriter
 

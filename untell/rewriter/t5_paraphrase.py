@@ -34,9 +34,24 @@ class T5ParaphraseRewriter:
     _tok = None
     _model = None
 
-    def __init__(self, num_beams: int = 4, max_length: int = 128):
+    def __init__(
+        self,
+        num_beams: int = 4,
+        max_length: int = 128,
+        sample: bool = False,
+        top_p: float = 0.95,
+        temperature: float = 1.2,
+    ):
+        # ``sample=True`` switches from a single deterministic beam output to nucleus sampling, so
+        # repeated calls yield DIVERSE paraphrases. T5-base paraphrase quality is high-variance
+        # (measured: it can drive a detector 0.97->0.07 on one draw and 0.02->0.99 on another), so
+        # the winning strategy is best-of-N: sample several and let the caller keep the lowest-scoring
+        # one. The neural composite drives that selection.
         self.num_beams = num_beams
         self.max_length = max_length
+        self.sample = sample
+        self.top_p = top_p
+        self.temperature = temperature
 
     def available(self) -> bool:
         try:
@@ -64,15 +79,18 @@ class T5ParaphraseRewriter:
             truncation=True,
             max_length=self.max_length,
         )
+        gen_kwargs = dict(
+            max_length=self.max_length,
+            num_return_sequences=1,
+            repetition_penalty=1.2,
+            no_repeat_ngram_size=3,
+        )
+        if self.sample:
+            gen_kwargs.update(do_sample=True, top_p=self.top_p, temperature=self.temperature)
+        else:
+            gen_kwargs.update(num_beams=self.num_beams)
         with torch.no_grad():
-            out = model.generate(
-                **enc,
-                num_beams=self.num_beams,
-                num_return_sequences=1,
-                max_length=self.max_length,
-                repetition_penalty=1.2,
-                no_repeat_ngram_size=3,
-            )
+            out = model.generate(**enc, **gen_kwargs)
         return tok.decode(out[0], skip_special_tokens=True).strip()
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:

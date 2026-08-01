@@ -348,12 +348,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--rewriter",
         choices=[
-            "auto", "surgical", "structural", "composite", "neural",
+            "auto", "surgical", "structural", "composite", "neural", "ensemble", "max",
             "t5_paraphrase", "mt_pivot", "base",
         ],
         default="composite",
         help="'composite' = structural + surgical chained ($0, best free path, DEFAULT); "
-        "'neural' = T5 paraphrase + structural + surgical (needs .[full]; strongest free path, "
+        "'ensemble'/'max' = run composite + mt_pivot + neural and keep the per-input detector-lowest "
+        "(strongest free path; >= any single method; needs .[full] for the neural/mt members); "
+        "'neural' = T5 paraphrase + structural + surgical (needs .[full]; "
         "moves detectors far more than rule-based alone; falls back to composite without the deps); "
         "'structural' = sentence-level transforms ($0); "
         "'surgical' = word-substitution rewriter ($0); "
@@ -394,7 +396,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     rewriter = None
-    if args.rewriter in ("surgical", "structural", "composite", "neural", "t5_paraphrase", "mt_pivot"):
+    if args.rewriter in (
+        "surgical", "structural", "composite", "neural", "ensemble", "max", "t5_paraphrase", "mt_pivot"
+    ):
         from untell.rewriter import get_rewriter
 
         rewriter = get_rewriter(prefer=args.rewriter)

@@ -14,7 +14,7 @@ import logging
 # Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
 # routes to a hosted/local-policy backend via prefer=None.
 _FREE_REWRITERS = frozenset(
-    {"surgical", "structural", "composite", "neural", "t5_paraphrase", "mt_pivot"}
+    {"surgical", "structural", "composite", "neural", "ensemble", "max", "t5_paraphrase", "mt_pivot"}
 )
 
 

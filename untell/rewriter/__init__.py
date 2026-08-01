@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from .base import Rewriter, get_rewriter
 from .composite import CompositeRewriter
+from .ensemble import EnsembleRewriter
 from .mt_pivot import MTPivotRewriter
 from .prompts import build_rewrite_prompt
 from .structural import StructuralRewriter
@@ -34,4 +35,5 @@ __all__ = [
     "CompositeRewriter",
     "MTPivotRewriter",
     "T5ParaphraseRewriter",
+    "EnsembleRewriter",
 ]

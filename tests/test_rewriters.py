@@ -152,7 +152,7 @@ class TestNeuralComposite:
         assert rw is not None
         assert rw.available() is True
 
-    def test_t5_stage_invoked_once_and_sentinels_survive(self, monkeypatch):
+    def test_t5_best_of_n_sampling_and_sentinels_survive(self, monkeypatch):
         import pytest
 
         from untell.scripts.preserve import find_sentinels
@@ -164,13 +164,101 @@ class TestNeuralComposite:
 
         def _fake(text, score_result, threshold=0.30):
             calls["n"] += 1
-            return text  # sentinel-safe identity; we only assert the stage ran + spans survive
+            return text  # sentinel-safe identity; asserts best-of-N draws + spans survive
 
         monkeypatch.setattr(rw._t5, "rewrite", _fake)
         masked = "Moreover, AI fundamentally reshaped ⟦HZ0000⟧ across ⟦HZ0001⟧ sectors overall."
         out = rw.rewrite(masked, {"tier": "lite"})
-        assert calls["n"] == 1  # neural stage ran exactly once (not per best_of attempt)
+        assert calls["n"] == rw.t5_best_of  # neural stage draws t5_best_of diverse samples
         assert find_sentinels(out) == {"⟦HZ0000⟧", "⟦HZ0001⟧"}  # locked spans intact through the chain
+
+    def test_neural_keeps_best_scoring_t5_draw(self, monkeypatch):
+        import pytest
+
+        rw = CompositeRewriter(use_t5=True)
+        if rw._t5 is None:
+            pytest.skip("T5 deps unavailable in this environment")
+        # Isolate the neural selection: rule stages pass through unchanged.
+        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: t)
+        monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
+        # Three diverse draws; the loop must keep the one the detector scores lowest.
+        draws = iter(["AI draw one here.", "AI draw two here.", "AI draw three here."])
+        monkeypatch.setattr(rw._t5, "rewrite", lambda t, s, threshold=0.30: next(draws))
+        rw.t5_best_of = 3
+
+        import untell.scripts.score as score_mod
+
+        # draw two is the detector-lowest; original + the other draws score higher.
+        table = {"AI draw two here.": 0.10}
+
+        def _fake_score(text, tier="lite", threshold=0.30):
+            return {"max": table.get(text, 0.90), "detectors": {"d": table.get(text, 0.90)}, "tier": tier}
+
+        monkeypatch.setattr(score_mod, "score_text", _fake_score)
+        out = rw.rewrite("Original AI sentence about industries.", {"tier": "lite"})
+        assert out == "AI draw two here."  # kept the lowest-scoring sampled paraphrase
+
+
+class TestEnsembleRewriter:
+    def test_available_and_includes_composite(self):
+        from untell.rewriter.ensemble import EnsembleRewriter
+
+        rw = EnsembleRewriter()
+        assert rw.available() is True
+        assert "composite" in rw.member_names  # composite is always a member
+
+    def test_get_rewriter_prefer_ensemble_and_max(self):
+        a = get_rewriter(prefer="ensemble")
+        b = get_rewriter(prefer="max")
+        assert a is not None and a.name == "ensemble"
+        assert b is not None and b.name == "ensemble"
+
+    def test_selects_lowest_scoring_member(self, monkeypatch):
+        from untell.rewriter.ensemble import EnsembleRewriter
+
+        rw = EnsembleRewriter()
+
+        # Force a known two-member field with deterministic outputs.
+        class _M:
+            def __init__(self, out):
+                self._out = out
+
+            def rewrite(self, text, score_result, threshold=0.30):
+                return self._out
+
+        rw._members = [("a", _M("candidate A wins")), ("b", _M("candidate B loses"))]
+
+        import untell.scripts.score as score_mod
+
+        table = {"candidate A wins": 0.12, "candidate B loses": 0.80}
+
+        def _fake_score(text, tier="lite", threshold=0.30):
+            return {"max": table.get(text, 0.99), "detectors": {"d": table.get(text, 0.99)}, "tier": tier}
+
+        monkeypatch.setattr(score_mod, "score_text", _fake_score)
+        out = rw.rewrite("original text scores 0.99", {"tier": "lite"})
+        assert out == "candidate A wins"  # lowest-scoring member output selected
+
+    def test_keeps_original_when_no_member_improves(self, monkeypatch):
+        from untell.rewriter.ensemble import EnsembleRewriter
+
+        rw = EnsembleRewriter()
+
+        class _M:
+            def rewrite(self, text, score_result, threshold=0.30):
+                return "worse candidate"
+
+        rw._members = [("a", _M())]
+
+        import untell.scripts.score as score_mod
+
+        def _fake_score(text, tier="lite", threshold=0.30):
+            m = 0.20 if text == "original best" else 0.90
+            return {"max": m, "detectors": {"d": m}, "tier": tier}
+
+        monkeypatch.setattr(score_mod, "score_text", _fake_score)
+        out = rw.rewrite("original best", {"tier": "lite"})
+        assert out == "original best"  # no member beat the original -> keep it
 
 
 class TestMTPivotRewriter:
