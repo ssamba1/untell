@@ -61,10 +61,10 @@ _SAFE_TO_LOWERCASE = {
     "evidence", "analysis", "performance", "efficiency", "productivity", "growth", "costs",
     "benefits", "risks", "challenges", "problems", "solutions", "changes", "effects",
     "impact", "adoption", "training", "testing", "development", "production", "demand",
-    "supply", "prices", "revenue", "profits", "sales", "markets", "users", "clients",
+    "supply", "prices", "revenue", "profits", "sales", "markets", "clients",
     "documents", "files", "records", "reports", "papers", "articles", "books", "sources",
     "methods", "approaches", "techniques", "strategies", "policies", "practices", "processes",
-    "exercise", "nutrition", "health", "treatment", "symptoms", "patients", "trials",
+    "exercise", "nutrition", "health", "treatment", "symptoms", "trials",
     "climate", "energy", "emissions", "pollution", "temperatures", "weather", "sea",
     "education", "schools", "teachers", "learning", "knowledge", "skills", "experience",
     # common adjectives and adverbs in the same position
