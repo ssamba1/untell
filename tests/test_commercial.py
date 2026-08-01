@@ -96,3 +96,40 @@ def test_empty_text_is_neutral(monkeypatch):
     monkeypatch.setenv("SAPLING_API_KEY", "k")
     monkeypatch.setattr(C, "_post_json", lambda *a, **k: {"score": 0.9})
     assert C.SaplingDetector().score("   ") is None
+
+
+def test_gptzero_returns_none_when_no_score_field_present(monkeypatch):
+    """A fabricated 0.5 is worse than no score: it enters the ensemble, drives max(), and suppresses
+    the all-failed guard. Same rule already applied to mage/hc3/perplexity."""
+    import untell.detectors.commercial as c
+
+    monkeypatch.setenv("GPTZERO_API_KEY", "k")
+    # Neither class_probabilities.ai nor completely_generated_prob is present.
+    monkeypatch.setattr(c, "_post_json",
+                        lambda *a, **k: {"documents": [{"class_probabilities": {"human": 0.9}}]})
+    assert c.GPTZeroDetector().score("some text") is None
+
+
+def test_gptzero_still_reads_the_fallback_field(monkeypatch):
+    import untell.detectors.commercial as c
+
+    monkeypatch.setenv("GPTZERO_API_KEY", "k")
+    monkeypatch.setattr(c, "_post_json",
+                        lambda *a, **k: {"documents": [{"completely_generated_prob": 0.8}]})
+    assert c.GPTZeroDetector().score("some text") == 0.8
+
+
+def test_zerogpt_returns_none_when_field_absent(monkeypatch):
+    import untell.detectors.commercial as c
+
+    monkeypatch.setenv("ZEROGPT_API_KEY", "k")
+    monkeypatch.setattr(c, "_post_json", lambda *a, **k: {"data": {"other": 1}})
+    assert c.ZeroGPTDetector().score("some text") is None
+
+
+def test_zerogpt_reads_a_real_percentage(monkeypatch):
+    import untell.detectors.commercial as c
+
+    monkeypatch.setenv("ZEROGPT_API_KEY", "k")
+    monkeypatch.setattr(c, "_post_json", lambda *a, **k: {"data": {"is_gpt_generated": 85}})
+    assert c.ZeroGPTDetector().score("some text") == 0.85

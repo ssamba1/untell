@@ -113,7 +113,13 @@ class GPTZeroDetector:
             doc = docs[0]
             ai = doc.get("class_probabilities", {}).get("ai")
             if ai is None:
-                ai = doc.get("completely_generated_prob", 0.5)
+                # NO 0.5 DEFAULT. If neither score field is present the API told us nothing, and a
+                # fabricated mid-score is worse than no score: it enters the ensemble, drives max(),
+                # and suppresses the all-failed guard the rest of the code relies on. Return None so
+                # this detector is EXCLUDED — the same rule already applied to mage/hc3/perplexity.
+                ai = doc.get("completely_generated_prob")
+            if ai is None:
+                return None
             return clamp01(float(ai))
         except (KeyError, TypeError, ValueError, IndexError):
             return None
@@ -159,7 +165,12 @@ class ZeroGPTDetector:
             # ZeroGPT response has nested structure
             score_data = data.get("data", {})
             if isinstance(score_data, dict):
-                return clamp01(float(score_data.get("is_gpt_generated", 50)) / 100.0)
+                # No 50 default: an absent field means the API returned no verdict, and 50 would
+                # become a fabricated 0.5 in the ensemble (see GPTZeroDetector above).
+                raw = score_data.get("is_gpt_generated")
+                if raw is None:
+                    return None
+                return clamp01(float(raw) / 100.0)
             return None
         except (TypeError, ValueError):
             return None
