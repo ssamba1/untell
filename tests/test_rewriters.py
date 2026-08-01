@@ -50,7 +50,15 @@ class TestStructuralRewriter:
         assert "does not" not in out and "doesn't" in out
 
     def test_burstiness_targeting_raises_cv(self):
+        import random
+
         from untell.rewriter.structural import _cv, _target_burstiness
+
+        # Seed the global RNG: _target_burstiness calls _split_one, which uses random, so without
+        # this the outcome depends on whatever random state the PREVIOUS test happened to leave.
+        # The test passed alone and inside its own file, and failed in other orderings — a flake,
+        # not a real regression.
+        random.seed(1234)
 
         # Uniform ~9-word sentences (low burstiness, an AI tell).
         sents = [
