@@ -154,3 +154,10 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Tests that load a real model (detector ensemble, sentence-transformers, NLI, T5) are marked
+# `slow`. They stay in the default run so CI and `pytest` still cover everything — the marker exists
+# so local iteration can use `pytest -m "not slow"` and get an answer in seconds instead of minutes.
+# A suite people avoid running is worse than a slower one they actually run.
+markers = [
+    "slow: loads a real ML model; skip locally with -m 'not slow'",
+]

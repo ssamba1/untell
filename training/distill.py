@@ -22,6 +22,7 @@ _PROMPT = "Rewrite the following text so it reads as natural human writing while
 def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshold: float = 0.30, margin: float = 0.05):
     """Run the loop on ``n`` samples; yield SFT rows for the ones that passed (kept the meaning)."""
     from eval.datasets import load_samples
+    from untell.scripts.quality import recommended_bar
     from untell.scripts.run import untell_text
 
     rows = []
@@ -30,7 +31,14 @@ def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshol
         result = untell_text(src, tier=tier, threshold=threshold, margin=margin)
         if "error" in result:
             continue
-        if not result.get("flagged") and result.get("similarity", 0.0) >= 0.76:
+        # Use the bar that matches the metric similarity() actually used. It is backend-adaptive
+        # (BERTScore 0.88 / cosine 0.76 / token-overlap 0.50) and a fixed 0.76 is only meaningful for
+        # the middle one — the same defect just fixed in training/reward.py. Here it is arguably
+        # worse: this filter decides which examples enter the DISTILLATION SET, so on a box without
+        # sentence-transformers it silently rejects nearly every good rewrite and "successfully"
+        # trains on an almost-empty dataset.
+        sim_bar = recommended_bar()
+        if not result.get("flagged") and result.get("similarity", 0.0) >= sim_bar:
             rows.append({"prompt": _PROMPT.format(text=src), "source": src, "humanized": result["final"]})
             kept += 1
     return {"kept": kept, "total": n, "rows": rows}

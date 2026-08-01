@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import pytest
 
+# Every test here loads a real model; see the `slow` marker note in pyproject.toml.
+pytestmark = pytest.mark.slow
+
 try:
     # NOTE: a broken torch install raises OSError (Windows DLL load), not ImportError, so
     # importorskip is insufficient — catch everything and skip the whole module.

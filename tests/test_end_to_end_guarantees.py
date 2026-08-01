@@ -20,6 +20,9 @@ from __future__ import annotations
 
 import pytest
 
+# Every test here loads a real model; see the `slow` marker note in pyproject.toml.
+pytestmark = pytest.mark.slow
+
 FACT_TEXTS = [
     (
         "Moreover, the study by Smith (2020) demonstrates that error rates fell 42% overall. "
