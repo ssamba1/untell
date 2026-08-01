@@ -133,3 +133,29 @@ def test_chunking_never_returns_empty():
     """A degenerate input must still yield something translatable rather than an empty list."""
     bt = BackTranslator()
     assert bt._chunk("no terminator here", _FakeTok()) == ["no terminator here"]
+
+
+# count_hidden has now lost THREE carrier classes one at a time (invisible math operators, orphan
+# ZWJ, C0/C1 controls), each shipping a report that said "0 hidden characters" while scrub_hidden
+# silently changed the text. Fixing carriers one by one does not prevent a fourth. This pins the
+# INVARIANT instead: for carriers that are removed (as opposed to homoglyphs, which are replaced
+# in place), the count must equal the number of characters scrubbing actually removes.
+SYNC_CASES = [
+    "a\u0001b",              # C0 control
+    "a\u001fb\u200cc",       # C1 control + zero-width non-joiner
+    "a\u200bb",              # zero-width space
+    "a\u2062b",              # invisible times
+    "hel\u200dlo",           # orphan ZWJ
+    "a\u0007\u200b\u2061b",  # bell + ZWSP + function application
+    "plain text",            # nothing to remove
+    "",                      # degenerate
+]
+
+
+@pytest.mark.parametrize("text", SYNC_CASES)
+def test_count_hidden_matches_what_scrub_hidden_removes(text):
+    removed = len(text) - len(scrub_hidden(text))
+    assert count_hidden(text) == removed, (
+        f"count_hidden reported {count_hidden(text)} but scrubbing removed {removed} chars from "
+        f"{text!r} — a caller would be told the text is clean while it is silently modified"
+    )

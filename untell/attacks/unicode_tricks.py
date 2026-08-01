@@ -140,4 +140,8 @@ def count_hidden(text: str) -> int:
     invisible = len(_WATERMARK_CHARS.findall(text))
     homoglyphs = sum(1 for ch in text if ch in _UNHOMOGLYPH)
     orphan_zwj = len(text) - len(_strip_orphan_zwj(text))
-    return invisible + homoglyphs + orphan_zwj
+    # C0/C1 controls are stripped by scrub_hidden too (everything in category Cc except tab, newline
+    # and carriage return), so they must be counted here or the same under-report recurs — this is
+    # the third carrier class to go missing from this function.
+    controls = sum(1 for ch in text if ch not in "\t\n\r" and unicodedata.category(ch) == "Cc")
+    return invisible + homoglyphs + orphan_zwj + controls
