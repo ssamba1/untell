@@ -174,3 +174,96 @@ def test_sign_and_operator_cannot_be_stripped_from_a_locked_number():
     masked, _ = lock("It fell by -15 points and was significant at p<0.05 level.")
     assert "-15" not in masked  # the sign is inside the sentinel
     assert "<" not in masked  # so is the operator
+
+# --- Fact-type coverage table -------------------------------------------------------------
+# The property that matters is NOT `restore(*lock(t)) == t` (that holds whether or not a span is
+# locked, because unlocked text passes through unchanged). It is: the WHOLE fact lands inside ONE
+# sentinel. A partial lock is the worst outcome — a sentinel appears, so the span looks protected,
+# while the rest stays freely rewritable. Measured before this table existed: 25 of 57 fact types
+# locked fully, 16 partially and 16 not at all ("5 mg" locked nothing; "16 GB" locked "16" and left
+# the unit loose; "March 15, 2024" locked "15" and "2024" and left the month rewritable).
+FACT_CASES = [
+    ("dose mg", "Patients received 5 mg daily.", "5 mg"),
+    ("volume ml", "Add 250 ml of water.", "250 ml"),
+    ("mass g", "The sample weighed 3 g.", "3 g"),
+    ("storage GB", "The model needs 16 GB of RAM.", "16 GB"),
+    ("latency ms", "Response took 250 ms.", "250 ms"),
+    ("duration weeks", "The trial ran for 6 weeks.", "6 weeks"),
+    ("duration months", "The trial ran for 6 months.", "6 months"),
+    ("duration seconds", "It finished in 30 seconds.", "30 seconds"),
+    ("distance miles", "They walked 12 miles.", "12 miles"),
+    ("distance ft", "The wall is 8 ft high.", "8 ft"),
+    ("speed mph", "It travels at 60 mph.", "60 mph"),
+    ("temp K", "Cooled to 4 K.", "4 K"),
+    ("temp C", "Heat to 37°C exactly.", "37°C"),
+    ("single-digit years", "It took 3 years.", "3 years"),
+    ("single-digit pct", "Growth was 5%.", "5%"),
+    ("percent word", "Growth was 5 percent.", "5 percent"),
+    ("US date", "Signed on March 15, 2024.", "March 15, 2024"),
+    ("UK date", "Signed on 15 March 2024.", "15 March 2024"),
+    ("month year", "Published in June 2023.", "June 2023"),
+    ("quarter", "Revenue rose in Q3 2024.", "Q3 2024"),
+    ("weekday", "The vote is on Tuesday.", "Tuesday"),
+    ("ratio words", "1 in 5 patients responded.", "1 in 5"),
+    ("scale", "Rated 4 out of 5 stars.", "4 out of 5"),
+    ("iso date", "Signed 2024-03-15.", "2024-03-15"),
+    ("negative", "The delta was -15 points.", "-15"),
+    ("p value", "The result was significant (p<0.05).", "p<0.05"),
+    ("n value", "The cohort had n >= 30 subjects.", "n >= 30"),
+    ("range", "Ages 10-20 were included.", "10-20"),
+    ("version", "Upgrade to v2.1.3 first.", "v2.1.3"),
+    ("time", "The meeting starts at 9:30.", "9:30"),
+    ("currency", "It cost $1,200 total.", "$1,200"),
+    ("sci notation", "About 1.5e10 particles.", "1.5e10"),
+    ("fraction", "Roughly 2/3 agreed.", "2/3"),
+    ("plus minus", "The value was 12 +/- 3 units.", "12 +/- 3"),
+    ("approx", "About ~500 users joined.", "~500"),
+    ("citation brackets", "As shown [12], the effect holds.", "[12]"),
+    ("citation apa", "As shown (Smith, 2020), it holds.", "(Smith, 2020)"),
+    ("citation narrative", "Smith (2020) showed the effect.", "Smith (2020)"),
+    ("url", "See https://example.com/a?b=1 for data.", "https://example.com/a?b=1"),
+    ("doi", "See doi:10.1000/xyz123 for data.", "doi:10.1000/xyz123"),
+    ("email", "Write to a.b@example.com today.", "a.b@example.com"),
+    ("chem formula", "Dissolve the H2O2 sample.", "H2O2"),
+    ("gene", "The BRCA1 mutation was present.", "BRCA1"),
+    ("hex colour", "The color is #FF00AA here.", "#FF00AA"),
+    ("section ref", "See Section 3.2 for detail.", "Section 3.2"),
+    ("figure ref", "See Figure 4 for detail.", "Figure 4"),
+    ("law ref", "Under 42 U.S.C. 1983 it applies.", "42 U.S.C. 1983"),
+    ("file path", "Edit src/main.py now.", "src/main.py"),
+    ("code call", "Call parse_json() on it.", "parse_json()"),
+    ("inline code", "Run `pip install untell` first.", "`pip install untell`"),
+]
+
+
+@pytest.mark.parametrize("label,text,fact", FACT_CASES, ids=[c[0] for c in FACT_CASES])
+def test_fact_is_locked_as_one_whole_span(label, text, fact):
+    """The entire fact must sit inside a single sentinel — never split, never partly exposed."""
+    masked, mapping = lock(text)
+    assert restore(masked, mapping) == text
+    assert any(fact in span for span in mapping.values()), (
+        f"{label}: {fact!r} is not fully inside any locked span. masked={masked!r} "
+        f"locked={list(mapping.values())!r}"
+    )
+
+
+def test_fenced_code_block_is_locked_whole():
+    text = "Here is the fix:\n\n```python\nx = compute(1, 2)\n```\n\nIt works."
+    masked, mapping = lock(text)
+    assert restore(masked, mapping) == text
+    assert any("x = compute(1, 2)" in span for span in mapping.values())
+
+
+@pytest.mark.parametrize(
+    "prose",
+    [
+        "Artificial intelligence has revolutionized numerous industries in recent years.",
+        "Effective time management is essential for achieving personal and professional goals.",
+        "That phrase, while memorable, obscures a good deal about how the cell actually works.",
+    ],
+)
+def test_ordinary_prose_is_not_over_locked(prose):
+    """Locking must not eat rewritable prose — a starved rewriter cannot move a detector score."""
+    _masked, mapping = lock(prose)
+    locked_chars = sum(len(v) for v in mapping.values())
+    assert locked_chars == 0, f"over-locked {locked_chars}/{len(prose)} chars: {list(mapping.values())}"

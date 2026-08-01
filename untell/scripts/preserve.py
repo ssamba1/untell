@@ -30,12 +30,56 @@ logger = logging.getLogger(__name__)
 # those, silently dropping the locked citation/fact on restore — so the round-trip must accept \d{4,}.
 _SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
 
-# Ordered, non-overlapping patterns. Earlier patterns win on overlap (handled by interval merge).
+# Units that may follow a number. Measured: with only the original short list
+# (%|kg|km|cm|mm|mol|°|years|days|hours|minutes), "5 mg" locked NOTHING and "16 GB" locked "16"
+# and left "GB" rewritable — the documented worst case, where a sentinel appears so the span looks
+# protected while the unit stays mutable and a dose/size can silently change magnitude.
+#
+# ORDER IS LOAD-BEARING *within* this alternation: it is first-match-wins, so every LONGER unit must
+# precede a shorter one that prefixes it, or "30 seconds" locks as "30 s" and leaves "econds" loose.
+_UNIT = (
+    r"percent|per cent|%"
+    # time (longest first)
+    r"|centuries|century|decades?|months?|weeks?|days?|hours?|minutes?|seconds?"
+    r"|msec|µs|us|ns|ms|hrs?|mins?|secs?|yrs?|years?"
+    # data
+    r"|Gbps|Mbps|kbps|bps|GHz|MHz|kHz|Hz|GB|MB|KB|TB|PB|Gb|Mb|kb"
+    # mass / volume
+    r"|tonnes?|kcal|cal|kJ|kg|mg|µg|ug|lbs?|oz|mL|ml|dL|gal|mol|nmol|µmol"
+    # distance / speed
+    r"|kilometres|kilometers|metres|meters|miles|inches|yards|feet"
+    r"|km/h|kph|mph|rpm|km|cm|mm|nm|µm|ft|yd|mi"
+    # energy / electrical
+    r"|kWh|MW|kW|mW|mV|mA|kV|W|V|A|J"
+    # temperature (bare ° and °C/°F)
+    r"|°[CF]?|K"
+    # magnitudes / currency codes
+    r"|trillion|billion|million|thousand|bn|USD|EUR|GBP|JPY"
+    # bare SI singles last: they prefix nothing, and each is a real unit in prose ("100 m", "30 s")
+    r"|kg|g|L|m|s|x|×"
+)
+
+# Month + weekday names: a date is a fact, but "March 15, 2024" locked only "15" and "2024",
+# leaving the MONTH free to be rewritten to April while both sentinels survived intact.
+_MONTH = (
+    r"Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?"
+    r"|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
+)
+_WEEKDAY = r"Mon(?:day)?|Tue(?:s(?:day)?)?|Wed(?:nesday)?|Thu(?:rs(?:day)?)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?"
+
+# Ordered patterns. Every match from every pattern is collected and OVERLAPPING/ADJACENT spans are
+# merged into their union (see `_merge`), so a broad pattern and a narrow one covering part of the
+# same fact combine into one lock rather than competing — adding a pattern can only widen a lock.
 _PATTERNS: list[tuple[str, re.Pattern]] = [
     # Sentinel literals already present in the INPUT must themselves be locked. Otherwise lock()
     # may reuse the same ⟦HZxxxx⟧ token for a real span, and restore() would then rewrite the
     # user's literal token too — corrupting the round-trip. Lock them first so each maps uniquely.
     ("sentinel", _SENTINEL_RE),
+    # Fenced and inline code. A rewrite that "improves the flow" of a code block destroys it, and
+    # nothing else in this list covers it: ``src/main.py`` and ``parse_json()`` are prose-shaped
+    # enough that every other pattern let them through untouched.
+    ("code", re.compile(r"```.*?```|~~~.*?~~~", re.DOTALL)),
+    ("code", re.compile(r"`[^`\n]{1,200}`")),
     # Bracketed numeric citations: [12], [3, 4], [1-5]
     ("citation", re.compile(r"\[\d+(?:\s*[-,]\s*\d+)*\]")),
     # Parenthetical author-year (APA/MLA): (Smith, 2020), (Smith & Lee, 2019, p. 4)
@@ -80,12 +124,83 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # trailing `\b` could only succeed when the symbol was followed by a letter or digit —
             # which never happens in prose. That made "5%" match nothing at all and "42%" lock only
             # its digits.
-            r"|[-−]?\b\d[\d,]*(?:\.\d+)?\s*(?:%|kg|km|cm|mm|mol|°[CF]?|years?|days?|hours?|minutes?)(?!\w)"
+            r"|[-−]?\b\d[\d,]*(?:\.\d+)?\s*(?:" + _UNIT + r")(?!\w)"
             r"|\b\d+\s*[-–—]\s*\d+\b"  # numeric range: 10-20
             r"|[-−]\d[\d,]*(?:\.\d+)?\b"  # negative number: -15, -3.2
             r"|\b\d[\d,]*\.\d+\b"  # decimals
             r"|\b\d{1,3}(?:,\d{3})+\b"  # comma-grouped thousands
             r"|\b\d{2,}\b"  # standalone integers of 2+ digits
+        ),
+    ),
+    # Calendar dates written with a month or weekday NAME. The name carries as much of the fact as
+    # the digits do, so it has to be inside the same sentinel: measured, "March 15, 2024" locked
+    # "15" and "2024" as two separate spans and left "March" freely rewritable.
+    (
+        "date",
+        re.compile(
+            r"\b(?:" + _WEEKDAY + r"),?\s+(?:" + _MONTH + r")\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?"
+            r"|\b(?:" + _MONTH + r")\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4}"
+            r"|\b\d{1,2}(?:st|nd|rd|th)?\s+(?:" + _MONTH + r"),?\s*\d{4}"
+            r"|\b(?:" + _MONTH + r")\s+\d{4}\b"
+            r"|\b(?:" + _MONTH + r")\s+\d{1,2}(?:st|nd|rd|th)\b"
+            r"|\b\d{1,2}(?:st|nd|rd|th)\s+of\s+(?:" + _MONTH + r")\b"
+            r"|\b(?:" + _WEEKDAY + r")\b"
+            r"|\b[QH][1-4]\s*(?:of\s+)?(?:FY)?\d{2,4}\b"  # Q3 2024, H1 FY25
+            r"|\bFY\s?\d{2,4}\b"
+            r"|\b\d+(?:st|nd|rd|th)\b",  # bare ordinal: the 3rd
+            re.IGNORECASE,
+        ),
+    ),
+    # Ratios and scales expressed in words — "1 in 5", "4 out of 5", "3 per 100", "2 to 1". Both
+    # numbers and the connective must move together or the ratio inverts while looking protected.
+    (
+        "ratio",
+        re.compile(
+            r"\b\d[\d,]*(?:\.\d+)?\s+(?:in|out of|of|per|to)\s+\d[\d,]*(?:\.\d+)?\b",
+            re.IGNORECASE,
+        ),
+    ),
+    # Tolerance and approximation markers. "12 ± 3" locked only "12"; "~500" locked only "500",
+    # dropping the "about" and asserting an exact figure.
+    (
+        "number",
+        re.compile(
+            r"\d[\d,]*(?:\.\d+)?\s*(?:±|\+/-|\+-)\s*\d[\d,]*(?:\.\d+)?"
+            r"|[~≈≃]\s*[-−]?\d[\d,]*(?:\.\d+)?"
+        ),
+    ),
+    # Numbered cross-references and legal citations. "Section 3.2" locked "3.2" alone, so the label
+    # could become "Chapter"; "42 U.S.C. 1983" split into two unrelated integers.
+    (
+        "reference",
+        re.compile(
+            r"\b\d+\s+U\.?\s?S\.?\s?C\.?\s*§*\s*\d+(?:\([a-z0-9]+\))*"
+            r"|§+\s*\d+(?:\.\d+)*(?:\([a-z0-9]+\))*"
+            r"|\b(?:Section|Sec|Chapter|Ch|Figure|Fig|Table|Tab|Appendix|Annex|Equation|Eq|Step|Part"
+            r"|Volume|Vol|Issue|No|Article|Clause|Item|Level|Phase|Grade|Room|Page|pp?)\.?\s*"
+            r"[A-Z]?\d+(?:\.\d+)*[a-z]?\b",
+        ),
+    ),
+    # Alphanumeric identifiers: chemical formulae (H2O2), gene symbols (BRCA1), model and standard
+    # names (GPT4, ISO 9001), hex colours. Each is a fact whose digits carry the meaning, and none
+    # matched anything above because the digits are welded to letters.
+    (
+        "identifier",
+        re.compile(
+            r"#[0-9A-Fa-f]{3,8}\b"
+            r"|\b[A-Z]{2,}[- ]?\d+(?:[-.]\d+)*\b"  # ISO 9001, IEEE 802.11
+            r"|\b[A-Z][A-Za-z]*\d+[A-Za-z0-9]*\b"  # H2O2, BRCA1, B12, GPT4
+        ),
+    ),
+    # Paths and code identifiers appearing bare in prose (outside backticks).
+    (
+        "code",
+        re.compile(
+            r"\b[\w.-]+(?:/[\w.-]+)+\.\w{1,6}\b"  # src/main.py
+            r"|\b[\w-]+\.(?:py|js|ts|tsx|jsx|json|ya?ml|md|txt|csv|tsv|html?|css|sh|ps1|toml|ini|cfg"
+            r"|xml|sql|go|rs|java|rb|php|c|cpp|hpp|swift|kt)\b"  # main.py
+            r"|\b[A-Za-z_]\w*\(\)"  # parse_json()
+            r"|\b[a-z]+(?:_[a-z0-9]+)+\b"  # snake_case_identifier
         ),
     ),
 ]
