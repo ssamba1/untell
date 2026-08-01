@@ -49,12 +49,16 @@ class BinocularsDetector:
         if BinocularsDetector._observer is None:
             BinocularsDetector._tokenizer = AutoTokenizer.from_pretrained(_OBSERVER)
             dev = "cuda"
+            # `.to(dev)`, NOT `device_map=dev`: device_map hard-requires `accelerate`, which is not
+            # a runtime dependency, so available() would report True and every score() call would
+            # raise. For a single device the placement is identical. This tier is GPU-gated and so
+            # never runs in CI — the guard in tests/test_detector_contract.py is what catches it.
             BinocularsDetector._observer = AutoModelForCausalLM.from_pretrained(
-                _OBSERVER, torch_dtype=torch.bfloat16, device_map=dev
-            ).eval()
+                _OBSERVER, dtype=torch.bfloat16
+            ).to(dev).eval()
             BinocularsDetector._performer = AutoModelForCausalLM.from_pretrained(
-                _PERFORMER, torch_dtype=torch.bfloat16, device_map=dev
-            ).eval()
+                _PERFORMER, dtype=torch.bfloat16
+            ).to(dev).eval()
         return BinocularsDetector._tokenizer, BinocularsDetector._observer, BinocularsDetector._performer
 
     def score(self, text: str) -> float | None:

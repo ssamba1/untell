@@ -107,3 +107,35 @@ def test_score_text_excludes_none_but_would_include_a_number(monkeypatch):
     monkeypatch.setattr(sc, "load_detectors", lambda tier="lite": [_D("d0", 0.5)])
     r = sc.score_text("some text here", tier="lite")
     assert r["max"] == 0.5 and r["flagged"] is True  # a fabricated 0.5 WOULD have pinned the loop
+
+
+def test_no_detector_load_requires_accelerate():
+    """`device_map=` routes model loading through `accelerate`, which the runtime extras do not
+    declare — it only appears under the training extra.
+
+    local_judge passed `device_map=device`, so `available()` reported True on any install with
+    torch and transformers, and then EVERY `score()` call raised:
+
+        ValueError: Using a `device_map` ... requires `accelerate`
+
+    A detector that advertises itself as available and cannot produce a number is the same failure
+    as one that produces a constant: the loop is optimising against a signal that is not there.
+    For a single device `.to(device)` places the model identically with no extra dependency.
+    """
+    import pathlib
+
+    import untell.detectors as pkg
+
+    offenders = []
+    for path in pathlib.Path(pkg.__file__).parent.glob("*.py"):
+        src = path.read_text(encoding="utf-8")
+        for i, line in enumerate(src.splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                continue
+            if "device_map" in stripped:
+                offenders.append(f"{path.name}:{i}: {stripped}")
+    assert not offenders, (
+        "detector model loading must not use device_map (it hard-requires `accelerate`, which is "
+        "not a runtime dependency):\n  " + "\n  ".join(offenders)
+    )
