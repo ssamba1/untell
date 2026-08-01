@@ -64,13 +64,31 @@ def verify(
     if tier is not None:
         local = score_text(text, tier=tier, threshold=threshold)
         for det_name, val in (local.get("detectors") or {}).items():
-            if isinstance(val, (int, float)):
+            # Skip the diagnostic sidecar keys ("<name>__error", "<name>__out_of_range") — they are
+            # metadata about a detector, not detectors, and a float sidecar would otherwise appear
+            # here as its own checker row.
+            if isinstance(val, (int, float)) and "__" not in det_name:
                 key = f"local:{det_name}"
                 names.append(key)
                 results[key] = {"ai": round(val, 4), "passes": val < threshold}
         key = f"local:max ({local['tier']})"
         names.append(key)
-        results[key] = {"ai": round(local["max"], 4), "passes": local["max"] < threshold, "tier": local["tier"]}
+        if local.get("scored") is False:
+            # Nothing scored, so local["max"] is a 0.0 PLACEHOLDER. Reporting `passes: 0.0 <
+            # threshold` here would print a clean pass on a verdict surface whose entire job is an
+            # honest answer — the worst possible place to fabricate one.
+            results[key] = {
+                "ai": None,
+                "passes": False,
+                "tier": local["tier"],
+                "error": "no local detector produced a score",
+            }
+        else:
+            results[key] = {
+                "ai": round(local["max"], 4),
+                "passes": local["max"] < threshold,
+                "tier": local["tier"],
+            }
 
     for d in (d for d in detectors if d.available()):
         names.append(d.name)

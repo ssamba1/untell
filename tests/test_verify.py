@@ -115,3 +115,62 @@ def test_browser_checker_unavailable_is_a_fail(monkeypatch):
     r = v["results"]["zerogpt(web)"]
     assert r["passes"] is False and r["error"]
     assert v["passes_all"] is False
+
+
+class _FakeDet:
+    def __init__(self, name, value):
+        self.name, self.tier, self._v = name, "lite", value
+
+    def available(self):
+        return True
+
+    def score(self, text):
+        return self._v
+
+
+def test_no_fabricated_pass_when_nothing_scored(monkeypatch):
+    """verify's whole job is an honest verdict, so it is the worst place to fabricate one.
+
+    When every local detector returns None, score_text's max is a 0.0 PLACEHOLDER — and
+    `passes: 0.0 < threshold` printed a clean pass on text that was never scored."""
+    import untell.detectors.commercial as cm
+    import untell.scripts.score as sc
+    import untell.scripts.verify as v
+
+    monkeypatch.setattr(sc, "load_detectors", lambda tier="lite": [_FakeDet("d0", None)])
+    monkeypatch.setattr(cm, "commercial_detectors", lambda: [])
+
+    r = v.verify("some text here", threshold=0.3, tier="lite")
+    row = next(val for k, val in r["results"].items() if "max" in k)
+    assert row["ai"] is None
+    assert row["passes"] is False
+    assert "error" in row
+    assert r["passes_all"] is False
+
+
+def test_real_scores_still_produce_a_verdict(monkeypatch):
+    import untell.detectors.commercial as cm
+    import untell.scripts.score as sc
+    import untell.scripts.verify as v
+
+    monkeypatch.setattr(sc, "load_detectors", lambda tier="lite": [_FakeDet("d0", 0.1)])
+    monkeypatch.setattr(cm, "commercial_detectors", lambda: [])
+
+    r = v.verify("some text here", threshold=0.3, tier="lite")
+    row = next(val for k, val in r["results"].items() if "max" in k)
+    assert row["ai"] == 0.1
+    assert row["passes"] is True
+
+
+def test_diagnostic_sidecar_keys_are_not_reported_as_checkers(monkeypatch):
+    """score_text records "<name>__out_of_range" / "<name>__error" alongside real scores. Those are
+    metadata about a detector, not detectors — a float sidecar must not become its own checker row."""
+    import untell.detectors.commercial as cm
+    import untell.scripts.score as sc
+    import untell.scripts.verify as v
+
+    monkeypatch.setattr(sc, "load_detectors", lambda tier="lite": [_FakeDet("d0", 85.0)])
+    monkeypatch.setattr(cm, "commercial_detectors", lambda: [])
+
+    r = v.verify("some text here", threshold=0.3, tier="lite")
+    assert not any("__" in k for k in r["results"]), r["results"].keys()
