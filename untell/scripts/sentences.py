@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import re
 import sys
 
 # Run-as-file support (zero-dep lite tier): when this file is executed directly
@@ -29,12 +28,7 @@ if __package__ in (None, ""):
             break
 
 from untell.scripts.score import DEFAULT_THRESHOLD, batch_score_texts
-
-_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
-
-
-def split_sentences(text: str) -> list[str]:
-    return [s.strip() for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
+from untell.text_split import split_sentences  # noqa: F401  (re-exported: `untell-sentences` API)
 
 
 def score_sentences(

@@ -60,3 +60,24 @@ def test_single_short_sentence_not_auto_max():
     from untell.detectors.perplexity_burstiness import lite_score
 
     assert lite_score("The cat sat.") < 0.9
+
+
+def test_all_three_splitters_are_the_same_implementation():
+    """`(?<=[.!?])\s+` was written out three times - in this module, the structural rewriter and
+    the perplexity detector - so fixing the abbreviation bug in one left the other two wrong:
+
+        scorer     scored the fragment "Dr." as a sentence and flagged it as AI
+        rewriter   merged the halves back as "Dr, though smith published the results"
+        detector   computed per-sentence surprisal over a one-token "sentence"
+
+    Pinning the shared behaviour is what stops the copies drifting apart again.
+    """
+    from untell.detectors.perplexity_burstiness import _sentences
+    from untell.rewriter.structural import _split_sentences
+    from untell.scripts.sentences import split_sentences
+
+    text = "Dr. Smith published the results in 2020. The study enrolled 240 patients."
+    expected = ["Dr. Smith published the results in 2020.", "The study enrolled 240 patients."]
+    assert split_sentences(text) == expected
+    assert _split_sentences(text) == expected
+    assert _sentences(text) == expected

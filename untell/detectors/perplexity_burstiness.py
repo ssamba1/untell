@@ -75,7 +75,12 @@ _COMMON = {
 
 
 def _sentences(text: str) -> list[str]:
-    parts = [s.strip() for s in _SENT_SPLIT.split(text) if s.strip()]
+    # Shared, abbreviation-aware splitter (untell.text_split): a naive split on ".\s" made "Dr."
+    # its own "sentence", and per-sentence surprisal over a one-token fragment is noise fed
+    # straight into the burstiness term.
+    from untell.text_split import split_sentences
+
+    parts = split_sentences(text)
     return parts or ([text.strip()] if text.strip() else [])
 
 
