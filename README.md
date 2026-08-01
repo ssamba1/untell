@@ -155,28 +155,42 @@ produced it — see **[`docs/free-ceiling-measured.md`](docs/free-ceiling-measur
 Reproduce it yourself, no API key, on CPU:
 
 ```bash
-untell-ceiling --rewriter surgical --tier full      # ~90s; deterministic; $0
+UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 3 --max-iters 2 --repeats 3
 ```
 
-| Free, no-key rewrite vs the local open ensemble (n=10) | before | after |
+| Free, no-key rewrite vs the local open ensemble (3 repeats = 9 loop runs) | before | after |
 |---|---|---|
-| flagged rate (max P(AI) ≥ 0.30) | 0.90 | **0.60** |
-| mean max P(AI) | 0.87 | **0.68** |
+| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.11 – 0.22** |
+| mean max P(AI) | 0.86 | **0.29 ± 0.02** |
 
-Two findings, both measured and both the *opposite* of the marketing:
+Per-detector, before → after (two independent replications):
 
-- **Surface edits strip the lexical tell but not the content tell.** Word-substitution moves the
-  perplexity detector (0.32 → 0.20) and RoBERTa-OpenAI (0.52 → 0.36), but a **content/genre** detector
-  (HC3-RoBERTa) barely budges (0.73 → 0.67). No meaning-preserving rewrite can move it — *the content is
-  the tell.*
+| detector | before | after |
+|---|---|---|
+| `perplexity_burstiness` | 0.32 | 0.07 – 0.10 |
+| `roberta_openai` | 0.52 | 0.10 |
+| `hc3_roberta` (content/genre) | 0.73 | **0.04 – 0.06** |
+| `fast_detectgpt` (curvature) | 0.31 | **0.28 — unmoved** |
+
+Three findings, all measured, and one of them overturned this project's own earlier conclusion:
+
+- **The "content tell" was mostly a *selection* limit, not a structural one.** An earlier version of
+  this table (measured with a single rewrite draw) showed HC3-RoBERTa stuck at 0.73 → 0.67 and
+  concluded no meaning-preserving rewrite could move it. With **best-of-3 selection against the tier
+  you actually score on**, it drops to **0.04**. The lever was never a cleverer rewriter — it was
+  choosing among several drafts against the real signal. See
+  [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) for the falsified claim in full.
+- **One wall did not fall.** `fast_detectgpt`'s curvature signal is untouched by everything here
+  (0.31 → 0.28 in both runs). "Most detectors move" is not "detection is solved."
 - **The local proxies partly anti-correlate with human-ness.** A rewrite that reads *obviously* more human
   scored **higher** on the proxy (0.578 → 0.918). So a low local score means "passed the weak local
   proxies," not "reads human" and **not** "beats GPTZero." That's exactly why the loop treats the local
   score as a weak hint and gates hard on meaning instead.
 
-**The honest ceiling:** for free you can reliably strip the lexical/perplexity tells and clear the *free*
-web checkers; you cannot strip the content tell, and clearing the local proxies does not imply clearing
-GPTZero / Originality / Turnitin (which need their API in the loop — paid). The tool says so, everywhere.
+**The honest ceiling:** for free you can strip the lexical/perplexity tells *and* most of the
+content/genre signal, and clear the *free* web checkers — but the curvature detector still doesn't
+move, and clearing the local proxies does not imply clearing GPTZero / Originality / Turnitin (which
+need their API in the loop — paid). The tool says so, everywhere.
 
 ---
 
