@@ -180,7 +180,8 @@ def _run_check() -> int:
     # Rewriters
     from untell.rewriter import get_rewriter
     print("\nRewriters:")
-    for name in ["composite", "structural", "surgical", "anthropic", "openai"]:
+    for name in ["composite", "structural", "surgical", "targeted", "neural", "ensemble",
+                 "t5_paraphrase", "mt_pivot", "anthropic", "openai"]:
         rw = get_rewriter(prefer=name)
         status = "✓" if rw and rw.available() else "✗"
         print(f"  {status} {name}")
@@ -192,15 +193,23 @@ def _run_check() -> int:
     except Exception:
         print("\nAPI Server: ✗ (install: pip install untell[server])")
 
-    # Rich output
+    # Rich output. The try body used to be a bare print(), which cannot fail — so this always
+    # reported the extra as installed regardless of whether it was. Actually import it.
     try:
+        import rich  # noqa: F401
+
         print("Rich output: ✓")
     except Exception:
         print("Rich output: ✗ (install: pip install untell[rich])")
 
     print(f"\nEnvironment: Python {sys.version.split()[0]} on {sys.platform}")
-    print("\n✓ All systems nominal" if available else "\n! No detectors available — install: pip install untell[full]")
-    return 0
+    if available:
+        print("\n✓ All systems nominal")
+        return 0
+    # Exit non-zero so `untell check` can gate a CI job or an install script. Returning 0 while
+    # printing "No detectors available" told every automated caller the install was healthy.
+    print("\n! No detectors available — install: pip install untell[full]")
+    return 1
 
 
 def main(argv: list[str] | None = None) -> int:
