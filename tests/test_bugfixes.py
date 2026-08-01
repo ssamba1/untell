@@ -368,3 +368,27 @@ def test_ensemble_declines_to_touch_already_clean_text(monkeypatch):
 
     monkeypatch.setattr(score_mod, "score_text", _fake_score)
     assert rw.rewrite(clean, {"tier": "lite"}) == clean  # untouched
+
+
+def test_composite_returns_original_when_no_draw_improves(monkeypatch):
+    """No 'consolation' rewrite: if no candidate beats the original, return the original.
+
+    The old fallback ('pick the first one anyway, it still changed the text') measurably HURT —
+    an already-clean paragraph (roberta 0.017) was pushed to 0.127 by a forced rewrite that spent
+    meaning-similarity for nothing."""
+    from untell.rewriter.composite import CompositeRewriter
+
+    rw = CompositeRewriter(best_of=2)
+    monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: "worse rewrite")
+    monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
+
+    import untell.scripts.score as score_mod
+
+    clean = "I went to the store yesterday. Rain, mostly."
+
+    def _fake_score(text, tier="lite", threshold=0.30):
+        m = 0.02 if text == clean else 0.90  # every rewrite is worse than the original
+        return {"max": m, "mean": m, "detectors": {"a": m}, "tier": tier}
+
+    monkeypatch.setattr(score_mod, "score_text", _fake_score)
+    assert rw.rewrite(clean, {"tier": "lite"}) == clean  # untouched, not a forced worse rewrite

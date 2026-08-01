@@ -126,11 +126,10 @@ class CompositeRewriter(Rewriter):
             except Exception:
                 pass
 
-        # Fallback: if no candidate improved, pick the first one anyway
-        # (it still changed the text structurally even if the lite detector
-        # didn't register the improvement).
-        if best_text == text:
-            restructured = self._structural.rewrite(text, score_result, threshold)
-            best_text = self._surgical.rewrite(restructured, score_result, threshold)
-
+        # No "consolation" rewrite. This used to force a rewrite when no candidate improved the
+        # score, on the theory that changing the text was worth something anyway. MEASURED, it is
+        # actively harmful: on an already-clean paragraph (roberta 0.017) the forced rewrite pushed
+        # the score UP to 0.127 while spending meaning-similarity for nothing. If none of the draws
+        # beat the original, the original IS the best candidate — return it unchanged and let the
+        # outer loop decide what to do next (it stops on a no-op, which is the correct outcome).
         return best_text
