@@ -153,3 +153,29 @@ def test_cli_json_ascii_safe(capsys):
 
 def test_cli_empty_input_returns_2(capsys):
     assert main(["   "]) == 2
+
+
+def test_no_token_counts_in_two_categories():
+    """The module's stated invariant: "a single phrase must count in exactly one category, never
+    two". "boasts" is in _AI_VOCAB and _INFLATED_COPULA_RE; "showcasing" is in _AI_VOCAB and
+    _PARTICIPIAL_TRAILER_RE — both used to fire twice for one token."""
+    r = score_tells("The park boasts a clear path.")
+    assert r["tells"] == 1, r["by_category"]
+
+    r = score_tells("The campaign concluded, showcasing our strengths.")
+    assert r["tells"] == 1, r["by_category"]
+
+
+def test_longest_span_claims_the_tell():
+    """_CATEGORIES is ordered for readability, not specificity (ai_vocab is first), so the richer
+    multi-word construction must win on span length rather than list position."""
+    r = score_tells("The campaign concluded, showcasing our strengths.")
+    assert r["by_category"].get("participial_trailer") == 1
+    assert "ai_vocab" not in r["by_category"]
+
+
+def test_standalone_vocab_still_counts_when_no_richer_pattern_matches():
+    """Dedup must not silently delete tells: "showcasing" with no comma is not a participial
+    trailer, so it must still be counted as AI vocabulary."""
+    r = score_tells("Our platform showcasing next-level wins.")
+    assert r["by_category"].get("ai_vocab", 0) >= 1

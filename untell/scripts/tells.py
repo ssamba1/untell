@@ -251,12 +251,31 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         if include_matches:
             matches["em_dash"] = ["—"] * text.count("—")
 
+    # Count by SPAN, not by pattern, so one stretch of text can only ever be one tell. Several words
+    # legitimately appear in two categories — "boasts" is AI vocabulary AND an inflated copula;
+    # "showcasing" is AI vocabulary AND the head of a participial trailer — and counting both fired
+    # the same token twice, breaking the module's stated invariant that "a single phrase must count
+    # in exactly one category, never two". Deleting the duplicate words is the wrong fix: they are
+    # real tells in constructions the more specific pattern does not match ("platform showcasing
+    # wins" has no comma, so the trailer pattern never fires).
+    #
+    # The LONGEST match claims the span, not the first category in the list — _CATEGORIES is ordered
+    # for readability, not specificity, and ai_vocab sits first, so list order would let a single
+    # word beat the multi-word construction that contains it.
+    spans: list[tuple[int, int, str, str]] = []
     for name, pat in _CATEGORIES:
-        found = pat.findall(text)
-        if found:
-            by_category[name] = len(found)
-            if include_matches:
-                matches[name] = [m if isinstance(m, str) else next((g for g in m if g), "") for m in found]
+        for m in pat.finditer(text):
+            spans.append((m.start(), m.end(), name, m.group(0)))
+    spans.sort(key=lambda s_: (-(s_[1] - s_[0]), s_[0]))  # longest first, then leftmost
+
+    claimed: list[tuple[int, int]] = []
+    for start, end, name, matched in spans:
+        if any(start < c_end and end > c_start for c_start, c_end in claimed):
+            continue  # this text is already counted as a richer tell
+        claimed.append((start, end))
+        by_category[name] = by_category.get(name, 0) + 1
+        if include_matches:
+            matches.setdefault(name, []).append(matched)
 
     # Two tells that aren't a simple findall:
     rot = _rule_of_three_runs(text)
