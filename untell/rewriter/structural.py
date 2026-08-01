@@ -439,8 +439,14 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
         if random.random() < rate:
             first_word = s.split()[0] if s.split() else ""
             if first_word and first_word[0].isupper() and first_word not in subjects:
-                # Add a varied opener
-                s = f"{random.choice(openers)} {s[0].lower() + s[1:]}"
+                # Prepend the opener, and lowercase what follows ONLY when that word is safe to
+                # lowercase. Doing it unconditionally produced "In short, dr. Smith published the
+                # results" — the abbreviation destroyed by the very transform meant to vary rhythm.
+                # "In short, Dr. Smith published ..." is correct English; nothing needs demoting.
+                if first_word.strip(",;:").lower() in _SAFE_TO_LOWERCASE:
+                    s = f"{random.choice(openers)} {s[0].lower() + s[1:]}"
+                else:
+                    s = f"{random.choice(openers)} {s}"
         out.append(s)
     return out
 
@@ -499,10 +505,15 @@ def _split_one(s: str) -> list[str] | None:
 
 
 def _merge_pair(sents: list[str], j: int) -> list[str]:
-    """Merge sentences j and j+1 into one compound sentence."""
+    """Merge sentences j and j+1 into one compound sentence, or leave them if that is unsafe."""
     a = sents[j].rstrip(".!?")
-    b = sents[j + 1].strip()
-    b = b[0].lower() + b[1:] if b and b[0].isupper() else b
+    b = _LEADING_MARKER_RE.sub("", sents[j + 1].strip(), count=1)
+    first_word = b.split()[0].strip(",;:").lower() if b.split() else ""
+    # Same rule as _merge_sentences: only demote a sentence to a clause when its opening word can
+    # be lowercased without mangling a name or an acronym.
+    if not b or not (b[0].islower() or first_word in _SAFE_TO_LOWERCASE):
+        return sents
+    b = b[0].lower() + b[1:] if b[0].isupper() else b
     return sents[:j] + [f"{a}, and {b}"] + sents[j + 2 :]
 
 

@@ -177,3 +177,46 @@ def test_merge_still_merges_ordinary_sentences():
             merged_at_least_once = True
             break
     assert merged_at_least_once, "ordinary sentences are no longer merged at all"
+
+
+def test_opener_injection_keeps_an_abbreviation_capitalised():
+    """Prepending an opener lowercased whatever followed, so "Dr. Smith published" became
+    "In short, dr. Smith published" - the abbreviation destroyed by the transform meant to vary
+    sentence rhythm. "In short, Dr. Smith published ..." is correct English; nothing needs demoting."""
+    import random
+
+    from untell.rewriter.structural import _vary_openers
+
+    for seed in range(25):
+        random.seed(seed)
+        out = _vary_openers(["Dr. Smith published the results in 2020."], rate=1.0)[0]
+        assert "dr." not in out, f"abbreviation lowercased: {out!r}"
+        assert "Dr. Smith" in out, f"lost the name: {out!r}"
+
+
+def test_merge_pair_leaves_a_proper_noun_alone():
+    from untell.rewriter.structural import _merge_pair
+
+    pair = ["The results were published.", "Smith led the team."]
+    assert _merge_pair(pair, 0) == pair, "merged and lowercased a surname"
+    merged = _merge_pair(["The results were published.", "The team was led well."], 0)
+    assert len(merged) == 1, "ordinary sentences should still merge"
+
+
+CASE_CASES = [
+    ("Furthermore", "also", "Also"),
+    ("furthermore", "also", "also"),
+    ("FURTHERMORE", "also", "ALSO"),
+    ("Moreover", "what is more", "What is more"),
+    ("robust", "solid", "solid"),
+    ("Delve", "dig into", "Dig into"),
+]
+
+
+@pytest.mark.parametrize("original,synonym,expected", CASE_CASES)
+def test_substitution_carries_the_original_capitalisation(original, synonym, expected):
+    """The synonym table is lower case, so substituting verbatim demoted sentence-initial words:
+    "Furthermore, it improves mood" came out as "also, it improves mood"."""
+    from untell.attacks.word_importance import _match_case
+
+    assert _match_case(original, synonym) == expected

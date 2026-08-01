@@ -268,6 +268,22 @@ def importance(text: str, tier: str = "lite") -> list[tuple[str, float]]:
     return sorted(scored, key=lambda kv: -kv[1])
 
 
+def _match_case(original: str, replacement: str) -> str:
+    """Carry ``original``'s capitalisation onto ``replacement``.
+
+    The synonym table is written in lower case, so substituting verbatim silently demoted a
+    sentence-initial word: "Furthermore, it improves mood" became "also, it improves mood" — a
+    sentence starting in lower case, in output whose whole purpose is to read as human writing.
+    """
+    if not original or not replacement:
+        return replacement
+    if original.isupper() and len(original) > 1:
+        return replacement.upper()
+    if original[0].isupper():
+        return replacement[0].upper() + replacement[1:]
+    return replacement
+
+
 def surgical_substitute(
     text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, max_subs: int = 8
 ) -> dict:
@@ -297,7 +313,7 @@ def surgical_substitute(
         # Generate all synonym candidates for this word and batch-score them.
         candidates = []
         for syn in synonyms(word):
-            cand = re.sub(rf"\b{re.escape(word)}\b", syn, cur, count=1)
+            cand = re.sub(rf"\b{re.escape(word)}\b", _match_case(word, syn), cur, count=1)
             candidates.append(cand)
         if not candidates:
             continue
