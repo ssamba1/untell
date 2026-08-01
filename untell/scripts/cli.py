@@ -47,6 +47,7 @@ _COMMANDS: dict[str, str] = {
     "sentences": "untell.scripts.sentences:main",
     "compare": "eval.compare_humanizers:main",
     "ceiling": "eval.ceiling:main",
+    "detector-audit": "eval.detector_audit:main",
     "humanness": "untell.humanness:main",
 }
 
@@ -59,6 +60,7 @@ _ONE_LINER = {
     "sentences": "flag which sentences read as AI",
     "compare": "head-to-head vs the free-humanizer technique classes",
     "ceiling": "measure the loop's free evasion of the local ensemble",
+    "detector-audit": "check every detector for dead/inverted output (integrity gate)",
     "humanness": "score text 0-100: how human does it read (combines tells + detectors)",
 }
 
