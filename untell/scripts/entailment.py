@@ -218,7 +218,7 @@ def meaning_preserved(
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI: ``python -m untell.scripts.entailment "<original>" "<rewrite>"`` -> JSON.
+    """CLI: ``python scripts/entailment.py "<original>" "<rewrite>"`` -> JSON (``-m`` form works too).
 
     Exists so the SKILL.md workflow can reach this check. The headless loop got the NLI meaning gate
     (contradiction veto + bidirectional entailment); the skill path — where Claude is the rewriter,

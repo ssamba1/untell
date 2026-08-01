@@ -94,7 +94,7 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    Then run the **meaning gate** — similarity alone is not sufficient and must not be your only
    check:
    ```bash
-   python -m untell.scripts.entailment "<ORIG masked>" "<current masked text>"
+   python scripts/entailment.py "<ORIG masked>" "<current masked text>"
    ```
    Exit `0` = meaning preserved, `1` = rejected. Cosine similarity was measured to score a direct
    inversion ("runs faster" → "runs slower") at **0.974**, sailing past the 0.76 bar, while
