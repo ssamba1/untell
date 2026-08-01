@@ -104,10 +104,23 @@ def _score_with_detectors(
         if val is None:  # detector explicitly produced no signal -> exclude, don't fake a 0.5
             scores[d.name] = None  # type: ignore[assignment]
             continue
-        scores[d.name] = round(float(val), 4)
+        # Defensive clamp at the AGGREGATION layer, not just in each adapter. A detector is supposed
+        # to return P(AI) in [0, 1], but this session found three adapters shipping wrong values, and
+        # an out-of-range score does real damage here: a commercial API answering on a 0-100 scale
+        # makes ai_percent read 8500.0, and the common "-1 means error" sentinel reads as MORE human
+        # than any real text, so broken-detector output would look like a perfect result. Clamping is
+        # the safe direction; the raw value is surfaced so the adapter bug is still visible.
+        raw = float(val)
+        clamped = 0.0 if raw < 0.0 else (1.0 if raw > 1.0 else raw)
+        if clamped != raw:
+            scores[f"{d.name}__out_of_range"] = round(raw, 4)  # type: ignore[assignment]
+        scores[d.name] = round(clamped, 4)
         live.append(d)
 
-    numeric = [v for v in scores.values() if isinstance(v, (int, float))]
+    numeric = [
+        v for k, v in scores.items()
+        if isinstance(v, (int, float)) and not k.endswith("__out_of_range")
+    ]
     mx = max(numeric) if numeric else 0.0
     mean = sum(numeric) / len(numeric) if numeric else 0.0
     effective = resolved_tier(live) if live else "lite"
@@ -124,6 +137,17 @@ def _score_with_detectors(
     }
     if failed:
         result["failed_detectors"] = failed
+    out_of_range = [k[: -len("__out_of_range")] for k in scores if k.endswith("__out_of_range")]
+    if out_of_range:
+        result["out_of_range_detectors"] = out_of_range
+    if not numeric:
+        # NOTHING was scored. max/mean are 0.0 placeholders, and 0.0 otherwise reads as a confident
+        # "definitely human" — the most misleading value this function could return. Say so
+        # explicitly rather than letting a caller mistake an unscored result for a clean one.
+        result["scored"] = False
+        result.setdefault(
+            "warning", "no detector produced a score — max/mean are placeholders, not a verdict"
+        )
     # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
     if _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
         result["warning"] = (

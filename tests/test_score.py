@@ -88,3 +88,60 @@ def test_dead_detectors_excluded_not_pinned_at_half(monkeypatch):
     assert "mage" in r.get("failed_detectors", [])
     assert "warning" in r
     assert r["flagged"] is False  # 0.1 < 0.3
+
+
+def _fake_detectors(values):
+    """Install detectors returning exactly `values` (an Exception instance means it raises)."""
+    class _D:
+        def __init__(self, name, v):
+            self.name, self.tier, self._v = name, "lite", v
+
+        def available(self):
+            return True
+
+        def score(self, text):
+            if isinstance(self._v, Exception):
+                raise self._v
+            return self._v
+
+    return lambda tier="lite": [_D(f"d{i}", v) for i, v in enumerate(values)]
+
+
+def test_out_of_range_score_is_clamped_and_surfaced(monkeypatch):
+    """A detector is supposed to return P(AI) in [0,1]; three adapters shipped wrong values this
+    session. Out-of-range output does real damage: a 0-100 scale makes ai_percent read 8500.0, and
+    the common "-1 means error" sentinel reads as MORE human than any real text."""
+    import untell.scripts.score as sc
+
+    monkeypatch.setattr(sc, "load_detectors", _fake_detectors([85.0]))
+    r = sc.score_text("some sample text here", tier="lite")
+    assert r["max"] == 1.0
+    assert r["ai_percent"] == 100.0  # not 8500.0
+    assert r["out_of_range_detectors"] == ["d0"]  # the adapter bug stays visible
+
+    monkeypatch.setattr(sc, "load_detectors", _fake_detectors([-1.0]))
+    r = sc.score_text("some sample text here", tier="lite")
+    assert r["max"] == 0.0  # not a "more human than human" negative
+    assert r["out_of_range_detectors"] == ["d0"]
+
+
+def test_unscored_result_is_not_mistakable_for_a_clean_one(monkeypatch):
+    """When nothing scored, max=0.0 otherwise reads as a confident "definitely human" — the most
+    misleading value this function could return."""
+    import untell.scripts.score as sc
+
+    monkeypatch.setattr(sc, "load_detectors", _fake_detectors([None, None]))
+    r = sc.score_text("some sample text here", tier="lite")
+    assert r["scored"] is False
+    assert r["flagged"] is False
+    assert "warning" in r
+
+
+def test_normal_scores_are_untouched(monkeypatch):
+    import untell.scripts.score as sc
+
+    monkeypatch.setattr(sc, "load_detectors", _fake_detectors([0.2, 0.9]))
+    r = sc.score_text("some sample text here", tier="lite")
+    assert r["max"] == 0.9
+    assert r.get("scored", True) is True
+    assert "out_of_range_detectors" not in r
