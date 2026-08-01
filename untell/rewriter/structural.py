@@ -44,6 +44,7 @@ _ABBREVIATIONS = {
 # happens to start the sentence — turns "Smith published" into "smith published" and "NASA
 # confirmed" into "nASA confirmed". Fewer merges is a cheap price for never mangling a name.
 _SAFE_TO_LOWERCASE = {
+    # function words and determiners
     "the", "this", "that", "these", "those", "a", "an", "it", "its", "they", "their", "them",
     "he", "his", "him", "she", "her", "we", "our", "us", "you", "your", "i", "my", "there",
     "here", "some", "many", "most", "much", "all", "each", "every", "both", "few", "several",
@@ -51,9 +52,53 @@ _SAFE_TO_LOWERCASE = {
     "because", "although", "though", "unless", "until", "as", "but", "and", "or", "so", "yet",
     "in", "on", "at", "for", "from", "with", "without", "by", "to", "into", "over", "under",
     "such", "other", "another", "any", "who", "which", "what", "how", "why", "where",
-    "operators", "users", "results", "data", "studies", "researchers", "companies", "students",
-    "people", "customers", "patients", "developers", "teams", "systems", "models", "tools",
+    # ordinary nouns that routinely open a sentence in expository prose
+    "people", "operators", "users", "results", "data", "studies", "research", "researchers",
+    "companies", "organizations", "organisations", "businesses", "students", "customers",
+    "patients", "developers", "engineers", "teams", "systems", "models", "tools", "machine",
+    "software", "hardware", "technology", "technologies", "industries", "governments",
+    "scientists", "doctors", "workers", "employees", "managers", "leaders", "experts",
+    "evidence", "analysis", "performance", "efficiency", "productivity", "growth", "costs",
+    "benefits", "risks", "challenges", "problems", "solutions", "changes", "effects",
+    "impact", "adoption", "training", "testing", "development", "production", "demand",
+    "supply", "prices", "revenue", "profits", "sales", "markets", "users", "clients",
+    "documents", "files", "records", "reports", "papers", "articles", "books", "sources",
+    "methods", "approaches", "techniques", "strategies", "policies", "practices", "processes",
+    "exercise", "nutrition", "health", "treatment", "symptoms", "patients", "trials",
+    "climate", "energy", "emissions", "pollution", "temperatures", "weather", "sea",
+    "education", "schools", "teachers", "learning", "knowledge", "skills", "experience",
+    # common adjectives and adverbs in the same position
+    "artificial", "regular", "effective", "modern", "current", "recent", "further", "additional",
+    "similar", "different", "specific", "general", "overall", "typical", "common", "important",
+    "significant", "large", "small", "high", "low", "new", "old", "good", "better", "best",
+    "worse", "worst", "early", "late", "fast", "slow", "long", "short", "clear", "likely",
+    "unlike", "despite", "given", "based", "using", "according",
 }
+
+# Capitalisation that is never sentence-position capitalisation: an internal capital (NASA, iPhone,
+# McDonald) always signals a name or acronym, whatever the word list says.
+_INTERNAL_CAPS_RE = re.compile(r"^[A-Za-z][a-z]*[A-Z]")
+
+def _safe_to_lowercase(word: str, context: str = "") -> bool:
+    """Can this sentence-initial word be lowercased without mangling a name or acronym?
+
+    Three sources of evidence, cheapest first — no model, so the free path stays dependency-free:
+      * an internal or full capital ("NASA", "iPhone") is never sentence-position capitalisation;
+      * a curated list of words that routinely open an expository sentence;
+      * the word appearing in lower case elsewhere in the same text, which is strong evidence it is
+        an ordinary word that merely happens to sit at a sentence start here.
+    """
+    bare = word.strip(",;:.!?\"'()").lower()
+    if not bare:
+        return False
+    if word.isupper() and len(word) > 1:
+        return False
+    if _INTERNAL_CAPS_RE.match(word.strip(",;:.!?\"'()")):
+        return False
+    if bare in _SAFE_TO_LOWERCASE:
+        return True
+    return bool(context) and re.search(rf"(?<![.!?]\s)\b{re.escape(bare)}\b", context) is not None
+
 
 # Discourse markers that may survive at the start of the second clause. Joining with ", and " when
 # the clause already opens with one produced "and plus,", "while and," and "and and," — visible
@@ -124,13 +169,13 @@ _SEMICOLON_RE = re.compile(r";\s+")
 # Low-content AI scaffolding openers — pure filler that precedes the real sentence. Strip the phrase
 # and keep the clause. "It is worth noting that X" -> "X"; "It should be noted that X" -> "X".
 _FILLER_OPENER_RE = re.compile(
-    r"(?:^|(?<=[.!?]\s))\s*"
+    r"(?P<lead>^|(?<=[.!?]\s))\s*"
     r"(?:it (?:is|'s) (?:worth (?:noting|mentioning)|important to (?:note|mention|highlight|remember)) that"
     r"|it should be noted that"
     r"|one (?:thing|point) (?:to note|worth noting) is that"
     r"|(?:it is|there is) no (?:doubt|denying) that"
     r"|needless to say,?"
-    r"|as (?:we|previously) (?:noted|mentioned|discussed),?)\s+",
+    r"|as (?:we|previously) (?:noted|mentioned|discussed),?)\s+(?P<rest>\S.*?)?(?=$|[.!?])",
     re.IGNORECASE,
 )
 
@@ -242,7 +287,7 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
             # first — the connector about to be added does the same job.
             b = _LEADING_MARKER_RE.sub("", b, count=1)
             merged_ok = bool(b) and (
-                b[0].islower() or b.split()[0].strip(",;:").lower() in _SAFE_TO_LOWERCASE
+                b[0].islower() or _safe_to_lowercase(b.split()[0], " ".join(sentences))
             )
             if b and merged_ok:
                 b = b.strip(".")
@@ -362,8 +407,22 @@ def _inject_contractions(text: str, rate: float = 1.0) -> str:
 def _strip_filler_openers(text: str) -> str:
     """Remove low-content AI scaffolding openers ("It is worth noting that ...") and keep the clause,
     re-capitalizing the sentence start that the strip exposes."""
-    out = _FILLER_OPENER_RE.sub("", text)
-    return re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), out)
+    # Capitalise ONLY the clause each strip exposes — never the whole text. The previous
+    # implementation ran `re.sub(r"(^|[.!?]\s+)([a-z])", ...)` over the entire string after the
+    # strip, which capitalises any lowercase word following ANY sentence-ending punctuation. That
+    # includes the period inside an abbreviation, so text this function never touched came back
+    # corrupted:
+    #     "The study used e.g. three methods."  -> "... e.g. Three methods."
+    #     "We met at 3 p.m. tomorrow"           -> "... 3 p.m. Tomorrow"
+    # The abbreviation guard in _split_sentences does not help here, because this runs on raw text
+    # before any sentence splitting. Folding the capitalisation into the substitution itself means
+    # nothing outside a matched filler can be altered.
+    def _strip_and_capitalise(m: re.Match) -> str:
+        lead = m.group("lead") or ""
+        rest = m.group("rest") or ""
+        return lead + (rest[:1].upper() + rest[1:] if rest else "")
+
+    return _FILLER_OPENER_RE.sub(_strip_and_capitalise, text)
 
 
 # Sentinel spans (⟦HZxxxx⟧) must never be touched by a word-level substitution.
@@ -443,7 +502,7 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
                 # lowercase. Doing it unconditionally produced "In short, dr. Smith published the
                 # results" — the abbreviation destroyed by the very transform meant to vary rhythm.
                 # "In short, Dr. Smith published ..." is correct English; nothing needs demoting.
-                if first_word.strip(",;:").lower() in _SAFE_TO_LOWERCASE:
+                if _safe_to_lowercase(first_word, " ".join(sentences)):
                     s = f"{random.choice(openers)} {s[0].lower() + s[1:]}"
                 else:
                     s = f"{random.choice(openers)} {s}"
@@ -508,10 +567,9 @@ def _merge_pair(sents: list[str], j: int) -> list[str]:
     """Merge sentences j and j+1 into one compound sentence, or leave them if that is unsafe."""
     a = sents[j].rstrip(".!?")
     b = _LEADING_MARKER_RE.sub("", sents[j + 1].strip(), count=1)
-    first_word = b.split()[0].strip(",;:").lower() if b.split() else ""
     # Same rule as _merge_sentences: only demote a sentence to a clause when its opening word can
     # be lowercased without mangling a name or an acronym.
-    if not b or not (b[0].islower() or first_word in _SAFE_TO_LOWERCASE):
+    if not b or not (b[0].islower() or _safe_to_lowercase(b.split()[0], " ".join(sents))):
         return sents
     b = b[0].lower() + b[1:] if b[0].isupper() else b
     return sents[:j] + [f"{a}, and {b}"] + sents[j + 2 :]
