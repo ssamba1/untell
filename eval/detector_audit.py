@@ -30,12 +30,19 @@ undefined on one sentence, and a supervised classifier sees a completely differe
 15 words than at 150 — so the gate was measuring a regime nobody runs in. The packaged probes are
 now paragraph-length.
 
-**Hand-written probes are a smoke test, not a measurement.** They can catch DEAD and INVERTED,
-which is what they are for. They cannot support a claim that a detector *discriminates*, because
-the "human" side was written to look human rather than sampled from humans. Pass ``--pairs N`` to
-run the real measurement against labelled human/AI pairs (HC3), which reports AUROC — the
-threshold-free probability that a random AI sample outscores a random human one. 0.5 is a coin
-flip and below 0.5 is inverted.
+**Hand-written probes are a smoke test, not a measurement — and this was verified, not assumed.**
+Replaying the broken ``perplexity_burstiness`` implementation through this module:
+
+    old detector, single-sentence probes (the gate as it was)   AUROC 0.84  -> OK
+    old detector, paragraph probes (the gate as it is)          AUROC 0.76  -> OK
+    old detector, labelled HC3 pairs                            gap -0.198  -> INVERTED
+
+Lengthening the probes was necessary but **not sufficient**: the packaged "human" side is written
+to look human, and it happens to be choppy, which is exactly the shape the broken scorer rated as
+human. Only ``--pairs`` — labelled human/AI pairs (HC3), reported as AUROC, the threshold-free
+probability that a random AI sample outscores a random human one — would have caught it. 0.5 is a
+coin flip and below 0.5 is inverted. Treat a clean run of the packaged probes as "nothing is
+obviously dead", never as evidence that a detector discriminates.
 
     untell-detector-audit             # fast smoke test on packaged probes
     untell-detector-audit --pairs 100 # real measurement on labelled data (needs .[eval])
