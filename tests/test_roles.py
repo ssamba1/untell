@@ -16,8 +16,11 @@ also reorder are not.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
+from untell.scripts import roles
 from untell.scripts.roles import available, role_swap
 
 pytestmark = pytest.mark.skipif(
@@ -110,3 +113,52 @@ def test_meaning_gate_rejects_role_swaps_end_to_end():
     # A high similarity that would sail past every other check in the gate.
     assert meaning_preserved(src, swapped, sim=0.995, strict_sim_bar=0.76) is False
     assert meaning_preserved(src, src, sim=1.0, strict_sim_bar=0.76) is True
+
+
+class TestRolesCLI:
+    """SKILL.md runs every step as `python scripts/<name>.py`, so a gate with no CLI is a gate the
+    flagship path cannot run. This one earns its place: the reversal it catches passes BOTH of the
+    other gates (similarity 0.994, entailment 0.988) because every word is preserved."""
+
+    def test_help_exits_zero(self, capsys):
+        assert roles.main(["--help"]) == 0
+        assert "usage" in capsys.readouterr().out.lower()
+
+    def test_missing_args_is_usage_error(self):
+        assert roles.main([]) == 2
+        assert roles.main(["only one"]) == 2
+
+    def test_exit_code_matches_rejected_field(self, capsys):
+        """Exit code is the shell contract — it must never disagree with the JSON."""
+        for a, b in [
+            ("The cache invalidated the request.", "The request invalidated the cache."),
+            ("The cache invalidated the request.", "The request was invalidated by the cache."),
+        ]:
+            code = roles.main([a, b])
+            payload = json.loads(capsys.readouterr().out)
+            assert code == (1 if payload["rejected"] else 0)
+
+    def test_unavailable_parser_skips_rather_than_rejects(self, capsys, monkeypatch):
+        """None means unknown. It must not become a rejection (which would block every rewrite when
+        spaCy is missing) and the JSON must say so, since exit 0 alone would read as verified."""
+        monkeypatch.setattr(roles, "role_swap", lambda a, b: None)
+        assert roles.main(["anything", "something else"]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["available"] is False and payload["rejected"] is False
+
+    def test_exit_codes_agree_with_entailment_cli(self):
+        """Both gates are documented as branching identically in a shell; keep the codes aligned."""
+        from untell.scripts import entailment
+
+        assert roles.main([]) == entailment.main([]) == 2
+
+    @pytest.mark.skipif(not available(), reason="spaCy model not installed")
+    def test_rejects_swap_that_survives_the_other_gates(self, capsys):
+        assert roles.main(["The cache invalidated the request.",
+                           "The request invalidated the cache."]) == 1
+        assert json.loads(capsys.readouterr().out)["role_swap"] is True
+
+    @pytest.mark.skipif(not available(), reason="spaCy model not installed")
+    def test_passive_voice_is_not_a_swap(self, capsys):
+        assert roles.main(["The cache invalidated the request.",
+                           "The request was invalidated by the cache."]) == 0

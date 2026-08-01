@@ -104,10 +104,25 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    altered meaning is not a win. If `available` is `false` (no `.[full]` extra) the check is
    skipped and you fall back to similarity plus your own reading.
 
+   Then the **predicate-argument check**, which catches what the other two cannot:
+   ```bash
+   python scripts/roles.py "<ORIG masked>" "<current masked text>"
+   ```
+   Exit `0` = roles intact, `1` = the rewrite swapped who did what to whom. Measured on
+   "The cache invalidated the request." → "The request invalidated the cache.": similarity
+   `0.994`, entailment `0.988`, contradiction `0.005` — **both earlier gates pass it**, because
+   every word is still there and the sentence still entails itself in aggregate. Only this check
+   rejects it. A swap of two arguments is the cheapest way for a rewrite to look faithful and
+   assert the opposite. Passive voice is not a swap and is not flagged.
+
+   The three gates are complementary, not redundant: similarity catches drift, entailment catches
+   negation and reversal of a claim, roles catches argument permutation. Run all three.
+
    Stop when **all** hold:
    - `max < threshold` (not flagged), **and**
    - the quality check `passes` is `true`, **and**
-   - the meaning gate exits `0` (or is unavailable).
+   - the meaning gate exits `0` (or is unavailable), **and**
+   - the predicate-argument check exits `0` (or is unavailable).
 
    **Confidence matters:** when `confidence` is `high` (full tier, embedding metric), enforce the
    quality gate strictly — never accept a rewrite where `passes` is false. When `confidence` is

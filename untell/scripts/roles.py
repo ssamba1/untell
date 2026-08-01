@@ -240,3 +240,50 @@ def role_swap(a: str, b: str) -> bool | None:
             )
             _NLP.warned = True
         return None
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI: ``python scripts/roles.py "<original>" "<rewrite>"`` -> JSON.
+
+    Added for the same reason as the entailment CLI: SKILL.md drives every step through
+    ``python scripts/<name>.py``, so a check with no CLI is a check the flagship path cannot run.
+    The predicate-argument veto catches the failure NLI is weakest on — "the cache invalidated the
+    request" vs "the request invalidated the cache" keeps every word, so lexical and embedding
+    metrics see near-identical text while the claim has been reversed.
+
+    Exit codes match ``entailment.py`` so both gates branch the same way in a shell:
+      0 = not rejected, 1 = roles permuted, 2 = usage error.
+
+    ``0`` means "this check did not reject it", NOT "meaning verified" — when spaCy is missing,
+    ``role_swap`` returns None and this reports ``available: false``. That is a skip, and the
+    module contract is explicit that None must never be read as a pass, so a caller that needs a
+    real verdict must check the ``available`` field rather than the exit code alone.
+    """
+    import json as _json
+    import sys as _sys
+
+    args = argv if argv is not None else _sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(
+            'usage: roles.py "<original>" "<rewrite>"\n\n'
+            "Prints JSON: available, role_swap, rejected.\n"
+            "Exit 0 if the rewrite does not permute the original's predicate-argument structure,\n"
+            "1 if it does, 2 on usage error. Needs spaCy + a model; without it `available` is\n"
+            "false and the check is skipped (exit 0) rather than guessed."
+        )
+        return 0
+    if len(args) < 2:
+        logger.error('usage: roles.py "<original>" "<rewrite>"')
+        return 2
+
+    swapped = role_swap(args[0], args[1])
+    if swapped is None:
+        print(_json.dumps({"available": False, "role_swap": None, "rejected": False,
+                           "note": "spaCy model unavailable — check skipped, not passed"}))
+        return 0
+    print(_json.dumps({"available": True, "role_swap": swapped, "rejected": swapped}))
+    return 1 if swapped else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
