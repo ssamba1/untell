@@ -88,12 +88,27 @@ def _vary_lengths(sentences: list[str], strength: float) -> list[str]:
 
 
 def rewrite(text: str, strength: float = 0.5) -> str:
-    """One deterministic mechanical rewrite at the given ``strength`` in [0, 1]."""
+    """One deterministic mechanical rewrite at the given ``strength`` in [0, 1].
+
+    ``strength=0.0`` leaves the CONTENT untouched. It is not byte-identical: splitting into
+    sentences and rejoining with single spaces normalises whitespace, so newlines collapse. That is
+    inherent to the approach and harmless for what this module measures, but it means a test must
+    compare normalised text, not bytes.
+    """
     sentences = [s for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
-    # Drop formulaic openers proportional to strength (always at strength >= 0.5).
+    # Drop formulaic openers proportional to strength.
+    #
+    # This used to read `if strength >= 0.5 or idx % 2 == 0`, which is not proportional to anything:
+    # every strength below 0.5 stripped exactly half the sentences, so 0.0, 0.1 and 0.4 produced
+    # byte-identical output — and **strength 0.0 was not a no-op**. In a module whose whole job is
+    # measurement, that means a strength sweep shows a flat line then a step, and there is no
+    # untouched control at the bottom of it.
+    #
+    # The counter below strips sentence `idx` when the running quota crosses an integer: 0.0 strips
+    # none, 0.5 strips every other, 1.0 strips all, and every value in between is monotone.
     cleaned = []
     for idx, s in enumerate(sentences):
-        if strength >= 0.5 or idx % 2 == 0:
+        if int((idx + 1) * strength) > int(idx * strength):
             s = _TRANSITIONS.sub("", s)
             if s and s[0].islower():
                 s = s[0].upper() + s[1:]
@@ -141,7 +156,14 @@ def full_loop(
     sim_bar: float | None = None,
     max_iters: int = 5,
 ) -> LoopResult:
-    """Closed-loop rewrite: escalate strength while flagged and similarity holds."""
+    """Best-of-N over escalating rewrite strengths, keeping the lowest-scoring candidate.
+
+    Called a "closed loop" for a long time, and it is worth being precise in the file that exists
+    to compare untell against alternatives: each round rewrites the ORIGINAL ``text`` at a higher
+    strength, so this is a strength sweep with best-of selection, not iterative refinement. untell's
+    own loop feeds each accepted rewrite back in as the next round's input; this baseline does not,
+    and describing it as a closed loop understates the difference the comparison is measuring.
+    """
     if sim_bar is None:  # bar appropriate to the active similarity metric (embedding vs token-overlap)
         sim_bar = recommended_bar()
     pre = score_text(text, tier=tier, threshold=threshold)
