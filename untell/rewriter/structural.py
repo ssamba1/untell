@@ -26,6 +26,44 @@ from untell.rewriter.base import Rewriter
 
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
+# Abbreviations whose trailing period is NOT a sentence end. Without these, "Dr. Smith published
+# the results" split into "Dr." and "Smith published the results", and the sentence merger then
+# rejoined them as "Dr, though smith published the results" — an abbreviation destroyed and a
+# surname lowercased, in a tool whose entire promise is that facts survive the rewrite.
+_ABBREVIATIONS = {
+    "dr", "mr", "mrs", "ms", "prof", "sr", "jr", "st", "rev", "hon", "gen", "col", "sgt", "lt",
+    "vs", "etc", "al", "cf", "approx", "est", "dept", "univ", "inc", "ltd", "co", "corp",
+    "fig", "figs", "eq", "no", "nos", "vol", "vols", "ch", "chap", "sec", "pp", "ed", "eds",
+    "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
+    "mon", "tue", "wed", "thu", "fri", "sat", "sun",
+    "e.g", "i.e", "a.m", "p.m", "u.s", "u.k", "ph.d", "m.d", "b.a", "m.a", "d.c",
+}
+
+# Words it is safe to lowercase when a sentence becomes a subordinate clause. Anything outside this
+# set is left capitalised and the merge is SKIPPED, because the alternative — lowercasing whatever
+# happens to start the sentence — turns "Smith published" into "smith published" and "NASA
+# confirmed" into "nASA confirmed". Fewer merges is a cheap price for never mangling a name.
+_SAFE_TO_LOWERCASE = {
+    "the", "this", "that", "these", "those", "a", "an", "it", "its", "they", "their", "them",
+    "he", "his", "him", "she", "her", "we", "our", "us", "you", "your", "i", "my", "there",
+    "here", "some", "many", "most", "much", "all", "each", "every", "both", "few", "several",
+    "one", "two", "three", "no", "not", "if", "when", "while", "after", "before", "since",
+    "because", "although", "though", "unless", "until", "as", "but", "and", "or", "so", "yet",
+    "in", "on", "at", "for", "from", "with", "without", "by", "to", "into", "over", "under",
+    "such", "other", "another", "any", "who", "which", "what", "how", "why", "where",
+    "operators", "users", "results", "data", "studies", "researchers", "companies", "students",
+    "people", "customers", "patients", "developers", "teams", "systems", "models", "tools",
+}
+
+# Discourse markers that may survive at the start of the second clause. Joining with ", and " when
+# the clause already opens with one produced "and plus,", "while and," and "and and," — visible
+# garbage in the primary free rewriter's output.
+_LEADING_MARKER_RE = re.compile(
+    r"^(?:and|but|or|so|yet|plus|also|then|however|moreover|furthermore|additionally|"
+    r"overall|therefore|thus|hence|indeed|besides|meanwhile|still)\b,?\s+",
+    re.IGNORECASE,
+)
+
 # Formulaic transitions that OPEN a sentence (§3, §8 from ai-tells.md).
 _TRANSITIONS_RE = re.compile(
     r"^(Moreover|Furthermore|Additionally|Overall|In conclusion|In summary|"
@@ -151,8 +189,30 @@ _CONTRACTIONS: list[tuple[re.Pattern, str]] = [
 # ---------------------------------------------------------------------------
 
 
+def _ends_with_abbreviation(fragment: str) -> bool:
+    """True when this fragment's final period belongs to an abbreviation or an initial."""
+    tail = fragment.rstrip().rsplit(" ", 1)[-1] if fragment.strip() else ""
+    if not tail.endswith("."):
+        return False
+    word = tail[:-1].strip("([\"'“‘").lower()
+    if word in _ABBREVIATIONS:
+        return True
+    # A single letter, or dotted initials: "J.", "J.R.R.", "U.S.A."
+    return bool(word) and len(word.replace(".", "")) <= 3 and all(
+        len(part) <= 1 for part in word.split(".") if part
+    )
+
+
 def _split_sentences(text: str) -> list[str]:
-    return [s.strip() for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
+    """Split on sentence-final punctuation, keeping abbreviations intact."""
+    parts = [s for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
+    merged: list[str] = []
+    for part in parts:
+        if merged and _ends_with_abbreviation(merged[-1]):
+            merged[-1] = f"{merged[-1].rstrip()} {part.strip()}"
+        else:
+            merged.append(part.strip())
+    return [s for s in merged if s]
 
 
 def _strip_transitions(sentences: list[str], rate: float = 1.0) -> list[str]:
@@ -177,15 +237,25 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
         if i + 1 < len(sentences) and random.random() < rate:
             a = sentences[i].rstrip(".")
             b = sentences[i + 1].strip()
-            if b:
+            # A clause that already opens with a discourse marker cannot take another connector:
+            # ", and " + "plus, it improves..." reads "and plus, it improves". Strip the marker
+            # first — the connector about to be added does the same job.
+            b = _LEADING_MARKER_RE.sub("", b, count=1)
+            merged_ok = bool(b) and (
+                b[0].islower() or b.split()[0].strip(",;:").lower() in _SAFE_TO_LOWERCASE
+            )
+            if b and merged_ok:
                 b = b.strip(".")
                 b = b[0].lower() + b[1:] if b and b[0].isupper() else b
                 connectors = [", and ", ", but ", ", while ", "; ", ", though "]
                 conn = random.choice(connectors)
                 out.append(f"{a}{conn}{b}.")
-            else:
-                out.append(sentences[i])
-            i += 2
+                i += 2
+                continue
+            # Not safe to demote to a subordinate clause (a name, an acronym, an unknown noun):
+            # leave both sentences alone rather than lowercasing something that must stay capital.
+            out.append(sentences[i])
+            i += 1
         else:
             out.append(sentences[i])
             i += 1

@@ -5,6 +5,8 @@ natural-sounding output — not regex artifacts like wrong verb tense or fragmen
 """
 from __future__ import annotations
 
+import pytest
+
 from untell.rewriter.structural import _flatten_participial_trailers, structural_rewrite
 
 
@@ -110,3 +112,68 @@ class TestClicheRemoval:
         text = "Studies show that this approach is effective in most cases."
         result = structural_rewrite(text, intensity=1.0)
         assert "evidence suggests" in result.lower() or "studies show" in result.lower()
+
+
+# --- Sentence boundaries and clause merging ---------------------------------------------------
+# Probing the free rewriter's actual output surfaced three defects visible to any reader:
+#   "Dr. Smith published the results"  ->  "Dr, though smith published the results"
+#   "Furthermore, it improves mood"    ->  ", and plus, it improves mood"
+#   "Moreover, machine learning ..."   ->  ", while and, machine learning ..."
+# An abbreviation split apart, a surname lowercased, and two conjunctions stacked.
+
+ABBREVIATION_CASES = [
+    ("title", "Dr. Smith published the results in 2020. The study enrolled 240 patients.", 2),
+    ("country", "The U.S. economy grew steadily. Inflation fell.", 2),
+    ("figure", "See Fig. 3 for detail. The trend is clear.", 2),
+    ("initials", "J. R. R. Tolkien wrote it. It sold well.", 2),
+    ("latin", "Use e.g. this approach instead. It works.", 2),
+    ("two titles", "Prof. Jones and Mr. Lee co-authored it. They disagreed.", 2),
+    ("no abbreviation", "No abbreviations here at all. Second sentence follows.", 2),
+]
+
+
+@pytest.mark.parametrize("label,text,expected", ABBREVIATION_CASES, ids=[c[0] for c in ABBREVIATION_CASES])
+def test_abbreviations_do_not_end_a_sentence(label, text, expected):
+    from untell.rewriter.structural import _split_sentences
+
+    parts = _split_sentences(text)
+    assert len(parts) == expected, f"{label}: split into {parts}"
+    for abbr in ("Dr.", "U.S.", "Fig.", "Prof.", "Mr.", "e.g."):
+        if abbr in text:
+            assert any(abbr in p for p in parts), f"{label}: {abbr} was split apart -> {parts}"
+
+
+def test_merge_never_lowercases_a_proper_noun():
+    """Demoting a sentence to a subordinate clause lowercases its first word. That is right for
+    "The study ..." and wrong for "Smith published ...", so a name blocks the merge instead."""
+    from untell.rewriter.structural import _merge_sentences
+
+    for _ in range(40):  # the merge is randomised; a single draw proves nothing
+        out = " ".join(_merge_sentences(["The results were published.", "Smith led the team."], rate=1.0))
+        assert "smith" not in out, f"proper noun lowercased: {out!r}"
+        out = " ".join(_merge_sentences(["The results were published.", "NASA confirmed them."], rate=1.0))
+        assert "nASA" not in out and "nasa" not in out, f"acronym mangled: {out!r}"
+
+
+def test_merge_strips_a_leading_marker_instead_of_stacking_conjunctions():
+    from untell.rewriter.structural import _merge_sentences
+
+    for _ in range(40):
+        out = " ".join(_merge_sentences(
+            ["Regular exercise reduces risk.", "Also, it improves mood."], rate=1.0))
+        low = out.lower()
+        for stacked in ("and also", "but also,", "and plus", "while and", "and and", "though also"):
+            assert stacked not in low, f"stacked connectives in {out!r}"
+
+
+def test_merge_still_merges_ordinary_sentences():
+    """The safety checks must not silently disable merging — it is the burstiness lever."""
+    from untell.rewriter.structural import _merge_sentences
+
+    merged_at_least_once = False
+    for _ in range(40):
+        out = _merge_sentences(["The system shuts down.", "The operator is alerted."], rate=1.0)
+        if len(out) == 1:
+            merged_at_least_once = True
+            break
+    assert merged_at_least_once, "ordinary sentences are no longer merged at all"
