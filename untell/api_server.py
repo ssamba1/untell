@@ -56,7 +56,8 @@ APP_DESC = __doc__
 # Free, no-key rewriter backends selectable via the ``rewriter`` field. Anything else (e.g. "auto")
 # means "let get_rewriter pick a hosted/local-policy backend" and is passed as prefer=None below.
 _FREE_REWRITERS = frozenset(
-    {"surgical", "structural", "composite", "neural", "ensemble", "max", "t5_paraphrase", "mt_pivot"}
+    {"surgical", "structural", "composite", "targeted", "neural", "ensemble", "max",
+     "t5_paraphrase", "mt_pivot"}
 )
 
 

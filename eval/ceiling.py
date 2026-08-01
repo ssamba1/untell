@@ -214,8 +214,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--rewriter",
         choices=[
-            "auto", "surgical", "structural", "composite", "neural", "ensemble", "max",
-            "t5_paraphrase", "mt_pivot",
+            "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
+            "max", "t5_paraphrase", "mt_pivot",
         ],
         default="auto",
         help="'auto' uses a hosted-LLM rewriter if a key is set (else baseline only); every other "
