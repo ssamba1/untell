@@ -21,3 +21,5 @@ transformer.h.{0, 2, 4, 6, 8, 10}.attn.attention.bias | UNEXPECTED |  |
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 [transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 5532.25it/s]
+Loading weights:   0%|          | 0/257 [00:00<?, ?it/s]Loading weights: 100%|##########| 257/257 [00:00<00:00, 6150.22it/s]

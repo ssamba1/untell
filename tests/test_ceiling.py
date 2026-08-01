@@ -42,3 +42,47 @@ def test_cli_smoke(capsys):
     out = capsys.readouterr().out
     assert "ceiling" in out.lower()
     assert "flagged rate" in out.lower()
+
+
+def test_repeats_records_per_run_means_and_spread(monkeypatch):
+    """The free rewriters are randomized, so a single pass is not reproducible evidence.
+
+    `repeats` must re-run the whole corpus N times and report the per-run means plus their stdev,
+    so a quoted number can be read with its error bar."""
+    import eval.ceiling as C
+
+    runs = {"n": 0}
+
+    def _fake_score(t, tier="full", threshold=0.3):
+        # rewritten text alternates 0.2 / 0.4 per run so the spread is non-zero
+        if "REW" not in t:
+            m = 0.9
+        else:
+            m = 0.2 if runs["n"] % 2 else 0.4
+        return {"max": m, "mean": m, "detectors": {"d": m}, "tier": tier,
+                "threshold": threshold, "flagged": m >= threshold}
+
+    def _fake_untell(t, **kw):
+        out = t + " REW"
+        return {"final": out, "pre": _fake_score(t), "post": _fake_score(out), "stopped": "passed"}
+
+    def _fake_run(t, **kw):
+        res = _fake_untell(t, **kw)
+        return res
+
+    monkeypatch.setattr(C, "score_text", _fake_score)
+    monkeypatch.setattr(C, "untell_text", _fake_run)
+
+    r = C.measure_ceiling(["para one", "para two"], repeats=3)
+    assert r["repeats"] == 3
+    assert len(r["run_post_means"]) == 3       # one mean recorded per run
+    assert r["post_mean_max_stdev"] is not None
+    assert "across 3 runs" in C._render(r)     # the spread is surfaced, not hidden
+
+
+def test_repeats_default_is_single_run_without_spread():
+    import eval.ceiling as C
+
+    assert C._stdev([0.5]) is None       # a single sample has no spread
+    assert C._stdev([]) is None
+    assert C._stdev([0.2, 0.4]) == 0.1   # population stdev

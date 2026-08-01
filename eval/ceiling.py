@@ -60,6 +60,14 @@ def _mean(xs: list[float]) -> float | None:
     return round(sum(xs) / len(xs), 4) if xs else None
 
 
+def _stdev(xs: list[float]) -> float | None:
+    """Population stdev; None for fewer than 2 samples."""
+    if len(xs) < 2:
+        return None
+    m = sum(xs) / len(xs)
+    return round((sum((x - m) ** 2 for x in xs) / len(xs)) ** 0.5, 4)
+
+
 def measure_ceiling(
     texts: list[str] | None = None,
     tier: str = "full",
@@ -67,31 +75,46 @@ def measure_ceiling(
     max_iters: int = 5,
     rewriter=None,
     best_of: int = 1,
+    repeats: int = 1,
 ) -> dict:
-    """Score each text, run the loop, and aggregate the before/after detector movement."""
+    """Score each text, run the loop, and aggregate the before/after detector movement.
+
+    ``repeats`` re-runs the whole corpus N times. The free rewriters are RANDOMIZED (composite draws
+    different seeds per attempt, the neural path samples), so a single pass is not reproducible
+    evidence — measured, the same corpus moved a rewriter's mean max P(AI) from 0.080 to 0.144 across
+    two runs. With ``repeats > 1`` the result carries ``post_mean_max_stdev`` and the per-run means,
+    so a reported number can be read with its spread instead of being mistaken for a point estimate.
+    """
     if texts is None:
         texts = list(_SAMPLE)
+    run_post_means: list[float] = []
     pre_max: list[float] = []
     post_max: list[float] = []
     per_pre: dict[str, list[float]] = {}
     per_post: dict[str, list[float]] = {}
     rewrote = 0
 
-    for t in texts:
-        pre = score_text(t, tier=tier, threshold=threshold)
-        pre_max.append(pre["max"])
-        for k, v in _numeric(pre).items():
-            per_pre.setdefault(k, []).append(v)
+    for _run in range(max(1, repeats)):
+        run_posts: list[float] = []
+        for t in texts:
+            pre = score_text(t, tier=tier, threshold=threshold)
+            pre_max.append(pre["max"])
+            for k, v in _numeric(pre).items():
+                per_pre.setdefault(k, []).append(v)
 
-        res = untell_text(
-            t, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rewriter, best_of=best_of
-        )
-        if "error" not in res and "post" in res:
-            post = res["post"]
-            post_max.append(post["max"])
-            for k, v in _numeric(post).items():
-                per_post.setdefault(k, []).append(v)
-            rewrote += 1
+            res = untell_text(
+                t, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rewriter,
+                best_of=best_of,
+            )
+            if "error" not in res and "post" in res:
+                post = res["post"]
+                post_max.append(post["max"])
+                run_posts.append(post["max"])
+                for k, v in _numeric(post).items():
+                    per_post.setdefault(k, []).append(v)
+                rewrote += 1
+        if run_posts:
+            run_post_means.append(round(sum(run_posts) / len(run_posts), 4))
 
     def flagged_rate(scores: list[float]) -> float | None:
         return round(sum(1 for s in scores if s >= threshold) / len(scores), 4) if scores else None
@@ -102,6 +125,9 @@ def measure_ceiling(
         "threshold": threshold,
         "max_iters": max_iters,
         "best_of": best_of,
+        "repeats": max(1, repeats),
+        "run_post_means": run_post_means or None,
+        "post_mean_max_stdev": _stdev(run_post_means),
         "rewrote": rewrote,
         "rewriter_available": rewrote > 0,
         "pre_flagged_rate": flagged_rate(pre_max),
@@ -125,6 +151,12 @@ def _render(r: dict) -> str:
             f"  post flagged rate: {r['post_flagged_rate']}   mean max P(AI): {r['post_mean_max']}   "
             f"(rewrote {r['rewrote']}/{r['n']})"
         )
+        if r.get("repeats", 1) > 1:
+            # The free rewriters are randomized, so the spread across runs is the honest error bar.
+            lines.append(
+                f"  across {r['repeats']} runs: per-run mean max = {r['run_post_means']}   "
+                f"stdev = {r['post_mean_max_stdev']}"
+            )
         lines.append("")
         lines.append("  per-detector mean P(AI)  before -> after:")
         for k, before in sorted(r["per_detector_pre"].items()):
@@ -159,11 +191,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-iters", type=int, default=5)
     parser.add_argument("--best-of", type=int, default=1)
     parser.add_argument(
+        "--repeats",
+        type=int,
+        default=1,
+        help="re-run the whole corpus N times and report the spread. The free rewriters are RANDOMIZED, "
+        "so a single pass is not reproducible evidence — use >=3 before quoting a number.",
+    )
+    parser.add_argument(
         "--rewriter",
-        choices=["auto", "surgical", "structural", "composite"],
+        choices=[
+            "auto", "surgical", "structural", "composite", "neural", "ensemble", "max",
+            "t5_paraphrase", "mt_pivot",
+        ],
         default="auto",
-        help="'auto' uses a hosted-LLM rewriter if a key is set (else baseline only); 'surgical' uses "
-        "the deterministic no-key word-substitution rewriter so the loop runs at $0 (free measurement).",
+        help="'auto' uses a hosted-LLM rewriter if a key is set (else baseline only); every other "
+        "choice is a FREE no-key backend so the loop runs at $0 — 'composite' (structural+surgical), "
+        "'ensemble'/'max' (best of all free methods), 'neural' (T5 best-of-N; needs .[full]).",
     )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
@@ -176,16 +219,23 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty corpus"}))
         return 2
     rewriter = None
-    if args.rewriter == "surgical":
+    if args.rewriter != "auto":
         from untell.rewriter import get_rewriter
 
-        rewriter = get_rewriter(prefer="surgical")
+        rewriter = get_rewriter(prefer=args.rewriter)
+        if rewriter is None:
+            print(
+                f"ERROR: --rewriter {args.rewriter} is unavailable — it needs the '.[full]' extra "
+                "(pip install -e '.[full]'). Try --rewriter composite for the zero-dependency path."
+            )
+            return 1
     result = measure_ceiling(
         texts,
         tier=args.tier,
         threshold=args.threshold,
         max_iters=args.max_iters,
         best_of=args.best_of,
+        repeats=args.repeats,
         rewriter=rewriter,
     )
     print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
