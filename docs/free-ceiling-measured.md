@@ -228,6 +228,19 @@ entailment ≥ 0.005), which on a fixed probe set admitted 7/8 faithful rewrites
 meaning-lost or inverted ones, versus 2/8 and 4/11 for the similarity bar it replaced. A lower score
 on a metric proven unreliable for this transformation is not evidence of lost meaning.
 
+### What this measurement does NOT cover
+
+The built-in corpus is formulaic AI prose with **no citations, numbers, quotes or named entities** —
+measured, `preserve.lock` finds **0 locked spans in all three paragraphs**. So every ceiling figure
+here exercises the rewriters and the meaning gate, and never once exercises the fact-preservation
+machinery that is the product's other half.
+
+That is not a flaw in the numbers — detector movement is what they claim to measure — but it does
+mean **a regression that corrupted citations or numbers would not show up anywhere in this
+document.** Those guarantees are covered separately by `tests/test_end_to_end_guarantees.py`, which
+runs the real loop over fact-bearing text and asserts every locked span survives byte-exact. Read
+the two together; neither alone describes the system.
+
 Two honest caveats that keep this from being a "solved" claim:
 
 1. ~~**`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is
