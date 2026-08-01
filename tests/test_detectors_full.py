@@ -7,6 +7,8 @@ RoBERTa / MAGE / Fast-DetectGPT / GPT-2-perplexity code paths that the lite tier
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 # Every test here loads a real model; see the `slow` marker note in pyproject.toml.
@@ -35,14 +37,34 @@ HUMAN_TEXT = (
 )
 
 
+# MAGE is opt-OUT via a documented env var, and the project's own reproduce command in the README
+# sets it (`UNTELL_DISABLE_MAGE=1 untell-ceiling ...`). Hard-requiring MAGE meant that following the
+# documentation and then running the suite produced two failures that were not bugs.
+_MAGE_OFF = os.environ.get("UNTELL_DISABLE_MAGE") == "1"
+_needs_mage = pytest.mark.skipif(_MAGE_OFF, reason="UNTELL_DISABLE_MAGE=1 excludes mage by design")
+
+
 def test_full_tier_loads_supervised_detectors():
     dets = load_detectors("full")
     names = {d.name for d in dets}
     assert resolved_tier(dets) == "full", names
-    assert {"roberta_openai", "mage", "fast_detectgpt"} <= names, names
+    expected = {"roberta_openai", "fast_detectgpt"} if _MAGE_OFF else {
+        "roberta_openai", "mage", "fast_detectgpt"
+    }
+    assert expected <= names, names
+    if _MAGE_OFF:
+        assert "mage" not in names, "UNTELL_DISABLE_MAGE=1 did not actually exclude mage"
 
 
-@pytest.mark.parametrize("name", ["roberta_openai", "mage", "fast_detectgpt", "hc3_roberta"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "roberta_openai",
+        pytest.param("mage", marks=_needs_mage),
+        "fast_detectgpt",
+        "hc3_roberta",
+    ],
+)
 def test_supervised_detector_scores_in_unit_interval(name):
     det = next(d for d in load_detectors("full") if d.name == name)
     try:

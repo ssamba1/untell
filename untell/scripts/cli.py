@@ -96,9 +96,33 @@ def _resolve(target: str):
 
 
 def _run_demo(text: str | None = None) -> int:
-    """Run a guided demo: score → tells on built-in text. Instant (<1s)."""
+    """Run a guided demo: score → tells on built-in text.
+
+    NOT instant, despite what this docstring used to claim. The lite tier is stdlib-only *until*
+    torch is importable, at which point it silently upgrades to GPT-2 perplexity — better math, but
+    measured at **28.6s** end to end for this demo on a machine with `.[full]` installed. Since
+    `untell` with no arguments runs this, that wait is the first thing a new user meets, so it is
+    announced the same way `untell-score` and `untell-verify` announce theirs.
+    """
+    import os
+    import sys as _s
+
     from untell.scripts.io_utils import configure_utf8_io
     configure_utf8_io()
+
+    if os.environ.get("UNTELL_LITE_NO_TORCH") != "1":
+        try:
+            import importlib.util
+
+            if importlib.util.find_spec("torch") is not None:
+                print(
+                    "[untell] the lite tier upgrades to GPT-2 perplexity when torch is installed — "
+                    "~20s on first run while models load and cache. Set UNTELL_LITE_NO_TORCH=1 for "
+                    "the genuinely instant stdlib path.",
+                    file=_s.stderr,
+                )
+        except Exception:
+            pass
 
     sample = (
         "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
@@ -108,7 +132,7 @@ def _run_demo(text: str | None = None) -> int:
     )
     sample_text = text or sample
 
-    # Step 1: Score (instant on lite tier)
+    # Step 1: Score on the lite tier (which is only instant without torch — see the notice above)
     print("\n[1/3] Scoring with local detector ensemble...\n")
     from untell.scripts.score import score_text
     pre = score_text(sample_text, tier="lite")

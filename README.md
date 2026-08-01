@@ -82,7 +82,7 @@ score the text and lock your facts. Zero dependencies (lite tier).
 git clone https://github.com/ssamba1/untell && cd untell
 pip install -e ".[full]"                          # real detector ensemble on CPU
 
-# One unified command (run `untell` with no args to see them all):
+# One unified command (`untell --help` lists them all; bare `untell` runs the guided demo):
 untell humanize "Your AI-sounding paragraph here."   # the closed loop (alias: loop); default $0 composite
 untell humanize "text" --rewriter surgical           # NO key needed — runs the loop for $0
 untell humanize "text" --rewriter ensemble           # strongest free path: composite + mt + neural, pick best (.[full])
