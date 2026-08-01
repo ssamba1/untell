@@ -94,6 +94,7 @@ def _score_with_detectors(
     """Score ``text`` against a *pre-loaded* detector list (avoids re-initialisation)."""
     scores: dict[str, float | None] = {}
     live = []  # detectors that produced a genuine numeric score
+    out_of_range_raw: dict[str, float] = {}  # name -> the raw value before clamping
     for d in detectors:
         try:
             val = d.score(text)
@@ -113,14 +114,17 @@ def _score_with_detectors(
         raw = float(val)
         clamped = 0.0 if raw < 0.0 else (1.0 if raw > 1.0 else raw)
         if clamped != raw:
-            scores[f"{d.name}__out_of_range"] = round(raw, 4)  # type: ignore[assignment]
+            # Recorded OUTSIDE the detectors dict on purpose. Every consumer that iterates
+            # `detectors` filters sidecars by `endswith("__error")` — run.py, verify.py and
+            # training/reward.py all do — so adding a differently-suffixed FLOAT key here silently
+            # broke them: reward.py folded the raw 100.0 from a 0-100-scale API into its weighted
+            # mean as a phantom detector, turning a correct ~0.75 reward into -49.5. Keeping the
+            # diagnostic out of the dict removes that trap for every present and future consumer.
+            out_of_range_raw[d.name] = round(raw, 4)
         scores[d.name] = round(clamped, 4)
         live.append(d)
 
-    numeric = [
-        v for k, v in scores.items()
-        if isinstance(v, (int, float)) and not k.endswith("__out_of_range")
-    ]
+    numeric = [v for v in scores.values() if isinstance(v, (int, float))]
     mx = max(numeric) if numeric else 0.0
     mean = sum(numeric) / len(numeric) if numeric else 0.0
     effective = resolved_tier(live) if live else "lite"
@@ -137,9 +141,9 @@ def _score_with_detectors(
     }
     if failed:
         result["failed_detectors"] = failed
-    out_of_range = [k[: -len("__out_of_range")] for k in scores if k.endswith("__out_of_range")]
-    if out_of_range:
-        result["out_of_range_detectors"] = out_of_range
+    if out_of_range_raw:
+        result["out_of_range_detectors"] = sorted(out_of_range_raw)
+        result["out_of_range_raw"] = out_of_range_raw
     if not numeric:
         # NOTHING was scored. max/mean are 0.0 placeholders, and 0.0 otherwise reads as a confident
         # "definitely human" — the most misleading value this function could return. Say so

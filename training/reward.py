@@ -16,7 +16,7 @@ GPU (the surrogate path needs `.[train]` + a trained surrogate dir).
 import os
 import re
 
-from untell.scripts.quality import similarity
+from untell.scripts.quality import recommended_bar, similarity
 from untell.scripts.score import score_text
 from untell.scripts.tells import score_tells
 
@@ -58,7 +58,7 @@ def free_ensemble_score(text: str, tier: str = "full", weights: dict[str, float]
     present = {
         k: float(v)
         for k, v in dets.items()
-        if isinstance(v, (int, float)) and not k.endswith("__error")
+        if isinstance(v, (int, float)) and "__" not in k
     }
     if not present:
         return float(res["max"])
@@ -113,7 +113,7 @@ def humanness_reward(
     candidate: str,
     *,
     tier: str = "full",
-    sim_floor: float = 0.76,
+    sim_floor: float | None = None,
     w_quality: float = 0.25,
 ) -> float:
     """Multi-objective reward: evasion + meaning + quality, with HARD meaning/length gates.
@@ -134,6 +134,15 @@ def humanness_reward(
     """
     if not candidate.strip():
         return -1.0
+    # The floor MUST match the metric similarity() actually used. It is backend-adaptive — BERTScore
+    # (bar 0.88), cosine embeddings (0.76), or the token-overlap fallback (0.50) — and the old
+    # hard-coded 0.76 was only meaningful for the middle one. In a lightweight training environment
+    # with no sentence-transformers, similarity() falls back to token overlap, where 0.76 is ~50%
+    # too strict: a faithful paraphrase that rewords 4 of 11 words scores ~0.64 and was hard-gated to
+    # -1.0, the SAME reward as an off-topic rewrite. Every meaningful candidate then earned -1.0, so
+    # GRPO trained the policy to make trivially small edits while the loss curve looked plausible.
+    if sim_floor is None:
+        sim_floor = recommended_bar()
     # Hard gates first — a gated candidate earns nothing regardless of how well it evades.
     if similarity(original, candidate) < sim_floor:
         return -1.0
