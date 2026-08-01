@@ -79,6 +79,19 @@ _VAGUE_ATTR_RE = re.compile(
 # Semicolons used as rhythm crutch.
 _SEMICOLON_RE = re.compile(r";\s+")
 
+# Low-content AI scaffolding openers — pure filler that precedes the real sentence. Strip the phrase
+# and keep the clause. "It is worth noting that X" -> "X"; "It should be noted that X" -> "X".
+_FILLER_OPENER_RE = re.compile(
+    r"(?:^|(?<=[.!?]\s))\s*"
+    r"(?:it (?:is|'s) (?:worth (?:noting|mentioning)|important to (?:note|mention|highlight|remember)) that"
+    r"|it should be noted that"
+    r"|one (?:thing|point) (?:to note|worth noting) is that"
+    r"|(?:it is|there is) no (?:doubt|denying) that"
+    r"|needless to say,?"
+    r"|as (?:we|previously) (?:noted|mentioned|discussed),?)\s+",
+    re.IGNORECASE,
+)
+
 # ---------------------------------------------------------------------------
 # Word-level patterns (additional to SurgicalRewriter's synonym map)
 # ---------------------------------------------------------------------------
@@ -272,6 +285,13 @@ def _inject_contractions(text: str, rate: float = 1.0) -> str:
     return text
 
 
+def _strip_filler_openers(text: str) -> str:
+    """Remove low-content AI scaffolding openers ("It is worth noting that ...") and keep the clause,
+    re-capitalizing the sentence start that the strip exposes."""
+    out = _FILLER_OPENER_RE.sub("", text)
+    return re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), out)
+
+
 def _flatten_copula(text: str) -> str:
     """Replace 'serves as', 'boasts', etc. with plain 'is'."""
     text = _INFLATED_COPULA_RE.sub("is", text)
@@ -416,6 +436,9 @@ def structural_rewrite(text: str, intensity: float = 0.5, seed: int | None = Non
     """
     if seed is not None:
         random.seed(seed)
+
+    # 0. Strip low-content scaffolding openers (pure filler)
+    text = _strip_filler_openers(text)
 
     # 1. Flatten participial trailers (always, these are pure tell)
     text = _flatten_participial_trailers(text)

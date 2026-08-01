@@ -69,6 +69,17 @@ class TestStructuralRewriter:
         # allow the injected "and" connector
         assert set(w(sents)) - set(w(after_sents)) == set()
 
+    def test_strips_filler_openers(self):
+        from untell.rewriter.structural import _strip_filler_openers
+
+        assert _strip_filler_openers("It is worth noting that results improved.") == "Results improved."
+        assert _strip_filler_openers("It should be noted that errors dropped.") == "Errors dropped."
+        # Mid-paragraph, capital of exposed clause restored.
+        assert (
+            _strip_filler_openers("The cat sat. It is important to note that dogs bark too.")
+            == "The cat sat. Dogs bark too."
+        )
+
     def test_empty_input(self):
         assert structural_rewrite("", intensity=1.0) == ""
 
