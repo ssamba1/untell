@@ -176,10 +176,17 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
 
    Make the drafts *actually different* (different sentence order, different level of detail, a
    different opening move) rather than three near-copies; near-copies score near-identically and waste
-   the step. Score each with step 3, then keep the draft with the lowest max **that also holds the
-   meaning gate** — and if none beats the current text, **keep the current text**. A rewrite that
-   doesn't improve anything still costs meaning fidelity, so an unimproved draft is worse than no
-   rewrite at all.
+   the step. Score each with step 3, then pick among the drafts **that hold the meaning gate** — and
+   if none beats the current text, **keep the current text**. A rewrite that doesn't improve anything
+   still costs meaning fidelity, so an unimproved draft is worse than no rewrite at all.
+
+   **Do not simply take the lowest `max`.** Differences under **0.02** are detector noise, not
+   signal, and the headless loop treats them as ties for exactly that reason. Among the drafts within
+   0.02 of the best `max`, prefer, in order: **fewest AI tells** (`scripts/tells.py`), then lowest
+   ensemble **`mean`**, then lowest `max` as the final tiebreak. A draft that also pushes the other
+   detectors down is genuinely better even when `max` is unchanged — `max` alone is blind to that —
+   and picking the marginally-lower-`max` draft that reads more like AI trades a real gain for a
+   rounding error.
 
 6. **Restore + report.** Once stopped, restore the protected spans — substitute each sentinel
    back to its original using the `mapping` from step 2:
