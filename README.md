@@ -95,10 +95,13 @@ untell ceiling --rewriter surgical --tier full       # measure free evasion of t
 # (every subcommand is also a standalone `untell-<name>` script, e.g. `untell-loop`, `untell-tells`)
 ```
 
-> **How far does free actually go?** We measured it. The training-free, no-key loop drops the local
-> open-detector ensemble from ~90% flagged to ~60% (mean max P(AI) 0.87 → 0.68) — and is
-> **powerless against content-locked detectors**, which no meaning-preserving rewrite can move. The
-> full numbers, method, and honest limits are in [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)
+> **How far does free actually go?** We measured it, then re-measured it when the first answer turned
+> out to be wrong. The training-free, no-key loop drops the local open-detector ensemble from 100%
+> flagged to **11%** (mean max P(AI) **0.86 → 0.21**), with meaning held by an NLI gate. An earlier
+> version of this README claimed the loop was "powerless against content-locked detectors" — that was
+> measured with a single rewrite draw and a miscalibrated detector, and **it did not survive
+> re-measurement**. Full numbers, method, superseded claims and honest limits:
+> [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)
 > (the report: [`docs/free-ceiling-report.md`](docs/free-ceiling-report.md)).
 
 <details>
@@ -124,7 +127,7 @@ pip install -e ".[mcp]" && untell-mcp     # (pip install "untell[mcp]" once on P
   repeat up to N times:
     score = scripts/score.py <text>          # ensemble of detectors -> {detector: P(AI), max}
     sentences = scripts/sentences.py <text>  # which sentences read as AI (target only these)
-    sim   = scripts/quality.py <orig> <text> # semantic similarity, must stay >= 0.76
+    meaning = NLI gate: no contradiction AND bidirectional entailment  (scripts/entailment.py)
     if max(score) < threshold and sim ok: stop
     Claude rewrites the flagged sentences using the per-detector scores as feedback
       (raise burstiness + perplexity, vary sentence architecture, kill clichés/formulaic
@@ -136,8 +139,13 @@ Three design choices make it work where blind paraphrasers fail:
 
 1. **It drives the `max` across detectors, not the average** — a rewrite only wins when the *hardest*
    detector is satisfied (genuine multi-detector evasion).
-2. **Every rewrite is gated on a 0.76 semantic-similarity bar** (the P-SP threshold from the
-   watermark-removal literature) — it *refuses* the meaning-mangling that wrecks other tools' output.
+2. **Every rewrite is gated on meaning by an NLI check, not cosine similarity** — it *refuses* the
+   meaning-mangling that wrecks other tools' output. Cosine similarity alone was measured to fail in
+   **both** directions: it passed rewrites that INVERT the source ("runs faster" → "runs slower"
+   scores 0.974 against a 0.76 bar) while rejecting 6 of 8 faithful formal→casual rewrites, because
+   it penalises register change — exactly what humanizing does. The gate now requires no
+   contradiction *and* bidirectional entailment: 7/8 faithful rewrites admitted, **0/11**
+   meaning-lost ones, versus 2/8 and 4/11 for the similarity bar it replaced.
 3. **Citations, numbers, quotes, URLs and named entities are locked byte-for-byte** via preserve-lock, so
    your APA/IEEE/MLA references and your facts survive the rewrite untouched.
 
