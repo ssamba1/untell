@@ -60,6 +60,11 @@ _AI_VOCAB = [
     "showcasing", "showcase", "reimagine", "reimagining", "world-class", "cutting-edge",
     "state-of-the-art", "best-in-class", "top-tier", "next-level", "turnkey", "supercharge",
     "unparalleled", "trailblazing",
+    # third cluster (2024-2026 high-frequency tells)
+    "navigate", "navigating", "grapple", "beacon", "trajectory", "salient", "granular",
+    "orchestrate", "orchestrating", "curate", "curated", "amplify", "ecosystem", "dichotomy",
+    "juxtapose", "trove", "veritable", "aforementioned", "delves", "delving", "penchant",
+    "adept", "prowess", "hallmark", "poised",
 ]
 _AI_VOCAB_RE = re.compile(r"\b(" + "|".join(_AI_VOCAB) + r")\b", re.IGNORECASE)
 
