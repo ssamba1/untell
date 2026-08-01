@@ -53,6 +53,12 @@ APP_TITLE = "untell API"
 APP_VERSION = "0.2.0"
 APP_DESC = __doc__
 
+# Free, no-key rewriter backends selectable via the ``rewriter`` field. Anything else (e.g. "auto")
+# means "let get_rewriter pick a hosted/local-policy backend" and is passed as prefer=None below.
+_FREE_REWRITERS = frozenset(
+    {"surgical", "structural", "composite", "neural", "t5_paraphrase", "mt_pivot"}
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -205,11 +211,13 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
 
     The ``rewriter`` field controls which rewriting backend to use:
     - ``\"auto\"`` (default) — uses a hosted LLM if an API key is configured, else fails
-    - ``\"surgical\"`` — uses the free, no-key, deterministic word-substitution rewriter
+    - ``\"composite\"`` — free structural + surgical chain ($0, no key)
+    - ``\"neural\"`` — free T5 paraphrase + structural + surgical (needs .[full]; strongest free path)
+    - ``\"surgical\"`` / ``\"structural\"`` / ``\"t5_paraphrase\"`` / ``\"mt_pivot\"`` — individual free backends
     """
     from untell.rewriter import get_rewriter
 
-    rw = get_rewriter(prefer="surgical") if body.rewriter == "surgical" else None
+    rw = get_rewriter(prefer=body.rewriter) if body.rewriter in _FREE_REWRITERS else None
     result = untell_text(
         body.text,
         tier=body.tier,
@@ -250,7 +258,7 @@ async def ceiling(body: CeilingRequest) -> dict:
     from eval.ceiling import measure_ceiling
     from untell.rewriter import get_rewriter
 
-    rw = get_rewriter(prefer="surgical") if body.rewriter == "surgical" else None
+    rw = get_rewriter(prefer=body.rewriter) if body.rewriter in _FREE_REWRITERS else None
     result = measure_ceiling(
         None,
         tier=body.tier,

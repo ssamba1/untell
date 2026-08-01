@@ -11,6 +11,12 @@ from __future__ import annotations
 
 import logging
 
+# Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
+# routes to a hosted/local-policy backend via prefer=None.
+_FREE_REWRITERS = frozenset(
+    {"surgical", "structural", "composite", "neural", "t5_paraphrase", "mt_pivot"}
+)
+
 
 def _server():
     from mcp.server.fastmcp import FastMCP
@@ -61,15 +67,15 @@ def _server():
             threshold: Max P(AI) to pass (default 0.30).
             style: Optional voice (casual, professional, academic, blunt, storytelling, journalistic).
             max_iters: Max rewrite iterations (default 5).
-            rewriter: 'auto' (hosted LLM if key set, else fail) or 'surgical' (free, no key).
+            rewriter: free no-key backend ('composite' best default, 'neural' = T5+structural+surgical
+                strongest but needs .[full], 'surgical'/'structural'/'t5_paraphrase'/'mt_pivot'), or
+                'auto' (hosted LLM if a key is set, else fail).
             best_of: Draw N candidates per iteration, keep the best-scoring one.
             margin: Safety margin below threshold for a comfortable pass.
         """
         from untell.rewriter import get_rewriter
 
-        rw = None
-        if rewriter == "surgical":
-            rw = get_rewriter(prefer="surgical")
+        rw = get_rewriter(prefer=rewriter) if rewriter in _FREE_REWRITERS else None
         return untell_text(
             text,
             tier=tier,
@@ -127,10 +133,10 @@ def _server():
         from untell.rewriter import get_rewriter
 
         rw = None
-        if rewriter == "surgical":
-            rw = get_rewriter(prefer="surgical")
+        if rewriter in _FREE_REWRITERS:
+            rw = get_rewriter(prefer=rewriter)
             if rw is None:
-                return {"error": "surgical rewriter unavailable"}
+                return {"error": f"{rewriter} rewriter unavailable (needs .[full] extra)"}
         return measure_ceiling(
             None,
             tier=tier,

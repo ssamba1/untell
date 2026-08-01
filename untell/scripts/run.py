@@ -347,11 +347,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--rewriter",
-        choices=["auto", "surgical", "structural", "composite", "mt_pivot", "base"],
+        choices=[
+            "auto", "surgical", "structural", "composite", "neural",
+            "t5_paraphrase", "mt_pivot", "base",
+        ],
         default="composite",
         help="'composite' = structural + surgical chained ($0, best free path, DEFAULT); "
+        "'neural' = T5 paraphrase + structural + surgical (needs .[full]; strongest free path, "
+        "moves detectors far more than rule-based alone; falls back to composite without the deps); "
         "'structural' = sentence-level transforms ($0); "
         "'surgical' = word-substitution rewriter ($0); "
+        "'t5_paraphrase' = free neural paraphraser alone (needs .[full]); "
         "'mt_pivot' = round-trip machine translation (needs .[full]; best on watermarked input); "
         "'base' = untuned base model, no LoRA adapter (A/B baseline; needs .[full] + UNTELL_POLICY_BASE); "
         "'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR).",
@@ -388,7 +394,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     rewriter = None
-    if args.rewriter in ("surgical", "structural", "composite", "mt_pivot"):
+    if args.rewriter in ("surgical", "structural", "composite", "neural", "t5_paraphrase", "mt_pivot"):
         from untell.rewriter import get_rewriter
 
         rewriter = get_rewriter(prefer=args.rewriter)
