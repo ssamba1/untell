@@ -314,3 +314,75 @@ class TestSurgicalRewriterProtocol:
         assert rw is not None
         assert rw.name == "surgical"
         assert rw.available() is True
+
+
+class TestTargetedRewriter:
+    def test_split_sentences_roundtrips_exactly(self):
+        from untell.rewriter.targeted import split_sentences
+
+        for case in [
+            "One. Two! Three?",
+            "One.  Two.",          # double space preserved
+            "No terminator",
+            "A. B.\n\nC.",         # newlines preserved
+            "",
+        ]:
+            assert "".join(split_sentences(case)) == case
+
+    def test_leaves_clean_sentences_byte_identical(self, monkeypatch):
+        """Only sentences that read as AI are rewritten; human-reading ones are untouched."""
+        from untell.rewriter.targeted import TargetedRewriter
+
+        class _Inner:
+            name = "inner"
+
+            def available(self):
+                return True
+
+            def rewrite(self, text, score_result, threshold=0.30):
+                return "REWRITTEN"
+
+        rw = TargetedRewriter(inner=_Inner(), min_score=0.30)
+
+        import untell.scripts.score as score_mod
+
+        ai = "Moreover, we leverage synergies."
+        human = "I walked home."
+
+        def _fake_score(text, tier="lite", threshold=0.30):
+            # the AI sentence is flagged and its rewrite scores lower; the human one is clean
+            m = {ai: 0.90, "REWRITTEN": 0.05, human: 0.02}.get(text.strip(), 0.50)
+            return {"max": m, "mean": m, "detectors": {"d": m}, "tier": tier}
+
+        monkeypatch.setattr(score_mod, "score_text", _fake_score)
+        out = rw.rewrite(f"{ai} {human}", {"tier": "lite"})
+        assert "REWRITTEN" in out       # the flagged sentence was rewritten
+        assert human in out             # the clean sentence survived byte-identical
+
+    def test_returns_original_when_no_sentence_improves(self, monkeypatch):
+        from untell.rewriter.targeted import TargetedRewriter
+
+        class _Inner:
+            name = "inner"
+
+            def available(self):
+                return True
+
+            def rewrite(self, text, score_result, threshold=0.30):
+                return "WORSE"
+
+        rw = TargetedRewriter(inner=_Inner(), min_score=0.30)
+
+        import untell.scripts.score as score_mod
+
+        def _fake_score(text, tier="lite", threshold=0.30):
+            m = 0.95 if text.strip() == "WORSE" else 0.90  # rewrite never helps
+            return {"max": m, "mean": m, "detectors": {"d": m}, "tier": tier}
+
+        monkeypatch.setattr(score_mod, "score_text", _fake_score)
+        src = "Moreover, we leverage synergies. Furthermore, we optimize verticals."
+        assert rw.rewrite(src, {"tier": "lite"}) == src  # no-harm: original returned
+
+    def test_get_rewriter_prefer_targeted(self):
+        rw = get_rewriter(prefer="targeted")
+        assert rw is not None and rw.name == "targeted"

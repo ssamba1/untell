@@ -25,6 +25,7 @@ from .prompts import build_rewrite_prompt
 from .structural import StructuralRewriter
 from .surgical import SurgicalRewriter
 from .t5_paraphrase import T5ParaphraseRewriter
+from .targeted import TargetedRewriter
 
 __all__ = [
     "Rewriter",
@@ -36,4 +37,5 @@ __all__ = [
     "MTPivotRewriter",
     "T5ParaphraseRewriter",
     "EnsembleRewriter",
+    "TargetedRewriter",
 ]

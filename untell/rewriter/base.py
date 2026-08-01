@@ -128,6 +128,11 @@ def get_rewriter(prefer: str | None = None) -> Rewriter | None:
         # Neural composite: T5 paraphrase front-stage + structural + surgical. Falls back to the
         # plain rule-based composite when T5's deps (.[full]) are absent, so it is never None.
         return CompositeRewriter(use_t5=True)
+    if prefer == "targeted":
+        # Rewrite ONLY the sentences that read as AI; leave human-reading ones byte-identical.
+        from .targeted import TargetedRewriter
+
+        return TargetedRewriter()
     if prefer in ("ensemble", "max"):
         # Best-of-all-free-methods selector: runs composite + mt_pivot + neural (whichever are
         # available) and keeps the per-input detector-lowest. Strongest free path; never None.
