@@ -220,6 +220,10 @@ def test_tells_tiebreak_prefers_fewer_tells(monkeypatch):
     # Both candidates score identically -> the tie-break must decide on AI tells.
     monkeypatch.setattr(run_mod, "score_text", _num_score(0.50))
 
+    # Source deliberately free of lockable spans: preserve.lock masks entities like "AI", and a fake
+    # rewriter that emits a fixed string would drop the sentinel and be (correctly) rejected — which
+    # would test the sentinel guard, not the tells tie-break this test is about.
+    source = "Some sample paragraph to rewrite here now."
     tell_heavy = "Moreover, it is important to note that we leverage robust synergies across verticals."
     tell_light = "We use a few tools."
     draws = iter([tell_heavy, tell_light])
@@ -235,7 +239,7 @@ def test_tells_tiebreak_prefers_fewer_tells(monkeypatch):
             return next(draws)
 
     out = run_mod.untell_text(
-        "Some AI paragraph to rewrite here now.",
+        source,
         tier="lite", threshold=0.3, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0, veto_contradictions=False,
     )
     assert out["final"] == tell_light  # equal detector score -> fewer-tells candidate wins
@@ -246,7 +250,7 @@ def test_tells_tiebreak_never_loses_a_better_adoptable_candidate(monkeypatch):
     one, or the strict outer adoption guard silently drops the real improvement (bug-hunt HIGH)."""
     import untell.scripts.run as run_mod
 
-    orig = "Original AI paragraph here to rewrite right now."
+    orig = "Original sample paragraph here to rewrite right now."
     a_text = "Moreover, it is important to note that we leverage robust synergies across verticals."  # many tells
     b_text = "We shifted fast."  # few tells
     # A (0.295) is adoptable vs the running best (pre=0.30); B (0.31) is NOT. B has fewer tells.
@@ -283,7 +287,7 @@ def test_selection_breaks_ties_on_ensemble_mean(monkeypatch):
     captures that, so a genuinely better-everywhere rewrite wins the tie."""
     import untell.scripts.run as run_mod
 
-    orig = "Original AI paragraph here to rewrite right now."
+    orig = "Original sample paragraph here to rewrite right now."
     flat = "We use tools."      # same max, high mean (other detectors unmoved)
     deep = "We use gear."       # same max, LOW mean (other detectors also improved)
     table = {orig: (0.30, 0.30), flat: (0.20, 0.60), deep: (0.20, 0.10)}
