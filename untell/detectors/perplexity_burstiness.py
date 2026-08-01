@@ -82,15 +82,21 @@ def lite_score(text: str) -> float:
 
     # Burstiness needs >= 2 sentences to mean anything. On a single sentence/fragment it is
     # *undefined* (the CV of one length is 0), so treating that as low-burstiness wrongly scored
-    # every short sentence as ~AI — the degeneracy that flooded per-sentence targeting. Use a neutral
-    # burst contribution there and lean on the common-word signal instead.
+    # every short sentence as ~AI — the degeneracy that flooded per-sentence targeting.
+    #
+    # The fix for that degeneracy used to be `burst_signal = 0.5`, described as "neutral". It is not
+    # neutral: at weight 0.6 it contributes a FIXED 0.30 to every single-sentence score, and 0.30 is
+    # exactly the default detection threshold (which compares with >=). So the lower half of the
+    # range was unreachable and every single-sentence input sat on the decision boundary no matter
+    # how human it read. Genuinely leaning on the common-word signal — using it alone, at full
+    # weight, when burstiness carries no information — is what the comment always intended.
     if len(nonempty) < 2:
-        burst_signal = 0.5
-    else:
-        burst = _burstiness(sents)        # ~0.0 (uniform) .. ~0.8+ (varied human prose)
-        # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
-        # CV around 0.5 is typical human prose; below ~0.25 reads as machine-uniform.
-        burst_signal = clamp01((0.55 - burst) / 0.55)
+        return clamp01(common_signal)
+
+    burst = _burstiness(sents)        # ~0.0 (uniform) .. ~0.8+ (varied human prose)
+    # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
+    # CV around 0.5 is typical human prose; below ~0.25 reads as machine-uniform.
+    burst_signal = clamp01((0.55 - burst) / 0.55)
 
     # Blend (burstiness weighted higher — it's the stronger of the two weak signals).
     return clamp01(0.6 * burst_signal + 0.4 * common_signal)
@@ -146,7 +152,14 @@ class PerplexityBurstinessDetector:
         var_signal = clamp01((400.0 - var) / 400.0)             # low variance trends AI
         return clamp01(0.7 * ppl_signal + 0.3 * var_signal)
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
+        # Empty/whitespace input carries no signal. The Detector protocol (base.py) requires None
+        # here so the ensemble EXCLUDES it: returning a number folds a fabricated score into the
+        # max/mean aggregation. Previously this path reached lite_score(), which answered 0.5 for
+        # empty text, and score_text("") duly reported flagged=True — an empty string classified as
+        # AI-generated.
+        if not text or not text.strip():
+            return None
         if self._torch_ready():
             try:
                 return clamp01(self._full_score(text))

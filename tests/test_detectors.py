@@ -25,9 +25,38 @@ def test_lite_detector_always_available():
 
 def test_scores_in_unit_interval():
     d = PerplexityBurstinessDetector()
-    for text in (AI_TEXT, HUMAN_TEXT, "x", "", "   "):
+    for text in (AI_TEXT, HUMAN_TEXT, "x"):
         s = d.score(text)
         assert 0.0 <= s <= 1.0
+
+
+def test_empty_text_returns_none_not_a_number():
+    """Protocol (base.py): empty/too-short input must return None so the ensemble EXCLUDES it.
+
+    This previously returned 0.5, which is not "neutral" — it is a fabricated score folded into the
+    max/mean aggregation, and score_text("") duly reported flagged=True for an empty string.
+    """
+    d = PerplexityBurstinessDetector()
+    for text in ("", "   ", "\n\t "):
+        assert d.score(text) is None
+
+
+def test_empty_text_is_not_flagged_by_the_ensemble():
+    from untell.scripts.score import score_text
+
+    r = score_text("", tier="lite")
+    assert r["flagged"] is False
+    assert r["detectors"]["perplexity_burstiness"] is None  # excluded, not scored
+
+
+def test_single_sentence_can_reach_below_the_threshold():
+    """Single-sentence inputs used to have a hard floor of exactly 0.30 — the detection threshold —
+    because an "undefined" burstiness contributed a fixed 0.6 * 0.5. Every single sentence therefore
+    sat on the decision boundary regardless of content. The lower range must be reachable."""
+    plain = lite_score("Mitochondrial ribosomes synthesize hydrophobic peptides.")
+    formulaic = lite_score("It is important to note that this is the best way to do the thing.")
+    assert plain < 0.30              # was pinned at exactly 0.30
+    assert formulaic > plain         # and the signal still discriminates on one sentence
 
 
 def test_ai_scores_higher_than_human_lite():
