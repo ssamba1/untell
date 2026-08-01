@@ -147,9 +147,17 @@ def test_polish_reports_true_similarity(monkeypatch):
     import untell.attacks as attacks_mod
     import untell.scripts.run as run_mod
 
-    monkeypatch.setattr(run_mod, "score_text", _num_score(0.1, flagged=False))
     src = "The quick brown fox jumps over the lazy dog every single morning."
     polished = "The quick brown fox leaps over the lazy dog every single morning."
+
+    # Polish must genuinely IMPROVE the score to be adopted (ties go to the unpolished text), so
+    # score the polished variant strictly lower than everything else.
+    def _score(text, tier="full", threshold=0.3):
+        m = 0.02 if text == polished else 0.10
+        return {"tier": tier, "detectors": {"perplexity_burstiness": m}, "max": m, "mean": m,
+                "threshold": threshold, "flagged": False}
+
+    monkeypatch.setattr(run_mod, "score_text", _score)
     monkeypatch.setattr(
         attacks_mod, "surgical_substitute",
         lambda t, tier=None, threshold=0.3: {"text": polished},
@@ -392,3 +400,25 @@ def test_composite_returns_original_when_no_draw_improves(monkeypatch):
 
     monkeypatch.setattr(score_mod, "score_text", _fake_score)
     assert rw.rewrite(clean, {"tier": "lite"}) == clean  # untouched, not a forced worse rewrite
+
+
+def test_polish_declines_when_it_does_not_help(monkeypatch):
+    """An equal-scoring polish must NOT be adopted: it spends meaning-similarity for nothing and,
+    since polish optimizes the detector score alone, can raise the AI-tell count while doing it."""
+    import untell.attacks as attacks_mod
+    import untell.scripts.run as run_mod
+
+    src = "The quick brown fox jumps over the lazy dog every single morning."
+    # Same score, but MORE AI tells -> must be rejected on both counts.
+    polished = "Moreover, it is important to note that the fox leverages the lazy dog each morning."
+
+    monkeypatch.setattr(run_mod, "score_text", _num_score(0.10, flagged=False))
+    monkeypatch.setattr(
+        attacks_mod, "surgical_substitute",
+        lambda t, tier=None, threshold=0.3: {"text": polished},
+    )
+    out = run_mod.untell_text(
+        src, tier="lite", threshold=0.3, max_iters=1, rewriter=_NoOp(),
+        polish=True, scrub=False, sim_bar=0.0,
+    )
+    assert out["final"] == src  # unpolished text kept

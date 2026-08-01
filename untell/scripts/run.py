@@ -277,12 +277,18 @@ def untell_text(
             polish_tier = "lite" if browser_score is not None else tier
             polished = surgical_substitute(final, tier=polish_tier, threshold=threshold)["text"]
             polished_score = score(polished)
-            # Polish on the restored (final) text: verify meaning preserved (vs the original masked
-            # text) and score not worse. Sentinel check is irrelevant — text is already restored.
-            if (
-                polished_score["max"] <= best_score["max"]
-                and similarity(text, polished) >= sim_bar
-            ):
+            # Polish on the restored (final) text: verify meaning preserved (vs the original) and
+            # that it actually HELPS. Sentinel check is irrelevant — text is already restored.
+            # Adopt only on a genuine improvement: an equal-scoring polish spends meaning-similarity
+            # for nothing, and since polish optimizes the detector score alone it can raise the AI-tell
+            # count while doing it. Ties therefore go to the unpolished text (same no-harm principle as
+            # the composite/ensemble selectors); within the detector noise band, tells break the tie.
+            better_score = polished_score["max"] < best_score["max"] - _TELLS_EPS
+            tie_but_more_human = (
+                abs(polished_score["max"] - best_score["max"]) <= _TELLS_EPS
+                and score_tells(polished).get("tells", 0) < score_tells(final).get("tells", 0)
+            )
+            if (better_score or tie_but_more_human) and similarity(text, polished) >= sim_bar:
                 final, best_score = polished, polished_score
                 polished_applied = True
         except Exception:

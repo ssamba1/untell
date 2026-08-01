@@ -23,3 +23,7 @@ Notes:
 [transformers] `torch_dtype` is deprecated! Use `dtype` instead!
 Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 5532.25it/s]
 Loading weights:   0%|          | 0/257 [00:00<?, ?it/s]Loading weights: 100%|##########| 257/257 [00:00<00:00, 6150.22it/s]
+C:\Users\Admin\Humanize\.venv\Lib\site-packages\transformers\models\marian\tokenization_marian.py:176: UserWarning: Recommended: pip install sacremoses.
+  warnings.warn("Recommended: pip install sacremoses.")
+Loading weights:   0%|          | 0/258 [00:00<?, ?it/s]Loading weights: 100%|##########| 258/258 [00:00<00:00, 26134.63it/s]
+Loading weights:   0%|          | 0/256 [00:00<?, ?it/s]Loading weights: 100%|##########| 256/256 [00:00<00:00, 4948.85it/s]
