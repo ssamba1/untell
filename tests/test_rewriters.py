@@ -386,3 +386,45 @@ class TestTargetedRewriter:
     def test_get_rewriter_prefer_targeted(self):
         rw = get_rewriter(prefer="targeted")
         assert rw is not None and rw.name == "targeted"
+
+
+class TestCompositeIntensitySweep:
+    def test_draws_use_varied_intensity(self, monkeypatch):
+        """Selection is only as good as the diversity it selects among: drafts must differ by more
+        than an RNG seed, so each attempt sweeps the structural intensity."""
+        rw = CompositeRewriter(best_of=3, intensity=0.7)
+        seen = []
+
+        def _spy(text, score_result, threshold=0.30):
+            seen.append(rw._structural.intensity)
+            return "restructured"
+
+        monkeypatch.setattr(rw._structural, "rewrite", _spy)
+        monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
+
+        import untell.scripts.score as score_mod
+
+        monkeypatch.setattr(
+            score_mod, "score_text",
+            lambda t, tier="lite", threshold=0.30: {"max": 0.5, "mean": 0.5, "detectors": {"d": 0.5},
+                                                    "tier": tier},
+        )
+        rw.rewrite("Some AI text to rewrite.", {"tier": "lite"})
+        assert len(set(seen)) > 1                    # the draws genuinely differ
+        assert all(0.4 <= i <= 1.0 for i in seen)    # stay in the sane range
+
+    def test_intensity_restored_after_rewrite(self, monkeypatch):
+        """The swept value must never leak across calls (shared mutable state bug)."""
+        rw = CompositeRewriter(best_of=3, intensity=0.7)
+        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: "x")
+        monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
+
+        import untell.scripts.score as score_mod
+
+        monkeypatch.setattr(
+            score_mod, "score_text",
+            lambda t, tier="lite", threshold=0.30: {"max": 0.5, "mean": 0.5, "detectors": {"d": 0.5},
+                                                    "tier": tier},
+        )
+        rw.rewrite("Some AI text to rewrite.", {"tier": "lite"})
+        assert rw._structural.intensity == 0.7

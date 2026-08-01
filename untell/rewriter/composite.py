@@ -109,10 +109,20 @@ class CompositeRewriter(Rewriter):
             return self._surgical.rewrite(restructured, score_result, threshold)
         baseline = float(score_text(text, tier=tier)["max"])
 
-        # Try multiple candidates with different seeds, keep the best.
+        # Try multiple candidates and keep the best. Selection is only as good as the DIVERSITY of
+        # what it selects among: drafts that differ merely by RNG seed score near-identically and
+        # waste the draw. So each attempt also varies the structural intensity across a spread around
+        # the configured value — a light-touch draft and an aggressive one explore genuinely different
+        # rewrites, which is what gives the selector something to choose between.
         best_text = text
         best_score = baseline
+        base_intensity = getattr(self._structural, "intensity", 0.7)
         for _attempt in range(self.best_of):
+            if self.best_of > 1:
+                # spread over [0.4, 1.0] centred on the configured intensity
+                span = 0.3
+                frac = _attempt / max(1, self.best_of - 1)  # 0.0 .. 1.0
+                self._structural.intensity = max(0.4, min(1.0, base_intensity - span + 2 * span * frac))
             # Step 1: structural (sentence-level)
             restructured = self._structural.rewrite(text, score_result, threshold)
             # Step 2: surgical (word-level polish)
@@ -125,6 +135,7 @@ class CompositeRewriter(Rewriter):
                     best_score = cand_score
             except Exception:
                 pass
+        self._structural.intensity = base_intensity  # never leak the swept value across calls
 
         # No "consolation" rewrite. This used to force a rewrite when no candidate improved the
         # score, on the theory that changing the text was worth something anyway. MEASURED, it is
