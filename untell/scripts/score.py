@@ -111,7 +111,23 @@ def _score_with_detectors(
         # makes ai_percent read 8500.0, and the common "-1 means error" sentinel reads as MORE human
         # than any real text, so broken-detector output would look like a perfect result. Clamping is
         # the safe direction; the raw value is surfaced so the adapter bug is still visible.
-        raw = float(val)
+        # The conversion is INSIDE its own guard: `float()` on a non-numeric value raises, and this
+        # line sits outside the try above, so an adapter handing back an error string instead of a
+        # number took down the whole scoring call rather than excluding itself.
+        try:
+            raw = float(val)
+        except (TypeError, ValueError):
+            scores[d.name] = None  # type: ignore[assignment]
+            scores[f"{d.name}__error"] = f"non-numeric score {val!r}"  # type: ignore[assignment]
+            continue
+        # NaN is neither < 0 nor > 1, so it slips through the clamp below untouched and then
+        # poisons everything downstream: max and mean become NaN, `NaN >= threshold` is False so
+        # `flagged` reads False — a confident "this is human" produced by a broken detector — and
+        # json.dumps emits a bare NaN, which is not valid JSON for any API client.
+        if raw != raw:
+            scores[d.name] = None  # type: ignore[assignment]
+            scores[f"{d.name}__error"] = "detector returned NaN"  # type: ignore[assignment]
+            continue
         clamped = 0.0 if raw < 0.0 else (1.0 if raw > 1.0 else raw)
         if clamped != raw:
             # Recorded OUTSIDE the detectors dict on purpose. Every consumer that iterates

@@ -139,3 +139,52 @@ def test_no_detector_load_requires_accelerate():
         "detector model loading must not use device_map (it hard-requires `accelerate`, which is "
         "not a runtime dependency):\n  " + "\n  ".join(offenders)
     )
+
+
+def _stub(value, raises=False):
+    class _D:
+        name, tier = "d0", "lite"
+
+        def available(self):
+            return True
+
+        def score(self, text):
+            if raises:
+                raise RuntimeError("boom")
+            return value
+
+    return _D()
+
+
+def test_nan_score_is_excluded_not_folded_in(monkeypatch):
+    """NaN is neither < 0 nor > 1, so it slid through the range clamp untouched.
+
+    Downstream that is the most dangerous value a detector can emit: max and mean become NaN,
+    `NaN >= threshold` evaluates False so `flagged` reads False — a confident "this text is human"
+    manufactured by a broken detector — and json.dumps writes a bare NaN, which no strict JSON
+    parser accepts.
+    """
+    import untell.scripts.score as sc
+
+    monkeypatch.setattr(sc, "load_detectors", lambda tier="lite": [_stub(float("nan"))])
+    r = sc.score_text("A reasonably long sentence for scoring purposes here.", tier="lite")
+
+    assert r["detectors"]["d0"] is None
+    assert "d0" in r["failed_detectors"]
+    assert r["scored"] is False           # no verdict invented
+    assert r["max"] == r["max"]           # not NaN
+    assert r["flagged"] is False and "warning" in r
+
+
+def test_non_numeric_score_excludes_the_detector_instead_of_crashing(monkeypatch):
+    """`float(val)` sat outside the try that guards `d.score()`, so an adapter returning a string
+    (an error message, say) raised ValueError out of score_text and took down the whole call —
+    every other detector's work with it."""
+    import untell.scripts.score as sc
+
+    monkeypatch.setattr(
+        sc, "load_detectors", lambda tier="lite": [_stub("rate limit exceeded"), _stub(0.9)]
+    )
+    r = sc.score_text("A reasonably long sentence for scoring purposes here.", tier="lite")
+    assert r["max"] == 0.9  # the working detector still counted
+    assert "d0" in r["failed_detectors"]
