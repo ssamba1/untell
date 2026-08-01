@@ -26,7 +26,7 @@ scheduled** (with the blocker named). No silent gaps.
 | Capability | Who has it | Us |
 |---|---|---|
 | Closed-loop detector-feedback rewrite | Adv-Paraphrasing, StealthHumanizer | ✅ **have** (our core, live-proven) |
-| Multi-detector ensemble (incl. paraphrase-robust) | StealthRL | ✅ **have** (8 local incl RADAR + 7 commercial + browser) |
+| Multi-detector ensemble (incl. paraphrase-robust) | StealthRL | ✅ **have** (8 local adapters, 5 on by default; RADAR opt-in per its non-commercial license, Binoculars needs CUDA + 7 commercial + browser) |
 | Numeric detector score fed into the rewrite prompt | Adv-Paraphrasing | ✅ **have** (prompts name worst detectors + scores) |
 | Per-sentence targeting | (none did it cleanly) | ✅ **have** (`untell-sentences`) |
 | Quality/meaning gate + citation lock | patina, StealthHumanizer | ✅ **have** (semantic gate + preserve-lock) |
