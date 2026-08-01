@@ -101,3 +101,35 @@ def test_homoglyph_is_normalized_to_ascii(desc, text, expected):
 @pytest.mark.parametrize("desc,text", MUST_SURVIVE)
 def test_legitimate_unicode_is_preserved(desc, text):
     assert scrub_hidden(text) == text, desc
+
+
+class _FakeTok:
+    """Tokenizer stand-in: 2 BPE tokens per word, matching MarianMT's rough ratio."""
+
+    def __call__(self, text, **kwargs):
+        if isinstance(text, list):
+            text = text[0]
+        return {"input_ids": list(range(len(text.split()) * 2))}
+
+
+def test_long_input_is_chunked_not_silently_truncated():
+    """truncation=True discards everything past 512 tokens and returns the partial translation as
+    if it were complete — no exception, no warning. A ~400-word document lost its tail."""
+    bt = BackTranslator()
+    long_text = " ".join(f"This is sentence number {i} about a topic." for i in range(60))
+    chunks = bt._chunk(long_text, _FakeTok())
+
+    assert len(chunks) > 1, "long input must be split"
+    # Nothing may be dropped: rejoining the chunks must reproduce every word.
+    assert " ".join(chunks).split() == long_text.split()
+
+
+def test_short_input_stays_a_single_chunk():
+    bt = BackTranslator()
+    assert len(bt._chunk("Hello there. How are you?", _FakeTok())) == 1
+
+
+def test_chunking_never_returns_empty():
+    """A degenerate input must still yield something translatable rather than an empty list."""
+    bt = BackTranslator()
+    assert bt._chunk("no terminator here", _FakeTok()) == ["no terminator here"]
