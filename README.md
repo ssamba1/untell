@@ -160,9 +160,12 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 
 
 | Free, no-key rewrite vs the local open ensemble (3 repeats = 9 loop runs) | before | after |
 |---|---|---|
-| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.11 – 0.22** (`--best-of 3`) → **0.00** (`--best-of 8`) |
-| mean max P(AI) | 0.86 | **0.29 ± 0.02** → **0.28 ± 0.01** |
+| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.22** (`--best-of 3`) → **0.00** (`--best-of 8`)¹ |
+| mean max P(AI) | 0.86 | **0.25 ± 0.03** |
 | meaning similarity | — | **0.96 mean, 0.93 worst** |
+
+¹ The `--best-of 8` figure was measured before the `fast_detectgpt` calibration fix, so treat it as
+indicative rather than directly comparable to the row above it.
 
 More draws buy **reliability, not a lower average**: 3 → 8 barely moves the mean but halves the
 run-to-run spread and clears every sample. Meaning is measured alongside, so a good evasion number
@@ -172,10 +175,10 @@ Per-detector, before → after (two independent replications):
 
 | detector | before | after |
 |---|---|---|
-| `perplexity_burstiness` | 0.32 | 0.07 – 0.10 |
-| `roberta_openai` | 0.52 | 0.10 |
-| `hc3_roberta` (content/genre) | 0.73 | **0.04 – 0.06** |
-| `fast_detectgpt` (curvature) | 0.31 | **0.28 — unmoved** |
+| `perplexity_burstiness` | 0.32 | **0.04** |
+| `roberta_openai` | 0.52 | **0.07** |
+| `hc3_roberta` (content/genre) | 0.73 | **0.04** |
+| `fast_detectgpt` (curvature) | 0.63 | **0.25** |
 
 Three findings, all measured, and one of them overturned this project's own earlier conclusion:
 
@@ -185,12 +188,11 @@ Three findings, all measured, and one of them overturned this project's own earl
   you actually score on**, it drops to **0.04**. The lever was never a cleverer rewriter — it was
   choosing among several drafts against the real signal. See
   [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) for the falsified claim in full.
-- **The one "immovable" detector turned out to be broken.** `fast_detectgpt` never moved in any
-  configuration (0.31 → 0.28) — because its calibration constants assumed a curvature range the
-  model never produces, pinning **every** input to ~0.30 regardless of content. Recalibrated; it now
-  spans 0.20–0.97. Ensemble figures measured before that fix included a constant and are being
-  re-measured. ("Most detectors move" still isn't "detection is solved" — this one remains a weak
-  signal whose human/AI direction flips on small samples.)
+- **The one "immovable" detector turned out to be broken — and once fixed, it moves.**
+  `fast_detectgpt` never budged in any configuration (0.31 → 0.28) because its calibration constants
+  assumed a curvature range the model never produces, pinning **every** input to ~0.30 regardless of
+  content. Recalibrated, it turns out to be the *strongest* baseline signal (0.63, not 0.31) and it
+  drops to 0.25 under rewriting. All four local detectors move.
 - **The local proxies partly anti-correlate with human-ness.** A rewrite that reads *obviously* more human
   scored **higher** on the proxy (0.578 → 0.918). So a low local score means "passed the weak local
   proxies," not "reads human" and **not** "beats GPTZero." That's exactly why the loop treats the local

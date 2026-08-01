@@ -154,6 +154,36 @@ shipped default is **3** as the reliability/cost knee; use `--best-of 8` when it
 spend the CPU. (Deterministic rewriters short-circuit to a single draw — extra draws would be
 byte-identical.)
 
+### Result 4 — re-measured with a LIVE fast_detectgpt (supersedes the per-detector table above)
+
+Every number above was computed while `fast_detectgpt` was emitting a near-constant ~0.30 for any
+input (the calibration bug fixed in `925beaf`). Re-measured on the repaired detector, same config
+(best-of-3, 3 repeats, 9 loop runs):
+
+| detector | before | after | delta |
+|---|---|---|---|
+| `perplexity_burstiness` | 0.319 | **0.045** | −0.274 |
+| `roberta_openai` | 0.523 | **0.069** | −0.454 |
+| `hc3_roberta` | 0.725 | **0.038** | −0.687 |
+| **`fast_detectgpt`** | **0.630** | **0.252** | **−0.378** |
+
+| Metric | value |
+|---|---|
+| flagged rate | 1.00 → **0.222** |
+| mean max P(AI) | 0.859 → **0.255 ± 0.030** |
+| meaning similarity | **0.959 mean, 0.935 worst** |
+
+**This falsifies the "one wall did not fall" caveat stated throughout the earlier sections.** With a
+working calibration, `fast_detectgpt` turns out to have been the *strongest* baseline AI signal
+(0.630, not 0.312) — and it moves, by −0.378. It never appeared to move before because it never
+responded to anything.
+
+So the honest picture is now: **all four local detectors move substantially, and meaning holds at
+0.96 similarity.** The remaining caveat is the one that actually matters and is unchanged — this is
+the local proxy ensemble, and clearing it says nothing about GPTZero / Originality / Turnitin. The
+documented anti-correlation (a rewrite that reads *more* human can score *worse* locally) also
+stands.
+
 Two honest caveats that keep this from being a "solved" claim:
 
 1. ~~**`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is
