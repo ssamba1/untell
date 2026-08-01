@@ -75,7 +75,21 @@ def _server():
         """
         from untell.rewriter import get_rewriter
 
-        rw = get_rewriter(prefer=rewriter) if rewriter in _FREE_REWRITERS else None
+        rw = None
+        if rewriter in _FREE_REWRITERS:
+            rw = get_rewriter(prefer=rewriter)
+            if rw is None:
+                # Do NOT fall through with rewriter=None. untell_text would then call get_rewriter()
+                # with no preference, which returns the first AVAILABLE backend — the hosted
+                # Anthropic/OpenAI rewriter when a key is set. A caller who explicitly asked for a
+                # free no-key backend (mt_pivot / t5_paraphrase need the .[full] extra) would have
+                # their API silently BILLED, with nothing in the result to reveal the substitution.
+                # The ceiling tool already guards this; the asymmetry was the bug.
+                return {
+                    "error": f"rewriter '{rewriter}' is unavailable — it needs the '.[full]' extra "
+                    "(pip install -e '.[full]'). Refusing to silently fall back to a paid rewriter; "
+                    "pass rewriter='composite' for the zero-dependency free path."
+                }
         return untell_text(
             text,
             tier=tier,
@@ -137,8 +151,15 @@ def _server():
             rw = get_rewriter(prefer=rewriter)
             if rw is None:
                 return {"error": f"{rewriter} rewriter unavailable (needs .[full] extra)"}
+        # `n` was declared and documented but never forwarded: measure_ceiling has no n parameter,
+        # so texts=None always meant "use the whole built-in sample" and the result came back with
+        # n=3 regardless — making it look like the caller's value had been honoured. Slice the
+        # sample here so the parameter does what its docstring says.
+        from eval.ceiling import _SAMPLE
+
+        texts = list(_SAMPLE)[: max(1, n)]
         return measure_ceiling(
-            None,
+            texts,
             tier=tier,
             threshold=threshold,
             max_iters=max_iters,
