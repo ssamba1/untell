@@ -95,22 +95,31 @@ def test_score_text_survives_detector_exception(monkeypatch):
     assert "boom" in r["failed_detectors"]
 
 
-def test_style_flag_warns_when_the_chosen_rewriter_ignores_it(capsys):
-    """--style is honoured only by the hosted-LLM rewriter (it goes into the prompt). The free
-    rule-based backends never read it — structural/targeted/ensemble contain zero references to
-    `style`, and composite's only match is in a comment. Accepting a documented flag and silently
-    doing nothing with it is the same class of defect as a detector returning a fabricated score."""
+def test_style_warns_only_for_backends_with_no_register_knob(capsys):
+    """--style is now honoured by the rule-based path (structural register profiles) and by the
+    hosted-LLM rewriter. `surgical` is purely word-level and has no register knob, so it must say so
+    rather than accept a documented flag and do nothing — the same class of defect as a detector
+    returning a fabricated score."""
+    from untell.scripts.run import main
+
+    main(["Moreover we utilize robust solutions today.", "--rewriter", "surgical",
+          "--style", "casual", "--tier", "lite", "--max-iters", "1"])
+    err = capsys.readouterr().err
+    assert "--style" in err and "no effect" in err
+
+
+def test_style_aware_backend_does_not_warn(capsys):
+    """composite honours style via structural, so warning there would be false."""
     from untell.scripts.run import main
 
     main(["Moreover we utilize robust solutions today.", "--rewriter", "composite",
           "--style", "casual", "--tier", "lite", "--max-iters", "1"])
-    err = capsys.readouterr().err
-    assert "--style" in err and "ignored" in err
+    assert "no effect" not in capsys.readouterr().err
 
 
 def test_no_style_warning_when_style_not_requested(capsys):
     from untell.scripts.run import main
 
-    main(["Moreover we utilize robust solutions today.", "--rewriter", "composite",
+    main(["Moreover we utilize robust solutions today.", "--rewriter", "surgical",
           "--tier", "lite", "--max-iters", "1"])
-    assert "is ignored" not in capsys.readouterr().err
+    assert "no effect" not in capsys.readouterr().err

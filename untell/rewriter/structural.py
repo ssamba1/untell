@@ -587,14 +587,56 @@ def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves:
 # ---------------------------------------------------------------------------
 
 
-def structural_rewrite(text: str, intensity: float = 0.5, seed: int | None = None) -> str:
+# Style profiles. `--style` was accepted by the CLI, advertised with 14 modes, threaded into
+# score_result — and read by nothing except the hosted-LLM rewriter's prompt. The free rewriters
+# already had the two knobs that actually carry register (contraction injection and plain-word
+# substitution); they were simply always on at a fixed setting. A profile just sets them.
+#
+# `contractions`: inject "it is" -> "it's" etc. The single strongest formality signal in English,
+#   and wrong for academic prose, which contracts far less than speech.
+# `register`: how much of the formal->plain vocabulary map to apply (0 = keep the formal word).
+_STYLE_PROFILES: dict[str, dict] = {
+    "casual":        {"contractions": True,  "register": 1.0},
+    "conversational": {"contractions": True, "register": 1.0},
+    "blunt":         {"contractions": True,  "register": 1.0},
+    "storytelling":  {"contractions": True,  "register": 0.8},
+    "humorous":      {"contractions": True,  "register": 0.9},
+    "journalistic":  {"contractions": False, "register": 0.8},
+    "persuasive":    {"contractions": True,  "register": 0.7},
+    "empathetic":    {"contractions": True,  "register": 0.8},
+    "instructional": {"contractions": True,  "register": 0.8},
+    "minimalist":    {"contractions": True,  "register": 1.0},
+    # Formal registers: contractions OFF and the plain-word swap held back, because "utilize" ->
+    # "use" is the right move for casual prose and the wrong one for a paper.
+    "academic":      {"contractions": False, "register": 0.15},
+    "professional":  {"contractions": False, "register": 0.4},
+    "technical":     {"contractions": False, "register": 0.3},
+    "poetic":        {"contractions": True,  "register": 0.5},
+}
+
+
+def style_profile(style: str | None) -> dict:
+    """Knob settings for a style name. Unknown/None -> the neutral default (previous behaviour)."""
+    if not style:
+        return {"contractions": True, "register": 1.0}
+    return _STYLE_PROFILES.get(style.strip().lower(), {"contractions": True, "register": 1.0})
+
+
+def structural_rewrite(
+    text: str, intensity: float = 0.5, seed: int | None = None, style: str | None = None
+) -> str:
     """Run the full structural rewrite pipeline. ``intensity`` in [0, 1].
 
     Higher intensity = more aggressive restructuring. Pass ``seed`` for reproducible
     output; leave as ``None`` (default) for varied results on each call.
+
+    ``style`` selects a register profile (see ``_STYLE_PROFILES``): it decides whether contractions
+    are injected and how much of the formal->plain vocabulary map is applied. Unknown or None keeps
+    the previous neutral behaviour, so this is additive.
     """
     if seed is not None:
         random.seed(seed)
+    profile = style_profile(style)
 
     # 0. Strip low-content scaffolding openers (pure filler)
     text = _strip_filler_openers(text)
@@ -614,11 +656,15 @@ def structural_rewrite(text: str, intensity: float = 0.5, seed: int | None = Non
     # 5. Hedge removal — always, these are pure tell
     text = _HEDGE_RE.sub(r"\1", text)
 
-    # 5b. Contraction injection — always (pure human-signal function-word shift)
-    text = _inject_contractions(text)
+    # 5b. Contraction injection — the strongest formality signal in English, so it is the first
+    # thing a style profile turns off: academic/technical prose contracts far less than speech.
+    if profile["contractions"]:
+        text = _inject_contractions(text)
 
     # 5c. Plain-register vocabulary — formal/AI-inflected words to the words people actually use.
-    text = _plain_register(text, intensity=intensity)
+    # Scaled by the profile: "utilize" -> "use" is right for casual prose and wrong for a paper, so
+    # the formal registers hold most of the map back rather than applying it wholesale.
+    text = _plain_register(text, intensity=intensity * profile["register"])
 
     # 6. Semicolon → period (semiconductors are a tell)
     text = _SEMICOLON_RE.sub(". ", text)
@@ -668,4 +714,7 @@ class StructuralRewriter(Rewriter):
         return True
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
-        return structural_rewrite(text, intensity=self.intensity)
+        # The loop puts the user's --style into score_result; read it instead of ignoring it.
+        return structural_rewrite(
+            text, intensity=self.intensity, style=(score_result or {}).get("style")
+        )

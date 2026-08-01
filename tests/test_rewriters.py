@@ -488,3 +488,50 @@ class TestPlainRegister:
         before = score_tells(src)["tells"]
         after = score_tells(structural_rewrite(src, intensity=1.0, seed=7))["tells"]
         assert after < before, f"tells did not drop: {before} -> {after}"
+
+
+class TestStyleProfiles:
+    """--style now drives the free rewriter's register knobs, instead of being accepted and ignored."""
+
+    def test_academic_keeps_formal_vocabulary_and_avoids_contractions(self):
+        import random
+
+        from untell.rewriter.structural import structural_rewrite
+
+        src = "Moreover, organizations utilize robust methodologies. It is not clear this demonstrates value."
+        random.seed(11)
+        out = structural_rewrite(src, intensity=1.0, style="academic")
+
+        assert "n't" not in out, f"academic prose should not contract: {out}"
+        assert "utilize" in out or "robust" in out, f"academic should keep formal vocabulary: {out}"
+
+    def test_casual_contracts_and_plainens_vocabulary(self):
+        import random
+
+        from untell.rewriter.structural import structural_rewrite
+
+        src = "Moreover, organizations utilize robust methodologies. It is not clear this demonstrates value."
+        random.seed(11)
+        out = structural_rewrite(src, intensity=1.0, style="casual")
+
+        assert "utilize" not in out, f"casual should plainen 'utilize': {out}"
+
+    def test_style_reaches_the_rewriter_through_score_result(self):
+        """The loop passes --style in score_result; StructuralRewriter must read it from there."""
+        import random
+
+        from untell.rewriter.structural import StructuralRewriter
+
+        rw = StructuralRewriter(intensity=1.0)
+        src = "Moreover, organizations utilize robust methodologies. It is not clear this holds."
+        random.seed(5)
+        academic = rw.rewrite(src, {"tier": "lite", "style": "academic"})
+        assert "n't" not in academic, f"style did not reach the rewriter: {academic}"
+
+    def test_unknown_and_missing_style_keep_previous_behaviour(self):
+        from untell.rewriter.structural import style_profile
+
+        neutral = {"contractions": True, "register": 1.0}
+        assert style_profile(None) == neutral
+        assert style_profile("not-a-real-style") == neutral
+        assert style_profile("ACADEMIC")["contractions"] is False  # case-insensitive

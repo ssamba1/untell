@@ -452,16 +452,15 @@ def main(argv: list[str] | None = None) -> int:
     ):
         from untell.rewriter import get_rewriter
 
-        # --style is honoured only by the hosted-LLM rewriter, which receives it in its prompt
-        # (rewriter/prompts.py). The free rule-based backends never read it: structural, targeted and
-        # ensemble contain zero references to `style`, and composite's only match is inside a
-        # comment. So `--style casual --rewriter composite` silently did nothing while the CLI
-        # advertised 14 style modes. Say so rather than accept a flag that has no effect.
-        if args.style:
+        # --style is honoured by the rule-based path via structural's register profiles
+        # (contraction injection + how much of the formal->plain map applies), and by the hosted-LLM
+        # rewriter via its prompt. The purely word-level backends have no register knob to turn, so
+        # say so rather than accept a flag that does nothing there.
+        _STYLE_AWARE = {"composite", "structural", "targeted", "neural", "ensemble", "max", "auto"}
+        if args.style and args.rewriter not in _STYLE_AWARE:
             print(
-                f"[untell] --style {args.style!r} is ignored by --rewriter {args.rewriter}: the free "
-                "rule-based rewriters do not read it. Style is applied only by the hosted-LLM "
-                "rewriter (--rewriter auto, needs an API key) or by Claude in the /untell skill.",
+                f"[untell] --style {args.style!r} has no effect with --rewriter {args.rewriter}: "
+                "that backend has no register knob. Use --rewriter composite (default) or auto.",
                 file=sys.stderr,
             )
         rewriter = get_rewriter(prefer=args.rewriter)
