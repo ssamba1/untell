@@ -337,3 +337,34 @@ def test_ensemble_does_not_trade_away_a_lower_detector(monkeypatch):
     monkeypatch.setattr(score_mod, "score_text", _fake_score)
     out = rw.rewrite("orig text here", {"tier": "lite"})
     assert out == good  # within the max noise band -> the better-everywhere candidate wins
+
+
+def test_ensemble_declines_to_touch_already_clean_text(monkeypatch):
+    """No-harm guarantee: if no member beats the original, the ORIGINAL is returned unchanged.
+
+    The measurement that exposed the max-only ranking bug had an already-clean sample driven from
+    0.017 to 0.933 by rewriting it. Including the original in the ranking pool makes that impossible:
+    a rewrite is adopted only when it genuinely helps."""
+    from untell.rewriter.ensemble import EnsembleRewriter
+
+    rw = EnsembleRewriter()
+
+    class _M:
+        def __init__(self, out):
+            self._out = out
+
+        def rewrite(self, text, score_result, threshold=0.30):
+            return self._out
+
+    rw._members = [("a", _M("worse rewrite one")), ("b", _M("worse rewrite two"))]
+
+    import untell.scripts.score as score_mod
+
+    clean = "I went to the store yesterday. Rain, mostly."
+
+    def _fake_score(text, tier="lite", threshold=0.30):
+        m = 0.02 if text == clean else 0.90  # every member output is worse than the original
+        return {"max": m, "mean": m, "detectors": {"a": m}, "tier": tier}
+
+    monkeypatch.setattr(score_mod, "score_text", _fake_score)
+    assert rw.rewrite(clean, {"tier": "lite"}) == clean  # untouched
