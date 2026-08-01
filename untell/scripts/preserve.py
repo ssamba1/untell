@@ -55,7 +55,13 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"[$€£]\s?\d[\d,]*(?:\.\d+)?"  # currency
             r"|\b\d[\d,]*\.\d+\b"  # decimals
             r"|\b\d{1,3}(?:,\d{3})+\b"  # comma-grouped thousands
-            r"|\b\d+\s*(?:%|kg|km|cm|mm|mol|°[CF]?|years?|days?|hours?|minutes?)\b"  # number + unit
+            # Number + unit. The terminator is (?!\w), NOT \b: `\b` requires a word character on one
+            # side, and `%` / bare `°` are non-word, so a trailing `\b` could only succeed when the
+            # symbol was followed by a letter or digit — which never happens in prose. The effect was
+            # that "5%" matched nothing at all (the 2+-digit fallback needs two digits) and "42%"
+            # locked only the digits, leaving "%" as raw text a rewriter could turn into " percent"
+            # while keeping the sentinel intact and passing the integrity check.
+            r"|\b\d+\s*(?:%|kg|km|cm|mm|mol|°[CF]?|years?|days?|hours?|minutes?)(?!\w)"  # number + unit
             r"|\b\d{2,}\b"  # standalone integers of 2+ digits
         ),
     ),

@@ -84,3 +84,34 @@ def test_sentinel_regex_handles_5plus_digit_overflow():
 def test_roundtrip_input_containing_literal_5digit_sentinel():
     # A literal 5-digit sentinel already in the INPUT must be locked and survive verbatim.
     _roundtrip("Keep this exact token ⟦HZ10000⟧ intact through the rewrite.")
+
+
+def test_percent_and_degree_units_are_locked_whole():
+    """A trailing \b after the unit could only match when the symbol was followed by a word char,
+    which never happens in prose. So "5%" locked NOTHING and "42%" locked only the digits."""
+    from untell.scripts.preserve import lock
+
+    for text, expected in [
+        ("The error rate was 5%.", "5%"),
+        ("The model achieved 42% accuracy.", "42%"),
+        ("It rose to 30\u00b0.", "30\u00b0"),
+        ("Temperature hit 30\u00b0C today.", "30\u00b0C"),
+    ]:
+        _masked, mapping = lock(text)
+        assert expected in mapping.values(), f"{expected!r} not locked in {text!r}: {mapping}"
+
+
+def test_percent_sign_cannot_be_rewritten_away_while_sentinel_survives():
+    """The exploit the old pattern allowed: lock only the digits, leave "%" as raw text, and a
+    rewrite turning "<sentinel>%" into "<sentinel> percent" passes the sentinel integrity check
+    while silently changing the number's unit."""
+    import re
+
+    from untell.scripts.preserve import lock, restore
+
+    masked, mapping = lock("The model achieved 42% accuracy.")
+    sentinels = re.findall(r"\u27e6HZ\d{4,}\u27e7", masked)
+    assert sentinels, "nothing was locked"
+    # With the whole "42%" locked, the "%" is inside the sentinel and cannot be reached.
+    assert "%" not in masked
+    assert restore(masked, mapping) == "The model achieved 42% accuracy."
