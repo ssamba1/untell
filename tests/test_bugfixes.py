@@ -236,7 +236,7 @@ def test_tells_tiebreak_prefers_fewer_tells(monkeypatch):
 
     out = run_mod.untell_text(
         "Some AI paragraph to rewrite here now.",
-        tier="lite", threshold=0.3, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
+        tier="lite", threshold=0.3, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0, veto_contradictions=False,
     )
     assert out["final"] == tell_light  # equal detector score -> fewer-tells candidate wins
 
@@ -271,7 +271,7 @@ def test_tells_tiebreak_never_loses_a_better_adoptable_candidate(monkeypatch):
             return next(draws)
 
     out = run_mod.untell_text(
-        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
+        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0, veto_contradictions=False,
     )
     assert out["final"] == a_text  # the 0.295 improvement is kept, not lost to B's fewer tells
 
@@ -307,7 +307,7 @@ def test_selection_breaks_ties_on_ensemble_mean(monkeypatch):
             return next(draws)
 
     out = run_mod.untell_text(
-        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0,
+        orig, tier="lite", threshold=0.30, max_iters=1, best_of=2, rewriter=_RW(), scrub=False, sim_bar=0.0, veto_contradictions=False,
     )
     assert out["final"] == deep  # tie on max+tells -> lower ensemble mean wins
 
@@ -473,3 +473,71 @@ def test_randomized_rewriter_still_draws_best_of_n(monkeypatch):
         tier="lite", threshold=0.3, max_iters=1, best_of=4, rewriter=_Rand(), scrub=False, sim_bar=0.0,
     )
     assert calls["n"] == 4
+
+
+def test_loop_vetoes_a_meaning_inverting_rewrite(monkeypatch):
+    """A rewrite that INVERTS the source must be rejected even though it sails through the
+    similarity gate (measured: "runs faster" -> "runs slower" scores 0.974 vs a 0.76 bar) and
+    scores beautifully on the detectors."""
+    import untell.scripts.run as run_mod
+
+    src = "The build runs significantly faster after the change."
+    inverted = "The build runs significantly slower after the change."
+
+    # The inversion looks perfect to the detectors — only the veto can catch it.
+    def _score(text, tier="full", threshold=0.3):
+        m = 0.02 if text == inverted else 0.90
+        return {"tier": tier, "detectors": {"d": m}, "max": m, "mean": m,
+                "threshold": threshold, "flagged": m >= 0.3}
+
+    monkeypatch.setattr(run_mod, "score_text", _score)
+    monkeypatch.setattr(run_mod, "contradicts", lambda a, b: b.strip() == inverted)
+
+    class _Inv:
+        name = "inv"
+        deterministic = False
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            return inverted
+
+    out = run_mod.untell_text(
+        src, tier="lite", threshold=0.3, max_iters=1, best_of=1, rewriter=_Inv(),
+        scrub=False, sim_bar=0.0,
+    )
+    assert out["final"] == src  # the inverting rewrite was never adopted
+
+
+def test_veto_can_be_disabled(monkeypatch):
+    """veto_contradictions=False restores the previous behaviour (and is what the NLI-less path
+    degrades to), so the flag must actually bypass the check."""
+    import untell.scripts.run as run_mod
+
+    src = "The build runs significantly faster after the change."
+    inverted = "The build runs significantly slower after the change."
+
+    def _score(text, tier="full", threshold=0.3):
+        m = 0.02 if text == inverted else 0.90
+        return {"tier": tier, "detectors": {"d": m}, "max": m, "mean": m,
+                "threshold": threshold, "flagged": m >= 0.3}
+
+    monkeypatch.setattr(run_mod, "score_text", _score)
+    monkeypatch.setattr(run_mod, "contradicts", lambda a, b: True)  # would veto everything
+
+    class _Inv:
+        name = "inv"
+        deterministic = False
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            return inverted
+
+    out = run_mod.untell_text(
+        src, tier="lite", threshold=0.3, max_iters=1, best_of=1, rewriter=_Inv(),
+        scrub=False, sim_bar=0.0, veto_contradictions=False,
+    )
+    assert out["final"] == inverted  # veto bypassed

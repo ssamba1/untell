@@ -31,6 +31,7 @@ if __package__ in (None, ""):
             break
 
 from untell.rewriter import get_rewriter
+from untell.scripts.entailment import contradicts
 from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
@@ -103,6 +104,7 @@ def untell_text(
     style: str | None = None,
     best_of: int = 1,
     detector_thresholds: dict[str, float] | None = None,
+    veto_contradictions: bool = True,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -223,9 +225,17 @@ def untell_text(
             # every sentinel exactly as often as it appears in `masked`: no drop, no alter, no dup.
             if Counter(_SENTINEL_RE.findall(candidate)) != Counter(_SENTINEL_RE.findall(masked)):
                 continue  # dropped/altered/DUPLICATED a locked span — reject outright
+            if similarity(masked, candidate) < sim_bar:
+                continue  # meaning drifted too far from the source
+            # Contradiction veto. Embedding similarity is BLIND to negation and antonymy — measured,
+            # "runs faster" -> "runs slower" scores 0.974 and sails through the gate. A rewrite that
+            # asserts the opposite of the source is not a humanized rewrite, it is a wrong one, so it
+            # is rejected regardless of how well it scores on similarity or on the detectors. No-op
+            # when the NLI deps are absent (never a silent veto).
+            if veto_contradictions and contradicts(masked, candidate):
+                continue
             cscore = score(candidate)
-            if similarity(masked, candidate) >= sim_bar:
-                valid.append((candidate, cscore, score_tells(candidate).get("tells", 0)))
+            valid.append((candidate, cscore, score_tells(candidate).get("tells", 0)))
         cand_best, cand_best_score = None, None
         if valid:
             # Primary objective: lowest detector max. Restrict the tells tie-break to the ADOPTABLE
