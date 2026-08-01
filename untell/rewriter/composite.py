@@ -28,10 +28,29 @@ class CompositeRewriter(Rewriter):
 
     name = "composite"
 
-    def __init__(self, intensity: float = 0.7, max_subs: int = 12, best_of: int = 3):
+    def __init__(
+        self, intensity: float = 0.7, max_subs: int = 12, best_of: int = 3, use_t5: bool = False
+    ):
         self._structural = StructuralRewriter(intensity=intensity)
         self._surgical = SurgicalRewriter(max_subs=max_subs)
         self.best_of = best_of
+        # Optional neural front-stage (``prefer="neural"``). A T5 paraphrase moves detectors far more
+        # than any rule-based transform (DIPPER-class paraphrasing drove DetectGPT 70%->4.6%), but is
+        # heavy (CPU, per-sentence generation) and non-deterministic — so it is OFF by default and the
+        # plain composite stays the always-available, deterministic $0 path. It is sentinel-safe: the
+        # paraphraser restores every locked span or falls back per sentence, and the outer loop's
+        # multiset check is the final net.
+        self._t5 = None
+        if use_t5:
+            try:
+                from .t5_paraphrase import T5ParaphraseRewriter
+
+                t5 = T5ParaphraseRewriter()
+                self._t5 = t5 if t5.available() else None
+            except Exception:
+                self._t5 = None
+        if use_t5 and self._t5 is not None:
+            self.name = "neural"  # distinguish in logs/results when the neural stage is live
 
     def available(self) -> bool:
         return True
@@ -39,7 +58,15 @@ class CompositeRewriter(Rewriter):
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         from untell.scripts.score import score_text
 
-        # Score the original to establish baseline.
+        # Neural front-stage (opt-in): one expensive paraphrase pass, then the cheap rule-based
+        # best-of polishes it. Run once (not per best_of attempt) since T5 dominates the cost.
+        if self._t5 is not None:
+            try:
+                text = self._t5.rewrite(text, score_result, threshold)
+            except Exception:
+                pass  # any neural failure -> fall through to the rule-based chain unchanged
+
+        # Score the (possibly paraphrased) text to establish baseline.
         tier = score_result.get("tier", "lite")
         if tier not in ("lite", "full", "heavy", "commercial"):
             # Non-scoreable tier (e.g. "browser:zerogpt"): score_text can't reproduce the real

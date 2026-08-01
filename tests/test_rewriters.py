@@ -50,7 +50,7 @@ class TestStructuralRewriter:
         assert "does not" not in out and "doesn't" in out
 
     def test_burstiness_targeting_raises_cv(self):
-        from untell.rewriter.structural import _target_burstiness, _cv
+        from untell.rewriter.structural import _cv, _target_burstiness
 
         # Uniform ~9-word sentences (low burstiness, an AI tell).
         sents = [
@@ -65,7 +65,10 @@ class TestStructuralRewriter:
         assert after > before
         # No content lost: every content word survives (redistribution only).
         import re as _re
-        w = lambda ss: sorted(x.lower() for x in _re.findall(r"[a-z]+", " ".join(ss).lower()))
+
+        def w(ss):
+            return sorted(x.lower() for x in _re.findall(r"[a-z]+", " ".join(ss).lower()))
+
         # allow the injected "and" connector
         assert set(w(sents)) - set(w(after_sents)) == set()
 
@@ -135,6 +138,39 @@ class TestCompositeRewriter:
         score_result = {"tier": "browser:zerogpt", "max": 0.7, "detectors": {}}
         result = rw.rewrite("Moreover, AI has transformed numerous industries.", score_result)
         assert isinstance(result, str) and len(result) > 0
+
+
+class TestNeuralComposite:
+    def test_name_reflects_t5_availability(self):
+        rw = CompositeRewriter(use_t5=True)
+        # With torch+transformers installed the neural stage is live and the name flips to "neural";
+        # without them it stays a plain "composite" (never errors, never None).
+        assert rw.name in ("neural", "composite")
+
+    def test_get_rewriter_prefer_neural(self):
+        rw = get_rewriter(prefer="neural")
+        assert rw is not None
+        assert rw.available() is True
+
+    def test_t5_stage_invoked_once_and_sentinels_survive(self, monkeypatch):
+        import pytest
+
+        from untell.scripts.preserve import find_sentinels
+
+        rw = CompositeRewriter(use_t5=True)
+        if rw._t5 is None:
+            pytest.skip("T5 deps unavailable in this environment")
+        calls = {"n": 0}
+
+        def _fake(text, score_result, threshold=0.30):
+            calls["n"] += 1
+            return text  # sentinel-safe identity; we only assert the stage ran + spans survive
+
+        monkeypatch.setattr(rw._t5, "rewrite", _fake)
+        masked = "Moreover, AI fundamentally reshaped ⟦HZ0000⟧ across ⟦HZ0001⟧ sectors overall."
+        out = rw.rewrite(masked, {"tier": "lite"})
+        assert calls["n"] == 1  # neural stage ran exactly once (not per best_of attempt)
+        assert find_sentinels(out) == {"⟦HZ0000⟧", "⟦HZ0001⟧"}  # locked spans intact through the chain
 
 
 class TestMTPivotRewriter:

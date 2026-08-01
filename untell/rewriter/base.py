@@ -124,6 +124,10 @@ def get_rewriter(prefer: str | None = None) -> Rewriter | None:
         return StructuralRewriter()
     if prefer == "composite":
         return CompositeRewriter()
+    if prefer == "neural":
+        # Neural composite: T5 paraphrase front-stage + structural + surgical. Falls back to the
+        # plain rule-based composite when T5's deps (.[full]) are absent, so it is never None.
+        return CompositeRewriter(use_t5=True)
     if prefer == "mt_pivot":
         from .mt_pivot import MTPivotRewriter
 
