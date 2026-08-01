@@ -114,3 +114,19 @@ def test_bertscore_paraphrase_above_bar():
     a = "The new system significantly improved response time."
     b = "Response time improved a lot with the new system."
     assert passes(a, b)  # faithful paraphrase clears the BERTScore bar
+
+
+def test_confidence_is_high_for_every_semantic_metric(monkeypatch):
+    """The check used to be method() == "embedding", which INVERTED the ranking once bertscore was
+    added: the highest-fidelity backend reported "low" while the middle tier reported "high"."""
+    import untell.scripts.quality as q
+
+    monkeypatch.setattr(q, "method", lambda: "bertscore")
+    assert q.confidence() == "high"
+
+    monkeypatch.setattr(q, "method", lambda: "embedding")
+    assert q.confidence() == "high"
+
+    # Only the lite fallback is advisory — it cannot tell a paraphrase from an off-topic rewrite.
+    monkeypatch.setattr(q, "method", lambda: "token_overlap")
+    assert q.confidence() == "low"

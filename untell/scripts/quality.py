@@ -138,12 +138,19 @@ def method() -> str:
 
 
 def confidence() -> str:
-    """How trustworthy the gate is: 'high' for semantic embeddings, 'low' for the lite fallback.
+    """How trustworthy the gate is: 'high' for a semantic metric, 'low' for the lite fallback.
 
     Token-overlap cannot tell a faithful paraphrase from an off-topic rewrite, so on the lite
     tier the quality gate is advisory, not authoritative.
+
+    This used to read ``method() == "embedding"``, which INVERTED the ranking once the bertscore
+    tier was added: bertscore is the highest-fidelity backend (see ``_bert_score_similarity``), yet
+    it compared unequal to "embedding" and was reported as "low" — while the middle tier, MiniLM
+    embeddings, was reported as "high". Any caller gating on ``confidence() == "high"`` would
+    distrust the best metric available and trust a weaker one. Both semantic metrics are
+    authoritative; only the token-overlap fallback is not.
     """
-    return "high" if method() == "embedding" else "low"
+    return "low" if method() == "token_overlap" else "high"
 
 
 def recommended_bar() -> float:
