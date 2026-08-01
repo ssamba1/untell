@@ -26,9 +26,20 @@ def test_registered_in_detector_list():
     assert "local_judge" in names
 
 
-def test_tier_heuristic():
-    """Small models should be 'full' tier; 7B+ models should be 'heavy'."""
-    d_light = LocalJudgeDetector(model_id="Qwen/Qwen2.5-1.5B-Instruct")
-    assert d_light.tier == "full"
-    d_heavy = LocalJudgeDetector(model_id="Qwen/Qwen2.5-7B-Instruct")
-    assert d_heavy.tier == "heavy"
+def test_every_model_size_is_heavy_tier():
+    """An LLM generation per candidate is heavy-tier work at any parameter count.
+
+    The 1.5B model used to be "full" — the documented default tier — but score() raised on every
+    call, so nothing noticed the cost. Measured once it worked: 3.71s warm per call against
+    0.03-0.06s for every other full-tier detector, for AUROC 0.514 over 40 labelled HC3 pairs.
+    """
+    for model_id in ("Qwen/Qwen2.5-1.5B-Instruct", "Qwen/Qwen2.5-7B-Instruct"):
+        assert LocalJudgeDetector(model_id=model_id).tier == "heavy"
+
+
+def test_local_judge_is_not_in_the_default_full_tier(monkeypatch):
+    """Pins the cost decision where a caller can see it: --tier full must stay fast."""
+    monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")
+    from untell.detectors.base import load_detectors
+
+    assert "local_judge" not in {d.name for d in load_detectors("full")}

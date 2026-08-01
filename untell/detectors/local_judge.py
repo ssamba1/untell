@@ -59,7 +59,19 @@ class LocalJudgeDetector:
     """
 
     name = "local_judge"
-    tier = "full"  # light model runs on CPU; 7B is "heavy" territory
+    # HEAVY, including the "light" 1.5B model. It was tier "full" — the documented default — but had
+    # been raising on every call, so nothing noticed. Once it actually ran, MEASURED on CPU against
+    # the rest of the full tier on the same paragraph:
+    #
+    #   perplexity_burstiness 0.06s   roberta_openai 0.03s   hc3_roberta 0.04s
+    #   fast_detectgpt        0.06s   local_judge    3.71s
+    #
+    # 60-120x the cost of any other detector, and inside a best-of-N loop that is per candidate per
+    # iteration. What it buys, measured over 40 labelled HC3 pairs (`untell-detector-audit --pairs
+    # 40`), is AUROC 0.514 — a coin flip, mean 0.90 on human text and 0.95 on AI: a 1.5B model asked
+    # to judge answers "AI" to almost anything. Paying seconds per candidate for that would make the
+    # default tier an order of magnitude slower for no signal, so it belongs behind --tier heavy.
+    tier = "heavy"
 
     _model = None
     _tokenizer = None
@@ -67,9 +79,8 @@ class LocalJudgeDetector:
     def __init__(self, model_id: str | None = None, device: str | None = None):
         self.model_id = model_id or _DEFAULT_MODEL
         self._device_override = device
-        # Heuristic tier: heavy models (7B+) are "heavy" tier; small ones are "full".
-        if "7b" in self.model_id.lower() or "8b" in self.model_id.lower() or "13b" in self.model_id.lower():
-            self.tier = "heavy"
+        # Every size is "heavy" (see the class comment) — a generation per candidate is heavy-tier
+        # work whether the model has 1.5B parameters or 7B.
 
     def available(self) -> bool:
         try:
