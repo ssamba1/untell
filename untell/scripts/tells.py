@@ -125,6 +125,13 @@ _CLICHES = [
     r"only time will tell", r"one thing is certain", r"as we move forward",
     r"despite (?:the )?challenges,? \w+ continues to thrive", r"vibrant hub", r"thriving ecosystem",
     r"rich tapestry of", r"game-?changer", r"game-?changing",
+    # 2024-2026 additions — corporate/AI cliché set
+    r"in the age of", r"in the world of", r"it'?s no secret that", r"the bottom line is",
+    r"the possibilities are endless", r"unlock the (?:potential|power) of", r"harness the power of",
+    r"take (?:it|things|your \w+) to the next level", r"a double-edged sword", r"the tip of the iceberg",
+    r"paradigm shift", r"sea change", r"at the forefront of", r"push the boundaries",
+    r"break new ground", r"move the needle", r"low-hanging fruit", r"circle back",
+    r"when we consider", r"look no further", r"the key takeaway",
 ]
 _CLICHE_RE = re.compile(r"\b(" + "|".join(_CLICHES) + r")\b", re.IGNORECASE)
 
