@@ -157,9 +157,16 @@ def test_humanize_endpoint():
 
 
 def test_ceiling_endpoint():
-    """The ceiling endpoint measures free evasion."""
+    """The ceiling endpoint measures free evasion.
+
+    Patched at ``eval.ceiling.measure_ceiling``, NOT ``untell.api_server.measure_ceiling``: the
+    endpoint imports it lazily inside the function body (deliberately — a module-level import would
+    pull the eval harness in on every server start), so there is no attribute of that name on
+    ``untell.api_server`` to patch and the test raised AttributeError before reaching the request.
+    It went unnoticed because the whole module skips when FastAPI is absent, which it was.
+    """
     with patch("untell.api_server.load_env"):
-        with patch("untell.api_server.measure_ceiling") as mock_ceiling:
+        with patch("eval.ceiling.measure_ceiling") as mock_ceiling:
             mock_ceiling.return_value = {"samples": [], "mean_by_strategy": {}, "bypass_rates": {}}
             from fastapi.testclient import TestClient
 
