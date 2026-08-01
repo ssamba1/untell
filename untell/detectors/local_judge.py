@@ -88,11 +88,14 @@ class LocalJudgeDetector:
             if tok.pad_token_id is None:
                 tok.pad_token = tok.eos_token
             device = self._device_override or ("cuda" if torch.cuda.is_available() else "cpu")
+            # Load, then `.to(device)` — NOT `device_map=`. Passing device_map at all routes the
+            # load through `accelerate`, which is not a declared dependency, so every score() call
+            # died with "Using a `device_map` ... requires `accelerate`" even though available()
+            # had just reported True. `.to()` places the model identically for a single device.
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_id,
-                torch_dtype=torch.bfloat16 if device != "cpu" else torch.float32,
-                device_map=device,
-            ).eval()
+                dtype=torch.bfloat16 if device != "cpu" else torch.float32,
+            ).to(device).eval()
             LocalJudgeDetector._tokenizer = tok
             LocalJudgeDetector._model = model
         return LocalJudgeDetector._tokenizer, LocalJudgeDetector._model
