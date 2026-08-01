@@ -4,10 +4,19 @@ from __future__ import annotations
 
 
 def _bypass_rate(results: list, threshold: float) -> float:
-    if not results:
+    """Fraction of samples whose post-rewrite max fell below threshold.
+
+    Samples where NOTHING scored are excluded, not counted as passes. ``score_text`` returns
+    ``max: 0.0`` as a placeholder when no detector produced a number, and ``0.0 < threshold`` is
+    true — so a benchmark run against a broken ML stack reported a **100% bypass rate**, the most
+    flattering possible number, produced by measuring nothing. ``scored: False`` exists on the
+    result dict precisely to tell the two apart.
+    """
+    scored = [r for r in results if r.post.get("scored") is not False]
+    if not scored:
         return 0.0
-    passed = sum(1 for r in results if r.post["max"] < threshold)
-    return passed / len(results)
+    passed = sum(1 for r in scored if r.post["max"] < threshold)
+    return passed / len(scored)
 
 
 def _mean(xs: list[float]) -> float:
