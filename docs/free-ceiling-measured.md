@@ -15,10 +15,9 @@ ensemble that untell can actually put in its loop.**
 > for the current numbers.** Every earlier result was measured while `perplexity_burstiness` — the
 > one detector present at every tier — was anti-correlated and saturating.
 >
-> ⚠️ **The corrected figure did not replicate, and is being re-measured.** One 3-repeat run gave
-> 0.859 → 0.247 ± 0.015 with flagged rate 0.00; an independent 3-repeat run of the same command
-> gave **0.330 ± 0.118, flagged 0.44**, with one of the three runs at 0.496. Treat *both* as single
-> noisy draws until the wider run below lands. See [Result 6](#result-6--re-measured-on-a-working-perplexity_burstiness-supersedes-result-5s-table).
+> The corrected figure, measured at `--repeats 9` (27 loop runs) after two 3-repeat runs disagreed:
+> **0.859 → 0.261 ± 0.027, flagged rate 1.00 → 0.148.** Use `--repeats ≥ 9`; three repeats gave
+> 0.247 ± 0.015 and 0.330 ± 0.118 on the same command.
 
 > **Read [Result 3](#result-3--superseding-update-the-content-wall-was-largely-a-selection-limit)
 > next.** Results 1–2 were measured with the then-default `best_of=1`. Re-measuring with best-of-3
@@ -287,50 +286,60 @@ input to exactly `0.0`. Measured on paragraph-length text it was *anti-correlate
 fitted to labelled HC3 pairs (AUROC **0.999** on 200 held-out pairs, nothing saturated), the same
 config re-run — `best-of 3`, `max-iters 2`, 3 repeats, 9 loop runs:
 
-| detector | before (Result 5) | **before (live detector)** | after (Result 5) | **after (live detector)** |
+| detector | before (Result 5) | **before (live detector)** | after (Result 5) | **after (9 repeats)** |
 |---|---|---|---|---|
-| `perplexity_burstiness` | 0.319 | **0.604** | 0.028 | **0.140** |
-| `roberta_openai` | 0.523 | 0.523 | 0.051 | **0.100** |
-| `hc3_roberta` | 0.725 | 0.725 | 0.020 | **0.003** |
-| `fast_detectgpt` | 0.630 | 0.630 | 0.214 | **0.206** |
+| `perplexity_burstiness` | 0.319 | **0.604** | 0.028 | **0.194** |
+| `roberta_openai` | 0.523 | 0.523 | 0.051 | **0.113** |
+| `hc3_roberta` | 0.725 | 0.725 | 0.020 | **0.022** |
+| `fast_detectgpt` | 0.630 | 0.630 | 0.214 | **0.225** |
 
-| Metric | Result 5 | **re-measured** |
+| Metric | Result 5 | **re-measured (9 repeats)** |
 |---|---|---|
-| flagged rate | 1.00 → 0.111 | 1.00 → **0.000** |
-| mean max P(AI) | 0.859 → 0.214 ± 0.012 | 0.859 → **0.247 ± 0.015** |
-| meaning similarity (cosine) | 0.944 / 0.900 worst | 0.916 / 0.815 worst |
+| flagged rate | 1.00 → 0.111 | 1.00 → **0.148** |
+| mean max P(AI) | 0.859 → 0.214 ± 0.012 | 0.859 → **0.261 ± 0.027** |
+| meaning similarity (cosine) | 0.944 / 0.900 worst | 0.930 / 0.825 worst |
 
-**The headline moved twice, in opposite directions, and both matter.** The *baseline* for
+**The headline moved in both directions and both matter.** The *baseline* for
 `perplexity_burstiness` was understated by nearly half (0.319 → 0.604): a broken detector had been
 reporting formulaic AI text as barely suspicious, so the "before" picture flattered the corpus. And
-the *after* figure is worse than Result 5 claimed (0.214 → 0.247), because the 0.028 it recorded for
-that detector was a number the loop never really had to earn. Against that, the flagged rate is now
-**0.000** — every sample finished below threshold in all nine runs, where Result 5 left one in nine
-flagged.
+the *after* figure is worse than Result 5 claimed (0.214 → 0.261), because the 0.028 it recorded for
+that detector was a number the loop never really had to earn — on a live detector it only reaches
+0.194.
 
-⚠️ **That figure did not replicate — read this before quoting it.** Running the identical command a
-second time on the same corpus:
+Result 5's flagged rate (0.111) and this one (0.148) are within noise of each other at these sample
+sizes; the meaningful change is the mean and the per-detector baseline, not the flag count.
 
-| 3-repeat run | mean max P(AI) | stdev | flagged rate | per-run means |
-|---|---|---|---|---|
-| first | **0.247** | 0.015 | 0.000 | 0.265 / 0.248 / 0.228 |
-| second | **0.330** | 0.118 | 0.444 | 0.252 / **0.496** / 0.241 |
+⚠️ **Neither 3-repeat run was trustworthy on its own.** Running the identical command a second time
+gave a materially different answer, so it was re-run at `--repeats 9`:
 
-Two of the second run's three repeats land right where the first run did; the third nearly doubles.
-So the difference is not a regression between the two — it is that **three repeats over a
-three-paragraph corpus is not enough to pin this number**, and the first run happened to draw three
-low values in a row. This document has said since Result 3 that "a single pass is not evidence";
-nine loop runs turns out not to be evidence either, at this corpus size, for a *tight interval* —
-it is enough to establish direction and magnitude, not a ±0.015 error bar.
+| run | repeats | loop runs | mean max P(AI) | stdev | flagged | per-repeat means |
+|---|---|---|---|---|---|---|
+| first | 3 | 9 | 0.247 | 0.015 | 0.000 | 0.265 / 0.248 / 0.228 |
+| second | 3 | 9 | 0.330 | 0.118 | 0.444 | 0.252 / **0.496** / 0.241 |
+| **third** | **9** | **27** | **0.261** | **0.027** | **0.148** | 0.212 – 0.297, no outlier |
 
-What survives both runs: the baseline is 0.859, every detector moves substantially, and the mean
-lands in the **0.25–0.33** band. What does not survive is the precision either run claimed on its
-own, and the "flagged 0.00" result in particular — the second run flagged 4 of 9.
+**The 9-repeat figure is the one to quote: 0.859 → 0.261 ± 0.027, flagged 1.00 → 0.148.**
 
-A wider re-measurement is the fix, and the honest interim statement is the band, not either point
-estimate. The corpus itself (`n=3`) is the binding constraint: `--repeats` multiplies loop runs but
-every repeat draws from the same three paragraphs, so it cannot average away a paragraph that is
-simply harder than the others.
+| detector | before | after (27 runs) |
+|---|---|---|
+| `perplexity_burstiness` | 0.604 | **0.194** |
+| `roberta_openai` | 0.523 | **0.113** |
+| `hc3_roberta` | 0.725 | **0.022** |
+| `fast_detectgpt` | 0.630 | **0.225** |
+
+meaning similarity 0.930 mean / 0.825 worst.
+
+Two lessons, and the second corrects an explanation this section briefly carried:
+
+1. **Three repeats is not enough**, and a low stdev across three does not mean the estimate is
+   stable — the first run's ±0.015 came from drawing three low values in a row, and the second run
+   contained a single 0.496 that dragged its mean up by 0.08. Nine repeats produced a range of
+   0.212–0.297 with no outlier at all.
+2. An earlier draft blamed **corpus size** and said `--repeats` "cannot average away a paragraph
+   that is simply harder than the others". That was wrong, and the 9-repeat run disproves it: the
+   variance was in the **rewriter's randomness**, not the corpus, and repeats did average it out
+   (stdev 0.118 → 0.027). `n=3` still limits how far the result generalises — it says nothing about
+   other genres — but it was not what made the number jump.
 
 The cosine similarity figure falls again (0.944 → 0.916 mean, 0.900 → 0.815 worst). The same caveat
 as Result 5 applies and is now stronger: fidelity is enforced by the NLI gate plus a

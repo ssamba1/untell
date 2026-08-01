@@ -97,9 +97,9 @@ untell ceiling --rewriter composite --best-of 3 --repeats 3  # measure free evas
 
 > **How far does free actually go?** We measured it, then re-measured it twice when the first two
 > answers turned out to be wrong. The training-free, no-key loop drops the local open-detector
-> ensemble from 100% flagged to **0–44%** (mean max P(AI) **0.86 → 0.25–0.33** across two
-> independent runs), with meaning held by an NLI gate plus a predicate-argument veto. The tighter
-> figure an earlier draft of this line quoted did not replicate — see the note under the table. The
+> ensemble from **100% flagged to 15%** (mean max P(AI) **0.86 → 0.26 ± 0.03**, 27 loop runs), with
+> meaning held by an NLI gate plus a predicate-argument veto. An earlier draft of this line quoted a
+> tighter figure from three repeats that did not replicate — see the note under the table. The
 > largest correction was the detector itself: the
 > one detector present at every tier was itself anti-correlated and saturating, so every previous
 > number on this page had been measured through it. An earlier
@@ -184,20 +184,19 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 
 
 | Free, no-key rewrite vs the local open ensemble (3 repeats = 9 loop runs) | before | after |
 |---|---|---|
-| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.00–0.44** (`--best-of 3`, see note) |
-| mean max P(AI) | 0.86 | **0.25–0.33** (two runs; see note) |
+| flagged rate (max P(AI) ≥ 0.30) | 1.00 | **0.15** (`--best-of 3`, 27 loop runs) |
+| mean max P(AI) | 0.86 | **0.26 ± 0.03** (`--repeats 9`) |
 | meaning similarity (cosine; the gate is NLI + roles) | — | **0.92 mean, 0.82 worst** |
 
 ¹ The `--best-of 8` figure was measured before the `fast_detectgpt` calibration fix, so treat it as
 indicative rather than directly comparable to the row above it.
 
-**Note on the range.** Two independent 3-repeat runs of the identical command gave 0.247 ± 0.015
-(flagged 0.00) and 0.330 ± 0.118 (flagged 0.44). Two of the second run's three repeats matched the
-first; the third nearly doubled. The direction and magnitude are solid — the baseline is 0.86 and
-every detector moves substantially — but a **±0.02 error bar was not real**, and neither point
-estimate should be quoted on its own. The binding constraint is corpus size (`n=3`): `--repeats`
-multiplies loop runs but every repeat draws from the same three paragraphs. See
-[`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md).
+**Use `--repeats 9`, not 3.** Two independent 3-repeat runs of the identical command gave
+0.247 ± 0.015 (flagged 0.00) and 0.330 ± 0.118 (flagged 0.44) — one contained a single 0.496 draw
+that moved its mean by 0.08. A low stdev across three repeats does not mean the estimate is stable.
+At 9 repeats (27 loop runs) the per-repeat means land in 0.212–0.297 with no outlier, giving
+**0.26 ± 0.03, flagged 0.15**. The instability was the rewriter's randomness, and repeats average it
+out. See [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md).
 
 More draws buy **reliability, not a lower average**: 3 → 8 barely moves the mean but halves the
 run-to-run spread and clears every sample. Meaning is measured alongside, so a good evasion number
@@ -207,10 +206,10 @@ Per-detector, before → after (two independent replications):
 
 | detector | before | after |
 |---|---|---|
-| `perplexity_burstiness` | 0.60 | **0.14** |
-| `roberta_openai` | 0.52 | **0.10** |
-| `hc3_roberta` (content/genre) | 0.73 | **0.00** |
-| `fast_detectgpt` (curvature) | 0.63 | **0.21** |
+| `perplexity_burstiness` | 0.60 | **0.19** |
+| `roberta_openai` | 0.52 | **0.11** |
+| `hc3_roberta` (content/genre) | 0.73 | **0.02** |
+| `fast_detectgpt` (curvature) | 0.63 | **0.22** |
 
 Three findings, all measured, and one of them overturned this project's own earlier conclusion:
 
