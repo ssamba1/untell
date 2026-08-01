@@ -63,7 +63,7 @@ def test_single_short_sentence_not_auto_max():
 
 
 def test_all_three_splitters_are_the_same_implementation():
-    """`(?<=[.!?])\s+` was written out three times - in this module, the structural rewriter and
+    r"""`(?<=[.!?])\s+` was written out three times - in this module, the structural rewriter and
     the perplexity detector - so fixing the abbreviation bug in one left the other two wrong:
 
         scorer     scored the fragment "Dr." as a sentence and flagged it as AI
