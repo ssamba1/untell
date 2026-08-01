@@ -179,6 +179,16 @@ def main(argv: list[str] | None = None) -> int:
     import sys
 
     args = argv if argv is not None else sys.argv[1:]
+    # -h/--help is a universal expectation, and every other script in this package honours it. This
+    # one treated it as text, so `quality.py --help` printed a usage line as an ERROR and exited 2 —
+    # a user checking how to call the meaning gate got what looked like a failure.
+    if any(a in ("-h", "--help") for a in args):
+        print(
+            'usage: quality.py "<original>" "<rewrite>"\n\n'
+            "Prints JSON: similarity, method (bertscore|embedding|token_overlap), confidence, bar,\n"
+            "and whether the pair passes the bar for the ACTIVE metric (each lives on its own scale).",
+        )
+        return 0
     if len(args) < 2:
         logger.error('usage: quality.py "<original>" "<rewrite>"')
         return 2

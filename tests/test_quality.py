@@ -130,3 +130,21 @@ def test_confidence_is_high_for_every_semantic_metric(monkeypatch):
     # Only the lite fallback is advisory — it cannot tell a paraphrase from an off-topic rewrite.
     monkeypatch.setattr(q, "method", lambda: "token_overlap")
     assert q.confidence() == "low"
+
+
+def test_help_flag_is_honoured_like_every_other_script(capsys):
+    """`quality.py --help` treated the flag as TEXT, printed usage as an ERROR and exited 2 — a user
+    checking how to call the meaning gate got what looked like a failure. Every sibling script in
+    untell/scripts honours -h/--help; this one is the meaning gate the whole skill workflow calls."""
+    from untell.scripts.quality import main
+
+    for flag in ("-h", "--help"):
+        assert main([flag]) == 0
+        assert "usage" in capsys.readouterr().out.lower()
+
+
+def test_missing_args_still_errors(capsys):
+    """The help path must not swallow the genuine misuse case."""
+    from untell.scripts.quality import main
+
+    assert main(["only-one-arg"]) == 2
