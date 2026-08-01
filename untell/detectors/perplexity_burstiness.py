@@ -39,6 +39,9 @@ _WORD = re.compile(r"[A-Za-z']+")
 # logistic stays responsive across the whole range instead of saturating at the ends. The
 # constants it replaced (mean per-sentence perplexity < 60, variance < 400) sat far outside the
 # range those quantities take, which pinned a large class of ordinary input to exactly 0.0.
+# Tokens of preceding text carried into each scoring window past the first, so that a long document
+# is scored with context throughout instead of being cut off at GPT-2's 1024-token limit.
+_CONTEXT = 256
 _NLL_MID = 3.036
 _NLL_SCALE = 0.315
 _SPREAD_MID = 0.625
@@ -176,19 +179,45 @@ class PerplexityBurstinessDetector:
         tok = PerplexityBurstinessDetector._tokenizer
         model = PerplexityBurstinessDetector._model
 
-        enc = tok(text, return_tensors="pt", truncation=True, max_length=1024,
-                  return_offsets_mapping=True)
+        # NOT truncated. GPT-2's context is 1024 tokens and a document can be far longer; scoring
+        # only the opening ~750 words would let everything after that drift unmeasured. The text is
+        # instead walked in windows, each carrying `_CONTEXT` tokens of preceding text whose
+        # surprisals are discarded — so every token after the first is scored *with* real context
+        # rather than as if it opened the document.
+        # verbose=False: without truncation the tokenizer warns that the sequence exceeds the
+        # model's 1024-token limit, which is alarming and wrong here — the windowing below never
+        # feeds the model more than it can take.
+        enc = tok(text, return_tensors="pt", return_offsets_mapping=True, verbose=False)
         ids = enc["input_ids"]
-        if ids.shape[1] < 2:
+        total = ids.shape[1]
+        if total < 2:
             return None, None
-        with torch.no_grad():
-            logits = model(ids).logits
-        lp = torch.log_softmax(logits[:, :-1, :].float(), dim=-1)
-        targets = ids[:, 1:]
-        nll = -lp.gather(-1, targets.unsqueeze(-1)).squeeze(-1)[0]
+
+        window = 1024
+        stride = window - _CONTEXT
+        chunks = []
+        start = 0
+        while start < total - 1:
+            end = min(start + window, total)
+            chunk = ids[:, start:end]
+            with torch.no_grad():
+                logits = model(chunk).logits
+            lp = torch.log_softmax(logits[:, :-1, :].float(), dim=-1)
+            targets = chunk[:, 1:]
+            chunk_nll = -lp.gather(-1, targets.unsqueeze(-1)).squeeze(-1)[0]
+            # Drop the context prefix on every window but the first: those tokens were already
+            # scored by the previous window, with at least as much context.
+            keep_from = 0 if start == 0 else _CONTEXT - 1
+            chunks.append(chunk_nll[keep_from:])
+            if end >= total:
+                break
+            start += stride
+
+        nll = torch.cat(chunks) if len(chunks) > 1 else chunks[0]
         # offsets align with `targets`, i.e. tokens 1..T-1 — the first token has no prediction.
         offsets = enc["offset_mapping"][0][1:].tolist()
-        return nll, offsets
+        n = min(len(nll), len(offsets))
+        return nll[:n], offsets[:n]
 
     def _full_score(self, text: str) -> float:
         """GPT-2 perplexity + per-sentence perplexity variance -> P(AI).

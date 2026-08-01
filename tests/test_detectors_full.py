@@ -115,3 +115,39 @@ def test_fast_detectgpt_actually_discriminates():
     # reverse it). That weakness is real and documented; the calibration fix only restored the
     # detector's dynamic range, it did not make the statistic discriminative at this size.
     assert max(h + a) - min(h + a) > 0.05
+
+
+def test_long_document_is_scored_past_the_context_window():
+    """GPT-2 stops at 1024 tokens; a document does not.
+
+    The scorer used to truncate, so everything after roughly the first 750 words went unmeasured —
+    an essay could carry an untouched AI tail and still be reported on its opening alone. The text
+    is now walked in overlapping windows, each carrying real preceding context.
+    """
+    pytest.importorskip("torch")
+    pytest.importorskip("transformers")
+    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+    det = PerplexityBurstinessDetector()
+    if not det._torch_ready():
+        pytest.skip("torch/transformers not importable")
+
+    long_text = ("The committee reviewed the proposal and asked for three specific changes "
+                 "before the vote. ") * 120  # comfortably over 1024 tokens
+    nll, offsets = det._token_nll(long_text)
+    assert nll is not None
+    assert len(nll) > 1024, f"only {len(nll)} tokens scored — the tail was truncated away"
+    assert len(offsets) >= len(nll)
+
+
+def test_score_is_finite_and_in_range_for_a_long_document():
+    pytest.importorskip("torch")
+    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+    det = PerplexityBurstinessDetector()
+    if not det._torch_ready():
+        pytest.skip("torch/transformers not importable")
+    text = ("Regular exercise offers benefits for physical and mental health. "
+            "It reduces the risk of chronic disease and improves mood. ") * 90
+    s = det.score(text)
+    assert s is not None and 0.0 <= s <= 1.0 and s == s
