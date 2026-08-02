@@ -220,6 +220,18 @@ def meaning_preserved(
     if not numbers_kept(source, candidate):
         return False
 
+    # A hedged claim must not be upgraded into a flat assertion. Seven of ten such strengthenings
+    # cleared this gate: "may cause" -> "causes", "suggest" -> "prove", "accused of" -> "committed",
+    # "usually" -> "always". None of them contradicts the source, and entailment (the min of both
+    # directions) lands low but above the 0.005 floor. Raising that floor would undo the tuning
+    # that admits faithful register shifts, so this is a separate mechanical check: the source
+    # hedged a claim somehow, the rewrite must hedge it somehow. Measured 0 false vetoes over 18
+    # real rewrites from composite/structural/surgical.
+    from untell.scripts.hedges import certainty_kept
+
+    if not certainty_kept(source, candidate):
+        return False
+
     # Positive evidence only: `role_swap` returns None when the parser is unavailable, and an
     # unavailable check must not become a veto.
     from untell.scripts.roles import role_swap

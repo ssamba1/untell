@@ -51,6 +51,7 @@ _COMMANDS: dict[str, str] = {
     "humanness": "untell.humanness:main",
     "scrub": "untell.scripts.scrub:main",
     "numbers": "untell.scripts.numbers:main",
+    "hedges": "untell.scripts.hedges:main",
 }
 
 _ONE_LINER = {
@@ -66,6 +67,7 @@ _ONE_LINER = {
     "humanness": "score text 0-100: how human does it read (combines tells + detectors)",
     "scrub": "strip hidden watermark chars (zero-width, tag, bidi, homoglyph)",
     "numbers": "check every number in the original survives a rewrite",
+    "hedges": "check a rewrite does not state more firmly than the original",
 }
 
 

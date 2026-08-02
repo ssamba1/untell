@@ -151,9 +151,21 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    19 tests passed." scores similarity `0.951`, contradiction `0.011`, entailment `0.007`, and
    clears the meaning gate by `0.002`. Spelling a number out is fine; dropping it is not.
 
-   The four gates are complementary, not redundant: similarity catches drift, entailment catches
+   And the **certainty check**, for the opposite failure — the rewrite claiming *more* than the
+   source did:
+   ```bash
+   python scripts/hedges.py "<ORIG masked>" "<current masked text>"
+   ```
+   Exit `0` = every hedged claim is still hedged, `1` = one was upgraded to a flat assertion;
+   `dropped` names the classes. Measured, these all cleared every other gate: "may cause" → "causes",
+   "the results suggest" → "the results prove", "she was accused of" → "she committed", "usually" →
+   "always", "plans to expand" → "is expanding". None of them *contradicts* the source, which is why
+   entailment lets them through. Swapping one hedge for another is fine ("may" → "might", "some" →
+   "a handful of"); removing hedging altogether is not.
+
+   The five gates are complementary, not redundant: similarity catches drift, entailment catches
    negation and reversal of a claim, roles catches argument permutation, numbers catches a
-   quantity quietly becoming vague. Run all four.
+   quantity quietly becoming vague, hedges catches a claim quietly becoming stronger. Run all five.
 
    Stop when **all** hold:
    - `max < threshold` (not flagged), **and**
@@ -161,7 +173,8 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
      the strict `passes` from `quality.py`), **and**
    - the meaning gate exits `0` (or is unavailable), **and**
    - the predicate-argument check exits `0` (or is unavailable), **and**
-   - the quantity check exits `0`.
+   - the quantity check exits `0`., **and**
+   - the certainty check exits `0`.
 
    **Confidence matters:** when `confidence` is `high` (full tier, semantic metric) **and the
    meaning gate did not run**, enforce the quality gate strictly — never accept a rewrite where
