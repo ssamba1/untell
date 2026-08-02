@@ -280,14 +280,21 @@ def test_sentinel_pattern_is_defined_once():
     import re
 
     root = pathlib.Path(__file__).resolve().parent.parent
-    literal = re.compile(r"re\.compile\(\s*r?[\"']\\u27e6HZ|re\.compile\(\s*r?[\"']⟦HZ")
+    # Every shipped package, not just untell/. A guard scoped to where the bug was last found is
+    # how the next instance survives — measured three times this session, most recently when the
+    # device_map guard looked only at detectors/ while a rewriter had it the whole time.
+    literal = re.compile(
+        r"re\.compile\(\s*r?[\"']\\u27e6HZ|re\.compile\(\s*r?[\"']⟦HZ"
+        r"|re\.(?:findall|search|sub|match)\(\s*r?[\"']\\u27e6HZ|re\.(?:findall|search|sub|match)\(\s*r?[\"']⟦HZ"
+    )
     offenders = []
-    for path in sorted((root / "untell").rglob("*.py")):
-        if path.name == "preserve.py":
-            continue
-        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if literal.search(line):
-                offenders.append(f"{path.relative_to(root)}:{i}: {line.strip()}")
+    for package in ("untell", "eval", "training", "tests"):
+        for path in sorted((root / package).rglob("*.py")):
+            if path.name in ("preserve.py", "test_preserve.py"):
+                continue
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if literal.search(line):
+                    offenders.append(f"{path.relative_to(root)}:{i}: {line.strip()}")
     assert not offenders, (
         "import SENTINEL_RE from untell.scripts.preserve instead of re-declaring it:\n  "
         + "\n  ".join(offenders)

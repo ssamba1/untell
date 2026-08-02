@@ -10,8 +10,6 @@ Each test pins the exact failure mode so the fix cannot silently regress:
 """
 from __future__ import annotations
 
-import re
-
 from untell.scripts.quality import similarity
 
 
@@ -55,7 +53,9 @@ def test_duplicate_sentinel_candidate_is_rejected(monkeypatch):
             return True
 
         def rewrite(self, text, score, threshold: float = 0.3) -> str:
-            m = re.search(r"⟦HZ\d{4,}⟧", text)
+            from untell.scripts.preserve import SENTINEL_RE
+
+            m = SENTINEL_RE.search(text)
             return f"{text} {m.group(0)}" if m else text  # duplicate a sentinel
 
     out = run_mod.untell_text(

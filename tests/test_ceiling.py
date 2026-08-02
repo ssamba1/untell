@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 from eval.ceiling import _SAMPLE, main, measure_ceiling
 
 
@@ -25,7 +23,10 @@ def test_full_delta_with_stub_rewriter():
             return True
 
         def rewrite(self, text, score_result, threshold=0.30):
-            sentinels = re.findall(r"⟦HZ\d{4}⟧", text)
+            # Production pattern, not a hand-written `\d{4}` — see tests/test_run.py.
+            from untell.scripts.preserve import SENTINEL_RE
+
+            sentinels = SENTINEL_RE.findall(text)
             return "Plain, short, human line. " + " ".join(sentinels)
 
     r = measure_ceiling(_SAMPLE[:2], tier="lite", threshold=0.30, max_iters=2, rewriter=_RW())

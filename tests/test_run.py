@@ -23,9 +23,12 @@ class _GoodRW:
 
     def rewrite(self, text, score_result, threshold=0.30):
         # Keep any sentinels present in the input so restore still works.
-        import re
+        # Uses the PRODUCTION pattern rather than a hand-written `\d{4}`: lock() numbers sentinels
+        # with a minimum width, so past 9999 spans they carry five digits. A test regex that only
+        # matches four could not detect a regression of exactly that bug.
+        from untell.scripts.preserve import SENTINEL_RE
 
-        sentinels = re.findall(r"⟦HZ\d{4}⟧", text)
+        sentinels = SENTINEL_RE.findall(text)
         tail = (" " + " ".join(sentinels)) if sentinels else ""
         return "It shifted. Fast. Nobody saw it coming, and then everything was different." + tail
 
@@ -280,9 +283,9 @@ class _DropRW:
         return True
 
     def rewrite(self, text, score_result, threshold=0.30):
-        import re
+        from untell.scripts.preserve import SENTINEL_RE
 
-        return re.sub(r"⟦HZ\d{4}⟧", "", "It shifted fast, and nobody saw it coming at all.")
+        return SENTINEL_RE.sub("", "It shifted fast, and nobody saw it coming at all.")
 
 
 def test_loop_rejects_sentinel_dropping_rewrite(monkeypatch):
@@ -310,10 +313,10 @@ def test_best_of_n_draws_multiple_candidates_and_keeps_facts(monkeypatch):
             return True
 
         def rewrite(self, text, score_result, threshold=0.30):
-            import re
+            from untell.scripts.preserve import SENTINEL_RE
 
             calls["n"] += 1
-            sentinels = re.findall(r"⟦HZ\d{4}⟧", text)
+            sentinels = SENTINEL_RE.findall(text)
             tail = (" " + " ".join(sentinels)) if sentinels else ""
             return f"It shifted, and people noticed. Variant {calls['n']}.{tail}"
 
