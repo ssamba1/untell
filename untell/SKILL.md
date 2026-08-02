@@ -161,7 +161,10 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    "the results suggest" → "the results prove", "she was accused of" → "she committed", "usually" →
    "always", "plans to expand" → "is expanding", "fell slightly" → "collapsed". It also reports
    `causal_upgrade` for the same failure reached by *adding* a claim rather than dropping a
-   qualifier — "is correlated with" → "causes", "coincided with" → "caused". None of them
+   qualifier — "is correlated with" → "causes", "coincided with" → "caused" — and
+   `intensifier_added` when the rewrite introduces a maximizer the source never used ("found an
+   effect" → "found a **large** effect", "fell" → "collapsed"). Adding a *minimizer* is fine: a
+   rewrite more cautious than its source is not a fidelity failure. None of them
    *contradicts* the source, which is why
    entailment lets them through. Swapping one hedge for another is fine ("may" → "might", "some" →
    "a handful of"); removing hedging altogether is not.
