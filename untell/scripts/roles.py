@@ -40,6 +40,7 @@ that rejects everything.
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,24 @@ def _connectives(doc) -> set[str]:
     return classes
 
 
+@lru_cache(maxsize=16)
+def _analyse(text: str) -> tuple[tuple[tuple[str, str, str | None], ...], frozenset[str]]:
+    """(predicate-argument triples, connective classes) for ``text``. Parsed once per string.
+
+    MEASURED: after the NLI pairs were cached, spaCy was the second-largest cost in a warm loop
+    profile (0.278s across 7 parses in a 1.39s run). Most of that is waste — `role_swap(source,
+    candidate)` re-parses the unchanged source for every candidate, so best-of-3 over 3 iterations
+    parses one document nine times.
+
+    Returns hashable, immutable structures and caches those rather than the spaCy `Doc`, which
+    holds a vocab-linked token array. Deterministic: the pipeline is loaded once and parsing is
+    pure, so the same string always yields the same analysis.
+    """
+    nlp = _load()
+    doc = nlp(text)
+    return tuple(_triples(doc)), frozenset(_connectives(doc))
+
+
 def role_swap(a: str, b: str) -> bool | None:
     """True when ``b`` permutes ``a``'s predicate-argument structure. None if unavailable.
 
@@ -209,8 +228,13 @@ def role_swap(a: str, b: str) -> bool | None:
     if nlp is None or not a.strip() or not b.strip():
         return None
     try:
-        da, db = nlp(a), nlp(b)
-        ta, tb = _triples(da), _triples(db)
+        # Parse through a cache. The loop calls this once per candidate with the SAME source, so
+        # `a` is re-parsed for every draw — best-of-3 over 3 iterations parses one unchanged
+        # document nine times. Only the derived facts are cached, never the spaCy Doc: a Doc holds
+        # the whole vocab-linked token array, and pinning several of those is real memory, while
+        # the triples and connectives are small tuples and sets.
+        ta, ca = _analyse(a)
+        tb, cb = _analyse(b)
         if not ta or not tb:
             return False
 
@@ -251,7 +275,7 @@ def role_swap(a: str, b: str) -> bool | None:
         # ADDING one is the structural rewriter's main burstiness move — joining two sentences with
         # "though" or "while" is how it varies architecture — and blocking that rejected every
         # candidate it produced, leaving the loop unable to rewrite anything at all.
-        if _connectives(da) - _connectives(db):
+        if ca - cb:
             return True
         return False
     except Exception as exc:
