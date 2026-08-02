@@ -159,7 +159,10 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    Exit `0` = every hedged claim is still hedged, `1` = one was upgraded to a flat assertion;
    `dropped` names the classes. Measured, these all cleared every other gate: "may cause" → "causes",
    "the results suggest" → "the results prove", "she was accused of" → "she committed", "usually" →
-   "always", "plans to expand" → "is expanding". None of them *contradicts* the source, which is why
+   "always", "plans to expand" → "is expanding", "fell slightly" → "collapsed". It also reports
+   `causal_upgrade` for the same failure reached by *adding* a claim rather than dropping a
+   qualifier — "is correlated with" → "causes", "coincided with" → "caused". None of them
+   *contradicts* the source, which is why
    entailment lets them through. Swapping one hedge for another is fine ("may" → "might", "some" →
    "a handful of"); removing hedging altogether is not.
 
