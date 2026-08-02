@@ -59,6 +59,12 @@ _CLASSES: dict[str, tuple[str, ...]] = {
     "evidential": (
         "suggests", "suggest", "suggested", "indicates", "indicate", "indicated", "appears",
         "appear", "appeared", "seems", "seem", "seemed", "reportedly", "allegedly", "alleged",
+        # Base and -ing forms of the attribution verbs, not only the past/adverbial ones: the class
+        # held "alleged" and "allegedly" but not "allege", so "Critics allege the firm misled
+        # investors." -> "The firm misled investors." dropped the attribution and cleared the whole
+        # gate — quantities, roles, NLI and similarity all pass, because removing "critics allege"
+        # does not contradict the source, it just asserts more.
+        "allege", "alleges", "alleging", "accuse", "accuses", "accusing",
         "accused", "claims", "claim", "claimed", "argues", "argue", "argued", "estimates",
         "estimated", "believed", "thought", "considered", "according to", "evidence",
         "suspected", "purported", "supposedly", "said to",
@@ -85,10 +91,21 @@ _CLASSES: dict[str, tuple[str, ...]] = {
         "edged", "ticked", "inched", "dipped", "nudged", "crept",
     ),
     # intended vs done
+    #
+    # Members must express INTENT. Four did not, and each one vetoed a whole family of faithful
+    # rewrites because a class is dropped whenever the candidate contains no member of it:
+    #   "due to"    means "because of" — causal, not intentional. Every swap to "because of",
+    #               "owing to", "as a result of" was flagged as dropping an intention hedge.
+    #   "will"      is future tense. Documentation is full of "this function will return X", and
+    #               the present-tense rewrite is the single most common humanising move there.
+    #   "set to"    matches assignment ("the timeout is set to 30 seconds").
+    #   "going to"  matches movement ("going to the conference").
+    # The real intent verbs below still carry the class, so "The company plans to expand." ->
+    # "The company is expanding." is caught exactly as before.
     "intention": (
         "plans", "plan", "planned", "aims", "aim", "aimed", "intends", "intend", "intended",
         "expects", "expect", "expected", "hopes", "hope", "hoped", "proposes", "proposed",
-        "seeks", "seek", "sought", "will", "going to", "set to", "due to", "plans to",
+        "seeks", "seek", "sought", "plans to",
     ),
 }
 
@@ -111,8 +128,12 @@ _ASSOCIATION_RE = re.compile(
     # a false veto, since a hyperlink plus any causal verb looked like an upgraded claim.
     r"(?<!\w)(?:correlat\w*|associat\w*|linked|linkage\w*|links\s+with|link\s+between|"
     r"relationship\s+between|connected\s+with|"
+    # NOT "alongside": it is overwhelmingly spatial or cooperative in ordinary prose ("the clinic
+    # operates alongside the hospital"), and its presence armed the whole check — after which any
+    # causal word ANYWHERE in the candidate, including an unrelated clause, read as an upgrade.
+    # "accompan\w*" already covers the accompaniment sense in statistical phrasing.
     r"related\s+to|coincid\w*|accompan\w*|co-?occur\w*|tied\s+to|goes?\s+together|"
-    r"alongside|tracks?\s+with)(?!\w)",
+    r"tracks?\s+with)(?!\w)",
     re.IGNORECASE,
 )
 _CAUSAL_RE = re.compile(
@@ -131,14 +152,22 @@ _NEGATOR_RE = re.compile(
     r"cannot|can't|isn't|is\s+not|without)(?!\w)",
     re.IGNORECASE,
 )
-_NEGATION_WINDOW = 30  # characters of preceding context searched for a negator
+# Sentence starts, so the negator search covers the whole clause the causal verb sits in.
+_SENT_START_RE = re.compile(r"(?:^|[.!?]\s+)")
 
 
 def _asserts_causation(text: str) -> bool:
     """True when ``text`` makes an UNnegated causal claim."""
     for m in _CAUSAL_RE.finditer(text):
-        lead = text[max(0, m.start() - _NEGATION_WINDOW):m.start()]
-        if not _NEGATOR_RE.search(lead):
+        # Search back to the start of the containing sentence rather than a fixed 30 characters.
+        # A negator normally opens the sentence — "Nothing in these data shows that coffee causes
+        # longer life." — and at 30 characters it was invisible whenever the subject ran longer
+        # than a few words, so a rewrite that explicitly DENIED causation was vetoed for asserting
+        # it. That punishes a rewrite for being more careful than its source.
+        start = 0
+        for b in _SENT_START_RE.finditer(text, 0, m.start()):
+            start = b.end()
+        if not _NEGATOR_RE.search(text[start:m.start()]):
             return True
     return False
 

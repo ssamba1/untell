@@ -36,11 +36,82 @@ class TestStrengtheningIsCaught:
             ("Revenue fell slightly.", "Revenue collapsed.", "degree"),
             ("Costs rose modestly.", "Costs skyrocketed.", "degree"),
             ("Output dipped a little.", "Output plunged.", "degree"),
+            # The class held "alleged"/"allegedly" but not the base form, so dropping the
+            # attribution entirely cleared the WHOLE gate — no contradiction, no role swap, no
+            # quantity change; removing "Critics allege" does not deny the source, it asserts more.
+            ("Critics allege the firm misled investors.", "The firm misled investors.", "evidential"),
+            ("Regulators accuse the bank of fraud.", "The bank committed fraud.", "evidential"),
         ],
     )
     def test_dropped_class_is_reported(self, source, candidate, cls):
         assert not certainty_kept(source, candidate)
         assert cls in dropped_hedges(source, candidate)
+
+
+class TestNonHedgesAreNotTreatedAsHedges:
+    """Every member of a class must actually belong to it.
+
+    "due to", "will", "set to" and "going to" sat in the *intention* class. None expresses intent,
+    and a class is reported dropped whenever the candidate contains no member of it — so each one
+    vetoed a whole family of faithful rewrites. Measured before the fix: 8 of 9 ordinary
+    paraphrases were rejected.
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            ("The delay was due to a supply shortage.",
+             "The delay was because of a supply shortage.", "due to -> because of"),
+            ("Costs rose due to inflation.", "Costs rose owing to inflation.", "due to -> owing to"),
+            ("This function will return a list of results.",
+             "This function returns a list of results.", "will -> present tense"),
+            ("The script will read the file and will print each line.",
+             "The script reads the file and prints each line.", "will -> present tense, twice"),
+            ("The timeout is set to 30 seconds.", "The timeout is 30 seconds.", "set to = assignment"),
+            ("She is going to the conference in Berlin.",
+             "She travels to the conference in Berlin.", "going to = movement"),
+        ],
+    )
+    def test_faithful_rewrite_is_not_vetoed(self, source, candidate, label):
+        assert certainty_kept(source, candidate), f"{label}: {dropped_hedges(source, candidate)}"
+
+    def test_real_intent_verbs_still_carry_the_class(self):
+        """Trimming the class must not disarm it."""
+        assert not certainty_kept("The company plans to expand.", "The company is expanding.")
+        assert not certainty_kept("We intend to publish the data.", "We publish the data.")
+        assert not certainty_kept("The team aims to cut latency.", "The team cuts latency.")
+
+
+class TestCausalUpgradeBoundaries:
+    def test_a_denial_of_causation_is_not_an_upgrade(self):
+        """The negator search covered 30 characters of preceding text, so a sentence-initial
+        negator was invisible whenever the subject ran longer than a few words — and a rewrite that
+        explicitly DENIED causation was vetoed for asserting it."""
+        src = "Coffee intake is associated with longer life."
+        for cand in (
+            "Coffee does not cause longer life.",
+            "Nothing in these data shows that coffee causes longer life.",
+            "Nothing in the very large observational dataset we assembled shows that coffee "
+            "causes longer life.",
+        ):
+            assert not hedges._causal_upgrade(src, cand), cand
+
+    def test_a_genuine_upgrade_still_fires(self):
+        assert hedges._causal_upgrade(
+            "Coffee intake is associated with longer life.", "Coffee intake causes longer life."
+        )
+        assert hedges._causal_upgrade(
+            "Screen time is correlated with poor sleep.", "Screen time causes poor sleep."
+        )
+
+    def test_spatial_alongside_does_not_arm_the_check(self):
+        """"alongside" is overwhelmingly spatial in prose, and its presence armed the whole check —
+        after which any causal word anywhere in the candidate, including an unrelated clause, read
+        as an association-to-causation upgrade."""
+        assert not hedges._causal_upgrade(
+            "The clinic operates alongside the hospital, and staff rotate weekly.",
+            "The clinic runs next to the hospital, and the rotation causes some confusion.",
+        )
 
 
 class TestFaithfulRewritesPass:
