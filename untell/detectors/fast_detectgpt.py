@@ -27,10 +27,31 @@ _SCORING_MODEL = "EleutherAI/gpt-neo-125m"
 # ensemble (which is why it appeared to be an "immovable" 0.31 -> 0.28 wall in the ceiling
 # measurements: it never moved because it never responded to anything).
 #
-# Re-centred on the observed distribution: human mean ~ -0.10, AI mean ~ +0.04 (n=10, this model,
-# paragraph-length inputs), so the midpoint sits between them and the scale spans the range.
-_CAL_MID = -0.03
-_CAL_SCALE = 0.12
+# Re-centred a second time, and this is the important one. The previous constants were fitted on
+# n=10 and placed the midpoint at the HUMAN mean rather than between the classes, so human prose
+# squashed to ~0.5 — above the 0.30 default threshold. Because the ensemble aggregates with `max`,
+# this one detector decided the full tier's verdict: it told 95% of human writers their own text
+# was machine-written, and the loop then rewrote it, spending meaning-similarity for nothing.
+#
+# MEASURED on HC3, 40 pairs to fit and 60 unseen pairs to check (the discrepancy is per window;
+# windowed_max takes the MAX, so the fit is against the per-document max, not the mean):
+#
+#     per-document max discrepancy   human  mean -0.023, range [-0.171, +0.167]
+#                                    ai     mean +0.265, range [+0.162, +0.430]
+#
+# The classes separate at roughly +0.16, which is where the midpoint belongs.
+#
+#     constants           fit FPR/TPR      held-out FPR/TPR    held-out AUROC
+#     MID -0.03 SC 0.12   92% / 100%       88% / 100%          0.996
+#     MID +0.20 SC 0.08    8% / 100%        2% /  97%          0.996
+#
+# AUROC is identical either way — the detector always separated the classes, it was only reporting
+# them on the wrong scale. Three points of true-positive rate for eighty-six points of false-positive
+# rate is the right trade for a tool whose worst failure is accusing a human of writing with AI.
+# The scale is deliberately not the sharpest option the grid offered (0.02 scored marginally better
+# on the fit set): the loop drives this value down and needs a graded response, not a step.
+_CAL_MID = 0.20
+_CAL_SCALE = 0.08
 
 
 class FastDetectGPTDetector:
