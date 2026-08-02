@@ -439,6 +439,47 @@ class TestCompositeIntensitySweep:
         rw.rewrite("Some AI text to rewrite.", {"tier": "lite"})
         assert rw._structural.intensity == 0.7
 
+    @pytest.mark.parametrize("base", [0.4, 0.5, 0.7, 0.9, 1.0])
+    @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
+    def test_sweep_always_draws_the_configured_intensity(self, base, n):
+        """intensity is the caller's knob; the diversity spread must add to it, not replace it.
+
+        The plain linear sweep put the two draws at the endpoints when best_of=2 — 0.4 and 1.0 for
+        the default 0.7 — so a caller who lowered intensity to limit surface change never got a
+        single candidate at the value they configured.
+        """
+        from untell.rewriter.composite import _intensity_sweep
+
+        out = _intensity_sweep(base, n)
+        assert len(out) == n
+        assert any(abs(v - base) < 1e-9 for v in out)
+        assert all(0.4 <= v <= 1.0 for v in out)
+
+    def test_sweep_still_spreads(self):
+        from untell.rewriter.composite import _intensity_sweep
+
+        assert len(set(_intensity_sweep(0.7, 3))) == 3  # default path unchanged: 0.4 / 0.7 / 1.0
+
+    def test_baseline_scoring_failure_does_not_abort_the_rewrite(self, monkeypatch):
+        """A candidate scoring error is swallowed; the baseline's used to propagate and crash.
+
+        Same transient causes (detector timeout, OOM spike), so the asymmetry meant identical
+        failures either lost one draw or killed the whole call depending on when they landed.
+        """
+        rw = CompositeRewriter(best_of=2, intensity=0.7)
+        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: t + " restructured")
+        monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t + " polished")
+
+        import untell.scripts.score as score_mod
+
+        def _boom(t, tier="lite", threshold=0.30):
+            raise RuntimeError("detector timed out")
+
+        monkeypatch.setattr(score_mod, "score_text", _boom)
+
+        out = rw.rewrite("Some AI text to rewrite.", {"tier": "lite"})
+        assert out == "Some AI text to rewrite. restructured polished"
+
 
 class TestPlainRegister:
     def test_swaps_formal_vocabulary_for_plain_words(self):

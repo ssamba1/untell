@@ -14,6 +14,34 @@ from .structural import StructuralRewriter
 from .surgical import SurgicalRewriter
 
 
+_INTENSITY_SPAN = 0.3
+
+
+def _intensity_sweep(base: float, n: int) -> list[float]:
+    """``n`` structural intensities spread around ``base``, always including ``base`` itself.
+
+    Diversity is what makes best-of selection worth anything — drafts differing only by RNG seed
+    score near-identically and waste the draw — so the attempts fan out around the configured
+    intensity. But the fan-out must not *replace* it: a plain linear sweep put the draws at the two
+    endpoints when ``n == 2`` (0.4 and 1.0 for the default 0.7), so a caller who lowered intensity
+    to limit surface change never got a single candidate at the value they asked for. The slot
+    nearest ``base`` is pinned to it.
+    """
+    if n <= 1:
+        return [base]
+    span = _INTENSITY_SPAN
+    out = [
+        max(0.4, min(1.0, base - span + 2 * span * k / (n - 1)))
+        for k in range(n)
+    ]
+    # Often base survives the sweep on its own (it is the midpoint whenever n is odd, and clamping
+    # can land on it too). Only when it does not is the nearest draw pulled onto it, so this
+    # changes nothing about the existing spread except in the case that dropped it.
+    if not any(abs(v - base) < 1e-9 for v in out):
+        out[min(range(n), key=lambda k: abs(out[k] - base))] = base
+    return out
+
+
 class CompositeRewriter(Rewriter):
     """Chain StructuralRewriter → SurgicalRewriter for the strongest free rewrite.
 
@@ -107,7 +135,15 @@ class CompositeRewriter(Rewriter):
             # against the true (browser) signal.
             restructured = self._structural.rewrite(text, score_result, threshold)
             return self._surgical.rewrite(restructured, score_result, threshold)
-        baseline = float(score_text(text, tier=tier)["max"])
+        try:
+            baseline = float(score_text(text, tier=tier)["max"])
+        except Exception:
+            # A candidate scoring failure below is swallowed; this one used to propagate and abort
+            # the whole rewrite. Same transient cause (detector timeout, OOM spike), opposite
+            # outcome. With no baseline there is nothing to select against, so take the same route
+            # as a non-scoreable tier: run the chain once and let the outer loop choose.
+            restructured = self._structural.rewrite(text, score_result, threshold)
+            return self._surgical.rewrite(restructured, score_result, threshold)
 
         # Try multiple candidates and keep the best. Selection is only as good as the DIVERSITY of
         # what it selects among: drafts that differ merely by RNG seed score near-identically and
@@ -117,12 +153,9 @@ class CompositeRewriter(Rewriter):
         best_text = text
         best_score = baseline
         base_intensity = getattr(self._structural, "intensity", 0.7)
+        intensities = _intensity_sweep(base_intensity, self.best_of)
         for _attempt in range(self.best_of):
-            if self.best_of > 1:
-                # spread over [0.4, 1.0] centred on the configured intensity
-                span = 0.3
-                frac = _attempt / max(1, self.best_of - 1)  # 0.0 .. 1.0
-                self._structural.intensity = max(0.4, min(1.0, base_intensity - span + 2 * span * frac))
+            self._structural.intensity = intensities[_attempt]
             # Step 1: structural (sentence-level)
             restructured = self._structural.rewrite(text, score_result, threshold)
             # Step 2: surgical (word-level polish)
