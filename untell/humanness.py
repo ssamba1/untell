@@ -24,6 +24,7 @@ Usage::
 from __future__ import annotations
 
 import logging
+import re
 
 from untell.scripts.score import score_text
 from untell.scripts.tells import score_tells
@@ -39,6 +40,25 @@ _W_BURSTY = 0.20      # Burstiness / sentence-length variation
 _MAX_TELLS_PER_100W = 25.0  # Approximate ceiling for tells/100w
 _BURSTY_IDEAL = 0.70        # Ideal burstiness CV (high variation = human)
 _MAX_BURSTY_PENALTY = 0.30  # Max penalty from low burstiness
+
+# Below this word count none of the three signals carries information. Matches the detector's own
+# `_MIN_WORDS_FOR_SIGNAL` in detectors/perplexity_burstiness.py, which abstains on the same grounds.
+_MIN_WORDS_FOR_SIGNAL = 5
+_WORD_RE = re.compile(r"[A-Za-z']+")
+_WARNED_TOO_SHORT = False
+
+
+def _warn_too_short() -> None:
+    """Say once that the input was too short to score, rather than returning a confident number."""
+    global _WARNED_TOO_SHORT
+    if _WARNED_TOO_SHORT:
+        return
+    _WARNED_TOO_SHORT = True
+    logger.warning(
+        "text is shorter than %d words — humanness cannot be measured at that length and is "
+        "reported as 50 (undetermined), not as a verdict.",
+        _MIN_WORDS_FOR_SIGNAL,
+    )
 
 
 def humanness(text: str, tier: str = "full") -> float:
@@ -59,6 +79,20 @@ def humanness(text: str, tier: str = "full") -> float:
     """
     if not text or not text.strip():
         return 50.0  # Neutral for empty text
+
+    # Too short to score. MEASURED, without this guard:
+    #     "Hello"     -> 100.0  "human"
+    #     "It works." -> 100.0  "human"
+    # Both at full confidence, from a headline command that advertises "how human does it read".
+    # None of the three signals means anything at that length: burstiness needs two sentences, a
+    # single tell would read as 100 per 100 words, and the detector already abstains below its own
+    # `_MIN_WORDS_FOR_SIGNAL` — humanness was ignoring that abstention and scoring anyway.
+    #
+    # 50.0 is the same "cannot tell" answer empty text gets, and lands in the `mixed` band. That is
+    # the honest reading: a confident 100 on one word is noise reported as certainty.
+    if len(_WORD_RE.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
+        _warn_too_short()
+        return 50.0
 
     # 1. AI-tells signal
     tells_result = score_tells(text)

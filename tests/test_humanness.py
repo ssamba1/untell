@@ -1,6 +1,8 @@
 """Tests for the humanness score metric."""
 from __future__ import annotations
 
+import pytest
+
 from untell.humanness import classification, humanness
 
 
@@ -114,3 +116,48 @@ def test_documented_bands_match_the_implementation():
     assert classification(34.9) == "likely AI"
     assert classification(15) == "likely AI"
     assert classification(14.9) == "AI"
+
+
+class TestTooShortToScore:
+    """A headline command that advertises "how human does it read" must not answer on one word.
+
+    MEASURED before the guard, at full confidence:
+        humanness("Hello")     -> 100.0  "human"
+        humanness("It works.") -> 100.0  "human"
+
+    None of the three signals means anything at that length. Burstiness needs two sentences, a
+    single tell reads as 100 per 100 words, and the detector already abstains below its own
+    `_MIN_WORDS_FOR_SIGNAL` — humanness was ignoring that abstention and scoring anyway.
+    """
+
+    @pytest.mark.parametrize(
+        "text", ["Hello", "It works.", "Yes.", "one two three four"],
+        ids=["one-word", "two-words", "single", "four-words"],
+    )
+    def test_short_text_is_undetermined_not_confident(self, text):
+        from untell.humanness import classification, humanness
+
+        score = humanness(text, tier="lite")
+        assert score == 50.0, f"{text!r} scored {score}"
+        assert classification(score) == "mixed"
+
+    def test_the_boundary_is_scored(self):
+        """At the threshold the signals become meaningful again, so the guard must not swallow it."""
+        from untell.humanness import humanness
+
+        assert humanness("The cat sat on mats", tier="lite") != 50.0
+
+    def test_real_text_is_unaffected(self):
+        from untell.humanness import classification, humanness
+
+        ai = (
+            "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
+            "Moreover, organizations increasingly leverage these technologies to optimize efficiency. "
+            "Overall, the transformative impact continues to expand across various sectors."
+        )
+        human = (
+            "I almost missed the bus. Rain again — of course. My shoes were soaked through by the "
+            "time the 8:14 finally rattled up, half-empty, smelling faintly of wet dog."
+        )
+        assert humanness(human, tier="lite") > humanness(ai, tier="lite")
+        assert classification(humanness(human, tier="lite")) in ("human", "mostly human")
