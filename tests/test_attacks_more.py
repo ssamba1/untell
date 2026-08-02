@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from untell.attacks import (
     count_hidden,
     homoglyph_substitute,
@@ -39,6 +41,68 @@ def test_no_synonym_entry_lists_its_own_key():
 
     offenders = {k: v for k, v in _SYN.items() if k.lower() in [s.lower() for s in v]}
     assert not offenders, f"self-synonyms waste a scoring call each: {offenders}"
+
+
+class TestASubstitutionDoesNotDoubleAParticle:
+    """A substitution is a one-token swap, so a multi-word replacement ending in a particle repeats
+    whichever particle the sentence already supplies.
+
+    30 of the table's multi-word values end in one, which makes this a property of the mechanism
+    rather than of any entry — the table cannot know what follows the word. Measured on natural
+    sentences before the fix:
+
+        "navigate through the complexities" -> "work through THROUGH the complexities"
+        "navigating through a transition"   -> "working through THROUGH a transition"
+        "a myriad of options"               -> "a scores of OF options"
+    """
+
+    CASES = [
+        ("The team will navigate through the regulatory complexities.", "navigate", "work through",
+         "The team will work through the regulatory complexities."),
+        ("They are navigating through a difficult transition.", "navigating", "working through",
+         "They are working through a difficult transition."),
+        ("The report offers a myriad of options to weigh.", "myriad", "scores of",
+         "The report offers a scores of options to weigh."),
+    ]
+
+    @pytest.mark.parametrize(("sentence", "word", "rep", "expected"), CASES)
+    def test_the_seam_collapses(self, sentence, word, rep, expected):
+        from untell.attacks.word_importance import substitute_once
+
+        assert substitute_once(sentence, word, rep) == expected
+
+    def test_a_different_particle_is_kept(self):
+        """"embark on" -> "set out on": the replacement ends in "out", not "on"; nothing to drop."""
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("The company will embark on a long programme.", "embark", "set out")
+        assert out == "The company will set out on a long programme."
+
+    def test_a_hyphenated_compound_is_not_a_duplicate(self):
+        """"the reason for for-profit companies": the second "for" starts a compound word."""
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("The reason for for-profit firms is margin.", "reason", "case for")
+        assert out == "The case for for-profit firms is margin."
+
+    @pytest.mark.parametrize("sentence", [c[0] for c in CASES])
+    def test_the_structural_path_collapses_it_too(self, sentence):
+        """_plain_register is the other consumer of the same table and had the same seam."""
+        import random
+
+        from untell.rewriter.structural import _plain_register
+
+        random.seed(0)
+        words = _plain_register(sentence, intensity=1.0).split()
+        doubled = [f"{a} {b}" for a, b in zip(words, words[1:]) if a.lower() == b.lower()]
+        assert not doubled, doubled
+
+    def test_no_particle_is_itself_a_substitutable_key(self):
+        """The structural path lets a match consume the following particle, which would hide it
+        from substitution in its own right. Safe only while no particle is a key."""
+        from untell.attacks.word_importance import _PARTICLES, _SYN
+
+        assert not (_PARTICLES & set(_SYN))
 
 
 def test_hyphenated_tells_are_actually_substituted():

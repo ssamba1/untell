@@ -451,6 +451,7 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
     """
     if not text.strip():
         return text
+    from untell.attacks.word_importance import DUP_PARTICLE_TAIL as _DUP_PARTICLE_TAIL
     from untell.attacks.word_importance import _SYN
 
     # Protect locked spans: mask them out, substitute, then restore.
@@ -463,19 +464,27 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
     masked = _SENTINEL_SPAN_RE.sub(_stash, text)
 
     def _swap(m: re.Match) -> str:
-        word = m.group(0)
+        word, tail = m.group(1), m.group(2) or ""
         options = _SYN.get(word.lower())
         if not options or random.random() > intensity:
-            return word
+            return m.group(0)  # group(0), not `word` — the tail is not ours to drop
         choice = random.choice(options)
         # Preserve the original capitalisation so sentence starts survive the swap.
         if word[:1].isupper():
             choice = choice[:1].upper() + choice[1:]
-        return choice
+        # Consume a following particle the replacement already ends with, rather than repeating it:
+        # "navigate through X" -> "work through X", not "work through through X". 30 of the table's
+        # multi-word values end in such a particle, so this belongs at the seam, not in the table —
+        # the table cannot know what follows the word.
+        if tail and choice.rsplit(" ", 1)[-1].lower() == tail.strip().lower():
+            return choice
+        return choice + tail
 
     # Same token shape as word_importance._WORD: hyphenated compounds are one token, so the
-    # table's "cutting-edge" / "state-of-the-art" entries are reachable here too.
-    masked = re.sub(r"[A-Za-z]+(?:-[A-Za-z]+)*", _swap, masked)
+    # table's "cutting-edge" / "state-of-the-art" entries are reachable here too. The optional
+    # second group is the following particle, matched here so _swap can decide whether it is a
+    # duplicate of the replacement's own ending.
+    masked = re.sub(r"([A-Za-z]+(?:-[A-Za-z]+)*)" + _DUP_PARTICLE_TAIL, _swap, masked)
     return re.sub(r"\x00(\d+)\x00", lambda m: spans[int(m.group(1))], masked)
 
 

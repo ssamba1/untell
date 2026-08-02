@@ -316,6 +316,44 @@ def importance(
     return sorted(scored, key=lambda kv: -kv[1])
 
 
+# Particles a multi-word replacement can end with, and which the surrounding sentence may already
+# supply. A substitution is a plain one-token swap, so when both sides carry the same particle it is
+# emitted twice. MEASURED on natural sentences:
+#
+#     "navigate through the complexities"  -> "work through THROUGH the complexities"
+#     "navigating through a transition"    -> "working through THROUGH a transition"
+#     "a myriad of options"                -> "a scores of OF options"
+#
+# 30 of the table's multi-word values end in one of these, so this is a property of the substitution
+# mechanism rather than of any particular entry — the table cannot know what follows the word.
+_PARTICLES = frozenset(
+    {"on", "into", "in", "up", "out", "of", "to", "for", "with", "at", "from", "off", "over",
+     "through", "about", "by", "down", "across"}
+)
+
+# `(?![\w-])` so "the reason for for-profit companies" is left alone: the second "for" starts a
+# hyphenated compound and is not a duplicate particle at all.
+_PARTICLE_ALT = "|".join(sorted(_PARTICLES, key=len, reverse=True))
+# CAPTURING and optional, so a caller can read the tail back and decide whether it duplicates the
+# replacement's own ending.
+DUP_PARTICLE_TAIL = rf"(\s+(?:{_PARTICLE_ALT})(?![\w-]))?"
+
+
+def substitute_once(text: str, word: str, replacement: str) -> str:
+    """Replace the first whole-word ``word`` with ``replacement``, collapsing a doubled particle.
+
+    When the replacement already ends in the particle the sentence supplies next, that particle is
+    consumed rather than repeated. Only the seam is touched — a duplicated word anywhere else in the
+    text is the author's and is left exactly as written.
+    """
+    rep = _match_case(word, replacement)
+    tail = replacement.rsplit(" ", 1)[-1].lower() if " " in replacement else ""
+    pattern = rf"\b{re.escape(word)}\b"
+    if tail in _PARTICLES:
+        pattern += rf"(?:\s+{re.escape(tail)}(?![\w-]))?"
+    return re.sub(pattern, lambda _m: rep, text, count=1)
+
+
 def _match_case(original: str, replacement: str) -> str:
     """Carry ``original``'s capitalisation onto ``replacement``.
 
@@ -370,7 +408,7 @@ def surgical_substitute(
         # Generate all synonym candidates for this word and batch-score them.
         candidates = []
         for syn in synonyms(word):
-            cand = re.sub(rf"\b{re.escape(word)}\b", _match_case(word, syn), cur, count=1)
+            cand = substitute_once(cur, word, syn)
             candidates.append(cand)
         if not candidates:
             continue
