@@ -1,0 +1,94 @@
+"""Quantity retention — the gap between "no sentinel was dropped" and "the fact survived".
+
+preserve.py deliberately leaves bare single digits unlocked so a rewrite may write "five" for "5".
+The cost is that a digit can also be rewritten into vagueness, and the meaning gate does not catch
+it. MEASURED on the case that motivated this module:
+
+    "Only 7 of the 19 tests passed."  ->  "Only a few of the 19 tests passed."
+        similarity 0.951   contradiction 0.011   entailment 0.007   -> meaning gate PASSED
+
+The entailment floor is 0.005, so it cleared by 0.002. No sentinel was dropped, because 7 was
+never locked; roles were unchanged; cosine saw near-identical text.
+"""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from untell.scripts import numbers
+from untell.scripts.numbers import missing_numbers, numbers_kept
+
+
+class TestNumbersKept:
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            ("Only 7 of the 19 tests passed.", "Just seven of the nineteen tests passed.", "spelled out"),
+            ("Only 7 of the 19 tests passed.", "Only 7 of the 19 tests came back green.", "reworded"),
+            ("Line one has 5 items.", "There are five things in line one.", "numeral to word"),
+            ("Revenue grew 1,234 units.", "Revenue grew 1234 units.", "separator is cosmetic"),
+            ("It has 2 parts.", "It has both parts.", "2 -> both"),
+            ("It has 1 owner.", "It has a single owner.", "1 -> a single"),
+            ("Scores: 42 and 42.", "Scores were 42 twice.", "duplicate counted once"),
+            ("See ⟦HZ0001⟧ for 5 details.", "See ⟦HZ0001⟧ for five details.", "sentinel ignored"),
+            ("No numbers here.", "Still no numbers.", "nothing to keep"),
+        ],
+    )
+    def test_faithful_rewrites_pass(self, source, candidate, label):
+        assert numbers_kept(source, candidate), f"{label}: {missing_numbers(source, candidate)}"
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "dropped", "label"),
+        [
+            ("Only 7 of the 19 tests passed.", "Only a few of the 19 tests passed.", "7", "the leak"),
+            ("Line one has 5 items.", "Line one has several items.", "5", "count to vague"),
+            ("We ran 240 trials.", "We ran many trials.", "240", "large number dropped"),
+        ],
+    )
+    def test_dropped_quantities_are_caught(self, source, candidate, dropped, label):
+        assert not numbers_kept(source, candidate), label
+        assert dropped in missing_numbers(source, candidate)
+
+    def test_sentinel_indices_are_not_treated_as_content(self):
+        """⟦HZ0007⟧ contains "0007". Counting that as a source number would make every masked
+        rewrite look like it dropped a fact."""
+        assert numbers_kept("See ⟦HZ0007⟧ now.", "Look at ⟦HZ0007⟧ today.")
+        assert missing_numbers("⟦HZ0042⟧ and ⟦HZ0043⟧.", "⟦HZ0042⟧ plus ⟦HZ0043⟧.") == []
+
+
+class TestNumbersCLI:
+    def test_help_exits_zero(self, capsys):
+        assert numbers.main(["--help"]) == 0
+        assert "usage" in capsys.readouterr().out.lower()
+
+    def test_missing_args_is_usage_error(self):
+        assert numbers.main([]) == 2
+        assert numbers.main(["only one"]) == 2
+
+    def test_exit_code_matches_kept_field(self, capsys):
+        """Exit code is the shell contract; it must not disagree with the JSON."""
+        for a, b in [
+            ("Only 7 of the 19 tests passed.", "Only a few of the 19 tests passed."),
+            ("Only 7 of the 19 tests passed.", "Just 7 of the 19 tests passed."),
+        ]:
+            code = numbers.main([a, b])
+            payload = json.loads(capsys.readouterr().out)
+            assert code == (0 if payload["kept"] else 1)
+
+    def test_exit_codes_align_with_the_other_gates(self):
+        from untell.scripts import entailment, roles
+
+        assert numbers.main([]) == entailment.main([]) == roles.main([]) == 2
+
+
+def test_meaning_gate_now_rejects_the_leak():
+    """End to end through the gate the loop actually calls."""
+    from untell.scripts.entailment import meaning_preserved
+    from untell.scripts.quality import similarity
+
+    src, bad = "Only 7 of the 19 tests passed.", "Only a few of the 19 tests passed."
+    good = "Just 7 of the 19 tests passed."
+    assert not meaning_preserved(src, bad, similarity(src, bad), strict_sim_bar=0.76)
+    assert meaning_preserved(src, good, similarity(src, good), strict_sim_bar=0.76)

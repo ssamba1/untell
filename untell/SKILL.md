@@ -141,15 +141,27 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    rejects it. A swap of two arguments is the cheapest way for a rewrite to look faithful and
    assert the opposite. Passive voice is not a swap and is not flagged.
 
-   The three gates are complementary, not redundant: similarity catches drift, entailment catches
-   negation and reversal of a claim, roles catches argument permutation. Run all three.
+   Finally the **quantity check**, which is mechanical rather than semantic:
+   ```bash
+   python scripts/numbers.py "<ORIG masked>" "<current masked text>"
+   ```
+   Exit `0` = every number survived, `1` = one was dropped; `missing` lists them. Step 2 does not
+   lock bare single digits on purpose, so that "5" can become "five" — but that also lets a precise
+   quantity slide into vagueness. Measured: "Only 7 of the 19 tests passed." → "Only a few of the
+   19 tests passed." scores similarity `0.951`, contradiction `0.011`, entailment `0.007`, and
+   clears the meaning gate by `0.002`. Spelling a number out is fine; dropping it is not.
+
+   The four gates are complementary, not redundant: similarity catches drift, entailment catches
+   negation and reversal of a claim, roles catches argument permutation, numbers catches a
+   quantity quietly becoming vague. Run all four.
 
    Stop when **all** hold:
    - `max < threshold` (not flagged), **and**
    - similarity clears the bar that applies (drift floor `0.30` when the meaning gate ran, else
      the strict `passes` from `quality.py`), **and**
    - the meaning gate exits `0` (or is unavailable), **and**
-   - the predicate-argument check exits `0` (or is unavailable).
+   - the predicate-argument check exits `0` (or is unavailable), **and**
+   - the quantity check exits `0`.
 
    **Confidence matters:** when `confidence` is `high` (full tier, semantic metric) **and the
    meaning gate did not run**, enforce the quality gate strictly — never accept a rewrite where

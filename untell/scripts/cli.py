@@ -50,6 +50,7 @@ _COMMANDS: dict[str, str] = {
     "detector-audit": "eval.detector_audit:main",
     "humanness": "untell.humanness:main",
     "scrub": "untell.scripts.scrub:main",
+    "numbers": "untell.scripts.numbers:main",
 }
 
 _ONE_LINER = {
@@ -64,6 +65,7 @@ _ONE_LINER = {
     "detector-audit": "check every detector for dead/inverted output (integrity gate)",
     "humanness": "score text 0-100: how human does it read (combines tells + detectors)",
     "scrub": "strip hidden watermark chars (zero-width, tag, bidi, homoglyph)",
+    "numbers": "check every number in the original survives a rewrite",
 }
 
 

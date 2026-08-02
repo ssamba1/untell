@@ -210,6 +210,16 @@ def meaning_preserved(
     if not (sim >= relaxed_sim_bar and con < contradiction_bar and ent >= entailment_floor):
         return False
 
+    # A stated quantity must survive. preserve.py deliberately leaves bare single digits
+    # rewritable (so "5" may become "five"), and NLI does not reliably object when one is dropped:
+    # "Only 7 of the 19 tests passed." -> "Only a few of the 19 tests passed." scores contradiction
+    # 0.011 and entailment 0.007, clearing the 0.005 floor by 0.002. Purely mechanical, no
+    # judgement about meaning — a numeral must still be findable, as a numeral or its English word.
+    from untell.scripts.numbers import numbers_kept
+
+    if not numbers_kept(source, candidate):
+        return False
+
     # Positive evidence only: `role_swap` returns None when the parser is unavailable, and an
     # unavailable check must not become a veto.
     from untell.scripts.roles import role_swap
