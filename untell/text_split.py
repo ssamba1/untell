@@ -37,10 +37,25 @@ def ends_with_abbreviation(fragment: str) -> bool:
     word = tail[:-1].strip("([\"'“‘").lower()
     if word in _ABBREVIATIONS:
         return True
+    parts = [p for p in word.split(".") if p]
+    if not word or len(word.replace(".", "")) > 3 or any(len(p) > 1 for p in parts):
+        return False
     # A single letter, or dotted initials: "J.", "J.R.R.", "U.S.A."
-    return bool(word) and len(word.replace(".", "")) <= 3 and all(
-        len(part) <= 1 for part in word.split(".") if part
-    )
+    if all(p.isalpha() for p in parts):
+        return True
+    # All-digit, e.g. "1." or "3.5.". The old test was length-only, and "3.5" satisfies "every
+    # dot-separated part is at most one character" exactly as well as "J.R" does — so a sentence
+    # ending in a single digit or a single-digit decimal was read as an abbreviation and never
+    # ended. MEASURED before this split:
+    #     "The mean was 3.5. Variance was low."           -> ONE sentence
+    #     "The answer is 3. The next question is harder."  -> ONE sentence
+    # This is the splitter the whole pipeline runs on, so the miscount propagated into burstiness
+    # CV, per-sentence scoring, and the targeted rewriter's unit of work.
+    #
+    # Digits still have one legitimate use here: an ordered-list or section marker ("1. First item",
+    # "3.5. Methods"), where the number really does not end a sentence. That case is exactly the one
+    # where the number is the WHOLE fragment; a sentence-final number always has words before it.
+    return all(p.isdigit() for p in parts) and tail == fragment.strip()
 
 
 def split_sentences(text: str) -> list[str]:

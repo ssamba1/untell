@@ -67,3 +67,48 @@ def test_abbreviations_do_not_start_a_new_sentence():
     """The specific regression the abbreviation-aware splitter exists to prevent."""
     for text in ("Dr. Smith arrived.", "Use tools, e.g. hammers.", "It rose 3.5 percent."):
         assert len(split_sentences(text)) == 1, split_sentences(text)
+
+
+class TestASentenceMayEndInANumber:
+    """The initials test was length-only — "every dot-separated part is at most one character".
+
+    "3.5" satisfies that exactly as well as "J.R" does, so a sentence ending in a single digit or a
+    single-digit decimal was read as an abbreviation and never ended. Two sentences came back as
+    one, and this splitter feeds burstiness CV, per-sentence scoring, and the targeted rewriter's
+    unit of work, so the miscount propagated into all of them.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "The mean was 3.5. Variance was low.",
+            "The answer is 3. The next question is harder.",
+            "Growth reached 7.2. That beat every forecast.",
+            "Accuracy hit 0.9. Precision lagged behind.",
+            "See section 4. The details are there.",
+        ],
+    )
+    def test_a_trailing_number_ends_the_sentence(self, text):
+        assert len(split_sentences(text)) == 2, split_sentences(text)
+
+    @pytest.mark.parametrize(
+        "text,expected",
+        [
+            ("1. First item. 2. Second item.", 2),
+            ("3.5. Methods. 3.6. Results.", 2),
+        ],
+    )
+    def test_a_list_or_section_marker_still_does_not_end_a_sentence(self, text, expected):
+        """A number that IS the whole fragment is a marker; a sentence-final number has words
+        before it. That is the only thing separating "1. First item" from "The answer is 1."."""
+        assert len(split_sentences(text)) == expected, split_sentences(text)
+
+    @pytest.mark.parametrize(
+        "text",
+        ["Dr. Smith arrived. He was late.", "It was J.R.R. Tolkien. Everyone knows it."],
+    )
+    def test_real_initials_and_abbreviations_are_untouched(self, text):
+        # NB: an abbreviation that ENDS a sentence ("...moved to the U.S.A. It was 1998.") stays
+        # merged. That is ambiguous without a parser and is pre-existing behaviour, unrelated to
+        # the numeric case fixed here.
+        assert len(split_sentences(text)) == 2, split_sentences(text)
