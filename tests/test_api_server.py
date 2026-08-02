@@ -463,6 +463,25 @@ def test_ceiling_rejects_an_unknown_rewriter_instead_of_substituting_one():
             assert "free_rewriters" in resp.json()
 
 
+def test_ceiling_response_names_the_corpus_it_measured():
+    """A ceiling number is a property of its corpus, and this endpoint always uses the built-in
+    demo sample — three hand-written paragraphs that are measurably easier than real AI text
+    (0.86 before, against 1.00 for real ChatGPT answers). A REST caller quoting the number has no
+    other way to know which corpus produced it."""
+    with patch("untell.api_server.load_env"):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post(
+            "/ceiling", json={"rewriter": "surgical", "n": 1, "tier": "lite", "max_iters": 1}
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["corpus"] == "builtin"
+        assert body["corpus_mean_words"] > 0
+
+
 def test_ceiling_still_accepts_valid_rewriters():
     with patch("untell.api_server.load_env"):
         from fastapi.testclient import TestClient
