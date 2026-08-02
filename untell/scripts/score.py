@@ -202,8 +202,18 @@ def _score_with_detectors(
         result.setdefault(
             "warning", "no detector produced a score — max/mean are placeholders, not a verdict"
         )
+    # An unrecognised tier is the ONE downgrade the check below structurally cannot catch. "lite"
+    # ranks 0 and `.get(tier, 0)` also returns 0 for an unknown name, so `0 > 0` is False and a
+    # typo produced a lite-tier answer labelled with no warning at all — quieter than a genuine
+    # full->lite fallback, which does warn. Name it as a caller error rather than a downgrade,
+    # and take the vocabulary from _TIER_RANK so it cannot drift from what load_detectors honours.
+    if tier not in _TIER_RANK:
+        result["warning"] = (
+            f"unknown tier '{tier}' — no tier matched, so only the always-on '{effective}' "
+            f"detectors ran. Valid tiers: {', '.join(_TIER_RANK)}."
+        )
     # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
-    if _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
+    elif _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
         result["warning"] = (
             f"requested tier '{tier}' but only '{effective}' produced scores"
             + (f"; failed to load: {', '.join(failed)}" if failed else "")

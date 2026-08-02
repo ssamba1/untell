@@ -45,6 +45,45 @@ def test_full_tier_request_runs_without_torch():
     assert 0.0 <= result["max"] <= 1.0
 
 
+class TestUnknownTierIsNotSilent:
+    """An unrecognised tier was the one downgrade the warning could structurally never catch.
+
+    The guard is ``_TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0)`` and lite ranks 0, so an
+    unknown name also resolved to 0 and ``0 > 0`` was always False. A typo therefore produced a
+    lite-tier answer with NO warning at all — quieter than a genuine full->lite fallback, which does
+    warn — and callers had nothing in the result to tell them their tier was ignored.
+    """
+
+    def test_a_typo_warns(self):
+        result = score_text("Some text to score here.", tier="fule")
+        assert "warning" in result, "unknown tier scored silently"
+        assert "unknown tier 'fule'" in result["warning"]
+
+    def test_the_warning_lists_the_valid_names(self):
+        from untell.detectors.base import _TIER_RANK
+
+        warning = score_text("Some text to score here.", tier="bogus")["warning"]
+        for name in _TIER_RANK:
+            assert name in warning, name
+
+    def test_tier_names_are_case_sensitive_and_say_so(self):
+        """'Full' loaded the lite detectors. Silently, because it ranks 0 like lite does."""
+        result = score_text("Some text to score here.", tier="Full")
+        assert result["tier"] == "lite"
+        assert "unknown tier 'Full'" in result.get("warning", "")
+
+    def test_a_real_tier_does_not_warn_about_being_unknown(self):
+        for tier in ("lite", "full", "heavy", "commercial"):
+            warning = score_text("Some text to score here.", tier=tier).get("warning", "")
+            assert "unknown tier" not in warning, tier
+
+    def test_the_requested_tier_is_still_reported_verbatim(self):
+        """`tier` is the tier that actually ran; `tier_requested` is what was asked for."""
+        result = score_text("Some text to score here.", tier="bogus")
+        assert result["tier_requested"] == "bogus"
+        assert result["tier"] == "lite"
+
+
 def test_dead_detectors_excluded_not_pinned_at_half(monkeypatch):
     """Regression: a full detector that fails to load must be EXCLUDED from the aggregate,
     never folded in as a neutral 0.5 (the real-world bug where a broken NumPy env pinned max=0.5
