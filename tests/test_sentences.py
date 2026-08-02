@@ -120,3 +120,49 @@ def test_no_module_keeps_its_own_sentence_splitter():
         "sentence splitting belongs in untell/text_split.py — these re-implement it and will drift:"
         "\n  " + "\n  ".join(offenders)
     )
+
+
+def test_stdlib_path_warns_that_sentence_targeting_is_near_chance(monkeypatch, caplog):
+    """Per-sentence AUROC on real labelled data (150 human / 150 ChatGPT sentences from HC3):
+
+        hc3_roberta   1.000     full (GPT-2)     0.968
+        fast_detect   0.940     roberta_openai   0.886
+        lite (stdlib) 0.493  <- a coin flip
+
+    On the zero-dependency path the flagged sentences are close to arbitrary, and a caller cannot
+    see that from the output — the scores look like scores. Said once, not per call.
+    """
+    import logging
+
+    import untell.scripts.sentences as s
+    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+    monkeypatch.setattr(s, "_WARNED_UNINFORMATIVE", False)
+    monkeypatch.setattr(PerplexityBurstinessDetector, "_torch_ready", lambda self: False)
+
+    text = ("Furthermore, AI has transformed industry today. I forgot my wallet again this "
+            "morning. Moreover, organizations leverage these tools daily.")
+    with caplog.at_level(logging.WARNING, logger="untell.scripts.sentences"):
+        s.score_sentences(text, tier="lite")
+        s.score_sentences(text, tier="lite")
+
+    warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert len(warnings) == 1, f"expected exactly one warning, got {len(warnings)}"
+    assert "0.493" in warnings[0].getMessage()
+
+
+def test_no_warning_when_a_model_backed_detector_will_do_the_ranking(monkeypatch, caplog):
+    """With torch present, "lite" upgrades to GPT-2 perplexity, which ranks sentences at 0.968 —
+    there is nothing to warn about, and a warning nobody needs is how warnings get ignored."""
+    import logging
+
+    import untell.scripts.sentences as s
+    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+    monkeypatch.setattr(s, "_WARNED_UNINFORMATIVE", False)
+    monkeypatch.setattr(PerplexityBurstinessDetector, "_torch_ready", lambda self: True)
+
+    with caplog.at_level(logging.WARNING, logger="untell.scripts.sentences"):
+        s.score_sentences("One sentence here today. Another sentence follows it now.", tier="lite")
+
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]

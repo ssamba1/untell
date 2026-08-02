@@ -30,6 +30,38 @@ if __package__ in (None, ""):
 from untell.scripts.score import DEFAULT_THRESHOLD, batch_score_texts
 from untell.text_split import split_sentences  # noqa: F401  (re-exported: `untell-sentences` API)
 
+logger = logging.getLogger(__name__)
+
+
+_WARNED_UNINFORMATIVE = False
+
+
+def _warn_if_targeting_is_uninformative(tier: str) -> None:
+    """Say once when the only detector that will score these sentences cannot rank them.
+
+    Measured per-sentence AUROC on real labelled data: 0.493 for the stdlib heuristic against
+    0.886-1.000 for every model-backed detector. A caller has no way to see that from the output —
+    the scores look like scores.
+    """
+    global _WARNED_UNINFORMATIVE
+    if _WARNED_UNINFORMATIVE:
+        return
+    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+    det = PerplexityBurstinessDetector()
+    if det._torch_ready():
+        return  # lite auto-upgrades to GPT-2 perplexity, which ranks sentences at AUROC 0.968
+    from untell.detectors.base import load_detectors
+
+    if any(d.name != "perplexity_burstiness" for d in load_detectors(tier)):
+        return  # some model-backed detector is present and will do the ranking
+    _WARNED_UNINFORMATIVE = True
+    logger.warning(
+        "per-sentence targeting on the pure-stdlib path is near-chance (measured AUROC 0.493 on "
+        "labelled data, vs 0.89-1.00 for the model-backed detectors). The 'flagged' sentences are "
+        "close to arbitrary. Install .[full] for targeting that means anything."
+    )
+
 
 def score_sentences(
     text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, top: int | None = None
@@ -40,7 +72,21 @@ def score_sentences(
     undefined — so this targets the worst sentences **relative to the rest** (capped) rather than
     every sentence over an absolute threshold, which floods short text with false positives. The
     ``flagged`` list is "rewrite these first", not an absolute per-sentence verdict.
+
+    **How well this actually works depends entirely on the tier.** MEASURED per-sentence AUROC over
+    150 human and 150 ChatGPT sentences drawn from HC3 paragraphs:
+
+        hc3_roberta        1.000        full (GPT-2) perplexity   0.968
+        fast_detectgpt     0.940        roberta_openai            0.886
+        lite (stdlib)      **0.493**  <- a coin flip
+
+    So on the zero-dependency path — no torch, the pure stdlib heuristic — per-sentence targeting
+    points the rewriter at essentially random sentences. Note that "lite" auto-upgrades to GPT-2
+    whenever torch is importable, so this only bites a genuinely dependency-free install; the
+    caller is told once, because the README markets sentence targeting as a headline feature and
+    on that path it is not one.
     """
+    _warn_if_targeting_is_uninformative(tier)
     sents = split_sentences(text)
     # Score all sentences in one batch so the detector ensemble loads once for the whole
     # paragraph rather than once per sentence (the hot path on the full tier).
