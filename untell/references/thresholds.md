@@ -11,7 +11,7 @@ These are the knobs the `untell` loop uses. Override per-run if the user asks.
 | `certainty check` | no hedge class dropped, no claim added | A rewrite is rejected if it states more firmly than the source: a dropped hedge, an association reported as causation, or an intensifier the source never used. | Seven of ten such strengthenings cleared similarity + NLI + roles, because none *contradicts* the source: "may cause" → "causes", "suggest" → "prove", "usually" → "always", "fell slightly" → "collapsed", "is correlated with" → "causes". Six classes plus `causal_upgrade` and `intensifier_added`. Swapping one hedge for another is fine; adding a *minimizer* is fine too, since a more cautious rewrite is not a fidelity failure. Run `scripts/hedges.py`. |
 | `relaxed sim bar` | `0.30`, **only when the meaning gate ran** | When entailment + roles are doing the meaning check, similarity drops to a drift floor. | The strict bar rejects **6 of 8 faithful** rewrites — heavy rewording is what humanizing *is*. Relaxing the floor and adding the two gates admitted 7 of 8 faithful and **0 of 11 bad** rewrites: more permissive *and* strictly safer. Without the gates the strict bar applies, since loosening it exactly when the checks that catch bad rewrites are missing would be pure risk. `meaning_preserved()` implements this; the skill mirrors it. |
 | `max iterations` | `5` | Hard cap on rewrite rounds. | The closed-loop evasion literature (arXiv 2506.07001) converges within ~3–5 iterations; more rounds risk meaning drift for little gain. |
-| aggregation | `max` | Which detector score the stop condition uses. | Targeting the hardest detector forces genuine multi-detector evasion (report gap #3), not just fooling the weakest one. |
+| aggregation | `max` | Which detector score the stop condition uses. | Targeting the hardest detector forces genuine multi-detector evasion (report gap #3), not just fooling the weakest one. Correct as a *stop target*; it is the worst choice as a *verdict* — see below. |
 
 ## What each threshold actually costs
 
@@ -37,6 +37,32 @@ loop work harder against detectors this corpus does not contain — including wh
 commercial checker does. Use `--margin` to push further below the bar rather than lowering the bar
 itself, and read `flagged` at 0.30 knowing roughly one human document in ten will trip it on the
 full tier.
+
+## `max` is a stop target, not a verdict
+
+Every false positive this project has measured traces to the same place: `max` means one detector
+saying "AI" about human writing decides the answer. Measured on 30 labelled HC3 pairs, full tier,
+threshold 0.30 — the identical per-detector scores, aggregated five ways:
+
+| aggregation | human mean | FPR | ai mean | TPR | AUROC |
+|---|---|---|---|---|---|
+| **`max` (shipped)** | 0.166 | **13%** | 0.999 | 100% | 1.000 |
+| 2nd-highest | 0.064 | 0% | 0.981 | 100% | 1.000 |
+| mean | 0.059 | 0% | 0.819 | 100% | 1.000 |
+| median | 0.034 | 0% | 0.842 | 100% | 1.000 |
+| at least 2 of N over threshold | 0.000 | 0% | 1.000 | 100% | 1.000 |
+
+`max` is the only one that produces false positives, and it buys no extra recall — every option
+catches 100% of the AI samples.
+
+It stays, because for the **loop** it is the right rule: driving `max` under the threshold means
+every detector has been beaten, while a mean would let the loop stop with one detector still
+flagging. That is the whole point of the multi-detector bar.
+
+The cost lands on the **verdict**. When reading `flagged` or `ai_percent` for a document you did not
+generate — deciding whether text *is* AI rather than whether a rewrite is done — read the
+`detectors` map, not `max` alone. One high score among four low ones is a disagreeing detector, not
+a consensus.
 
 ## Tuning guidance
 
