@@ -223,6 +223,30 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --rewriter composite --tier full --best-of 
 Per detector, before → after: `hc3_roberta` 0.73 → 0.06, `roberta_openai` 0.52 → 0.08,
 `perplexity_burstiness` 0.41 → 0.12, `fast_detectgpt` 0.21 → 0.03.
 
+> ⚠️ **Read that table with its corpus.** Those are `untell-ceiling`'s **built-in sample: three
+> hand-written paragraphs, mean 36 words.** They read as AI, and they are measurably *easier* than
+> real AI output — they start at 0.86 where actual ChatGPT answers start at **1.00**. Holding length
+> constant on HC3 pairs (tier=full, best-of-3):
+>
+> | corpus | words | before | after | still flagged |
+> |---|---|---|---|---|
+> | built-in sample | 37 | 0.86 | **0.23** | **0%** |
+> | HC3 ChatGPT answers, cut to 36w | 36 | 1.00 | **0.63** | **50%** |
+> | HC3 ChatGPT answers, full length | 186 | 1.00 | **0.76** | **83%** |
+>
+> The gap is the **corpus, not the length** — at identical length the built-in sample lands three
+> times lower. Length then adds on top, because detectors take the `max` over windows and the loop
+> has to clear *every* window: a separate sweep at 348–1601 words ended at 1.00, still flagged.
+>
+> So the table above measures the loop's **mechanics on short, easy text** — it is a demo, not a
+> claim about real AI documents. For the number that generalises, run it on real generated text:
+>
+> ```bash
+> UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 8 --rewriter composite --tier full --best-of 3 --repeats 3
+> ```
+>
+> Every result now carries the `corpus` it came from, and a built-in-sample run says so in its output.
+
 ¹ Figures marked `--best-of 8` predate the detector calibration fixes and are indicative only. The
 "after" number improved (0.26 → 0.18, flagged 0.15 → 0.07) when two detectors were recalibrated —
 not because the rewriter got better, but because the detectors had been over-scoring *everything*,
