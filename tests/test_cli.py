@@ -123,3 +123,45 @@ def test_no_style_warning_when_style_not_requested(capsys):
     main(["Moreover we utilize robust solutions today.", "--rewriter", "surgical",
           "--tier", "lite", "--max-iters", "1"])
     assert "no effect" not in capsys.readouterr().err
+
+
+class TestDemoUsesTheStrongestAvailableTier:
+    """`untell` with no arguments is the first thing a new user runs, and it hardcoded tier="lite".
+
+    MEASURED on the demo's own deliberately-AI sample ("Furthermore, artificial intelligence has
+    fundamentally transformed numerous industries..."):
+
+        tier=lite   detector max 0.364   humanness 56.4  "mostly human"
+        tier=full   detector max 1.000   humanness 24.6  "likely AI"
+
+    So the tool's own demo answered "mostly human" about text written to be obviously machine-
+    generated. The lite heuristic is documented as a weak proxy; leading with it here undersold the
+    tool and misinformed the reader.
+    """
+
+    def _run_demo(self, monkeypatch, capsys, no_torch: bool):
+        from untell.scripts.cli import _run_demo
+
+        if no_torch:
+            monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        else:
+            monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+        _run_demo()
+        return capsys.readouterr().out
+
+    def test_the_tier_that_ran_is_named(self, monkeypatch, capsys):
+        """"mostly human" from the weak heuristic and "likely AI" from the real ensemble are
+        different claims; without the tier a reader cannot tell them apart."""
+        out = self._run_demo(monkeypatch, capsys, no_torch=True)
+        assert "(tier:" in out
+
+    def test_forced_stdlib_path_is_honoured(self, monkeypatch, capsys):
+        """UNTELL_LITE_NO_TORCH=1 is the documented way to force the dependency-free path. A user
+        who asks for it must not be handed a model-backed score instead."""
+        out = self._run_demo(monkeypatch, capsys, no_torch=True)
+        assert "(tier: lite)" in out
+
+    def test_full_tier_is_used_when_torch_is_installed(self, monkeypatch, capsys):
+        pytest.importorskip("torch")
+        out = self._run_demo(monkeypatch, capsys, no_torch=False)
+        assert "(tier: full)" in out, out[-400:]

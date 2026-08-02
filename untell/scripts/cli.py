@@ -138,18 +138,39 @@ def _run_demo(text: str | None = None) -> int:
     )
     sample_text = text or sample
 
-    # Step 1: Score on the lite tier (which is only instant without torch — see the notice above)
+    # Score on the strongest tier whose stack is actually installed. This used to be hardcoded to
+    # "lite", and the result was a demo that called its OWN deliberately-AI sample human. MEASURED
+    # on the sample above:
+    #     tier=lite   detector max 0.364   humanness 56.4  "mostly human"
+    #     tier=full   detector max 1.000   humanness 24.6  "likely AI"
+    # The first thing a new user runs is `untell` with no arguments, and it was answering "mostly
+    # human" about text written to be obviously machine-generated. The lite heuristic is documented
+    # as a weak proxy; leading with it here undersold the tool and misinformed the reader.
+    # UNTELL_LITE_NO_TORCH=1 is the documented way to force the stdlib path, so it wins here too —
+    # a user who asked for the dependency-free path should not be handed a model-backed score.
+    demo_tier = "lite"
+    if os.environ.get("UNTELL_LITE_NO_TORCH") != "1":
+        try:
+            import importlib.util
+
+            if importlib.util.find_spec("torch") is not None:
+                demo_tier = "full"
+        except Exception:
+            pass
+
     print("\n[1/3] Scoring with local detector ensemble...\n")
     from untell.scripts.score import score_text
-    pre = score_text(sample_text, tier="lite")
+    pre = score_text(sample_text, tier=demo_tier)
     try:
         from untell.humanness import classification, humanness
         from untell.rich_output import print_humanness
-        h = humanness(sample_text, tier="lite")
+        h = humanness(sample_text, tier=demo_tier)
         print_humanness(h, classification(h))
     except Exception:
         print(f"  AI Probability: {pre['max']:.2f}  (threshold: {pre['threshold']})")
-        print(f"  Tier: {pre['tier']}")
+    # Name the tier that actually ran. "mostly human" from the weak heuristic and "likely AI" from
+    # the real ensemble are different claims, and the reader cannot tell them apart otherwise.
+    print(f"  (tier: {pre.get('tier', demo_tier)})")
     print()
 
     # Step 2: Tells (instant)
