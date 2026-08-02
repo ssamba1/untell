@@ -124,3 +124,64 @@ def test_meaning_gate_rejects_strengthening_end_to_end():
     good = "The drug might make you drowsy."
     assert not meaning_preserved(src, bad, similarity(src, bad), strict_sim_bar=0.76)
     assert meaning_preserved(src, good, similarity(src, good), strict_sim_bar=0.76)
+
+
+class TestCausalUpgrade:
+    """Association -> causation is the same failure as dropping a hedge, reached by adding a claim.
+
+    MEASURED, both cleared similarity + NLI + roles: a causal claim does not contradict an
+    associational one, it just says more. Neither sentence locks anything in preserve.py either, so
+    nothing else in the pipeline saw it.
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "candidate"),
+        [
+            ("Screen time is correlated with poor sleep.", "Screen time causes poor sleep."),
+            ("The outage coincided with the deploy.", "The deploy caused the outage."),
+            ("Income is associated with health outcomes.", "Income drives health outcomes."),
+            ("The two events are linked.", "One event led to the other."),
+        ],
+    )
+    def test_upgrade_is_caught(self, source, candidate):
+        assert not certainty_kept(source, candidate)
+        assert "causal_upgrade" in dropped_hedges(source, candidate)
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            ("Screen time is correlated with poor sleep.", "Screen time is linked to poor sleep.", "synonym"),
+            ("Screen time is correlated with poor sleep.", "Poor sleep tracks with screen time.", "tracks with"),
+            ("Income is associated with health outcomes.", "Income and health outcomes go together.", "go together"),
+            ("Smoking causes cancer.", "Smoking is a cause of cancer.", "source already causal"),
+            ("The deploy caused the outage.", "The outage was caused by the deploy.", "causal passive"),
+            ("Rain caused the delay.", "The delay was due to rain.", "causal reworded"),
+        ],
+    )
+    def test_no_false_veto(self, source, candidate, label):
+        assert certainty_kept(source, candidate), f"{label}: {dropped_hedges(source, candidate)}"
+
+    def test_hyperlink_link_is_not_an_association(self):
+        r"""Broadening the pattern to `link\w*` made this a false veto: a hyperlink plus any causal
+        verb looked like an upgraded claim. "linked"/"link between" are associations; a bare noun
+        "link ... to" is a URL."""
+        assert certainty_kept("Click the link to continue.", "Click the link, which leads to the form.")
+
+    def test_negated_causation_is_not_an_assertion(self):
+        """A rewrite that DENIES causation is more careful than the source, not less."""
+        assert certainty_kept(
+            "There is a link between the two.", "They are related, though nothing causes the other."
+        )
+        assert certainty_kept(
+            "Screen time is correlated with poor sleep.",
+            "Screen time does not cause poor sleep, but they correlate.",
+        )
+
+    def test_meaning_gate_rejects_causal_upgrade_end_to_end(self):
+        from untell.scripts.entailment import meaning_preserved
+        from untell.scripts.quality import similarity
+
+        src = "Screen time is correlated with poor sleep."
+        bad, good = "Screen time causes poor sleep.", "Screen time is linked to poor sleep."
+        assert not meaning_preserved(src, bad, similarity(src, bad), strict_sim_bar=0.76)
+        assert meaning_preserved(src, good, similarity(src, good), strict_sim_bar=0.76)

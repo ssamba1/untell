@@ -92,6 +92,62 @@ _CLASS_RES: dict[str, re.Pattern[str]] = {
 }
 
 
+# Association vs causation. This one is not a dropped class but an UPGRADE: the source reported
+# that two things go together, the rewrite says one produced the other. MEASURED — both of these
+# cleared similarity, NLI and roles, because a causal claim does not contradict an associational
+# one, it just says more:
+#     "Screen time is correlated with poor sleep." -> "Screen time causes poor sleep."
+#     "The outage coincided with the deploy."      -> "The deploy caused the outage."
+# Neither sentence locks anything in preserve.py, so nothing else in the pipeline sees it either.
+_ASSOCIATION_RE = re.compile(
+    # "linked" on its own, because "The two events are linked." has no "to" and was missed. But NOT
+    # a bare noun "link": broadening to `link\w*` made "Click the link, which leads to the form."
+    # a false veto, since a hyperlink plus any causal verb looked like an upgraded claim.
+    r"(?<!\w)(?:correlat\w*|associat\w*|linked|linkage\w*|links\s+with|link\s+between|"
+    r"relationship\s+between|connected\s+with|"
+    r"related\s+to|coincid\w*|accompan\w*|co-?occur\w*|tied\s+to|goes?\s+together|"
+    r"alongside|tracks?\s+with)(?!\w)",
+    re.IGNORECASE,
+)
+_CAUSAL_RE = re.compile(
+    r"(?<!\w)(?:caus\w*|leads?\s+to|led\s+to|results?\s+in|resulted\s+in|produc\w*|"
+    r"triggers?|triggered|drives?|driven\s+by|responsible\s+for|brings?\s+about|"
+    r"brought\s+about|gives?\s+rise\s+to|makes?\s+\w+\s+(?:worse|better)|"
+    r"because\s+of|owing\s+to|thanks\s+to)(?!\w)",
+    re.IGNORECASE,
+)
+
+
+# A causal word under negation is not a causal claim — "nothing causes the other" DENIES one, and
+# vetoing it would punish a rewrite for being more careful than the source.
+_NEGATOR_RE = re.compile(
+    r"(?<!\w)(?:not|no|nothing|never|neither|nor|n't|doesn't|does\s+not|did\s+not|"
+    r"cannot|can't|isn't|is\s+not|without)(?!\w)",
+    re.IGNORECASE,
+)
+_NEGATION_WINDOW = 30  # characters of preceding context searched for a negator
+
+
+def _asserts_causation(text: str) -> bool:
+    """True when ``text`` makes an UNnegated causal claim."""
+    for m in _CAUSAL_RE.finditer(text):
+        lead = text[max(0, m.start() - _NEGATION_WINDOW):m.start()]
+        if not _NEGATOR_RE.search(lead):
+            return True
+    return False
+
+
+def _causal_upgrade(source: str, candidate: str) -> bool:
+    """True when the source reported an association and the rewrite asserts causation.
+
+    Requires the source to be associational AND not already causal — a source that already says
+    "causes" is free to keep saying it.
+    """
+    if not _ASSOCIATION_RE.search(source) or _asserts_causation(source):
+        return False
+    return _asserts_causation(candidate)
+
+
 def _classes_present(text: str) -> set[str]:
     return {name for name, rx in _CLASS_RES.items() if rx.search(text)}
 
@@ -99,9 +155,14 @@ def _classes_present(text: str) -> set[str]:
 def dropped_hedges(source: str, candidate: str) -> list[str]:
     """Hedge classes present in ``source`` but absent from ``candidate``.
 
-    A dropped class means the rewrite states more firmly than the source did.
+    A dropped class means the rewrite states more firmly than the source did. ``causal_upgrade``
+    is reported alongside them: it is the same failure (claiming more than the source) reached by
+    adding a causal claim rather than by removing a hedge.
     """
-    return sorted(_classes_present(source) - _classes_present(candidate))
+    found = sorted(_classes_present(source) - _classes_present(candidate))
+    if _causal_upgrade(source, candidate):
+        found.append("causal_upgrade")
+    return found
 
 
 def certainty_kept(source: str, candidate: str) -> bool:
