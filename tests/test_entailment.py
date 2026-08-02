@@ -247,3 +247,47 @@ class TestEntailmentCLI:
         """The reason this gate exists: cosine scores this pair ~0.97, above the 0.76 bar."""
         assert entailment.main(["The build runs faster.", "The build runs slower."]) == 1
         assert json.loads(capsys.readouterr().out)["contradiction"] > 0.5
+
+
+class TestModelFreeChecksRunWithoutNLI:
+    """The stdlib-only gates must not be gated behind the NLI model's availability.
+
+    `meaning_preserved` used to return `sim >= strict_sim_bar` the moment NLI was unavailable —
+    before reaching the quantity and certainty checks. Both are pure regex and need no model, so on
+    the zero-dependency tier (the advertised default) a rewrite could drop a stated number or
+    upgrade a hedged claim and nothing would object.
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            ("Only 7 of the 19 tests passed.", "Only a few of the 19 tests passed.", "drops a number"),
+            ("The drug may cause drowsiness.", "The drug causes drowsiness.", "drops a hedge"),
+            ("Screen time is correlated with poor sleep.", "Screen time causes poor sleep.", "causal upgrade"),
+            ("The study found an effect.", "The study found a large effect.", "intensifier added"),
+        ],
+    )
+    def test_bad_rewrites_rejected_without_nli(self, source, candidate, label, monkeypatch):
+        monkeypatch.setenv("UNTELL_DISABLE_NLI", "1")
+        assert not entailment.available()
+        assert not entailment.meaning_preserved(source, candidate, 0.95, strict_sim_bar=0.76), label
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            ("Only 7 of the 19 tests passed.", "Just 7 of the 19 tests passed.", "faithful"),
+            ("The drug may cause drowsiness.", "The drug might make you drowsy.", "hedge swap"),
+        ],
+    )
+    def test_faithful_rewrites_still_pass_without_nli(self, source, candidate, label, monkeypatch):
+        monkeypatch.setenv("UNTELL_DISABLE_NLI", "1")
+        assert entailment.meaning_preserved(source, candidate, 0.95, strict_sim_bar=0.76), label
+
+    def test_mechanical_checks_precede_the_model(self):
+        """Also the cheap order: a candidate rejected mechanically skips four NLI forward passes and
+        a spaCy parse. All checks are conjunctive, so order cannot change the verdict, only cost."""
+        import inspect
+
+        src = inspect.getsource(entailment.meaning_preserved)
+        assert src.index("numbers_kept") < src.index("if not available()")
+        assert src.index("certainty_kept") < src.index("if not available()")
