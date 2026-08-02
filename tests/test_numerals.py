@@ -104,9 +104,28 @@ class TestListMarkersAreNotQuantities:
     """
 
     def test_list_to_prose_is_not_a_dropped_quantity(self):
-        src = "There are three reasons:\n1. Cost is high.\n2. Speed is low.\n3. HD needs bandwidth."
+        # The lead-in says "several", not "three": the point of this case is the MARKERS, and a
+        # spelled-out count in the lead-in is a real quantity that prose must keep (see the test
+        # below, and `test_real_quantities_inside_a_list_are_still_checked` — same principle, the
+        # marker is structure but everything else on the line is a fact).
+        src = "There are several reasons:\n1. Cost is high.\n2. Speed is low.\n3. HD needs bandwidth."
         prose = "There are a few reasons: cost is high, speed is low, and HD needs bandwidth."
         assert numbers_kept(src, prose), missing_numbers(src, prose)
+
+    def test_a_spelled_count_in_the_lead_in_is_still_a_quantity(self):
+        """"three reasons" -> "a few reasons" is the module's opening example, in word form.
+
+        Stripping the markers must not also excuse the count they were introduced by: the source
+        states how many, and the rewrite makes it vague. Identical in kind to the "7 of the 19
+        tests" -> "a few of the 19 tests" case the docstring opens with.
+        """
+        src = "There are three reasons:\n1. Cost is high.\n2. Speed is low.\n3. HD needs bandwidth."
+        prose = "There are a few reasons: cost is high, speed is low, and HD needs bandwidth."
+        assert not numbers_kept(src, prose)
+        assert "3" in missing_numbers(src, prose)
+        # ...and prose that keeps the count, in either spelling, passes.
+        assert numbers_kept(src, "There are three reasons: cost, speed and bandwidth.")
+        assert numbers_kept(src, "There are 3 reasons: cost, speed and bandwidth.")
 
     def test_paren_style_markers_too(self):
         src = "Steps:\n1) Install it.\n2) Run it."

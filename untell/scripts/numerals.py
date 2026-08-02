@@ -69,20 +69,52 @@ _WORDS = {
 # the turning point.") keeps its number checked; list markers past 99 are vanishingly rare.
 _LIST_MARKER_RE = re.compile(r"(?m)^[ \t]*\d{1,2}[.)](?=\s)")
 
+# Spelled-out numbers, read from BOTH sides. Extraction used to find DIGITS only, so a quantity the
+# source stated as a word was invisible and could be changed freely. MEASURED:
+#
+#     "Three sites took part."             ->  "Five sites took part."             PASSED
+#     "The trial enrolled three patients." ->  "The trial enrolled four patients." PASSED
+#
+# By any ordinary reading the source states a number there, and this module's contract is that
+# every number the source states must survive.
+#
+# This list is deliberately stricter than _WORDS above. _WORDS is the permissive side — it decides
+# whether a source numeral may count as present in the candidate, so loose synonyms like "both",
+# "a dozen" and "none" belong there. Reading those OUT of a source would be a false-veto machine:
+# "no" in "there is no clear benefit" is not the quantity zero, and "one" in "one of the reasons"
+# is not the quantity one. Only unambiguous number words are read out, and "one" only as the tail
+# of a compound ("twenty-one").
+_UNITS = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9}
+_TEENS = {
+    "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+    "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19,
+}
+_TENS = {
+    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
+    "eighty": 80, "ninety": 90,
+}
+# Tens-and-units compounds are matched FIRST, so "twenty-four" reads as 24 rather than as 20 and 4
+# — which would demand the candidate contain both and veto the perfectly faithful "24".
+_SPELLED_RE = re.compile(
+    r"(?<![\w-])(?:(?:" + "|".join(_TENS) + r")(?:[-\s](?:one|" + "|".join(_UNITS) + r"))?"
+    r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))(?![\w-])",
+    re.IGNORECASE,
+)
+
+
+def _spelled_value(match: str) -> str:
+    total = 0
+    for part in re.split(r"[-\s]+", match.strip().lower()):
+        total += _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
+    return str(total)
+
 
 def _numbers(text: str) -> list[str]:
+    """Every number in ``text`` as a normalised digit string — digits and spelled-out alike."""
     without_structure = _LIST_MARKER_RE.sub(" ", SENTINEL_RE.sub(" ", text))
-    return _NUMBER_RE.findall(without_structure)
-
-
-def _present(number: str, candidate: str, candidate_lower: str) -> bool:
-    if number in candidate:
-        return True
-    # "1,234" may reasonably be rewritten "1234" (or the reverse); treat separators as cosmetic.
-    bare = number.replace(",", "")
-    if bare and bare in candidate.replace(",", ""):
-        return True
-    return any(w in candidate_lower for w in _WORDS.get(bare, ()))
+    out = [n.replace(",", "") for n in _NUMBER_RE.findall(without_structure)]
+    out += [_spelled_value(m.group(0)) for m in _SPELLED_RE.finditer(without_structure)]
+    return out
 
 
 def missing_numbers(source: str, candidate: str) -> list[str]:
@@ -92,15 +124,20 @@ def missing_numbers(source: str, candidate: str) -> list[str]:
     not dropped the fact.
     """
     cand_lower = candidate.lower()
+    # Compare VALUES, not substrings. The old check asked whether the source's digits appeared
+    # anywhere in the candidate text, so "2" counted as present inside "1234".
+    cand_values = set(_numbers(candidate))
     seen: set[str] = set()
     missing: list[str] = []
     for n in _numbers(source):
-        key = n.replace(",", "")
-        if key in seen:
+        if n in seen:
             continue
-        seen.add(key)
-        if not _present(n, candidate, cand_lower):
-            missing.append(n)
+        seen.add(n)
+        # Present as the same value written either way, or as one of the loose synonyms above
+        # ("a dozen" for 12, "both" for 2) that are too ambiguous to read out of a source.
+        if n in cand_values or any(w in cand_lower for w in _WORDS.get(n, ())):
+            continue
+        missing.append(n)
     return missing
 
 
