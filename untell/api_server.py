@@ -39,7 +39,7 @@ from typing import Literal
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from untell._env import load_env
 from untell.rewriter.prompts import STYLE_NAMES
@@ -150,13 +150,29 @@ _VERIFY_TIER = Literal["lite", "full", "heavy", "commercial", ""]
 _Style = Enum("_Style", {name: name for name in STYLE_NAMES}, type=str)
 
 
-class ScoreRequest(BaseModel):
+class _Request(BaseModel):
+    """Base for every request model: an unmodelled field is an ERROR, not a silent drop.
+
+    pydantic's default is to ignore unknown fields. MEASURED: POST /humanize accepted `confirm`,
+    `detector_thresholds` and even `nonsense_field` with HTTP 200, and the loop ran without any of
+    them — so a caller asking for a 3-way confirmation re-scan, or per-detector gates, got back a
+    result computed without them and nothing to say the request was only partly honoured. That is
+    worse than a rejection: the response looks like the answer to the question that was asked.
+
+    This makes an unsupported parameter a 422 naming the field. Clients sending fields this API
+    never modelled will now get an error where they previously got a quietly different computation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ScoreRequest(_Request):
     text: str = _TEXT
     tier: _TIER = "full"
     threshold: float = DEFAULT_THRESHOLD
 
 
-class HumanizeRequest(BaseModel):
+class HumanizeRequest(_Request):
     text: str = _TEXT
     # "full", matching the CLI's `--tier` default. The loop OPTIMISES against whatever tier it is
     # given, so defaulting to lite meant every REST caller drove a single stdlib heuristic — which
@@ -180,20 +196,28 @@ class HumanizeRequest(BaseModel):
     best_of: int = 3
     margin: float = 0.0
     polish: bool = False
+    # Both are `untell humanize` flags that this surface modelled nowhere, so sending them was a
+    # silent no-op. `confirm` re-scores a pass N more times and keeps "passed" only if every re-scan
+    # clears — the guard against a noisy detector re-flagging. `detector_thresholds` holds named
+    # detectors to their own stricter gates on top of the global threshold. Neither needs an extra
+    # dependency, and both change the verdict, which is precisely why dropping them quietly was
+    # worse than refusing them.
+    confirm: int = 0
+    detector_thresholds: dict[str, float] | None = None
 
 
-class TellsRequest(BaseModel):
+class TellsRequest(_Request):
     text: str = _TEXT
     include_matches: bool = False
 
 
-class SentencesRequest(BaseModel):
+class SentencesRequest(_Request):
     text: str = _TEXT
     tier: _TIER = "lite"
     threshold: float = DEFAULT_THRESHOLD
 
 
-class VerifyRequest(BaseModel):
+class VerifyRequest(_Request):
     text: str = _TEXT
     threshold: float = DEFAULT_THRESHOLD
     tier: _VERIFY_TIER = "full"
@@ -366,6 +390,8 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
         best_of=body.best_of,
         margin=body.margin,
         polish=body.polish,
+        confirm=body.confirm,
+        detector_thresholds=body.detector_thresholds,
     )
     return _safe(result)
 

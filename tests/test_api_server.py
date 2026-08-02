@@ -477,7 +477,24 @@ def test_ceiling_still_accepts_valid_rewriters():
             assert resp.status_code == 200, name
 
 
-class TestTierIsValidated:
+class _Unlimited:
+    """Mixin disabling the 60-request/minute limiter for request-heavy test classes.
+
+    They issue enough requests to trip it — one per style, one per endpoint — and a 429 is not what
+    any of them is asserting.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _no_rate_limit(self, monkeypatch):
+        import untell.api_server as api
+
+        monkeypatch.setenv("UNTELL_RATE_LIMIT", "0")
+        api._rate_buckets.clear()
+        yield
+        api._rate_buckets.clear()
+
+
+class TestTierIsValidated(_Unlimited):
     """`tier` was a bare `str` on every request model, so any string was accepted.
 
     `load_detectors("bogus")` matches no tier and falls back to the always-on lite heuristic, so the
@@ -564,7 +581,76 @@ class TestTierIsValidated:
         assert set(schemas["VerifyRequest"]["properties"]["tier"]["enum"]) == set(_TIER_RANK) | {""}
 
 
-class TestStyleIsValidated:
+class TestAnUnmodelledFieldIsAnError(_Unlimited):
+    """pydantic's default is to DROP unknown fields, which made a partial answer look like the answer.
+
+    MEASURED: POST /humanize accepted `confirm`, `detector_thresholds` and `nonsense_field` with
+    HTTP 200 and ran the loop without any of them. A caller asking for a confirmation re-scan, or
+    for per-detector gates, got a result computed without them and nothing saying the request had
+    been only partly honoured.
+    """
+
+    @pytest.mark.parametrize("path", ["/score", "/humanize", "/tells", "/sentences", "/verify"])
+    def test_an_unknown_field_is_rejected(self, path):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post(path, json={"text": "Some text.", "nonsense_field": 1})
+        assert resp.status_code == 422, path
+
+    def test_the_error_names_the_offending_field(self):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post("/score", json={"text": "Some text.", "typo_here": 1})
+        assert "typo_here" in resp.text
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [("confirm", 3), ("detector_thresholds", {"hc3_roberta": 0.1})],
+    )
+    def test_the_newly_modelled_fields_reach_the_loop(self, monkeypatch, field, value):
+        from fastapi.testclient import TestClient
+
+        import untell.api_server as api
+
+        seen: dict = {}
+        monkeypatch.setattr(
+            api, "untell_text", lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}}
+        )
+        resp = TestClient(api.app).post(
+            "/humanize",
+            json={"text": "Some text.", "tier": "lite", "rewriter": "surgical", field: value},
+        )
+        assert resp.status_code == 200
+        assert seen[field] == value
+
+    def test_every_humanize_field_is_actually_forwarded(self, monkeypatch):
+        """A modelled field that is never passed on is the same silent no-op, one layer in."""
+        import inspect
+
+        from fastapi.testclient import TestClient
+
+        import untell.api_server as api
+        from untell.scripts.run import untell_text
+
+        seen: dict = {}
+        monkeypatch.setattr(
+            api, "untell_text", lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}}
+        )
+        TestClient(api.app).post(
+            "/humanize", json={"text": "Some text.", "tier": "lite", "rewriter": "surgical"}
+        )
+        loop_params = set(inspect.signature(untell_text).parameters)
+        # `rewriter` is resolved from a name to an object, so it is forwarded under the same key.
+        modelled = set(api.HumanizeRequest.model_fields) - {"text"}
+        assert modelled <= loop_params, sorted(modelled - loop_params)
+        assert modelled <= set(seen), f"modelled but never forwarded: {sorted(modelled - set(seen))}"
+
+
+class TestStyleIsValidated(_Unlimited):
     """`style` was a bare `str`, and an unknown name is a silent no-op.
 
     The name is looked up in the STYLES dict, missed, and skipped — so a caller asked for a voice,
