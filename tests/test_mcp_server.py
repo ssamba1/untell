@@ -173,3 +173,16 @@ def test_rewriter_default_is_the_free_path_on_every_surface():
 
     assert inspect.signature(_mcp_tools()["untell"]).parameters["rewriter"].default == "composite"
     assert HumanizeRequest.model_fields["rewriter"].default == "composite"
+
+
+def test_untell_tool_exposes_polish():
+    """The REST API's /humanize exposes `polish`; the MCP tool always called untell_text with the
+    default False, so the same loop reached through MCP produced a strictly weaker result than
+    through HTTP, with nothing to indicate a knob was missing."""
+    import inspect
+
+    import untell.mcp_server as mcp
+
+    src = inspect.getsource(mcp)
+    assert "polish: bool = False" in src
+    assert "polish=polish" in src, "declared but not forwarded to untell_text"

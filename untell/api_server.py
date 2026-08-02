@@ -366,6 +366,20 @@ async def ceiling(body: CeilingRequest) -> dict:
     from eval.ceiling import _SAMPLE, measure_ceiling
     from untell.rewriter import get_rewriter
 
+    # An unrecognised name used to fall through to `rw = None`, which means "let get_rewriter pick"
+    # — so a typo, or a deliberate 'base', silently ran a DIFFERENT backend than the one asked for,
+    # and with a key configured that is the paid hosted-LLM path. HTTP 200 either way, no error
+    # field, nothing in the response naming the rewriter that actually ran. Reject instead; the MCP
+    # tool already does the equivalent by passing the name through for untell_text to refuse.
+    if body.rewriter not in _FREE_REWRITERS and body.rewriter != "auto":
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": f"unknown rewriter {body.rewriter!r}",
+                "free_rewriters": sorted(_FREE_REWRITERS),
+                "hint": "pass 'auto' to let the server choose a configured backend",
+            },
+        )
     rw = get_rewriter(prefer=body.rewriter) if body.rewriter in _FREE_REWRITERS else None
     # `n` was in the request schema but never used: passing texts=None ran the whole built-in
     # sample regardless, so a caller asking for one fast sample paid for all of them. Capped by

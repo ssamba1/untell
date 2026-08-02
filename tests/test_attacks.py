@@ -241,3 +241,43 @@ def test_synonyms_still_returns_builtin_entries():
 
     assert "use" in synonyms("leverage")
     assert synonyms("zzzznotaword") == []
+
+
+NFC_SINGLETONS = [
+    ("greek question mark", ";", ";"),
+    ("greek varia", "`", "`"),
+    ("kelvin sign", "K", "K"),
+]
+
+
+@pytest.mark.parametrize("desc,ch,ascii_form", NFC_SINGLETONS)
+def test_nfc_singletons_are_counted_not_just_scrubbed(desc, ch, ascii_form):
+    """scrub_hidden ends with an NFC pass, and NFC itself rewrites singleton confusables.
+
+    Measured: each of these was silently replaced while count_hidden reported 0 — so the scrub
+    report claimed the text was clean and the text had changed. Fourth carrier class to go missing
+    from that function, which is why it is now counted the way it is applied (by asking NFC) rather
+    than by listing three codepoints and waiting for a fifth.
+    """
+    text = f"abc{ch}def"
+    assert scrub_hidden(text) == f"abc{ascii_form}def", desc
+    assert count_hidden(text) >= 1, f"{desc}: scrubbed but reported as clean"
+
+
+@pytest.mark.parametrize(
+    "desc,text",
+    [
+        ("plain ascii", "The cat sat on the mat."),
+        ("emoji zwj family", "\U0001f468‍\U0001f469‍\U0001f467"),
+        ("variation selector", "❤️"),
+        ("rtl with bidi mark", "مرحبا ‏!"),
+        ("precomposed accents", "café naïve résumé"),
+        ("CJK", "人工智能"),
+        ("superscript and ligature", "x² and ﬁne"),
+    ],
+)
+def test_legitimate_unicode_is_not_counted_as_hidden(desc, text):
+    """Counting per CHARACTER keeps real composition out of it: "e" + combining acute normalises as
+    a pair but neither character changes alone, so only true singletons are counted. Otherwise every
+    accented document would report as watermarked."""
+    assert count_hidden(text) == 0, desc

@@ -74,6 +74,10 @@ def _server():
         # where measuring the single-draw baseline is the point.)
         best_of: int = 3,
         margin: float = 0.0,
+        # Exposed because the REST API's /humanize does. `untell_text` was always called with the
+        # default polish=False here, so the same loop reached through MCP produced a strictly
+        # weaker result than through HTTP, with nothing to indicate a knob was missing.
+        polish: bool = False,
     ) -> dict:
         """Run the closed untell loop: score -> rewrite -> re-score until the hardest
         detector passes or max_iters is hit. Needs an LLM rewriter key, or pass
@@ -93,6 +97,8 @@ def _server():
                 'auto' (hosted LLM if a key is set, else fail).
             best_of: Draw N candidates per iteration, keep the best-scoring one.
             margin: Safety margin below threshold for a comfortable pass.
+            polish: Run a final word-level substitution pass over the result, adopted only if it
+                lowers the score without un-passing it. Matches /humanize on the REST API.
         """
         from untell.rewriter import get_rewriter
 
@@ -126,6 +132,7 @@ def _server():
             rewriter=rw,
             best_of=best_of,
             margin=margin,
+            polish=polish,
         )
 
     # Put the real style list into the tool's advertised description. Generated, not restated, so

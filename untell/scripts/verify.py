@@ -179,7 +179,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--tier",
         default="full",
-        choices=["lite", "full", "heavy", "commercial"],
+        # "" is in `choices` because the help text has always advertised it and the code below
+        # already handles it — `(args.tier or "").lower() in ("commercial", "")` maps both to
+        # commercial-only. Without it argparse rejected `--tier ''` with exit 2, so the documented
+        # invocation was the one thing that could not work.
+        choices=["lite", "full", "heavy", "commercial", ""],
         help="Local detector tier (default: full). Pass 'commercial' or set --tier '' for commercial-only.",
     )
     parser.add_argument(

@@ -216,4 +216,18 @@ def count_hidden(text: str) -> int:
     # and carriage return), so they must be counted here or the same under-report recurs — this is
     # the third carrier class to go missing from this function.
     controls = sum(1 for ch in text if ch not in "\t\n\r" and unicodedata.category(ch) == "Cc")
-    return invisible + exotic_spaces + homoglyphs + orphan_zwj + orphan_vs + orphan_bidi + controls
+    # scrub_hidden ends with an NFC pass, and NFC itself rewrites a handful of SINGLETON codepoints
+    # that are confusables in their own right: U+037E GREEK QUESTION MARK -> ';', U+1FEF GREEK
+    # VARIA -> '`', U+212A KELVIN SIGN -> 'K'. Measured, each was scrubbed while this function
+    # reported 0, so the report said the text was clean and the text had changed. That is the
+    # fourth carrier class to go missing here, so it is counted the way it is applied — by asking
+    # NFC — rather than by listing the three codepoints and waiting for a fifth.
+    #
+    # Per CHARACTER, deliberately: composing "e" + combining acute is legitimate Unicode and
+    # normalising the pair changes it, but neither character changes alone, so this counts only the
+    # singletons and leaves real composition alone.
+    nfc_singletons = sum(1 for ch in text if unicodedata.normalize("NFC", ch) != ch)
+    return (
+        invisible + exotic_spaces + homoglyphs + orphan_zwj + orphan_vs + orphan_bidi
+        + controls + nfc_singletons
+    )

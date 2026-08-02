@@ -440,3 +440,38 @@ class TestRateLimiting:
         # A different bucket key is unaffected by the exhausted one.
         api._rate_buckets["someone-else"] = (0.0, 0)
         assert len(api._rate_buckets) >= 2
+
+
+def test_ceiling_rejects_an_unknown_rewriter_instead_of_substituting_one():
+    """An unrecognised name fell through to `rw = None`, which means "let get_rewriter pick".
+
+    So a typo — or a deliberate 'base' — silently ran a DIFFERENT backend than the one asked for,
+    and with an API key configured that is the paid hosted-LLM path. HTTP 200 either way, no error
+    field, and nothing in the response naming the rewriter that actually ran. The MCP tool already
+    refused; the two surfaces disagreed.
+    """
+    with patch("untell.api_server.load_env"):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        client = TestClient(app)
+        for name in ("bogus_name", "base", "SURGICAL"):
+            resp = client.post("/ceiling", json={"rewriter": name, "n": 1, "tier": "lite"})
+            assert resp.status_code == 422, name
+            assert "unknown rewriter" in resp.json()["error"]
+            assert "free_rewriters" in resp.json()
+
+
+def test_ceiling_still_accepts_valid_rewriters():
+    with patch("untell.api_server.load_env"):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        client = TestClient(app)
+        for name in ("surgical", "auto"):
+            resp = client.post(
+                "/ceiling", json={"rewriter": name, "n": 1, "tier": "lite", "max_iters": 1}
+            )
+            assert resp.status_code == 200, name
