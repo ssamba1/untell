@@ -132,6 +132,27 @@ def humanness(text: str, tier: str = "full") -> float:
     # 4. Composite. With no detector signal, its weight is REDISTRIBUTED across the signals that
     # did produce something rather than being scored as 0 — dropping a term whose weight is half
     # the total is not the same as that term reporting "human".
+    #
+    # KNOWN CALIBRATION GAP, measured on 30 labelled HC3 pairs. The blended score RANKS perfectly
+    # (AUROC 1.000, human mean 89.2 vs AI mean 43.7 on the full tier) but the BANDS understate:
+    # not one of thirty real ChatGPT samples reached "likely AI", and on the lite tier 27 of 30
+    # landed in "mostly human". A user pasting obvious AI text is told it is mixed, or mostly human.
+    #
+    # The cause is signal quality, per-signal AUROC on that corpus:
+    #     detector  1.000     (weight 0.50)
+    #     bursty    0.896     (weight 0.25)
+    #     tells     0.523     (weight 0.25)   <- chance; human 0.026 vs ai 0.023
+    # A quarter of the score comes from a term that cannot separate the classes at all here, and it
+    # pulls AI text UP because HC3's answers carry marginally fewer catalogued tells than the human
+    # ones. Raising the detector weight to 0.70 would move AI to "likely AI" (25.5) while leaving
+    # human at "human" (86.7).
+    #
+    # NOT reweighted, deliberately. HC3 is 2022-era ChatGPT and predates most of the vocabulary the
+    # tells catalogue targets ("delve", "tapestry", "leverage") — score_tells catches 18 of 18
+    # modern tell sentences with 0 false positives on human prose, so the term is informative on
+    # current AI text and merely silent on this corpus. Refitting weights against one dated corpus
+    # would trade a real signal for a better number on a benchmark. Fixing this properly needs a
+    # labelled sample of MODERN generated text; until then the gap is documented rather than tuned.
     weights = {"tells": _W_TELLS, "detector": _W_DETECTOR, "bursty": _W_BURSTY}
     parts = {"tells": normalized_tells, "bursty": bursty_penalty}
     if detector_max is not None:
