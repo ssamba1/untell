@@ -155,9 +155,14 @@ def _render(r: dict) -> str:
         f"  pre  flagged rate: {r['pre_flagged_rate']}   mean max P(AI): {r['pre_mean_max']}",
     ]
     if r["rewriter_available"]:
+        # Denominator is n * repeats, i.e. the number of ATTEMPTS. `rewrote` accumulates across
+        # every repeat while `n` is one run's corpus size, so `rewrote/n` printed "(rewrote 9/3)"
+        # at --repeats 3 and "(rewrote 27/3)" at --repeats 9 — a success count larger than the
+        # total it is measured against, on the line reporting the headline result.
+        attempts = r["n"] * max(1, r.get("repeats", 1) or 1)
         lines.append(
             f"  post flagged rate: {r['post_flagged_rate']}   mean max P(AI): {r['post_mean_max']}   "
-            f"(rewrote {r['rewrote']}/{r['n']})"
+            f"(rewrote {r['rewrote']}/{attempts})"
         )
         if r.get("repeats", 1) > 1:
             # The free rewriters are randomized, so the spread across runs is the honest error bar.

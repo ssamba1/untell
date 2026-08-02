@@ -111,3 +111,45 @@ def test_reports_meaning_similarity_alongside_evasion(monkeypatch):
     assert r["mean_similarity"] == 0.93
     assert r["min_similarity"] == 0.93
     assert "meaning preserved" in C._render(r)
+
+
+def test_rewrote_denominator_counts_every_attempt(monkeypatch):
+    """`rewrote` accumulates across ALL repeats; `n` is one run's corpus size. Printing
+    `rewrote/n` therefore rendered a success count LARGER than the total it was measured
+    against — "(rewrote 9/3)" at --repeats 3, "(rewrote 27/3)" at --repeats 9 — on the line
+    carrying the headline result."""
+    import eval.ceiling as C
+
+    base = {
+        "n": 3, "tier": "full", "threshold": 0.3, "max_iters": 2, "best_of": 3,
+        "run_post_means": None, "post_mean_max_stdev": None,
+        "mean_similarity": 0.93, "min_similarity": 0.82, "rewriter_available": True,
+        "pre_flagged_rate": 1.0, "post_flagged_rate": 0.148,
+        "pre_mean_max": 0.8587, "post_mean_max": 0.2613,
+        "per_detector_pre": {"d1": 0.6}, "per_detector_post": {"d1": 0.19},
+    }
+
+    single = C._render({**base, "repeats": 1, "rewrote": 3})
+    assert "(rewrote 3/3)" in single
+
+    repeated = C._render({
+        **base, "repeats": 9, "rewrote": 27,
+        "run_post_means": [0.25] * 9, "post_mean_max_stdev": 0.027,
+    })
+    assert "(rewrote 27/27)" in repeated, repeated
+    assert "27/3" not in repeated, "the denominator is still one run's corpus size"
+
+
+def test_render_survives_a_missing_repeats_key():
+    """_render is called on dicts built by callers and by tests; a missing/None repeats must not
+    crash the report or divide by zero."""
+    import eval.ceiling as C
+
+    out = C._render({
+        "n": 2, "tier": "lite", "threshold": 0.3, "max_iters": 1, "best_of": 1,
+        "rewrote": 2, "rewriter_available": True,
+        "pre_flagged_rate": 1.0, "post_flagged_rate": 0.5,
+        "pre_mean_max": 0.8, "post_mean_max": 0.3,
+        "per_detector_pre": {}, "per_detector_post": {},
+    })
+    assert "(rewrote 2/2)" in out
