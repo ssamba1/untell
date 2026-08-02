@@ -160,6 +160,13 @@ detector, but three draws scored against that detector usually do. The lever was
 rewriter — it was *choosing among rewrites against the signal you actually care about*, and that was
 shipped disabled.
 
+> **SCOPE CORRECTION (Result 11).** This falsification holds *on the built-in sample*, and the
+> built-in sample turns out to be the easy case. Re-run against real HC3 ChatGPT answers with the
+> same selection, `hc3_roberta` goes **0.998 → 0.810** — barely moved, exactly as Results 1–2
+> described. Best-of-N selection is still a real and large lever, and everything measured below
+> stands for the corpus it was measured on; what does not stand is reading "the content wall was a
+> selection limit" as a general claim. See Result 11.
+
 ### How far does selection scale? (best-of-3 vs best-of-8)
 
 Same corpus, same 3 repeats, only `--best-of` changed:
@@ -563,3 +570,71 @@ demo number under a real corpus's name.
 **The next frontier is length, not phrasing.** Clearing one window is solved; clearing every window
 of a 600-word document is not, and `max`-over-windows means the second does not follow from the
 first.
+
+---
+
+## Result 11 — the ceiling against real AI text, and the content wall coming back
+
+Result 10 showed the corpus mattered. This is the measurement it implies, run properly:
+**8 real HC3 ChatGPT answers, mean 195 words, `--repeats 3` (24 loop runs), full tier,
+`--best-of 3`, `--max-iters 5`.**
+
+```bash
+UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 8 --rewriter composite \
+  --tier full --best-of 3 --max-iters 5 --repeats 3
+```
+
+| | built-in sample (Result 9) | real HC3 answers |
+|---|---|---|
+| mean max P(AI) | 0.859 → **0.154 ± 0.042** | 0.999 → **0.860 ± 0.001** |
+| flagged rate | 1.00 → **0.000** | 1.00 → **1.000** |
+| meaning similarity | 0.931 mean / 0.868 worst | 0.981 mean / 0.945 worst |
+
+Per detector, before → after:
+
+| detector | before | after | verdict |
+|---|---|---|---|
+| `roberta_openai` | 0.993 | **0.088** | crushed |
+| `fast_detectgpt` | 0.640 | **0.260** | moves well |
+| `perplexity_burstiness` | 0.619 | **0.429** | moves |
+| **`hc3_roberta`** | 0.998 | **0.810** | **barely moves** |
+
+**Not a single sample cleared the threshold**, and the standard deviation across three repeats is
+**0.0012** — this is not a variance problem the way the built-in sample's was. The loop hits the
+same wall every run.
+
+### The wall is `hc3_roberta`, and it is not a lack of effort
+
+The obvious explanation — that the meaning gate is holding the rewriter back on harder text — is
+wrong, and worth stating because the similarity number invites it. Similarity sits at 0.98 here
+against 0.93 on the built-in sample, which reads like the loop is making smaller changes. Measured,
+it is not:
+
+| corpus | words | tokens changed | similarity | final |
+|---|---|---|---|---|
+| built-in | 34–39 | 78–100% | 0.90–0.96 | 0.20–0.28, passed |
+| HC3 | 146–207 | **89–93%** | 0.97–0.997 | 0.51–0.999, max_iters |
+
+Nine tokens in ten are rewritten and the content detector does not care. Similarity stays high
+*because* the rewrite is faithful — it is a content metric, and so is `hc3_roberta`. The loop is
+doing the work; the signal it is being asked to move is the one thing a meaning-preserving rewrite
+is not allowed to change.
+
+`roberta_openai` at 0.993 → 0.088 on the same text is the control that makes this readable: the
+rewriter is not weak, and the loop is not broken. One detector is measuring style and one is
+measuring subject matter.
+
+### What this means for the claims in this document
+
+- Result 3's falsification of the content wall **holds on the built-in sample and does not
+  generalise.** Best-of-N selection remains a large, real lever — it is what takes
+  `roberta_openai` to 0.088 here — but "the content wall was a selection limit" was a
+  corpus-specific result stated as a general one. Results 1–2 called `hc3_roberta` the detector a
+  meaning-preserving rewrite cannot move, and on real AI text that is what it is.
+- Every figure in Results 1–9 remains reproducible and each still isolates the defect it measured.
+  None of them was ever a claim about real AI documents; they now say so.
+- **The honest free ceiling against real AI text is 0.86, flagged 1.00** — not 0.15, flagged 0.00.
+
+The two frontiers this leaves are length (Result 10) and the content signal itself. Neither is a
+phrasing problem, which is the only thing an inference-only loop can attack, and that — not a
+better rewriter — is what bounds the free path.

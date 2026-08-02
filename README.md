@@ -239,13 +239,34 @@ Per detector, before → after: `hc3_roberta` 0.73 → 0.06, `roberta_openai` 0.
 > has to clear *every* window: a separate sweep at 348–1601 words ended at 1.00, still flagged.
 >
 > So the table above measures the loop's **mechanics on short, easy text** — it is a demo, not a
-> claim about real AI documents. For the number that generalises, run it on real generated text:
->
-> ```bash
-> UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 8 --rewriter composite --tier full --best-of 3 --repeats 3
-> ```
->
-> Every result now carries the `corpus` it came from, and a built-in-sample run says so in its output.
+> claim about real AI documents.
+
+**The number against real AI text** — 8 HC3 ChatGPT answers, mean 195 words, 24 loop runs:
+
+```bash
+UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 8 --rewriter composite --tier full --best-of 3 --max-iters 5 --repeats 3
+```
+
+| | built-in sample | **real HC3 answers** |
+|---|---|---|
+| mean max P(AI) | 0.86 → 0.15 ± 0.04 | 1.00 → **0.86 ± 0.001** |
+| flagged rate | 1.00 → 0.00 | 1.00 → **1.00** |
+| meaning similarity | 0.93 / 0.87 worst | 0.98 / 0.95 worst |
+
+Per detector: `roberta_openai` 0.99 → **0.09** (crushed), `fast_detectgpt` 0.64 → 0.26,
+`perplexity_burstiness` 0.62 → 0.43, **`hc3_roberta` 1.00 → 0.81 (barely moves)**.
+
+Not one sample cleared, and the spread across three repeats is 0.001 — the loop hits the same wall
+every run. It is not a lack of effort: **89–93% of tokens are rewritten**, and `roberta_openai`
+going to 0.09 on that same text proves the rewriter is working. `hc3_roberta` measures *subject
+matter*, and a meaning-preserving rewrite is not allowed to change that. Similarity stays at 0.98
+for the same reason — it is a content metric too.
+
+So the honest summary: **style detectors fall, the content detector does not, and a longer document
+makes it worse** because `max`-over-windows means every window has to clear. Full method, the
+falsified claims and the corpus caveat: [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)
+(Results 10–11). Every result now carries the `corpus` it came from, and a built-in-sample run says
+so in its output.
 
 ¹ Figures marked `--best-of 8` predate the detector calibration fixes and are indicative only. The
 "after" number improved (0.26 → 0.18, flagged 0.15 → 0.07) when two detectors were recalibrated —
