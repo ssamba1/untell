@@ -120,3 +120,67 @@ def test_mage_direct_load_scores():
     s = d.score("Furthermore, this underscores a pivotal and transformative paradigm shift.")
     assert s is not None and 0.0 <= s <= 1.0
     assert MageDetector._dead is False
+
+
+# --- single-sentence scoring was perfectly inverted -------------------------------------------
+# On a lone sentence, burstiness is undefined, so the score fell back to the common-word ratio
+# alone. That ratio was calibrated for an older kind of AI text: modern model prose reaches for
+# inflated vocabulary ("leverage", "transformative"), which drives the ratio DOWN, while casual
+# human speech is almost entirely common words, which drives it UP. Measured AUROC over the pairs
+# below was 0.000 — every AI sentence ranked below every human one.
+#
+# It mattered because sentences.py scores each sentence in isolation: per-sentence targeting was
+# pointing the rewriter at whichever sentences read most human.
+
+_AI_SENTENCES = [
+    "Furthermore, artificial intelligence has fundamentally transformed numerous industries.",
+    "Moreover, organizations increasingly leverage these technologies to optimize efficiency.",
+    "This robust framework enables stakeholders to seamlessly navigate complex challenges.",
+    "In today's rapidly evolving landscape, businesses must delve into innovative solutions.",
+    "It is important to note that this underscores the importance of robust solutions.",
+]
+_HUMAN_SENTENCES = [
+    "I went to the store and forgot the milk again.",
+    "The build broke because someone bumped the pinned version.",
+    "She said it was fine, but her face said otherwise.",
+    "We tried it twice and it still didn't work.",
+    "He emailed me back three days later with one line.",
+]
+
+
+def test_single_sentence_scoring_is_not_inverted():
+    """The whole point: AI single sentences must outrank human ones. AUROC was 0.000."""
+    ai = [lite_score(s) for s in _AI_SENTENCES]
+    human = [lite_score(s) for s in _HUMAN_SENTENCES]
+    pairs = [(a, h) for a in ai for h in human]
+    auroc = sum((a > h) + 0.5 * (a == h) for a, h in pairs) / len(pairs)
+    assert auroc > 0.9, f"single-sentence AUROC {auroc:.3f} — was 0.000 (perfectly inverted)"
+
+
+def test_ordinary_human_sentences_are_not_flagged():
+    """The common-word term is the one measured to be backwards, so it is capped below the default
+    0.30 threshold. At a 0.35 cap every plain human sentence landed on exactly 0.350 and flagged."""
+    from untell.scripts.score import DEFAULT_THRESHOLD
+
+    for s in _HUMAN_SENTENCES:
+        assert lite_score(s) < DEFAULT_THRESHOLD, f"false positive on human sentence: {s!r}"
+
+
+def test_ai_single_sentences_are_flagged():
+    from untell.scripts.score import DEFAULT_THRESHOLD
+
+    for s in _AI_SENTENCES:
+        assert lite_score(s) >= DEFAULT_THRESHOLD, f"AI sentence not flagged: {s!r}"
+
+
+def test_tells_failure_does_not_restore_the_inverted_ratio(monkeypatch):
+    """If tells raises, the fallback must stay capped — never hand the verdict back to the term
+    that was measured backwards."""
+    import untell.detectors.perplexity_burstiness as pb
+
+    def boom(*a, **k):
+        raise RuntimeError("tells exploded")
+
+    monkeypatch.setattr("untell.scripts.tells.score_tells", boom)
+    # A sentence of almost entirely common words: the inverted ratio would score this very high.
+    assert pb.lite_score("We tried it twice and it still did not work.") <= pb._RATIO_CEILING

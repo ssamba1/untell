@@ -114,6 +114,53 @@ def _common_ratio(text: str) -> float:
 _MIN_WORDS_FOR_SIGNAL = 5
 
 
+# Tell density that reads as "clearly AI" for one sentence. AI sentences in the probe set carried
+# 1-3 tells in ~10-15 words (roughly 10-25 per 100 words); human ones carried none.
+_SENTENCE_TELL_SATURATION = 22.0
+
+# Hard ceiling on the (measured-backwards) common-word term for a lone sentence. Must stay strictly
+# BELOW the default detection threshold so this term can never flag text by itself.
+_RATIO_CEILING = 0.25
+
+
+def _single_sentence_signal(text: str, common_signal: float) -> float:
+    """P(AI) for a lone sentence, where burstiness carries no information.
+
+    The common-word ratio must NOT drive this. Measured on 5 AI and 5 human single sentences, the
+    common-word signal alone scored **AUROC 0.000** — perfectly inverted, every AI sentence ranked
+    below every human one. The cause is that the ratio was calibrated on a kind of AI text that is
+    no longer typical: modern model prose reaches for inflated vocabulary ("leverage",
+    "transformative", "numerous"), which drives the common-word ratio DOWN, while casual human
+    speech ("we tried it twice and it still didn't work") is nearly all common words and drives it
+    UP. So the one surviving signal ranked the AI text as maximally human.
+
+    That was not merely a dead detector. `sentences.py` scores each sentence in isolation, so
+    per-sentence targeting — the skill's step 4b — was pointed at whichever sentences read most
+    human, telling the rewriter to attack exactly the wrong spans.
+
+    AI-tell density replaces it: it counts markers that are actually characteristic of machine
+    prose, and it is stdlib-only, so the zero-dependency tier keeps working. The common-word signal
+    survives only as a weak floor for the case it genuinely catches — padding built from common
+    words ("it is the best way to do the thing") — where it cannot outvote the tell evidence.
+    """
+    from untell.scripts.tells import (
+        score_tells,  # local: avoids a detectors -> scripts import cycle
+    )
+
+    try:
+        density = float(score_tells(text).get("tells_per_100w") or 0.0)
+    except Exception:
+        # Never let a tells failure resurrect the inverted ratio as the whole answer.
+        return min(common_signal, _RATIO_CEILING)
+
+    tell_signal = clamp01(density / _SENTENCE_TELL_SATURATION)
+    # Cap the ratio's contribution below the default detection threshold. It is the term measured
+    # to be backwards, so it may position a tell-free sentence within the range but must never on
+    # its own push one over the line into "flagged" — at a 0.35 cap every ordinary human sentence
+    # in the probe set landed on exactly 0.350 and was flagged at the 0.30 default.
+    return max(tell_signal, min(common_signal, _RATIO_CEILING))
+
+
 def lite_score(text: str) -> float | None:
     """Deterministic, stdlib-only P(AI) heuristic in [0, 1], or None when the text is too short.
 
@@ -141,7 +188,7 @@ def lite_score(text: str) -> float | None:
     # how human it read. Genuinely leaning on the common-word signal — using it alone, at full
     # weight, when burstiness carries no information — is what the comment always intended.
     if len(nonempty) < 2:
-        return clamp01(common_signal)
+        return clamp01(_single_sentence_signal(text, common_signal))
 
     burst = _burstiness(sents)        # ~0.0 (uniform) .. ~0.8+ (varied human prose)
     # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
