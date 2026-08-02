@@ -75,6 +75,68 @@ def test_undefined_burstiness_row_is_still_omitted(monkeypatch):
     assert not any("Burstiness" in str(a) for args in printed for a in args)
 
 
+class TestBurstinessReachesThePlainTerminalToo:
+    """The burstiness row was printed only when `rich` happened to be installed.
+
+    Uniform sentence length is the single strongest stylometric tell and the one signal the tell
+    CATALOGUE cannot see, so on a plain terminal the most important line was simply absent — and
+    the `is not None` fix that made a CV of exactly 0.0 visible had been applied to the rich path
+    only, so the fallback hid it twice over.
+    """
+
+    def _run(self, monkeypatch, capsys, tells):
+        monkeypatch.setattr(rich_output, "_RICH", False)
+        monkeypatch.setattr(rich_output, "_CONSOLE", None)
+        rich_output.print_tells_result(tells)
+        return capsys.readouterr().out
+
+    def test_the_cv_is_printed(self, monkeypatch, capsys):
+        out = self._run(monkeypatch, capsys, {
+            "tells": 3, "tells_per_100w": 10.0, "burstiness_cv": 0.42,
+            "low_burstiness": False, "by_category": {"ai_vocab": 3},
+        })
+        assert "Burstiness CV: 0.42" in out
+
+    def test_a_cv_of_zero_is_printed_and_marked(self, monkeypatch, capsys):
+        out = self._run(monkeypatch, capsys, {
+            "tells": 3, "tells_per_100w": 10.0, "burstiness_cv": 0.0,
+            "low_burstiness": True, "by_category": {"ai_vocab": 3},
+        })
+        assert "Burstiness CV: 0.0" in out
+        assert "uniform = tell" in out
+
+    def test_an_undefined_cv_is_still_omitted(self, monkeypatch, capsys):
+        out = self._run(monkeypatch, capsys, {
+            "tells": 0, "tells_per_100w": 0.0, "burstiness_cv": None, "by_category": {},
+        })
+        assert "Burstiness" not in out
+
+    def test_both_paths_agree_on_when_the_row_appears(self, monkeypatch, capsys):
+        """The two renderers must not disagree about whether a signal exists."""
+        cases = [
+            ({"burstiness_cv": 0.0, "low_burstiness": True}, True),
+            ({"burstiness_cv": 0.42, "low_burstiness": False}, True),
+            ({"burstiness_cv": None}, False),
+            ({}, False),
+        ]
+        for extra, expected in cases:
+            tells = {"tells": 1, "tells_per_100w": 1.0, "by_category": {}, **extra}
+
+            plain = self._run(monkeypatch, capsys, dict(tells))
+
+            printed: list = []
+            monkeypatch.setattr(rich_output, "_RICH", True)
+            monkeypatch.setattr(
+                rich_output, "_CONSOLE",
+                type("C", (), {"print": lambda self, *a, **k: printed.append(a)})(),
+            )
+            rich_output.print_tells_result(dict(tells))
+            rich_shown = any("Burstiness" in str(a) for args in printed for a in args)
+
+            assert ("Burstiness" in plain) is expected, extra
+            assert rich_shown is expected, extra
+
+
 def test_plain_text_fallback_needs_no_rich(monkeypatch, capsys):
     """The module is documented to degrade gracefully; the fallback path must not touch _CONSOLE."""
     monkeypatch.setattr(rich_output, "_RICH", False)

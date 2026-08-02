@@ -146,6 +146,13 @@ def print_tells_result(tells: dict):
     """Print a formatted AI-tells breakdown."""
     if not _RICH:
         print(f"Tells: {tells.get('tells', 0)} ({tells.get('tells_per_100w', 0)}/100w)")
+        # Burstiness was reported only when `rich` happened to be installed, so on a plain terminal
+        # the single strongest stylometric tell — uniform sentence length, the one signal the tell
+        # CATALOGUE cannot see — was simply absent from the output. Same `is not None` rule as the
+        # rich path below: a CV of exactly 0.0 is the most extreme case, not a missing value.
+        if tells.get("burstiness_cv") is not None:
+            suffix = "  (uniform = tell)" if tells.get("low_burstiness") else ""
+            print(f"Burstiness CV: {tells['burstiness_cv']}{suffix}")
         for cat, count in sorted(tells.get("by_category", {}).items(), key=lambda kv: -kv[1]):
             print(f"  {cat}: {count}")
         return
