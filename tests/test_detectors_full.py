@@ -246,3 +246,51 @@ def test_long_document_tail_is_not_invisible(name):
         f"{name}: {len(ai.split())} words of AI text scored {ai_alone:.3f} alone but only "
         f"{with_prefix:.3f} behind a {len(prefix.split())}-word prefix — the tail is invisible"
     )
+
+
+def test_full_path_ranks_real_sentences_far_above_chance():
+    """Pin per-sentence discrimination on REAL labelled data, not hand-written probes.
+
+    Twice in one session a change was made to this detector to satisfy a six-sentence hand-written
+    probe set, and both times the real-data number moved the other way. Measured `_full_score`
+    AUROC over HC3 sentences, by length:
+
+        5-9w 0.969   10-14w 0.975   15-19w 0.965   20-29w 0.995   30-60w 0.995   paragraph 1.000
+
+    A six-sample set cannot see any of that. This asserts the floor so a future "fix" that trades
+    real-data ranking for probe-set appearance fails loudly instead of silently.
+
+    Opt-in (network + ~1min), following the UNTELL_TEST_MAGE convention already used here:
+        UNTELL_TEST_SENTENCE_AUROC=1 pytest tests/test_detectors_full.py -k real_sentences
+    """
+    import os
+
+    if os.environ.get("UNTELL_TEST_SENTENCE_AUROC") != "1":
+        pytest.skip("set UNTELL_TEST_SENTENCE_AUROC=1 (downloads HC3, ~1min)")
+
+    from eval.datasets import load_pairs
+    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+    from untell.text_split import split_sentences
+
+    pairs = load_pairs("hc3", 40)
+    if not pairs:
+        pytest.skip("HC3 unavailable")
+
+    det = PerplexityBurstinessDetector()
+    if not det._torch_ready():
+        pytest.skip("torch/transformers not importable")
+
+    human, ai = [], []
+    for h, a in pairs:
+        human += [s for s in split_sentences(h) if len(s.split()) >= 10]
+        ai += [s for s in split_sentences(a) if len(s.split()) >= 10]
+    human, ai = human[:80], ai[:80]
+
+    hs = [x for x in (det._full_score(s) for s in human) if x is not None]
+    as_ = [x for x in (det._full_score(s) for s in ai) if x is not None]
+    wins = sum((a > h) + 0.5 * (a == h) for a in as_ for h in hs)
+    auroc = wins / (len(as_) * len(hs))
+    assert auroc >= 0.85, (
+        f"per-sentence AUROC on real HC3 data fell to {auroc:.3f} (was 0.88-0.99 across every "
+        f"length bucket). A hand-written probe set cannot detect this."
+    )
