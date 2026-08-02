@@ -56,11 +56,18 @@ def summarize(by_strategy: dict[str, list], threshold: float) -> dict:
     for name, results in by_strategy.items():
         if not results:
             continue
-        pd = _per_detector(results, threshold)
+        # ONE denominator for every P(AI) figure in the row. `_bypass_rate` already excluded
+        # unscored samples — max: 0.0 is a placeholder, and 0.0 < threshold would count it as a
+        # pass — but the means beside it did not, so the same row mixed two populations. Measured:
+        # 5 samples at 0.35 plus 5 unscored gave mean_post_max 0.175, which reads as comfortably
+        # under a 0.30 threshold, next to a bypass rate of 0%. The true scored-only mean was 0.35.
+        scored = [r for r in results if r.post.get("scored") is not False]
+        pd = _per_detector(scored or results, threshold)
         strategies[name] = {
             "n": len(results),
-            "mean_pre_max": _mean([r.pre["max"] for r in results]),
-            "mean_post_max": _mean([r.post["max"] for r in results]),
+            "n_scored": len(scored),
+            "mean_pre_max": _mean([r.pre["max"] for r in scored]),
+            "mean_post_max": _mean([r.post["max"] for r in scored]),
             "bypass_rate": _bypass_rate(results, threshold),
             "mean_similarity": _mean([r.similarity for r in results]),
             "mean_iterations": _mean([float(r.iterations) for r in results]),
@@ -70,9 +77,24 @@ def summarize(by_strategy: dict[str, list], threshold: float) -> dict:
     summary = {"threshold": threshold, "strategies": strategies}
     if "full_loop" in strategies and "single_pass" in strategies:
         fl, sp = strategies["full_loop"], strategies["single_pass"]
+        # Each bypass rate is over its OWN strategy's scored subset, so the two are only comparable
+        # when both scored everything. A strategy whose detector failed on some samples gets a
+        # smaller denominator and an inflated rate. Measured: full_loop with 1 pass and 9 unscored
+        # reported 100% against single_pass's genuine 50% (5 of 10), and thesis_pass came back True
+        # — declaring the project's headline claim proven while single_pass was five times better in
+        # absolute terms.
+        comparable = fl["n_scored"] == fl["n"] and sp["n_scored"] == sp["n"]
         summary["thesis_pass"] = bool(
-            fl["bypass_rate"] >= sp["bypass_rate"] and fl["mean_similarity"] >= sp["mean_similarity"] - 0.02
+            comparable
+            and fl["bypass_rate"] >= sp["bypass_rate"]
+            and fl["mean_similarity"] >= sp["mean_similarity"] - 0.02
         )
+        if not comparable:
+            summary["thesis_undecided"] = (
+                f"not comparable: full_loop scored {fl['n_scored']}/{fl['n']}, "
+                f"single_pass scored {sp['n_scored']}/{sp['n']} — bypass rates are over different "
+                "denominators, so the comparison is meaningless. Fix the detector stack and re-run."
+            )
     return summary
 
 
@@ -84,10 +106,22 @@ def render(by_strategy: dict[str, list], threshold: float) -> str:
     lines.append(f"Threshold (max-proxy P(AI) for bypass): **{threshold}**\n")
     lines.append("| Strategy | n | mean pre max | mean post max | bypass rate | mean sim | mean iters |")
     lines.append("|---|---:|---:|---:|---:|---:|---:|")
+    any_unscored = False
     for name, st in s["strategies"].items():
+        # Show the denominator the P(AI) figures are actually over. `n` alone next to a percentage
+        # reads as "this fraction of n", which is wrong whenever anything went unscored.
+        n_cell = str(st["n"]) if st["n_scored"] == st["n"] else f"{st['n_scored']}/{st['n']}"
+        any_unscored = any_unscored or st["n_scored"] != st["n"]
         lines.append(
-            f"| {name} | {st['n']} | {st['mean_pre_max']:.3f} | {st['mean_post_max']:.3f} | "
+            f"| {name} | {n_cell} | {st['mean_pre_max']:.3f} | {st['mean_post_max']:.3f} | "
             f"{st['bypass_rate']:.0%} | {st['mean_similarity']:.3f} | {st['mean_iterations']:.1f} |"
+        )
+    if any_unscored:
+        lines.append(
+            "\n> **n shown as `scored/total`.** Every P(AI) figure above — the means, the bypass "
+            "rate and the per-detector beat rates — is over the SCORED samples only. Samples no "
+            "detector could score carry a `max: 0.0` placeholder, and counting those would report "
+            "them as passes."
         )
 
     # Per-detector pre->post breakdown (uses the richest strategy that has detectors).
@@ -128,4 +162,6 @@ def render(by_strategy: dict[str, list], threshold: float) -> str:
             f"(full_loop {fl['bypass_rate']:.0%}@{fl['mean_similarity']:.2f} vs "
             f"single_pass {sp['bypass_rate']:.0%}@{sp['mean_similarity']:.2f})"
         )
+        if s.get("thesis_undecided"):
+            lines.append(f"\n> {s['thesis_undecided']}")
     return "\n".join(lines)

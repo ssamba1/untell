@@ -81,3 +81,84 @@ def test_unscored_samples_are_not_counted_as_bypasses():
     assert _bypass_rate([_R(scored_pass), _R(scored_fail)], 0.30) == 0.5
     # Unscored samples are excluded from the denominator too, not counted as failures.
     assert _bypass_rate([_R(scored_pass), _R(unscored)], 0.30) == 1.0
+
+
+class TestOneDenominatorPerRow:
+    """Every P(AI) figure in a strategy row must be over the same sample set.
+
+    `_bypass_rate` already excluded unscored samples — `max: 0.0` is a placeholder and
+    `0.0 < threshold` would count it as a pass — but the means beside it did not, and the `n`
+    column showed the full count. Three published figures over two different populations, in one
+    row, with nothing saying so.
+    """
+
+    @staticmethod
+    def _r(pre_max, post_max, scored=True, sim=0.95):
+        from dataclasses import dataclass, field
+
+        @dataclass
+        class _R:
+            pre: dict
+            post: dict
+            similarity: float = 0.95
+            iterations: int = 1
+            text: str = "x"
+            history: list = field(default_factory=list)
+
+        post = ({"max": post_max, "mean": post_max, "detectors": {"d": post_max}, "scored": True}
+                if scored else {"max": 0.0, "mean": 0.0, "detectors": {}, "scored": False})
+        return _R(
+            pre={"max": pre_max, "mean": pre_max, "detectors": {"d": pre_max}, "scored": True},
+            post=post, similarity=sim,
+        )
+
+    def test_mean_post_max_excludes_unscored_placeholders(self):
+        """Measured: 5 samples at 0.35 plus 5 unscored gave mean_post_max 0.175 — comfortably under
+        a 0.30 threshold, so the strategy read as succeeding — next to a bypass rate of 0%."""
+        from eval.report import summarize
+
+        rows = [self._r(0.9, 0.35) for _ in range(5)] + [self._r(0.9, 0.0, scored=False) for _ in range(5)]
+        st = summarize({"test": rows}, 0.30)["strategies"]["test"]
+        assert abs(st["mean_post_max"] - 0.35) < 1e-9, st["mean_post_max"]
+        assert st["n"] == 10 and st["n_scored"] == 5
+
+    def test_thesis_is_not_declared_on_incomparable_denominators(self):
+        """The project's headline claim. Measured: full_loop with 1 pass and 9 unscored reported a
+        100% bypass rate against single_pass's genuine 50% (5 of 10), and the thesis "passed" — while
+        single_pass was five times better in absolute terms."""
+        from eval.report import summarize
+
+        by = {
+            "full_loop": [self._r(0.9, 0.1)] + [self._r(0.9, 0.0, scored=False) for _ in range(9)],
+            "single_pass": [self._r(0.9, 0.1) for _ in range(5)] + [self._r(0.9, 0.9) for _ in range(5)],
+        }
+        s = summarize(by, 0.30)
+        assert s["thesis_pass"] is False
+        assert "thesis_undecided" in s
+
+    def test_thesis_still_passes_when_everything_scored(self):
+        """The guard must not make the thesis unprovable."""
+        from eval.report import summarize
+
+        by = {
+            "full_loop": [self._r(0.9, 0.1) for _ in range(8)] + [self._r(0.9, 0.9) for _ in range(2)],
+            "single_pass": [self._r(0.9, 0.1) for _ in range(5)] + [self._r(0.9, 0.9) for _ in range(5)],
+        }
+        s = summarize(by, 0.30)
+        assert s["thesis_pass"] is True
+        assert "thesis_undecided" not in s
+
+    def test_table_shows_the_real_denominator(self):
+        from eval.report import render
+
+        rows = [self._r(0.9, 0.35) for _ in range(5)] + [self._r(0.9, 0.0, scored=False) for _ in range(5)]
+        out = render({"test": rows}, 0.30)
+        assert "| 5/10 |" in out, out
+        assert "scored/total" in out
+
+    def test_table_stays_clean_when_nothing_is_unscored(self):
+        from eval.report import render
+
+        out = render({"test": [self._r(0.9, 0.1) for _ in range(4)]}, 0.30)
+        assert "| 4 |" in out
+        assert "scored/total" not in out
