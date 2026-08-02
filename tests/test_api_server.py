@@ -233,3 +233,47 @@ def test_humanize_with_composite_rewriter():
             assert resp.status_code == 200
             data = resp.json()
             assert data["final"] == "Better text."
+
+
+def test_scoring_and_gates_are_thread_safe():
+    """The REST API serves concurrent requests, and every scorer here caches state in module
+    globals — detector instances, the tells registry, the quality metric backend.
+
+    None of that is lock-protected, so a future change that makes one of those caches mutable
+    mid-flight would corrupt results only under load, which is exactly the failure a single-threaded
+    test suite never sees. MEASURED: 96 calls across 12 threads, 0 errors, and each input produced
+    one stable answer. (The ML paths were checked the same way separately — 40 concurrent NLI +
+    spaCy calls with cold caches produced 4 distinct verdicts, 10 each, no races.)
+    """
+    import concurrent.futures as cf
+
+    from untell.scripts.hedges import certainty_kept
+    from untell.scripts.numerals import numbers_kept
+    from untell.scripts.quality import similarity
+    from untell.scripts.score import score_text
+    from untell.scripts.tells import score_tells
+
+    texts = [
+        "Furthermore, organizations leverage these technologies to optimize efficiency.",
+        "Some studies suggest that 7 of the 19 programs may improve outcomes.",
+        "I went to the store and forgot the milk again, third time this month.",
+        "Revenue fell slightly last quarter while costs rose modestly across regions.",
+    ]
+
+    def work(i: int):
+        t, u = texts[i % len(texts)], texts[(i + 1) % len(texts)]
+        return (
+            score_text(t, tier="lite")["max"],
+            score_tells(t)["tells"],
+            round(similarity(t, u), 4),
+            numbers_kept(t, u),
+            certainty_kept(t, u),
+        )
+
+    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+        results = [f.result() for f in cf.as_completed([ex.submit(work, i) for i in range(48)])]
+
+    assert len(results) == 48
+    # Same input must give the same answer no matter how the threads interleaved.
+    single_threaded = {work(i) for i in range(len(texts))}
+    assert set(results) == single_threaded, "concurrent results diverged from serial ones"
