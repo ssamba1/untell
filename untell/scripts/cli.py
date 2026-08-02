@@ -49,6 +49,7 @@ _COMMANDS: dict[str, str] = {
     "ceiling": "eval.ceiling:main",
     "detector-audit": "eval.detector_audit:main",
     "humanness": "untell.humanness:main",
+    "scrub": "untell.scripts.scrub:main",
 }
 
 _ONE_LINER = {
@@ -62,6 +63,7 @@ _ONE_LINER = {
     "ceiling": "measure the loop's free evasion of the local ensemble",
     "detector-audit": "check every detector for dead/inverted output (integrity gate)",
     "humanness": "score text 0-100: how human does it read (combines tells + detectors)",
+    "scrub": "strip hidden watermark chars (zero-width, tag, bidi, homoglyph)",
 }
 
 

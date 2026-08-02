@@ -56,7 +56,22 @@ Defaults live in `references/thresholds.md` (threshold `0.30`, similarity bar `0
 iterations). Load `references/prompt-rubric.md` **and** `references/ai-tells.md` before your first
 rewrite — `ai-tells.md` is the full catalog of patterns the output must never contain.
 
-1. **Read the input.** If given a file path, read it. Keep the original text verbatim as `ORIG`.
+1. **Read the input.** If given a file path, read it.
+
+1b. **Scrub hidden characters — do this BEFORE locking, not after.** AI text can carry zero-width,
+   tag, bidi and homoglyph characters that identify its origin regardless of how well it reads:
+   ```bash
+   python scripts/scrub.py --json "<raw input>"
+   ```
+   Reports `hidden_before`, `hidden_after`, `changed`, and the cleaned `text`. **Use that cleaned
+   text as `ORIG` from here on** — everything downstream works from it.
+
+   These characters carry no meaning, so nothing in a rewrite has any reason to remove them: they
+   survive every paraphrase untouched. And the order is load-bearing — locking first would capture
+   any hidden characters sitting inside a locked citation or quote into the mapping, and step 6's
+   restore would put them straight back into the finished text. The headless loop scrubs before
+   `lock()` for exactly this reason. If `changed` is `true`, say so in the final report: the user
+   should know their source was watermarked.
 
 2. **Preserve-lock.** Protect citations, numbers, quotes, URLs, and named entities so your
    rewrite cannot alter them:

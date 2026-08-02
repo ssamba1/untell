@@ -127,10 +127,12 @@ pip install -e ".[mcp]" && untell-mcp     # (pip install "untell[mcp]" once on P
 
 ```
 /untell <text|file>
-  preserve-lock citations / numbers / quotes / URLs / entities   (scripts/preserve.py)
   scrub hidden watermark characters — zero-width, tag, control, blank-rendering and
     homoglyph carriers, plus orphaned ZWJ / variation selectors / bidi marks (kept where
     emoji or right-to-left text makes them load-bearing)   (attacks/unicode_tricks.py)
+  preserve-lock citations / numbers / quotes / URLs / entities   (scripts/preserve.py)
+    — scrub first, on purpose: locking first would capture any hidden characters inside a
+      locked span into the mapping, and the final restore would put them straight back
   repeat up to N times:
     score = scripts/score.py <text>          # ensemble of detectors -> {detector: P(AI), max}
     sentences = scripts/sentences.py <text>  # which sentences read as AI (target only these)
