@@ -465,7 +465,9 @@ def test_composite_returns_original_when_no_draw_improves(monkeypatch):
     from untell.rewriter.composite import CompositeRewriter
 
     rw = CompositeRewriter(best_of=2)
-    monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: "worse rewrite")
+    monkeypatch.setattr(
+        rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: "worse rewrite"
+    )
     monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
 
     import untell.scripts.score as score_mod

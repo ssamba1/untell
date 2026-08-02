@@ -747,8 +747,23 @@ class StructuralRewriter(Rewriter):
     def available(self) -> bool:
         return True
 
-    def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
+    def rewrite(
+        self, text: str, score_result: dict, threshold: float = 0.30,
+        intensity: float | None = None,
+    ) -> str:
+        """``intensity`` overrides the configured value for this call only.
+
+        CompositeRewriter sweeps intensity across its best-of draws. It used to do that by
+        assigning ``self._structural.intensity`` and restoring it afterwards, which corrupts the
+        object if anything between the two raises — the restore is not in a ``finally`` — and
+        corrupts it permanently under concurrent use, because a second caller reads the swept value
+        as its "original" and restores that. Measured with 8 threads on one shared instance: the
+        configured 0.7 came back as 0.4, so every later call used the wrong intensity with no error
+        anywhere. An argument cannot leak.
+        """
         # The loop puts the user's --style into score_result; read it instead of ignoring it.
         return structural_rewrite(
-            text, intensity=self.intensity, style=(score_result or {}).get("style")
+            text,
+            intensity=self.intensity if intensity is None else intensity,
+            style=(score_result or {}).get("style"),
         )

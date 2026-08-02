@@ -189,7 +189,7 @@ class TestNeuralComposite:
         if rw._t5 is None:
             pytest.skip("T5 deps unavailable in this environment")
         # Isolate the neural selection: rule stages pass through unchanged.
-        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: t)
+        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: t)
         monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
         # Three diverse draws; the loop must keep the one the detector scores lowest.
         draws = iter(["AI draw one here.", "AI draw two here.", "AI draw three here."])
@@ -405,8 +405,10 @@ class TestCompositeIntensitySweep:
         rw = CompositeRewriter(best_of=3, intensity=0.7)
         seen = []
 
-        def _spy(text, score_result, threshold=0.30):
-            seen.append(rw._structural.intensity)
+        # The sweep is now an ARGUMENT, not an assignment to the shared rewriter, so observe what
+        # was passed rather than what the attribute happens to hold.
+        def _spy(text, score_result, threshold=0.30, intensity=None):
+            seen.append(intensity)
             return "restructured"
 
         monkeypatch.setattr(rw._structural, "rewrite", _spy)
@@ -426,7 +428,7 @@ class TestCompositeIntensitySweep:
     def test_intensity_restored_after_rewrite(self, monkeypatch):
         """The swept value must never leak across calls (shared mutable state bug)."""
         rw = CompositeRewriter(best_of=3, intensity=0.7)
-        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: "x")
+        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: "x")
         monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t)
 
         import untell.scripts.score as score_mod
@@ -467,7 +469,9 @@ class TestCompositeIntensitySweep:
         failures either lost one draw or killed the whole call depending on when they landed.
         """
         rw = CompositeRewriter(best_of=2, intensity=0.7)
-        monkeypatch.setattr(rw._structural, "rewrite", lambda t, s, threshold=0.30: t + " restructured")
+        monkeypatch.setattr(
+            rw._structural, "rewrite", lambda t, s, threshold=0.30, intensity=None: t + " restructured"
+        )
         monkeypatch.setattr(rw._surgical, "rewrite", lambda t, s, threshold=0.30: t + " polished")
 
         import untell.scripts.score as score_mod
@@ -617,3 +621,94 @@ def test_split_round_trips_exactly(text):
     from untell.rewriter.targeted import split_sentences
 
     assert "".join(split_sentences(text)) == text
+
+
+class TestCompositeDoesNotMutateSharedState:
+    """The intensity sweep used to assign `self._structural.intensity` and restore it afterwards.
+
+    Two ways that corrupts the object, both silent:
+      * the restore is not in a `finally`, so any exception between the two leaves the swept value
+        in place permanently;
+      * under concurrency a second caller reads the swept value as its own baseline and "restores"
+        that. Measured with 8 threads on one shared instance: the configured 0.7 came back as 0.4,
+        and every later call used the wrong intensity with nothing raised anywhere.
+    """
+
+    SRC = (
+        "Furthermore, the organization leverages robust methodologies to optimize operational "
+        "outcomes. Moreover, stakeholders utilize comprehensive frameworks to drive innovation."
+    )
+
+    def _patch_score(self, monkeypatch):
+        import untell.scripts.score as score_mod
+
+        monkeypatch.setattr(
+            score_mod, "score_text",
+            lambda t, tier="lite", threshold=0.30: {
+                "max": 0.5, "mean": 0.5, "detectors": {"d": 0.5}, "tier": tier, "scored": True,
+            },
+        )
+
+    def test_intensity_attribute_is_never_mutated(self, monkeypatch):
+        self._patch_score(monkeypatch)
+        rw = CompositeRewriter(best_of=3, intensity=0.7)
+        seen = []
+        real = rw._structural.rewrite
+
+        def _spy(text, score_result, threshold=0.30, intensity=None):
+            seen.append(rw._structural.intensity)  # the ATTRIBUTE, not the argument
+            return real(text, score_result, threshold, intensity=intensity)
+
+        monkeypatch.setattr(rw._structural, "rewrite", _spy)
+        rw.rewrite(self.SRC, {"tier": "lite"})
+
+        assert rw._structural.intensity == 0.7
+        assert set(seen) == {0.7}, f"attribute changed mid-run: {seen}"
+
+    def test_intensity_survives_an_exception_mid_sweep(self, monkeypatch):
+        """No `finally` protected the restore, so a raising transform poisoned the instance."""
+        self._patch_score(monkeypatch)
+        rw = CompositeRewriter(best_of=3, intensity=0.7)
+
+        def _boom(*a, **kw):
+            raise RuntimeError("transform failed")
+
+        monkeypatch.setattr(rw._structural, "rewrite", _boom)
+        with pytest.raises(RuntimeError):
+            rw.rewrite(self.SRC, {"tier": "lite"})
+        assert rw._structural.intensity == 0.7
+
+    def test_concurrent_rewrites_do_not_corrupt_the_instance(self, monkeypatch):
+        import threading
+
+        self._patch_score(monkeypatch)
+        rw = CompositeRewriter(best_of=3, intensity=0.7)
+        errors: list[BaseException] = []
+
+        def worker():
+            try:
+                rw.rewrite(self.SRC, {"tier": "lite"})
+            except BaseException as exc:  # noqa: BLE001 - reported below
+                errors.append(exc)
+
+        threads = [threading.Thread(target=worker) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert not errors, errors
+        assert rw._structural.intensity == 0.7
+
+    def test_the_sweep_still_reaches_the_structural_rewriter(self, monkeypatch):
+        """Removing the mutation must not remove the diversity it existed to create."""
+        self._patch_score(monkeypatch)
+        rw = CompositeRewriter(best_of=3, intensity=0.7)
+        passed = []
+
+        monkeypatch.setattr(
+            rw._structural, "rewrite",
+            lambda t, s, threshold=0.30, intensity=None: passed.append(intensity) or t,
+        )
+        rw.rewrite(self.SRC, {"tier": "lite"})
+        assert sorted(passed) == [0.4, 0.7, 1.0]

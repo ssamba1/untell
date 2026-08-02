@@ -155,9 +155,14 @@ class CompositeRewriter(Rewriter):
         base_intensity = getattr(self._structural, "intensity", 0.7)
         intensities = _intensity_sweep(base_intensity, self.best_of)
         for _attempt in range(self.best_of):
-            self._structural.intensity = intensities[_attempt]
-            # Step 1: structural (sentence-level)
-            restructured = self._structural.rewrite(text, score_result, threshold)
+            # Passed per call, NOT assigned to self._structural. Assigning and restoring left the
+            # shared rewriter holding a swept value whenever anything in between raised, and
+            # corrupted it permanently under concurrent use: a second caller reads the swept value
+            # as its own baseline and "restores" that. Measured with 8 threads, the configured 0.7
+            # came back as 0.4 and stayed there.
+            restructured = self._structural.rewrite(
+                text, score_result, threshold, intensity=intensities[_attempt]
+            )
             # Step 2: surgical (word-level polish)
             polished = self._surgical.rewrite(restructured, score_result, threshold)
             # Score the candidate
@@ -168,7 +173,7 @@ class CompositeRewriter(Rewriter):
                     best_score = cand_score
             except Exception:
                 pass
-        self._structural.intensity = base_intensity  # never leak the swept value across calls
+        # No restore needed any more: nothing was mutated.
 
         # No "consolation" rewrite. This used to force a rewrite when no candidate improved the
         # score, on the theory that changing the text was worth something anyway. MEASURED, it is
