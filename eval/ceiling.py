@@ -94,14 +94,21 @@ def measure_ceiling(
     per_pre: dict[str, list[float]] = {}
     per_post: dict[str, list[float]] = {}
     rewrote = 0
+    unscored = 0
 
     for _run in range(max(1, repeats)):
         run_posts: list[float] = []
         for t in texts:
             pre = score_text(t, tier=tier, threshold=threshold)
-            pre_max.append(pre["max"])
-            for k, v in _numeric(pre).items():
-                per_pre.setdefault(k, []).append(v)
+            # An unscored result carries max: 0.0 as a placeholder, and flagged_rate below counts
+            # `s >= threshold` — so a dead detector stack would report a 0% post-flagged rate, i.e.
+            # "we beat every detector", as the headline ceiling number. Exclude, don't count.
+            if pre.get("scored") is False:
+                unscored += 1
+            else:
+                pre_max.append(pre["max"])
+                for k, v in _numeric(pre).items():
+                    per_pre.setdefault(k, []).append(v)
 
             res = untell_text(
                 t, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rewriter,
@@ -109,10 +116,11 @@ def measure_ceiling(
             )
             if "error" not in res and "post" in res:
                 post = res["post"]
-                post_max.append(post["max"])
-                run_posts.append(post["max"])
-                for k, v in _numeric(post).items():
-                    per_post.setdefault(k, []).append(v)
+                if post.get("scored") is not False:
+                    post_max.append(post["max"])
+                    run_posts.append(post["max"])
+                    for k, v in _numeric(post).items():
+                        per_post.setdefault(k, []).append(v)
                 rewrote += 1
                 # Evasion without meaning preservation is worthless — a rewrite that destroys the
                 # text trivially "beats" every detector. Report it alongside, so a ceiling number
@@ -138,6 +146,7 @@ def measure_ceiling(
         "mean_similarity": _mean(sims),
         "min_similarity": round(min(sims), 4) if sims else None,
         "rewriter_available": rewrote > 0,
+        "unscored": unscored,
         "pre_flagged_rate": flagged_rate(pre_max),
         "post_flagged_rate": flagged_rate(post_max),
         "pre_mean_max": _mean(pre_max),
@@ -154,6 +163,10 @@ def _render(r: dict) -> str:
         "",
         f"  pre  flagged rate: {r['pre_flagged_rate']}   mean max P(AI): {r['pre_mean_max']}",
     ]
+    if r.get("unscored"):
+        # Say which samples produced no signal at all. Silently excluding them would leave a
+        # confident-looking ceiling computed from a fraction of the corpus.
+        lines.insert(1, f"  WARNING: {r['unscored']}/{r['n']} samples scored by NO detector — excluded")
     if r["rewriter_available"]:
         # Denominator is n * repeats, i.e. the number of ATTEMPTS. `rewrote` accumulates across
         # every repeat while `n` is one run's corpus size, so `rewrote/n` printed "(rewrote 9/3)"

@@ -56,8 +56,18 @@ _SAMPLE = [
 ]
 
 
-def _ai_max(text: str, tier: str) -> float:
-    return float(score_text(text, tier=tier)["max"]) if text.strip() else 0.0
+def _ai_max(text: str, tier: str) -> float | None:
+    """Max P(AI), or None when there is nothing to measure.
+
+    score_text returns ``max: 0.0`` as a placeholder when no detector produced a number. Folding
+    that in as a real score would credit every technique in the table with perfect evasion on a
+    broken stack — 0.0 P(AI), 0% flagged — which is the exact shape of the result the tool exists
+    to find.
+    """
+    if not text.strip():
+        return None
+    res = score_text(text, tier=tier)
+    return None if res.get("scored") is False else float(res["max"])
 
 
 def _techniques(tier: str, threshold: float):
@@ -126,12 +136,19 @@ def compare(texts: list[str], tier: str = "full", threshold: float = DEFAULT_THR
                 }
                 continue
             n = len(texts)
+            measured = [s for s in ai_scores if s is not None]
             rows[name] = {
-                "ai_max_mean": round(sum(ai_scores) / n, 4),
+                # Detector-independent columns keep the full denominator; the P(AI) columns are
+                # averaged over what actually scored, and say so when that is not everything.
+                "ai_max_mean": round(sum(measured) / len(measured), 4) if measured else None,
                 "tells_per_100w_mean": round(sum(tell_rates) / n, 2),
                 "tells_total": sum(tell_counts),
                 "sim_mean": round(sum(sims) / n, 3),
-                "flagged_rate": round(sum(1 for s in ai_scores if s >= threshold) / n, 3),
+                "flagged_rate": (
+                    round(sum(1 for s in measured if s >= threshold) / len(measured), 3)
+                    if measured else None
+                ),
+                "unscored": n - len(measured),
             }
     return {"n": len(texts), "tier": tier, "threshold": threshold, "techniques": rows}
 
@@ -147,9 +164,14 @@ def _render(r: dict) -> str:
         if "error" in m:
             lines.append(f"  {name:24} (skipped: {m['error']})")
             continue
+        # "n/a" rather than a number when no detector scored: an empty cell cannot be misread as
+        # a result, a 0.0 can.
+        ai = "n/a" if m.get("ai_max_mean") is None else m["ai_max_mean"]
+        flagged = "n/a" if m.get("flagged_rate") is None else m["flagged_rate"]
+        note = f"  ({m['unscored']}/{r['n']} unscored)" if m.get("unscored") else ""
         lines.append(
-            f"  {name:24} {m['ai_max_mean']:>9} {m['flagged_rate']:>8} "
-            f"{m['tells_per_100w_mean']:>11} {m['sim_mean']:>8}"
+            f"  {name:24} {ai:>9} {flagged:>8} "
+            f"{m['tells_per_100w_mean']:>11} {m['sim_mean']:>8}{note}"
         )
     lines += [
         "",
