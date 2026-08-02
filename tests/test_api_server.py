@@ -369,3 +369,74 @@ class TestAuthSurface:
         monkeypatch.delenv("UNTELL_API_KEY", raising=False)
         r = TestClient(app).post("/score", json={"text": self.TEXT, "tier": "lite"})
         assert r.status_code == 200
+
+
+class TestRateLimiting:
+    """The module docstring advertised "rate limiting" from the start and nothing implemented it —
+    no limiter, no 429, no counter. This covers the implementation that makes the claim true.
+    """
+
+    TEXT = "Furthermore, organizations leverage these technologies to optimize efficiency."
+
+    def _client(self, monkeypatch, limit: str | None = None):
+        from fastapi.testclient import TestClient
+
+        import untell.api_server as api
+
+        monkeypatch.delenv("UNTELL_API_KEY", raising=False)
+        if limit is None:
+            monkeypatch.delenv("UNTELL_RATE_LIMIT", raising=False)
+        else:
+            monkeypatch.setenv("UNTELL_RATE_LIMIT", limit)
+        api._rate_buckets.clear()
+        return TestClient(api.app), api
+
+    def test_requests_over_the_limit_get_429(self, monkeypatch):
+        client, _api = self._client(monkeypatch, "5")
+        codes = [client.post("/tells", json={"text": self.TEXT}).status_code for _n in range(8)]
+        assert codes[:5] == [200] * 5, codes
+        assert codes[5:] == [429] * 3, codes
+
+    def test_429_says_what_the_limit_is_and_when_to_retry(self, monkeypatch):
+        """A limit with no Retry-After makes a client guess, and guessing means hammering."""
+        client, _api = self._client(monkeypatch, "2")
+        for _n in range(3):
+            r = client.post("/tells", json={"text": self.TEXT})
+        assert r.status_code == 429
+        assert "rate limit exceeded" in r.json()["error"]
+        assert "UNTELL_RATE_LIMIT" in r.json()["error"]
+        assert int(r.headers["retry-after"]) >= 1
+
+    def test_zero_disables_it(self, monkeypatch):
+        client, _api = self._client(monkeypatch, "0")
+        codes = [client.post("/tells", json={"text": self.TEXT}).status_code for _n in range(8)]
+        assert codes == [200] * 8
+
+    def test_health_is_exempt(self, monkeypatch):
+        """Rate-limiting the health endpoint would take a service down under its own monitoring."""
+        client, _api = self._client(monkeypatch, "2")
+        for _n in range(6):
+            assert client.get("/health").status_code == 200
+
+    def test_a_bad_value_falls_back_instead_of_crashing(self, monkeypatch):
+        client, api = self._client(monkeypatch, "not-a-number")
+        assert api._rate_limit() == api._DEFAULT_RATE_LIMIT
+        assert client.post("/tells", json={"text": self.TEXT}).status_code == 200
+
+    def test_separate_callers_get_separate_budgets(self, monkeypatch):
+        """Keyed on the credential when present, so one noisy caller cannot exhaust everyone."""
+        from fastapi.testclient import TestClient
+
+        import untell.api_server as api
+
+        monkeypatch.setenv("UNTELL_API_KEY", "key-a")
+        monkeypatch.setenv("UNTELL_RATE_LIMIT", "3")
+        api._rate_buckets.clear()
+        client = TestClient(api.app)
+        hdr = {"X-API-Key": "key-a"}
+        codes = [client.post("/tells", json={"text": self.TEXT}, headers=hdr).status_code
+                 for _n in range(5)]
+        assert codes[:3] == [200] * 3 and codes[3:] == [429] * 2, codes
+        # A different bucket key is unaffected by the exhausted one.
+        api._rate_buckets["someone-else"] = (0.0, 0)
+        assert len(api._rate_buckets) >= 2

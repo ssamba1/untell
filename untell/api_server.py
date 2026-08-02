@@ -46,6 +46,8 @@ from untell.scripts.sentences import score_sentences
 from untell.scripts.tells import score_tells
 from untell.scripts.verify import verify
 
+logger = logging.getLogger(__name__)
+
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
@@ -193,6 +195,62 @@ def _safe(result: dict) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# Rate limiting
+# ---------------------------------------------------------------------------
+#
+# The module docstring has advertised "rate limiting" since this server was written and nothing
+# implemented it — there was no limiter, no 429, no counter. Retracting the claim was one option;
+# making it true is the better one for a service that ships with auth and is described as
+# production.
+#
+# Fixed window, in-process, no dependency. Keyed on the API key when one is presented, else the
+# client address, so one noisy caller cannot exhaust everyone else's budget.
+#
+# HONEST LIMITATION: the counter lives in this process. Behind multiple uvicorn workers each has
+# its own, so the effective limit is per worker, not global. That is fine for the single-process
+# default this server documents and wrong for a horizontally-scaled deployment, which needs a
+# shared store (Redis) — stated here rather than discovered later.
+_RATE_WINDOW_SECONDS = 60
+_DEFAULT_RATE_LIMIT = 60
+_rate_buckets: dict[str, tuple[float, int]] = {}
+
+
+def _rate_limit() -> int:
+    """Requests allowed per window. 0 disables. Read per call so tests and ops can change it."""
+    raw = os.environ.get("UNTELL_RATE_LIMIT", "").strip()
+    if not raw:
+        return _DEFAULT_RATE_LIMIT
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        logger.warning("UNTELL_RATE_LIMIT=%r is not an integer; using %d", raw, _DEFAULT_RATE_LIMIT)
+        return _DEFAULT_RATE_LIMIT
+
+
+def _rate_limited(request: Request, credential: str) -> int | None:
+    """Return seconds to wait if this caller is over the limit, else None."""
+    limit = _rate_limit()
+    if limit <= 0:
+        return None
+    import time
+
+    # Prefer the credential: two callers behind one NAT are different clients, and one client
+    # rotating source ports is not several.
+    client = request.client.host if request.client else "unknown"
+    bucket_key = credential or client
+
+    now = time.monotonic()
+    started, count = _rate_buckets.get(bucket_key, (now, 0))
+    if now - started >= _RATE_WINDOW_SECONDS:
+        started, count = now, 0
+    count += 1
+    _rate_buckets[bucket_key] = (started, count)
+    if count > limit:
+        return max(1, int(_RATE_WINDOW_SECONDS - (now - started)))
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Middleware
 # ---------------------------------------------------------------------------
 
@@ -206,6 +264,19 @@ async def auth_middleware(request: Request, call_next) -> JSONResponse | Respons
     err = _check_auth(auth, x_key)
     if err:
         return JSONResponse(content={"error": err}, status_code=401)
+
+    # Rate limit AFTER auth, so an unauthenticated flood cannot consume a legitimate caller's
+    # budget by sharing their bucket.
+    retry_after = _rate_limited(request, x_key or auth or "")
+    if retry_after is not None:
+        return JSONResponse(
+            content={
+                "error": f"rate limit exceeded — {_rate_limit()} requests per "
+                f"{_RATE_WINDOW_SECONDS}s. Set UNTELL_RATE_LIMIT to change it, 0 to disable."
+            },
+            status_code=429,
+            headers={"Retry-After": str(retry_after)},
+        )
     return await call_next(request)
 
 
