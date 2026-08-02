@@ -130,8 +130,15 @@ class LoopResult:
     history: list[float] = field(default_factory=list)
 
 
-def noop(text: str, **_kw) -> LoopResult:
-    s = score_text(text, tier="lite")
+def noop(text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, **_kw) -> LoopResult:
+    """The control: unchanged text, scored by the SAME ensemble as every other strategy.
+
+    ``tier`` used to be swallowed by ``**_kw`` and hardcoded to lite, so at --tier full the control
+    row and the strategy rows were produced by different detectors and the comparison — which is
+    the entire point of the harness — was between two different measurements. Measured on one
+    sample: noop pre_max 0.5323 against single_pass pre_max 1.0000, same text.
+    """
+    s = score_text(text, tier=tier, threshold=threshold)
     return LoopResult(text=text, iterations=0, pre=s, post=s, similarity=1.0, history=[s["max"]])
 
 

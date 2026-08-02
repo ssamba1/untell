@@ -21,6 +21,31 @@ def test_noop_returns_input_unchanged():
     assert res.similarity == 1.0
 
 
+@pytest.mark.parametrize("name", sorted(STRATEGIES))
+def test_every_strategy_scores_at_the_tier_it_was_given(name, monkeypatch):
+    """The comparison is only valid if every row was produced by the same ensemble.
+
+    ``noop`` swallowed ``tier`` in **_kw and hardcoded lite, so at --tier full the control row was
+    scored by a different detector set than the strategies it was the control for. The existing
+    tests all passed tier="lite" explicitly, which is the value that happened to be hardcoded.
+    """
+    import eval.baselines as baselines
+
+    seen: list[str] = []
+
+    def _spy(text, tier="full", threshold=0.3, **kw):
+        seen.append(tier)
+        return {"max": 0.5, "mean": 0.5, "detectors": {"fake": 0.5}, "scored": True, "flagged": True}
+
+    monkeypatch.setattr(baselines, "score_text", _spy)
+    monkeypatch.setattr(baselines, "similarity", lambda a, b: 1.0)
+
+    STRATEGIES[name]("Some sample text that is long enough to work with.", tier="full", threshold=0.3)
+
+    assert seen, f"{name} never scored anything"
+    assert set(seen) == {"full"}, f"{name} scored at {sorted(set(seen))}, not the requested tier"
+
+
 def test_single_pass_rewrites_and_scores():
     text = "Furthermore, artificial intelligence has transformed industries. Moreover, it improves efficiency overall."
     res = single_pass(text, tier="lite")
