@@ -158,6 +158,23 @@ def contradicts(a: str, b: str, bar: float = DEFAULT_CONTRADICTION_BAR) -> bool:
 
 # Entailment floor for the relaxed gate. Measured, meaning-lost/inverted rewrites sit at
 # 0.000-0.002 and faithful register shifts at 0.016-0.921, so 0.005 sits in an 8x-wide empty gap.
+#
+# DO NOT RAISE THIS to catch more. It is tempting: rewrites that ADD content the source never
+# stated ("The study found an effect." -> "The peer-reviewed study found a large effect.") score
+# 0.003-0.011, above the floor, and a bar around 0.02 would reject them. Re-measured on 26 real
+# composite/structural/surgical rewrites, that bar also rejects genuinely faithful work:
+#
+#     faithful (real rewriter output, n=26)   min 0.01201, three samples below 0.02
+#     added-content rewrites (n=8)            max 0.01102
+#
+# The two populations are 0.001 apart with no margin, so any floor that separates them on one
+# sample is fitting noise. Heavy rewording — which is what humanizing IS — genuinely lowers
+# bidirectional entailment, and the metric cannot tell that from a fabricated detail.
+#
+# That is why added/lost specifics are caught by narrow mechanical checks instead —
+# :mod:`untell.scripts.numerals` for quantities, :mod:`untell.scripts.hedges` for claim strength,
+# :mod:`untell.scripts.roles` for argument swaps. Each answers a question NLI cannot, without
+# putting faithful rewrites at risk.
 DEFAULT_ENTAILMENT_FLOOR = 0.005
 # Similarity floor used only when NLI is carrying the meaning check. It exists to catch gross topic
 # drift that NLI might rate as merely "neutral", not to judge fidelity — NLI does that far better.

@@ -14,10 +14,16 @@ Entailment is the min of both directions, so "causes" -> "may cause" should scor
 does, just not below 0.005. Raising that floor is the wrong lever: it was tuned to admit 7 of 8
 faithful register shifts, and faithful rewrites reword heavily.
 
-So this is deliberately mechanical, like :mod:`untell.scripts.numbers`. It asks one question per
-class: the source hedged this claim somehow — does the rewrite still hedge it *somehow*? Any term
-from the same class counts, so "may" -> "might" and "some" -> "a handful of" are fine. Only
-dropping the class entirely is a veto.
+So this is deliberately mechanical, like :mod:`untell.scripts.numerals`. It asks one question
+per class: the source hedged this claim somehow — does the rewrite still hedge it *somehow*?
+Any term from the same class counts, so "may" -> "might" and "some" -> "a handful of" are
+fine. Only dropping the class entirely is a veto.
+
+Two rules are not class drops but the same failure reached by ADDING something:
+``causal_upgrade`` (source reported an association, rewrite asserts causation) and
+``intensifier_added`` (rewrite introduces "large"/"dramatically"/"collapsed" where the
+source was neutral). Adding a MINIMIZER is deliberately allowed — a rewrite more cautious
+than its source is not a fidelity failure.
 
 API:
     dropped_hedges(source, candidate) -> list[str]   # class names the rewrite dropped
@@ -148,6 +154,28 @@ def _causal_upgrade(source: str, candidate: str) -> bool:
     return _asserts_causation(candidate)
 
 
+# Intensifiers the source did not use. The mirror of the `degree` class: that one catches a
+# minimizer being DROPPED ("fell slightly" -> "collapsed"), this catches a maximizer being ADDED to
+# a neutral source ("found an effect" -> "found a LARGE effect").
+#
+# The asymmetry is deliberate. Adding a minimizer ("fell" -> "fell somewhat") makes the rewrite more
+# cautious than the source, which is not a fidelity failure. Adding an intensifier makes it claim
+# more, which is. MEASURED, this is a real gap and not one NLI can close: added-content rewrites
+# score bidirectional entailment 0.003-0.011 while genuinely faithful rewriter output reaches down
+# to 0.012 — see the note on DEFAULT_ENTAILMENT_FLOOR in entailment.py.
+_INTENSIFIER_RE = re.compile(
+    r"(?<!\w)(?:large|huge|massive|dramatic|dramatically|sharply|significantly|substantially|"
+    r"vastly|enormous|enormously|major|severe|severely|drastic|drastically|considerably|"
+    r"markedly|greatly|hugely|steeply|soared|skyrocketed|collapsed|plummeted|plunged|surged)(?!\w)",
+    re.IGNORECASE,
+)
+
+
+def _intensifier_added(source: str, candidate: str) -> bool:
+    """True when the rewrite introduces an intensifier the source did not use."""
+    return bool(_INTENSIFIER_RE.search(candidate)) and not _INTENSIFIER_RE.search(source)
+
+
 def _classes_present(text: str) -> set[str]:
     return {name for name, rx in _CLASS_RES.items() if rx.search(text)}
 
@@ -162,6 +190,8 @@ def dropped_hedges(source: str, candidate: str) -> list[str]:
     found = sorted(_classes_present(source) - _classes_present(candidate))
     if _causal_upgrade(source, candidate):
         found.append("causal_upgrade")
+    if _intensifier_added(source, candidate):
+        found.append("intensifier_added")
     return found
 
 

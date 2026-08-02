@@ -186,3 +186,66 @@ class TestCausalUpgrade:
         bad, good = "Screen time causes poor sleep.", "Screen time is linked to poor sleep."
         assert not meaning_preserved(src, bad, similarity(src, bad), strict_sim_bar=0.76)
         assert meaning_preserved(src, good, similarity(src, good), strict_sim_bar=0.76)
+
+
+class TestIntensifierAdded:
+    """The mirror of the `degree` class: a maximizer ADDED to a neutral source.
+
+    NLI cannot cover this. MEASURED, added-content rewrites score bidirectional entailment
+    0.003-0.011 while genuinely faithful rewriter output reaches down to 0.012 (n=26 real
+    composite/structural/surgical rewrites) — the populations are 0.001 apart, so no floor
+    separates them without rejecting real work. See DEFAULT_ENTAILMENT_FLOOR in entailment.py.
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "candidate"),
+        [
+            ("The study found an effect.", "The study found a large effect."),
+            ("The study found an effect.", "The peer-reviewed study found a large effect."),
+            ("The tool reduces errors.", "The tool dramatically reduces errors."),
+            ("Revenue fell.", "Revenue collapsed."),
+            ("Adoption grew.", "Adoption skyrocketed."),
+        ],
+    )
+    def test_added_intensifier_is_caught(self, source, candidate):
+        assert not certainty_kept(source, candidate)
+        assert "intensifier_added" in dropped_hedges(source, candidate)
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            ("The study found a large effect.", "The study found a big effect.", "source already intense"),
+            ("Revenue collapsed.", "Revenue fell off a cliff.", "intensity preserved"),
+            ("The study found an effect.", "The research showed an effect.", "plain reword"),
+            ("Sales rose last quarter.", "Revenue went up in the last quarter.", "plain reword 2"),
+        ],
+    )
+    def test_no_false_veto(self, source, candidate, label):
+        assert certainty_kept(source, candidate), f"{label}: {dropped_hedges(source, candidate)}"
+
+    def test_adding_a_minimizer_is_allowed(self):
+        """Deliberate asymmetry: a rewrite more cautious than its source is not a fidelity failure.
+        Only claiming MORE is."""
+        assert certainty_kept("Revenue fell.", "Revenue fell somewhat.")
+        assert certainty_kept("The tool reduces errors.", "The tool reduces errors a little.")
+
+    def test_real_rewriter_output_is_not_vetoed(self):
+        """Measured 0 vetoes over 27 rewrites, including real HC3 AI paragraphs."""
+        from untell.rewriter import get_rewriter
+        from untell.scripts.score import score_text
+
+        sources = [
+            "Furthermore, organizations increasingly leverage these robust technologies to optimize efficiency.",
+            "Revenue fell slightly last quarter and costs rose modestly.",
+            "Some studies suggest the approach usually improves outcomes.",
+        ]
+        vetoed = []
+        for name in ("composite", "structural", "surgical"):
+            rw = get_rewriter(prefer=name)
+            if rw is None or not rw.available():
+                continue
+            for src in sources:
+                out = rw.rewrite(src, score_text(src, tier="lite"), 0.30)
+                if not certainty_kept(src, out):
+                    vetoed.append((name, dropped_hedges(src, out), out))
+        assert not vetoed, f"rewriter output would be vetoed: {vetoed}"
