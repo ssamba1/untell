@@ -187,3 +187,57 @@ def test_count_hidden_matches_what_scrub_hidden_removes(text):
         f"count_hidden reported {count_hidden(text)} but scrubbing removed {removed} chars from "
         f"{text!r} — a caller would be told the text is clean while it is silently modified"
     )
+
+
+def test_wordnet_is_probed_once_not_per_word():
+    """A failed import is not cached by Python — it re-scans sys.path every single time.
+
+    `synonyms()` did `from nltk.corpus import wordnet` inside a try/except on every call, which
+    reads as free when nltk is absent. MEASURED in a warm loop profile, it was the single largest
+    non-model cost:
+
+        7389 find_spec calls, every one for 'nltk'
+        36720 _path_join, 7344 nt.stat, ~0.6s of pure import machinery
+
+    Isolated: 400 synonym lookups took 140.0 ms re-importing each time versus 0.9 ms with the probe
+    cached — 153x. After the fix the same loop run makes ZERO find_spec calls.
+    """
+    import importlib._bootstrap_external as be
+
+    from untell.attacks import word_importance as wi
+
+    wi._wordnet_cache = wi._WORDNET_UNSET  # force a cold probe
+
+    seen = []
+    original = be.FileFinder.find_spec
+
+    def spy(self, fullname, target=None):
+        if fullname.split(".")[0] == "nltk":
+            seen.append(fullname)
+        return original(self, fullname, target)
+
+    def probe_cost(n_words: int) -> int:
+        """find_spec calls for nltk while looking up ``n_words`` synonyms, from a cold probe."""
+        wi._wordnet_cache = wi._WORDNET_UNSET
+        seen.clear()
+        be.FileFinder.find_spec = spy
+        try:
+            for i in range(n_words):
+                wi.synonyms(f"leverage{i % 3}")
+        finally:
+            be.FileFinder.find_spec = original
+        return len(seen)
+
+    # A single failed import scans EVERY sys.path entry, so the absolute count depends on the
+    # environment. The invariant that matters is that it does not scale with the number of words:
+    # one probe per process, not one per lookup.
+    few, many = probe_cost(3), probe_cost(30)
+    assert many <= few, f"nltk probe scales with word count: {few} calls for 3 words, {many} for 30"
+
+
+def test_synonyms_still_returns_builtin_entries():
+    """The probe must not disturb the built-in map, which is the path that always works."""
+    from untell.attacks.word_importance import synonyms
+
+    assert "use" in synonyms("leverage")
+    assert synonyms("zzzznotaword") == []

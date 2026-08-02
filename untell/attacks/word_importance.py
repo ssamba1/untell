@@ -230,20 +230,50 @@ _SYN: dict[str, list[str]] = {
 }
 
 
+_WORDNET_UNSET = object()
+_wordnet_cache = _WORDNET_UNSET  # _WORDNET_UNSET = not probed; None = unavailable; else the module
+
+
+def _wordnet():
+    """Return nltk's wordnet corpus, or None. Probed once.
+
+    `synonyms()` used to `from nltk.corpus import wordnet` on every call, inside a try/except. That
+    reads as free when nltk is missing — but Python does NOT cache failed imports, so every call
+    re-scanned the whole of sys.path. MEASURED in a warm 3-iteration best-of-3 loop profile:
+
+        7389 find_spec calls, all for 'nltk', ~0.6s of pure import machinery
+        (36720 _path_join, 7344 nt.stat)
+
+    One probe per process instead. Same lazy-sentinel pattern as `quality._st_model` and
+    `preserve`'s NER guard: _UNSET means not yet probed, None means probed and absent.
+    """
+    global _wordnet_cache
+    if _wordnet_cache is not _WORDNET_UNSET:
+        return _wordnet_cache
+    try:
+        from nltk.corpus import wordnet as _wn
+
+        _wn.synsets("test")  # the corpus is a lazy loader; touch it so a missing download fails here
+        _wordnet_cache = _wn
+    except Exception:
+        _wordnet_cache = None
+    return _wordnet_cache
+
+
 def synonyms(word: str) -> list[str]:
     """Synonym candidates for ``word`` — built-in map plus WordNet (if nltk is available)."""
     w = word.lower()
     out = list(_SYN.get(w, []))
-    try:
-        from nltk.corpus import wordnet
-
-        for syn in wordnet.synsets(w):
-            for lemma in syn.lemmas():
-                name = lemma.name().replace("_", " ")
-                if name.lower() != w and name.replace(" ", "").isalpha():
-                    out.append(name)
-    except Exception:
-        pass
+    wordnet = _wordnet()
+    if wordnet is not None:
+        try:
+            for syn in wordnet.synsets(w):
+                for lemma in syn.lemmas():
+                    name = lemma.name().replace("_", " ")
+                    if name.lower() != w and name.replace(" ", "").isalpha():
+                        out.append(name)
+        except Exception:
+            pass
     seen: set[str] = set()
     deduped: list[str] = []
     for s in out:
