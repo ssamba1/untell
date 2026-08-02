@@ -389,11 +389,13 @@ def _render(result: dict) -> str:
     return "\n".join(lines)
 
 
-def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    from untell.scripts.io_utils import configure_utf8_io
+def build_parser() -> argparse.ArgumentParser:
+    """The `untell humanize` argument parser.
 
-    configure_utf8_io()
+    Split out of ``main`` so the defaults it declares can be read without running the CLI. The REST
+    and MCP surfaces restate several of them (tier, rewriter, best_of) and had drifted to weaker
+    values; the tests now compare against this parser rather than against a hand-copied constant.
+    """
     parser = argparse.ArgumentParser(prog="untell-loop", description="Run the headless untell loop.")
     parser.add_argument("text", nargs="?", help="text to untell (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
@@ -471,7 +473,15 @@ def main(argv: list[str] | None = None) -> int:
         "took roberta 0.523->0.080 mean where a single draw reached only ~0.30. Use 1 for speed.",
     )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    from untell.scripts.io_utils import configure_utf8_io
+
+    configure_utf8_io()
+    args = build_parser().parse_args(argv)
 
     if args.file:
         from untell.scripts.io_utils import read_file

@@ -165,12 +165,13 @@ def _render(v: dict) -> str:
     return "\n".join(lines)
 
 
-def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    from untell.scripts.io_utils import configure_utf8_io
+def build_parser() -> argparse.ArgumentParser:
+    """The `untell-verify` argument parser.
 
-    configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
-    load_env()  # pick up ANTHROPIC_API_KEY / commercial keys from a .env file if present
+    Split out of ``main`` so the tier vocabulary it declares — which includes the "" that means
+    commercial-only — can be read without running the CLI. POST /verify restates it, and a test
+    pins the two together rather than trusting them to stay in step.
+    """
     parser = argparse.ArgumentParser(prog="untell-verify", description="Verify text against AI detectors (local ensemble + commercial checkers).")
     parser.add_argument("text", nargs="?", help="text to verify (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
@@ -202,7 +203,16 @@ def main(argv: list[str] | None = None) -> int:
         help="comma-separated free-web-UI checkers to drive via Playwright (e.g. 'zerogpt'). "
         "No API key, but slow/fragile; respect each site's terms.",
     )
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    from untell.scripts.io_utils import configure_utf8_io
+
+    configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
+    load_env()  # pick up ANTHROPIC_API_KEY / commercial keys from a .env file if present
+    args = build_parser().parse_args(argv)
     browser = [s.strip() for s in args.browser.split(",")] if args.browser else None
 
     if args.file:
