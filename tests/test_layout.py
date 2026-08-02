@@ -126,3 +126,73 @@ def test_unterminated_fence_does_not_swallow_the_rest_silently():
     src = f"prose\n\n{FENCE}\nx = 1\ny = 2"
     out = apply_per_block(src, lambda b: "REWRITTEN")
     assert "x = 1" in out and "y = 2" in out
+
+
+class TestBlocksExposesTheUnits:
+    """`blocks()` is the same partitioning as apply_per_block, for callers that need the units.
+
+    Per-sentence targeting is the case that needs it: it splits on sentence terminators, and a
+    bullet list, transcript or headings outline has none, so the whole document came back as one
+    "sentence" and the worst-sentence list named all of it. Measured at 40 lines each, units before
+    the fix: bullets 1, headings 1, transcript 1, semicolon run-on 1 — against 40 for prose.
+    """
+
+    def test_markers_become_separate_units_with_their_marker_kept(self):
+        from untell.layout import blocks
+
+        src = "- first item\n- second item\n- third item"
+        assert blocks(src) == ["- first item", "- second item", "- third item"]
+
+    def test_headings_become_separate_units(self):
+        from untell.layout import blocks
+
+        src = "## Section one\n## Section two"
+        assert blocks(src) == ["## Section one", "## Section two"]
+
+    def test_soft_wrapped_lines_stay_one_unit(self):
+        """The reason blocks() cannot simply split on newlines: a wrapped paragraph is one unit,
+        and splitting it would hand the caller half-sentences."""
+        from untell.layout import blocks
+
+        src = "This sentence is wrapped\nacross two lines but is one\nsentence all the same."
+        assert blocks(src) == ["This sentence is wrapped\nacross two lines but is one\nsentence all the same."]
+
+    def test_blank_lines_separate_units(self):
+        from untell.layout import blocks
+
+        assert blocks("first para\n\nsecond para") == ["first para", "second para"]
+
+    def test_fenced_code_is_not_a_unit(self):
+        from untell.layout import blocks
+
+        src = f"prose here\n\n{FENCE}\nx = 1\n{FENCE}\n\nmore prose"
+        assert blocks(src) == ["prose here", "more prose"]
+
+    def test_empty_and_whitespace_yield_nothing(self):
+        from untell.layout import blocks
+
+        assert blocks("") == []
+        assert blocks("   \n\n  ") == []
+
+    def test_single_paragraph_is_one_unit(self):
+        from untell.layout import blocks
+
+        assert blocks("Just one line here.") == ["Just one line here."]
+
+    def test_blocks_and_apply_per_block_agree_on_where_units_start(self):
+        """Both are built on one partitioner, so they cannot drift apart."""
+        from untell.layout import apply_per_block, blocks
+
+        from untell.layout import _LINE_MARKER_RE
+
+        src = DOC
+        seen: list[str] = []
+        apply_per_block(src, lambda b: seen.append(b) or b)
+        # apply_per_block sees marker BODIES; blocks() re-attaches the marker. Strip with the
+        # module's own pattern rather than a hand-rolled one, which is how this test first got the
+        # "# " heading prefix wrong.
+        stripped = []
+        for b in blocks(src):
+            m = _LINE_MARKER_RE.match(b)
+            stripped.append(m.group(2) if m else b)
+        assert stripped == seen

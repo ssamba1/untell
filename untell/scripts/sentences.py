@@ -87,7 +87,16 @@ def score_sentences(
     on that path it is not one.
     """
     _warn_if_targeting_is_uninformative(tier)
-    sents = split_sentences(text)
+    # Split within LAYOUT BLOCKS, not across the whole document. split_sentences breaks on
+    # terminators, and a bullet list, transcript or headings outline has none — so the entire
+    # document came back as one "sentence" and the worst-sentence list named all of it, which is no
+    # localisation at all. MEASURED at 40 lines each: bullets 1 unit, transcript 1, outline 1,
+    # semicolon run-on 1, against 40 for ordinary prose. A line that carries a marker is its own
+    # unit; consecutive plain lines stay together so a soft-wrapped paragraph is still split by
+    # sentence rather than by line.
+    from untell.layout import blocks
+
+    sents = [s for block in blocks(text) for s in split_sentences(block)] or split_sentences(text)
     # Score all sentences in one batch so the detector ensemble loads once for the whole
     # paragraph rather than once per sentence (the hot path on the full tier).
     results = batch_score_texts(sents, tier=tier, threshold=threshold)

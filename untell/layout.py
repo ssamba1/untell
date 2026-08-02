@@ -44,32 +44,69 @@ def apply_per_block(text: str, transform: Callable[[str], str]) -> str:
     return out.replace("\n", "\r\n") if crlf else out
 
 
-def _walk(text: str, transform: Callable[[str], str]) -> str:
+def blocks(text: str) -> list[str]:
+    """The prose units of ``text``, in order, with layout lines and empty units dropped.
+
+    The same partitioning :func:`apply_per_block` uses, exposed for callers that need the UNITS
+    rather than a rewritten document. Per-sentence targeting is the case that needs it: it splits on
+    sentence terminators, so a bullet list, a transcript or a headings outline — none of which has
+    any — collapses to a single unit and the "worst sentences" it reports name the whole document.
+
+    Marked lines keep their marker, because the unit a reader sees includes it.
+    """
     out: list[str] = []
+    for kind, prefix, body in _segments(text.replace("\r\n", "\n")):
+        if kind == "prose" and body.strip():
+            out.append(prefix + body)
+    return out
+
+
+def _segments(text: str):
+    """Partition ``text`` into (kind, prefix, body) triples, in order.
+
+    ``kind`` is "prose" when ``body`` is transformable text, and "layout" when the line must be
+    reproduced verbatim (blank lines, fenced code, fence markers). ``prefix`` is a list bullet,
+    ordered number, blockquote arrow or ATX heading, re-attached unchanged.
+
+    Both public entry points are built on this so the two can never disagree about where a block
+    starts — which they would, being twenty lines apart and easy to edit independently.
+    """
     buffer: list[str] = []
     in_fence = False
 
-    def flush() -> None:
+    def flush():
         if buffer:
-            out.append(transform("\n".join(buffer)))
+            joined = "\n".join(buffer)
             buffer.clear()
+            return [("prose", "", joined)]
+        return []
 
     for line in text.split("\n"):
         if _FENCE_RE.match(line):
-            flush()
+            yield from flush()
             in_fence = not in_fence
-            out.append(line)
+            yield ("layout", "", line)
             continue
         if in_fence or not line.strip():
-            flush()
-            out.append(line)
+            yield from flush()
+            yield ("layout", "", line)
             continue
         marker = _LINE_MARKER_RE.match(line)
         if marker:
-            flush()
-            prefix, body = marker.group(1), marker.group(2)
-            out.append(prefix + (transform(body) if body.strip() else body))
+            yield from flush()
+            yield ("prose", marker.group(1), marker.group(2))
             continue
         buffer.append(line)
-    flush()
+    yield from flush()
+
+
+def _walk(text: str, transform: Callable[[str], str]) -> str:
+    out: list[str] = []
+    for kind, prefix, body in _segments(text):
+        if kind == "layout":
+            out.append(body)
+        elif body.strip():
+            out.append(prefix + transform(body))
+        else:
+            out.append(prefix + body)
     return "\n".join(out)
