@@ -162,8 +162,18 @@ Three design choices make it work where blind paraphrasers fail:
    regulator sued the company" — score 0.99 entailment, because as bags of tokens they are identical.
    Word order cannot separate those from a faithful voice change, so `scripts/roles.py` compares
    parsed (subject, verb, object) structure with the passive normalised into active order:
-   **9/9 role permutations caught, 0/13 faithful rewrites falsely vetoed.** End to end the gate now
-   admits **0 of 13** meaning-changing rewrites.
+   **9/9 role permutations caught, 0/13 faithful rewrites falsely vetoed** by that check. End to end
+   the gate admits **0 of 17** meaning-changing rewrites.
+
+   The full gate is a conjunction — similarity floor, contradiction, bidirectional entailment,
+   predicate-argument structure, retained quantities, retained claim strength — and it is
+   deliberately a little strict. Measured on that same faithful set it rejects **1 of 13**: the
+   hedge-to-hedge swap "the results *suggest* … *some* patients" → "the results *hint* … *certain*
+   patients", where the claim-strength check cannot tell a lateral move between two weak hedges from
+   a genuine upgrade. Measured on **25 candidates the composite rewriter actually produced**, the
+   whole gate passes 84% — rejections split 8% roles, 4% claim strength, 4% quantities, 0% NLI. That
+   is the intended trade: a gate that rejects nothing is not a guarantee, and the loop simply draws
+   again.
 3. **Citations, numbers, quotes, URLs and named entities are locked byte-for-byte** via preserve-lock, so
    your APA/IEEE/MLA references and your facts survive the rewrite untouched.
 
