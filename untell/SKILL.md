@@ -73,8 +73,8 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    `lock()` for exactly this reason. If `changed` is `true`, say so in the final report: the user
    should know their source was watermarked.
 
-2. **Preserve-lock.** Protect citations, numbers, quotes, URLs, and named entities so your
-   rewrite cannot alter them:
+2. **Preserve-lock.** Protect citations, numbers, quotes, URLs, named entities, code (fenced and
+   inline), file paths, CLI flags and environment variables so your rewrite cannot alter them:
    ```bash
    python scripts/preserve.py "<ORIG>"
    ```
