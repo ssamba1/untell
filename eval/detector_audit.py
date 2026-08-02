@@ -64,6 +64,8 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
+from untell.scripts.score import DEFAULT_THRESHOLD  # noqa: E402  (after the sys.path shim above)
+
 # A detector whose output varies by less than this across the probe set is emitting a constant.
 MIN_RANGE = 0.05
 # A gap this negative means human text scores higher than AI text — the convention is backwards.
@@ -73,6 +75,12 @@ WEAK_GAP = 0.05
 # AUROC below this is an inverted detector; below WEAK_AUROC it responds but barely separates.
 INVERT_AUROC = 0.45
 WEAK_AUROC = 0.65
+# Fraction of HUMAN documents a detector may flag at the default threshold before the calibration
+# is the problem rather than the discrimination. A tool that tells people their own writing is
+# machine-generated is worse than useless to them, and the ensemble takes `max`, so one badly-scaled
+# detector sets the floor for every tier that includes it. 20% is generous — the two detectors this
+# check was added for were sitting at 92% and 32% with AUROC 0.999+.
+MAX_FPR = 0.20
 
 # Human-written prose: specific, uneven, incidental detail. Deliberately NOT "polished".
 # PARAGRAPH length on purpose — see the module docstring. At one sentence per probe this set
@@ -226,8 +234,16 @@ def audit_detector(name: str, det, probes: tuple[list[str], list[str]] | None = 
     rng = max(human + ai) - min(human + ai)
     au = auroc(ai, human)
 
-    # AUROC decides direction and separation; it is threshold-free, so unlike the mean gap it
-    # cannot be rescued by one outlier dragging a class average across the line.
+    # What the USER experiences is `max >= threshold`, not a ranking. AUROC is threshold-free and
+    # therefore blind to a detector that separates the classes perfectly while reporting them on a
+    # scale that puts ordinary human writing over the line. Two detectors shipped exactly that and
+    # this audit called both healthy at AUROC 0.999+ the whole time:
+    #   fast_detectgpt          human mean 0.510, 92% of human documents flagged
+    #   perplexity_burstiness   human mean 0.244, 32% flagged
+    # Both were fixed by moving a logistic midpoint; neither moved AUROC by more than 0.001.
+    fpr = sum(1 for x in human if x >= DEFAULT_THRESHOLD) / len(human)
+    tpr = sum(1 for x in ai if x >= DEFAULT_THRESHOLD) / len(ai)
+
     if rng < MIN_RANGE:
         verdict = "DEAD"
     elif au is not None and au < INVERT_AUROC:
@@ -238,6 +254,10 @@ def audit_detector(name: str, det, probes: tuple[list[str], list[str]] | None = 
         verdict = "WEAK"
     elif gap < WEAK_GAP:
         verdict = "WEAK"
+    elif fpr > MAX_FPR:
+        # Separation is fine; the scale is not. Distinct from WEAK on purpose — the fix is a
+        # calibration constant, not a better detector.
+        verdict = "MISCALIBRATED"
     elif min(ai) > max(human):
         verdict = "OK_SEPARATED"
     else:
@@ -251,6 +271,8 @@ def audit_detector(name: str, det, probes: tuple[list[str], list[str]] | None = 
         "gap": round(gap, 4),
         "range": round(rng, 4),
         "auroc": round(au, 4) if au is not None else None,
+        "fpr": round(fpr, 4),
+        "tpr": round(tpr, 4),
         "n": len(human),
     }
 
@@ -324,10 +346,14 @@ def audit_all(pairs: int = 0, dataset: str = "hc3") -> dict:
     # small-sample false alarm, and gating CI on it would have turned the build red over noise.
     # perplexity_burstiness's real defect scored 0.000 on the same probes — a perfect inversion,
     # which 36 pairs cannot produce by chance. That is the gap this bar is set to catch.
+    # MISCALIBRATED counts as broken at paragraph granularity: the detector works, but at the
+    # threshold the product actually uses it flags human writing, and `max` aggregation spreads
+    # that to every tier containing it. Sentence rows are excluded for the same small-sample reason
+    # as below — a handful of short probes is not evidence about a false-positive rate.
     broken = [
         r["detector"]
         for r in rows
-        if r["verdict"] in ("DEAD", "INVERTED")
+        if r["verdict"] in ("DEAD", "INVERTED", "MISCALIBRATED")
         and (
             r.get("granularity") != "sentence"
             or r.get("auroc") is None
@@ -341,17 +367,23 @@ def render(report: dict) -> str:
     lines = [
         f"probe set: {report.get('source', 'packaged probes')}",
         "",
-        f"{'detector':24} {'verdict':14} {'AUROC':>7} {'human':>7} {'ai':>7} {'gap':>7} {'range':>7}",
-        "-" * 80,
+        f"{'detector':24} {'verdict':14} {'AUROC':>7} {'human':>7} {'ai':>7} {'gap':>7} "
+        f"{'FPR':>6} {'TPR':>6}",
+        "-" * 88,
     ]
     for r in report["results"]:
         if "human_mean" not in r:
             lines.append(f"{r['detector']:24} {r['verdict']:14}")
         else:
             au = f"{r['auroc']:7.3f}" if r.get("auroc") is not None else "      -"
+            # FPR/TPR at the default threshold, alongside AUROC. AUROC alone is threshold-free and
+            # cannot see a detector that ranks correctly but reports on a scale that flags most
+            # human writing — which is what two of these were doing at AUROC 0.999+.
+            fpr = f"{r['fpr']:6.0%}" if r.get("fpr") is not None else "     -"
+            tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"
             lines.append(
                 f"{r['detector']:24} {r['verdict']:14} {au} {r['human_mean']:7.3f} "
-                f"{r['ai_mean']:7.3f} {r['gap']:+7.3f} {r['range']:7.3f}"
+                f"{r['ai_mean']:7.3f} {r['gap']:+7.3f} {fpr} {tpr}"
             )
     lines.append("")
     if report["broken"]:
