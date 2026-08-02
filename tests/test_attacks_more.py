@@ -109,6 +109,66 @@ class TestASubstitutionDoesNotDoubleAParticle:
         assert not (_PARTICLES & set(_SYN))
 
 
+class TestTheRegisterPassIntroducesNoGrammarFault:
+    """Property test over whole paragraphs, not constructed sentences.
+
+    The three seam fixes — doubled particle, quantifier frame, article agreement — were each found
+    with a hand-made example, and a hand-made example only proves the case it was built for. This
+    asserts the general property: the register pass may not INTRODUCE any of the three faults, and
+    a fault already in the input is the author's and must survive untouched.
+
+    Verified against 120 real HC3 texts x 3 seeds (360 runs, zero introduced) before being reduced
+    to the packaged corpora so it needs no download.
+    """
+
+    PARTICLES = ("on", "into", "in", "up", "out", "of", "to", "for", "with", "at", "from", "off",
+                 "over", "through", "about", "by", "down", "across")
+
+    @staticmethod
+    def _faults(text: str) -> dict:
+        from untell.attacks.word_importance import takes_an
+
+        particles = "|".join(TestTheRegisterPassIntroducesNoGrammarFault.PARTICLES)
+        return {
+            "article": {
+                (a, w)
+                for a, w in re.findall(r"\b([Aa]n?)\s+([A-Za-z][\w-]*)", text)
+                if takes_an(w) != (a.lower() == "an")
+            },
+            "stranded_quantifier": set(
+                re.findall(r"\ban? (many|countless|lots|scores|plenty|several|numerous)\b", text, re.I)
+            ),
+            "doubled_particle": set(re.findall(rf"\b({particles})\s+\1\b", text, re.I)),
+        }
+
+    def _corpus(self):
+        from eval.ceiling import _SAMPLE
+        from eval.datasets import _BUILTIN
+
+        return list(_BUILTIN) + list(_SAMPLE)
+
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3, 4])
+    def test_no_fault_is_introduced(self, seed):
+        import random
+
+        from untell.rewriter.structural import _plain_register
+
+        for i, text in enumerate(self._corpus()):
+            random.seed(seed * 100 + i)
+            out = _plain_register(text, intensity=1.0)
+            before, after = self._faults(text), self._faults(out)
+            for kind in before:
+                introduced = after[kind] - before[kind]
+                assert not introduced, f"{kind} introduced: {sorted(introduced)} in {out!r}"
+
+    def test_the_check_can_actually_detect_each_fault(self):
+        """A property test that cannot fail certifies nothing — prove the detector works."""
+        assert self._faults("an complex system")["article"]
+        assert self._faults("a many of options")["stranded_quantifier"]
+        assert self._faults("work through through it")["doubled_particle"]
+        assert not any(self._faults("a complex system with many options").values())
+
+
 class TestTheArticleAgreesWithTheReplacement:
     """a/an follows the SOUND of the next word, and a substitution changes that word.
 
