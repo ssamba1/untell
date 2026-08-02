@@ -54,8 +54,15 @@ preserves meaning) — and **no shipping tool, open or commercial, actually does
 
 ## ⚡ Quick start
 
-**Try it free, no install:** paste text into the **[in-browser AI detector](https://ssamba1.github.io/untell/demo.html)**
-for an instant AI-tell score (runs locally, nothing uploaded).
+**Web UI:** [`docs/demo.html`](docs/demo.html) is a front-end for the REST API — **not** an
+in-browser detector. Start the server, then open it pointed at that server:
+
+```bash
+pip install -e ".[server]" && untell-server     # then open docs/demo.html?api=http://localhost:8000
+```
+
+Your text is POSTed to that API. Run it locally and it never leaves your machine; point `?api=` at
+a remote host and it does.
 
 **Install the Claude Code skill — one line:**
 
@@ -504,8 +511,9 @@ validation). It's auto-excluded and the rest of the ensemble runs normally — n
 
 **Full tier feels slow.** Each `untell-score` call loads the models fresh, and the first run downloads
 ~0.5 GB of weights (cached after that). For a multi-iteration run prefer the single-process headless
-loop — `untell-loop` loads the models once — over many one-off score calls. The **lite** tier and the
-[in-browser demo](https://ssamba1.github.io/untell/demo.html) need no downloads at all.
+loop — `untell-loop` loads the models once — over many one-off score calls. The **lite** tier needs
+no downloads at all. (The [web UI](docs/demo.html) is a front-end for the REST API, so it inherits
+whatever tier the server it talks to is running — it does not score in the browser.)
 
 ## Honest caveats
 

@@ -214,7 +214,15 @@
 </div>
 
 <script>
-const API = window.location.origin;
+// This page is a front-end for the untell REST API — it does NOT score in the browser. It needs
+// `untell-server` running somewhere it can reach.
+//
+// Default to the page's own origin, which is right when the page is served from the same host as
+// the API. Opened from GitHub Pages or from a file:// URL there is no API on that origin, so allow
+// an explicit override: demo.html?api=http://localhost:8000. The server sets CORS
+// allow_origins=["*"], so a cross-origin call from either place is permitted.
+const API = (new URLSearchParams(window.location.search).get('api') || window.location.origin)
+  .replace(/\/+$/, '');
 
 async function humanize() {
   const btn = document.getElementById('humanizeBtn');
@@ -285,7 +293,11 @@ async function humanize() {
     document.getElementById('diffOutput').innerHTML = simpleDiff(input, final);
 
   } catch (e) {
-    error.textContent = 'API error — is the server running? (' + e.message + ')';
+    error.innerHTML =
+      'Could not reach the untell API at <code>' + API + '</code>. ' +
+      'This page is a front-end for the REST API — it does not score text in the browser. ' +
+      'Start it with <code>pip install -e ".[server]" &amp;&amp; untell-server</code>, then reload as ' +
+      '<code>demo.html?api=http://localhost:8000</code>. (' + e.message + ')';
   }
   btn.disabled = false;
   btn.textContent = 'Humanize ✦';
