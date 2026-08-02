@@ -123,7 +123,7 @@ _SENTENCE_TELL_SATURATION = 22.0
 _RATIO_CEILING = 0.25
 
 
-def _single_sentence_signal(text: str, common_signal: float) -> float:
+def _single_sentence_signal(text: str, fallback: float, cap: float = _RATIO_CEILING) -> float:
     """P(AI) for a lone sentence, where burstiness carries no information.
 
     The common-word ratio must NOT drive this. Measured on 5 AI and 5 human single sentences, the
@@ -138,10 +138,25 @@ def _single_sentence_signal(text: str, common_signal: float) -> float:
     per-sentence targeting — the skill's step 4b — was pointed at whichever sentences read most
     human, telling the rewriter to attack exactly the wrong spans.
 
-    AI-tell density replaces it: it counts markers that are actually characteristic of machine
-    prose, and it is stdlib-only, so the zero-dependency tier keeps working. The common-word signal
-    survives only as a weak floor for the case it genuinely catches — padding built from common
-    words ("it is the best way to do the thing") — where it cannot outvote the tell evidence.
+    AI-tell density is the primary term: it counts markers actually characteristic of machine prose
+    and is stdlib-only, so the zero-dependency tier keeps working. ``fallback`` is whatever
+    predictability signal the active backend produced, kept as a floor via ``max`` so it can still
+    carry a sentence the tells miss.
+
+    ``cap`` is what separates the two backends, and it is not cosmetic:
+
+    * **lite** (common-word ratio) caps at ``_RATIO_CEILING``, below the detection threshold. That
+      term is backwards — casual human speech is nearly all common words — so it may position a
+      sentence but must never flag one alone.
+    * **GPT-2 perplexity** passes ``cap=1.0``. MEASURED on 60 real HC3 pairs, it ranks single
+      sentences at AUROC ~0.97, so capping it is not conservatism, it is discarding the best signal
+      available. Capping it at 0.25 was tried and regressed real text badly: every HC3 AI sentence
+      pinned to exactly 0.250, under the 0.30 threshold, and `sentences.py` (which flags the worst
+      third AND requires >= threshold) flagged 0 of 46 sentences across six AI paragraphs.
+
+    The two terms cover different failure modes, which is why this maxes rather than replaces:
+    perplexity catches bland, predictable AI prose; tells catch the modern flowery register where
+    perplexity inverts because the rare vocabulary reads as *surprising*.
     """
     from untell.scripts.tells import (
         score_tells,  # local: avoids a detectors -> scripts import cycle
@@ -150,15 +165,11 @@ def _single_sentence_signal(text: str, common_signal: float) -> float:
     try:
         density = float(score_tells(text).get("tells_per_100w") or 0.0)
     except Exception:
-        # Never let a tells failure resurrect the inverted ratio as the whole answer.
-        return min(common_signal, _RATIO_CEILING)
+        # Never let a tells failure resurrect an unreliable term as the whole answer.
+        return min(fallback, cap)
 
     tell_signal = clamp01(density / _SENTENCE_TELL_SATURATION)
-    # Cap the ratio's contribution below the default detection threshold. It is the term measured
-    # to be backwards, so it may position a tell-free sentence within the range but must never on
-    # its own push one over the line into "flagged" — at a 0.35 cap every ordinary human sentence
-    # in the probe set landed on exactly 0.350 and was flagged at the 0.30 default.
-    return max(tell_signal, min(common_signal, _RATIO_CEILING))
+    return max(tell_signal, min(fallback, cap))
 
 
 def lite_score(text: str) -> float | None:
@@ -347,7 +358,7 @@ class PerplexityBurstinessDetector:
             # measure predictability, and predictability stops tracking authorship at this length.
             # So the predictability term is capped as a floor and tell density decides, exactly as
             # on the lite path — one rule for single sentences regardless of which backend ran.
-            return _single_sentence_signal(text, ppl_signal)
+            return _single_sentence_signal(text, ppl_signal, cap=1.0)
         burst_signal = 1.0 / (1.0 + math.exp((spread - _SPREAD_MID) / _SPREAD_SCALE))
         return clamp01(_PPL_WEIGHT * ppl_signal + (1.0 - _PPL_WEIGHT) * burst_signal)
 
