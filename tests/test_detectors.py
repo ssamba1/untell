@@ -217,3 +217,46 @@ def test_full_gpt2_path_is_not_inverted_on_single_sentences():
     pairs = [(a, h) for a in ai for h in human]
     auroc = sum((a > h) + 0.5 * (a == h) for a, h in pairs) / len(pairs)
     assert auroc > 0.9, f"full-path single-sentence AUROC {auroc:.3f} (was inverted)"
+
+
+# A bland, predictable sentence in the HC3 register: zero AI tells, but exactly the kind of text
+# GPT-2 perplexity is good at. It is the case that exposed a regression where a 0.25 cap was
+# applied to the GPT-2 path as well as the lite one.
+_BLAND_AI_SENTENCE = "There are several factors that can affect the performance of a computer system."
+
+
+def test_bland_sentence_has_no_tells():
+    """Guard the guard: if this ever gains a tell, the two tests below stop testing the cap."""
+    from untell.scripts.tells import score_tells
+
+    assert score_tells(_BLAND_AI_SENTENCE)["tells"] == 0
+
+
+@pytest.mark.skipif(not _torch_available(), reason="GPT-2 path needs torch")
+def test_gpt2_single_sentence_is_not_capped_at_the_lite_ceiling():
+    """Ranking and calibration fail independently, and only ranking was checked the first time.
+
+    Capping the GPT-2 path at _RATIO_CEILING left AUROC at 0.971 — ordering intact — while pinning
+    every real HC3 AI sentence to exactly 0.250, below the 0.30 threshold. `sentences.py` flags the
+    worst third AND requires >= threshold, so per-sentence targeting flagged 0 of 46 sentences
+    across six AI paragraphs. The cap belongs only to the lite term, which is genuinely backwards.
+    """
+    from untell.detectors.perplexity_burstiness import _RATIO_CEILING
+
+    det = PerplexityBurstinessDetector()
+    if not det._torch_ready():
+        pytest.skip("torch present but the GPT-2 path did not initialise")
+    score = det.score(_BLAND_AI_SENTENCE)
+    assert score > _RATIO_CEILING, (
+        f"GPT-2 single-sentence score {score} is at or below the lite cap {_RATIO_CEILING} — "
+        "per-sentence flagging cannot fire"
+    )
+
+
+def test_lite_single_sentence_keeps_the_ceiling():
+    """The lite term stays capped: it is the one measured backwards, and must not flag alone."""
+    from untell.detectors.perplexity_burstiness import _RATIO_CEILING
+
+    # A tell-free sentence can never exceed the ceiling on the lite path.
+    for s in _HUMAN_SENTENCES + [_BLAND_AI_SENTENCE]:
+        assert lite_score(s) <= _RATIO_CEILING + 1e-9, f"lite cap breached by {s!r}"
