@@ -122,10 +122,19 @@ def target_ai_score(text: str, tier: str = "full") -> float:
 
 
 def fluency(text: str) -> float:
-    """Cheap quality proxy in [0,1]: distinct-bigram ratio (1.0 = no repetition, low = degenerate)."""
+    """Cheap quality proxy in [0,1]: distinct-bigram ratio (1.0 = no repetition, low = degenerate).
+
+    Under four words there are too few bigrams to be meaningful, but returning a flat 1.0 there
+    made "yes yes yes" indistinguishable from well-formed prose and gave it zero quality penalty —
+    exactly the degenerate short completion GRPO is most likely to sample. Distinct *unigram* ratio
+    is the same idea at the granularity that is available: 1.0 for "the cat sat", 0.33 for
+    "yes yes yes".
+    """
     words = [w.lower() for w in _W.findall(text)]
+    if not words:
+        return 1.0  # nothing to judge; an empty candidate is hard-gated before this is reached
     if len(words) < 4:
-        return 1.0
+        return len(set(words)) / len(words)
     bigrams = list(zip(words, words[1:]))
     return len(set(bigrams)) / len(bigrams)
 
@@ -154,7 +163,11 @@ def humanness_reward(
     unrecognizable; a hard gate makes meaning non-negotiable. Targeting evasion + meaning + tells at
     once is the impossibility-triangle win competitors miss (they reward only evasion, so quality rots).
     """
-    if not candidate.strip():
+    # None is a real input here: a GRPO generation step that fails or emits an empty token sequence
+    # hands the reward fn None, and `None.strip()` raised an AttributeError that propagated out of
+    # reward_fn and killed the run with no checkpoint. The docstring's contract for an unusable
+    # candidate is -1.0; that now covers None as well.
+    if not original or not candidate or not candidate.strip():
         return -1.0
     # The floor MUST match the metric similarity() actually used. It is backend-adaptive — BERTScore
     # (bar 0.88), cosine embeddings (0.76), or the token-overlap fallback (0.50) — and the old
@@ -179,6 +192,16 @@ def humanness_reward(
     return round(evade - tells_penalty - burst_penalty - quality_penalty, 4)
 
 
-def batch_rewards(original: str, candidates: list[str], *, tier: str = "full", sim_floor: float = 0.76) -> list[float]:
-    """Rewards for several candidate rewrites of one source (GRPO scores a group per prompt)."""
+def batch_rewards(
+    original: str, candidates: list[str], *, tier: str = "full", sim_floor: float | None = None
+) -> list[float]:
+    """Rewards for several candidate rewrites of one source (GRPO scores a group per prompt).
+
+    ``sim_floor`` defaults to None, meaning "ask recommended_bar() for the active similarity
+    backend", exactly as humanness_reward does. It used to default to 0.76 — the cosine-embedding
+    bar — which silently overrode that adaptation for every batched call: too strict on the
+    token-overlap fallback (bar 0.50, so faithful paraphrases were gated to -1.0 alongside
+    off-topic ones) and too lenient on BERTScore (bar 0.88). The single-candidate path was fixed
+    for this and the batch path, which is the one GRPO actually calls, was not.
+    """
     return [humanness_reward(original, c, tier=tier, sim_floor=sim_floor) for c in candidates]

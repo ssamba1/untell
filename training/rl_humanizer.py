@@ -44,6 +44,49 @@ def build_dataset(name: str = "builtin", n: int = 2000):
     return [{"prompt": _PROMPT.format(text=s), "source": s} for s in samples]
 
 
+def _normalise(s: str) -> str:
+    return " ".join(s.split())
+
+
+def _source_resolver(source_by_prompt: dict[str, str]):
+    """Return ``prompt -> source text``, or None when it genuinely cannot be recovered.
+
+    The old code was ``source_by_prompt.get(p, p)``: on a lookup miss it passed the PROMPT as the
+    original. A prompt is the instruction wrapper plus the source, so it fails the similarity gate
+    and usually the length gate too — every candidate scores -1.0. That is the worst possible
+    failure for GRPO: a group whose rewards are all identical carries no advantage signal, so
+    training runs to completion at full GPU cost and learns nothing, with no error to show for it.
+
+    Exact match first, then whitespace-normalised (a tokenize/decode round-trip inside the trainer
+    can renormalise the string), then strip the known prompt prefix. If all three miss, return None
+    — humanness_reward treats that as an unusable candidate and returns -1.0, which is at least the
+    honest answer, and the warning below says it is happening.
+    """
+    by_norm = {_normalise(k): v for k, v in source_by_prompt.items()}
+    prefix = _PROMPT.split("{text}")[0]
+    warned = False
+
+    def resolve(p: str) -> str | None:
+        nonlocal warned
+        src = source_by_prompt.get(p)
+        if src is not None:
+            return src
+        src = by_norm.get(_normalise(p))
+        if src is not None:
+            return src
+        if p.startswith(prefix):
+            return p[len(prefix):].strip() or None
+        if not warned:
+            warned = True
+            logger.warning(
+                "reward: could not map a prompt back to its source text; those candidates score "
+                "-1.0. If this is every prompt, the reward carries no signal and the run is wasted."
+            )
+        return None
+
+    return resolve
+
+
 def train(
     model_id: str = DEFAULT_MODEL,
     tier: str = "full",
@@ -136,11 +179,12 @@ def train(
     rows = build_dataset(n=16 if smoke else 2000)
     source_by_prompt = {r["prompt"]: r["source"] for r in rows}
     dataset = Dataset.from_list([{"prompt": r["prompt"]} for r in rows])
+    resolve_source = _source_resolver(source_by_prompt)
 
     def reward_fn(prompts, completions, **_):
         # GRPO calls with batched prompts/completions; score each against the (free ensemble) reward.
         return [
-            humanness_reward(source_by_prompt.get(p, p), c, tier=tier, sim_floor=reward_sim_floor)
+            humanness_reward(resolve_source(p), c, tier=tier, sim_floor=reward_sim_floor)
             for p, c in zip(prompts, completions)
         ]
 
