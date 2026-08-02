@@ -23,12 +23,32 @@ ensemble that untell can actually put in its loop.**
 > **0.859 → 0.261 ± 0.027, flagged rate 1.00 → 0.148.** Use `--repeats ≥ 9`; three repeats gave
 > 0.247 ± 0.015 and 0.330 ± 0.118 on the same command.
 
+> ## ⚠️ Read the corpus before reading any number here
+>
+> **Results 1–9 are all measured on the same three hand-written paragraphs** (mean 36 words), and
+> that corpus is measurably *easier* than real AI output. On real HC3 ChatGPT answers the same loop,
+> same settings, gives **0.999 → 0.860 ± 0.001, flagged 1.00 → 1.00** — not one sample cleared.
+>
+> | corpus | words | before | after | still flagged |
+> |---|---|---|---|---|
+> | built-in sample (Results 1–9) | 37 | 0.859 | **0.154** | **0%** |
+> | real HC3 answers ([Result 11](#result-11--the-ceiling-against-real-ai-text-and-the-content-wall-coming-back)) | 195 | 0.999 | **0.860** | **100%** |
+>
+> Every figure below reproduces exactly as written, and each isolates the defect it was measuring.
+> What none of them is, is a claim about real AI documents. Read
+> [Result 10](#result-10--the-corpus-was-doing-more-work-than-anything-measured-above) and
+> [Result 11](#result-11--the-ceiling-against-real-ai-text-and-the-content-wall-coming-back) first.
+
 > **Read [Result 3](#result-3--superseding-update-the-content-wall-was-largely-a-selection-limit)
 > next.** Results 1–2 were measured with the then-default `best_of=1`. Re-measuring with best-of-3
 > selection cut mean max P(AI) roughly in half again (0.683 → **0.290**) and falsified this
 > document's original claim that the content/genre detector cannot be moved (`hc3_roberta`
 > 0.725 → **0.036–0.064**, replicated). Earlier sections are kept for the record with corrections
 > marked inline.
+>
+> That falsification is itself scoped by Result 11: it holds on the built-in sample, and on real
+> HC3 answers `hc3_roberta` only reaches **0.810**, which is what Results 1–2 originally described.
+> Selection remains a large real lever — it takes `roberta_openai` to 0.088 on that same real text.
 
 ## Setup
 
