@@ -174,17 +174,24 @@ Three design choices make it work where blind paraphrasers fail:
    Word order cannot separate those from a faithful voice change, so `scripts/roles.py` compares
    parsed (subject, verb, object) structure with the passive normalised into active order:
    **9/9 role permutations caught, 0/13 faithful rewrites falsely vetoed** by that check. End to end
-   the gate admits **0 of 17** meaning-changing rewrites.
+   the gate admits **0 of 25** meaning-changing rewrites — role swaps, negation flips, altered
+   quantities, dropped hedges, association reported as causation, and dropped attribution.
 
    The full gate is a conjunction — similarity floor, contradiction, bidirectional entailment,
-   predicate-argument structure, retained quantities, retained claim strength — and it is
-   deliberately a little strict. Measured on that same faithful set it rejects **1 of 13**: the
-   hedge-to-hedge swap "the results *suggest* … *some* patients" → "the results *hint* … *certain*
-   patients", where the claim-strength check cannot tell a lateral move between two weak hedges from
-   a genuine upgrade. Measured on **25 candidates the composite rewriter actually produced**, the
-   whole gate passes 84% — rejections split 8% roles, 4% claim strength, 4% quantities, 0% NLI. That
-   is the intended trade: a gate that rejects nothing is not a guarantee, and the loop simply draws
-   again.
+   predicate-argument structure, retained quantities, retained claim strength. Measured on the
+   faithful set it now rejects **0 of 13**, and on **75 candidates the composite rewriter actually
+   produced** (25 texts × 3 runs, since the rewriter is randomised) it passes **96%**, replicating
+   at 96/96/96. The only rejections are the quantities check, at 4%.
+
+   Both numbers moved because the claim-strength check was over-strict in ways that had nothing to
+   do with claim strength: "due to", "will", "set to" and "going to" were classed as *intention*
+   hedges, so every rewrite of "the delay was due to X" or "this function will return X" was vetoed;
+   "hint" was missing from the *evidential* class, so swapping one weak hedge for another read as
+   dropping it; and a negator more than 30 characters from its verb was invisible, so a rewrite that
+   explicitly *denied* causation was vetoed for asserting it. Tightening that same pass closed a
+   real leak in the other direction — "critics allege the firm misled investors" → "the firm misled
+   investors" cleared every check, because dropping an attribution does not contradict the source,
+   it just asserts more.
 3. **Citations, numbers, quotes, URLs and named entities are locked byte-for-byte** via preserve-lock, so
    your APA/IEEE/MLA references and your facts survive the rewrite untouched.
 
