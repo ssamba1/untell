@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 import os
 
-from .base import clamp01
+from .base import clamp01, windowed_max
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,20 @@ class RadarDetector:
         import torch.nn.functional as F
 
         tok, model = self._load()
-        inputs = tok(text, return_tensors="pt", truncation=True, max_length=512)
-        with torch.no_grad():
-            p_ai = F.softmax(model(**inputs).logits, dim=-1)[0, 0].item()  # index 0 = AI
-        return clamp01(float(p_ai))
+
+        def _one(window: str) -> float:
+            inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)
+            with torch.no_grad():
+                return F.softmax(model(**inputs).logits, dim=-1)[0, 0].item()  # index 0 = AI
+
+        # Windowed, like every other supervised adapter. `truncation=True, max_length=512` reads
+        # roughly the first 380 words and silently discards the rest, so a document with a human
+        # preamble scored as human no matter what followed. MEASURED on a 2887-word document whose
+        # last 207 words were AI: RADAR 0.113 (missed it) against hc3_roberta 0.999 (windowed); on
+        # the AI block alone RADAR scores 0.995, so the detector was fine and simply never saw it.
+        #
+        # This adapter was left behind when the others were fixed — it is opt-in, so it is absent
+        # from the default tiers the fix was verified against. It is also the paraphrase-robust one,
+        # the hardest to fool and therefore the most valuable to be reading the whole document.
+        score = windowed_max(text, _one)
+        return None if score is None else clamp01(float(score))

@@ -499,3 +499,48 @@ class TestDetectorsDoNotFlagHumanWriting:
             f"tier={tier}: mean gap {gap:.3f} — human {[round(x, 3) for x in human]} "
             f"vs ai {[round(x, 3) for x in ai]}"
         )
+
+
+class TestEverySupervisedAdapterWindows:
+    """An adapter that truncates but never windows reads only the first ~380 words.
+
+    `truncation=True, max_length=N` discards everything past the cap silently, so a document with a
+    long human preamble scores as human no matter what follows. That was fixed for hc3_roberta,
+    roberta_openai, mage and fast_detectgpt — and missed for radar and binoculars, both of which
+    sit outside the default tiers and so were absent from the runs the fix was verified against.
+
+    MEASURED on radar: a 2887-word document whose final 207 words were AI scored 0.113, while
+    windowed hc3_roberta scored 0.999 on the same input. RADAR scores the AI block alone at 0.995,
+    so the detector was never the problem — it simply never saw the text.
+
+    A grep guard rather than a behavioural one because these two adapters need models this suite
+    does not download, so nothing else can catch a regression here.
+    """
+
+    EXEMPT = {
+        # Documented, and measured: this one is a document-level aggregate (burstiness is the
+        # variance of sentence lengths ACROSS a document) and windowing destroys the quantity it
+        # measures. It reads the whole text natively instead of truncating.
+        "perplexity_burstiness.py": "not truncated at all; windowing would break the aggregate",
+        # A generative judge, not a classifier — there is no per-window score to take a max over,
+        # and it is opt-in and off by default.
+        "local_judge.py": "generative judge, opt-in, no per-window score",
+    }
+
+    def test_no_adapter_truncates_without_windowing(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent / "untell" / "detectors"
+        offenders = []
+        for path in sorted(root.glob("*.py")):
+            if path.name in ("base.py", "__init__.py") or path.name in self.EXEMPT:
+                continue
+            body = path.read_text(encoding="utf-8", errors="replace")
+            if "truncation=True" in body and "windowed_max" not in body:
+                offenders.append(path.name)
+
+        assert not offenders, (
+            f"{offenders} truncate their input without windowing it, so they read only the first "
+            "~380 words of any document and score the rest as if it were not there. Wrap the "
+            "per-window call in windowed_max, or add an entry to EXEMPT explaining why not."
+        )

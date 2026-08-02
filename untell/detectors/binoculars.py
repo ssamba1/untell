@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import math
 
-from .base import clamp01
+from .base import clamp01, windowed_max
 
 _OBSERVER = "tiiuae/falcon-7b"
 _PERFORMER = "tiiuae/falcon-7b-instruct"
@@ -70,6 +70,17 @@ class BinocularsDetector:
 
         tok, observer, performer = self._load()
         device = next(observer.parameters()).device
+        # Windowed, like every other supervised adapter. `truncation=True, max_length=512` reads
+        # roughly the first 380 words and silently discards the rest, so a document with a long
+        # human preamble scored as human regardless of what followed it. RADAR had the identical
+        # gap and was measured missing a 207-word AI block at the end of a 2887-word document
+        # (0.113 windowed-elsewhere vs 0.999); both adapters sit outside the default tiers, which
+        # is why they were left behind when the others were fixed.
+        return windowed_max(text, lambda w: self._score_window(w, tok, observer, performer, device))
+
+    def _score_window(self, text: str, tok, observer, performer, device) -> float | None:
+        import torch
+
         enc = tok(text, return_tensors="pt", truncation=True, max_length=512).to(device)
         ids = enc["input_ids"]
         if ids.shape[1] < 2:
