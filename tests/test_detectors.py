@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from untell.detectors.base import clamp01, load_detectors, resolved_tier
 from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector, lite_score
 
@@ -184,3 +186,34 @@ def test_tells_failure_does_not_restore_the_inverted_ratio(monkeypatch):
     monkeypatch.setattr("untell.scripts.tells.score_tells", boom)
     # A sentence of almost entirely common words: the inverted ratio would score this very high.
     assert pb.lite_score("We tried it twice and it still did not work.") <= pb._RATIO_CEILING
+
+
+def _torch_available() -> bool:
+    import importlib.util
+
+    return importlib.util.find_spec("torch") is not None
+
+
+@pytest.mark.skipif(not _torch_available(), reason="full GPT-2 path needs torch")
+def test_full_gpt2_path_is_not_inverted_on_single_sentences():
+    """The lite fix left this broken, and a lite-only test did not notice.
+
+    With torch installed the detector takes the GPT-2 path, where a lone sentence had no burstiness
+    and fell back to perplexity alone — measured human_mean 0.224 vs ai_mean 0.154, inverted. The
+    logistic midpoint is fitted to paragraph-length text, and at sentence length the quantity flips
+    sign for this distribution: casual human speech is highly predictable, modern formal AI prose
+    reaches for rarer words that GPT-2 finds more surprising.
+
+    This test is deliberately run through the detector object, not `lite_score`, so it exercises
+    whichever backend is actually installed.
+    """
+    det = PerplexityBurstinessDetector()
+    if not det._torch_ready():
+        pytest.skip("torch present but the GPT-2 path did not initialise")
+
+    ai = [det.score(s) for s in _AI_SENTENCES]
+    human = [det.score(s) for s in _HUMAN_SENTENCES]
+    assert all(v is not None for v in ai + human)
+    pairs = [(a, h) for a in ai for h in human]
+    auroc = sum((a > h) + 0.5 * (a == h) for a, h in pairs) / len(pairs)
+    assert auroc > 0.9, f"full-path single-sentence AUROC {auroc:.3f} (was inverted)"

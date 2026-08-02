@@ -337,7 +337,17 @@ class PerplexityBurstinessDetector:
         # over paragraph-length human/AI pairs; see eval/detector_audit.py for the harness.
         ppl_signal = 1.0 / (1.0 + math.exp((mean_nll - _NLL_MID) / _NLL_SCALE))
         if spread is None:
-            return clamp01(ppl_signal)
+            # One sentence. Perplexity alone is INVERTED here, measured: human_mean 0.224 vs
+            # ai_mean 0.154 on the audit's sentence probes. The midpoint above is fitted to
+            # paragraph-length text, and at sentence length the quantity itself flips sign for the
+            # distribution this tool exists to handle — casual human speech ("we tried it twice and
+            # it still didn't work") is extremely predictable, while modern formal AI prose reaches
+            # for rarer words ("transformative", "stakeholders") that GPT-2 finds MORE surprising.
+            # Same failure the lite path had, arrived at from the opposite direction: both terms
+            # measure predictability, and predictability stops tracking authorship at this length.
+            # So the predictability term is capped as a floor and tell density decides, exactly as
+            # on the lite path — one rule for single sentences regardless of which backend ran.
+            return _single_sentence_signal(text, ppl_signal)
         burst_signal = 1.0 / (1.0 + math.exp((spread - _SPREAD_MID) / _SPREAD_SCALE))
         return clamp01(_PPL_WEIGHT * ppl_signal + (1.0 - _PPL_WEIGHT) * burst_signal)
 
