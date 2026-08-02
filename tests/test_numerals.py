@@ -17,8 +17,8 @@ import json
 
 import pytest
 
-from untell.scripts import numbers
-from untell.scripts.numbers import missing_numbers, numbers_kept
+from untell.scripts import numerals as numbers
+from untell.scripts.numerals import missing_numbers, numbers_kept
 
 
 class TestNumbersKept:

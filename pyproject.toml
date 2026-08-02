@@ -137,7 +137,7 @@ untell-eval-policy = "eval.eval_policy:main"
 untell-server = "untell.api_server:main"
 untell-humanness = "untell.humanness:main"
 untell-scrub = "untell.scripts.scrub:main"
-untell-numbers = "untell.scripts.numbers:main"
+untell-numbers = "untell.scripts.numerals:main"
 untell-hedges = "untell.scripts.hedges:main"
 
 [tool.setuptools]

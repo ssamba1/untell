@@ -215,7 +215,7 @@ def meaning_preserved(
     # "Only 7 of the 19 tests passed." -> "Only a few of the 19 tests passed." scores contradiction
     # 0.011 and entailment 0.007, clearing the 0.005 floor by 0.002. Purely mechanical, no
     # judgement about meaning — a numeral must still be findable, as a numeral or its English word.
-    from untell.scripts.numbers import numbers_kept
+    from untell.scripts.numerals import numbers_kept
 
     if not numbers_kept(source, candidate):
         return False

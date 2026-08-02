@@ -85,3 +85,39 @@ def test_skill_invokes_scripts_by_relative_path():
     skill = SKILL.read_text(encoding="utf-8", errors="replace")
     stray = re.findall(r"python -m untell\.scripts\.\w+", skill)
     assert not stray, f"SKILL.md should call scripts by path, not -m: {stray}"
+
+
+def test_no_step_script_shadows_a_stdlib_module():
+    """A script here must not be named after a stdlib module.
+
+    SKILL.md runs every step as `python scripts/<name>.py`, and Python puts the SCRIPT'S directory
+    first on sys.path. So a file named `numbers.py` in this folder becomes THE `numbers` module for
+    that process — including for numpy, which does `import numbers` and calls
+    `numbers.Integral.register(...)` during its own import.
+
+    That is not theoretical. Adding `scripts/numbers.py` broke `python scripts/preserve.py` outright:
+
+        AttributeError: module 'numbers' has no attribute 'Integral'
+
+    preserve.py -> spacy -> thinc -> numpy, and numpy's import died on the shadowed module. Every
+    step script that reaches numpy transitively would have failed the same way, which is most of
+    them, via the exact invocation the skill documents. Renaming to `numerals.py` fixed it.
+    """
+    import sys
+
+    stdlib = set(getattr(sys, "stdlib_module_names", ()))
+    assert stdlib, "sys.stdlib_module_names unavailable — this guard needs Python 3.10+"
+
+    offenders = [p.name for p in SCRIPTS.glob("*.py") if p.stem in stdlib]
+    assert not offenders, (
+        f"these shadow stdlib modules for any `python scripts/<name>.py` run: {offenders}. "
+        "Rename them — the shadowing breaks any dependency that imports the real module."
+    )
+
+
+def test_stdlib_shadowing_guard_would_actually_fire():
+    """Guard the guard: prove the check recognises a known stdlib name."""
+    import sys
+
+    stdlib = set(getattr(sys, "stdlib_module_names", ()))
+    assert {"numbers", "json", "types", "string"} <= stdlib

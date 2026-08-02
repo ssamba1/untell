@@ -291,18 +291,37 @@ def test_long_document_scoring_is_stable_not_inflated():
 
     This is the failure mode that windowing this detector produced: the max over many windows of a
     weak signal climbs with document length regardless of content.
+
+    The paragraphs must be DISTINCT. A first version of this test repeated one paragraph twelve
+    times, which passed on the stdlib path and failed under the GPT-2 backend — correctly. Verbatim
+    repetition is extremely predictable, so it reads as machine-written on its own merits
+    (0.140 -> 0.625 across 12 copies), and the test was measuring repetition rather than length.
     """
-    human = (
-        "I went to the store and forgot the milk again. "
-        "The build broke because someone bumped the pinned version, which took a while to find. "
-        "She said it was fine, but her face said otherwise and I let it go. "
-        "We tried it twice and it still did not work, so we went home. "
-        "Turns out the cable was loose the whole time, which nobody had checked. "
-    )
+    paragraphs = [
+        "I went to the store and forgot the milk again. Third time this month, embarrassing.",
+        "The build broke because someone bumped the pinned version. Took me an hour to spot it.",
+        "She said it was fine, but her face said otherwise, so I dropped it and left.",
+        "We tried it twice and it still did not work. Nobody wanted to admit we were stuck.",
+        "Turns out the cable was loose the whole time. I laughed, then I did not laugh.",
+        "He emailed back three days later with one line: no. That was the whole message.",
+        "The dog got out through the gate again. I have started counting how often it happens.",
+        "My neighbour repainted his fence bright orange. Nobody has said a word to him about it.",
+    ]
+    from untell.scripts.score import DEFAULT_THRESHOLD
+
     det = PerplexityBurstinessDetector()
-    short = det.score(human)
-    long_ = det.score(human * 12)
-    assert short is not None and long_ is not None
-    # Repetition genuinely reads as machine-uniform, so this asserts the weaker property that
-    # matters: length alone must not drive the score up without bound.
-    assert long_ <= short + 0.35, f"score inflated with length: {short:.3f} -> {long_:.3f}"
+    scores = {n: det.score(" ".join(paragraphs[:n])) for n in (2, 4, 8)}
+    assert all(s is not None for s in scores.values())
+
+    # The property this test exists for, and it must hold on either backend.
+    assert scores[8] <= scores[2] + 0.10, (
+        f"score climbs with length on human prose: {scores[2]:.3f} (2 paras) -> {scores[8]:.3f} (8)"
+    )
+
+    # Whether this prose is flagged at all is only assertable on the GPT-2 backend. The pure-stdlib
+    # heuristic scores it 0.48-0.53 — above threshold — which is the known weakness the code already
+    # documents (measured per-sentence AUROC 0.493, a coin flip). Asserting it there would be
+    # asserting the heuristic is good, which it is not and does not claim to be.
+    if det._torch_ready():
+        for n, s in scores.items():
+            assert s < DEFAULT_THRESHOLD, f"{n} paragraphs of ordinary human prose flagged at {s:.3f}"

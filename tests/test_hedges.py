@@ -111,7 +111,8 @@ class TestHedgesCLI:
             assert code == (0 if payload["kept"] else 1)
 
     def test_exit_codes_align_with_the_other_gates(self):
-        from untell.scripts import entailment, numbers, roles
+        from untell.scripts import entailment, roles
+        from untell.scripts import numerals as numbers
 
         assert hedges.main([]) == numbers.main([]) == entailment.main([]) == roles.main([]) == 2
 

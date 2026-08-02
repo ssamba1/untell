@@ -143,7 +143,7 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
 
    Finally the **quantity check**, which is mechanical rather than semantic:
    ```bash
-   python scripts/numbers.py "<ORIG masked>" "<current masked text>"
+   python scripts/numerals.py "<ORIG masked>" "<current masked text>"
    ```
    Exit `0` = every number survived, `1` = one was dropped; `missing` lists them. Step 2 does not
    lock bare single digits on purpose, so that "5" can become "five" — but that also lets a precise

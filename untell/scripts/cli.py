@@ -50,7 +50,7 @@ _COMMANDS: dict[str, str] = {
     "detector-audit": "eval.detector_audit:main",
     "humanness": "untell.humanness:main",
     "scrub": "untell.scripts.scrub:main",
-    "numbers": "untell.scripts.numbers:main",
+    "numbers": "untell.scripts.numerals:main",
     "hedges": "untell.scripts.hedges:main",
 }
 

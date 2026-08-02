@@ -98,7 +98,7 @@ def numbers_kept(source: str, candidate: str) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI: ``python scripts/numbers.py "<original>" "<rewrite>"`` -> JSON.
+    """CLI: ``python scripts/numerals.py "<original>" "<rewrite>"`` -> JSON.
 
     Exit 0 when every number survived, 1 when one was dropped, 2 on usage error — the same contract
     as ``entailment.py`` and ``roles.py`` so all three branch identically in a shell.
@@ -109,14 +109,14 @@ def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
     if any(a in ("-h", "--help") for a in args):
         print(
-            'usage: numbers.py "<original>" "<rewrite>"\n\n'
+            'usage: numerals.py "<original>" "<rewrite>"\n\n'
             "Prints JSON: missing (numerals dropped by the rewrite), kept (bool).\n"
             "Exit 0 if every number in the original survives — as a numeral or its English word —\n"
             "1 if any was dropped, 2 on usage error."
         )
         return 0
     if len(args) < 2:
-        logger.error('usage: numbers.py "<original>" "<rewrite>"')
+        logger.error('usage: numerals.py "<original>" "<rewrite>"')
         return 2
 
     missing = missing_numbers(args[0], args[1])
