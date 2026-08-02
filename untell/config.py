@@ -32,9 +32,12 @@ like a feature, and the docstring above would otherwise be a promise the package
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def _try_pyproject(path: Path) -> dict[str, Any]:
@@ -53,7 +56,15 @@ def _try_pyproject(path: Path) -> dict[str, Any]:
     try:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
         return dict(data.get("tool", {}).get("untell", {}))
-    except Exception:
+    except Exception as exc:
+        # A file the user WROTE and got wrong is not the same as no file. Swallowing this returned
+        # {}, every default applied, and nothing said the config had been dropped — so a typo in
+        # `threshold` looked exactly like never having set it. Say so and keep going: a broken
+        # config should not stop the tool, but it must not be invisible either.
+        logger.warning(
+            "ignoring %s: it exists but could not be parsed (%s: %s). Its [tool.untell] settings "
+            "are NOT applied and defaults are in use.", path, type(exc).__name__, exc,
+        )
         return {}
 
 
@@ -62,13 +73,32 @@ def _try_yaml(path: Path) -> dict[str, Any]:
     try:
         import yaml
     except ImportError:
+        # Not a user error, but still a silently ignored file: the settings exist and are not being
+        # applied. `load()` already falls through to pyproject.toml on an empty result, so this is
+        # informational rather than a warning about correctness.
+        logger.warning(
+            "ignoring %s: PyYAML is not installed, so its settings are NOT applied "
+            "(pip install pyyaml, or move them to pyproject.toml under [tool.untell]).", path,
+        )
         return {}
     try:
         with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
-        return dict(data) if isinstance(data, dict) else {}
-    except Exception:
+    except Exception as exc:
+        logger.warning(
+            "ignoring %s: it exists but could not be parsed (%s: %s). Its settings are NOT applied "
+            "and defaults are in use.", path, type(exc).__name__, exc,
+        )
         return {}
+    if data is not None and not isinstance(data, dict):
+        # A YAML file that parses to a list or a bare scalar is not a config mapping. Returning {}
+        # for it was as silent as a parse failure.
+        logger.warning(
+            "ignoring %s: expected a mapping of settings, got %s. Its contents are NOT applied.",
+            path, type(data).__name__,
+        )
+        return {}
+    return dict(data) if isinstance(data, dict) else {}
 
 
 def load() -> dict[str, Any]:

@@ -94,6 +94,62 @@ def test_malformed_pyproject_does_not_raise(monkeypatch, tmp_path):
     assert config.load() == {}
 
 
+class TestABrokenConfigFileIsNotSilent:
+    """A file the user WROTE and got wrong is not the same as no file.
+
+    Both readers swallowed every exception and returned {}, so a YAML typo or a broken TOML table
+    meant the settings were dropped, every default applied, and nothing anywhere said so — a
+    mistyped `threshold` looked exactly like never having set one. The tool should keep running on
+    a broken config; it must not do so invisibly.
+    """
+
+    MALFORMED = [
+        ("untell.yaml", "threshold: 0.2\n  tier: full\n   rewriter: [\n"),
+        ("untell.yaml", 'threshold: "0.2\ntier: full\n'),
+        ("pyproject.toml", '[tool.untell]\nthreshold = 0.2\ntier = "full\n'),
+        ("pyproject.toml", "[tool.untell\nthreshold = 0.2\n"),
+    ]
+
+    @pytest.mark.parametrize(("filename", "body"), MALFORMED)
+    def test_it_warns_and_names_the_file(self, monkeypatch, tmp_path, caplog, filename, body):
+        (tmp_path / filename).write_text(body, encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+        with caplog.at_level("WARNING", logger="untell.config"):
+            assert config.load() == {}
+        assert filename in caplog.text
+        assert "NOT applied" in caplog.text
+
+    @pytest.mark.parametrize(("filename", "body"), MALFORMED)
+    def test_it_still_does_not_raise(self, monkeypatch, tmp_path, filename, body):
+        (tmp_path / filename).write_text(body, encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+        assert config.load() == {}
+
+    def test_a_valid_file_warns_about_nothing(self, monkeypatch, tmp_path, caplog):
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.untell]\nthreshold = 0.2\n', encoding="utf-8"
+        )
+        monkeypatch.chdir(tmp_path)
+        with caplog.at_level("WARNING", logger="untell.config"):
+            assert config.load() == {"threshold": 0.2}
+        assert not caplog.text
+
+    def test_a_yaml_that_is_not_a_mapping_is_reported(self, monkeypatch, tmp_path, caplog):
+        """A file parsing to a list is as silently ignored as one that fails to parse."""
+        pytest.importorskip("yaml")
+        (tmp_path / "untell.yaml").write_text("- threshold\n- tier\n", encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+        with caplog.at_level("WARNING", logger="untell.config"):
+            assert config.load() == {}
+        assert "expected a mapping" in caplog.text
+
+    def test_an_absent_file_says_nothing(self, monkeypatch, tmp_path, caplog):
+        monkeypatch.chdir(tmp_path)
+        with caplog.at_level("WARNING", logger="untell.config"):
+            assert config.load() == {}
+        assert not caplog.text
+
+
 def test_env_beats_the_config_file(monkeypatch, tmp_path):
     (tmp_path / "pyproject.toml").write_text('[tool.untell]\ntier = "heavy"\n', encoding="utf-8")
     monkeypatch.chdir(tmp_path)
