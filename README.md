@@ -317,12 +317,16 @@ verdict, because a threshold-free metric cannot catch this class of bug on its o
 
 Three further findings, all measured, and one of them overturned this project's own earlier conclusion:
 
-- **The "content tell" was mostly a *selection* limit, not a structural one.** An earlier version of
+- **The "content tell" was mostly a *selection* limit — on this corpus.** An earlier version of
   this table (measured with a single rewrite draw) showed HC3-RoBERTa stuck at 0.73 → 0.67 and
   concluded no meaning-preserving rewrite could move it. With **best-of-3 selection against the tier
   you actually score on**, it drops to **0.04**. The lever was never a cleverer rewriter — it was
-  choosing among several drafts against the real signal. See
-  [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) for the falsified claim in full.
+  choosing among several drafts against the real signal.
+  **Scope correction:** that holds on the built-in sample. On real HC3 answers the same selection
+  leaves `hc3_roberta` at **1.00 → 0.81**, which is what the original claim described — while
+  `roberta_openai` still falls to 0.09, so selection is a real lever and content is still the wall.
+  Both results, and the caveat that `hc3_roberta` is *trained on* HC3, are in
+  [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) (Results 10–11).
 - **The one "immovable" detector turned out to be broken — and once fixed, it moves.**
   `fast_detectgpt` never budged in any configuration (0.31 → 0.28) because its calibration constants
   assumed a curvature range the model never produces, pinning **every** input to ~0.30 regardless of
