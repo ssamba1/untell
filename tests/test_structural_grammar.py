@@ -304,3 +304,103 @@ class TestNoDoubledTerminator:
         assert _terminated("trailing space. ") == "trailing space."
         assert _terminated("") == ""
         assert _terminated(_terminated("twice")) == "twice."
+
+
+class TestDocumentLayoutSurvives:
+    """A user pastes a formatted document and expects the same document back, reworded.
+
+    The pipeline ends in `" ".join(sentences)`, so run over a whole document it returned one wall
+    of text: paragraph breaks gone, three bullets merged onto one line, "1. Install it." swallowed
+    into the prose as "1, and in short, and, install it.". Nothing downstream objects — the meaning
+    gate compares meaning and the detectors score statistics, neither of which looks at layout.
+    """
+
+    FENCE = "```"
+    CODE = "x = compute(1, 2)   # Furthermore, this is robust"
+
+    def _doc(self):
+        return (
+            "# Overview\n"
+            "\n"
+            "Furthermore, the system leverages robust methodologies to optimize outcomes.\n"
+            "\n"
+            "- Furthermore, it is robust.\n"
+            "- Moreover, it is seamless.\n"
+            "\n"
+            f"{self.FENCE}python\n"
+            f"{self.CODE}\n"
+            f"{self.FENCE}\n"
+            "\n"
+            "> Moreover, the analysis holds.\n"
+            "\n"
+            "1. Furthermore, install it.\n"
+            "2. Moreover, configure it.\n"
+        )
+
+    def test_every_structural_element_survives(self):
+        import random
+
+        doc = self._doc()
+        for seed in range(10):
+            random.seed(seed)
+            out = structural_rewrite(doc, intensity=1.0)
+            lines = out.split("\n")
+            assert lines[0] == "# Overview", out
+            assert sum(1 for x in lines if x.startswith("- ")) == 2, out
+            assert [x[:2] for x in lines if x[:2] in ("1.", "2.")] == ["1.", "2."], out
+            assert sum(1 for x in lines if x.startswith("> ")) == 1, out
+            assert out.count(self.FENCE) == 2, out
+            assert doc.count("\n\n") == out.count("\n\n"), out
+
+    def test_fenced_code_is_byte_identical(self):
+        import random
+
+        for seed in range(10):
+            random.seed(seed)
+            out = structural_rewrite(self._doc(), intensity=1.0)
+            assert self.CODE in out, f"code was rewritten: {out}"
+
+    def test_prose_is_still_rewritten(self):
+        """Preserving layout must not turn the rewriter into a no-op."""
+        import random
+
+        random.seed(0)
+        doc = self._doc()
+        assert structural_rewrite(doc, intensity=1.0) != doc
+
+    def test_paragraph_breaks_survive(self):
+        import random
+
+        src = (
+            "Furthermore, the system leverages robust methodologies to optimize outcomes.\n\n"
+            "Moreover, organizations increasingly utilize these tools to drive innovation."
+        )
+        for seed in range(10):
+            random.seed(seed)
+            assert "\n\n" in structural_rewrite(src, intensity=1.0)
+
+    def test_crlf_line_endings_are_preserved(self):
+        """Splitting on "\n" leaves a stray "\r" on every line; rejoining then drops it."""
+        import random
+
+        src = "Furthermore, it is robust.\r\n\r\nMoreover, it scales.\r\n"
+        random.seed(0)
+        out = structural_rewrite(src, intensity=1.0)
+        assert "\r\n" in out
+        assert "\n" not in out.replace("\r\n", "")  # no bare LF left behind
+
+    def test_trailing_newline_is_kept(self):
+        import random
+
+        random.seed(0)
+        assert structural_rewrite("Furthermore, the system is robust.\n", intensity=1.0).endswith("\n")
+
+    def test_single_line_input_is_unaffected_by_the_layout_path(self):
+        """The common case — one paragraph, no newlines — must not change behaviour."""
+        import random
+
+        src = "Furthermore, the system leverages robust methodologies to optimize outcomes."
+        random.seed(3)
+        out = structural_rewrite(src, intensity=1.0)
+        assert "\n" not in out
+        assert out != src
