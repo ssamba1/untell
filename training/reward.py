@@ -108,7 +108,16 @@ def target_ai_score(text: str, tier: str = "full") -> float:
             from training.surrogate import SurrogateDetector
 
             _SURROGATE = SurrogateDetector(sd)
-        return float(_SURROGATE.score(text))
+        sv = _SURROGATE.score(text)
+        if sv is None:
+            # Same rule as free_ensemble_score below: no signal is not a reward. The surrogate
+            # returns None (per the Detector protocol) when it has nothing to look at, and
+            # float(None) would raise a bare TypeError from inside the reward loop.
+            raise RuntimeError(
+                "the surrogate produced no score for this text (empty or whitespace-only), so "
+                "there is no training signal — refusing to return a reward."
+            )
+        return float(sv)
     return free_ensemble_score(text, tier=tier)
 
 

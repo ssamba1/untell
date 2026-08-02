@@ -58,11 +58,28 @@ _BUILTIN_HUMAN = [
 
 
 def _builtin_labeled(n: int) -> list[tuple[str, float]]:
-    rows = [(t, 1.0) for t in _BUILTIN_AI] + [(t, 0.0) for t in _BUILTIN_HUMAN]
-    out = []
+    """``n`` samples, alternating AI and human so every prefix is as balanced as n allows.
+
+    The classes used to be concatenated — all AI, then all human — and then sliced to ``[:n]``.
+    With three of each that gave zero human samples for n <= 3 and 9 AI to 7 human at the
+    ``--smoke`` default of 16, while ``load_labeled`` documented its return as balanced. A
+    surrogate trained on one class cannot separate the two, and it reports no error while failing:
+    it just learns to answer "AI" and scores a perfect training loss doing it.
+
+    Odd ``n`` necessarily leaves one extra AI sample; that is the only imbalance possible now.
+    """
+    if n <= 0:
+        return []
+    ai = [(t, 1.0) for t in _BUILTIN_AI]
+    human = [(t, 0.0) for t in _BUILTIN_HUMAN]
+    out: list[tuple[str, float]] = []
+    i = 0
     while len(out) < n:
-        out.extend(rows)
-    return out[:n] if n <= len(out) else out
+        out.append(ai[i % len(ai)])
+        if len(out) < n:
+            out.append(human[i % len(human)])
+        i += 1
+    return out
 
 
 def _load_csv(path: str) -> list[tuple[str, float]]:
@@ -93,7 +110,10 @@ def load_labeled(dataset: str = "hc3", n: int = 2000, seed: int = 0) -> list[tup
     if name.endswith(".csv") or os.path.isfile(dataset):
         rows = _load_csv(dataset)
         rng.shuffle(rows)
-        return rows[:n] if n else rows
+        # `rows[:n] if n else rows` read n=0 as "no limit" and returned the entire CSV. n is a
+        # sample count, so 0 means none — a caller using it as a dry-run sentinel got the full
+        # dataset instead. Negative values clamp to 0 rather than slicing from the end.
+        return rows[:max(0, n)]
 
     try:
         from datasets import load_dataset
@@ -133,6 +153,8 @@ def load_labeled(dataset: str = "hc3", n: int = 2000, seed: int = 0) -> list[tup
         return _builtin_labeled(n)
 
     # Balance the two classes so the surrogate isn't biased by corpus skew.
+    if n <= 0:
+        return []  # same reading of n as the CSV branch: a count, not a sentinel
     ai = [r for r in rows if r[1] >= 0.5]
     hu = [r for r in rows if r[1] < 0.5]
     k = min(len(ai), len(hu), max(1, n // 2))
@@ -215,11 +237,14 @@ class SurrogateDetector:
     def available(self) -> bool:
         return True
 
-    def score(self, text: str) -> float:
+    def score(self, text: str) -> float | None:
         from untell.detectors.base import clamp01
 
         if not text or not text.strip():
-            return 0.5
+            # None means "no signal" and is excluded from the ensemble (untell/detectors/base.py).
+            # Returning 0.5 made empty text a real vote: a text every other detector scored 0.05
+            # came out at 0.5 max, purely from a detector that had nothing to look at.
+            return None
         enc = self._tok(text, return_tensors="pt", truncation=True, max_length=512)
         with self._torch.no_grad():
             p = self._torch.sigmoid(self._model(**enc).logits)[0, 0].item()
