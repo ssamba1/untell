@@ -326,3 +326,46 @@ def test_best_of_n_draws_multiple_candidates_and_keeps_facts(monkeypatch):
     assert "error" not in res
     assert calls["n"] == 3
     assert "Smith (2020)" in res["final"] and "47%" in res["final"]  # facts survive best-of selection
+
+
+class TestRewriterByName:
+    """`untell_text(rewriter="composite")` used to fail deep in the loop.
+
+    The parameter is untyped, named after the thing users type on the command line, and every
+    caller in the repo (CLI, MCP server, REST API) resolved the name before calling — so it was
+    effectively object-only. Passing the obvious string produced:
+
+        rewriter failed: AttributeError: 'str' object has no attribute 'rewrite'
+
+    which says nothing about the cause. Found by making that exact mistake while measuring the loop.
+    """
+
+    def test_name_and_object_are_equivalent(self):
+        from untell.rewriter import get_rewriter
+        from untell.scripts.run import untell_text
+
+        text = ("Furthermore, organizations increasingly leverage these robust technologies to "
+                "optimize operational efficiency across sectors.")
+        by_name = untell_text(text, tier="lite", rewriter="composite", max_iters=1, best_of=1)
+        by_object = untell_text(text, tier="lite", rewriter=get_rewriter(prefer="composite"),
+                                max_iters=1, best_of=1)
+        assert "error" not in by_name, by_name.get("error")
+        assert "error" not in by_object, by_object.get("error")
+        assert by_name["pre"]["max"] == by_object["pre"]["max"]
+
+    def test_unknown_name_is_a_clear_error_not_a_silent_substitution(self):
+        """A caller who names a rewriter wants that one. Falling back to auto-selection would
+        attribute results to the wrong technique."""
+        from untell.scripts.run import untell_text
+
+        r = untell_text("Some text here to rewrite.", tier="lite", rewriter="does_not_exist")
+        assert "does_not_exist" in r["error"]
+        assert r["final"] == "Some text here to rewrite."
+
+    def test_missing_rewriter_error_names_the_library_form(self):
+        """The message used to name only `--rewriter composite`, which a library caller cannot pass."""
+        from untell.scripts.run import untell_text
+
+        r = untell_text("Some text here.", tier="lite", rewriter=None, max_iters=1)
+        if "error" in r:  # only when no API key / policy dir is configured
+            assert "rewriter='composite'" in r["error"]

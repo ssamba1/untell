@@ -121,11 +121,31 @@ def untell_text(
     """
     if sim_bar is None:
         sim_bar = recommended_bar()
+    # `rewriter` may be a rewriter object OR a name. Every caller in this repo — the CLI, the MCP
+    # server, the REST API — resolves the name itself before calling, so the parameter was
+    # effectively object-only while being untyped and named after the thing users type on the
+    # command line. Passing the obvious `rewriter="composite"` failed deep inside the loop with
+    # `AttributeError: 'str' object has no attribute 'rewrite'`, which says nothing about the cause.
+    if isinstance(rewriter, str):
+        name = rewriter
+        rewriter = get_rewriter(prefer=name)
+        # Do NOT fall back to auto-selection here. A caller who names a rewriter wants that one, and
+        # silently substituting another produces results attributed to the wrong technique.
+        if rewriter is None or not rewriter.available():
+            return {
+                "error": f"rewriter {name!r} is not available — check the name (see `untell --check` "
+                "for the installed list) or install its extra",
+                "final": text,
+            }
     rw = rewriter if rewriter is not None else get_rewriter()
     if rw is None:
         return {
-            "error": "no rewriter configured — run with --rewriter composite (free, $0, no key), or "
-            "set ANTHROPIC_API_KEY / OPENAI_API_KEY / UNTELL_POLICY_DIR",
+            # Name the library form too. `get_rewriter()` with no preference returns None unless an
+            # API key is configured, so a caller of `untell_text(text)` — with no CLI in sight —
+            # was told to pass a command-line flag they cannot pass.
+            "error": "no rewriter configured — pass rewriter='composite' (or --rewriter composite "
+            "on the CLI): free, $0, no key. Otherwise set ANTHROPIC_API_KEY / OPENAI_API_KEY / "
+            "UNTELL_POLICY_DIR",
             "final": text,
         }
 

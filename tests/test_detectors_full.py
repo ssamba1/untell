@@ -22,6 +22,17 @@ try:
 except Exception as exc:  # pragma: no cover - environment dependent
     pytest.skip(f"torch/transformers unavailable: {exc}", allow_module_level=True)
 
+# UNTELL_LITE_NO_TORCH=1 is the project's documented way to force the stdlib path with torch still
+# installed — `untell --demo` names it, and it is the natural way to exercise the zero-dependency
+# behaviour locally. Without this skip, doing so fails `test_perplexity_full_path_runs_and_is_bounded`
+# on `assert det._torch_ready()`: the detector is honouring the env var, and the test is asserting
+# the opposite. That is a broken *simulation*, not a broken detector, so skip rather than fail.
+if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":  # pragma: no cover - environment dependent
+    pytest.skip(
+        "UNTELL_LITE_NO_TORCH=1 forces the stdlib path; full-tier tests do not apply",
+        allow_module_level=True,
+    )
+
 from untell.detectors.base import load_detectors, resolved_tier  # noqa: E402
 from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector  # noqa: E402
 
