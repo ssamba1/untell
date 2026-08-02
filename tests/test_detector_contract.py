@@ -121,23 +121,53 @@ def test_no_detector_load_requires_accelerate():
     A detector that advertises itself as available and cannot produce a number is the same failure
     as one that produces a constant: the loop is optimising against a signal that is not there.
     For a single device `.to(device)` places the model identically with no extra dependency.
+
+    Scanned across the WHOLE package, not just detectors/: the first version of this guard looked
+    only at `untell/detectors/`, and `untell/rewriter/local_policy.py` was setting
+    `device_map="auto"` the entire time. Restricting a guard to where the bug was last found is how
+    the next instance survives.
+
+    `local_policy.py` is the one allowed use — a policy model may genuinely not fit one GPU — and
+    it earns the exception by checking `accelerate` is importable first and failing with a message
+    that names the fix, the way its 4-bit branch already does for bitsandbytes.
     """
     import pathlib
 
-    import untell.detectors as pkg
+    import untell
 
+    root = pathlib.Path(untell.__file__).parent
+    allowed = {"local_policy.py"}
     offenders = []
-    for path in pathlib.Path(pkg.__file__).parent.glob("*.py"):
-        src = path.read_text(encoding="utf-8")
-        for i, line in enumerate(src.splitlines(), 1):
+    for path in sorted(root.rglob("*.py")):
+        if path.name in allowed:
+            continue
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()
             if stripped.startswith("#"):
                 continue
             if "device_map" in stripped:
-                offenders.append(f"{path.name}:{i}: {stripped}")
+                offenders.append(f"{path.relative_to(root)}:{i}: {stripped}")
     assert not offenders, (
-        "detector model loading must not use device_map (it hard-requires `accelerate`, which is "
-        "not a runtime dependency):\n  " + "\n  ".join(offenders)
+        "model loading must not use device_map (it hard-requires `accelerate`, which is not a "
+        "runtime dependency):\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_local_policy_checks_for_accelerate_before_using_device_map():
+    """The allowed exception has to actually be safe: it must detect the missing dependency itself
+    rather than letting from_pretrained die with "Using a `device_map` ... requires `accelerate`"."""
+    import pathlib
+
+    import untell.rewriter.local_policy as lp
+
+    src = pathlib.Path(lp.__file__).read_text(encoding="utf-8")
+    device_map_line = next(
+        i for i, line in enumerate(src.splitlines())
+        if 'kw["device_map"]' in line
+    )
+    preceding = "\n".join(src.splitlines()[max(0, device_map_line - 14): device_map_line])
+    assert "accelerate" in preceding, (
+        "device_map is set without first checking that accelerate is importable"
     )
 
 

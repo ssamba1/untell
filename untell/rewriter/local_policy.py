@@ -91,8 +91,20 @@ class LocalPolicyRewriter:
                 load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16
             )
         else:
-            kw["torch_dtype"] = "auto"
+            kw["dtype"] = "auto"  # torch_dtype= is deprecated in transformers 5.x
         if torch.cuda.is_available():
+            # `device_map="auto"` is the right call for a policy model that may not fit one GPU —
+            # but it hard-requires `accelerate`, which transformers does NOT pull in. Without it
+            # from_pretrained dies with "Using a `device_map` ... requires `accelerate`", the same
+            # opaque failure that made local_judge dead on arrival. Fail with a clear message
+            # instead, exactly as the 4-bit branch above already does for bitsandbytes.
+            import importlib.util
+
+            if importlib.util.find_spec("accelerate") is None:
+                raise RuntimeError(
+                    "loading the policy model on a GPU needs `accelerate` (device_map='auto'); "
+                    "install it with `pip install accelerate`, or run on CPU."
+                )
             kw["device_map"] = "auto"
 
         model = AutoModelForCausalLM.from_pretrained(self.base_model, **kw)
