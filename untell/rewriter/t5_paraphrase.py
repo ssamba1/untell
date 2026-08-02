@@ -19,6 +19,7 @@ from __future__ import annotations
 from collections import Counter
 
 # Matches the sentinel format lock() emits (4-or-more digits — see preserve.py).
+from untell.layout import apply_per_block
 from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE
 from untell.text_split import split_sentences
 
@@ -96,6 +97,15 @@ class T5ParaphraseRewriter:
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         if not text.strip() or not self.available():
+            return text
+        # Paraphrasing ends in `" ".join(out_parts)`, which discards every newline: a document came
+        # back with its blank lines, list markers and fenced code flattened into one paragraph.
+        # Rewriting a block at a time keeps the layout and changes nothing for single-paragraph
+        # input, which is the common case.
+        return apply_per_block(text, self._rewrite_block)
+
+    def _rewrite_block(self, text: str) -> str:
+        if not text.strip():
             return text
 
         # Swap sentinels for ALLCAPS placeholders the model tends to copy verbatim.

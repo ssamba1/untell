@@ -16,6 +16,7 @@ from __future__ import annotations
 from collections import Counter
 
 from untell.attacks.back_translation import BackTranslator
+from untell.layout import apply_per_block
 
 # Matches the sentinel format lock() emits (4-or-more digits — see preserve.py).
 from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE
@@ -36,6 +37,14 @@ class MTPivotRewriter:
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         if not text.strip() or not self.available():
+            return text
+        # Round-trip MT reflows whatever it is given, so a document came back with its blank lines,
+        # list markers and fenced code collapsed into one paragraph. Translating a block at a time
+        # keeps the layout, and single-paragraph input takes the same path as before.
+        return apply_per_block(text, self._rewrite_block)
+
+    def _rewrite_block(self, text: str) -> str:
+        if not text.strip():
             return text
 
         # Swap each sentinel for an ALLCAPS placeholder MarianMT copies verbatim.

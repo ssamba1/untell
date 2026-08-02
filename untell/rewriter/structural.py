@@ -18,6 +18,7 @@ from __future__ import annotations
 import random
 import re
 
+from untell.layout import apply_per_block
 from untell.rewriter.base import Rewriter
 from untell.text_split import split_sentences
 
@@ -642,14 +643,6 @@ def style_profile(style: str | None) -> dict:
     return _STYLE_PROFILES.get(style.strip().lower(), {"contractions": True, "register": 1.0})
 
 
-# Line-leading markers that carry document structure rather than prose: list bullets, ordered-list
-# numbers, blockquote arrows and ATX headings. The marker is re-attached verbatim and only the text
-# after it is rewritten — otherwise "1. Install it." became "1, and in short, and, install it.",
-# the marker swallowed into the sentence as if it were a numeral in the prose.
-_LINE_MARKER_RE = re.compile(r"^([ \t]*(?:[-*+][ \t]+|\d+[.)][ \t]+|>[ \t]?|#{1,6}[ \t]+))(.*)$")
-_FENCE_RE = re.compile(r"^[ \t]*(?:```|~~~)")
-
-
 def structural_rewrite(
     text: str, intensity: float = 0.5, seed: int | None = None, style: str | None = None
 ) -> str:
@@ -672,50 +665,7 @@ def structural_rewrite(
     """
     if seed is not None:
         random.seed(seed)
-    if "\n" not in text:
-        return _rewrite_prose(text, intensity=intensity, style=style)
-    # Work in \n and restore the source's own line ending, so a CRLF document does not come back
-    # with its line endings silently rewritten (or, before this, removed entirely).
-    crlf = "\r\n" in text
-    out = _rewrite_preserving_layout(text.replace("\r\n", "\n"), intensity=intensity, style=style)
-    return out.replace("\n", "\r\n") if crlf else out
-
-
-def _rewrite_preserving_layout(text: str, *, intensity: float, style: str | None) -> str:
-    """Rewrite each prose block in ``text``, leaving every line break and marker exactly as it was.
-
-    Consecutive plain lines form one block, so a soft-wrapped paragraph still gets the
-    sentence-level transforms (merging and splitting need more than one sentence in view). Marked
-    lines and fenced code are handled individually or not at all.
-    """
-    out: list[str] = []
-    buffer: list[str] = []
-    in_fence = False
-
-    def flush() -> None:
-        if buffer:
-            out.append(_rewrite_prose("\n".join(buffer), intensity=intensity, style=style))
-            buffer.clear()
-
-    for line in text.split("\n"):
-        if _FENCE_RE.match(line):
-            flush()
-            in_fence = not in_fence
-            out.append(line)
-            continue
-        if in_fence or not line.strip():
-            flush()
-            out.append(line)  # code and blank lines pass through untouched
-            continue
-        marker = _LINE_MARKER_RE.match(line)
-        if marker:
-            flush()
-            prefix, body = marker.group(1), marker.group(2)
-            out.append(prefix + (_rewrite_prose(body, intensity=intensity, style=style) if body.strip() else body))
-            continue
-        buffer.append(line)
-    flush()
-    return "\n".join(out)
+    return apply_per_block(text, lambda block: _rewrite_prose(block, intensity=intensity, style=style))
 
 
 def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
