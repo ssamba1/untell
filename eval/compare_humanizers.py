@@ -83,20 +83,46 @@ def _techniques(tier: str, threshold: float):
 
         return back_translate(t)
 
-    def ours_loop(t: str) -> str:
-        from untell.rewriter import get_rewriter
-        from untell.scripts.run import untell_text
+    def _ours(prefer: str, best_of: int):
+        def run(t: str) -> str:
+            from untell.rewriter import get_rewriter
+            from untell.scripts.run import untell_text
 
-        res = untell_text(
-            t, tier=tier, threshold=threshold, max_iters=5, rewriter=get_rewriter(prefer="surgical")
-        )
-        return res.get("final", t)
+            res = untell_text(
+                t, tier=tier, threshold=threshold, max_iters=5,
+                rewriter=get_rewriter(prefer=prefer), best_of=best_of,
+            )
+            return res.get("final", t)
 
+        return run
+
+    # Two of our rows, for two different questions.
+    #
+    # The surgical row is the apples-to-apples control: `synonym_swap` above IS
+    # `attacks.surgical_substitute`, so this asks "does wrapping that same technique in the closed
+    # loop beat running it once?" Keeping it is the honest comparison against that technique class.
+    #
+    # But it was the ONLY row we had, and it is not what anyone runs. MEASURED on these samples:
+    #
+    #     synonym_swap                    P(AI) 0.2736   tells/100w 7.02
+    #     ours_loop (surgical)            P(AI) 0.2736   tells/100w 7.02   <- identical
+    #     back_translation                P(AI) 0.2416   tells/100w 4.94   <- "beats" us
+    #     ours_loop (composite, DEFAULT)  P(AI) 0.0408   tells/100w 0.79
+    #
+    # So the table answering "are we better than the free humanizers" was reporting our weakest
+    # backend, tying with the technique it was supposed to improve on, and losing to
+    # back-translation — while the rewriter the CLI actually defaults to scores ~7x lower P(AI) and
+    # ~9x fewer tells. Understating the tool by that much is the same measurement error this repo
+    # keeps correcting, pointed at ourselves.
+    #
+    # best_of matches the CLI default (3) for the default row, and stays 1 for the control so the
+    # comparison against a single synonym_swap pass remains single-draw on both sides.
     return {
         "none (raw AI)": lambda t: t,
         "synonym_swap": synonym_swap,
         "back_translation": back_translation,
-        "ours_loop (surgical)": ours_loop,
+        "ours_loop (surgical)": _ours("surgical", 1),
+        "ours_loop (composite)": _ours("composite", 3),
     }
 
 
