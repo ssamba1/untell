@@ -13,8 +13,6 @@ the sentinel-protected loop.
 
 from __future__ import annotations
 
-import re
-
 _MODEL = "Helsinki-NLP/opus-mt-{src}-{tgt}"
 
 
@@ -57,7 +55,12 @@ class BackTranslator:
         come back ~30% shorter with no indication anything was lost. Chained pivots compound it,
         since each hop re-applies the cap to the previous hop's output.
         """
-        sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+        # Abbreviation-aware (untell.text_split): splitting "Dr. Smith" apart here sends "Dr." into
+        # the translator as a standalone sentence, and a round trip through another language does
+        # not reliably bring an abbreviation back.
+        from untell.text_split import split_sentences
+
+        sentences = split_sentences(text.strip())
         chunks: list[str] = []
         current = ""
         for sentence in sentences:

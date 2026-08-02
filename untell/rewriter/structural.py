@@ -25,7 +25,7 @@ from untell.text_split import split_sentences
 # Sentence-level patterns
 # ---------------------------------------------------------------------------
 
-_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
+# (sentence splitting lives in untell.text_split — imported above)
 
 # Words it is safe to lowercase when a sentence becomes a subordinate clause. Anything outside this
 # set is left capitalised and the merge is SKIPPED, because the alternative — lowercasing whatever

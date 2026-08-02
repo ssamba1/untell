@@ -25,7 +25,7 @@ from .base import clamp01
 
 logger = logging.getLogger(__name__)
 
-_SENT_SPLIT = re.compile(r"[.!?]+(?:\s+|$)")
+# (sentence splitting lives in untell.text_split — imported lazily inside `_sentences`)
 _WORD = re.compile(r"[A-Za-z']+")
 
 # Calibration for the full (GPT-2) path. `_NLL_*` govern mean token surprisal over the whole

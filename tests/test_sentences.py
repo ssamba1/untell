@@ -75,9 +75,39 @@ def test_all_three_splitters_are_the_same_implementation():
     from untell.detectors.perplexity_burstiness import _sentences
     from untell.rewriter.structural import _split_sentences
     from untell.scripts.sentences import split_sentences
+    from untell.scripts.tells import _sentences as tells_sentences
 
     text = "Dr. Smith published the results in 2020. The study enrolled 240 patients."
     expected = ["Dr. Smith published the results in 2020.", "The study enrolled 240 patients."]
     assert split_sentences(text) == expected
     assert _split_sentences(text) == expected
     assert _sentences(text) == expected
+    # tells feeds its split into the burstiness CV, which the loop uses to tie-break candidates,
+    # so a stray one-word "Dr." sentence lands directly in a selection decision.
+    assert tells_sentences(text) == expected
+
+
+def test_no_module_keeps_its_own_sentence_splitter():
+    """Grep-level guard. Six copies of `(?<=[.!?])\\s+` existed; four were fixed one at a time and
+    the remaining two were still splitting "Dr." apart. Pinning the count is what stops the seventh.
+
+    `untell/text_split.py` owns the pattern. `targeted.py` is the one allowed exception: it must
+    reassemble the document byte-for-byte, so it keeps a whitespace-preserving variant — but it
+    defers to `ends_with_abbreviation` from the shared module for the part that was wrong.
+    """
+    import pathlib
+    import re
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    pattern = re.compile(r"re\.compile\(r?\"\(\?<=\[\.!\?\]\)|re\.split\(r\"\(\?<=\[\.!\?\]\)")
+    offenders = []
+    for path in sorted((root / "untell").rglob("*.py")):
+        if path.name in ("text_split.py", "targeted.py"):
+            continue
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if pattern.search(line):
+                offenders.append(f"{path.relative_to(root)}:{i}: {line.strip()}")
+    assert not offenders, (
+        "sentence splitting belongs in untell/text_split.py — these re-implement it and will drift:"
+        "\n  " + "\n  ".join(offenders)
+    )

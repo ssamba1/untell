@@ -40,7 +40,9 @@ if __package__ in (None, ""):
             break
 
 _WORD = re.compile(r"[A-Za-z0-9']+")
-_SENT_SPLIT = re.compile(r"[.!?]+(?:\s+|$)")
+# Sentence splitting lives in untell.text_split — see the note there. A naive split made "Dr." a
+# one-word sentence, which feeds straight into the burstiness coefficient of variation below and so
+# into the loop's tie-break between candidate rewrites.
 
 # High-frequency AI vocabulary (from ai-tells.md §1). Whole-word, case-insensitive.
 _AI_VOCAB = [
@@ -231,7 +233,9 @@ def _semicolon_crutch(text: str) -> int:
 
 
 def _sentences(text: str) -> list[str]:
-    return [s.strip() for s in _SENT_SPLIT.split(text) if s.strip()]
+    from untell.text_split import split_sentences
+
+    return split_sentences(text)
 
 
 def _burstiness_cv(text: str) -> float | None:

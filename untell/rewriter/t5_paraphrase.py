@@ -19,9 +19,10 @@ from __future__ import annotations
 import re
 from collections import Counter
 
+from untell.text_split import split_sentences
+
 _MODEL_ID = "humarin/chatgpt_paraphraser_on_T5_base"
 _SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
-_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
 
 class T5ParaphraseRewriter:
@@ -105,7 +106,10 @@ class T5ParaphraseRewriter:
             swapped = swapped.replace(sent, ph)
 
         out_parts: list[str] = []
-        for sent in _SENT_SPLIT.split(swapped.strip()):
+        # Abbreviation-aware (untell.text_split): a naive split fed the model a bare "Dr." as a
+        # sentence to paraphrase, and a neural paraphraser handed a two-character fragment returns
+        # whatever it likes — the abbreviation does not survive.
+        for sent in split_sentences(swapped.strip()):
             if not sent.strip():
                 continue
             try:
