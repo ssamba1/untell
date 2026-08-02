@@ -16,6 +16,9 @@ ensemble that untell can actually put in its loop.**
 > one detector present at every tier — was anti-correlated and saturating.
 >
 > The corrected figure, measured at `--repeats 9` (27 loop runs) after two 3-repeat runs disagreed:
+> **Superseded by Result 8 — the current figure is 0.859 → 0.184 ± 0.035, flagged 1.00 → 0.074.**
+> Everything below Result 7 was measured through two miscalibrated detectors.
+>
 > **0.859 → 0.261 ± 0.027, flagged rate 1.00 → 0.148.** Use `--repeats ≥ 9`; three repeats gave
 > 0.247 ± 0.015 and 0.330 ± 0.118 on the same command.
 
@@ -388,3 +391,72 @@ GPU float ops are not bit-exact, so the perplexity detector can drift run-to-run
 is deterministic, so the loop converges in one effective pass and stops early (`stopped: "stalled"`)
 rather than burning all iterations. n is small and the corpus is formulaic by design; treat these as
 the first data points in an unmeasured regime, not a benchmark.*
+
+---
+
+## Result 8 — the detectors were over-scoring everything, including the loop's own output
+
+Every number above was measured with two miscalibrated detectors. Found by asking a question the
+audit never asked: **what does this tool say about text a human wrote?**
+
+Measured on 40 HC3 pairs at the default 0.30 threshold:
+
+| detector | human mean | human flagged | AI caught |
+|---|---|---|---|
+| `fast_detectgpt` | 0.510 | **92%** | 100% |
+| `perplexity_burstiness` | 0.244 | 32% | 100% |
+| `hc3_roberta` | 0.000 | 0% | 100% |
+| `roberta_openai` | 0.006 | 0% | 100% |
+| **ensemble (max)** | **0.520** | **95%** | 100% |
+
+The ensemble aggregates with `max`, so one badly-scaled detector sets the floor: the full tier
+flagged 95% of human documents. A user running `untell-score` on their own writing would be told it
+was machine-generated, and the loop would rewrite it — spending meaning-similarity to fix nothing.
+
+**Both were calibration, not discrimination.** AUROC was 0.999+ for both throughout, and moved by at
+most 0.001 when fixed. `fast_detectgpt` had its logistic midpoint at the *human mean*
+(`_CAL_MID = -0.03` against human -0.023, AI +0.265); `perplexity_burstiness` had its midpoints at
+the *class midpoint* (`_NLL_MID = 3.036` against human 3.85, AI 2.23). Both are intuitive places to
+put a midpoint and both are wrong: what matters is where the THRESHOLD falls relative to the human
+distribution, not where the classes divide.
+
+Refit on 40 pairs, validated on 60 unseen:
+
+| | fit FPR/TPR | held-out FPR/TPR | held-out AUROC |
+|---|---|---|---|
+| `fast_detectgpt` MID -0.03 SC 0.12 | 92% / 100% | 88% / 100% | 0.996 |
+| `fast_detectgpt` MID +0.20 SC 0.08 | 8% / 100% | **2% / 97%** | 0.996 |
+| `perplexity_burstiness` MID 3.036 / 0.625 | 32% / 100% | 37% / 100% | 1.000 |
+| `perplexity_burstiness` MID 2.680 / 0.400 | 5% / 100% | **12% / 100%** | 0.999 |
+
+End state, human text at the default threshold: full ensemble 95% → **12%**, lite 32% → **5%**, AI
+still caught 100% in both.
+
+### What this does to the ceiling
+
+Re-measured with `--repeats 9` (27 loop runs), same command as Result 7:
+
+| | Result 7 (before) | Result 8 (after) |
+|---|---|---|
+| mean max P(AI) | 0.859 → 0.261 ± 0.027 | 0.859 → **0.184 ± 0.035** |
+| flagged rate | 1.00 → 0.148 | 1.00 → **0.074** |
+| meaning similarity | — | 0.936 mean, 0.835 worst |
+
+The *before* figure is unchanged at 0.859 — AI text is flagged just as confidently, which is the
+point. The *after* figure improved because the detectors had been over-scoring the loop's output
+the same way they over-scored human writing. The rewriter did not get better; the ruler got
+accurate.
+
+Per detector, before → after: `hc3_roberta` 0.73 → 0.05, `roberta_openai` 0.52 → 0.11,
+`perplexity_burstiness` 0.41 → 0.14, `fast_detectgpt` 0.21 → 0.02.
+
+### Method note
+
+`untell-detector-audit` reported both detectors as healthy the entire time, because it reported
+AUROC — a threshold-free measure that asks whether a detector *ranks* the classes correctly, which
+both did perfectly. It cannot see a detector that ranks correctly and reports on a scale that puts
+ordinary human prose over the line. The audit now reports FPR and TPR at the default threshold and
+has a `MISCALIBRATED` verdict for exactly this shape.
+
+**The general lesson: a discrimination metric cannot validate a decision rule.** Anything that
+ships a threshold has to be measured at that threshold.
