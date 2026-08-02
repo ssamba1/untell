@@ -68,6 +68,11 @@ _CLASSES: dict[str, tuple[str, ...]] = {
         "accused", "claims", "claim", "claimed", "argues", "argue", "argued", "estimates",
         "estimated", "believed", "thought", "considered", "according to", "evidence",
         "suspected", "purported", "supposedly", "said to",
+        # "hint" is an evidential hedge — weaker than "suggests", not stronger. Its absence made
+        # "the results suggest ..." -> "the results hint ..." read as a dropped class, which is the
+        # documented 1-of-13 false veto in the README: the check could not tell a lateral move
+        # between two weak hedges from a genuine upgrade. "suggests" -> "proves" still drops it.
+        "hint", "hints", "hinted", "hinting",
     ),
     # how often, as opposed to always
     "frequency": (

@@ -75,6 +75,21 @@ class TestNonHedgesAreNotTreatedAsHedges:
     def test_faithful_rewrite_is_not_vetoed(self, source, candidate, label):
         assert certainty_kept(source, candidate), f"{label}: {dropped_hedges(source, candidate)}"
 
+    def test_a_lateral_move_between_two_weak_hedges_is_not_an_upgrade(self):
+        """The README documented this as the gate's one known false veto on the faithful set.
+
+        "hint" is an evidential hedge — weaker than "suggests", not stronger — but it was not a
+        class member, so swapping one weak hedge for another read as dropping the class.
+        """
+        assert certainty_kept(
+            "The results suggest the treatment may help some patients.",
+            "The results hint that the treatment could help certain patients.",
+        )
+        assert certainty_kept("The data suggest a benefit.", "The data indicate a benefit.")
+        # ...and an actual upgrade out of the class is still caught, from either end.
+        assert not certainty_kept("The results suggest a link.", "The results prove a link.")
+        assert not certainty_kept("The data hint at a benefit.", "The data prove a benefit.")
+
     def test_real_intent_verbs_still_carry_the_class(self):
         """Trimming the class must not disarm it."""
         assert not certainty_kept("The company plans to expand.", "The company is expanding.")
