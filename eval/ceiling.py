@@ -10,8 +10,15 @@ runnable and still useful. With a rewriter (an API key, or one passed to ``measu
 reports the full before/after delta — the actual inference-only ceiling on the local tier.
 
     untell-ceiling                       # built-in sample, baseline (or full delta if a key is set)
+    untell-ceiling --dataset hc3 --n 12  # real ChatGPT answers — the number that generalises
     untell-ceiling --file corpus.txt     # paragraphs separated by blank lines
     untell-ceiling --tier full --best-of 3 --json
+
+The default corpus is three HAND-WRITTEN paragraphs, and it is measurably easier than real AI
+output: it starts at mean max P(AI) 0.859 where actual ChatGPT answers start at 0.998. At identical
+length the loop lands at 0.234 on it and clears every sample, against 0.628 with half still flagged
+on HC3. That gap is the corpus, not the length. Quote a number from ``--dataset hc3``; the built-in
+sample demonstrates the mechanics.
 """
 
 from __future__ import annotations
@@ -34,6 +41,20 @@ from untell.scripts.run import untell_text
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 
 # A few formulaic AI paragraphs (no locked facts needed; this measures detector movement).
+#
+# HAND-WRITTEN, and measurably EASIER than real AI output. They were composed to read as AI, and
+# they do — but they start at mean max P(AI) 0.859, where actual ChatGPT answers start at 0.998.
+# Measured on 6 HC3 pairs at tier=full, best_of=3, max_iters=5, with length held constant:
+#
+#     corpus                          words   pre     post    still flagged
+#     built-in sample                 37      0.859   0.234   0%
+#     HC3 ChatGPT answers, cut to 36w 36      0.998   0.628   50%
+#     HC3 ChatGPT answers, full       186     0.999   0.762   83%
+#
+# So the gap is the CORPUS, not the length: at identical length the built-in sample lands three
+# times lower and clears every sample. Any number measured on it is a demo of the loop's mechanics,
+# not the ceiling against real AI text — use --dataset hc3 for that. The warning in _render says so
+# on every run that uses this default.
 _SAMPLE = [
     "Furthermore, artificial intelligence has fundamentally transformed numerous industries in recent "
     "years. Moreover, organizations increasingly leverage these technologies to optimize operational "
@@ -76,6 +97,7 @@ def measure_ceiling(
     rewriter=None,
     best_of: int = 1,
     repeats: int = 1,
+    corpus: str = "builtin",
 ) -> dict:
     """Score each text, run the loop, and aggregate the before/after detector movement.
 
@@ -135,6 +157,12 @@ def measure_ceiling(
 
     return {
         "n": len(texts),
+        # WHICH texts. A ceiling is a property of the corpus as much as of the loop — the built-in
+        # sample starts at 0.859 and real ChatGPT answers start at 0.998 — and the result carried no
+        # record of which one produced it, so two very different numbers were indistinguishable
+        # once written down.
+        "corpus": corpus,
+        "corpus_mean_words": round(sum(len(t.split()) for t in texts) / len(texts), 1) if texts else None,
         "tier": tier,
         "threshold": threshold,
         "max_iters": max_iters,
@@ -159,10 +187,21 @@ def measure_ceiling(
 def _render(r: dict) -> str:
     lines = [
         f"untell inference-only ceiling — tier={r['tier']} threshold={r['threshold']} "
-        f"best_of={r['best_of']} n={r['n']}",
+        f"best_of={r['best_of']} n={r['n']} corpus={r.get('corpus', 'builtin')} "
+        f"({r.get('corpus_mean_words')} words avg)",
         "",
         f"  pre  flagged rate: {r['pre_flagged_rate']}   mean max P(AI): {r['pre_mean_max']}",
     ]
+    if r.get("corpus") == "builtin":
+        # The default corpus is three HAND-WRITTEN paragraphs. They read as AI, but they start at
+        # 0.859 where real ChatGPT answers start at 0.998, and at identical length the loop lands
+        # three times lower on them and clears every sample. Printing the number without this makes
+        # a demo look like a benchmark.
+        lines.insert(
+            1,
+            "  NOTE: built-in sample = 3 hand-written paragraphs, measurably easier than real AI "
+            "text (pre 0.86 vs 1.00). Use --dataset hc3 for the ceiling against real AI output.",
+        )
     if r.get("unscored"):
         # Say which samples produced no signal at all. Silently excluding them would leave a
         # confident-looking ceiling computed from a fraction of the corpus.
@@ -218,6 +257,16 @@ def main(argv: list[str] | None = None) -> int:
     configure_utf8_io()
     parser = argparse.ArgumentParser(prog="untell-ceiling", description=__doc__)
     parser.add_argument("--file", "-f", help="corpus file (paragraphs separated by blank lines)")
+    parser.add_argument(
+        "--dataset",
+        default="builtin",
+        help="corpus of AI text to measure against: builtin (3 hand-written paragraphs — a demo, "
+        "and measurably easier than real AI output), or hc3 / raid / mage for real generated text "
+        "(needs .[eval]). --file overrides this.",
+    )
+    parser.add_argument(
+        "--n", type=int, default=6, help="samples to draw from --dataset (ignored for builtin)"
+    )
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--max-iters", type=int, default=5)
@@ -246,7 +295,24 @@ def main(argv: list[str] | None = None) -> int:
     from untell._env import load_env
 
     load_env()
-    texts = _read_corpus(args.file) if args.file else _SAMPLE
+    if args.file:
+        texts, corpus = _read_corpus(args.file), f"file:{args.file}"
+    elif args.dataset.lower() in ("builtin", "sample"):
+        texts, corpus = list(_SAMPLE), "builtin"
+    else:
+        from eval.datasets import load_samples
+
+        texts, corpus = load_samples(args.dataset, args.n), args.dataset.lower()
+        # load_samples falls back to the built-in sample when `datasets` is missing or the load
+        # fails. Silently reporting that as an hc3 ceiling would attach real-corpus authority to
+        # the demo corpus — the exact confusion the corpus field exists to prevent.
+        if texts and all(t in _SAMPLE for t in texts):
+            print(
+                f"ERROR: --dataset {args.dataset} fell back to the built-in sample (install the "
+                "'.[eval]' extra: pip install -e '.[eval]'). Refusing to report a built-in-sample "
+                "measurement under a real dataset's name."
+            )
+            return 1
     if not texts:
         print(json.dumps({"error": "empty corpus"}))
         return 2
@@ -269,6 +335,7 @@ def main(argv: list[str] | None = None) -> int:
         best_of=args.best_of,
         repeats=args.repeats,
         rewriter=rewriter,
+        corpus=corpus,
     )
     print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
     return 0

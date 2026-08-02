@@ -5,6 +5,59 @@ from __future__ import annotations
 from eval.ceiling import _SAMPLE, main, measure_ceiling
 
 
+class TestTheCorpusIsPartOfTheResult:
+    """A ceiling is a property of the corpus as much as of the loop.
+
+    The built-in sample is three HAND-WRITTEN paragraphs. They read as AI but start at mean max
+    P(AI) 0.859, where real ChatGPT answers start at 0.998, and at IDENTICAL length the loop lands
+    at 0.234 on them (0% still flagged) against 0.628 on HC3 (50% still flagged). The result
+    carried no record of which corpus produced it, so a demo number and a benchmark number were
+    indistinguishable once written down.
+    """
+
+    def test_the_result_names_its_corpus(self):
+        from eval.ceiling import measure_ceiling
+
+        r = measure_ceiling(["Some text to score here and there."], tier="lite", max_iters=1)
+        assert r["corpus"] == "builtin"
+        assert r["corpus_mean_words"] == 7
+
+    def test_a_caller_can_label_its_own_corpus(self):
+        from eval.ceiling import measure_ceiling
+
+        r = measure_ceiling(["a b c d e"], tier="lite", max_iters=1, corpus="hc3")
+        assert r["corpus"] == "hc3"
+
+    def test_the_render_warns_only_for_the_builtin_sample(self):
+        from eval.ceiling import _render, measure_ceiling
+
+        builtin = _render(measure_ceiling(["a b c"], tier="lite", max_iters=1))
+        real = _render(measure_ceiling(["a b c"], tier="lite", max_iters=1, corpus="hc3"))
+        assert "hand-written" in builtin
+        assert "hand-written" not in real
+
+    def test_the_render_states_the_corpus_on_the_header_line(self):
+        from eval.ceiling import _render, measure_ceiling
+
+        out = _render(measure_ceiling(["a b c"], tier="lite", max_iters=1, corpus="hc3"))
+        assert "corpus=hc3" in out.splitlines()[0]
+
+
+def test_dataset_flag_refuses_to_report_a_fallback_under_a_real_name(monkeypatch, capsys):
+    """load_samples falls back to the built-in sample when `datasets` is missing or the load fails.
+
+    Reporting that as an hc3 ceiling would attach real-corpus authority to the demo corpus — the
+    exact confusion the corpus field exists to prevent.
+    """
+    import eval.ceiling as ceiling
+    import eval.datasets as datasets
+
+    monkeypatch.setattr(datasets, "load_samples", lambda dataset="builtin", n=5: list(ceiling._SAMPLE))
+    rc = ceiling.main(["--dataset", "hc3", "--n", "3", "--tier", "lite", "--max-iters", "1"])
+    assert rc == 1
+    assert "fell back to the built-in sample" in capsys.readouterr().out
+
+
 def test_baseline_without_rewriter():
     # No rewriter and no API key => baseline (pre) only; post is None but the run still succeeds.
     r = measure_ceiling(_SAMPLE[:2], tier="lite", max_iters=2, rewriter=None)
