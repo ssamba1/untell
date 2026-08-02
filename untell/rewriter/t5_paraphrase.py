@@ -99,8 +99,11 @@ class T5ParaphraseRewriter:
             return text
 
         # Swap sentinels for ALLCAPS placeholders the model tends to copy verbatim.
-        sentinels = list(dict.fromkeys(_SENTINEL_RE.findall(text)))
-        placeholders = {f"ZQXMARK{i}ZQX": s for i, s in enumerate(sentinels)}
+        # `wanted` holds the source's per-sentinel occurrence counts, which is what the final check
+        # must compare against — measuring the output against the *deduplicated* set made any
+        # entity mentioned twice look duplicated and silently disabled the rewriter on that text.
+        wanted = Counter(_SENTINEL_RE.findall(text))
+        placeholders = {f"ZQXMARK{i}ZQX": s for i, s in enumerate(wanted)}
         swapped = text
         for ph, sent in placeholders.items():
             swapped = swapped.replace(sent, ph)
@@ -132,8 +135,8 @@ class T5ParaphraseRewriter:
             out_parts.append(restored.strip())
 
         result = " ".join(p for p in out_parts if p)
-        # Final safety: every original sentinel must be present exactly once (no drop, no dup),
-        # else return the input untouched.
-        if Counter(_SENTINEL_RE.findall(result)) != Counter(sentinels):
+        # Final safety: every original sentinel must survive with its original multiplicity
+        # (no drop, no dup), else return the input untouched.
+        if Counter(_SENTINEL_RE.findall(result)) != wanted:
             return text
         return result or text

@@ -181,6 +181,43 @@ def test_mt_pivot_duplicate_sentinel_falls_back(monkeypatch):
     assert rw.rewrite(masked, {}) == masked  # dup placeholder -> safe no-op
 
 
+def test_mt_pivot_keeps_a_rewrite_that_preserved_a_repeated_sentinel(monkeypatch):
+    """A locked entity mentioned twice must not disable the rewriter.
+
+    The survival check compared the output's sentinel counts against a *deduplicated* list, so a
+    second mention of the same entity always looked like MT had duplicated it. Any text naming a
+    person, place or org more than once — the normal case — got the original back untouched.
+    """
+    from untell.rewriter.mt_pivot import MTPivotRewriter
+
+    rw = MTPivotRewriter()
+    monkeypatch.setattr(rw._bt, "available", lambda: True)
+    # Faithful MT: placeholders copied verbatim, surrounding wording changed.
+    monkeypatch.setattr(
+        rw._bt, "back_translate", lambda text, pivots=("fr",): text.replace("visited", "went to")
+    )
+    masked = "⟦HZ0000⟧ visited ⟦HZ0001⟧, and ⟦HZ0000⟧ stayed for a week."
+
+    out = rw.rewrite(masked, {})
+    assert out != masked  # the rewrite was kept, not discarded
+    assert out.count("⟦HZ0000⟧") == 2 and out.count("⟦HZ0001⟧") == 1
+
+
+def test_mt_pivot_still_rejects_a_dropped_repeat(monkeypatch):
+    """Loosening the check must not stop it catching a genuinely lost occurrence."""
+    from untell.rewriter.mt_pivot import MTPivotRewriter
+
+    rw = MTPivotRewriter()
+    monkeypatch.setattr(rw._bt, "available", lambda: True)
+    monkeypatch.setattr(
+        rw._bt,
+        "back_translate",
+        lambda text, pivots=("fr",): text.replace("ZQXMARK0ZQX stayed", "he stayed"),
+    )
+    masked = "⟦HZ0000⟧ visited ⟦HZ0001⟧, and ⟦HZ0000⟧ stayed for a week."
+    assert rw.rewrite(masked, {}) == masked  # one of the two occurrences lost -> no-op
+
+
 def test_t5_drops_sentinel_falls_back(monkeypatch):
     from untell.rewriter.t5_paraphrase import T5ParaphraseRewriter
 
@@ -189,6 +226,43 @@ def test_t5_drops_sentinel_falls_back(monkeypatch):
     monkeypatch.setattr(rw, "_paraphrase_one", lambda s: "totally reworded with no marker at all")
     masked = "AI changed ⟦HZ0000⟧ dramatically."
     assert rw.rewrite(masked, {}) == masked
+
+
+def test_t5_keeps_a_paraphrase_that_preserved_a_repeated_sentinel(monkeypatch):
+    """Same deduplicated-vs-counted mismatch as mt_pivot, same silent no-op."""
+    from untell.rewriter.t5_paraphrase import T5ParaphraseRewriter
+
+    rw = T5ParaphraseRewriter()
+    monkeypatch.setattr(rw, "available", lambda: True)
+    monkeypatch.setattr(rw, "_paraphrase_one", lambda s: s.replace("visited", "went to"))
+    masked = "⟦HZ0000⟧ visited ⟦HZ0001⟧. Later ⟦HZ0000⟧ left."
+
+    out = rw.rewrite(masked, {})
+    assert out != masked
+    assert out.count("⟦HZ0000⟧") == 2 and out.count("⟦HZ0001⟧") == 1
+
+
+def test_no_rewriter_compares_output_sentinels_against_a_deduplicated_list():
+    """Grep guard for the bug class, in both places it was found and anywhere it is added next.
+
+    `Counter(findall(output)) != Counter(dedup(findall(source)))` is always wrong: the left side
+    counts occurrences and the right side counts distinct values, so repeated sentinels never
+    match and the caller silently falls back. run.py and targeted.py already compare findall to
+    findall; this keeps it that way.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    offenders = [
+        p.relative_to(root).as_posix()
+        for p in root.glob("untell/**/*.py")
+        if re.search(r"dict\.fromkeys\(\s*_SENTINEL_RE\.findall", p.read_text(encoding="utf-8", errors="replace"))
+    ]
+    assert not offenders, (
+        f"{offenders} deduplicate sentinels before a Counter comparison — compare findall to "
+        "findall, or the rewriter no-ops on any text naming an entity twice"
+    )
 
 
 def test_t5_preserves_copied_sentinel(monkeypatch):

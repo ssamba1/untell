@@ -39,7 +39,12 @@ class MTPivotRewriter:
             return text
 
         # Swap each sentinel for an ALLCAPS placeholder MarianMT copies verbatim.
-        sentinels = list(dict.fromkeys(_SENTINEL_RE.findall(text)))
+        # `wanted` keeps the per-sentinel OCCURRENCE COUNT of the source; the survival check below
+        # compares against it. Comparing against the deduplicated list instead meant any entity
+        # mentioned twice made the counts differ even when MT preserved both, so every such text
+        # took the fallback path and the rewriter was a silent no-op on it.
+        wanted = Counter(_SENTINEL_RE.findall(text))
+        sentinels = list(wanted)  # unique, in first-appearance order
         placeholders: dict[str, str] = {}
         swapped = text
         for i, sent in enumerate(sentinels):
@@ -59,6 +64,6 @@ class MTPivotRewriter:
         # Verify every sentinel survived; otherwise fall back to the original (the loop's own
         # sentinel check would reject a lossy candidate anyway, but returning the input keeps the
         # loop moving instead of wasting the draw).
-        if Counter(_SENTINEL_RE.findall(translated)) != Counter(sentinels):
+        if Counter(_SENTINEL_RE.findall(translated)) != wanted:
             return text  # a sentinel was dropped OR duplicated by MT -> safe no-op
         return translated
