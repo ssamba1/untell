@@ -42,6 +42,8 @@ if __package__ in (None, ""):
 from untell.detectors.base import clamp01
 
 _PCT = re.compile(r"([\d.]+)\s*%")
+# A percentage RANGE ("10%-20%", "10 – 20%"). Read as its upper bound; see parse_ai_percent.
+_RANGE = re.compile(r"([\d.]+)\s*%?\s*[-–—]\s*([\d.]+)\s*%")
 # Word-bounded, so "again" and "available" stop counting as an AI label and "really" as a human one
 # — the old check was a bare `"ai" in window` / `"human" in window` substring test.
 # Longest alternative first: the alternation is first-match-wins, so `\bai\b` ahead of
@@ -133,14 +135,38 @@ def parse_ai_percent(text: str) -> float | None:
     unlabelled = None
     saw_human = any(False in v for v in kinds.values())
 
+    # "AI: 10%-20%" is ONE reading, not two. The dash is a range separator, but the sign check
+    # below saw it as a minus, refused the upper bound, and returned 10% — the low end of the
+    # range, under-stating AI, which is the single direction this parser refuses everywhere else.
+    # Collapse each range onto its lower-bound match (the one a label attaches to) carrying the
+    # UPPER value, and drop the second match.
+    upper_of: dict[int, float] = {}
+    skip: set[int] = set()
+    by_start = {m.start(): m for m in numbers}
+    for rm in _RANGE.finditer(raw):
+        lo, hi = by_start.get(rm.start(1)), by_start.get(rm.start(2))
+        if lo is None or hi is None:
+            continue
+        try:
+            upper_of[lo.start()] = float(rm.group(2))
+        except ValueError:
+            continue
+        skip.add(hi.start())
+
     for m in numbers:
+        if m.start() in skip:
+            continue
         kind = kinds.get(m.start(), set())
-        # The digit pattern cannot see a leading sign, so check the source text for one.
-        negative = bool(m.start()) and raw[m.start() - 1] in "-−"
+        # The digit pattern cannot see a leading sign, so check the source text for one. A dash
+        # directly after a digit or '%' is a range separator and was handled above, not a sign.
+        prev = raw[m.start() - 1] if m.start() else ""
+        prev2 = raw[m.start() - 2] if m.start() >= 2 else ""
+        negative = bool(prev) and prev in "-−" and not (prev2.isdigit() or prev2 == "%")
         try:
             pct = float(m.group(1))
         except ValueError:
             continue
+        pct = upper_of.get(m.start(), pct)
         if negative or pct < 0.0:
             continue  # under-states AI — refuse rather than report "looks human"
         if kind == {True} and ai_labelled is None:
@@ -260,7 +286,13 @@ def _user_sites() -> dict[str, SiteConfig]:
 
     JSON shape: ``{"sitename": {"url": ..., "input_selector": ..., "result_selector": ..., ...}}``.
     """
-    path = os.environ.get("UNTELL_BROWSER_SITES") or "browser_sites.json"
+    # The legacy alias is documented in the line above but was never read, so anyone who followed
+    # it got {} back and every custom checker silently returned None.
+    path = (
+        os.environ.get("UNTELL_BROWSER_SITES")
+        or os.environ.get("HUMANIZE_BROWSER_SITES")
+        or "browser_sites.json"
+    )
     try:
         with open(path, encoding="utf-8") as fh:
             raw = json.load(fh)

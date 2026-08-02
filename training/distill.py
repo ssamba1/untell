@@ -27,7 +27,12 @@ def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshol
 
     rows = []
     kept = 0
-    for src in load_samples(dataset, n):
+    # Count what load_samples actually returned. Reporting the REQUESTED n as the denominator told
+    # a user who asked for 2000 from a 50-item dataset "wrote 3/2000", i.e. that 1997 samples were
+    # rejected by the meaning/flagged filter, when only 50 were ever seen. That misdiagnosis points
+    # at the filter instead of at the dataset.
+    samples = list(load_samples(dataset, n))
+    for src in samples:
         result = untell_text(src, tier=tier, threshold=threshold, margin=margin)
         if "error" in result:
             continue
@@ -41,7 +46,7 @@ def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshol
         if not result.get("flagged") and result.get("similarity", 0.0) >= sim_bar:
             rows.append({"prompt": _PROMPT.format(text=src), "source": src, "humanized": result["final"]})
             kept += 1
-    return {"kept": kept, "total": n, "rows": rows}
+    return {"kept": kept, "total": len(samples), "requested": n, "rows": rows}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -64,7 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     with open(args.out, "w", encoding="utf-8") as fh:
         for row in out["rows"]:
             fh.write(json.dumps(row, ensure_ascii=True) + "\n")
-    print(f"wrote {out['kept']}/{out['total']} passing samples -> {args.out}")
+    short = ""
+    if out["total"] < out["requested"]:
+        short = f" (dataset supplied {out['total']} of the {out['requested']} requested)"
+    print(f"wrote {out['kept']}/{out['total']} passing samples -> {args.out}{short}")
     return 0
 
 

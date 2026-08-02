@@ -29,6 +29,39 @@ def test_parse_ai_percent(text, expected):
     assert abs(parse_ai_percent(text) - expected) < 1e-6
 
 
+def test_user_sites_honours_the_documented_legacy_alias(tmp_path, monkeypatch):
+    """_user_sites' own docstring advertises HUMANIZE_BROWSER_SITES; the code never read it, so
+    anyone who followed the documentation got {} and every custom checker returned None."""
+    import json as _json
+
+    from untell.browser_check import _user_sites
+
+    cfg = tmp_path / "sites.json"
+    cfg.write_text(
+        _json.dumps({"mysite": {"url": "https://example.test", "input_selector": "#in",
+                                "result_selector": "#out"}}),
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("UNTELL_BROWSER_SITES", raising=False)
+    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(cfg))
+    assert "mysite" in _user_sites()
+
+
+def test_user_sites_prefers_the_current_variable_over_the_alias(tmp_path, monkeypatch):
+    import json as _json
+
+    from untell.browser_check import _user_sites
+
+    current = tmp_path / "current.json"
+    legacy = tmp_path / "legacy.json"
+    base = {"url": "https://example.test", "input_selector": "#in", "result_selector": "#out"}
+    current.write_text(_json.dumps({"current": base}), encoding="utf-8")
+    legacy.write_text(_json.dumps({"legacy": base}), encoding="utf-8")
+    monkeypatch.setenv("UNTELL_BROWSER_SITES", str(current))
+    monkeypatch.setenv("HUMANIZE_BROWSER_SITES", str(legacy))
+    assert set(_user_sites()) == {"current"}
+
+
 def test_parse_ai_percent_none_when_no_number():
     assert parse_ai_percent("no percentage here") is None
     assert parse_ai_percent("") is None
@@ -161,6 +194,15 @@ PARSE_CASES = [
     ("45% Human Written", None),
     ("150% AI", 1.0),                       # clamped — over-stating AI is safe
     ("-10% AI", None),                      # sign was silently dropped -> read as 0.10
+    ("−10% AI", None),                      # unicode minus, same refusal
+    # A RANGE is one reading, and its upper bound is the safe one. The dash used to be read as a
+    # minus sign, which refused the upper bound and returned the LOW end — under-stating AI, the
+    # single direction this parser refuses everywhere else.
+    ("AI: 10%-20%", 0.20),
+    ("AI: 10% - 20%", 0.20),
+    ("AI: 10 – 20%", 0.20),                 # en dash, percent only on the upper bound
+    ("AI-generated: 65%—80%", 0.80),        # em dash
+    ("Human: 45%-55%", None),               # an inverted range is still inverted
     ("Analyzing...", None),
     ("Hang on while we verify your browser", None),
     ("", None),

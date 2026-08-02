@@ -268,12 +268,16 @@ async def verify_endpoint(body: VerifyRequest) -> dict:
 @app.post("/ceiling")
 async def ceiling(body: CeilingRequest) -> dict:
     """Measure untell's inference-only evasion ceiling against the local detector ensemble."""
-    from eval.ceiling import measure_ceiling
+    from eval.ceiling import _SAMPLE, measure_ceiling
     from untell.rewriter import get_rewriter
 
     rw = get_rewriter(prefer=body.rewriter) if body.rewriter in _FREE_REWRITERS else None
+    # `n` was in the request schema but never used: passing texts=None ran the whole built-in
+    # sample regardless, so a caller asking for one fast sample paid for all of them. Capped by
+    # the sample size, and the response echoes the count actually measured.
+    texts = list(_SAMPLE)[: max(1, body.n)]
     result = measure_ceiling(
-        None,
+        texts,
         tier=body.tier,
         threshold=body.threshold,
         max_iters=body.max_iters,
