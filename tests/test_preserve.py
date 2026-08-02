@@ -377,3 +377,90 @@ class TestFlagsAndEnvVars:
     )
     def test_round_trip(self, text):
         assert restore(*lock(text)) == text
+
+
+class TestFactsLockedWholeNotInPieces:
+    """A fact locked in pieces is not locked: whatever falls outside the sentinel stays rewritable
+    while every sentinel survives, so the integrity check passes and the fact still changed."""
+
+    def test_medical_marker_polarity_is_inside_the_lock(self):
+        """CD4+ and CD4- are opposite cell populations. Locking only the stem left the sign free.
+
+        Measured before: "CD4+" masked to "⟦HZ0000⟧+" while "CD8-" happened to mask whole — the two
+        behaved differently inside one sentence.
+        """
+        from untell.scripts.preserve import lock
+
+        masked, mapping = lock("The CD4+ count fell while CD8- cells rose.")
+        assert set(mapping.values()) == {"CD4+", "CD8-"}
+        assert "+" not in masked and "-" not in masked
+
+    def test_meridiem_is_inside_the_lock(self):
+        """"9:30 AM" locked only "9:30", so a rewrite could move a meeting twelve hours."""
+        from untell.scripts.preserve import lock
+
+        _, m = lock("The meeting starts at 9:30 AM and ends at 4:15 PM.")
+        assert set(m.values()) == {"9:30 AM", "4:15 PM"}
+        _, m2 = lock("It runs 8:00 a.m. to 5:00 p.m. daily.")
+        assert set(m2.values()) == {"8:00 a.m.", "5:00 p.m."}
+
+    def test_locking_pm_does_not_eat_the_sentence_terminator(self):
+        """`[Mm]\.?` swallowed the full stop after "PM", leaving the masked text unterminated and
+        breaking sentence splitting for everything downstream."""
+        from untell.scripts.preserve import lock
+
+        masked, _ = lock("The meeting starts at 9:30 AM and ends at 4:15 PM.")
+        assert masked.endswith(".")
+
+    def test_slash_dates_lock_as_one_span(self):
+        """The fraction rule took "03/04" and left "/2021" as free text, severing day-month from
+        year with a rewritable separator between them."""
+        from untell.scripts.preserve import lock
+
+        _, m = lock("The incident occurred on 03/04/2021 and again on 11/12/2022.")
+        assert set(m.values()) == {"03/04/2021", "11/12/2022"}
+
+    def test_bare_fractions_and_ratios_still_work(self):
+        """The slash-date rule must not swallow ordinary fractions or clock ratios."""
+        from untell.scripts.preserve import lock
+
+        _, m = lock("About 2/3 of runs passed, a ratio of 3:1.")
+        assert "2/3" in m.values() and "3:1" in m.values()
+
+
+class TestWeekdayAbbreviationsDoNotLockOrdinaryWords:
+    """The date pattern carries re.IGNORECASE and the 3-letter weekdays are ordinary English words.
+
+    Measured before: "She **sat** on the bench", "The **sun** was bright" and "the **wed**ding" all
+    locked as date facts. Over-locking is not harmless — a locked span is one the rewriter may not
+    touch, so this pinned ordinary prose the loop is supposed to be free to rewrite.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "She sat on the bench and read for an hour.",
+            "The sun was bright and warm all afternoon.",
+            "They wed in the spring of that year.",
+            "I won the match and then lost the next one.",
+        ],
+    )
+    def test_lowercase_weekday_words_are_not_locked(self, text):
+        from untell.scripts.preserve import lock
+
+        _, mapping = lock(text)
+        assert not mapping, f"over-locked {list(mapping.values())} in {text!r}"
+
+    @pytest.mark.parametrize("text", ["The meeting is on Wed and again on Sat.", "Due Monday."])
+    def test_real_weekdays_are_still_locked(self, text):
+        from untell.scripts.preserve import lock
+
+        _, mapping = lock(text)
+        assert mapping, f"failed to lock a weekday in {text!r}"
+
+    def test_full_weekday_names_stay_case_insensitive(self):
+        """"sunday" is unambiguous whatever its case, unlike "sun"."""
+        from untell.scripts.preserve import lock
+
+        _, mapping = lock("it happened on sunday afternoon")
+        assert "sunday" in mapping.values()

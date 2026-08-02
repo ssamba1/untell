@@ -71,6 +71,11 @@ _MONTH = (
     r"|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
 )
 _WEEKDAY = r"Mon(?:day)?|Tue(?:s(?:day)?)?|Wed(?:nesday)?|Thu(?:rs(?:day)?)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?"
+# Split for the BARE-weekday case only. Abbreviations are matched case-sensitively there because
+# "sat", "sun", "wed", "mon" and "fri" are ordinary words; see the date pattern below. The combined
+# `_WEEKDAY` above is still used where a month or a number pins the context.
+_WEEKDAY_FULL = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
+_WEEKDAY_ABBR = r"Mon|Tues|Tue|Wed|Thurs|Thur|Thu|Fri|Sat|Sun"
 
 # Ordered patterns. Every match from every pattern is collected and OVERLAPPING/ADJACENT spans are
 # merged into their union (see `_merge`), so a broad pattern and a narrow one covering part of the
@@ -117,6 +122,20 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"\bv\d+(?:\.\d+)+\b"  # semantic version: v2.1.3
             r"|\b\d{4}-\d{2}-\d{2}\b"  # ISO date: 2024-03-15
             r"|\b\d+(?:\.\d+)?[eE][+-]?\d+\b"  # scientific notation: 1.5e10
+            # Slash date BEFORE the fraction rule, which would otherwise take "03/04" and leave
+            # "/2021" as free text: measured, "03/04/2021" masked to "⟦HZ0000⟧/⟦HZ0001⟧" with the
+            # separator rewritable and the day/month pair severed from its year.
+            r"|\b\d{1,2}\s*/\s*\d{1,2}\s*/\s*\d{2,4}\b"  # slash date: 03/04/2021
+            # Clock time INCLUDING any meridiem. "9:30 AM" locked only "9:30" and left "AM" free,
+            # so a rewrite could move a meeting twelve hours while every sentinel survived intact.
+            # `[Mm]\.?` would swallow a sentence-ending full stop after "PM", leaving the masked
+            # text without a terminator and breaking sentence splitting downstream. Match either
+            # the fully dotted form or the undotted one, so only a dot that belongs to the
+            # abbreviation is absorbed.
+            # The `\b` belongs to the UNDOTTED branch only: after "a.m." the next character is a
+            # space, so a trailing \b can never match and the dotted form would fall through to the
+            # bare-time rule below, leaving the meridiem outside the lock again.
+            r"|\b\d{1,3}:\d{1,3}(?::\d{2})?\s*(?:[AaPp]\.[Mm]\.|[AaPp][Mm]\b)"  # 9:30 AM, 4:15 p.m.
             r"|\b\d{1,3}:\d{1,3}(?::\d{2})?\b"  # time or ratio: 9:30, 3:1, 1:02:33
             r"|\b\d+\s*/\s*\d+\b"  # fraction: 2/3
             # Comparison against a number: p<0.05, n >= 30. The operator must be inside the lock or a
@@ -149,7 +168,14 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"|\b(?:" + _MONTH + r")\s+\d{4}\b"
             r"|\b(?:" + _MONTH + r")\s+\d{1,2}(?:st|nd|rd|th)\b"
             r"|\b\d{1,2}(?:st|nd|rd|th)\s+of\s+(?:" + _MONTH + r")\b"
-            r"|\b(?:" + _WEEKDAY + r")\b"
+            # Bare weekday. This pattern carries re.IGNORECASE and the three-letter abbreviations
+            # are ordinary English words, so measured: "She **sat** on the bench", "The **sun** was
+            # bright" and "the **wed**ding" all locked as date facts — pinning ordinary prose the
+            # rewriter is supposed to be free to change. The abbreviations now require their
+            # capitalised form, which costs nothing (a weekday in real prose is capitalised); the
+            # full names stay case-insensitive because "sunday" is unambiguous either way.
+            r"|\b(?:" + _WEEKDAY_FULL + r")\b"
+            r"|(?-i:\b(?:" + _WEEKDAY_ABBR + r")\b)"
             r"|\b[QH][1-4]\s*(?:of\s+)?(?:FY)?\d{2,4}\b"  # Q3 2024, H1 FY25
             r"|\bFY\s?\d{2,4}\b"
             r"|\b\d+(?:st|nd|rd|th)\b",  # bare ordinal: the 3rd
@@ -193,6 +219,17 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         "identifier",
         re.compile(
             r"#[0-9A-Fa-f]{3,8}\b"
+            # The +/- variants come FIRST: alternation is first-match-wins, so the plain rules
+            # below would otherwise take "CD4" and leave the sign outside the lock.
+            #
+            # A trailing +/- is part of the identifier, not punctuation beside it. Immunology and
+            # lab notation use it to carry POLARITY — CD4+ and CD4- are opposite cell populations —
+            # so locking only the stem left the sign freely rewritable while the sentinel survived
+            # intact, and a rewrite could invert the finding. Measured: "CD4+" masked to
+            # "⟦HZ0000⟧+" while "CD8-" happened to mask whole, so the two behaved differently
+            # inside one sentence.
+            r"|\b[A-Z]{2,}[- ]?\d+(?:[-.]\d+)*[+-](?!\w)"
+            r"|\b[A-Z][A-Za-z]*\d+[A-Za-z0-9]*[+-](?!\w)"  # CD4+, CD8-, Rh+
             r"|\b[A-Z]{2,}[- ]?\d+(?:[-.]\d+)*\b"  # ISO 9001, IEEE 802.11
             r"|\b[A-Z][A-Za-z]*\d+[A-Za-z0-9]*\b"  # H2O2, BRCA1, B12, GPT4
         ),
