@@ -121,3 +121,30 @@ def test_stdlib_shadowing_guard_would_actually_fire():
 
     stdlib = set(getattr(sys, "stdlib_module_names", ()))
     assert {"numbers", "json", "types", "string"} <= stdlib
+
+
+def test_skill_runs_every_check_the_loop_runs():
+    """SKILL.md must call every gate `meaning_preserved()` calls.
+
+    This is the divergence that kept recurring: the headless loop gained the NLI gate, then the
+    predicate-argument veto, then quantity and certainty checks, and each time the flagship path —
+    where Claude is the rewriter — was left running an older, weaker gate. The skill was still
+    enforcing a similarity bar the loop had abandoned, and had no contradiction check at all.
+
+    `meaning_preserved` imports its sub-checks lazily by module, so the set of imports inside it is
+    the authoritative list of what the loop enforces. Every one must appear in SKILL.md as a step.
+    """
+    import inspect
+
+    from untell.scripts import entailment
+
+    src = inspect.getsource(entailment.meaning_preserved)
+    modules = set(re.findall(r"from untell\.scripts\.(\w+) import", src))
+    assert modules, "no sub-check imports found — has meaning_preserved been restructured?"
+
+    skill = SKILL.read_text(encoding="utf-8", errors="replace")
+    missing = sorted(m for m in modules if f"scripts/{m}.py" not in skill)
+    assert not missing, (
+        f"the loop's meaning gate runs {sorted(modules)} but SKILL.md never invokes {missing} — "
+        "the flagship path would enforce a weaker gate than the headless loop"
+    )
