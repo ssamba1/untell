@@ -98,7 +98,21 @@ def train(
     hub_id: str | None = None,
     resume: str | None = None,
     dpo_init: str | None = None,
-    reward_sim_floor: float = 0.76,
+    # `build_dataset` has always taken a name, and `train` never passed one — so every GRPO run
+    # used the built-in sample regardless. That sample holds five texts; `_builtin` pads by
+    # repeating them, so a 2000-prompt run trains on five distinct sources repeated 400 times.
+    # training/distill.py already exposes --dataset; the reinforcement path, which is the one that
+    # most needs source diversity, was the one that could not select data.
+    dataset: str = "builtin",
+    n: int | None = None,
+    # None means "ask recommended_bar() for the active similarity backend", matching
+    # humanness_reward and batch_rewards. Both of those were fixed off a hard-coded 0.76 — the
+    # cosine-embedding bar — and this, the value GRPO actually trains with, kept passing 0.76
+    # explicitly and overrode both fixes. similarity() is backend-adaptive: BERTScore wants 0.88,
+    # cosine 0.76, the token-overlap fallback 0.50. A training box without sentence-transformers
+    # gets the fallback, where 0.76 is ~50% too strict, so faithful paraphrases were hard-gated to
+    # -1.0 alongside off-topic ones and the group carried no advantage signal.
+    reward_sim_floor: float | None = None,
 ):
     """GRPO-train the policy. Heavy deps imported here so this module stays importable without a GPU.
 
@@ -176,7 +190,18 @@ def train(
         model = PeftModel.from_pretrained(base, dpo_init).merge_and_unload()
         logger.info("merged DPO adapter %s into base before GRPO", dpo_init)
 
-    rows = build_dataset(n=16 if smoke else 2000)
+    rows = build_dataset(dataset, n=n if n is not None else (16 if smoke else 2000))
+    # Say how much REAL data arrived. load_samples pads a short dataset by repeating it, so len(rows)
+    # is the requested count either way and cannot reveal that a run has no diversity. GRPO on five
+    # repeated sources still produces a plausible loss curve and a useless policy.
+    unique = len({r["source"] for r in rows})
+    logger.info("GRPO dataset %r: %d prompts from %d distinct sources", dataset, len(rows), unique)
+    if unique < min(len(rows), 50):
+        logger.warning(
+            "only %d distinct source texts behind %d prompts (dataset=%r). The policy sees the same "
+            "few texts over and over; install .[eval] and pass --dataset hc3/raid/mage for real data.",
+            unique, len(rows), dataset,
+        )
     source_by_prompt = {r["prompt"]: r["source"] for r in rows}
     dataset = Dataset.from_list([{"prompt": r["prompt"]} for r in rows])
     resolve_source = _source_resolver(source_by_prompt)
@@ -255,8 +280,12 @@ def train(
     return out
 
 
-def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+def build_parser() -> argparse.ArgumentParser:
+    """The GRPO trainer's argument parser, separate from ``main`` so its defaults are readable.
+
+    Three of them (reward-sim-floor, dataset, n) had drifted away from what train() should do, and
+    a test that restated the expected values here would have drifted with them.
+    """
     parser = argparse.ArgumentParser(prog="training.rl_humanizer", description=__doc__)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
@@ -268,12 +297,38 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--resume", default=None, help="resume from this checkpoint directory (e.g. out/rl-humanizer/checkpoint-125)")
     parser.add_argument("--steps", type=int, default=300, help="training steps (default 300 to fit Kaggle 9h GPU limit; each step ~100s on T4)")
     parser.add_argument("--dpo-init", default=None, help="path to a DPO LoRA adapter to merge into the base before GRPO (warm-start)")
-    parser.add_argument("--reward-sim-floor", type=float, default=0.76, help="hard meaning gate: rewrites below this similarity earn -1.0 (default 0.76)")
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--dataset",
+        default="builtin",
+        help="source of AI texts to untell: builtin (5 offline samples), hc3, raid, mage. "
+        "Needs .[eval] for anything but builtin. Matches training/distill.py's --dataset.",
+    )
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=None,
+        help="number of training prompts (default 2000, or 16 with --smoke). A short dataset is "
+        "padded by repetition, so ask for no more than it actually holds.",
+    )
+    parser.add_argument(
+        "--reward-sim-floor",
+        type=float,
+        default=None,
+        help="hard meaning gate: rewrites below this similarity earn -1.0. Default: whatever "
+        "recommended_bar() returns for the similarity backend actually installed (BERTScore 0.88, "
+        "cosine embeddings 0.76, token-overlap fallback 0.50). Only set this to override it.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    args = build_parser().parse_args(argv)
     path = train(
         model_id=args.model, tier=args.tier, steps=args.steps, k=args.k, out=args.out,
         smoke=args.smoke, load_4bit=args.load_4bit, hub_id=args.hub_id, resume=args.resume,
         dpo_init=args.dpo_init, reward_sim_floor=args.reward_sim_floor,
+        dataset=args.dataset, n=args.n,
     )
     print(f"saved policy -> {path}")
     return 0

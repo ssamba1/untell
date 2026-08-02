@@ -65,6 +65,71 @@ def test_batch_rewards_defaults_to_the_backend_bar_not_a_hardcoded_one(monkeypat
     assert all(kw["sim_floor"] is None for kw in seen)
 
 
+class TestTrainerDefaults:
+    """train() is the third site of the hard-coded-sim-floor bug, and the one GRPO runs on.
+
+    humanness_reward and batch_rewards were both moved off a hard-coded 0.76 to
+    ``recommended_bar()``; train() kept passing 0.76 explicitly and overrode both fixes for every
+    real run. Read the values off the signature and the parser so a regression cannot hide behind
+    a restated constant here.
+    """
+
+    def test_reward_sim_floor_defers_to_recommended_bar(self):
+        import inspect
+
+        from training.rl_humanizer import train
+
+        assert inspect.signature(train).parameters["reward_sim_floor"].default is None
+
+    def test_the_cli_flag_defers_too(self):
+        from training.rl_humanizer import build_parser
+
+        action = next(a for a in build_parser()._actions if a.dest == "reward_sim_floor")
+        assert action.default is None
+
+    def test_a_dataset_can_actually_be_chosen(self):
+        """`build_dataset` always took a name; train() never passed one, so every GRPO run used the
+        built-in sample — five texts, padded by repetition to whatever n was asked for."""
+        import inspect
+
+        from training.rl_humanizer import build_parser, train
+
+        assert "dataset" in inspect.signature(train).parameters
+        assert {"dataset", "n"} <= {a.dest for a in build_parser()._actions}
+
+    def test_the_cli_forwards_both_to_train(self, monkeypatch):
+        """Threading a parameter through the signature is only half the fix — main has to pass it."""
+        import training.rl_humanizer as rl
+
+        seen: dict = {}
+        monkeypatch.setattr(rl, "train", lambda **kw: seen.update(kw) or "out/x")
+        rl.main(["--dataset", "hc3", "--n", "7", "--reward-sim-floor", "0.5"])
+        assert seen["dataset"] == "hc3"
+        assert seen["n"] == 7
+        assert seen["reward_sim_floor"] == 0.5
+
+    def test_the_cli_defaults_reach_train_unchanged(self, monkeypatch):
+        import training.rl_humanizer as rl
+
+        seen: dict = {}
+        monkeypatch.setattr(rl, "train", lambda **kw: seen.update(kw) or "out/x")
+        rl.main([])
+        assert seen["dataset"] == "builtin"
+        assert seen["n"] is None
+        assert seen["reward_sim_floor"] is None
+
+    def test_build_dataset_honours_the_name_it_is_given(self, monkeypatch):
+        import eval.datasets as ds
+        import training.rl_humanizer as rl
+
+        seen: dict = {}
+        monkeypatch.setattr(
+            ds, "load_samples", lambda dataset="builtin", n=5: seen.update(dataset=dataset, n=n) or ["x"]
+        )
+        rl.build_dataset("hc3", n=7)
+        assert seen == {"dataset": "hc3", "n": 7}
+
+
 @pytest.mark.parametrize(
     "text,expected",
     [
