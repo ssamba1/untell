@@ -68,6 +68,16 @@ _CLASSES: dict[str, tuple[str, ...]] = {
         "some", "several", "many", "most", "a few", "few", "certain", "various", "a number of",
         "a handful", "part of", "portion", "subset", "minority", "majority", "not all", "much",
     ),
+    # how much — "fell slightly" is a hedge on magnitude, and dropping it inflates the claim
+    # ("Revenue fell slightly." -> "Revenue collapsed." cleared every other gate). Verbs that carry
+    # smallness lexically (edged, ticked, inched) count as members, so compact rewordings like
+    # "edged down" are not vetoed for lacking an adverb.
+    "degree": (
+        "slightly", "marginally", "modestly", "somewhat", "a bit", "a little", "moderately",
+        "mildly", "partially", "partly", "slight", "small", "minor", "narrowly", "fractionally",
+        "fraction", "a touch", "a tad", "tad", "minimally", "negligibly", "marginal",
+        "edged", "ticked", "inched", "dipped", "nudged", "crept",
+    ),
     # intended vs done
     "intention": (
         "plans", "plan", "planned", "aims", "aim", "aimed", "intends", "intend", "intended",

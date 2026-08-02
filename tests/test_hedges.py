@@ -33,6 +33,9 @@ class TestStrengtheningIsCaught:
             ("She was accused of fraud.", "She committed fraud.", "evidential"),
             ("It usually works.", "It always works.", "frequency"),
             ("The company plans to expand.", "The company is expanding.", "intention"),
+            ("Revenue fell slightly.", "Revenue collapsed.", "degree"),
+            ("Costs rose modestly.", "Costs skyrocketed.", "degree"),
+            ("Output dipped a little.", "Output plunged.", "degree"),
         ],
     )
     def test_dropped_class_is_reported(self, source, candidate, cls):
@@ -54,6 +57,10 @@ class TestFaithfulRewritesPass:
             ("She was accused of fraud.", "She was allegedly involved in fraud.", "accused->allegedly"),
             ("Organizations use these tools.", "Companies rely on this stuff.", "no hedges present"),
             ("The build runs faster now.", "The build is quicker these days.", "plain paraphrase"),
+            ("Revenue fell slightly.", "Revenue edged down.", "degree: verb carries smallness"),
+            ("Revenue fell slightly.", "Revenue declined a fraction.", "degree: a fraction"),
+            ("Revenue fell slightly.", "Revenue went down a touch.", "degree: a touch"),
+            ("Revenue fell slightly.", "There was a small drop in revenue.", "degree: small"),
         ],
     )
     def test_no_false_veto(self, source, candidate, label):
