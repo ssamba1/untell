@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 
 from untell.detectors.base import _TIER_RANK, load_detectors, resolved_tier
@@ -74,8 +75,33 @@ def batch_score_texts(
     return [_score_with_detectors(detectors, _truncate(t), tier, threshold) for t in texts]
 
 
+_WS_RUN_RE = re.compile(r"[ \t]{2,}")
+_BLANK_RUN_RE = re.compile(r"\n{3,}")
+
+
+def _normalise_ws(text: str) -> str:
+    """Collapse runs of spaces/tabs and 3+ blank lines, for SCORING only.
+
+    The perplexity detectors tokenise whatever they are given, and GPT-2 encodes "  " differently
+    from " ", so the same words scored materially differently depending on spacing. MEASURED on HC3
+    documents, doubling every space:
+
+        0.730 -> 0.649    0.459 -> 0.586    0.572 -> 0.667
+
+    Swings of up to 0.13 on identical content, enough to flip a borderline verdict. Text pasted out
+    of a PDF or an editor with hard-wrapped columns routinely carries runs like this.
+
+    This affects only the string handed to the detectors. Nothing here touches the text the caller
+    gets back, so document layout — which the rewriters now go to some trouble to preserve — is
+    unaffected. It is a no-op on ordinary prose: verified byte-identical on the HC3 sample, so it
+    cannot disturb the detector calibrations fitted against that corpus.
+    """
+    return _BLANK_RUN_RE.sub("\n\n", _WS_RUN_RE.sub(" ", text))
+
+
 def _truncate(text: str) -> str:
-    """Truncate absurdly long input so detectors don't OOM on the full tier."""
+    """Normalise whitespace, then truncate absurdly long input so detectors don't OOM."""
+    text = _normalise_ws(text)
     if len(text) > _MAX_INPUT_CHARS:
         return text[:_MAX_INPUT_CHARS]
     return text

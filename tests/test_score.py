@@ -145,3 +145,63 @@ def test_normal_scores_are_untouched(monkeypatch):
     assert r["max"] == 0.9
     assert r.get("scored", True) is True
     assert "out_of_range_detectors" not in r
+
+
+class TestScoringIsWhitespaceStable:
+    """Identical words must score identically regardless of spacing.
+
+    The perplexity detectors tokenise whatever they are handed, and GPT-2 encodes "  " differently
+    from " ", so the same content scored differently depending on formatting. MEASURED on HC3
+    documents, doubling every space: 0.730 -> 0.649, 0.459 -> 0.586, 0.572 -> 0.667. Swings of up to
+    0.13 on identical content, enough to flip a borderline verdict — and text pasted out of a PDF or
+    a hard-wrapped editor carries runs like this routinely.
+
+    Found by metamorphic testing: asserting a RELATION between two inputs, which needs no known
+    answer and no labels, so it catches inconsistencies a unit test and an AUROC both miss.
+    """
+
+    SRC = (
+        "Furthermore, the organization leverages robust methodologies to optimize operational "
+        "outcomes. Moreover, stakeholders utilize comprehensive frameworks to drive innovation "
+        "across the multifaceted landscape of modern enterprise technology."
+    )
+
+    def test_doubled_spaces_do_not_move_the_score(self):
+        from untell.scripts.score import score_text
+
+        a = score_text(self.SRC, tier="lite")["max"]
+        b = score_text(self.SRC.replace(" ", "  "), tier="lite")["max"]
+        assert a == b, f"{a} vs {b}"
+
+    def test_tabs_and_mixed_runs_do_not_move_the_score(self):
+        from untell.scripts.score import score_text
+
+        a = score_text(self.SRC, tier="lite")["max"]
+        b = score_text(self.SRC.replace(" ", " \t "), tier="lite")["max"]
+        assert a == b, f"{a} vs {b}"
+
+    def test_extra_blank_lines_do_not_move_the_score(self):
+        from untell.scripts.score import score_text
+
+        two = "First paragraph here about something.\n\nSecond paragraph here about something else."
+        many = two.replace("\n\n", "\n\n\n\n\n")
+        assert score_text(two, tier="lite")["max"] == score_text(many, tier="lite")["max"]
+
+    def test_normalisation_leaves_ordinary_prose_untouched(self):
+        """It must be a no-op on normal text, or it would shift the fitted detector calibrations."""
+        from untell.scripts.score import _normalise_ws
+
+        assert _normalise_ws(self.SRC) == self.SRC
+
+    def test_single_newlines_survive(self):
+        """Only RUNS collapse. A single newline is meaningful — the rewriters preserve layout, and
+        the detectors' sentence splitting reads line structure."""
+        from untell.scripts.score import _normalise_ws
+
+        assert _normalise_ws("- one\n- two\n- three") == "- one\n- two\n- three"
+        assert _normalise_ws("para one\n\npara two") == "para one\n\npara two"
+
+    def test_scoring_is_deterministic(self):
+        from untell.scripts.score import score_text
+
+        assert score_text(self.SRC, tier="lite")["max"] == score_text(self.SRC, tier="lite")["max"]
