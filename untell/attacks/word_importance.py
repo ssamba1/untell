@@ -392,6 +392,47 @@ def _frame_form(replacement: str, plural_head: bool = True) -> str | None:
     return form
 
 
+# "a" vs "an" follows the SOUND of the next word, and a substitution changes that word. MEASURED
+# coming out of the composite rewriter: "an intricate scheduling system" -> "an complex scheduling
+# system", "an innovative approach" -> "an new approach".
+#
+# A first-letter rule is wrong in two directions ("a university", "an hour"), so both exceptions are
+# listed. The vocabulary is closed — replacements come from _SYN — and a scan of all 389 distinct
+# first-words found no silent-h word at all and eight /j/-onset ones, so these lists are complete
+# for what can actually be emitted, plus the common cases in case the table grows.
+_A_DESPITE_VOWEL = frozenset(
+    """one once use used useful user using usable usage usual usually unique unit united universal
+    university uniform union unified utility utilise utilize utilizing utilization euro european
+    eulogy ubiquitous""".split()
+)
+_AN_DESPITE_CONSONANT = frozenset(
+    "hour hourly honest honestly honor honour honorary honoured heir heiress".split()
+)
+_ARTICLE = r"(\b[Aa]n?\b[ \t]+)?"
+
+
+def takes_an(word: str) -> bool:
+    """Does ``word`` take "an" rather than "a"?"""
+    w = word.strip().lower().lstrip("\"'([").rstrip("\"')],.;:!?")
+    if not w:
+        return False
+    if w in _AN_DESPITE_CONSONANT:
+        return True
+    if w in _A_DESPITE_VOWEL:
+        return False
+    return w[0] in "aeiou"
+
+
+def agree_article(article: str, following: str) -> str:
+    """Return ``article`` corrected to agree with ``following``, keeping case and spacing."""
+    head = article.rstrip()
+    spacing = article[len(head):]
+    want = "an" if takes_an(following) else "a"
+    if head[:1].isupper():
+        want = want.capitalize()
+    return want + spacing
+
+
 def substitute_once(text: str, word: str, replacement: str) -> str:
     """Replace the first whole-word ``word`` with ``replacement``, keeping the seam grammatical.
 
@@ -415,10 +456,18 @@ def substitute_once(text: str, word: str, replacement: str) -> str:
 
     rep = _match_case(word, replacement)
     tail = replacement.rsplit(" ", 1)[-1].lower() if " " in replacement else ""
-    pattern = rf"\b{re.escape(word)}\b"
+    pattern = _ARTICLE + rf"\b{re.escape(word)}\b"
     if tail in _PARTICLES:
         pattern += rf"(?:\s+{re.escape(tail)}(?![\w-]))?"
-    return re.sub(pattern, lambda _m: rep, text, count=1)
+
+    def _replace(m: re.Match) -> str:
+        article = m.group(1)
+        if not article:
+            return rep
+        # The article agreed with the word being replaced, not with the replacement.
+        return agree_article(article, replacement) + rep
+
+    return re.sub(pattern, _replace, text, count=1)
 
 
 def _match_case(original: str, replacement: str) -> str:

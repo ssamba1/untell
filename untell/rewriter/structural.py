@@ -452,7 +452,7 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
     if not text.strip():
         return text
     from untell.attacks.word_importance import DUP_PARTICLE_TAIL as _DUP_PARTICLE_TAIL
-    from untell.attacks.word_importance import _QUANT_FRAME_KEYS, _SYN, substitute_once
+    from untell.attacks.word_importance import _ARTICLE, _QUANT_FRAME_KEYS, _SYN, agree_article, substitute_once
 
     # Protect locked spans: mask them out, substitute, then restore.
     spans: list[str] = []
@@ -484,27 +484,32 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
                 break
 
     def _swap(m: re.Match) -> str:
-        word, tail = m.group(1), m.group(2) or ""
+        article, word, tail = m.group(1) or "", m.group(2), m.group(3) or ""
         options = _SYN.get(word.lower())
         if not options or random.random() > intensity:
-            return m.group(0)  # group(0), not `word` — the tail is not ours to drop
+            return m.group(0)  # group(0), not `word` — the article and tail are not ours to drop
         choice = random.choice(options)
         # Preserve the original capitalisation so sentence starts survive the swap.
         if word[:1].isupper():
             choice = choice[:1].upper() + choice[1:]
+        # The article agreed with the word being replaced, not with the replacement: "an intricate
+        # design" became "an complex design".
+        head = agree_article(article, choice) if article else ""
         # Consume a following particle the replacement already ends with, rather than repeating it:
         # "navigate through X" -> "work through X", not "work through through X". 30 of the table's
         # multi-word values end in such a particle, so this belongs at the seam, not in the table —
         # the table cannot know what follows the word.
         if tail and choice.rsplit(" ", 1)[-1].lower() == tail.strip().lower():
-            return choice
-        return choice + tail
+            return head + choice
+        return head + choice + tail
 
     # Same token shape as word_importance._WORD: hyphenated compounds are one token, so the
     # table's "cutting-edge" / "state-of-the-art" entries are reachable here too. The optional
-    # second group is the following particle, matched here so _swap can decide whether it is a
-    # duplicate of the replacement's own ending.
-    masked = re.sub(r"([A-Za-z]+(?:-[A-Za-z]+)*)" + _DUP_PARTICLE_TAIL, _swap, masked)
+    # groups around it are the preceding article and the following particle, matched here so _swap
+    # can re-agree the one and drop the other when the replacement already supplies it.
+    masked = re.sub(
+        _ARTICLE + r"([A-Za-z]+(?:-[A-Za-z]+)*)" + _DUP_PARTICLE_TAIL, _swap, masked
+    )
     return re.sub(r"\x00(\d+)\x00", lambda m: spans[int(m.group(1))], masked)
 
 

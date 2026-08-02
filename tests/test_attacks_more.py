@@ -109,6 +109,79 @@ class TestASubstitutionDoesNotDoubleAParticle:
         assert not (_PARTICLES & set(_SYN))
 
 
+class TestTheArticleAgreesWithTheReplacement:
+    """a/an follows the SOUND of the next word, and a substitution changes that word.
+
+    MEASURED coming out of the composite rewriter: "an intricate scheduling system" ->
+    "an complex scheduling system", "an innovative approach" -> "an new approach". Across the whole
+    table, 168 entries can flip the article and every one of them produced a mismatch.
+    """
+
+    @pytest.mark.parametrize(
+        ("sentence", "word", "rep", "expected"),
+        [
+            ("They built an intricate system.", "intricate", "complex",
+             "They built a complex system."),
+            ("It was an innovative approach.", "innovative", "new", "It was a new approach."),
+            ("The team wrote a comprehensive report.", "comprehensive", "extensive",
+             "The team wrote an extensive report."),
+            # No article: nothing to correct.
+            ("They built intricate systems.", "intricate", "complex", "They built complex systems."),
+        ],
+    )
+    def test_the_article_is_corrected(self, sentence, word, rep, expected):
+        from untell.attacks.word_importance import substitute_once
+
+        assert substitute_once(sentence, word, rep) == expected
+
+    def test_a_capitalised_article_stays_capitalised(self):
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("An intricate system failed.", "intricate", "complex")
+        assert out == "A complex system failed."
+
+    @pytest.mark.parametrize(
+        ("word", "expected"),
+        [
+            ("hour", True), ("honest", True), ("heir", True),      # silent h -> "an"
+            ("university", False), ("unique", False), ("use", False), ("one", False),  # /j/, /w/
+            ("apple", True), ("elephant", True), ("system", False), ("complex", False),
+        ],
+    )
+    def test_the_sound_rule_beats_the_letter_rule(self, word, expected):
+        from untell.attacks.word_importance import takes_an
+
+        assert takes_an(word) is expected
+
+    def test_every_replacement_the_table_can_emit_is_classified(self):
+        """The vocabulary is closed, so the exception lists can be complete rather than heuristic."""
+        from untell.attacks.word_importance import _SYN, takes_an
+
+        for vals in _SYN.values():
+            for val in vals:
+                assert isinstance(takes_an(val.split()[0]), bool)
+
+    @pytest.mark.parametrize(
+        "sentence",
+        [
+            "They built an intricate scheduling system for the department.",
+            "It was an innovative approach to a very old problem.",
+            "The team produced a comprehensive account of the incident.",
+        ],
+    )
+    def test_the_structural_path_agrees_too(self, sentence):
+        import random
+
+        from untell.attacks.word_importance import takes_an
+        from untell.rewriter.structural import _plain_register
+
+        for seed in range(12):
+            random.seed(seed)
+            out = _plain_register(sentence, intensity=1.0)
+            for article, following in re.findall(r"\b([Aa]n?)\s+(\S+)", out):
+                assert takes_an(following) == (article.lower() == "an"), (seed, article, following, out)
+
+
 class TestQuantifierFramesAreRewrittenWhole:
     """"a myriad of X" carries its article and its "of" as part of the construction.
 
