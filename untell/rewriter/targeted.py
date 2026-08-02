@@ -88,7 +88,15 @@ class TargetedRewriter(Rewriter):
 
         sentences = split_sentences(text)
         if len(sentences) < 2:
-            return self._inner.rewrite(text, score_result, threshold)
+            # Single sentence: still validated, as one unit. This path used to return the inner
+            # rewriter's output UNCONDITIONALLY, skipping both the sentinel check and the
+            # improvement guard that the multi-sentence path applies. MEASURED with a rewriter that
+            # drops a locked span:
+            #     "The trial enrolled ⟦HZ0000⟧ patients"        -> "...the figure patients"  (lost)
+            #     the same rewriter on two sentences            -> correctly rejected
+            # A dropped sentinel is silent fact loss: restore() puts nothing back, and the number
+            # or citation the lock existed to protect is simply gone from the output.
+            return self._accept_or_keep(text, score_result, threshold, tier)
 
         out: list[str] = []
         changed = False
@@ -128,3 +136,36 @@ class TargetedRewriter(Rewriter):
                 out.append(sent)
 
         return "".join(out) if changed else text
+
+    def _accept_or_keep(self, body: str, score_result: dict, threshold: float, tier: str) -> str:
+        """Rewrite one unit, returning the candidate only if it is safe AND better.
+
+        The same three conditions the per-sentence loop applies: every locked span survives with its
+        original multiplicity, the rewrite actually lowers the score, and any failure anywhere keeps
+        the original. Factored out so the single-sentence path cannot drift away from the guarded
+        one again — it did, and the drift was invisible because both paths "worked".
+        """
+        from untell.scripts.score import score_text
+
+        stripped = body.strip()
+        if not stripped:
+            return body
+        try:
+            before = float(score_text(stripped, tier=tier)["max"])
+        except Exception:
+            return body
+        if before < self.min_score:
+            return body
+        try:
+            cand = self._inner.rewrite(stripped, score_result, threshold).strip()
+        except Exception:
+            return body
+        if Counter(_SENTINEL_RE.findall(cand)) != Counter(_SENTINEL_RE.findall(stripped)):
+            return body
+        try:
+            after = float(score_text(cand, tier=tier)["max"])
+        except Exception:
+            return body
+        if cand and after < before:
+            return cand + body[len(body.rstrip()):]  # preserve original trailing whitespace
+        return body
