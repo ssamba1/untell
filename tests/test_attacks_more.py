@@ -17,6 +17,43 @@ AI = (
 )
 
 
+def test_every_synonym_key_is_reachable_by_the_tokenizer():
+    """A key the tokenizer can never produce is dead code that looks exactly like live code.
+
+    Both consumers — synonyms() and rewriter/structural._plain_register — look words up one token
+    at a time, so "represents a" could never match, and under the old bare [A-Za-z]+ pattern
+    neither could any hyphenated key. That silently killed six of the most recognisable tells in
+    the catalogue (cutting-edge, state-of-the-art, world-class, best-in-class, top-tier,
+    next-level) while the comment above the table claimed phrases were matched.
+    """
+    from untell.attacks.word_importance import _SYN, _WORD
+
+    unreachable = [k for k in _SYN if not _WORD.fullmatch(k)]
+    assert not unreachable, f"these _SYN keys can never be looked up: {unreachable}"
+
+
+def test_no_synonym_entry_lists_its_own_key():
+    """A word listed as its own synonym makes surgical_substitute score a candidate identical to
+    the current text — a wasted detector pass that can never beat the improvement threshold."""
+    from untell.attacks.word_importance import _SYN
+
+    offenders = {k: v for k, v in _SYN.items() if k.lower() in [s.lower() for s in v]}
+    assert not offenders, f"self-synonyms waste a scoring call each: {offenders}"
+
+
+def test_hyphenated_tells_are_actually_substituted():
+    """The end-to-end consequence of the tokenizer fix, not just the table's shape."""
+    import random
+
+    from untell.rewriter.structural import _plain_register
+
+    random.seed(0)
+    src = "Our cutting-edge, state-of-the-art platform delivers world-class results."
+    out = _plain_register(src, intensity=1.0)
+    for tell in ("cutting-edge", "state-of-the-art", "world-class"):
+        assert tell not in out, f"{tell} survived the plain-register pass"
+
+
 def test_synonyms_known_word():
     syns = synonyms("numerous")
     assert "many" in [s.lower() for s in syns]

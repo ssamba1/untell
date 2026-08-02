@@ -437,7 +437,9 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
             choice = choice[:1].upper() + choice[1:]
         return choice
 
-    masked = re.sub(r"[A-Za-z]+", _swap, masked)
+    # Same token shape as word_importance._WORD: hyphenated compounds are one token, so the
+    # table's "cutting-edge" / "state-of-the-art" entries are reachable here too.
+    masked = re.sub(r"[A-Za-z]+(?:-[A-Za-z]+)*", _swap, masked)
     return re.sub(r"\x00(\d+)\x00", lambda m: spans[int(m.group(1))], masked)
 
 

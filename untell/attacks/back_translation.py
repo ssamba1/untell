@@ -13,7 +13,11 @@ the sentinel-protected loop.
 
 from __future__ import annotations
 
+import re
+
 _MODEL = "Helsinki-NLP/opus-mt-{src}-{tgt}"
+# Clause boundaries, used only to break a sentence that is itself over the token budget.
+_CLAUSE = re.compile(r"(?<=[,;:])\s+")
 
 
 class BackTranslator:
@@ -60,20 +64,59 @@ class BackTranslator:
         # not reliably bring an abbreviation back.
         from untell.text_split import split_sentences
 
+        budget = self._MAX_TOKENS - 16
         sentences = split_sentences(text.strip())
         chunks: list[str] = []
         current = ""
         for sentence in sentences:
-            candidate = f"{current} {sentence}".strip() if current else sentence
-            # Measure with the real tokenizer rather than guessing a word ratio.
-            if current and len(tok(candidate)["input_ids"]) > self._MAX_TOKENS - 16:
-                chunks.append(current)
-                current = sentence
-            else:
-                current = candidate
+            # A sentence that exceeds the budget on its own cannot be rescued by starting a new
+            # chunk, and the `current and` guard below skips the size test for exactly that case —
+            # so one long sentence (roughly 350+ words) passed through whole and _translate
+            # truncated it. Break it up before it gets there.
+            for piece in self._fit(sentence, tok, budget):
+                candidate = f"{current} {piece}".strip() if current else piece
+                # Measure with the real tokenizer rather than guessing a word ratio.
+                if current and len(tok(candidate)["input_ids"]) > budget:
+                    chunks.append(current)
+                    current = piece
+                else:
+                    current = candidate
         if current:
             chunks.append(current)
         return chunks or [text]
+
+    def _fit(self, sentence: str, tok, budget: int) -> list[str]:
+        """One sentence as pieces that each fit ``budget``. Usually returns it unchanged.
+
+        Clause boundaries first, so the translator still receives grammatical units; a greedy
+        word-level fill only for a clause that is itself over budget. Both measure with the real
+        tokenizer — MarianMT's SentencePiece vocabulary runs well over one token per English word,
+        so any word-count estimate would be wrong in the unsafe direction.
+        """
+        if len(tok(sentence)["input_ids"]) <= budget:
+            return [sentence]
+
+        def _greedy(units: list[str]) -> list[str]:
+            out: list[str] = []
+            cur = ""
+            for u in units:
+                candidate = f"{cur} {u}".strip() if cur else u
+                if cur and len(tok(candidate)["input_ids"]) > budget:
+                    out.append(cur)
+                    cur = u
+                else:
+                    cur = candidate
+            if cur:
+                out.append(cur)
+            return out
+
+        pieces: list[str] = []
+        for clause in _greedy(_CLAUSE.split(sentence)):
+            if len(tok(clause)["input_ids"]) <= budget:
+                pieces.append(clause)
+            else:
+                pieces.extend(_greedy(clause.split()))
+        return pieces or [sentence]
 
     def _translate(self, text: str, src: str, tgt: str) -> str:
         import torch

@@ -129,6 +129,34 @@ def test_short_input_stays_a_single_chunk():
     assert len(bt._chunk("Hello there. How are you?", _FakeTok())) == 1
 
 
+CHUNK_SHAPES = {
+    # The existing coverage is all many-short-sentences, the one shape where the size guard fires.
+    "one long sentence, no clause breaks": " ".join(["word"] * 900) + ".",
+    "one long sentence with commas": ", ".join(" ".join(["word"] * 60) for _ in range(15)) + ".",
+    "long sentence followed by short ones": " ".join(["word"] * 800) + ". Short one. Another.",
+    "two long sentences": " ".join(["alpha"] * 700) + ". " + " ".join(["beta"] * 700) + ".",
+    "one very long word-salad clause": " ".join(["supercalifragilistic"] * 600) + ".",
+}
+
+
+@pytest.mark.parametrize("text", CHUNK_SHAPES.values(), ids=list(CHUNK_SHAPES))
+def test_no_chunk_exceeds_the_token_budget(text):
+    """The size test was skipped for a chunk's first sentence (`if current and ...`), so a single
+    sentence over the budget could never be split — it passed through whole and _translate's
+    truncation=True silently dropped everything past 512 tokens, returning the partial translation
+    as if it were complete. Asserting the invariant, not the symptom: no chunk over budget, and no
+    word lost."""
+    bt = BackTranslator()
+    tok = _FakeTok()
+    chunks = bt._chunk(text, tok)
+
+    budget = bt._MAX_TOKENS - 16
+    assert chunks
+    for c in chunks:
+        assert len(tok(c)["input_ids"]) <= budget, f"chunk of {len(c.split())} words exceeds budget"
+    assert " ".join(chunks).split() == text.split(), "chunking dropped or reordered words"
+
+
 def test_chunking_never_returns_empty():
     """A degenerate input must still yield something translatable rather than an empty list."""
     bt = BackTranslator()

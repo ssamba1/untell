@@ -27,11 +27,18 @@ if __package__ in (None, ""):
 
 from untell.scripts.score import DEFAULT_THRESHOLD, batch_score_texts, score_text
 
-_WORD = re.compile(r"[A-Za-z]+")
+# Hyphenated compounds are ONE token. With a bare [A-Za-z]+ the table's hyphenated keys
+# ("cutting-edge", "state-of-the-art", "world-class", "best-in-class", "top-tier", "next-level")
+# could never be looked up — every one of them was unreachable, while the comment on _SYN claimed
+# phrases were matched. They are among the most recognisable AI tells in the catalogue.
+_WORD = re.compile(r"[A-Za-z]+(?:-[A-Za-z]+)*")
 
 # Formulaic AI vocabulary -> plainer human alternatives (the words detectors + competitors target).
 # Each entry must be a single word or short phrase that is a natural, less-AI-sounding replacement.
-# Keep entries lowercased. Phrases with spaces are matched as whole tokens via \b anchors.
+# Keep entries lowercased, and every key must be a single token as _WORD defines one: letters,
+# optionally hyphen-joined. A key containing a SPACE can never be looked up, because both consumers
+# (synonyms() here and _plain_register in rewriter/structural.py) key on individual tokens —
+# test_word_importance.py enforces this, since a dead entry looks exactly like a live one.
 _SYN: dict[str, list[str]] = {
     # --- Tells-catalog AI vocab (ai-tells.md §1-2) ---
     "delve": ["dig", "look", "go deep"],
@@ -61,7 +68,7 @@ _SYN: dict[str, list[str]] = {
     "harness": ["use", "tap", "put to work"],
     "harnessing": ["using", "tapping", "putting to work"],
     "unlock": ["open", "release", "free up"],
-    "unleash": ["release", "let loose", "unleash"],
+    "unleash": ["release", "let loose", "set off"],
     "spearhead": ["lead", "head", "drive"],
     "paramount": ["key", "top", "critical"],
     "plethora": ["wealth", "lots", "many"],
@@ -163,7 +170,6 @@ _SYN: dict[str, list[str]] = {
     "optimize": ["tune", "sharpen", "improve"],
     "optimizes": ["tunes", "sharpens", "improves"],
     "represents": ["is", "stands for", "means"],
-    "represents a": ["is a", "marks a"],
     "enables": ["lets", "allows", "makes possible"],
     "enabled": ["let", "allowed", "made possible"],
     "increasingly": ["more and more", "ever more"],
