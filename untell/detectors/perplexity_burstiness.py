@@ -35,16 +35,32 @@ _WORD = re.compile(r"[A-Za-z']+")
 # MEASURED on 120 HC3 human/ChatGPT paragraph pairs (`untell-detector-audit --pairs 120`):
 #   mean surprisal   human 3.87 +- 0.40   ai 2.21 +- 0.23
 #   sentence spread  human 0.72 +- 0.33   ai 0.53 +- 0.17
-# Each midpoint sits between the class means and each scale spans the observed spread, so the
-# logistic stays responsive across the whole range instead of saturating at the ends. The
-# constants it replaced (mean per-sentence perplexity < 60, variance < 400) sat far outside the
-# range those quantities take, which pinned a large class of ordinary input to exactly 0.0.
+# The midpoints do NOT sit at the class midpoint, which is where they used to sit and which is a
+# mistake worth spelling out. A midpoint halfway between the classes maps the boundary case to 0.5,
+# so every human document in the lower part of its range lands well above the 0.30 default
+# threshold. Measured with the old NLL_MID of 3.036 — the exact midpoint of human 3.85 and AI 2.23 —
+# this detector reported a mean of 0.244 on human text and flagged 32% of it, and the ensemble
+# takes `max`, so that became the full tier's false-positive floor.
+#
+# What matters is not where the classes divide but where the THRESHOLD lands relative to the human
+# distribution. Refit on 40 HC3 pairs and checked against 60 unseen ones:
+#
+#   raw quantities       mean surprisal  human 3.85 [3.09, 5.15]   ai 2.23 [1.85, 2.62]
+#                        sentence spread human 0.78 [0.23, 1.74]   ai 0.48 [0.19, 0.89]
+#
+#   NLL_MID 3.036 / SPREAD_MID 0.625   held-out FPR 37%  TPR 100%  AUROC 1.000  human mean 0.260
+#   NLL_MID 2.680 / SPREAD_MID 0.400   held-out FPR 12%  TPR 100%  AUROC 0.999  human mean 0.154
+#
+# The true-positive rate is unchanged at 100% and AUROC moves by 0.001 — the detector separated the
+# classes just as well before, it was reporting them on a scale that put ordinary human writing
+# over the line. Scales are unchanged; only the midpoints moved.
+#
 # Tokens of preceding text carried into each scoring window past the first, so that a long document
 # is scored with context throughout instead of being cut off at GPT-2's 1024-token limit.
 _CONTEXT = 256
-_NLL_MID = 3.036
+_NLL_MID = 2.680
 _NLL_SCALE = 0.315
-_SPREAD_MID = 0.625
+_SPREAD_MID = 0.400
 _SPREAD_SCALE = 0.250
 # Perplexity carries most of the signal (AUROC 1.00 alone on HC3 vs 0.70 for spread), but the
 # blend keeps burstiness contributing: it is an independent axis, so a rewriter that lowers only
