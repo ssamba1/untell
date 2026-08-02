@@ -335,3 +335,44 @@ class TestIntensifierAdded:
                 if not certainty_kept(src, out):
                     vetoed.append((name, dropped_hedges(src, out), out))
         assert not vetoed, f"rewriter output would be vetoed: {vetoed}"
+
+
+class TestAdjectiveFormsAreCoveredNotJustAdverbs:
+    """Both lists held adverbs and omitted the matching adjectives, which is the form a rewrite
+    actually reaches for on a noun ("a significant effect", not "significantly")."""
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "word"),
+        [
+            ("The study found an effect.", "The study found a significant effect.", "significant"),
+            ("There was an increase in cost.", "There was a substantial increase in cost.", "substantial"),
+            ("There was a rise in demand.", "There was a sharp rise in demand.", "sharp"),
+            ("The team saw a change.", "The team saw a considerable change.", "considerable"),
+            ("Prices moved this week.", "Prices moved steeply this week.", "steep"),
+        ],
+    )
+    def test_added_adjective_intensifier_is_caught(self, source, candidate, word):
+        assert not certainty_kept(source, candidate), word
+        assert "intensifier_added" in dropped_hedges(source, candidate)
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "word"),
+        [
+            ("There was a modest increase in revenue.", "There was an increase in revenue.", "modest"),
+            ("The effect was moderate across the cohort.", "The effect was present across the cohort.", "moderate"),
+            ("The change was minimal in both arms.", "The change was seen in both arms.", "minimal"),
+            ("A partial recovery followed the treatment.", "A recovery followed the treatment.", "partial"),
+            ("Uptake was limited in the trial.", "Uptake was seen in the trial.", "limited"),
+        ],
+    )
+    def test_dropped_adjective_degree_hedge_is_caught(self, source, candidate, word):
+        """These were only ever "caught" when the rewrite ALSO added an intensifier, which a
+        different check fired on. Dropping the hedge on its own — the more natural rewrite — was
+        invisible: measured, all five passed the entire gate."""
+        assert not certainty_kept(source, candidate), word
+        assert "degree" in dropped_hedges(source, candidate)
+
+    def test_a_lateral_degree_swap_is_still_allowed(self):
+        """Widening the class must not start vetoing hedge-for-hedge swaps."""
+        assert certainty_kept("There was a modest increase.", "There was a slight increase.")
+        assert certainty_kept("The effect was minimal.", "The effect was small.")

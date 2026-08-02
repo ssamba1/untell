@@ -89,10 +89,20 @@ _CLASSES: dict[str, tuple[str, ...]] = {
     # ("Revenue fell slightly." -> "Revenue collapsed." cleared every other gate). Verbs that carry
     # smallness lexically (edged, ticked, inched) count as members, so compact rewordings like
     # "edged down" are not vetoed for lacking an adverb.
+    # Adverbs AND their adjective forms. The list held "modestly", "moderately", "minimally" and
+    # "partially" but not "modest", "moderate", "minimal", "partial" — so dropping the adjective
+    # went undetected. MEASURED, each of these passed the whole gate before:
+    #     "There was a modest increase."      -> "There was an increase."
+    #     "The effect was moderate."          -> "The effect was present."
+    #     "A partial recovery followed."      -> "A recovery followed."
+    # They only appeared to be caught in an earlier probe because the rewrite ALSO added an
+    # intensifier, which the separate intensifier check fired on. Dropping the hedge on its own —
+    # the more natural rewrite — was invisible.
     "degree": (
         "slightly", "marginally", "modestly", "somewhat", "a bit", "a little", "moderately",
         "mildly", "partially", "partly", "slight", "small", "minor", "narrowly", "fractionally",
         "fraction", "a touch", "a tad", "tad", "minimally", "negligibly", "marginal",
+        "modest", "moderate", "minimal", "partial", "limited", "slim",
         "edged", "ticked", "inched", "dipped", "nudged", "crept",
     ),
     # intended vs done
@@ -198,9 +208,16 @@ def _causal_upgrade(source: str, candidate: str) -> bool:
 # score bidirectional entailment 0.003-0.011 while genuinely faithful rewriter output reaches down
 # to 0.012 — see the note on DEFAULT_ENTAILMENT_FLOOR in entailment.py.
 _INTENSIFIER_RE = re.compile(
-    r"(?<!\w)(?:large|huge|massive|dramatic|dramatically|sharply|significantly|substantially|"
-    r"vastly|enormous|enormously|major|severe|severely|drastic|drastically|considerably|"
-    r"markedly|greatly|hugely|steeply|soared|skyrocketed|collapsed|plummeted|plunged|surged)(?!\w)",
+    # Adverbs AND their adjective forms. The list carried "significantly", "substantially" and
+    # "sharply" but not "significant", "substantial", "sharp" — and the adjective is the form a
+    # rewrite actually reaches for on a noun. MEASURED, each of these cleared the whole gate:
+    #     "The study found an effect."        -> "The study found a significant effect."
+    #     "There was an increase in cost."    -> "There was a substantial increase in cost."
+    #     "There was a rise in demand."       -> "There was a sharp rise in demand."
+    r"(?<!\w)(?:large|huge|massive|dramatic|dramatically|sharp|sharply|significant|significantly|"
+    r"substantial|substantially|vast|vastly|enormous|enormously|major|severe|severely|drastic|"
+    r"drastically|considerable|considerably|marked|markedly|greatly|hugely|steep|steeply|"
+    r"soared|skyrocketed|collapsed|plummeted|plunged|surged)(?!\w)",
     re.IGNORECASE,
 )
 
