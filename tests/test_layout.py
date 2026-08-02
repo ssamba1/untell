@@ -128,6 +128,57 @@ def test_unterminated_fence_does_not_swallow_the_rest_silently():
     assert "x = 1" in out and "y = 2" in out
 
 
+class TestAFenceClosesOnlyOnItsOwnMarker:
+    """The walker toggled a boolean on ANY fence marker, so the wrong one closed the block.
+
+    Markdown closes a fence only with the SAME character as its opener, and at least as many of
+    them. A ~~~ block containing a ``` line — the standard way to show fenced-code syntax inside a
+    document — therefore ended at the inner backticks, and everything after it went to the
+    transform as prose. MEASURED: `print("hello")` inside such a block was rewritten.
+    """
+
+    def test_a_backtick_fence_does_not_close_a_tilde_fence(self):
+        seen = []
+        src = 'prose\n\n~~~\nwrite:\n```\nprint("hello")\n```\ndone.\n~~~\n\nmore prose'
+        out = apply_per_block(src, lambda b: seen.append(b) or "REWRITTEN")
+        assert seen == ["prose", "more prose"]
+        assert 'print("hello")' in out
+        assert "write:" in out and "done." in out
+
+    def test_a_tilde_fence_does_not_close_a_backtick_fence(self):
+        seen = []
+        src = "prose\n\n```\n~~~\nx = 1\n~~~\n```\n\nmore prose"
+        out = apply_per_block(src, lambda b: seen.append(b) or "REWRITTEN")
+        assert seen == ["prose", "more prose"]
+        assert "x = 1" in out
+
+    def test_a_shorter_run_does_not_close_a_longer_one(self):
+        """```` opens; the ``` inside it is content, exactly as a renderer treats it."""
+        seen = []
+        src = 'prose\n\n````\n```\nprint("inner")\n```\n````\n\nmore prose'
+        out = apply_per_block(src, lambda b: seen.append(b) or "REWRITTEN")
+        assert seen == ["prose", "more prose"]
+        assert 'print("inner")' in out
+
+    def test_a_longer_run_still_closes_a_shorter_one(self):
+        seen = []
+        src = "prose\n\n```\nx = 1\n`````\n\nmore prose"
+        out = apply_per_block(src, lambda b: seen.append(b) or "REWRITTEN")
+        assert seen == ["prose", "more prose"]
+        assert "x = 1" in out
+
+    def test_every_line_survives_verbatim(self):
+        src = 'a\n\n~~~\n```\ncode\n```\n~~~\n\nb\n'
+        assert apply_per_block(src, lambda b: b) == src
+
+    def test_blocks_agrees_with_apply_per_block(self):
+        """Both entry points are built on one partitioner; pin that they see the same fence."""
+        from untell.layout import blocks
+
+        src = 'prose one\n\n~~~\n```\ncode\n```\n~~~\n\nprose two'
+        assert blocks(src) == ["prose one", "prose two"]
+
+
 class TestBlocksExposesTheUnits:
     """`blocks()` is the same partitioning as apply_per_block, for callers that need the units.
 

@@ -22,7 +22,10 @@ from collections.abc import Callable
 # blockquote arrows and ATX headings. The marker is re-attached verbatim and only the text after it
 # is transformed.
 _LINE_MARKER_RE = re.compile(r"^([ \t]*(?:[-*+][ \t]+|\d+[.)][ \t]+|>[ \t]?|#{1,6}[ \t]+))(.*)$")
-_FENCE_RE = re.compile(r"^[ \t]*(?:```|~~~)")
+# Capture the whole run, not just the first three characters. A fence closes only on the SAME
+# character as its opener and at least as many of them, which is exactly how a document shows
+# fenced-code syntax inside a fenced block.
+_FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 
 
 def apply_per_block(text: str, transform: Callable[[str], str]) -> str:
@@ -72,7 +75,11 @@ def _segments(text: str):
     starts — which they would, being twenty lines apart and easy to edit independently.
     """
     buffer: list[str] = []
-    in_fence = False
+    # The OPEN fence's marker, or None outside a fence. A bare boolean toggled on any fence marker,
+    # so the wrong one closed the block: a ~~~ fence containing a ``` line — the standard way to
+    # show fenced-code syntax — ended at the inner backticks, and everything after was handed to
+    # the transform as prose. MEASURED: `print("hello")` inside such a block was rewritten.
+    fence: str | None = None
 
     def flush():
         if buffer:
@@ -82,12 +89,19 @@ def _segments(text: str):
         return []
 
     for line in text.split("\n"):
-        if _FENCE_RE.match(line):
-            yield from flush()
-            in_fence = not in_fence
+        marker_match = _FENCE_RE.match(line)
+        if marker_match:
+            run = marker_match.group(1)
+            if fence is None:
+                yield from flush()
+                fence = run
+            elif run[0] == fence[0] and len(run) >= len(fence):
+                fence = None
+            # A non-matching marker inside a fence is content; it stays fenced either way, and the
+            # line is emitted verbatim in all three cases.
             yield ("layout", "", line)
             continue
-        if in_fence or not line.strip():
+        if fence is not None or not line.strip():
             yield from flush()
             yield ("layout", "", line)
             continue
