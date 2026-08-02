@@ -502,3 +502,64 @@ ensemble at `--best-of 3`, not against a commercial checker — the local tier i
 optimised against, so this number is a ceiling on THIS ensemble and says nothing about GPTZero.
 `untell-verify` against a real commercial API remains the only honest test, and the meaning gate
 is what stops the number being bought with a mangled rewrite: worst-case similarity 0.868.
+
+---
+
+## Result 10 — the corpus was doing more work than anything measured above
+
+Every figure in this document, Results 1 through 9, was measured on the same three paragraphs:
+`eval/ceiling.py::_SAMPLE`, **hand-written, mean 36 words**. They were composed to read as AI, and
+they do. They are also **measurably easier than real AI output**, which nothing here had checked.
+
+Length and corpus are separable, so they were separated: HC3 ChatGPT answers were truncated to the
+built-in sample's own length and run through the identical loop (tier=full, `--best-of 3`,
+`--max-iters 5`, n=6).
+
+| corpus | words | before | after | still flagged |
+|---|---|---|---|---|
+| built-in sample (every result above) | 37 | 0.859 | **0.234** | **0%** |
+| HC3 ChatGPT answers, truncated to 36w | 36 | 0.998 | **0.628** | **50%** |
+| HC3 ChatGPT answers, full length | 186 | 0.999 | **0.762** | **83%** |
+
+**The gap is the corpus, not the length.** At identical length the built-in sample ends three times
+lower and clears every sample, because it *starts* at 0.859 where real ChatGPT answers start at
+0.998. The "before" figure that Results 6-9 relied on as a stable control — unchanged at 0.859
+across three re-measurements — is stable because the corpus never changed, not because 0.859 is
+what AI text scores.
+
+Length then adds on top of that, and for a structural reason. Detectors window long text and
+aggregate with `max`, so a document is only as clean as its **worst** window and the loop has to
+clear every one of them rather than one. A separate sweep over concatenated HC3 answers:
+
+| paragraphs | words | before | after | still flagged |
+|---|---|---|---|---|
+| 1 | 203 | 1.000 | 0.757 | 100% |
+| 2 | 348 | 1.000 | 0.999 | 100% |
+| 3 | 556 | 1.000 | 0.999 | 100% |
+| 5 | 994 | 1.000 | 0.999 | 100% |
+| 8 | 1601 | 1.000 | 0.999 | 100% |
+
+Windowing itself did not introduce false positives — human text measured 0.000 in every window at
+every length — so this is the loop failing to clear a long document, not the detector misreading
+one.
+
+### What this changes
+
+Not the numbers. Results 1-9 reproduce exactly as written, and each still isolates the defect it was
+measuring: the calibration bugs, the discarded passing candidates and the selection limit were all
+real, and fixing them all moved the same corpus from 0.261 to 0.154.
+
+What changes is **what those numbers can be read as saying**. `0.859 → 0.154, flagged 0.000`
+describes the loop's mechanics on short, easy, single-window text. It is not the ceiling against a
+real AI-written document, which on this evidence is closer to **0.63 at snippet length and 0.76 at
+paragraph length, with most documents still flagged**.
+
+That was invisible for nine results because the corpus was never a variable. `measure_ceiling` now
+records `corpus` and `corpus_mean_words` in its result, a built-in-sample run prints a note saying
+so, and `untell-ceiling --dataset hc3|raid|mage` runs the same measurement on real generated text —
+refusing to run at all if the dataset silently falls back to the built-in sample, which would put a
+demo number under a real corpus's name.
+
+**The next frontier is length, not phrasing.** Clearing one window is solved; clearing every window
+of a 600-word document is not, and `max`-over-windows means the second does not follow from the
+first.
