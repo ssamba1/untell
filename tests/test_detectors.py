@@ -372,3 +372,69 @@ class TestShortInputAbstentionIsPathIndependent:
         assert r.get("scored") is False
         assert r.get("warning")
         assert r.get("flagged") is False
+
+
+class TestWindowingCoversTextWithoutSentenceTerminators:
+    """A "sentence" wider than a window could never be packed, so it passed through whole.
+
+    The size test is skipped for the first piece of a window (`if current and ...`), exactly as in
+    BackTranslator._chunk. Any text with no sentence terminators is ONE sentence to the splitter,
+    which covers transcripts, bullet lists, headings-only outlines, semicolon run-ons and single
+    very long sentences. Each was handed to the adapter whole and then truncated at ~380 words by
+    its own `truncation=True`, and scored confidently on that fraction — the precise failure
+    windowing exists to prevent.
+
+    Measured before, at a 320-word window: a 1600-word bullet list produced one window of 1600
+    words, a 1200-word transcript one of 1200, a 900-word run-on one of 900.
+    """
+
+    SHAPES = {
+        "no terminators": " ".join(f"word{i}" for i in range(900)),
+        "newline-separated": "\n".join(f"line {i} of the transcript here" for i in range(200)),
+        "bullet list": "\n".join(f"- item number {i} in the list here" for i in range(200)),
+        "semicolon run-on": "; ".join(f"clause number {i} of the run-on" for i in range(200)),
+        "one enormous sentence": " ".join(f"word{i}" for i in range(900)) + ".",
+        "headings only": "\n".join(f"## Section {i} heading text" for i in range(200)),
+        "normal prose": " ".join(f"This is sentence number {i} with a few words." for i in range(120)),
+    }
+
+    @pytest.mark.parametrize("label", sorted(SHAPES))
+    def test_no_window_exceeds_the_cap(self, label):
+        from untell.detectors.base import WINDOW_WORDS, windowed_max
+
+        seen: list[str] = []
+        windowed_max(self.SHAPES[label], lambda w: seen.append(w) or 0.5)
+        assert seen
+        for w in seen:
+            assert len(w.split()) <= WINDOW_WORDS, (
+                f"{label}: window of {len(w.split())} words exceeds the {WINDOW_WORDS} cap, so the "
+                "adapter will truncate it"
+            )
+
+    @pytest.mark.parametrize("label", sorted(SHAPES))
+    def test_no_word_is_dropped(self, label):
+        from untell.detectors.base import windowed_max
+
+        text = self.SHAPES[label]
+        seen: list[str] = []
+        windowed_max(text, lambda w: seen.append(w) or 0.5)
+        assert " ".join(seen).split() == text.split(), f"{label}: windowing lost or reordered words"
+
+    def test_short_text_is_still_one_call(self):
+        """Nothing may change for ordinary input."""
+        from untell.detectors.base import WINDOW_WORDS, windowed_max
+
+        text = " ".join(f"word{i}" for i in range(WINDOW_WORDS))
+        seen: list[str] = []
+        windowed_max(text, lambda w: seen.append(w) or 0.5)
+        assert seen == [text]
+
+    def test_aggregation_is_still_the_max_and_none_survives(self):
+        from untell.detectors.base import windowed_max
+
+        doc = self.SHAPES["normal prose"]
+        vals = iter([0.1, 0.9, 0.3, 0.2, 0.4, 0.5])
+        assert windowed_max(doc, lambda w: next(vals, 0.0)) == 0.9
+        mixed = iter([None, 0.7, None, None, None, None])
+        assert windowed_max(doc, lambda w: next(mixed, None)) == 0.7
+        assert windowed_max(doc, lambda w: None) is None

@@ -34,6 +34,18 @@ def clamp01(x: float) -> float:
 WINDOW_WORDS = 320
 
 
+def _split_to_width(sentence: str, width: int) -> list[str]:
+    """``sentence`` as pieces of at most ``width`` words. Usually returns it unchanged.
+
+    Only reached when one sentence is wider than a whole window, which in practice means the text
+    had no sentence terminators for the splitter to find.
+    """
+    words = sentence.split()
+    if len(words) <= width:
+        return [sentence]
+    return [" ".join(words[i:i + width]) for i in range(0, len(words), width)]
+
+
 def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> float | None:
     """Score long text in windows and return the HIGHEST window score.
 
@@ -74,12 +86,24 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
     current: list[str] = []
     count = 0
     for sentence in split_sentences(text) or [text]:
-        n = len(sentence.split())
-        if current and count + n > window_words:
-            windows.append(" ".join(current))
-            current, count = [], 0
-        current.append(sentence)
-        count += n
+        # A "sentence" wider than the whole window can never be packed into one — the `current and`
+        # guard below skips the size test for it — so it used to pass through whole and the
+        # adapter's own truncation=True discarded everything past ~380 words. That is not an exotic
+        # case: any text without sentence terminators is a single "sentence", which covers
+        # transcripts, bullet lists, headings-only outlines, semicolon run-ons and one very long
+        # sentence. MEASURED before, at a 320-word window:
+        #     1600-word bullet list      -> 1 window of 1600 words
+        #     1200-word transcript       -> 1 window of 1200 words
+        #      900-word run-on sentence  -> 1 window of  900 words
+        # Each was then read only as far as the adapter's truncation allowed, and scored
+        # confidently on that fraction — the exact failure windowing exists to prevent.
+        for piece in _split_to_width(sentence, window_words):
+            n = len(piece.split())
+            if current and count + n > window_words:
+                windows.append(" ".join(current))
+                current, count = [], 0
+            current.append(piece)
+            count += n
     if current:
         windows.append(" ".join(current))
 
