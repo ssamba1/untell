@@ -40,6 +40,37 @@ def test_every_model_size_is_heavy_tier():
 def test_local_judge_is_not_in_the_default_full_tier(monkeypatch):
     """Pins the cost decision where a caller can see it: --tier full must stay fast."""
     monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")
+    monkeypatch.delenv("UNTELL_ENABLE_LOCAL_JUDGE", raising=False)
     from untell.detectors.base import load_detectors
 
     assert "local_judge" not in {d.name for d in load_detectors("full")}
+
+
+def test_local_judge_is_not_in_the_default_heavy_tier_either(monkeypatch):
+    """It does not discriminate, and `max` aggregation let it decide the tier's verdict.
+
+    MEASURED on 20 labelled HC3 pairs at the default threshold: local_judge alone scores human text
+    at a mean of 0.853 and flags 89% of it, for AUROC 0.591 — barely above chance. Because the
+    ensemble takes `max`, the heavy tier inherited that: 90% of human documents flagged, against
+    15% for full. The strongest tier was the least trustworthy, and the loop would then rewrite
+    text that was already human.
+    """
+    monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")
+    monkeypatch.delenv("UNTELL_ENABLE_LOCAL_JUDGE", raising=False)
+    from untell.detectors.base import load_detectors
+
+    assert "local_judge" not in {d.name for d in load_detectors("heavy")}
+
+
+def test_local_judge_can_still_be_opted_into(monkeypatch):
+    """Opt-in, not deleted — the same shape RADAR uses, so it stays usable for experiments."""
+    monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")
+    monkeypatch.setenv("UNTELL_ENABLE_LOCAL_JUDGE", "1")
+    from untell.detectors.base import load_detectors
+
+    d = LocalJudgeDetector()
+    if not d.available():
+        import pytest
+
+        pytest.skip("torch/transformers unavailable")
+    assert "local_judge" in {x.name for x in load_detectors("heavy")}

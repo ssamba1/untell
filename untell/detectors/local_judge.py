@@ -83,6 +83,27 @@ class LocalJudgeDetector:
         # work whether the model has 1.5B parameters or 7B.
 
     def available(self) -> bool:
+        # OPT-IN ONLY. This detector does not discriminate and it wrecks the tier it sits in.
+        # MEASURED on 20 labelled HC3 pairs, at the default 0.30 threshold:
+        #
+        #     local_judge alone   human mean 0.853, flags 89% of HUMAN documents   AUROC 0.591
+        #     heavy tier          human mean 0.846, FPR 90%
+        #     full tier           human mean 0.168, FPR 15%
+        #
+        # AUROC 0.591 is barely above chance, so it contributes almost no separation — but the
+        # ensemble aggregates with `max`, so its near-constant "yes, AI" verdict became the whole
+        # heavy tier's answer. The strongest tier was the least trustworthy one: it told 90% of
+        # human writers their own text was machine-generated, and the loop would then rewrite it.
+        #
+        # The failure is inherent to the approach, not a calibration constant: a 1.5B instruct model
+        # asked "rate how likely this is AI" answers high almost regardless of input, which is
+        # ordinary instruction-following bias, not detection. It was already demoted out of the full
+        # tier earlier for scoring at chance; this finishes the job rather than leaving it deciding
+        # heavy-tier verdicts.
+        #
+        # Same opt-in shape as RADAR, so the module stays usable for anyone experimenting with it.
+        if not os.environ.get("UNTELL_ENABLE_LOCAL_JUDGE"):
+            return False
         try:
             import torch  # noqa: F401
             import transformers  # noqa: F401
