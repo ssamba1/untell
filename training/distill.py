@@ -19,11 +19,34 @@ import logging
 from untell.rewriter.local_policy import _TRAIN_PROMPT as _PROMPT
 
 
-def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshold: float = 0.30, margin: float = 0.05):
+def distill(
+    dataset: str = "builtin",
+    n: int = 200,
+    tier: str = "full",
+    threshold: float = 0.30,
+    margin: float = 0.05,
+    # "composite" and best_of=3, matching `untell humanize` and the REST/MCP surfaces. untell_text's
+    # own defaults are rewriter=None (auto-select, which needs an API key and otherwise returns
+    # "no rewriter configured") and best_of=1 — the weak draw measured at 33% still flagged against
+    # 0% at best_of=3. This function's filter keeps only samples the loop got PAST the detectors, so
+    # a weak loop does not merely produce weaker rows: it silently drops every sample that a proper
+    # loop would have kept, shrinking the distillation set and biasing it toward the easiest texts.
+    rewriter: str = "composite",
+    best_of: int = 3,
+):
     """Run the loop on ``n`` samples; yield SFT rows for the ones that passed (kept the meaning)."""
     from eval.datasets import load_samples
+    from untell.rewriter import get_rewriter
     from untell.scripts.quality import recommended_bar
     from untell.scripts.run import untell_text
+
+    rw = None if rewriter == "auto" else get_rewriter(prefer=rewriter)
+    if rw is None and rewriter != "auto":
+        raise RuntimeError(
+            f"rewriter {rewriter!r} is unavailable (some backends need the '.[full]' extra). "
+            "Refusing to fall back to auto-select, which would silently use a PAID hosted rewriter "
+            "for every one of the samples this builds a training set from."
+        )
 
     rows = []
     kept = 0
@@ -33,7 +56,9 @@ def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshol
     # at the filter instead of at the dataset.
     samples = list(load_samples(dataset, n))
     for src in samples:
-        result = untell_text(src, tier=tier, threshold=threshold, margin=margin)
+        result = untell_text(
+            src, tier=tier, threshold=threshold, margin=margin, rewriter=rw, best_of=best_of
+        )
         if "error" in result:
             continue
         # Use the bar that matches the metric similarity() actually used. It is backend-adaptive
@@ -49,20 +74,50 @@ def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshol
     return {"kept": kept, "total": len(samples), "requested": n, "rows": rows}
 
 
-def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+def build_parser() -> argparse.ArgumentParser:
+    """The distillation CLI's parser, split out of ``main`` so its defaults can be read in tests."""
     parser = argparse.ArgumentParser(prog="training.distill", description=__doc__)
     parser.add_argument("--dataset", default="builtin")
     parser.add_argument("--n", type=int, default=200)
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--out", default="data/sft.jsonl")
-    args = parser.parse_args(argv)
+    # threshold and margin were parameters of distill() that main neither exposed nor passed, so the
+    # two gates deciding which samples enter the training set were unreachable from the command that
+    # builds it.
+    parser.add_argument(
+        "--threshold", "-t", type=float, default=0.30,
+        help="max P(AI) a sample must reach to be kept (default 0.30)",
+    )
+    parser.add_argument(
+        "--margin", type=float, default=0.05,
+        help="safety headroom below --threshold, so a borderline pass keeps iterating (default 0.05)",
+    )
+    parser.add_argument(
+        "--rewriter", default="composite",
+        help="free no-key backend (default composite, matching `untell humanize`), or 'auto' for a "
+        "hosted LLM if a key is set",
+    )
+    parser.add_argument(
+        "--best-of", type=int, default=3,
+        help="candidates per iteration (default 3, matching `untell humanize`). best-of-1 was "
+        "measured at 33%% still flagged against 0%% at 3, and a sample the loop fails to clear is "
+        "DISCARDED here, so a weak draw shrinks and biases the training set.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    args = build_parser().parse_args(argv)
 
     from untell._env import load_env
 
     load_env()
 
-    out = distill(dataset=args.dataset, n=args.n, tier=args.tier)
+    out = distill(
+        dataset=args.dataset, n=args.n, tier=args.tier, threshold=args.threshold,
+        margin=args.margin, rewriter=args.rewriter, best_of=args.best_of,
+    )
     import os
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)

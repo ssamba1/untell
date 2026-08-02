@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from training.distill import distill
 from training.reward import fluency, humanness_reward
 
@@ -73,6 +75,79 @@ def test_distill_drops_flagged_or_low_similarity(monkeypatch):
 
     monkeypatch.setattr(run_mod, "untell_text", lambda text, **k: {"final": "x", "flagged": False, "similarity": 0.2})
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
+
+
+class TestDistillRunsTheStrongLoop:
+    """This function's filter DISCARDS any sample the loop fails to clear.
+
+    So a weak loop does not merely produce weaker rows — it silently drops every sample a proper
+    loop would have kept, shrinking the training set and biasing it toward the easiest texts.
+    untell_text's own defaults are rewriter=None (auto-select, which needs an API key and otherwise
+    returns "no rewriter configured" for every sample) and best_of=1, measured at 33% still flagged
+    against 0% at best_of=3. distill passed neither, so it inherited both.
+    """
+
+    def _capture(self, monkeypatch):
+        import untell.scripts.run as run_mod
+
+        seen: list[dict] = []
+
+        def fake(text, **kw):
+            seen.append(kw)
+            return {"final": "a human rewrite", "flagged": False, "similarity": 0.99}
+
+        monkeypatch.setattr(run_mod, "untell_text", fake)
+        return seen
+
+    def test_a_free_rewriter_is_resolved_and_passed(self, monkeypatch):
+        seen = self._capture(monkeypatch)
+        distill("builtin", n=2, tier="lite")
+        assert seen and all(kw["rewriter"] is not None for kw in seen), (
+            "rewriter=None means auto-select, which needs an API key"
+        )
+
+    def test_best_of_defaults_to_three(self, monkeypatch):
+        seen = self._capture(monkeypatch)
+        distill("builtin", n=2, tier="lite")
+        assert all(kw["best_of"] == 3 for kw in seen)
+
+    def test_threshold_and_margin_reach_the_loop(self, monkeypatch):
+        seen = self._capture(monkeypatch)
+        distill("builtin", n=2, tier="lite", threshold=0.12, margin=0.34)
+        assert all(kw["threshold"] == 0.12 and kw["margin"] == 0.34 for kw in seen)
+
+    def test_an_unavailable_rewriter_is_refused_not_auto_selected(self, monkeypatch):
+        """Falling through to auto-select would put a PAID hosted rewriter on every sample."""
+        import untell.rewriter as rw_mod
+
+        monkeypatch.setattr(rw_mod, "get_rewriter", lambda prefer=None: None)
+        with pytest.raises(RuntimeError, match="Refusing to fall back"):
+            distill("builtin", n=1, tier="lite", rewriter="mt_pivot")
+
+    def test_the_cli_exposes_every_gate_and_forwards_it(self, monkeypatch, tmp_path):
+        """threshold and margin were parameters of distill() that main never exposed or passed."""
+        import training.distill as d
+
+        seen: dict = {}
+        monkeypatch.setattr(d, "distill", lambda **kw: seen.update(kw) or {
+            "kept": 0, "total": 0, "requested": 0, "rows": []
+        })
+        d.main([
+            "--n", "5", "--tier", "lite", "--threshold", "0.2", "--margin", "0.07",
+            "--best-of", "4", "--rewriter", "surgical", "--out", str(tmp_path / "sft.jsonl"),
+        ])
+        assert seen["threshold"] == 0.2
+        assert seen["margin"] == 0.07
+        assert seen["best_of"] == 4
+        assert seen["rewriter"] == "surgical"
+
+    def test_the_cli_defaults_match_untell_humanize(self):
+        from training.distill import build_parser
+
+        defaults = {a.dest: a.default for a in build_parser()._actions}
+        assert defaults["best_of"] == 3
+        assert defaults["rewriter"] == "composite"
+        assert defaults["tier"] == "full"
 
 
 def test_dpo_build_pairs(monkeypatch):
