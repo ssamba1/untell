@@ -148,3 +148,28 @@ def test_skill_runs_every_check_the_loop_runs():
         f"the loop's meaning gate runs {sorted(modules)} but SKILL.md never invokes {missing} — "
         "the flagship path would enforce a weaker gate than the headless loop"
     )
+
+
+def test_every_module_with_a_main_can_be_run_with_dash_m():
+    """`python -m untell.humanness` executed the module, printed nothing, and exited 0.
+
+    The guard above only walks `untell/scripts/`, so a module with a `main()` living anywhere else
+    in the package was never checked — and `untell/humanness.py` had no `__main__` block. Its
+    console script and `untell humanness` both worked, which is exactly why nobody noticed: only
+    the `-m` form was dead, and it failed by succeeding silently.
+    """
+    import re
+
+    package = REPO / "untell"
+    offenders = []
+    for path in sorted(package.rglob("*.py")):
+        if "__pycache__" in path.parts or path.name == "__init__.py":
+            continue
+        src = path.read_text(encoding="utf-8", errors="replace")
+        if re.search(r"^def main\(", src, re.M) and "__main__" not in src:
+            offenders.append(str(path.relative_to(REPO)))
+
+    assert not offenders, (
+        f"these define main() but have no `if __name__ == '__main__'` block, so `python -m` on "
+        f"them does nothing and exits 0: {offenders}"
+    )
