@@ -163,6 +163,23 @@ def _triples(doc) -> list[tuple[str, str, str | None]]:
                 for g in child.children:
                     if g.dep_ == "pobj":
                         subj = _key(g)
+        if obj is None and not passive:
+            # No direct object: fall back to the object of a preposition. Many verbs take their
+            # second argument that way — "benefit FROM tools", "depend ON funding", "apply TO
+            # cases" — and without this the triple is (subject, verb, None) on both sides of a
+            # swap, so no rule can fire. MEASURED, this evaded every gate:
+            #     "Organizations may benefit from these tools."
+            #  -> "These tools may benefit from organizations."
+            #     contradiction 0.001, entailment 0.990, role_swap False
+            # `agent` is excluded above because it is the passive's real subject, not an object.
+            for child in tok.children:
+                if child.dep_ == "prep":
+                    for g in child.children:
+                        if g.dep_ == "pobj":
+                            obj = _key(g)
+                            break
+                if obj is not None:
+                    break
         if passive and subj is None:
             subj = None  # agentless passive: the actor is genuinely unstated
         if subj is None and obj is None:

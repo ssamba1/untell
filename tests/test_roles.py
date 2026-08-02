@@ -162,3 +162,44 @@ class TestRolesCLI:
     def test_passive_voice_is_not_a_swap(self, capsys):
         assert roles.main(["The cache invalidated the request.",
                            "The request was invalidated by the cache."]) == 0
+
+
+class TestPrepositionalObjectSwaps:
+    """A verb's second argument is often a prepositional object, and those swaps evaded everything.
+
+    `_triples` only captured DIRECT objects, so "Organizations may benefit from these tools." and
+    "These tools may benefit from organizations." both reduced to (subject, verb, None). With the
+    object slot empty on both sides no swap rule can fire, and NLI is no help either — MEASURED
+    contradiction 0.001, entailment 0.990. Every gate passed a reversed claim.
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "candidate"),
+        [
+            ("Organizations may benefit from these tools.", "These tools may benefit from organizations."),
+            ("The team depends on the vendor.", "The vendor depends on the team."),
+            ("The rule applies to contractors.", "Contractors apply to the rule."),
+            ("Funding comes from the state.", "The state comes from funding."),
+        ],
+    )
+    @pytest.mark.skipif(not available(), reason="spaCy model not installed")
+    def test_prepositional_swap_is_caught(self, source, candidate):
+        assert role_swap(source, candidate) is True
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            ("Organizations may benefit from these tools.", "These tools may help organizations.", "recast"),
+            ("Organizations may benefit from these tools.", "Companies might gain from this software.", "synonyms"),
+            ("The team depends on the vendor.", "The team relies on the vendor.", "verb swap"),
+            ("The rule applies to contractors.", "Contractors are covered by the rule.", "voice recast"),
+            ("Funding comes from the state.", "The state provides the funding.", "reworded"),
+            ("The proposal was rejected by the committee.", "The committee rejected the proposal.", "passive->active"),
+            ("Sales rose in Europe last year.", "Last year, sales grew across Europe.", "adjunct reorder"),
+        ],
+    )
+    @pytest.mark.skipif(not available(), reason="spaCy model not installed")
+    def test_faithful_rewrites_are_not_vetoed(self, source, candidate, label):
+        """The prepositional fallback must not turn ordinary adjuncts into false swaps — "in Europe"
+        and "by the committee" are not the verb's second argument in the relevant sense."""
+        assert role_swap(source, candidate) is not True, label
