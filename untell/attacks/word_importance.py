@@ -339,13 +339,80 @@ _PARTICLE_ALT = "|".join(sorted(_PARTICLES, key=len, reverse=True))
 DUP_PARTICLE_TAIL = rf"(\s+(?:{_PARTICLE_ALT})(?![\w-]))?"
 
 
-def substitute_once(text: str, word: str, replacement: str) -> str:
-    """Replace the first whole-word ``word`` with ``replacement``, collapsing a doubled particle.
+# "a myriad of X" / "a plethora of X" is a quantifier FRAME: the article and the "of" belong to the
+# construction, not to the noun, so swapping the middle token alone cannot be grammatical. MEASURED
+# coming out of the composite rewriter on three natural sentences:
+#
+#     "a myriad of options"   -> "a many of options" / "a countless of options"
+#     "a plethora of evidence" -> "a lots of evidence" / "a many of evidence"
+#
+# The table is single-token by design (a test enforces it) and no single token fits this frame, so
+# the frame has to be rewritten as a unit. _FRAME_FORM says how each replacement reads once the
+# article and "of" are the substitution's responsibility; a replacement that is not listed is left
+# alone entirely, because emitting nothing is better than emitting broken English.
+_QUANT_FRAME_KEYS = ("myriad", "plethora")
+_FRAME_FORM = {
+    "many": "many",
+    "countless": "countless",
+    "numerous": "numerous",
+    "several": "several",
+    "lots": "lots of",
+    "scores": "scores of",
+    "plenty": "plenty of",
+    "wealth": "a wealth of",
+    "range": "a range of",
+    "array": "an array of",
+    "mix": "a mix of",
+}
 
-    When the replacement already ends in the particle the sentence supplies next, that particle is
-    consumed rather than repeated. Only the seam is touched — a duplicated word anywhere else in the
-    text is the author's and is left exactly as written.
+
+# Quantifier forms that work with a MASS noun. "a plethora of evidence" -> "many evidence" is
+# ungrammatical for the same reason "many water" is: `many` counts, and `evidence` does not. The
+# frame hides this, because "a plethora of X" reads naturally whether X is count or mass.
+_MASS_SAFE_FORMS = frozenset({"lots of", "plenty of", "a wealth of"})
+
+
+def _looks_plural(noun: str) -> bool:
+    """Rough count-noun test: a plural head takes a counting quantifier, a mass head does not.
+
+    Deliberately conservative — "not obviously plural" only ever RESTRICTS the options, so a wrong
+    answer costs a substitution rather than producing "many evidence".
     """
+    w = noun.strip().strip(".,;:!?\"')").lower()
+    return w.endswith("s") and not w.endswith(("ss", "us", "is", "'s"))
+
+
+def _frame_form(replacement: str, plural_head: bool = True) -> str | None:
+    """How ``replacement`` reads in "a <key> of X", or None if it has no grammatical form there."""
+    form = replacement if replacement.lower().endswith(" of") else _FRAME_FORM.get(replacement.lower())
+    if form is None:
+        return None
+    if not plural_head and form.lower() not in _MASS_SAFE_FORMS:
+        return None
+    return form
+
+
+def substitute_once(text: str, word: str, replacement: str) -> str:
+    """Replace the first whole-word ``word`` with ``replacement``, keeping the seam grammatical.
+
+    Two things happen at the seam. A particle the replacement already ends in is consumed rather
+    than repeated, and a quantifier frame ("a myriad of") is rewritten whole rather than having its
+    middle token swapped. Only the seam is touched — a duplicated word anywhere else in the text is
+    the author's and is left exactly as written.
+    """
+    if word.lower() in _QUANT_FRAME_KEYS:
+        # group(1) is the frame to replace; group(2) is the head noun, read only to decide whether
+        # a counting quantifier is allowed. Slice on group(1) so the noun is never consumed.
+        frame = re.compile(rf"\b((?:a|an)\s+{re.escape(word)}\s+of)\b\s*(\S*)", re.IGNORECASE)
+        match = frame.search(text)
+        if match:
+            form = _frame_form(replacement, plural_head=_looks_plural(match.group(2)))
+            if form is None:
+                return text  # no grammatical form in this frame — leave it rather than mangle it
+            if match.group(1)[:1].isupper():
+                form = form[:1].upper() + form[1:]
+            return text[: match.start(1)] + form + text[match.end(1):]
+
     rep = _match_case(word, replacement)
     tail = replacement.rsplit(" ", 1)[-1].lower() if " " in replacement else ""
     pattern = rf"\b{re.escape(word)}\b"

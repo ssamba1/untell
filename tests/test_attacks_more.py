@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from untell.attacks import (
@@ -61,8 +63,10 @@ class TestASubstitutionDoesNotDoubleAParticle:
          "The team will work through the regulatory complexities."),
         ("They are navigating through a difficult transition.", "navigating", "working through",
          "They are working through a difficult transition."),
+        # "a myriad of" is a quantifier FRAME, so the whole thing goes — see the class below.
+        # Collapsing the doubled "of" alone would leave "a scores of options".
         ("The report offers a myriad of options to weigh.", "myriad", "scores of",
-         "The report offers a scores of options to weigh."),
+         "The report offers scores of options to weigh."),
     ]
 
     @pytest.mark.parametrize(("sentence", "word", "rep", "expected"), CASES)
@@ -103,6 +107,84 @@ class TestASubstitutionDoesNotDoubleAParticle:
         from untell.attacks.word_importance import _PARTICLES, _SYN
 
         assert not (_PARTICLES & set(_SYN))
+
+
+class TestQuantifierFramesAreRewrittenWhole:
+    """"a myriad of X" carries its article and its "of" as part of the construction.
+
+    Swapping the middle token alone cannot be grammatical, and the table is single-token by design
+    (a test above enforces it), so the frame has to be handled as a unit. MEASURED coming out of
+    the composite rewriter before the fix:
+
+        "a myriad of options"    -> "a many of options" / "a countless of options"
+        "a plethora of evidence" -> "a lots of evidence" / "a many of evidence"
+    """
+
+    FRAMES = [
+        ("The report offers a myriad of options to weigh.", "myriad"),
+        ("There is a plethora of evidence supporting it.", "plethora"),
+        ("Researchers examined a myriad of factors in the cohort.", "myriad"),
+    ]
+
+    # Bare counting quantifiers: grammatical on their own ("many options"), never after an article.
+    # "a wealth of evidence" is fine — `wealth` is a noun, so it keeps the frame it came from.
+    BARE = r"\ban? (many|countless|lots|scores|plenty|several|numerous)\b"
+
+    @pytest.mark.parametrize(("sentence", "key"), FRAMES)
+    def test_no_replacement_leaves_a_stranded_article(self, sentence, key):
+        from untell.attacks.word_importance import _SYN, substitute_once
+
+        for option in _SYN[key]:
+            out = substitute_once(sentence, key, option)
+            assert not re.search(self.BARE, out, re.IGNORECASE), (option, out)
+            assert " of of " not in out, (option, out)
+
+    def test_a_count_quantifier_is_refused_on_a_mass_noun(self):
+        """"a plethora of evidence" -> "many evidence" is wrong for the same reason "many water"
+        is. The frame hides it, because it reads naturally with count and mass heads alike."""
+        from untell.attacks.word_importance import substitute_once
+
+        sentence = "There is a plethora of evidence supporting it."
+        assert substitute_once(sentence, "plethora", "many") == sentence  # refused, not mangled
+        assert "a wealth of evidence" in substitute_once(sentence, "plethora", "wealth")
+        assert "lots of evidence" in substitute_once(sentence, "plethora", "lots")
+
+    def test_a_count_quantifier_is_allowed_on_a_plural_head(self):
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("The report offers a myriad of options.", "myriad", "many")
+        assert out == "The report offers many options."
+
+    def test_the_head_noun_is_never_consumed(self):
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("It lists a myriad of options today.", "myriad", "countless")
+        assert out == "It lists countless options today."
+
+    def test_capitalisation_at_a_sentence_start_survives(self):
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("A myriad of options exist here.", "myriad", "countless")
+        assert out == "Countless options exist here."
+
+    @pytest.mark.parametrize(("sentence", "key"), FRAMES)
+    def test_the_structural_path_agrees(self, sentence, key):
+        import random
+
+        from untell.rewriter.structural import _plain_register
+
+        for seed in range(12):
+            random.seed(seed)
+            out = _plain_register(sentence, intensity=1.0)
+            assert not re.search(self.BARE, out, re.IGNORECASE), (seed, out)
+            assert "many evidence" not in out, (seed, out)
+
+    def test_a_bare_key_outside_the_frame_still_substitutes(self):
+        """The frame rule must not disable the ordinary swap."""
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("Myriad options exist here.", "Myriad", "Countless")
+        assert out == "Countless options exist here."
 
 
 def test_hyphenated_tells_are_actually_substituted():

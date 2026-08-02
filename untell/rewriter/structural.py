@@ -452,7 +452,7 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
     if not text.strip():
         return text
     from untell.attacks.word_importance import DUP_PARTICLE_TAIL as _DUP_PARTICLE_TAIL
-    from untell.attacks.word_importance import _SYN
+    from untell.attacks.word_importance import _QUANT_FRAME_KEYS, _SYN, substitute_once
 
     # Protect locked spans: mask them out, substitute, then restore.
     spans: list[str] = []
@@ -462,6 +462,26 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
         return f"\x00{len(spans) - 1}\x00"
 
     masked = _SENTINEL_SPAN_RE.sub(_stash, text)
+
+    # Quantifier frames first, as a unit. "a myriad of X" carries its article and its "of" as part
+    # of the construction, so the token pass below cannot make it grammatical — it produced "a many
+    # of X" and "a lots of X". Handled here, the frame is gone before the token pass sees the key.
+    for _key in _QUANT_FRAME_KEYS:
+        while re.search(rf"\b(?:a|an)\s+{_key}\s+of\b", masked, flags=re.IGNORECASE):
+            if random.random() > intensity:
+                break
+            # substitute_once owns the grammar rule (which forms fit the frame, and which of those
+            # survive a mass-noun head), so try the options until one of them applies. It returns
+            # the text unchanged when a replacement has no grammatical form here.
+            options = list(_SYN.get(_key, []))
+            random.shuffle(options)
+            for option in options:
+                replaced = substitute_once(masked, _key, option)
+                if replaced != masked:
+                    masked = replaced
+                    break
+            else:
+                break
 
     def _swap(m: re.Match) -> str:
         word, tail = m.group(1), m.group(2) or ""
