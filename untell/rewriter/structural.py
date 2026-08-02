@@ -393,7 +393,8 @@ def _strip_filler_openers(text: str) -> str:
 
 
 # Sentinel spans (⟦HZxxxx⟧) must never be touched by a word-level substitution.
-_SENTINEL_SPAN_RE = re.compile(r"⟦HZ\d{4,}⟧")
+# Imported, not re-declared — see the note on SENTINEL_RE in preserve.py.
+from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_SPAN_RE  # noqa: E402
 
 
 def _plain_register(text: str, intensity: float = 1.0) -> str:

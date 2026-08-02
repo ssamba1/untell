@@ -29,6 +29,11 @@ logger = logging.getLogger(__name__)
 # to 5 digits past 9999 locked spans. Matching exactly \d{4} would make restore()/find_sentinels miss
 # those, silently dropping the locked citation/fact on restore — so the round-trip must accept \d{4,}.
 _SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
+# Public alias. The rewriters that have to verify sentinel survival (mt_pivot, t5_paraphrase,
+# targeted) each had their own copy of this pattern. It guards every locked citation, number and
+# quote, and the `{4,}` above is load-bearing — a copy written as `\d{4}` would stop matching past
+# 9999 locked spans and silently drop them on restore. One definition, imported, cannot drift.
+SENTINEL_RE = _SENTINEL_RE
 
 # Units that may follow a number. Measured: with only the original short list
 # (%|kg|km|cm|mm|mol|°|years|days|hours|minutes), "5 mg" locked NOTHING and "16 GB" locked "16"

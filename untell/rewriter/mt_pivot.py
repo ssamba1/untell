@@ -13,13 +13,12 @@ degrades to a safe no-op when unavailable, exactly like the other optional rewri
 
 from __future__ import annotations
 
-import re
 from collections import Counter
 
 from untell.attacks.back_translation import BackTranslator
 
 # Matches the sentinel format lock() emits (4-or-more digits — see preserve.py).
-_SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
+from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE
 
 
 class MTPivotRewriter:

@@ -267,3 +267,46 @@ def test_ordinary_prose_is_not_over_locked(prose):
     _masked, mapping = lock(prose)
     locked_chars = sum(len(v) for v in mapping.values())
     assert locked_chars == 0, f"over-locked {locked_chars}/{len(prose)} chars: {list(mapping.values())}"
+
+
+def test_sentinel_pattern_is_defined_once():
+    """The sentinel regex guards every locked citation, number and quote.
+
+    Four modules each carried their own copy. The `{4,}` is load-bearing — lock() numbers sentinels
+    with `f"⟦HZ{i:04d}⟧"`, which overflows to five digits past 9999 spans, so a copy written `\\d{4}`
+    would stop matching exactly the documents with the most to lose and drop those spans on restore.
+    """
+    import pathlib
+    import re
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    literal = re.compile(r"re\.compile\(\s*r?[\"']\\u27e6HZ|re\.compile\(\s*r?[\"']⟦HZ")
+    offenders = []
+    for path in sorted((root / "untell").rglob("*.py")):
+        if path.name == "preserve.py":
+            continue
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if literal.search(line):
+                offenders.append(f"{path.relative_to(root)}:{i}: {line.strip()}")
+    assert not offenders, (
+        "import SENTINEL_RE from untell.scripts.preserve instead of re-declaring it:\n  "
+        + "\n  ".join(offenders)
+    )
+
+
+def test_every_consumer_shares_the_same_compiled_pattern():
+    from untell.rewriter.mt_pivot import _SENTINEL_RE as mt
+    from untell.rewriter.t5_paraphrase import _SENTINEL_RE as t5
+    from untell.rewriter.targeted import _SENTINEL_RE as targeted
+    from untell.scripts.preserve import SENTINEL_RE
+
+    assert SENTINEL_RE is targeted is t5 is mt
+
+
+def test_sentinel_pattern_matches_past_9999_spans():
+    """Five-digit sentinels are reachable: lock() uses a minimum width, not a fixed one."""
+    from untell.scripts.preserve import SENTINEL_RE
+
+    assert SENTINEL_RE.findall("⟦HZ0000⟧ ⟦HZ9999⟧ ⟦HZ10000⟧ ⟦HZ123456⟧") == [
+        "⟦HZ0000⟧", "⟦HZ9999⟧", "⟦HZ10000⟧", "⟦HZ123456⟧"
+    ]

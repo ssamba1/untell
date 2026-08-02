@@ -20,9 +20,10 @@ from __future__ import annotations
 import re
 from collections import Counter
 
+from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE
+
 from .base import Rewriter
 
-_SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
 # Split on sentence-final punctuation followed by whitespace, keeping the delimiter with the sentence.
 _SENT_SPLIT = re.compile(r"(?<=[.!?])(\s+)")
 

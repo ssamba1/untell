@@ -16,13 +16,13 @@ sentence, not the whole text.
 
 from __future__ import annotations
 
-import re
 from collections import Counter
 
+# Matches the sentinel format lock() emits (4-or-more digits — see preserve.py).
+from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE
 from untell.text_split import split_sentences
 
 _MODEL_ID = "humarin/chatgpt_paraphraser_on_T5_base"
-_SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
 
 
 class T5ParaphraseRewriter:
