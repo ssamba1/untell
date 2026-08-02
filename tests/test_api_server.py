@@ -1,6 +1,7 @@
 """Tests for the REST API server — offline, no network."""
 from __future__ import annotations
 
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -63,30 +64,59 @@ def test_tells_endpoint():
         assert data["tells"] > 0
 
 
-def test_auth_blocks_unauthorized():
+def test_auth_blocks_unauthorized(monkeypatch):
     """When UNTELL_API_KEY is set, requests without a key get 401."""
-    with patch("untell.api_server._API_KEY", "secret123"):
-        with patch("untell.api_server.load_env"):
-            from fastapi.testclient import TestClient
+    monkeypatch.setenv("UNTELL_API_KEY", "secret123")
+    with patch("untell.api_server.load_env"):
+        from fastapi.testclient import TestClient
 
-            from untell.api_server import app
+        from untell.api_server import app
 
-            client = TestClient(app)
-            resp = client.post("/score", json={"text": "test", "tier": "lite"})
-            assert resp.status_code == 401
+        client = TestClient(app)
+        resp = client.post("/score", json={"text": "test", "tier": "lite"})
+        assert resp.status_code == 401
 
 
-def test_auth_allows_with_valid_key():
+def test_auth_allows_with_valid_key(monkeypatch):
     """When UNTELL_API_KEY is set, requests with the correct key pass."""
-    with patch("untell.api_server._API_KEY", "secret123"):
-        with patch("untell.api_server.load_env"):
-            from fastapi.testclient import TestClient
+    monkeypatch.setenv("UNTELL_API_KEY", "secret123")
+    with patch("untell.api_server.load_env"):
+        from fastapi.testclient import TestClient
 
-            from untell.api_server import app
+        from untell.api_server import app
 
-            client = TestClient(app)
-            resp = client.post("/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "secret123"})
-            assert resp.status_code == 200
+        client = TestClient(app)
+        resp = client.post("/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "secret123"})
+        assert resp.status_code == 200
+
+
+def test_auth_honours_a_key_set_only_in_dotenv(tmp_path, monkeypatch):
+    """A key in .env must protect the server, not leave it wide open.
+
+    The real startup order is import-then-lifespan: uvicorn imports the module, and only then
+    does ``lifespan`` call ``load_env()``. Reading the key at import meant a .env-only key was
+    always empty at check time, so every protected endpoint served unauthenticated requests.
+    ``load_env`` is deliberately *not* patched here — this exercises the whole path.
+    """
+    (tmp_path / ".env").write_text("UNTELL_API_KEY=from-dotenv\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    from fastapi.testclient import TestClient
+
+    from untell.api_server import app
+
+    # patch.dict, not monkeypatch.delenv: load_env *adds* the key to os.environ during the test,
+    # and monkeypatch only restores vars it was told about. patch.dict snapshots the whole mapping.
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("UNTELL_API_KEY", None)
+        with TestClient(app) as client:  # `with` runs the lifespan hook
+            assert client.post("/score", json={"text": "test", "tier": "lite"}).status_code == 401
+            assert client.post(
+                "/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "wrong"}
+            ).status_code == 401
+            assert client.post(
+                "/score", json={"text": "test", "tier": "lite"}, headers={"X-API-Key": "from-dotenv"}
+            ).status_code == 200
 
 
 def test_empty_text_returns_422():

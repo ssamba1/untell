@@ -82,20 +82,29 @@ app.add_middleware(
 # Auth
 # ---------------------------------------------------------------------------
 
-_API_KEY = os.environ.get("UNTELL_API_KEY", "").strip()
+def _api_key() -> str:
+    """Read the configured key per request rather than once at import.
+
+    ``lifespan`` calls ``load_env()`` at *startup*, which happens after this module is imported.
+    A key that lives only in ``.env`` — the workflow the docs describe — was therefore never
+    visible to a module-level constant, and every check below fell through to the
+    "no key configured = open access" branch. Cost of reading it here is one dict lookup.
+    """
+    return os.environ.get("UNTELL_API_KEY", "").strip()
 
 
 def _verify_key(x_api_key: str | None = None) -> bool:
-    if not _API_KEY:
+    key = _api_key()
+    if not key:
         return True  # no key configured = open access
     # Constant-time: `==` on strings short-circuits at the first differing byte, so response time
     # leaks how long a supplied prefix matched and the key can be recovered a character at a time.
-    return bool(x_api_key) and hmac.compare_digest(x_api_key, _API_KEY)
+    return bool(x_api_key) and hmac.compare_digest(x_api_key, key)
 
 
 def _check_auth(authorization: str | None, x_api_key: str | None) -> str | None:
     """Return an error message if auth fails, else None."""
-    if not _API_KEY:
+    if not _api_key():
         return None
     if x_api_key and _verify_key(x_api_key):
         return None
