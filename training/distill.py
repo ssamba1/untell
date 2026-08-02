@@ -16,7 +16,7 @@ import argparse
 import json
 import logging
 
-_PROMPT = "Rewrite the following text so it reads as natural human writing while preserving its exact meaning:\n\n{text}"
+from untell.rewriter.local_policy import _TRAIN_PROMPT as _PROMPT
 
 
 def distill(dataset: str = "builtin", n: int = 200, tier: str = "full", threshold: float = 0.30, margin: float = 0.05):

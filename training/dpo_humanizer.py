@@ -14,8 +14,9 @@ from __future__ import annotations
 import argparse
 import logging
 
+from untell.rewriter.local_policy import _TRAIN_PROMPT as _PROMPT
+
 SMOKE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
-_PROMPT = "Rewrite the following text so it reads as natural human writing while preserving its exact meaning:\n\n{text}"
 
 
 def build_pairs(dataset: str = "builtin", n: int = 200, tier: str = "full") -> dict:

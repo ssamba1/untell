@@ -257,16 +257,23 @@ def _score_max(text: str, tier: str) -> float:
     return float(score_text(text, tier=tier)["max"]) if text.strip() else 0.0
 
 
-def importance(text: str, tier: str = "lite", only: set[str] | None = None) -> list[tuple[str, float]]:
+def importance(
+    text: str, tier: str = "lite", only: set[str] | None = None, base: float | None = None
+) -> list[tuple[str, float]]:
     """Rank unique words by how much removing them drops the detector score (descending).
 
     Batches all word-removed variants through the detector ensemble in one call — O(1) detector
     *loads* instead of O(unique_words). It is still O(unique_words) forward PASSES, which is the
     real cost on the full tier, so ``only`` restricts the ranking to a caller-supplied word set.
+
+    ``base`` is the score of ``text`` itself. Callers that already have it — surgical_substitute
+    computes exactly this for its ``pre`` — should pass it: recomputing it here ran a second,
+    byte-identical baseline pass over the same text at the same tier on every call.
     """
     if not text.strip():
         return []
-    base = _score_max(text, tier)
+    if base is None:
+        base = _score_max(text, tier)
     # Batch score all word-removed texts with one detector-load.
     unique_words = list(dict.fromkeys(m.group(0) for m in _WORD.finditer(text)))
     if only is not None:
@@ -314,7 +321,7 @@ def surgical_substitute(
     # tier this was the difference between 57s and a few seconds, with identical output.
     substitutable = {w.lower() for w in dict.fromkeys(m.group(0) for m in _WORD.finditer(text))
                      if synonyms(w)}
-    word_ranks = importance(text, tier=tier, only=substitutable)
+    word_ranks = importance(text, tier=tier, only=substitutable, base=pre)  # `pre` IS its baseline
     # NOTE: ``word_ranks`` is computed ONCE from the original text. After a substitution changes
     # the text, subsequent drop values are stale — a word's true importance may differ in the
     # modified text. This is a performance caveat (we may try an already-deflated word), not a

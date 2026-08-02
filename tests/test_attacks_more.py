@@ -54,6 +54,47 @@ def test_hyphenated_tells_are_actually_substituted():
         assert tell not in out, f"{tell} survived the plain-register pass"
 
 
+def test_surgical_substitute_scores_the_original_once(monkeypatch):
+    """surgical_substitute computed `pre`, then importance() recomputed the identical baseline —
+    two byte-identical detector passes over the same text at the same tier on every call. On the
+    full tier that is a whole multi-model ensemble pass spent on a value already in hand."""
+    import untell.attacks.word_importance as wi
+
+    src = (
+        "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
+        "Moreover, organizations leverage robust methodologies to optimize crucial outcomes."
+    )
+    seen: list[str] = []
+
+    def _spy(text, **kw):
+        seen.append(text)
+        return {"max": 0.9, "mean": 0.9, "detectors": {"fake": 0.9}, "scored": True}
+
+    monkeypatch.setattr(wi, "score_text", _spy)
+    monkeypatch.setattr(
+        wi, "batch_score_texts",
+        lambda texts, **kw: [{"max": 0.9, "mean": 0.9, "detectors": {"fake": 0.9}} for _ in texts],
+    )
+
+    wi.surgical_substitute(src, tier="lite", max_subs=4)
+    assert seen.count(src) == 1, f"scored the original {seen.count(src)} times"
+
+
+def test_importance_accepts_a_precomputed_base(monkeypatch):
+    import untell.attacks.word_importance as wi
+
+    def _boom(text, **kw):
+        raise AssertionError("importance recomputed the baseline despite being given one")
+
+    monkeypatch.setattr(wi, "score_text", _boom)
+    monkeypatch.setattr(
+        wi, "batch_score_texts",
+        lambda texts, **kw: [{"max": 0.5, "mean": 0.5, "detectors": {"fake": 0.5}} for _ in texts],
+    )
+    ranks = wi.importance("robust seamless delve utilize", tier="lite", base=0.8)
+    assert ranks and all(abs(d - 0.3) < 1e-9 for _, d in ranks)  # 0.8 base - 0.5 stripped
+
+
 def test_synonyms_known_word():
     syns = synonyms("numerous")
     assert "many" in [s.lower() for s in syns]

@@ -21,10 +21,15 @@ from __future__ import annotations
 import os
 from typing import Any
 
-# MUST stay in sync with ``training.rl_humanizer._PROMPT``. The policy was RL-trained on THIS exact
-# instruction, so feeding it the loop's richer rubric prompt (rewriter/prompts.py) would be
-# out-of-distribution. The moat is single-pass by design — the per-iteration detector feedback the API
-# rewriter consumes does not apply here; we just (re)sample from the trained prompt.
+# The single source of truth for the training prompt: rl_humanizer, dpo_humanizer and distill all
+# import it from here. It used to be re-typed as a literal in two of them, so a change here would
+# have left DPO and the distilled SFT data tuned on one instruction while inference used another —
+# with nothing to detect the drift but the quality of the output.
+#
+# The policy was RL-trained on THIS exact instruction, so feeding it the loop's richer rubric prompt
+# (rewriter/prompts.py) would be out-of-distribution. The moat is single-pass by design — the
+# per-iteration detector feedback the API rewriter consumes does not apply here; we just (re)sample
+# from the trained prompt.
 _TRAIN_PROMPT = (
     "Rewrite the following text so it reads as natural human writing while preserving its exact "
     "meaning:\n\n{text}"
