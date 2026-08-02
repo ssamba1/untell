@@ -61,7 +61,20 @@ def free_ensemble_score(text: str, tier: str = "full", weights: dict[str, float]
         if isinstance(v, (int, float)) and "__" not in k
     }
     if not present:
-        return float(res["max"])
+        # `res["max"]` is a 0.0 PLACEHOLDER when nothing scored, and 0.0 means "not AI at all" —
+        # so `humanness_reward` handed back 1.0, the MAXIMUM evasion credit, for text no detector
+        # ever looked at. A GRPO/DPO run against a broken ML stack would then optimise a constant
+        # perfect reward: every candidate ties, the gradient carries no information, and hours of
+        # GPU time produce an adapter trained on nothing, with no error anywhere to show it.
+        #
+        # This is the same unscored-placeholder-read-as-clean bug fixed in `humanness()` and
+        # `report._bypass_rate` this session; it is worst here, because a wrong REWARD is not a
+        # misreported number, it is the thing the model learns.
+        raise RuntimeError(
+            "no detector produced a score, so there is no training signal — refusing to return a "
+            f"reward. {res.get('warning') or ''} Failed: {res.get('failed_detectors') or 'unknown'}. "
+            "Fix the detector stack, or set UNTELL_REWARD_FAST=1 for the model-free stdlib reward."
+        )
     w = {k: weights.get(k, 0.03) for k in present}
     total = sum(w.values()) or 1.0
     return float(sum(w[k] * present[k] for k in present) / total)

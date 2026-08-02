@@ -1,3 +1,12 @@
+"""Training-reward tests.
+
+A wrong reward is not a misreported number — it is the thing the model learns, so a silent
+failure here costs GPU hours and yields an adapter trained on noise.
+"""
+
+from __future__ import annotations
+
+import pytest
 
 
 def test_sim_floor_adapts_to_the_active_similarity_metric(monkeypatch):
@@ -53,3 +62,55 @@ def test_out_of_range_sidecar_cannot_enter_the_weighted_mean(monkeypatch):
         },
     )
     assert r.free_ensemble_score("some text", tier="full") == 1.0
+
+
+def test_no_detector_signal_refuses_to_return_a_reward(monkeypatch):
+    """`res["max"]` is a 0.0 PLACEHOLDER when nothing scored, and 0.0 means "not AI at all" — so
+    the reward came back as 1.0, the MAXIMUM evasion credit, for text no detector ever looked at.
+
+    A GRPO/DPO run against a broken ML stack would optimise a constant perfect reward: every
+    candidate ties, the gradient carries no information, and hours of GPU time produce an adapter
+    trained on nothing, with no error anywhere to show it.
+
+    Same unscored-placeholder bug as humanness() and report._bypass_rate — worst here, because a
+    wrong reward is not a misreported number, it is the thing the model learns.
+    """
+    import training.reward as R
+
+    monkeypatch.setattr(R, "score_text", lambda text, tier="full", threshold=0.30: {
+        "tier": "lite", "detectors": {"d__error": "boom"}, "max": 0.0, "mean": 0.0,
+        "threshold": threshold, "flagged": False, "scored": False,
+        "warning": "no detector produced a score", "failed_detectors": ["d"],
+    })
+    text = "original text here that is long enough to clear the length gate"
+    with pytest.raises(RuntimeError, match="no training signal"):
+        R.humanness_reward(text, text, sim_floor=0.0)
+
+
+def test_partial_detector_failure_still_scores(monkeypatch):
+    """One dead detector must NOT abort training — only a total absence of signal does. The
+    surviving detectors are renormalized, which is the documented behaviour."""
+    import training.reward as R
+
+    monkeypatch.setattr(R, "score_text", lambda text, tier="full", threshold=0.30: {
+        "tier": "full",
+        "detectors": {"hc3_roberta": 0.80, "mage__error": "boom", "mage": None},
+        "max": 0.80, "mean": 0.80, "threshold": threshold, "flagged": True,
+        "failed_detectors": ["mage"],
+    })
+    assert R.free_ensemble_score("some text here") == pytest.approx(0.80)
+
+
+def test_fast_reward_path_needs_no_detectors(monkeypatch):
+    """UNTELL_REWARD_FAST=1 is the documented escape hatch named in the error message, so it must
+    not depend on the detector stack it exists to avoid."""
+    import training.reward as R
+
+    monkeypatch.setenv("UNTELL_REWARD_FAST", "1")
+
+    def _boom(*a, **k):
+        raise AssertionError("the fast path must not call score_text")
+
+    monkeypatch.setattr(R, "score_text", _boom)
+    text = "Furthermore, we leverage robust solutions to delve into the realm of synergy."
+    assert -1.0 <= R.humanness_reward(text, text, sim_floor=0.0) <= 1.0
