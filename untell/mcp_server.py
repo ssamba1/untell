@@ -33,9 +33,16 @@ def _server():
     server = FastMCP("untell")
 
     @server.tool()
-    def score(text: str, tier: str = "lite") -> dict:
-        """Score text for AI-likelihood: max + ai_percent 0-100 + per-detector breakdown."""
-        return score_text(text, tier=tier)
+    def score(text: str, tier: str = "full", threshold: float = 0.30) -> dict:
+        """Score text for AI-likelihood: max + ai_percent 0-100 + per-detector breakdown.
+
+        `tier` defaults to "full" to match POST /score on the REST API — the same named operation
+        returned a different answer depending on which surface a caller reached it through, because
+        this one ran a single stdlib heuristic and that one ran the four-detector ensemble.
+        `threshold` was missing entirely here, so `flagged` was frozen at the 0.30 default and a
+        caller could not ask the question they meant to ask.
+        """
+        return score_text(text, tier=tier, threshold=threshold)
 
     @server.tool()
     def sentences(text: str, tier: str = "lite", threshold: float = 0.30) -> dict:
@@ -53,7 +60,11 @@ def _server():
     # actually sees. Patch first, register second.
     def untell(
         text: str,
-        tier: str = "lite",
+        # "full", matching the CLI's --tier default and POST /humanize. The loop OPTIMISES against
+        # whatever tier it is given, so lite meant driving a single stdlib heuristic the README calls
+        # "weak — a demo signal, not an evasion claim", and returning a "passed" verdict the CLI's
+        # four-detector ensemble would have rejected. Same shape as the best_of=1 default below.
+        tier: str = "full",
         threshold: float = 0.30,
         style: str | None = None,
         max_iters: int = 5,

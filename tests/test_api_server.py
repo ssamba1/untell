@@ -475,3 +475,118 @@ def test_ceiling_still_accepts_valid_rewriters():
                 "/ceiling", json={"rewriter": name, "n": 1, "tier": "lite", "max_iters": 1}
             )
             assert resp.status_code == 200, name
+
+
+class TestTierIsValidated:
+    """`tier` was a bare `str` on every request model, so any string was accepted.
+
+    `load_detectors("bogus")` matches no tier and falls back to the always-on lite heuristic, so the
+    response came back HTTP 200 carrying a lite-shaped result with nothing to say the requested tier
+    was never honoured. The CLI rejects the same input at parse time (argparse `choices`, exit 2).
+    """
+
+    ENDPOINTS = ("/score", "/humanize", "/sentences", "/verify")
+
+    @pytest.mark.parametrize("tier", ["bogus", "Full", "FULL", "lite ", "full,heavy"])
+    @pytest.mark.parametrize("path", ENDPOINTS)
+    def test_unknown_tier_is_rejected(self, path, tier):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post(path, json={"text": "A short test sentence.", "tier": tier})
+        assert resp.status_code == 422, f"{path} accepted tier={tier!r}"
+
+    @pytest.mark.parametrize("path", [p for p in ENDPOINTS if p != "/verify"])
+    def test_empty_tier_is_rejected_everywhere_except_verify(self, path):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post(path, json={"text": "A short test sentence.", "tier": ""})
+        assert resp.status_code == 422, f"{path} accepted an empty tier"
+
+    def test_verify_still_accepts_the_empty_tier_its_cli_documents(self):
+        """`untell-verify --tier ''` means commercial-only and is in the CLI's own `choices`.
+
+        Narrowing this endpoint to the standard four would have made REST reject an input its CLI
+        accepts — the same cross-surface divergence this class exists to prevent, reversed.
+        """
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post("/verify", json={"text": "A short test sentence.", "tier": ""})
+        assert resp.status_code == 200
+
+    def test_verify_vocabulary_matches_its_cli(self):
+        from typing import get_args
+
+        from untell.api_server import _VERIFY_TIER
+        from untell.scripts.verify import build_parser
+
+        parser = build_parser()
+        tier_action = next(a for a in parser._actions if a.dest == "tier")
+        assert set(get_args(_VERIFY_TIER)) == set(tier_action.choices)
+
+    @pytest.mark.parametrize("tier", ["lite", "full", "heavy", "commercial"])
+    def test_every_real_tier_still_passes(self, tier):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post("/score", json={"text": "A short test sentence.", "tier": tier})
+        assert resp.status_code == 200, tier
+
+    def test_the_literal_matches_what_load_detectors_honours(self):
+        """The enum is restated in three places (argparse, this Literal, `_TIER_RANK`).
+
+        Pin it to the loader's own table so adding a tier cannot leave the network surfaces
+        rejecting a name the CLI accepts.
+        """
+        from typing import get_args
+
+        from untell.api_server import _TIER
+        from untell.detectors.base import _TIER_RANK
+
+        assert set(get_args(_TIER)) == set(_TIER_RANK)
+
+    def test_openapi_advertises_the_vocabulary(self):
+        """A bare `str` gave clients no way to discover the valid values from /docs."""
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+        from untell.detectors.base import _TIER_RANK
+
+        schemas = TestClient(app).get("/openapi.json").json()["components"]["schemas"]
+        for name in ("ScoreRequest", "HumanizeRequest", "CeilingRequest", "SentencesRequest"):
+            assert set(schemas[name]["properties"]["tier"]["enum"]) == set(_TIER_RANK), name
+        assert set(schemas["VerifyRequest"]["properties"]["tier"]["enum"]) == set(_TIER_RANK) | {""}
+
+
+class TestTierDefaultsMatchTheCLI:
+    """The loop OPTIMISES against the tier it is given, so a weaker default is a weaker product.
+
+    /humanize defaulted to lite — a single stdlib heuristic the README calls "weak — a demo signal,
+    not an evasion claim" — and returned "passed" verdicts the CLI's four-detector ensemble would
+    have rejected. Same class as the best_of=1 default: the CLI was strengthened and the network
+    surfaces were left behind.
+    """
+
+    @pytest.mark.parametrize(
+        "model_name", ["ScoreRequest", "HumanizeRequest", "VerifyRequest", "CeilingRequest"]
+    )
+    def test_scoring_surfaces_default_to_full(self, model_name):
+        import untell.api_server as api
+
+        model = getattr(api, model_name)
+        assert model.model_fields["tier"].default == "full", model_name
+
+    def test_the_cli_agrees(self):
+        """Read the default off the CLI parser rather than restating it here."""
+        from untell.scripts.run import build_parser
+
+        parser = build_parser()
+        tier_action = next(a for a in parser._actions if a.dest == "tier")
+        assert tier_action.default == "full"
+        assert set(tier_action.choices or ()) == {"lite", "full", "heavy", "commercial"}

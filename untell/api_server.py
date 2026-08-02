@@ -33,6 +33,7 @@ import hmac
 import logging
 import os
 from contextlib import asynccontextmanager
+from typing import Literal
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -127,16 +128,34 @@ def _check_auth(authorization: str | None, x_api_key: str | None) -> str | None:
 # tied-up worker, and the bound is the scorer's own constant so the two cannot drift.
 _TEXT = Field(..., max_length=MAX_INPUT_CHARS)
 
+# The CLI rejects an unknown --tier at parse time (argparse `choices`, exit 2). The network surfaces
+# accepted anything: `load_detectors("bogus")` matches no tier, falls back to the lite heuristic, and
+# the response comes back 200 with a lite-shaped result and no indication the requested tier was
+# never honoured. A typo therefore produced a plausible answer from the wrong ensemble. Same
+# vocabulary as the CLI, enforced at the edge.
+_TIER = Literal["lite", "full", "heavy", "commercial"]
+
+# /verify is the one surface whose vocabulary is wider: `untell-verify --tier ''` is a documented
+# invocation meaning "commercial checkers only", and the handler already maps "" and "commercial" to
+# the same local-skip. Narrowing this to _TIER would have made the REST surface reject an input its
+# own CLI accepts — the same cross-surface divergence being fixed here, pointing the other way.
+_VERIFY_TIER = Literal["lite", "full", "heavy", "commercial", ""]
+
 
 class ScoreRequest(BaseModel):
     text: str = _TEXT
-    tier: str = "full"
+    tier: _TIER = "full"
     threshold: float = DEFAULT_THRESHOLD
 
 
 class HumanizeRequest(BaseModel):
     text: str = _TEXT
-    tier: str = "lite"
+    # "full", matching the CLI's `--tier` default. The loop OPTIMISES against whatever tier it is
+    # given, so defaulting to lite meant every REST caller drove a single stdlib heuristic — which
+    # the README describes as "weak — a demo signal, not an evasion claim" — and got back a "passed"
+    # verdict the CLI's four-detector ensemble would have rejected. Same shape as the best_of=1
+    # default fixed below: the CLI was strengthened and the network surfaces were left behind.
+    tier: _TIER = "full"
     threshold: float = DEFAULT_THRESHOLD
     style: str | None = None
     max_iters: int = 5
@@ -162,20 +181,20 @@ class TellsRequest(BaseModel):
 
 class SentencesRequest(BaseModel):
     text: str = _TEXT
-    tier: str = "lite"
+    tier: _TIER = "lite"
     threshold: float = DEFAULT_THRESHOLD
 
 
 class VerifyRequest(BaseModel):
     text: str = _TEXT
     threshold: float = DEFAULT_THRESHOLD
-    tier: str = "full"
+    tier: _VERIFY_TIER = "full"
     sandbox: bool = False
     browser: str | None = None
 
 
 class CeilingRequest(BaseModel):
-    tier: str = "full"
+    tier: _TIER = "full"
     threshold: float = DEFAULT_THRESHOLD
     max_iters: int = 5
     rewriter: str = "surgical"
