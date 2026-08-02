@@ -274,6 +274,23 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
     return out
 
 
+# A terminator, allowing for closing quotes/brackets after it: `he said "stop."` is terminated.
+_TERMINATED_RE = re.compile(r"[.!?][\"'”’)\]]*$")
+
+
+def _terminated(s: str) -> str:
+    """``s`` with a full stop appended only if it does not already end in one.
+
+    Appending unconditionally is how "…different retailers.." reached the output: the second half
+    of a split sentence is the tail of a sentence that already ended in a full stop, and it got
+    another. Nothing downstream objects — detectors score statistics, the meaning gate checks
+    meaning, and the tells catalogue matches phrases — so a doubled stop ships in text whose entire
+    purpose is to read as human writing.
+    """
+    s = s.rstrip()
+    return s if not s or _TERMINATED_RE.search(s) else s + "."
+
+
 def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float = 0.25) -> list[str]:
     """Split sentences longer than ``max_words`` words at a suitable break point."""
     out: list[str] = []
@@ -297,9 +314,9 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                 second = second[0].lower() + second[1:] if second[0].isupper() else second
                 # Check if we broke mid-clause (second starts with a conjunction)
                 if second.split()[0].lower() in ("and", "or", "but", "while", "because", "since", "although", "though"):
-                    out.append(f"{first}, {second}.")
+                    out.append(_terminated(f"{first}, {second}"))
                 else:
-                    out.append(f"{first}. {second[0].upper() + second[1:] if second else second}.")
+                    out.append(f"{_terminated(first)} {_terminated(second[0].upper() + second[1:])}")
             else:
                 out.append(s)
         else:

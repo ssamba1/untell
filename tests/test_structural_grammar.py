@@ -5,6 +5,8 @@ natural-sounding output — not regex artifacts like wrong verb tense or fragmen
 """
 from __future__ import annotations
 
+import re as _re
+
 import pytest
 
 from untell.rewriter.structural import _flatten_participial_trailers, structural_rewrite
@@ -241,3 +243,64 @@ def test_safe_to_lowercase_separates_ordinary_words_from_names(word, context, ex
     from untell.rewriter.structural import _safe_to_lowercase
 
     assert _safe_to_lowercase(word, context) is expected, f"{word!r} in {context!r}"
+
+
+# ---------------------------------------------------------------------------
+# Surface well-formedness
+# ---------------------------------------------------------------------------
+
+_DOUBLE_STOP = _re.compile(r"[.!?]\s*[.!?]")
+
+
+class TestNoDoubledTerminator:
+    """Nothing in the pipeline looks at surface well-formedness.
+
+    Detectors score statistics, the meaning gate checks meaning, and the tells catalogue matches
+    phrases — so "…from a number of different retailers.. The list is published…" passes every
+    check and ships, in output whose entire purpose is to read as human writing. Found by diffing
+    punctuation between source and candidate over real rewriter output, not by reading the code.
+    """
+
+    def test_splitting_a_sentence_does_not_double_its_full_stop(self):
+        from untell.rewriter.structural import _split_long_sentences
+
+        # The second half of a split is the tail of a sentence that ALREADY ends in a full stop;
+        # _split_long_sentences appended another unconditionally.
+        long_sentence = (
+            "The company publishes an annual ranking of the largest retailers in the United "
+            "States based on sales data gathered from a great number of different retailers "
+            "across the country every year."
+        )
+        for seed in range(20):
+            import random
+
+            random.seed(seed)
+            out = " ".join(_split_long_sentences([long_sentence], max_words=10, rate=1.0))
+            assert not _DOUBLE_STOP.search(out), out
+
+    def test_conjunction_branch_does_not_double_either(self):
+        from untell.rewriter.structural import _split_long_sentences
+
+        import random
+
+        sentence = (
+            "The system collects data from many different sources every single day, and it then "
+            "publishes a summary report for every registered user of the platform."
+        )
+        for seed in range(20):
+            random.seed(seed)
+            out = " ".join(_split_long_sentences([sentence], max_words=10, rate=1.0))
+            assert not _DOUBLE_STOP.search(out), out
+
+    def test_terminated_helper_is_idempotent(self):
+        from untell.rewriter.structural import _terminated
+
+        assert _terminated("ends here") == "ends here."
+        assert _terminated("ends here.") == "ends here."
+        assert _terminated("ends here!") == "ends here!"
+        assert _terminated("ends here?") == "ends here?"
+        assert _terminated('he said "stop."') == 'he said "stop."'  # closing quote after the stop
+        assert _terminated("(an aside.)") == "(an aside.)"
+        assert _terminated("trailing space. ") == "trailing space."
+        assert _terminated("") == ""
+        assert _terminated(_terminated("twice")) == "twice."
