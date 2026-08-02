@@ -300,19 +300,17 @@ def main(argv: list[str] | None = None) -> int:
     elif args.dataset.lower() in ("builtin", "sample"):
         texts, corpus = list(_SAMPLE), "builtin"
     else:
-        from eval.datasets import load_samples
+        from eval.datasets import DatasetUnavailable, load_samples
 
-        texts, corpus = load_samples(args.dataset, args.n), args.dataset.lower()
-        # load_samples falls back to the built-in sample when `datasets` is missing or the load
-        # fails. Silently reporting that as an hc3 ceiling would attach real-corpus authority to
-        # the demo corpus — the exact confusion the corpus field exists to prevent.
-        if texts and all(t in _SAMPLE for t in texts):
-            print(
-                f"ERROR: --dataset {args.dataset} fell back to the built-in sample (install the "
-                "'.[eval]' extra: pip install -e '.[eval]'). Refusing to report a built-in-sample "
-                "measurement under a real dataset's name."
-            )
+        # strict=True: load_samples otherwise substitutes the built-in sample when `datasets` is
+        # missing or the load fails, and reporting that as an hc3 ceiling would attach real-corpus
+        # authority to the demo corpus — the exact confusion the `corpus` field exists to prevent.
+        try:
+            texts = load_samples(args.dataset, args.n, strict=True)
+        except DatasetUnavailable as exc:
+            print(f"ERROR: {exc}")
             return 1
+        corpus = args.dataset.lower()
     if not texts:
         print(json.dumps({"error": "empty corpus"}))
         return 2

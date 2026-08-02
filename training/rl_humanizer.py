@@ -40,7 +40,9 @@ def build_dataset(name: str = "builtin", n: int = 2000):
     """Build {prompt, source} rows from AI-text samples to untell (RAID/MAGE/HC3 via eval.datasets)."""
     from eval.datasets import load_samples
 
-    samples = load_samples(name, n)
+    # strict for anything but the built-in set: a GRPO run reports the dataset it trained on, and
+    # a silent fallback would train on 5 padded paragraphs under a real corpus's name.
+    samples = load_samples(name, n, strict=name.lower() not in ("builtin", "sample"))
     return [{"prompt": _PROMPT.format(text=s), "source": s} for s in samples]
 
 

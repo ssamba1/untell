@@ -127,21 +127,40 @@ def load_pairs(dataset: str = "hc3", n: int = 50, min_words: int = 60) -> list[t
     return pairs
 
 
-def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
+class DatasetUnavailable(RuntimeError):
+    """A named dataset could not be loaded and ``strict=True`` refused to substitute another."""
+
+
+def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> list[str]:
     """Return up to ``n`` AI-generated text samples for the named dataset.
 
     Falls back to the built-in sample if ``datasets`` isn't installed or the load fails, so the
     harness never hard-requires a network download.
+
+    ``strict=True`` raises ``DatasetUnavailable`` instead of falling back. The fallback is right for
+    a smoke run and wrong for a measurement: the built-in sample is three hand-written paragraphs
+    that are measurably EASIER than real AI output (see docs/free-ceiling-measured.md, Result 10),
+    so silently substituting it attaches a real corpus's name to a demo corpus's numbers. Callers
+    that report a dataset name in their output should pass strict=True.
     """
     name = dataset.lower()
     if name in ("builtin", "sample"):
         return _builtin(n)
 
+    def _fallback(reason: str) -> list[str]:
+        if strict:
+            raise DatasetUnavailable(
+                f"dataset {dataset!r} is unavailable ({reason}). Refusing to substitute the "
+                "built-in sample, which is easier than real AI text and would be reported under "
+                f"{dataset!r}'s name. Install the '.[eval]' extra, or pass --dataset builtin."
+            )
+        logger.warning("dataset %r unavailable (%s); using builtin samples.", dataset, reason)
+        return _builtin(n)
+
     try:
         from datasets import load_dataset
     except Exception:
-        logger.warning("could not import `datasets` package")
-        return _builtin(n)
+        return _fallback("the `datasets` package is not installed")
 
     try:
         if name == "hc3":
@@ -155,7 +174,7 @@ def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
                         break
                 if len(texts) >= n:
                     break
-            return texts[:n] or _builtin(n)
+            return texts[:n] or _fallback("the load returned no usable samples")
 
         if name == "raid":
             ds = load_dataset("liamdugan/raid", split="train", streaming=True)
@@ -166,7 +185,7 @@ def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
                     texts.append(gen.strip())
                 if len(texts) >= n:
                     break
-            return texts[:n] or _builtin(n)
+            return texts[:n] or _fallback("the load returned no usable samples")
 
         if name == "mage":
             ds = load_dataset("yaful/MAGE", split="test", streaming=True)
@@ -178,10 +197,8 @@ def load_samples(dataset: str = "builtin", n: int = 5) -> list[str]:
                     texts.append(txt.strip())
                 if len(texts) >= n:
                     break
-            return texts[:n] or _builtin(n)
+            return texts[:n] or _fallback("the load returned no usable samples")
     except Exception as exc:
-        logger.warning("failed to load dataset '%s': %s", name, exc)
-        return _builtin(n)
+        return _fallback(f"{type(exc).__name__}: {exc}")
 
-    logger.warning("unknown dataset '%s'; using builtin samples.", dataset)
-    return _builtin(n)
+    return _fallback("no such dataset — known: hc3, raid, mage, builtin")

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from eval.ceiling import _SAMPLE, main, measure_ceiling
 
 
@@ -44,7 +46,7 @@ class TestTheCorpusIsPartOfTheResult:
 
 
 def test_dataset_flag_refuses_to_report_a_fallback_under_a_real_name(monkeypatch, capsys):
-    """load_samples falls back to the built-in sample when `datasets` is missing or the load fails.
+    """load_samples substitutes the built-in sample when `datasets` is missing or the load fails.
 
     Reporting that as an hc3 ceiling would attach real-corpus authority to the demo corpus — the
     exact confusion the corpus field exists to prevent.
@@ -52,10 +54,55 @@ def test_dataset_flag_refuses_to_report_a_fallback_under_a_real_name(monkeypatch
     import eval.ceiling as ceiling
     import eval.datasets as datasets
 
-    monkeypatch.setattr(datasets, "load_samples", lambda dataset="builtin", n=5: list(ceiling._SAMPLE))
+    def _unavailable(dataset="builtin", n=5, strict=False):
+        assert strict, "the ceiling CLI must ask for the dataset strictly"
+        raise datasets.DatasetUnavailable(f"dataset {dataset!r} is unavailable (test)")
+
+    monkeypatch.setattr(datasets, "load_samples", _unavailable)
     rc = ceiling.main(["--dataset", "hc3", "--n", "3", "--tier", "lite", "--max-iters", "1"])
     assert rc == 1
-    assert "fell back to the built-in sample" in capsys.readouterr().out
+    assert "unavailable" in capsys.readouterr().out
+
+
+class TestStrictLoadingRefusesToSubstitute:
+    """A silent fallback puts a demo corpus's numbers under a real corpus's name.
+
+    The built-in sample is three hand-written paragraphs, measurably easier than real AI output
+    (Result 10), so this is not a cosmetic mislabel — it is the difference between "flagged 0.00"
+    and "flagged 1.00". Every caller that PRINTS a dataset name now loads strictly.
+    """
+
+    def test_a_bad_name_raises_instead_of_substituting(self):
+        from eval.datasets import DatasetUnavailable, load_samples
+
+        with pytest.raises(DatasetUnavailable, match="no such dataset"):
+            load_samples("not-a-dataset", 2, strict=True)
+
+    def test_the_default_still_falls_back_quietly_enough_for_a_smoke_run(self):
+        from eval.datasets import load_samples
+
+        assert len(load_samples("not-a-dataset", 2)) == 2
+
+    def test_builtin_is_never_strict(self):
+        from eval.datasets import load_samples
+
+        assert len(load_samples("builtin", 2, strict=True)) == 2
+
+    @pytest.mark.parametrize(
+        ("module", "func", "kwargs"),
+        [
+            ("training.distill", "distill", {"dataset": "not-a-dataset", "n": 1, "tier": "lite"}),
+            ("training.rl_humanizer", "build_dataset", {"name": "not-a-dataset", "n": 1}),
+        ],
+    )
+    def test_the_training_entry_points_load_strictly(self, module, func, kwargs):
+        import importlib
+
+        from eval.datasets import DatasetUnavailable
+
+        mod = importlib.import_module(module)
+        with pytest.raises(DatasetUnavailable):
+            getattr(mod, func)(**kwargs)
 
 
 def test_baseline_without_rewriter():

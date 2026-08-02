@@ -54,7 +54,10 @@ def distill(
     # a user who asked for 2000 from a 50-item dataset "wrote 3/2000", i.e. that 1997 samples were
     # rejected by the meaning/flagged filter, when only 50 were ever seen. That misdiagnosis points
     # at the filter instead of at the dataset.
-    samples = list(load_samples(dataset, n))
+    # strict for anything but the built-in set: this builds a TRAINING SET and prints the dataset
+    # name beside the count, so a silent fallback to five padded paragraphs would be labelled with
+    # a real corpus's name and trained on.
+    samples = list(load_samples(dataset, n, strict=dataset.lower() not in ("builtin", "sample")))
     for src in samples:
         result = untell_text(
             src, tier=tier, threshold=threshold, margin=margin, rewriter=rw, best_of=best_of
