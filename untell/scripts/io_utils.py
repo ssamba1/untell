@@ -14,6 +14,28 @@ logger = logging.getLogger(__name__)
 # character of the text — an invisible char the scorer then sees as content.
 _TEXT_ENCODINGS = ("utf-8-sig", "utf-8", "cp1252", "latin-1")
 
+# Byte-order marks, longest first — the UTF-32-LE mark (FF FE 00 00) starts with the UTF-16-LE mark
+# (FF FE), so checking UTF-16 first would truncate every UTF-32 file to garbage.
+#
+# Sniffing these is not a nicety. `latin-1` is last in the list above and it maps every one of the
+# 256 byte values, so it CANNOT raise UnicodeDecodeError — the loop always "succeeds" there. That
+# made the lossy-replacement branch below unreachable dead code, and, far worse, meant a UTF-16
+# file (what Windows "Save as -> Unicode" writes) decoded silently into mojibake:
+#     'The "smart quotes"'  ->  'ÿþT\x00h\x00e\x00 \x00"\x00s\x00m\x00a\x00r\x00t\x00...'
+# and was then scored and rewritten as if that were the user's prose.
+_BOMS: tuple[tuple[bytes, str], ...] = (
+    (b"\xff\xfe\x00\x00", "utf-32"),
+    (b"\x00\x00\xfe\xff", "utf-32"),
+    (b"\xef\xbb\xbf", "utf-8-sig"),
+    (b"\xff\xfe", "utf-16"),
+    (b"\xfe\xff", "utf-16"),
+)
+
+# Real text files contain no NUL at all, so a single one means the content is binary or was decoded
+# with the wrong codec. Rejecting on any NUL is deliberately strict: the alternative is scoring and
+# rewriting mojibake, and this module already prefers a clear error over plausible garbage (see the
+# scanned-PDF branch).
+
 
 def _read_docx(path: str) -> str:
     from docx import Document  # python-docx
@@ -53,20 +75,54 @@ def _read_pdf(path: str) -> str:
     return "\n".join(texts)
 
 
+def _reject_if_binary(path: str, text: str) -> str:
+    """Refuse content that decoded "successfully" but is plainly not prose.
+
+    Because latin-1 accepts any byte, a binary file reads back as a string and would be scored as
+    text — the detector would report a number for it. Returning garbage is worse than failing.
+    """
+    if "\x00" in text:
+        raise ValueError(
+            f"{path}: decoded text contains NUL bytes — this is a binary file, or text in an "
+            "encoding this reader could not identify. Convert it to UTF-8 and retry."
+        )
+    return text
+
+
 def _read_text(path: str) -> str:
+    with open(path, "rb") as fh:
+        head = fh.read(4)
+    # A byte-order mark is unambiguous: use it rather than guessing. Without this, UTF-16/UTF-32
+    # files fell through to latin-1 (which cannot fail) and became mojibake, silently.
+    for bom, encoding in _BOMS:
+        if head.startswith(bom):
+            try:
+                with open(path, encoding=encoding) as fh:
+                    return _reject_if_binary(path, fh.read())
+            except UnicodeDecodeError:
+                break  # BOM present but the body does not decode — fall through to the guesses
+
     for encoding in _TEXT_ENCODINGS:
         try:
             with open(path, encoding=encoding) as fh:
-                return fh.read()
+                text = fh.read()
         except UnicodeDecodeError:
             continue
-    # Nothing decoded cleanly. Only now accept lossy replacement, and say so — the previous
-    # behaviour applied errors="replace" immediately, so a cp1252 file (Word's default on Windows)
-    # silently became mojibake: every smart quote and em-dash turned into U+FFFD before scoring.
+        if encoding == "latin-1":
+            # Reached only because every stricter codec failed. latin-1 cannot fail, so arriving
+            # here is not evidence the result is right — say so instead of returning it silently.
+            logger.warning(
+                "%s: decoded as latin-1 only because it maps every byte; %s all failed. If this "
+                "file is not Latin-1 the text is mojibake. Convert it to UTF-8 to be sure.",
+                path, ", ".join(_TEXT_ENCODINGS[:-1]),
+            )
+        return _reject_if_binary(path, text)
+
+    # Unreachable while latin-1 is in the list, but kept so removing it degrades safely.
     logger.warning("%s: could not decode with %s; falling back to lossy replacement.",
                    path, ", ".join(_TEXT_ENCODINGS))
     with open(path, encoding="utf-8", errors="replace") as fh:
-        return fh.read()
+        return _reject_if_binary(path, fh.read())
 
 
 def read_file(path: str) -> str:

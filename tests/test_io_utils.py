@@ -4,6 +4,8 @@ from __future__ import annotations
 import io
 import sys
 
+import pytest
+
 from untell.scripts.io_utils import configure_utf8_io
 
 
@@ -115,3 +117,69 @@ def test_partially_extractable_pdf_warns_but_returns_text(monkeypatch, tmp_path,
         out = io.read_file(str(p))
     assert "real text here" in out
     assert "PARTIAL" in caplog.text
+
+
+# --- encoding coverage --------------------------------------------------------------------------
+# `latin-1` is last in _TEXT_ENCODINGS and maps all 256 byte values, so it CANNOT raise
+# UnicodeDecodeError — the decode loop always "succeeded" there. That made the lossy-replacement
+# branch unreachable and, far worse, silently turned UTF-16 (what Windows "Save as -> Unicode"
+# writes) into mojibake:
+#     'The "smart quotes"'  ->  'ÿþT\x00h\x00e\x00 \x00"\x00s\x00m\x00a\x00r\x00t\x00...'
+# which was then scored and rewritten as if it were the user's prose.
+
+_SAMPLE = 'The "smart quotes" — and an em-dash — cost €5 in café Zürich.'
+_CP1252_SAMPLE = 'The "smart quotes" — and an em-dash — cost E5 in café Zürich.'
+
+ENCODING_CASES = [
+    ("utf-8", _SAMPLE.encode("utf-8"), _SAMPLE),
+    ("utf-8-sig", _SAMPLE.encode("utf-8-sig"), _SAMPLE),
+    ("cp1252", _CP1252_SAMPLE.encode("cp1252"), _CP1252_SAMPLE),
+    ("utf-16-le-bom", _SAMPLE.encode("utf-16"), _SAMPLE),
+    ("utf-16-be-bom", b"\xfe\xff" + _SAMPLE.encode("utf-16-be"), _SAMPLE),
+    ("utf-32-bom", _SAMPLE.encode("utf-32"), _SAMPLE),
+    ("latin-1", "café".encode("latin-1"), "café"),
+    ("empty", b"", ""),
+]
+
+
+@pytest.mark.parametrize("label,raw,expected", ENCODING_CASES, ids=[c[0] for c in ENCODING_CASES])
+def test_text_files_round_trip_regardless_of_encoding(tmp_path, label, raw, expected):
+    from untell.scripts.io_utils import read_file
+
+    path = tmp_path / f"{label}.txt"
+    path.write_bytes(raw)
+    assert read_file(str(path)) == expected
+
+
+@pytest.mark.parametrize(
+    "label,raw",
+    [
+        ("all byte values", bytes(range(256)) * 2),
+        ("png header", b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+        ("utf-16 without bom", "hello there".encode("utf-16-le")),
+    ],
+)
+def test_binary_input_raises_instead_of_scoring_garbage(tmp_path, label, raw):
+    """latin-1 accepts any byte, so a binary file read back as a string and the detector would
+    happily report a number for it. Real text contains no NUL; returning garbage is worse than
+    failing, which is the same call this module already makes for a scanned PDF."""
+    from untell.scripts.io_utils import read_file
+
+    path = tmp_path / "binary.bin"
+    path.write_bytes(raw)
+    with pytest.raises(ValueError, match="NUL"):
+        read_file(str(path))
+
+
+def test_latin1_fallback_is_announced(tmp_path, caplog):
+    """Arriving at latin-1 is not evidence the result is right — it is where every stricter codec
+    already failed, and latin-1 cannot fail. Say so rather than returning it silently."""
+    import logging
+
+    from untell.scripts.io_utils import read_file
+
+    path = tmp_path / "undecodable.txt"
+    path.write_bytes(b"caf\xe9 \x81\x8d\x8f")  # 0x81/0x8d/0x8f are undefined in cp1252
+    with caplog.at_level(logging.WARNING, logger="untell.scripts.io_utils"):
+        read_file(str(path))
+    assert any("latin-1" in r.getMessage() for r in caplog.records), "fell back silently"
