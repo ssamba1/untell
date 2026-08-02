@@ -140,6 +140,36 @@ _SPECS = [
 ]
 
 
+# --- sentence granularity -----------------------------------------------------------------------
+# `sentences.py` scores each sentence IN ISOLATION to decide which spans to rewrite, so a detector
+# can be healthy on paragraphs and broken on the input it is actually fed there. That is not
+# hypothetical: perplexity_burstiness measured AUROC 0.000 on these exact probes — perfectly
+# inverted — while passing the paragraph audit, because burstiness is undefined for one sentence
+# and the fallback term was calibrated backwards for modern AI prose. Per-sentence targeting was
+# therefore aimed at whichever sentences read most human, and nothing detected it.
+# A sentence row counts as broken only at or below this AUROC. Chance is 0.5 on 36 pairs; a real
+# inversion of the kind found in perplexity_burstiness scored 0.000. Anything between is reported
+# for information but must not fail a build.
+SENTENCE_BROKEN_AUROC = 0.20
+
+SENTENCE_HUMAN_PROBES = [
+    "I went to the store and forgot the milk again.",
+    "The build broke because someone bumped the pinned version.",
+    "She said it was fine, but her face said otherwise.",
+    "We tried it twice and it still didn't work.",
+    "Turns out the cable was loose the whole time.",
+    "He emailed me back three days later with one line.",
+]
+SENTENCE_AI_PROBES = [
+    "Furthermore, artificial intelligence has fundamentally transformed numerous industries.",
+    "Moreover, organizations increasingly leverage these technologies to optimize efficiency.",
+    "This robust framework enables stakeholders to seamlessly navigate complex challenges.",
+    "In today's rapidly evolving landscape, businesses must delve into innovative solutions.",
+    "It is important to note that this underscores the importance of robust solutions.",
+    "Additionally, this serves as a testament to the transformative power of innovation.",
+]
+
+
 def _mean(xs: list[float]) -> float:
     return sum(xs) / len(xs)
 
@@ -243,7 +273,38 @@ def audit_all(pairs: int = 0, dataset: str = "hc3") -> dict:
             rows.append(audit_detector(key, getattr(mod, cls)(), probes))
         except Exception as exc:
             rows.append({"detector": key, "verdict": f"IMPORT_ERR:{type(exc).__name__}"})
-    broken = [r["detector"] for r in rows if r["verdict"] in ("DEAD", "INVERTED")]
+    # Audit the same detectors on single sentences. Only run against the packaged sentence probes:
+    # a labelled paragraph corpus passed via --pairs says nothing about sentence granularity.
+    sentence_probes = (SENTENCE_HUMAN_PROBES, SENTENCE_AI_PROBES)
+    for key, module, cls in _SPECS:
+        try:
+            mod = __import__(module, fromlist=[cls])
+            row = audit_detector(key, getattr(mod, cls)(), sentence_probes)
+        except Exception as exc:
+            row = {"detector": key, "verdict": f"IMPORT_ERR:{type(exc).__name__}"}
+        row["detector"] = f"{key} [sentence]"
+        row["granularity"] = "sentence"
+        rows.append(row)
+
+    # Sentence rows are held to a STRICTER bar before counting as broken, because six probes per
+    # class is 36 pairs and an AUROC near 0.5 is chance, not evidence.
+    #
+    # MEASURED, after this audit first called fast_detectgpt "INVERTED" on these probes (AUROC
+    # 0.444): re-run on 40 human + 40 AI sentences taken from real HC3 pairs, fast_detectgpt scores
+    # 0.915 and hc3_roberta 0.995+. Both are healthy at sentence granularity; the verdict was a
+    # small-sample false alarm, and gating CI on it would have turned the build red over noise.
+    # perplexity_burstiness's real defect scored 0.000 on the same probes — a perfect inversion,
+    # which 36 pairs cannot produce by chance. That is the gap this bar is set to catch.
+    broken = [
+        r["detector"]
+        for r in rows
+        if r["verdict"] in ("DEAD", "INVERTED")
+        and (
+            r.get("granularity") != "sentence"
+            or r.get("auroc") is None
+            or r["auroc"] <= SENTENCE_BROKEN_AUROC
+        )
+    ]
     return {"results": rows, "broken": broken, "source": source}
 
 

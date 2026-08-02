@@ -109,3 +109,62 @@ def test_perplexity_burstiness_is_healthy():
 
     r = audit_detector("perplexity_burstiness", PerplexityBurstinessDetector())
     assert r["verdict"] not in ("DEAD", "INVERTED"), r
+
+
+# --- sentence granularity ----------------------------------------------------------------------
+# perplexity_burstiness passed the paragraph audit while scoring AUROC 0.000 on single sentences,
+# and sentences.py scores each sentence in isolation to pick rewrite targets. The audit now covers
+# that granularity — but at a stricter bar, because six probes per class is 36 pairs and an AUROC
+# near 0.5 is chance rather than evidence.
+
+
+def test_sentence_probe_sets_exist_and_are_single_sentences():
+    from eval.detector_audit import SENTENCE_AI_PROBES, SENTENCE_HUMAN_PROBES
+
+    assert len(SENTENCE_AI_PROBES) >= 5 and len(SENTENCE_HUMAN_PROBES) >= 5
+    for s in SENTENCE_AI_PROBES + SENTENCE_HUMAN_PROBES:
+        assert s.rstrip().count(". ") == 0, f"probe is more than one sentence: {s!r}"
+
+
+def test_audit_all_covers_sentence_granularity():
+    report = audit_all()
+    labels = {r["detector"] for r in report["results"]}
+    assert any(d.endswith("[sentence]") for d in labels), "sentence rows missing from the audit"
+    assert "perplexity_burstiness [sentence]" in labels
+
+
+def test_perplexity_burstiness_is_healthy_on_single_sentences():
+    """The regression this granularity was added for: it measured AUROC 0.000 here."""
+    from eval.detector_audit import SENTENCE_AI_PROBES, SENTENCE_HUMAN_PROBES
+    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+    r = audit_detector(
+        "perplexity_burstiness",
+        PerplexityBurstinessDetector(),
+        (SENTENCE_HUMAN_PROBES, SENTENCE_AI_PROBES),
+    )
+    assert r["verdict"] not in ("DEAD", "INVERTED"), r
+    assert r["auroc"] > 0.9, r
+
+
+def test_near_chance_sentence_row_is_reported_but_not_called_broken():
+    """fast_detectgpt scored 0.444 on these probes and was labelled INVERTED — then measured 0.915
+    on 40 real HC3 sentence pairs. Gating a build on 36 pairs of noise is worse than not gating."""
+    from eval.detector_audit import SENTENCE_BROKEN_AUROC
+
+    assert 0.0 < SENTENCE_BROKEN_AUROC < 0.5
+    rows = [
+        {"detector": "x [sentence]", "verdict": "INVERTED", "auroc": 0.444, "granularity": "sentence"},
+        {"detector": "y [sentence]", "verdict": "INVERTED", "auroc": 0.000, "granularity": "sentence"},
+        {"detector": "z", "verdict": "INVERTED", "auroc": 0.444},
+    ]
+    broken = [
+        r["detector"]
+        for r in rows
+        if r["verdict"] in ("DEAD", "INVERTED")
+        and (r.get("granularity") != "sentence" or r.get("auroc") is None
+             or r["auroc"] <= SENTENCE_BROKEN_AUROC)
+    ]
+    assert "x [sentence]" not in broken   # chance-level: reported, not fatal
+    assert "y [sentence]" in broken       # a true inversion 36 pairs cannot produce by chance
+    assert "z" in broken                  # paragraph rows keep the original, stricter treatment
