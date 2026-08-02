@@ -91,3 +91,57 @@ def test_plain_text_fallback_needs_no_rich(monkeypatch, capsys):
     assert "0.86" in out and "0.02" in out
     assert "Humanness: 73.0/100" in out
     assert "tier=full" in out
+
+
+class TestNoChangeIsReportedAsSuchNotAsSuccess:
+    """The loop deliberately returns the original when no candidate beats it — but the report said
+    "humanization complete", showed a delta of "—", and printed the same text in two panels
+    labelled "Original" and "Humanized". A run that did nothing looked exactly like one that
+    worked. Measured on real input: 1-2 of 25 HC3 paragraphs come back unchanged.
+    """
+
+    SRC = "Furthermore, the system leverages robust methodologies to optimize outcomes."
+
+    def test_plain_output_says_no_change_was_made(self, monkeypatch, capsys):
+        import untell.rich_output as rich_output
+
+        monkeypatch.setattr(rich_output, "_RICH", False)
+        monkeypatch.setattr(rich_output, "_CONSOLE", None)
+        rich_output.print_humanize_result(
+            self.SRC, self.SRC, {"max": 0.63}, {"max": 0.63}, 3, "max_iters"
+        )
+        out = capsys.readouterr().out
+        assert "No change was made" in out
+        assert "0.63" in out  # the score it is still sitting at
+
+    def test_plain_output_does_not_say_it_when_the_text_changed(self, monkeypatch, capsys):
+        import untell.rich_output as rich_output
+
+        monkeypatch.setattr(rich_output, "_RICH", False)
+        monkeypatch.setattr(rich_output, "_CONSOLE", None)
+        rich_output.print_humanize_result(
+            self.SRC, "A rewritten version of it.", {"max": 0.86}, {"max": 0.02}, 2, "passed"
+        )
+        out = capsys.readouterr().out
+        assert "No change was made" not in out
+
+    def test_rich_output_headers_differ(self, monkeypatch):
+        """Same assertion on the rich path, which is what a terminal user actually sees."""
+        import untell.rich_output as rich_output
+
+        printed = []
+
+        class _FakeConsole:
+            def print(self, *args, **kw):
+                printed.append(" ".join(str(a) for a in args))
+
+        monkeypatch.setattr(rich_output, "_RICH", True)
+        monkeypatch.setattr(rich_output, "_CONSOLE", _FakeConsole())
+        monkeypatch.setattr(rich_output, "_Panel", lambda *a, **k: f"PANEL({a[0]})")
+
+        rich_output.print_humanize_result(
+            self.SRC, self.SRC, {"max": 0.63}, {"max": 0.63}, 3, "max_iters"
+        )
+        blob = "\n".join(printed)
+        assert "No change was made" in blob
+        assert "Humanized" not in blob  # no panel claiming a humanized version exists

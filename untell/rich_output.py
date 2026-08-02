@@ -56,10 +56,27 @@ def print_humanize_result(
     stopped: str,
 ):
     """Print a professional before/after comparison to the terminal."""
+    # An unchanged result is a real outcome — the loop returns the original when no candidate beat
+    # it, deliberately, rather than forcing a rewrite that spends meaning for nothing. But the
+    # header said "humanization complete", the delta column showed "—", and the two text panels
+    # were identical: a run that did nothing was reported exactly like a successful one. Say it.
+    no_change = final == original
+    note = ""
+    if no_change:
+        still = post_score.get("max")
+        still_txt = f" It still scores P(AI) {still:.2f}." if isinstance(still, (int, float)) else ""
+        note = (
+            "No change was made: no candidate rewrite scored better than the original, so the "
+            f"original is returned unmodified.{still_txt} Try --best-of 3, a higher --intensity, "
+            "or a different --rewriter."
+        )
+
     if not _RICH:
         # Fallback: plain text
         print(f"Iterations: {iterations}  Stopped: {stopped}")
         print(f"Before: P(AI)={pre_score.get('max', 0):.2f}  After: P(AI)={post_score.get('max', 0):.2f}")
+        if note:
+            print(f"\n{note}")
         print(f"\n--- Original ---\n{original}")
         print(f"\n--- Humanized ---\n{final}")
         return
@@ -68,8 +85,14 @@ def print_humanize_result(
     _CONSOLE.print()
     header = _Table.grid(padding=1)
     header.add_column(style="bold cyan")
-    header.add_row(f"untell — humanization complete ({iterations} iteration{'s' if iterations != 1 else ''})")
-    _CONSOLE.print(_Panel(header, style="cyan"))
+    plural = "s" if iterations != 1 else ""
+    header.add_row(
+        f"untell — {'NO CHANGE MADE' if no_change else 'humanization complete'} "
+        f"({iterations} iteration{plural})"
+    )
+    _CONSOLE.print(_Panel(header, style="yellow" if no_change else "cyan"))
+    if note:
+        _CONSOLE.print(f"[yellow]{note}[/]")
 
     # Score comparison
     table = _Table(show_header=True, header_style="bold magenta")
@@ -102,14 +125,20 @@ def print_humanize_result(
     table.add_row("Stopped", "", stopped.replace("_", " ").title(), "")
     _CONSOLE.print(table)
 
-    # Side-by-side diff
-    _CONSOLE.print("\n[bold]Before → After[/]")
-    _CONSOLE.print(_diff_words(original, final))
-
-    # Full text panels
-    _CONSOLE.print()
-    _CONSOLE.print(_Panel(original[:2000] + ("..." if len(original) > 2000 else ""), title="Original", border_style="yellow"))
-    _CONSOLE.print(_Panel(final[:2000] + ("..." if len(final) > 2000 else ""), title="Humanized", border_style="green"))
+    # Side-by-side diff — pointless when nothing moved, and printing the same text in two panels
+    # labelled "Original" and "Humanized" actively suggests something happened.
+    if not no_change:
+        _CONSOLE.print("\n[bold]Before → After[/]")
+        _CONSOLE.print(_diff_words(original, final))
+        _CONSOLE.print()
+        _CONSOLE.print(_Panel(original[:2000] + ("..." if len(original) > 2000 else ""), title="Original", border_style="yellow"))
+        _CONSOLE.print(_Panel(final[:2000] + ("..." if len(final) > 2000 else ""), title="Humanized", border_style="green"))
+    else:
+        _CONSOLE.print()
+        _CONSOLE.print(_Panel(
+            original[:2000] + ("..." if len(original) > 2000 else ""),
+            title="Text (unchanged)", border_style="yellow",
+        ))
     _CONSOLE.print()
 
 
