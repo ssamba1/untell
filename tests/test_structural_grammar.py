@@ -72,6 +72,152 @@ class TestNegatedContrastGrammar:
         assert len(result) > 10
 
 
+class TestNotOnlyKeepsBothHalves:
+    """"not only X but also Y" is not a negated contrast — X and Y are BOTH asserted.
+
+    The handler returned everything after "but also", but the match spans only
+    "not only X but also" (Y and the head sit outside it), so that is the empty string: X was
+    deleted and a doubled space left where it had been. Content loss from a transform whose
+    documented contract is to preserve the positive statement.
+    """
+
+    @pytest.mark.parametrize(
+        "text,keep",
+        [
+            ("It's not only faster, but also cheaper to run.", ["faster", "cheaper"]),
+            (
+                "The change is not only a performance win but also a cost saving.",
+                ["performance win", "cost saving"],
+            ),
+            (
+                "The tool is not only free but also open source.",
+                ["free", "open source"],
+            ),
+        ],
+    )
+    def test_both_claims_survive(self, text, keep):
+        from untell.rewriter.structural import _flatten_negated_contrast
+
+        result = _flatten_negated_contrast(text)
+        for phrase in keep:
+            assert phrase in result, f"dropped {phrase!r}: {result!r}"
+
+    def test_no_doubled_space_is_left_behind(self):
+        from untell.rewriter.structural import _flatten_negated_contrast
+
+        result = _flatten_negated_contrast("It's not only faster, but also cheaper to run.")
+        assert "  " not in result, repr(result)
+
+    def test_the_construction_itself_is_gone(self):
+        from untell.rewriter.structural import _flatten_negated_contrast
+
+        result = _flatten_negated_contrast("It's not only faster, but also cheaper to run.")
+        assert "not only" not in result.lower()
+        assert "but also" not in result.lower()
+
+
+class TestMergeRespectsSentenceTerminators:
+    """_merge_sentences used rstrip(".") where _merge_pair — the same merge, other copy — used
+    rstrip(".!?"), so the other terminators survived and the connector landed straight after one:
+
+        "The results were remarkable!" + "The team published them."
+          -> "The results were remarkable!; the team published them."
+    """
+
+    def test_an_exclamation_does_not_survive_into_the_middle(self):
+        import random
+
+        from untell.rewriter.structural import _merge_sentences
+
+        random.seed(0)
+        out = _merge_sentences(["The results were remarkable!", "The team published them."], rate=1.0)
+        joined = " ".join(out)
+        assert "!;" not in joined and "!," not in joined, joined
+
+    @pytest.mark.parametrize("merge", ["_merge_sentences", "_merge_pair"])
+    def test_a_question_is_never_demoted_to_a_clause(self, merge):
+        """"Was the effect real, and the replication says yes" is not English: the interrogative
+        word order cannot carry a coordinate clause, and appending a period gives "?." either way.
+        Both copies of the merge must decline."""
+        import random
+
+        import untell.rewriter.structural as st
+
+        sents = ["Was the effect real?", "The replication says yes."]
+        random.seed(0)
+        out = (
+            st._merge_sentences(list(sents), rate=1.0)
+            if merge == "_merge_sentences"
+            else st._merge_pair(list(sents), 0)
+        )
+        assert out == sents, out
+
+    def test_ordinary_sentences_still_merge(self):
+        import random
+
+        from untell.rewriter.structural import _merge_sentences
+
+        random.seed(0)
+        out = _merge_sentences(["The results were clear.", "The team published them."], rate=1.0)
+        assert len(out) == 1, out
+
+
+class TestSplitNeedsARealClauseBoundary:
+    """_split_one dropped the conjunction it split on, which is right for two clauses and wrong
+    for two verb phrases sharing one subject:
+
+        "The engineer opened the log at midnight and traced the fault to a stale cache entry."
+          -> "The engineer opened the log at midnight." / "Traced the fault to a stale cache entry."
+
+    The second is a subject-less fragment. There is no parser here, so the check is conservative:
+    an unrecognised word after the conjunction means "don't split".
+    """
+
+    @pytest.mark.parametrize(
+        "sentence",
+        [
+            "The committee reviewed the lengthy proposal in detail and rejected it without much debate.",
+            "The engineer opened the failing service log at midnight and traced the fault to a cache entry.",
+            "The analyst gathered the quarterly figures from every region and summarised them for the board.",
+        ],
+    )
+    def test_a_shared_subject_is_not_split(self, sentence):
+        from untell.rewriter.structural import _split_one
+
+        assert _split_one(sentence) is None, _split_one(sentence)
+
+    @pytest.mark.parametrize(
+        "sentence",
+        [
+            "The engineer opened the failing service log at midnight and it turned out to be a cache entry.",
+            "The committee reviewed the proposal for several weeks, and the board approved it in the end.",
+            "The tests ran overnight on the build server and the report was waiting in the morning.",
+        ],
+    )
+    def test_a_real_clause_boundary_still_splits(self, sentence):
+        from untell.rewriter.structural import _split_one
+
+        out = _split_one(sentence)
+        assert out is not None and len(out) == 2, sentence
+        assert all(part.strip() for part in out)
+
+    def test_no_split_produces_a_verb_initial_fragment(self):
+        """The property, stated directly: whatever comes back must start with something that can
+        begin a clause."""
+        from untell.rewriter.structural import _split_one, _starts_a_clause
+
+        sentences = [
+            "The committee reviewed the lengthy proposal in detail and rejected it without debate.",
+            "The engineer opened the failing service log at midnight and traced the fault quickly.",
+            "The engineer opened the failing service log at midnight and it turned out to be stale.",
+            "The researcher collected the samples over three months and the lab processed them all.",
+        ]
+        for s in sentences:
+            out = _split_one(s)
+            if out:
+                assert _starts_a_clause(out[1].split()[0]), f"{s!r} -> {out!r}"
+
+
 class TestGeneralOutputQuality:
     """Verify general output quality — no artifacts, no double punctuation."""
 

@@ -247,8 +247,16 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
     out: list[str] = []
     i = 0
     while i < len(sentences):
-        if i + 1 < len(sentences) and random.random() < rate:
-            a = sentences[i].rstrip(".")
+        if i + 1 < len(sentences) and random.random() < rate and _mergeable(
+            sentences[i], sentences[i + 1]
+        ):
+            # rstrip(".!?"), not rstrip("."). Stripping only the period left the other terminators
+            # in place and the connector was appended straight after them:
+            #     "The results were remarkable!" + "The team published them."
+            #       -> "The results were remarkable!; the team published them."
+            # _merge_pair below — the other copy of this same merge — has always used ".!?"; this
+            # copy was the one that diverged.
+            a = sentences[i].rstrip(".!?")
             b = sentences[i + 1].strip()
             # A clause that already opens with a discourse marker cannot take another connector:
             # ", and " + "plus, it improves..." reads "and plus, it improves". Strip the marker
@@ -258,7 +266,7 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
                 b[0].islower() or _safe_to_lowercase(b.split()[0], " ".join(sentences))
             )
             if b and merged_ok:
-                b = b.strip(".")
+                b = b.rstrip(".!?")
                 b = b[0].lower() + b[1:] if b and b[0].isupper() else b
                 connectors = [", and ", ", but ", ", while ", "; ", ", though "]
                 conn = random.choice(connectors)
@@ -351,9 +359,19 @@ def _flatten_negated_contrast(text: str) -> str:
             return f"It's {after}."
 
         if "not only" in full.lower() and "but also" in full.lower():
-            parts = full.split("but also", 1)
-            if len(parts) == 2:
-                return parts[1].strip().lstrip(",").strip()
+            # "not only X but also Y" is NOT a negated contrast — X and Y are BOTH asserted, so
+            # there is no false half to discard. The match spans only "not only X but also" (Y and
+            # the head sit outside it), and the old code returned everything after "but also",
+            # which inside that span is the empty string. So X was deleted and a doubled space left
+            # behind:
+            #     "It's not only faster, but also cheaper to run."  ->  "It's  cheaper to run."
+            # "faster" is simply gone — content loss, from a transform whose contract is to keep
+            # the positive statement. Replacing the span with "X and" yields the meaning-preserving
+            # flattening: "It's faster and cheaper to run."
+            lower = full.lower()
+            start = lower.index("not only") + len("not only")
+            x = full[start:lower.rindex("but also")].strip().rstrip(",").strip()
+            return f"{x} and" if x else full
 
         if "isn't about" in full.lower():
             parts = full.split(";", 1)
@@ -501,6 +519,43 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
 _CONJ = ("and", "but", "which", "because", "so", "while", "although", "though", "since")
 
 
+def _mergeable(a: str, b: str) -> bool:
+    """Can these two sentences be coordinated into one without mangling either?
+
+    A question cannot be demoted to a coordinate clause: its word order is interrogative, so
+    "Was the effect real, and the replication says yes" is not English, and neither is the
+    trailing "?." you get from appending a period after one. Exclamations coordinate fine —
+    the force is carried by the punctuation, which the merge is dropping anyway.
+    """
+    return not a.rstrip().endswith("?") and not b.rstrip().endswith("?")
+
+
+# Words that can begin an independent clause: a subject of some kind. Used to tell a conjunction
+# that joins two CLAUSES ("...at midnight, and it traced...") from one that joins two VERB PHRASES
+# sharing a subject ("...opened the log and traced the fault"). Splitting at the latter and dropping
+# the conjunction leaves a subject-less fragment:
+#     "The engineer opened the log at midnight and traced the fault to a stale cache entry."
+#       -> "The engineer opened the log at midnight." / "Traced the fault to a stale cache entry."
+# There is no parser in this module, so the test is deliberately conservative: an unrecognised word
+# means "don't split", which costs some burstiness gain and never emits a fragment.
+_CLAUSE_STARTERS = frozenset(
+    """i we you he she it they there this that these those his her its their our your my
+    a an the some many most few several each every both all one another no other such
+    what which who whose when where why how if""".split()
+)
+
+
+def _starts_a_clause(word: str) -> bool:
+    """Could this word begin an independent clause — i.e. is it plausibly a subject?"""
+    w = word.strip("\"'“”‘’(),;:").strip()
+    if not w:
+        return False
+    # A capitalised word mid-sentence is a proper noun, which is a subject.
+    if w[0].isupper():
+        return True
+    return w.lower() in _CLAUSE_STARTERS
+
+
 def _cv(lengths: list[int]) -> float:
     if len(lengths) < 2:
         return 0.0
@@ -529,7 +584,11 @@ def _split_one(s: str) -> list[str] | None:
     if best is None:  # else a coordinating conjunction
         for off in range(mid):
             for pos in (mid + off, mid - off):
-                if 0 < pos < len(words) - 1 and words[pos].lower() in _CONJ:
+                if (
+                    0 < pos < len(words) - 1
+                    and words[pos].lower() in _CONJ
+                    and _starts_a_clause(words[pos + 1])
+                ):
                     best = pos
                     break
             if best is not None:
@@ -553,6 +612,8 @@ def _split_one(s: str) -> list[str] | None:
 
 def _merge_pair(sents: list[str], j: int) -> list[str]:
     """Merge sentences j and j+1 into one compound sentence, or leave them if that is unsafe."""
+    if not _mergeable(sents[j], sents[j + 1]):
+        return sents
     a = sents[j].rstrip(".!?")
     b = _LEADING_MARKER_RE.sub("", sents[j + 1].strip(), count=1)
     # Same rule as _merge_sentences: only demote a sentence to a clause when its opening word can
