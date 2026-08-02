@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 DEFAULT_BAR = 0.76  # semantic-cosine bar (P-SP threshold); only meaningful for the embedding metric
 TOKEN_BAR = 0.50  # token-overlap (Dice) bar; faithful paraphrases reword heavily and score lower
 BERTSCORE_BAR = 0.88  # BERTScore-F1 bar (rescaled-with-baseline); faithful paraphrases land ~0.88-0.92
-_WORD = re.compile(r"[A-Za-z0-9']+")
+# Unicode-aware: the ASCII-only [A-Za-z0-9']+ tokenised every non-Latin script to nothing, and
+# token_overlap then scored two unrelated Russian, Greek or Chinese texts as a perfect 1.0.
+_WORD = re.compile(r"[^\W_]+(?:'[^\W_]+)*", re.UNICODE)
 
 _UNSET = object()
 _model = _UNSET  # _UNSET = not yet probed; None = probed and unavailable; else the model
@@ -85,13 +87,31 @@ def _tokens(text: str) -> list[str]:
     return [w.lower() for w in _WORD.findall(text)]
 
 
+def _char_bigrams(text: str):
+    """Whitespace-stripped character bigrams — the granularity of last resort."""
+    from collections import Counter
+
+    s = "".join(text.split()).lower()
+    if len(s) < 2:
+        return Counter(s)
+    return Counter(s[i:i + 2] for i in range(len(s) - 1))
+
+
 def token_overlap(a: str, b: str) -> float:
     """Dice coefficient over token multisets — the lite fallback. In [0, 1]."""
     from collections import Counter
 
     ca, cb = Counter(_tokens(a)), Counter(_tokens(b))
+    # Under two word tokens on either side leaves word-level Dice nothing to work with:
+    # punctuation- or formula-only text, and scriptio-continua scripts (Chinese, Japanese, Thai)
+    # where a whole clause is a single token. Drop to character bigrams instead of comparing two
+    # empty multisets, which used to return 1.0 — a perfect meaning-preservation score for texts
+    # with nothing whatsoever in common. This is the gate's only similarity metric when
+    # sentence-transformers is absent, so it decided whether such a rewrite was admissible.
+    if sum(ca.values()) < 2 or sum(cb.values()) < 2:
+        ca, cb = _char_bigrams(a), _char_bigrams(b)
     if not ca and not cb:
-        return 1.0
+        return 1.0 if a.strip() == b.strip() else 0.0
     if not ca or not cb:
         return 0.0
     inter = sum((ca & cb).values())

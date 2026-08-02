@@ -62,6 +62,46 @@ def test_empty_vs_nonempty():
     assert similarity("", "something") == 0.0
 
 
+# token_overlap is the gate's ONLY similarity metric when sentence-transformers is absent — the
+# documented minimal install. Any text it scores 1.0 is a rewrite the gate will admit.
+@pytest.mark.parametrize(
+    "label,a,b",
+    [
+        ("chinese", "人工智能已经改变了许多行业", "今天天气很好我想去公园散步"),
+        ("russian", "Искусственный интеллект изменил отрасли", "Сегодня хорошая погода в парке"),
+        ("greek", "Η τεχνητή νοημοσύνη άλλαξε τα πάντα", "Ο καιρός σήμερα είναι ωραίος"),
+        ("punctuation", "!!! ...", "???  ---"),
+        ("formula", "1 + 1 = 2", "9 * 9 = 81"),
+    ],
+)
+def test_token_overlap_rejects_unrelated_non_latin_text(label, a, b):
+    """The ASCII-only token pattern matched nothing in these scripts, so both multisets came out
+    empty and the "both empty means identical" branch returned 1.0 — a perfect meaning score for
+    two texts with nothing in common, in every non-Latin script."""
+    assert token_overlap(a, b) < TOKEN_BAR, label
+
+
+@pytest.mark.parametrize(
+    "label,a,b",
+    [
+        ("chinese", "人工智能已经改变了许多行业", "人工智能改变了许多的行业"),
+        ("russian", "Искусственный интеллект изменил отрасли",
+         "Искусственный интеллект изменил эти отрасли"),
+        ("punctuation identical", "!!!", "!!!"),
+    ],
+)
+def test_token_overlap_still_passes_faithful_non_latin_paraphrase(label, a, b):
+    """Rejecting everything would be just as wrong: it would starve the loop instead of the gate."""
+    assert token_overlap(a, b) >= TOKEN_BAR, label
+
+
+def test_token_overlap_unchanged_for_latin_text():
+    """The fix must not move the metric where it already worked."""
+    assert token_overlap("the cat sat on the mat", "the cat sat on the mat") == 1.0
+    assert token_overlap("the cat sat on the mat", "quantum flux capacitor arrays") == 0.0
+    assert token_overlap("don't stop", "don't stop believing now") > 0.5
+
+
 def test_metric_aware_bar_is_lower_for_token_overlap():
     # sentence-transformers is absent in CI's lite path → token-overlap metric is active.
     assert TOKEN_BAR < DEFAULT_BAR
