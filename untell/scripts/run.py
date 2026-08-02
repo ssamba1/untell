@@ -200,10 +200,13 @@ def untell_text(
     rewrites = 0
     stopped = "max_iters"
     for i in range(1, max_iters + 1):
-        iters = i
         if _passed(best_score) and similarity(masked, best_masked) >= sim_bar:
             stopped = "passed"
             break
+        # Counted AFTER the exit check, so an input that already passes reports 0 iterations rather
+        # than 1. It used to be set first, so text that needed no work at all came back claiming a
+        # round of rewriting had happened — with rewrites=0 beside it, contradicting itself.
+        iters = i
         # Targeted feedback: name the specific sentences that read as AI (cheap lite scoring), so the
         # rewriter fixes only those instead of re-rolling the whole text (fewer iters, less drift).
         try:
@@ -326,7 +329,15 @@ def untell_text(
                 abs(polished_score["max"] - best_score["max"]) <= _TELLS_EPS
                 and score_tells(polished).get("tells", 0) < score_tells(final).get("tells", 0)
             )
-            if (better_score or tie_but_more_human) and similarity(text, polished) >= sim_bar:
+            # Never trade a pass for a tie. The tie band is +/- _TELLS_EPS (0.02), so a polished
+            # candidate scoring UP TO 0.02 worse is adopted when it carries fewer tells — and if the
+            # incumbent sits just under the threshold, that band straddles it. MEASURED: incumbent
+            # 0.28 (passing), polished 0.30 with fewer tells, adopted, and the run returned
+            # stopped='passed' together with flagged=True and max at the threshold. The loop said it
+            # had succeeded and the same result said the text was still flagged.
+            un_passes = _passed(best_score) and not _passed(polished_score)
+            if (better_score or tie_but_more_human) and not un_passes \
+                    and similarity(text, polished) >= sim_bar:
                 final, best_score = polished, polished_score
                 polished_applied = True
         except Exception:

@@ -369,3 +369,95 @@ class TestRewriterByName:
         r = untell_text("Some text here.", tier="lite", rewriter=None, max_iters=1)
         if "error" in r:  # only when no API key / policy dir is configured
             assert "rewriter='composite'" in r["error"]
+
+
+def _fixed_score(mapping, default=0.5):
+    """score_text stand-in keyed on exact text."""
+    def _s(text, tier="full", threshold=0.3):
+        mx = mapping.get(text.strip(), default)
+        return {"tier": tier, "detectors": {"perplexity_burstiness": mx}, "max": mx, "mean": mx,
+                "threshold": threshold, "flagged": mx >= threshold, "scored": True}
+    return _s
+
+
+class _Same:
+    name = "same"
+    deterministic = True
+
+    def available(self):
+        return True
+
+    def rewrite(self, text, score, threshold=0.3):
+        return text
+
+
+def test_polish_never_trades_a_pass_for_a_tie(monkeypatch):
+    """The tie band is +/- _TELLS_EPS (0.02), so a polished candidate scoring UP TO 0.02 worse is
+    adopted when it carries fewer tells. If the incumbent sits just under the threshold that band
+    straddles it, and polish un-passes text the loop had already passed.
+
+    MEASURED before: incumbent 0.28 (passing), polished 0.30 with fewer tells -> adopted, and the
+    run returned stopped='passed' together with flagged=True and max exactly at the threshold. The
+    same result said it had succeeded and that the text was still flagged.
+    """
+    import untell.attacks as attacks_mod
+    import untell.scripts.run as run_mod
+
+    src = "Furthermore, the organization leverages robust methodologies to optimize outcomes."
+    polished = "The organization uses solid methods to improve outcomes."
+
+    monkeypatch.setattr(run_mod, "score_text", _fixed_score({src: 0.28, polished: 0.30}, 0.28))
+    monkeypatch.setattr(
+        attacks_mod, "surgical_substitute", lambda t, tier=None, threshold=0.3: {"text": polished}
+    )
+
+    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=1, rewriter=_Same(),
+                              polish=True, scrub=False, sim_bar=0.0)
+    assert out["stopped"] == "passed"
+    assert out["post"]["max"] < 0.30, "polish pushed the score back over the threshold"
+    assert out["final"].strip() != polished
+
+
+def test_polish_is_still_adopted_when_it_genuinely_helps(monkeypatch):
+    """The guard must not disable polish — only stop it from un-passing."""
+    import untell.attacks as attacks_mod
+    import untell.scripts.run as run_mod
+
+    src = "Furthermore, the organization leverages robust methodologies to optimize outcomes."
+    polished = "The organization uses solid methods to improve outcomes."
+
+    monkeypatch.setattr(run_mod, "score_text", _fixed_score({src: 0.28, polished: 0.10}, 0.28))
+    monkeypatch.setattr(
+        attacks_mod, "surgical_substitute", lambda t, tier=None, threshold=0.3: {"text": polished}
+    )
+
+    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=1, rewriter=_Same(),
+                              polish=True, scrub=False, sim_bar=0.0)
+    assert out["final"].strip() == polished
+    assert out["post"]["max"] == 0.10
+
+
+def test_already_clean_text_reports_zero_iterations(monkeypatch):
+    """`iters = i` was set before the exit check, so text needing no work came back claiming a
+    round of rewriting had happened — next to rewrites=0, contradicting itself."""
+    import untell.scripts.run as run_mod
+
+    monkeypatch.setattr(run_mod, "score_text", _fixed_score({}, 0.05))
+    out = run_mod.untell_text(
+        "This sentence is already clean and needs no work at all today.",
+        tier="lite", threshold=0.30, max_iters=5, rewriter=_Same(), scrub=False, sim_bar=0.0,
+    )
+    assert out["stopped"] == "passed"
+    assert out["iterations"] == 0
+    assert out["rewrites"] == 0
+
+
+def test_work_still_counts_its_iterations(monkeypatch):
+    """Zero must mean zero, not "the counter is broken"."""
+    import untell.scripts.run as run_mod
+
+    src = "Furthermore, this text is flagged and will stay flagged throughout the run."
+    monkeypatch.setattr(run_mod, "score_text", _fixed_score({}, 0.90))
+    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=3, rewriter=_Same(),
+                              scrub=False, sim_bar=0.0)
+    assert out["iterations"] >= 1
