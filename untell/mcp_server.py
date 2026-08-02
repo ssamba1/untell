@@ -57,8 +57,22 @@ def _server():
         threshold: float = 0.30,
         style: str | None = None,
         max_iters: int = 5,
-        rewriter: str = "auto",
-        best_of: int = 1,
+        # "composite", matching the CLI's default, NOT "auto". MEASURED: calling this tool with
+        # defaults returned {"error": "no rewriter configured"} on any install without an API key.
+        # "auto" is not in _FREE_REWRITERS, so it fell through unresolved, and untell_text's
+        # auto-select declines to pick a backend when no key is set — even though `composite` is
+        # free, always available, and the documented zero-dependency path. The flagship MCP tool
+        # failed out of the box while the identical CLI invocation worked.
+        rewriter: str = "composite",
+        # 3, matching the CLI's `untell humanize --best-of` default. MEASURED over 6 real HC3
+        # paragraphs, this is the difference between the strong path and the weak one:
+        #     best_of=1  mean 0.601 -> 0.293, 33% still flagged
+        #     best_of=3  mean 0.601 -> 0.256,  0% still flagged
+        # The CLI moved to 3 after best-of-1 was identified as a root cause of understated
+        # evasion. MCP and the REST API were left on 1, so every non-CLI caller got the weak
+        # path. (The `ceiling` tool below stays at 1 — that matches ITS cli, eval/ceiling.py,
+        # where measuring the single-draw baseline is the point.)
+        best_of: int = 3,
         margin: float = 0.0,
     ) -> dict:
         """Run the closed untell loop: score -> rewrite -> re-score until the hardest
@@ -83,7 +97,13 @@ def _server():
         from untell.rewriter import get_rewriter
 
         rw = None
-        if rewriter in _FREE_REWRITERS:
+        if rewriter not in _FREE_REWRITERS and rewriter != "auto":
+            # An unknown name fell through as None and was then silently auto-selected, so a typo
+            # ran a DIFFERENT technique and the result was reported as if it were the requested
+            # one. untell_text resolves names itself now and refuses to substitute, so hand it
+            # the name and let it produce a clear error.
+            rw = rewriter
+        elif rewriter in _FREE_REWRITERS:
             rw = get_rewriter(prefer=rewriter)
             if rw is None:
                 # Do NOT fall through with rewriter=None. untell_text would then call get_rewriter()
@@ -162,7 +182,13 @@ def _server():
         from untell.rewriter import get_rewriter
 
         rw = None
-        if rewriter in _FREE_REWRITERS:
+        if rewriter not in _FREE_REWRITERS and rewriter != "auto":
+            # An unknown name fell through as None and was then silently auto-selected, so a typo
+            # ran a DIFFERENT technique and the result was reported as if it were the requested
+            # one. untell_text resolves names itself now and refuses to substitute, so hand it
+            # the name and let it produce a clear error.
+            rw = rewriter
+        elif rewriter in _FREE_REWRITERS:
             rw = get_rewriter(prefer=rewriter)
             if rw is None:
                 return {"error": f"{rewriter} rewriter unavailable (needs .[full] extra)"}

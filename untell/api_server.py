@@ -138,8 +138,17 @@ class HumanizeRequest(BaseModel):
     threshold: float = DEFAULT_THRESHOLD
     style: str | None = None
     max_iters: int = 5
-    rewriter: str = "auto"
-    best_of: int = 1
+    # "composite", matching the CLI and the MCP tool. MEASURED: POST /humanize with defaults
+    # returned "no rewriter configured" on any install without an API key, because "auto" is not
+    # in _FREE_REWRITERS and auto-select declines to pick a backend without a key — even though
+    # composite is free, always available, and the documented zero-dependency path.
+    rewriter: str = "composite"
+    # 3, matching the CLI's --best-of default. MEASURED over 6 real HC3 paragraphs:
+    # best_of=1 -> 33% still flagged; best_of=3 -> 0%. The CLI moved to 3 after best-of-1 was
+    # identified as a root cause of understated evasion; MCP and this surface were left behind.
+    # (CeilingRequest stays at 1 — that matches eval/ceiling.py, where the single-draw baseline
+    # is what is being measured.)
+    best_of: int = 3
     margin: float = 0.0
     polish: bool = False
 
@@ -238,7 +247,14 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
     """
     from untell.rewriter import get_rewriter
 
-    rw = get_rewriter(prefer=body.rewriter) if body.rewriter in _FREE_REWRITERS else None
+    # An unknown name used to fall through as None and then be silently auto-selected, so a typo
+    # ran a DIFFERENT technique and the response reported it as the requested one. untell_text
+    # resolves names itself and refuses to substitute, so hand it the name for anything not
+    # free-listed. "auto" still means "let it choose", so that one keeps passing None.
+    if body.rewriter in _FREE_REWRITERS:
+        rw = get_rewriter(prefer=body.rewriter)
+    else:
+        rw = None if body.rewriter == "auto" else body.rewriter
     result = untell_text(
         body.text,
         tier=body.tier,
