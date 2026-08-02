@@ -391,6 +391,18 @@ class PerplexityBurstinessDetector:
         # AI-generated.
         if not text or not text.strip():
             return None
+        # The same abstention floor both paths are supposed to share. It lived only inside
+        # `lite_score`, so whenever torch was importable — the default once `.[full]` is installed —
+        # `_full_score` ran instead and no floor applied at all. Its own guard is on TOKEN count
+        # (it needs an in-context pass to produce anything), which trips at one token, not five
+        # words. Measured before:
+        #     "Hi."                     -> 0.811   a two-token fragment called AI
+        #     "word word"   (2 words)   -> 0.000   "definitely human", from two words
+        #     "word word word word"     -> 0.000   same
+        # Both directions are confident verdicts drawn from no stylometric evidence, and both feed
+        # the ensemble max as if they were measurements.
+        if len(_WORD.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
+            return None
         if self._torch_ready():
             try:
                 full = self._full_score(text)

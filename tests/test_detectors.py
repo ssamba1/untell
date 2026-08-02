@@ -325,3 +325,50 @@ def test_long_document_scoring_is_stable_not_inflated():
     if det._torch_ready():
         for n, s in scores.items():
             assert s < DEFAULT_THRESHOLD, f"{n} paragraphs of ordinary human prose flagged at {s:.3f}"
+
+
+class TestShortInputAbstentionIsPathIndependent:
+    """`_MIN_WORDS_FOR_SIGNAL` must hold on BOTH scoring paths, not just the stdlib one.
+
+    The floor lived only inside `lite_score`. `score()` routes to the GPT-2 path whenever torch is
+    importable — the default once .[full] is installed — and that path has only a token-count guard,
+    which trips at one token rather than five words. Measured before:
+
+        "Hi."                   -> 0.811   a two-token fragment reported as AI
+        "word word"             -> 0.000   "definitely human", from two words
+        "word word word word"   -> 0.000   same
+
+    Both are confident verdicts drawn from no stylometric evidence, and both reach the ensemble max
+    as if they were measurements.
+    """
+
+    @pytest.mark.parametrize("n", [0, 1, 2, 3, 4])
+    def test_detector_abstains_below_the_floor(self, n):
+        from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+        assert PerplexityBurstinessDetector().score(" ".join(["word"] * n)) is None
+
+    @pytest.mark.parametrize(
+        "text", ["Hi.", "The cat sat.", "Yes!", "No, never.", "Stop -- now."]
+    )
+    def test_short_real_fragments_abstain(self, text):
+        """Punctuation makes these several TOKENS but still fewer than five words, which is the
+        gap the token-count guard left open."""
+        from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+        assert PerplexityBurstinessDetector().score(text) is None
+
+    def test_five_words_is_scored(self):
+        """The floor must not swallow real input: at the boundary the detector still answers."""
+        from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+        v = PerplexityBurstinessDetector().score("The cat sat on the mat.")
+        assert v is not None and 0.0 <= v <= 1.0
+
+    def test_score_text_reports_an_abstention_rather_than_a_verdict(self):
+        from untell.scripts.score import score_text
+
+        r = score_text("Hi.", tier="lite")
+        assert r.get("scored") is False
+        assert r.get("warning")
+        assert r.get("flagged") is False
