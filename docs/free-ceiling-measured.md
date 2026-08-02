@@ -16,8 +16,9 @@ ensemble that untell can actually put in its loop.**
 > one detector present at every tier — was anti-correlated and saturating.
 >
 > The corrected figure, measured at `--repeats 9` (27 loop runs) after two 3-repeat runs disagreed:
-> **Superseded by Result 8 — the current figure is 0.859 → 0.184 ± 0.035, flagged 1.00 → 0.074.**
-> Everything below Result 7 was measured through two miscalibrated detectors.
+> **Superseded by Result 9 — the current figure is 0.859 → 0.154 ± 0.042, flagged 1.00 → 0.000.**
+> Everything below Result 7 was measured through two miscalibrated detectors, and Result 8 was
+> measured before the loop was found to be discarding passing candidates.
 >
 > **0.859 → 0.261 ± 0.027, flagged rate 1.00 → 0.148.** Use `--repeats ≥ 9`; three repeats gave
 > 0.247 ± 0.015 and 0.330 ± 0.118 on the same command.
@@ -460,3 +461,44 @@ has a `MISCALIBRATED` verdict for exactly this shape.
 
 **The general lesson: a discrimination metric cannot validate a decision rule.** Anything that
 ships a threshold has to be measured at that threshold.
+
+---
+
+## Result 9 — the loop was discarding passing candidates
+
+Result 8's numbers were measured before three control-flow defects in `run.py` were found by a
+multi-agent probe sweep. Two of them made the loop throw away work it had already done.
+
+**The best-of-N tie-break could discard a passing candidate.** Candidates within `_TELLS_EPS`
+(0.02) of the best score are treated as tied and the fewest AI tells wins. That band is symmetric,
+so when the best candidate sits just under the threshold it straddles it:
+
+    candidate A   max 0.28  (passes)      2 tells
+    candidate B   max 0.30  (does not)    0 tells
+    -> B adopted, loop never stops on 'passed', burns every remaining iteration
+
+**Polish could un-pass an already-passing result.** Same epsilon band, same straddle: incumbent
+0.28, polished 0.30 with fewer tells, adopted — and the run returned `stopped='passed'` together
+with `flagged=True`. One result asserting both.
+
+A preference meant only to break ties was deciding losses. Both now refuse to trade a pass.
+
+Re-measured, same command, `--repeats 9` (27 loop runs):
+
+| | Result 8 | Result 9 |
+|---|---|---|
+| mean max P(AI) | 0.859 → 0.184 ± 0.035 | 0.859 → **0.154 ± 0.042** |
+| flagged rate | 1.00 → 0.074 | 1.00 → **0.000** |
+| meaning similarity | 0.936 mean, 0.835 worst | 0.931 mean, 0.868 worst |
+
+Per detector, before → after: `hc3_roberta` 0.73 → 0.06, `roberta_openai` 0.52 → 0.08,
+`perplexity_burstiness` 0.41 → 0.12, `fast_detectgpt` 0.21 → 0.03.
+
+The *before* figure is unchanged at 0.859 for the third measurement running, which is the control
+that makes the rest readable: nothing about how AI text is scored has moved.
+
+**Every sample now clears the threshold.** That is a flagged rate of zero against the local open
+ensemble at `--best-of 3`, not against a commercial checker — the local tier is the thing being
+optimised against, so this number is a ceiling on THIS ensemble and says nothing about GPTZero.
+`untell-verify` against a real commercial API remains the only honest test, and the meaning gate
+is what stops the number being bought with a mangled rewrite: worst-case similarity 0.868.
