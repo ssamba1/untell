@@ -48,6 +48,62 @@ def test_off_topic_rewrite_is_still_hard_gated(monkeypatch):
     assert r.humanness_reward(orig, off_topic) == -1.0
 
 
+class TestTheGateIsTheWorstOutcome:
+    """A gate-PASSING candidate must never rank below a gate-FAILING one.
+
+    The gates pay -1.0 — "no evasion credit" — which is only a meaningful punishment if nothing
+    scored can go lower. The continuous path had no lower bound: tells_penalty is
+    ``_TELLS_W * tells_per_100w`` and that rate is unbounded. MEASURED on the free ensemble, a
+    27-word candidate made of 26 catalogued tells scored -1.4445, below the gate. GRPO normalises
+    rewards within a group, so ordering is the entire signal: the policy was being taught that
+    abandoning the meaning beat keeping it.
+    """
+
+    # 27 words, 26 catalogued tells -> 96.3 per 100w -> a 1.4445 penalty on its own.
+    TELL_SATURATED = (
+        "Moreover, utilize the robust, seamless, holistic, paradigm, leverage, "
+        "elevate, foster, bolster, garnered, pivotal, transformative, innovative, "
+        "noteworthy, groundbreaking, comprehensive, nuanced, meticulous, vibrant, "
+        "bustling, multifaceted, intricate, paramount, plethora, myriad."
+    )
+
+    def test_a_tell_saturated_but_faithful_rewrite_stays_above_the_gate(self, monkeypatch):
+        import training.reward as r
+
+        monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 1.0)
+        # Identical text: similarity 1.0 and equal length, so both hard gates pass.
+        reward = r.humanness_reward(self.TELL_SATURATED, self.TELL_SATURATED, sim_floor=0.0)
+        assert reward > -1.0, "a gate-passing candidate scored at or below the gate"
+        assert reward == r._MIN_SCORED_REWARD
+
+    def test_it_still_ranks_below_a_faithful_clean_rewrite(self, monkeypatch):
+        """Flooring must not flatten the ordering that matters."""
+        import training.reward as r
+
+        monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 0.1)
+        clean = "Exercise makes the heart stronger and lifts the mood over time."
+        good = r.humanness_reward(clean, clean, sim_floor=0.0)
+        bad = r.humanness_reward(self.TELL_SATURATED, self.TELL_SATURATED, sim_floor=0.0)
+        assert good > bad > -1.0
+
+    def test_the_penalties_are_still_applied_below_saturation(self, monkeypatch):
+        """The floor must be a floor, not a flat rate — normal tell densities still cost."""
+        import training.reward as r
+
+        monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 0.2)
+        plain = "The report covers the third quarter and the outlook for the next one."
+        telly = "Moreover, the report delves into the third quarter. Furthermore, it is important "
+        telly += "to note the outlook, showcasing a robust and multifaceted landscape."
+        assert r.humanness_reward(plain, plain, sim_floor=0.0) > r.humanness_reward(
+            telly, telly, sim_floor=0.0
+        )
+
+    def test_the_floor_sits_above_the_gate_value(self):
+        import training.reward as r
+
+        assert r._MIN_SCORED_REWARD > r._GATE_REWARD
+
+
 def test_out_of_range_sidecar_cannot_enter_the_weighted_mean(monkeypatch):
     """score_text records a clamped value plus the raw one. If the raw value leaks into the reward's
     weighted mean as a phantom detector, a correct ~0.75 reward becomes ~-49.5."""

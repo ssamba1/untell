@@ -44,6 +44,22 @@ _FREE_WEIGHTS = {
 _TELLS_W = 0.015  # per AI-tell-per-100-words; typical AI text 10-30, human 0-3 -> up to ~0.30-0.45
 _BURST_W = 0.10  # flat penalty when sentence lengths are uniform (a burstiness tell)
 
+# What a hard gate pays, and the floor everything else must stay above.
+#
+# The gates are meant to be the WORST outcome available — "no evasion credit", the whole point of
+# making meaning non-negotiable. The continuous path had no lower bound: tells_penalty is
+# _TELLS_W * tells_per_100w and that rate is unbounded. MEASURED on the free ensemble, a 27-word
+# candidate made of 26 catalogued tells scores 96.3 per 100w, a penalty of 1.4445, and a final
+# reward of -1.4445 — below the gate value. So a rewrite that PRESERVED the meaning ranked below one
+# that abandoned it entirely. GRPO normalises rewards within a group, which makes the ordering the
+# entire learning signal, so that inversion trains the policy to drift off-topic on purpose.
+#
+# The floor sits just above the gate rather than at it, so "awful but faithful" and "off-topic"
+# stay distinguishable in the right order. Candidates below the floor are all pathological and
+# collapse together; that is the intended loss of resolution.
+_GATE_REWARD = -1.0
+_MIN_SCORED_REWARD = -0.99
+
 
 def free_ensemble_score(text: str, tier: str = "full", weights: dict[str, float] | None = None) -> float:
     """Weighted-mean P(AI) over the FREE open detectors the active tier produced (renormalized).
@@ -158,6 +174,10 @@ def humanness_reward(
       * meaning drift below ``sim_floor`` — the policy cannot buy evasion by drifting off-topic
       * output shorter than half the input — nor by deleting content
 
+    -1.0 is the WORST reward available, and a gate-passing candidate is floored just above it. That
+    ordering is the gate: without it, an unbounded tells penalty let a faithful-but-tell-saturated
+    rewrite score -1.4445, so the policy was rewarded for abandoning the meaning instead.
+
     The hard gates are the DEPO-style fix for the StealthRL quality-collapse failure mode (2.5/5):
     a soft penalty lets a big evasion reward pay for a small meaning loss every step until the text is
     unrecognizable; a hard gate makes meaning non-negotiable. Targeting evasion + meaning + tells at
@@ -168,7 +188,7 @@ def humanness_reward(
     # reward_fn and killed the run with no checkpoint. The docstring's contract for an unusable
     # candidate is -1.0; that now covers None as well.
     if not original or not candidate or not candidate.strip():
-        return -1.0
+        return _GATE_REWARD
     # The floor MUST match the metric similarity() actually used. It is backend-adaptive — BERTScore
     # (bar 0.88), cosine embeddings (0.76), or the token-overlap fallback (0.50) — and the old
     # hard-coded 0.76 was only meaningful for the middle one. In a lightweight training environment
@@ -180,16 +200,20 @@ def humanness_reward(
         sim_floor = recommended_bar()
     # Hard gates first — a gated candidate earns nothing regardless of how well it evades.
     if similarity(original, candidate) < sim_floor:
-        return -1.0
+        return _GATE_REWARD
     if len(candidate) < 0.5 * len(original):
-        return -1.0
+        return _GATE_REWARD
     ai = target_ai_score(candidate, tier=tier)  # surrogate if UNTELL_SURROGATE_DIR set, else free ensemble
     evade = 1.0 - ai
     tells = score_tells(candidate)
     tells_penalty = _TELLS_W * float(tells.get("tells_per_100w", 0.0))
     burst_penalty = _BURST_W if tells.get("low_burstiness") else 0.0
     quality_penalty = w_quality * (1.0 - fluency(candidate))
-    return round(evade - tells_penalty - burst_penalty - quality_penalty, 4)
+    raw = evade - tells_penalty - burst_penalty - quality_penalty
+    # Keep a gate-PASSING candidate strictly above what a gate-FAILING one earns. See
+    # _MIN_SCORED_REWARD: without this a tell-saturated but faithful rewrite scored -1.4445,
+    # i.e. worse than abandoning the meaning outright.
+    return round(max(raw, _MIN_SCORED_REWARD), 4)
 
 
 def batch_rewards(
