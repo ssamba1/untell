@@ -759,3 +759,66 @@ class TestSeedingDoesNotTouchTheCallersRng:
         random.seed(1234)
         b = structural_rewrite(self.SRC, intensity=1.0)
         assert a == b
+
+
+class TestRewritesIntroduceNoMechanicalDefects:
+    """A rewrite may change wording freely; it must not damage the text mechanically.
+
+    Checked on input chosen to stress sentence handling — abbreviations ("Dr.", "e.g.", "p.m."),
+    decimals ("3.5% vs. 2.1%"), quoted speech, a numbered list, URLs with parens and query strings,
+    and spaced initials ("J. R. R. Tolkien"). Each is a place a naive split-on-period corrupts text.
+
+    Defects present in the SOURCE are subtracted, so this measures what rewriting introduced rather
+    than what it inherited. An earlier version of this check omitted that and reported three false
+    positives — "at 3 p.m. Furthermore, they..." matched a split-at-abbreviation pattern that the
+    source matched identically, because it is simply a correct sentence boundary.
+    """
+
+    HARD = {
+        "abbreviations": "Dr. Smith met Prof. Jones at 3 p.m. Furthermore, they leveraged the data, "
+                         "e.g. the survey results, to optimize outcomes.",
+        "decimals": "Revenue rose 3.5% vs. 2.1% last year. Moreover, the ratio of 1.5 to 2.0 was "
+                    "robust across sectors.",
+        "quotes": 'He said "the results are robust" and then added "furthermore, we must optimize." '
+                  "The team agreed.",
+        "list": "Key points:\n1. Leverage the data.\n2. Optimize the workflow.\n3. Furthermore, iterate.",
+        "urls": "See https://example.com/a_b(c) for details. Furthermore, the docs at "
+                "docs.example.org/x?y=1 explain it.",
+        "initials": "J. R. R. Tolkien wrote it. Moreover, C. S. Lewis leveraged similar themes.",
+    }
+
+    @staticmethod
+    def _defects(text: str) -> set[str]:
+        import re
+
+        found = set()
+        if text.count('"') % 2:
+            found.add("unbalanced-quotes")
+        if re.search(r"\b\d+\.\s+\d+\b", text):
+            found.add("split-decimal")
+        if re.search(r"https?://\S*\s", text):
+            found.add("url-broken")
+        if re.search(r"[a-z]{2,}\s+[,.;:]", text):
+            found.add("space-before-punct")
+        if re.search(r"\b(\w+)\s+\1\b", text, re.I):
+            found.add("doubled-word")
+        return found
+
+    @pytest.mark.parametrize("rewriter_name", ["composite", "structural", "surgical"])
+    def test_no_new_defects_on_hard_input(self, rewriter_name):
+        from untell.rewriter import get_rewriter
+        from untell.scripts.score import score_text
+
+        rw = get_rewriter(prefer=rewriter_name)
+        if rw is None or not rw.available():
+            pytest.skip(f"{rewriter_name} unavailable")
+
+        problems = []
+        for label, src in self.HARD.items():
+            out = rw.rewrite(src, score_text(src, tier="lite"), 0.30)
+            introduced = self._defects(out) - self._defects(src)
+            if "\n" in src and "\n" not in out:
+                introduced.add("layout-flattened")
+            if introduced:
+                problems.append((label, sorted(introduced), out[:120]))
+        assert not problems, problems
