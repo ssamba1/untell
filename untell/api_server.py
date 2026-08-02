@@ -37,11 +37,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from untell._env import load_env
 from untell.scripts.run import untell_text
-from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+from untell.scripts.score import DEFAULT_THRESHOLD, MAX_INPUT_CHARS, score_text
 from untell.scripts.sentences import score_sentences
 from untell.scripts.tells import score_tells
 from untell.scripts.verify import verify
@@ -118,14 +118,22 @@ def _check_auth(authorization: str | None, x_api_key: str | None) -> str | None:
 # ---------------------------------------------------------------------------
 
 
+# Bound the text field on every request model. MEASURED: `preserve.lock()` runs BEFORE scoring and
+# is uncapped, scaling ~45ms per KB after the spaCy model warms — 188 KB takes 8.5s, so roughly a
+# megabyte occupies a worker for ~45s. score.py's 50k cap did not protect this path because it
+# applies after locking. Rejecting at the edge turns an unbounded request into a 422 instead of a
+# tied-up worker, and the bound is the scorer's own constant so the two cannot drift.
+_TEXT = Field(..., max_length=MAX_INPUT_CHARS)
+
+
 class ScoreRequest(BaseModel):
-    text: str
+    text: str = _TEXT
     tier: str = "full"
     threshold: float = DEFAULT_THRESHOLD
 
 
 class HumanizeRequest(BaseModel):
-    text: str
+    text: str = _TEXT
     tier: str = "lite"
     threshold: float = DEFAULT_THRESHOLD
     style: str | None = None
@@ -137,18 +145,18 @@ class HumanizeRequest(BaseModel):
 
 
 class TellsRequest(BaseModel):
-    text: str
+    text: str = _TEXT
     include_matches: bool = False
 
 
 class SentencesRequest(BaseModel):
-    text: str
+    text: str = _TEXT
     tier: str = "lite"
     threshold: float = DEFAULT_THRESHOLD
 
 
 class VerifyRequest(BaseModel):
-    text: str
+    text: str = _TEXT
     threshold: float = DEFAULT_THRESHOLD
     tier: str = "full"
     sandbox: bool = False

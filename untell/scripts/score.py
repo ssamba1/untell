@@ -52,6 +52,10 @@ DEFAULT_THRESHOLD = 0.30
 # discarding it (see detectors/base.py `windowed_max`), so this cap is the only truncation left and
 # it bounds cost rather than hiding content.
 _MAX_INPUT_CHARS = 50_000
+# Public alias so network surfaces can reject oversized input at the edge instead of discovering
+# the bound halfway through a request. Same aliasing pattern as preserve.SENTINEL_RE: one constant,
+# two names, no second copy to drift.
+MAX_INPUT_CHARS = _MAX_INPUT_CHARS
 
 
 def batch_score_texts(

@@ -277,3 +277,31 @@ def test_scoring_and_gates_are_thread_safe():
     # Same input must give the same answer no matter how the threads interleaved.
     single_threaded = {work(i) for i in range(len(texts))}
     assert set(results) == single_threaded, "concurrent results diverged from serial ones"
+
+
+def test_oversized_text_is_rejected_at_the_edge():
+    """One unbounded request could occupy a worker for a minute.
+
+    `preserve.lock()` runs BEFORE scoring and was uncapped. MEASURED, after the spaCy model warms,
+    it scales ~45ms per KB: 188 KB takes 8.5s, so roughly a megabyte ties up a worker for ~45s.
+    score.py's 50k cap did not protect that path, because it applies after locking.
+
+    The bound is score.py's own constant, so the network edge and the scorer cannot drift apart.
+    """
+    from fastapi.testclient import TestClient
+
+    from untell.api_server import app
+    from untell.scripts.score import MAX_INPUT_CHARS
+
+    client = TestClient(app)
+    oversized = "x " * (MAX_INPUT_CHARS // 2 + 500)
+    assert len(oversized) > MAX_INPUT_CHARS
+
+    for path in ("/score", "/tells", "/sentences", "/humanize", "/verify"):
+        r = client.post(path, json={"text": oversized, "tier": "lite"})
+        assert r.status_code == 422, f"{path} accepted {len(oversized)} chars: {r.status_code}"
+
+    # ...and ordinary requests still work — the bound must not be so tight it breaks real use.
+    ok = "Furthermore, organizations leverage these technologies to optimize efficiency."
+    assert client.post("/score", json={"text": ok, "tier": "lite"}).status_code == 200
+    assert client.post("/tells", json={"text": ok}).status_code == 200
