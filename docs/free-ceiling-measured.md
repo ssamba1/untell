@@ -624,6 +624,29 @@ is not allowed to change.
 rewriter is not weak, and the loop is not broken. One detector is measuring style and one is
 measuring subject matter.
 
+### Caveat: `hc3_roberta` has home-field advantage on this corpus
+
+`hc3_roberta` is trained **on HC3**, and this measurement is on HC3. Auditing all four detectors at
+threshold 0.30 over 100 held-out pairs makes that visible:
+
+| detector | FPR | TPR | AUROC | human mean | AI mean |
+|---|---|---|---|---|---|
+| `perplexity_burstiness` | 6.0% | 98.0% | 0.9972 | 0.129 | 0.601 |
+| `roberta_openai` | 2.0% | 98.0% | 0.9990 | 0.015 | 0.975 |
+| **`hc3_roberta`** | **0.0%** | 98.0% | **1.0000** | **0.000** | 0.979 |
+| `fast_detectgpt` | 2.0% | 100.0% | 0.9955 | 0.085 | 0.667 |
+| ensemble (`max`) | 10.0% | 100.0% | — | — | — |
+
+A perfect 1.0000 with a human mean of exactly 0.000 is the signature of **in-distribution
+evaluation**, not of a generally perfect detector. So part of the 0.810 wall may be train/test
+overlap rather than a property of AI text — the mirror image of the built-in sample's problem, with
+the bias pointing the other way. Result 10's lesson applies to this result too: a number is a
+property of its corpus until measured on another one.
+
+The ensemble row is worth noting separately: individual false-positive rates of 0–6% combine into
+**10%** under `max` aggregation, because the union of four detectors' mistakes is what `max`
+reports. That is the documented cost of using `max` as a verdict rather than as a loop target.
+
 ### What this means for the claims in this document
 
 - Result 3's falsification of the content wall **holds on the built-in sample and does not
