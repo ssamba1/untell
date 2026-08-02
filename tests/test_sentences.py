@@ -165,4 +165,11 @@ def test_no_warning_when_a_model_backed_detector_will_do_the_ranking(monkeypatch
     with caplog.at_level(logging.WARNING, logger="untell.scripts.sentences"):
         s.score_sentences("One sentence here today. Another sentence follows it now.", tier="lite")
 
-    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+    # Filter by logger NAME. `caplog.at_level(..., logger=...)` sets the level for that logger but
+    # caplog still records everything that reaches the root handler, so this asserted "no warnings
+    # from anywhere" — and failed on huggingface_hub's unrelated "set a HF_TOKEN to enable higher
+    # rate limits" notice, which fires whenever a model loads without a token. The subject here is
+    # the targeting warning, so that is what must be absent.
+    ours = [r for r in caplog.records
+            if r.levelno >= logging.WARNING and r.name == "untell.scripts.sentences"]
+    assert not ours, [r.getMessage() for r in ours]
