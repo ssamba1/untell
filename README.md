@@ -179,9 +179,9 @@ Three design choices make it work where blind paraphrasers fail:
 
    The full gate is a conjunction — similarity floor, contradiction, bidirectional entailment,
    predicate-argument structure, retained quantities, retained claim strength. Measured on the
-   faithful set it now rejects **0 of 13**, and on **75 candidates the composite rewriter actually
-   produced** (25 texts × 3 runs, since the rewriter is randomised) it passes **96%**, replicating
-   at 96/96/96. The only rejections are the quantities check, at 4%.
+   faithful set it now rejects **0 of 13**, and on **~70 candidates the composite rewriter actually
+   produced** (25 texts × 3 runs, since the rewriter is randomised) it passes **96–100%**, mean 99%
+   across runs. The only rejection left is the predicate-argument check, at ~1%.
 
    Both numbers moved because the claim-strength check was over-strict in ways that had nothing to
    do with claim strength: "due to", "will", "set to" and "going to" were classed as *intention*
@@ -191,7 +191,9 @@ Three design choices make it work where blind paraphrasers fail:
    explicitly *denied* causation was vetoed for asserting it. Tightening that same pass closed a
    real leak in the other direction — "critics allege the firm misled investors" → "the firm misled
    investors" cleared every check, because dropping an attribution does not contradict the source,
-   it just asserts more.
+   it just asserts more. The quantities check moved too: it read only DIGITS, so "three sites took
+   part" → "five sites took part" passed, and reading spelled-out numbers on both sides closed that
+   while removing the last of its false vetoes on real candidates.
 3. **Citations, numbers, quotes, URLs and named entities are locked byte-for-byte** via preserve-lock, so
    your APA/IEEE/MLA references and your facts survive the rewrite untouched.
 
