@@ -61,3 +61,65 @@ def test_load_env_bare_call_reads_the_cwd(tmp_path, monkeypatch, with_dotenv):
 def test_load_env_bare_call_with_no_env_file_is_noop(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     assert load_env() is False
+
+
+# Which parser runs depends only on whether an optional dependency is installed, so any
+# disagreement means one .env file configures the program two different ways. The divergence that
+# was there: an inline comment on an unquoted value.
+#
+#     SOME_API_KEY=abc123 # the prod key
+#       python-dotenv -> "abc123"
+#       the fallback  -> "abc123 # the prod key"
+#
+# A key carrying trailing junk fails auth at the remote end, and nothing in that error names the
+# .env file. These are stated as expected values so they hold with or without python-dotenv, and
+# the differential test below re-derives them from python-dotenv itself when it is installed.
+_VALUE_CASES = [
+    ("PLAIN=abc123", "abc123"),
+    ("WITH_COMMENT=abc123 # the prod key", "abc123"),
+    ('QUOTED="abc123"', "abc123"),
+    ('QUOTED_WITH_HASH="abc # 123"', "abc # 123"),      # inside quotes a # is data
+    ('QUOTED_THEN_COMMENT="abc123" # note', "abc123"),  # close on the MATCHING quote
+    ("SINGLE='abc123'", "abc123"),
+    ("SINGLE_WITH_HASH='abc # 123'", "abc # 123"),
+    ("HASH_NO_SPACE=abc#123", "abc#123"),               # a comment needs leading whitespace
+    ("URL=https://example.com/path#fragment", "https://example.com/path#fragment"),
+    ("APOSTROPHE=it's fine", "it's fine"),
+    ("EQUALS_IN_VALUE=a=b=c", "a=b=c"),
+    ("TRAILING_SPACE=abc123   ", "abc123"),
+    ("EMPTY=", ""),
+]
+
+
+@pytest.mark.parametrize(("line", "expected"), _VALUE_CASES, ids=[c[0].split("=")[0] for c in _VALUE_CASES])
+def test_fallback_parser_values(tmp_path, monkeypatch, line, expected):
+    monkeypatch.setitem(sys.modules, "dotenv", None)  # force the zero-dependency parser
+    key = line.split("=", 1)[0]
+    env = tmp_path / ".env"
+    env.write_text(line + "\n", encoding="utf-8")
+    monkeypatch.delenv(key, raising=False)
+
+    assert load_env(str(env)) is True
+    assert os.environ[key] == expected
+
+
+def test_the_two_parsers_agree_on_every_case(tmp_path, monkeypatch):
+    """Differential test: the optional dependency must not change what a .env file means."""
+    pytest.importorskip("dotenv")
+    source = "\n".join(line for line, _ in _VALUE_CASES) + "\n"
+    keys = [line.split("=", 1)[0] for line, _ in _VALUE_CASES]
+
+    def read(force_fallback: bool) -> dict[str, str | None]:
+        env = tmp_path / (".env.fallback" if force_fallback else ".env.dotenv")
+        env.write_text(source, encoding="utf-8")
+        for k in keys:
+            monkeypatch.delenv(k, raising=False)
+        with monkeypatch.context() as m:
+            if force_fallback:
+                m.setitem(sys.modules, "dotenv", None)
+            assert load_env(str(env)) is True
+        return {k: os.environ.get(k) for k in keys}
+
+    fallback = read(force_fallback=True)
+    dotenv = read(force_fallback=False)
+    assert fallback == dotenv

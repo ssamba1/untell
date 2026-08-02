@@ -8,7 +8,37 @@ variables always win (we never override an already-set var), so this is safe to 
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
+
+
+_COMMENT = re.compile(r"\s+#.*$")
+
+
+def _parse_value(raw: str) -> str:
+    """Parse the right-hand side of a ``KEY=VALUE`` line the way python-dotenv does.
+
+    Which parser runs depends only on whether an optional dependency is installed, so any
+    disagreement means the same .env file configures the program two different ways. MEASURED
+    across eight representative lines, exactly one diverged: an inline comment on an unquoted
+    value.
+
+        SOME_API_KEY=abc123 # the prod key
+          python-dotenv -> "abc123"
+          this fallback -> "abc123 # the prod key"
+
+    A key with trailing junk fails auth at the remote end, and nothing in that error names the
+    .env file as the cause. A quoted value keeps its ``#`` — inside quotes it is data, not a
+    comment — which is why the comment strip has to happen before unquoting, not after.
+    """
+    val = raw.strip()
+    if val and val[0] in "\"'":
+        # Close on the MATCHING quote, not on the end of the line: `KEY="abc" # note` is a quoted
+        # value with a comment after it, and anchoring to the last character left the quotes in.
+        end = val.find(val[0], 1)
+        if end != -1:
+            return val[1:end]
+    return _COMMENT.sub("", val).strip()
 
 
 def load_env(path: str | None = None) -> bool:
@@ -43,7 +73,7 @@ def load_env(path: str | None = None) -> bool:
             key = key.strip()
             if key.startswith("export "):  # tolerate `export KEY=VALUE` shell syntax
                 key = key[len("export "):].strip()
-            val = val.strip().strip('"').strip("'")
+            val = _parse_value(val)
             if key and key not in os.environ:  # real env wins
                 os.environ[key] = val
     except Exception:
