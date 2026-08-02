@@ -14,19 +14,26 @@ from pathlib import Path
 def load_env(path: str | None = None) -> bool:
     """Load ``.env`` (cwd by default) into ``os.environ`` without overriding existing vars.
 
-    Returns True if a file/loader ran, False otherwise.
+    Returns True if a file was found and parsed, False otherwise.
     """
+    # Resolve the path here rather than letting python-dotenv do it. Bare ``load_dotenv()``
+    # searches *upward from the calling file*, which is this module inside the installed package —
+    # so with python-dotenv present it walks site-packages' parents and never sees the caller's
+    # cwd, silently ignoring the .env the docs tell users to create. Without python-dotenv the
+    # fallback below reads cwd correctly, so the optional dependency was what broke it.
+    p = Path(path) if path else Path.cwd() / ".env"
+    if not p.is_file():
+        return False
+
     try:
         from dotenv import load_dotenv  # python-dotenv, if installed
 
         # utf-8-sig so a BOM-prefixed .env (common from Windows editors) doesn't corrupt the first key.
-        return bool(load_dotenv(path, override=False, encoding="utf-8-sig"))
+        load_dotenv(str(p), override=False, encoding="utf-8-sig")
+        return True
     except Exception:
         pass
 
-    p = Path(path) if path else Path.cwd() / ".env"
-    if not p.is_file():
-        return False
     try:
         for raw in p.read_text(encoding="utf-8-sig").splitlines():  # utf-8-sig strips a leading BOM
             line = raw.strip()
