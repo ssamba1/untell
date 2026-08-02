@@ -80,3 +80,26 @@ def test_claims_are_actually_being_found():
         len(_LOCAL_CLAIM.findall(d.read_text(encoding="utf-8", errors="replace"))) for d in _live_docs()
     )
     assert hits > 0, "no '<n> local' claims found — the pattern or the doc set is wrong, not the docs"
+
+
+def test_thresholds_reference_documents_every_gate_the_loop_runs():
+    """SKILL.md cites references/thresholds.md as the source of loop defaults, so a gate missing
+    from it is a gate a reader does not know exists.
+
+    It has fallen behind twice: once when the NLI gate and the BERTScore tier were added, and again
+    when the quantity and certainty checks were. `meaning_preserved()` imports its sub-checks lazily
+    by module, so those imports are the authoritative list of what the loop enforces.
+    """
+    import inspect
+
+    from untell.scripts import entailment
+
+    src = inspect.getsource(entailment.meaning_preserved)
+    modules = set(re.findall(r"from untell\.scripts\.(\w+) import", src))
+    assert modules, "no sub-check imports found — has meaning_preserved been restructured?"
+
+    doc = (REPO / "untell" / "references" / "thresholds.md").read_text(encoding="utf-8", errors="replace")
+    missing = sorted(m for m in modules if m not in doc)
+    assert not missing, (
+        f"the loop's meaning gate runs {sorted(modules)} but thresholds.md never mentions {missing}"
+    )
