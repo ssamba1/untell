@@ -305,3 +305,67 @@ def test_oversized_text_is_rejected_at_the_edge():
     ok = "Furthermore, organizations leverage these technologies to optimize efficiency."
     assert client.post("/score", json={"text": ok, "tier": "lite"}).status_code == 200
     assert client.post("/tells", json={"text": ok}).status_code == 200
+
+
+class TestAuthSurface:
+    """The existing auth tests cover blocked / allowed / .env. These cover the ways auth is
+    usually bypassed rather than defeated: an alternate scheme, and path variants that miss an
+    exemption list.
+
+    Worth pinning because this file already shipped one auth bug — the key was read into a
+    module-level constant, so a key set after import left every check on the "no key configured =
+    open access" branch.
+    """
+
+    TEXT = "Furthermore, organizations leverage these technologies to optimize efficiency."
+    KEY = "s3cret-test-key"
+
+    def _client(self, monkeypatch):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        monkeypatch.setenv("UNTELL_API_KEY", self.KEY)
+        return TestClient(app)
+
+    @pytest.mark.parametrize(
+        ("headers", "expected"),
+        [
+            ({}, 401),
+            ({"X-API-Key": "wrong"}, 401),
+            ({"X-API-Key": KEY}, 200),
+            ({"x-api-key": KEY}, 200),
+            ({"Authorization": f"Bearer {KEY}"}, 200),
+            ({"Authorization": "Bearer wrong"}, 401),
+            ({"Authorization": KEY}, 401),
+        ],
+        ids=["none", "wrong", "header", "lowercase-header", "bearer", "bearer-wrong", "bare-token"],
+    )
+    def test_key_is_required_and_verified(self, monkeypatch, headers, expected):
+        r = self._client(monkeypatch).post(
+            "/score", json={"text": self.TEXT, "tier": "lite"}, headers=headers
+        )
+        assert r.status_code == expected
+
+    @pytest.mark.parametrize("path", ["/score/", "/SCORE", "/health/../score", "//score"])
+    def test_path_variants_do_not_slip_past_the_exemption_list(self, monkeypatch, path):
+        """The middleware exempts /health, /docs, /openapi.json and /redoc by exact match. A
+        variant that routes to a real endpoint while missing that comparison would be an open
+        door."""
+        r = self._client(monkeypatch).post(path, json={"text": self.TEXT, "tier": "lite"})
+        assert r.status_code == 401, f"{path} reached the app without a key ({r.status_code})"
+
+    @pytest.mark.parametrize("path", ["/health", "/docs", "/openapi.json"])
+    def test_exempt_paths_stay_reachable_without_a_key(self, monkeypatch, path):
+        """Locking these would break health checks and the documented /docs UI."""
+        assert self._client(monkeypatch).get(path).status_code == 200
+
+    def test_no_key_configured_means_open_access(self, monkeypatch):
+        """Documented default. Asserted so it stays a deliberate choice rather than an accident."""
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        monkeypatch.delenv("UNTELL_API_KEY", raising=False)
+        r = TestClient(app).post("/score", json={"text": self.TEXT, "tier": "lite"})
+        assert r.status_code == 200
