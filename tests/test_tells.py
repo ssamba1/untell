@@ -222,3 +222,50 @@ def test_ordinary_negation_is_not_a_tell(text):
     assert not score_tells(text)["by_category"].get("negated_contrast"), (
         f"ordinary negation falsely counted in {text!r}"
     )
+
+
+class TestSignpostingCliche:
+    """"It is important to note that ..." — the most common signpost in AI prose — scored as
+    perfectly clean text.
+
+    The cliche list had `it'?s (?:important|worth) (?:to note|noting)`, which matches "it's" and
+    "its" but not "it is". A one-character gap in one alternation, and the whole "it is important
+    to note" family walked through it. Found while investigating why single-sentence scoring was
+    inverted, since tells is the signal that actually discriminates at sentence length.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "It is important to note that this matters.",
+            "It should be noted that results vary.",
+            "It is essential to note that timing differs.",
+            "It is necessary to note the delay.",
+            "It’s important to note that curly apostrophes appear constantly in AI output.",
+            "it's worth noting that the old straight-quote form still works.",
+        ],
+        ids=["it-is-important", "should-be-noted", "essential", "necessary", "curly", "regression-its"],
+    )
+    def test_signpost_forms_are_counted(self, text):
+        assert score_tells(text)["tells"] >= 1, f"signpost not counted: {text!r}"
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "It is important that you show up on time.",
+            "I noted the time and moved on.",
+            "She noted the error in the log.",
+            "It is worth the wait.",
+            "We tried it twice and it still didn't work.",
+        ],
+        ids=["important-not-note", "noted-verb", "noted-error", "worth-the-wait", "plain"],
+    )
+    def test_ordinary_prose_is_not_flagged(self, text):
+        """The pattern needs 'to note'/'noting' — 'it is important that' is ordinary English and
+        flagging it would tax normal writing."""
+        assert score_tells(text)["tells"] == 0, f"false positive on: {text!r}"
+
+    def test_counted_once_not_twice(self):
+        """Overlapping patterns must not double-count — the span resolver keeps the longest match."""
+        r = score_tells("It is important to note that this matters.")
+        assert r["tells"] == 1

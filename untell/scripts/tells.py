@@ -128,7 +128,11 @@ _CLICHES = [
     r"in today'?s (?:fast-paced|digital|modern|ever-changing) world", r"in the ever-evolving \w+ of",
     r"in an era where", r"as technology continues to evolve", r"when it comes to", r"at its core",
     r"at the end of the day", r"in the realm of", r"this is where \w+ comes in",
-    r"it'?s (?:important|worth) (?:to note|noting)", r"it cannot be overstated",
+    # "it'?s" matches "it's" and "its" but NOT "it is" — so the single most common signpost in AI
+    # prose, "It is important to note that ...", scored as perfectly clean. Curly apostrophes are
+    # matched too: AI output is full of them, and "it’s" missed the straight-quote-only class.
+    r"it(?:['’]?s| is) (?:important|worth|essential|necessary) (?:to note|noting)",
+    r"it should be noted", r"it cannot be overstated",
     r"one of the most important", r"plays? a (?:crucial|pivotal|vital) role",
     r"stands? as a testament to", r"underscores? the importance of",
     r"reflects? a broader (?:trend|shift)", r"marks? a significant shift", r"let'?s dive in",
