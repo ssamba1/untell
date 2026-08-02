@@ -42,7 +42,11 @@ def _read_input(args: argparse.Namespace) -> str | None:
         # A missing or unreadable path is a usage problem, not a crash — an uncaught
         # FileNotFoundError traceback tells a script caller nothing it can act on.
         try:
-            return Path(args.file).read_text(encoding="utf-8", errors="replace")
+            # read_file(): BOM-aware, sniffs UTF-16/cp1252, rejects binaries. Reading a
+            # UTF-16 file with a naive utf-8 open produced mojibake and scrubbed THAT.
+            from untell.scripts.io_utils import read_file
+
+            return read_file(args.file)
         except OSError as exc:
             logger.error("cannot read %s: %s", args.file, exc)
             return None

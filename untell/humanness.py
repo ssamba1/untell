@@ -177,8 +177,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.file:
-        with open(args.file, encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
+        # read_file(): BOM-aware, sniffs UTF-16/cp1252, handles docx/pdf, rejects binaries.
+        # A naive utf-8 open turned a UTF-16 document into mojibake and scored THAT.
+        from untell.scripts.io_utils import read_file
+
+        text = read_file(args.file)
     elif args.text:
         text = args.text
     else:
@@ -195,3 +198,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"Humanness: {score}/100  ({cls})")
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

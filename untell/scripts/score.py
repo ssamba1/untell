@@ -189,8 +189,13 @@ def _score_with_detectors(
 
 def _read_input(args: argparse.Namespace) -> str:
     if args.file:
-        with open(args.file, encoding="utf-8", errors="replace") as fh:
-            return fh.read()
+        # read_file(): BOM-aware, sniffs UTF-16/cp1252, handles docx/pdf, rejects binaries.
+        # A naive open(encoding="utf-8", errors="replace") turns a UTF-16 document into mojibake
+        # peppered with NUL bytes and scores THAT, silently. Same bug already fixed in run.py and
+        # tells.py; it was still open at every other --file entry point.
+        from untell.scripts.io_utils import read_file
+
+        return read_file(args.file)
     if args.text:
         return args.text
     return sys.stdin.read()

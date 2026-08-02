@@ -202,8 +202,11 @@ def main(argv: list[str] | None = None) -> int:
     browser = [s.strip() for s in args.browser.split(",")] if args.browser else None
 
     if args.file:
-        with open(args.file, encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
+        # read_file(): BOM-aware, sniffs UTF-16/cp1252, handles docx/pdf, rejects binaries.
+        # A naive utf-8 open turned a UTF-16 document into mojibake and verified THAT.
+        from untell.scripts.io_utils import read_file
+
+        text = read_file(args.file)
     elif args.text:
         text = args.text
     else:

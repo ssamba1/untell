@@ -183,3 +183,66 @@ def test_latin1_fallback_is_announced(tmp_path, caplog):
     with caplog.at_level(logging.WARNING, logger="untell.scripts.io_utils"):
         read_file(str(path))
     assert any("latin-1" in r.getMessage() for r in caplog.records), "fell back silently"
+
+
+class TestEveryFileEntryPointDecodesProperly:
+    """`read_file()` existed and only two callers used it.
+
+    It sniffs BOMs, falls back through UTF-16/cp1252/latin-1, handles docx/pdf and rejects
+    binaries. run.py and tells.py used it; score, verify, sentences, humanness and scrub each did
+    `open(encoding="utf-8", errors="replace")` instead, which does not fail on a UTF-16 file — it
+    silently substitutes U+FFFD:
+
+        naive     '\ufffd\ufffdL\x00e\x00 \x00c\x00a\x00f\x00\ufffd\x00 ...'
+        read_file 'Le café naïve coûte cinq euros. Résumé attached, per Smith (2024).'
+
+    So `untell score --file` on a UTF-16 document scored garbage and reported it as a real number.
+    This is the same defect already fixed once in run.py; it stayed open everywhere else.
+    """
+
+    SAMPLE = "Le caf\u00e9 na\u00efve co\u00fbte cinq euros. R\u00e9sum\u00e9 attached, per Smith (2024)."
+
+    @pytest.mark.parametrize("encoding", ["utf-8", "utf-8-sig", "utf-16", "cp1252", "latin-1"])
+    def test_read_file_round_trips_every_common_encoding(self, tmp_path, encoding):
+        from untell.scripts.io_utils import read_file
+
+        p = tmp_path / f"doc_{encoding}.txt"
+        p.write_bytes(self.SAMPLE.encode(encoding))
+        assert read_file(str(p)).strip() == self.SAMPLE
+
+    @pytest.mark.parametrize("encoding", ["utf-16-le", "utf-16-be"])
+    def test_bomless_utf16_is_rejected_loudly_not_mangled(self, tmp_path, encoding):
+        """BOM-less UTF-16 is genuinely ambiguous — there is nothing to sniff, and the bytes look
+        like ASCII interleaved with NULs.
+
+        `read_file` raises rather than guessing, which is the right call: the failure mode this
+        whole class of bug is about is SILENT corruption, and a loud error is the opposite of that.
+        Asserted explicitly so nobody "improves" it into a silent best-effort decode.
+        """
+        from untell.scripts.io_utils import read_file
+
+        p = tmp_path / f"doc_{encoding}.txt"
+        p.write_bytes(self.SAMPLE.encode(encoding))
+        with pytest.raises(ValueError):
+            read_file(str(p))
+
+    def test_no_cli_reads_a_file_with_a_naive_open(self):
+        """Pins the fix at every entry point rather than one at a time.
+
+        Matching on source is deliberate: a behavioural test needs a real model per CLI, while the
+        defect is purely "which reader did this call", which is visible statically and cannot drift.
+        """
+        import re
+        from pathlib import Path
+
+        repo = Path(__file__).resolve().parent.parent
+        offenders = []
+        for rel in ("untell/scripts/score.py", "untell/scripts/verify.py",
+                    "untell/scripts/sentences.py", "untell/scripts/tells.py",
+                    "untell/scripts/scrub.py", "untell/scripts/run.py", "untell/humanness.py"):
+            src = (repo / rel).read_text(encoding="utf-8", errors="replace")
+            if not re.search(r'args\.file', src):
+                continue
+            if "read_file(" not in src:
+                offenders.append(rel)
+        assert not offenders, f"these read --file without read_file(): {offenders}"
