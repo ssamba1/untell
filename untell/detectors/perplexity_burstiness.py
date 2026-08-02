@@ -363,6 +363,27 @@ class PerplexityBurstinessDetector:
         return clamp01(_PPL_WEIGHT * ppl_signal + (1.0 - _PPL_WEIGHT) * burst_signal)
 
     def score(self, text: str) -> float | None:
+        # This detector deliberately does NOT use `windowed_max`, unlike every supervised adapter.
+        # That looks like an oversight and was "fixed" once; the measurement says otherwise.
+        #
+        # Their problem was TRUNCATION — `truncation=True, max_length=512` meant they physically
+        # could not see past ~380 words, so windowing let them read the document at all. This
+        # detector already sees all of it, and both its terms are AGGREGATE properties: burstiness
+        # is the variation of sentence lengths ACROSS a document, and the common-word ratio is a
+        # document-wide proportion. Cutting the document into windows destroys the very quantity
+        # being measured, and taking the max of many noisy window scores inflates every long input.
+        #
+        # MEASURED on real HC3 documents, windowed vs whole-document:
+        #     3 paragraphs   AUROC 0.887 / FPR 90%   vs   0.975 / FPR 30%
+        #     6 paragraphs   AUROC 0.980 / FPR 90%   vs   1.000 / FPR  0%
+        # True-positive rate was 100% either way, so windowing bought nothing and flagged nine out
+        # of ten human documents.
+        #
+        # The known cost of keeping it global: a long human tail dilutes an embedded AI section
+        # (measured 0.624 -> 0.239 on the stdlib path). That is the correct trade for a
+        # document-level aggregate, the supervised adapters DO window so the full tier still catches
+        # it, and `sentences.py` scores sentences individually for per-section targeting.
+        #
         # Empty/whitespace input carries no signal. The Detector protocol (base.py) requires None
         # here so the ensemble EXCLUDES it: returning a number folds a fabricated score into the
         # max/mean aggregation. Previously this path reached lite_score(), which answered 0.5 for

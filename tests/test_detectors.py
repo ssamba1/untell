@@ -260,3 +260,49 @@ def test_lite_single_sentence_keeps_the_ceiling():
     # A tell-free sentence can never exceed the ceiling on the lite path.
     for s in _HUMAN_SENTENCES + [_BLAND_AI_SENTENCE]:
         assert lite_score(s) <= _RATIO_CEILING + 1e-9, f"lite cap breached by {s!r}"
+
+
+def test_perplexity_burstiness_is_deliberately_not_windowed():
+    """Pins a negative result, because this looks like a missing feature and was once "fixed".
+
+    Every supervised adapter wraps its scorer in `windowed_max`, because `truncation=True,
+    max_length=512` meant they could not see past ~380 words. This detector has no such limit and
+    both its terms are aggregate: burstiness is the variation of sentence lengths ACROSS a
+    document, and the common-word ratio is a document-wide proportion. Windowing destroys the
+    quantity being measured, and max-of-many-noisy-windows inflates long input.
+
+    MEASURED on real HC3 documents, windowed vs whole-document:
+        3 paragraphs   AUROC 0.887 / FPR 90%   vs   0.975 / FPR 30%
+        6 paragraphs   AUROC 0.980 / FPR 90%   vs   1.000 / FPR  0%
+    TPR was 100% either way — windowing bought nothing and flagged 9 of 10 human documents.
+    """
+    import inspect
+
+    import untell.detectors.perplexity_burstiness as pb
+
+    assert "windowed_max(" not in inspect.getsource(pb.PerplexityBurstinessDetector.score), (
+        "perplexity_burstiness must stay whole-document: windowing it measured AUROC 0.887 vs "
+        "0.975 and FPR 90% vs 30% on 3-paragraph HC3 documents"
+    )
+
+
+def test_long_document_scoring_is_stable_not_inflated():
+    """A long stretch of ordinary human prose must not become AI-flagged just for being long.
+
+    This is the failure mode that windowing this detector produced: the max over many windows of a
+    weak signal climbs with document length regardless of content.
+    """
+    human = (
+        "I went to the store and forgot the milk again. "
+        "The build broke because someone bumped the pinned version, which took a while to find. "
+        "She said it was fine, but her face said otherwise and I let it go. "
+        "We tried it twice and it still did not work, so we went home. "
+        "Turns out the cable was loose the whole time, which nobody had checked. "
+    )
+    det = PerplexityBurstinessDetector()
+    short = det.score(human)
+    long_ = det.score(human * 12)
+    assert short is not None and long_ is not None
+    # Repetition genuinely reads as machine-uniform, so this asserts the weaker property that
+    # matters: length alone must not drive the score up without bound.
+    assert long_ <= short + 0.35, f"score inflated with length: {short:.3f} -> {long_:.3f}"
