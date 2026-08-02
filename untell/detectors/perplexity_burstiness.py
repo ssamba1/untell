@@ -105,10 +105,25 @@ def _common_ratio(text: str) -> float:
     return sum(1 for w in words if w in _COMMON) / len(words)
 
 
-def lite_score(text: str) -> float:
-    """Deterministic, stdlib-only P(AI) heuristic in [0, 1]."""
+# Below this word count the common-word ratio is not a ratio. MEASURED on the stdlib path:
+#   "a" -> 1.0     "the" -> 1.0     "I" -> 1.0      "it is" -> 1.0     "the of and" -> 1.0
+#   "Hello" -> 0.0             "xylophone" -> 0.0
+# The answer is decided entirely by whether the handful of words appear in a 120-word stoplist, and
+# it is returned at FULL confidence in both directions. That is not a weak signal, it is noise
+# reported as certainty, and it reaches the loop as a real detector score.
+_MIN_WORDS_FOR_SIGNAL = 5
+
+
+def lite_score(text: str) -> float | None:
+    """Deterministic, stdlib-only P(AI) heuristic in [0, 1], or None when the text is too short.
+
+    ``None`` is the Detector protocol's "no signal" — ``score_text`` excludes it and reports
+    ``scored: False`` rather than folding a fabricated number into the ensemble max.
+    """
     if not text or not text.strip():
-        return 0.5
+        return None
+    if len(_WORD.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
+        return None
     sents = _sentences(text)
     nonempty = [s for s in sents if _WORD.findall(s)]
     common = _common_ratio(text)          # ~0.3 (varied) .. ~0.6 (formulaic)
@@ -224,8 +239,8 @@ class PerplexityBurstinessDetector:
         n = min(len(nll), len(offsets))
         return nll[:n], offsets[:n]
 
-    def _full_score(self, text: str) -> float:
-        """GPT-2 perplexity + per-sentence perplexity variance -> P(AI).
+    def _full_score(self, text: str) -> float | None:
+        """GPT-2 perplexity + per-sentence perplexity variance -> P(AI), or None on no signal.
 
         Both quantities are read off ONE in-context forward pass over the whole passage.
         The previous implementation re-encoded every sentence **in isolation** and averaged the
@@ -289,7 +304,10 @@ class PerplexityBurstinessDetector:
             return None
         if self._torch_ready():
             try:
-                return clamp01(self._full_score(text))
+                full = self._full_score(text)
+                # None propagates as "no signal" — clamp01(None) would raise, and clamping a
+                # fabricated substitute is exactly what this detector's history warns against.
+                return None if full is None else clamp01(full)
             except Exception as exc:  # model/load failure -> heuristic, but say so (don't fail silently)
                 logger.warning(
                     "perplexity_burstiness full path failed (%s: %s); falling back to lite heuristic.",

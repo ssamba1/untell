@@ -56,10 +56,19 @@ def test_top_caps_flagged_count():
 
 
 def test_single_short_sentence_not_auto_max():
-    # A single short sentence has undefined burstiness; it must not be auto-scored ~AI.
+    """A single short sentence has undefined burstiness; it must not be auto-scored ~AI.
+
+    It now returns None outright rather than a low number. On a handful of words the common-word
+    ratio is decided entirely by a 120-word stoplist and is returned at full confidence in both
+    directions — measured: "a" -> 1.0, "the of and" -> 1.0, "xylophone" -> 0.0. None is the
+    protocol's "no signal", so score_text excludes it and reports scored: False.
+    """
     from untell.detectors.perplexity_burstiness import lite_score
 
-    assert lite_score("The cat sat.") < 0.9
+    assert lite_score("The cat sat.") is None
+    # Long enough to carry signal -> a real number, and not an automatic ~1.0.
+    score = lite_score("The cat sat on the mat and watched the rain fall outside.")
+    assert score is not None and score < 0.9
 
 
 def test_all_three_splitters_are_the_same_implementation():

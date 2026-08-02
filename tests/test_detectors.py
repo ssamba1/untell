@@ -25,9 +25,12 @@ def test_lite_detector_always_available():
 
 def test_scores_in_unit_interval():
     d = PerplexityBurstinessDetector()
-    for text in (AI_TEXT, HUMAN_TEXT, "x"):
+    for text in (AI_TEXT, HUMAN_TEXT):
         s = d.score(text)
-        assert 0.0 <= s <= 1.0
+        assert s is not None and 0.0 <= s <= 1.0
+    # "x" is below the minimum word count: the answer is None (no signal), not a number. It used
+    # to score 0.0 — a confident "definitely human" for a single character.
+    assert d.score("x") is None
 
 
 def test_empty_text_returns_none_not_a_number():
