@@ -17,6 +17,7 @@ import logging
 from eval.baselines import STRATEGIES
 from eval.datasets import load_samples
 from eval.report import render
+from untell.detectors.base import _TIER_RANK
 
 
 def run(dataset: str, n: int, tier: str, threshold: float, strategies: list[str]) -> dict[str, list]:
@@ -39,7 +40,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eval.benchmark", description=__doc__)
     parser.add_argument("--dataset", default="builtin", help="builtin | hc3 | raid")
     parser.add_argument("--n", type=int, default=5, help="number of samples")
-    parser.add_argument("--tier", default="lite", choices=["lite", "full", "heavy"])
+    # Derived from the loader's table rather than restated: this hand-written list omitted
+    # "commercial", which the strategies pass straight through to score_text and which every other
+    # CLI in the tree accepts.
+    parser.add_argument("--tier", default="lite", choices=list(_TIER_RANK))
     parser.add_argument("--threshold", type=float, default=0.30)
     parser.add_argument(
         "--strategies",

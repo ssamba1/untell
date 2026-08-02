@@ -151,6 +151,41 @@ def test_the_tier_vocabulary_is_the_loaders_own():
     assert set(tier_action.choices) == set(_TIER_RANK)
 
 
+def test_no_cli_accepts_a_narrower_tier_vocabulary_than_the_loader():
+    """Every `--tier` in the tree restates the tier list, and a restated vocabulary drifts.
+
+    Two had: `untell-humanness` and `eval/benchmark.py` omitted "commercial", so both exited 2 on a
+    tier their own code passes straight to score_text and that every other CLI accepts.
+
+    Scans the SOURCE rather than building each parser, because most of these still construct their
+    parser inside main(). An earlier version of this test imported the modules and skipped whatever
+    lacked a build_parser() — which skipped 7 of 11, including both files that had the defect. A
+    test that skips the cases it was written for verifies nothing.
+
+    `untell-verify` is allowed to be WIDER: it documents `--tier ''` for commercial-only.
+    """
+    import re
+    from pathlib import Path
+
+    from untell.detectors.base import _TIER_RANK
+
+    root = Path(__file__).resolve().parents[1]
+    # A literal `choices=[...]` list attached to a --tier argument, however the call is wrapped.
+    pattern = re.compile(r'"--tier".{0,400}?choices=\[([^\]]*)\]', re.S)
+    checked, narrow = 0, []
+    for path in sorted(list(root.glob("untell/**/*.py")) + list(root.glob("eval/*.py"))
+                       + list(root.glob("training/*.py"))):
+        for match in pattern.finditer(path.read_text(encoding="utf-8")):
+            checked += 1
+            listed = set(re.findall(r'"([^"]*)"', match.group(1)))
+            missing = set(_TIER_RANK) - listed
+            if missing:
+                narrow.append((path.relative_to(root).as_posix(), sorted(missing)))
+
+    assert checked >= 8, f"only found {checked} --tier choices lists — the scan is wrong"
+    assert not narrow, f"CLIs rejecting tiers the loader supports: {narrow}"
+
+
 def test_the_style_vocabulary_is_the_prompt_tables_own():
     from untell.rewriter.prompts import STYLE_NAMES
     from untell.scripts.run import build_parser

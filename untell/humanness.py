@@ -193,7 +193,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("text", nargs="?", help="text to score")
     parser.add_argument("--file", "-f", help="read text from this file")
-    parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy"])
+    # Derived from the loader's own table, not restated. The hand-written list here omitted
+    # "commercial", so `untell-humanness --tier commercial` exited 2 while every other CLI accepted
+    # it and `humanness(text, tier="commercial")` worked from Python — this function passes the tier
+    # straight to score_text, which has always supported it.
+    from untell.detectors.base import _TIER_RANK
+
+    parser.add_argument("--tier", default="full", choices=list(_TIER_RANK))
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
