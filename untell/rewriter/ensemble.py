@@ -112,4 +112,13 @@ class EnsembleRewriter(Rewriter):
         # rewrite is only adopted when it genuinely helps), take the lowest mean.
         best_max = min(r[0] for r, _ in scored)
         near = [(r, t) for r, t in scored if r[0] <= best_max + _RANK_EPS]
+        # The band is 0.02 wide and nothing kept it off the threshold. A candidate at max 0.295
+        # PASSES a 0.30 gate and one at 0.310 does not, yet they are 0.015 apart, so both land in
+        # the band and the mean tie-break hands back the FAILING one whenever its mean is lower.
+        # MEASURED with exactly those numbers: the failing candidate was selected. Passing is a
+        # step change, not a smooth quantity, so it outranks the noise-band heuristic entirely.
+        # Fourth site of this shape, after the composite intensity sweep, polish adoption, and the
+        # loop's best-of-N tells tie-break.
+        passing = [(r, t) for r, t in near if r[0] < threshold]
+        near = passing or near
         return min(near, key=lambda rt: (rt[0][1], rt[0][0]))[1]

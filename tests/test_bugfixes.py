@@ -425,6 +425,77 @@ def test_ensemble_does_not_trade_away_a_lower_detector(monkeypatch):
     assert out == good  # within the max noise band -> the better-everywhere candidate wins
 
 
+class TestEnsembleBandCannotStraddleTheThreshold:
+    """_RANK_EPS is 0.02 wide and nothing kept it off the pass threshold.
+
+    A candidate at max 0.295 PASSES a 0.30 gate and one at 0.310 does not, yet they are 0.015
+    apart — so both land in the noise band and the mean tie-break returns the FAILING one whenever
+    its mean is lower. Passing is a step change, not a smooth quantity, so it has to outrank the
+    band heuristic. Fourth site of this shape, after the composite intensity sweep, polish
+    adoption, and the loop's best-of-N tells tie-break.
+    """
+
+    PASSING = "passing candidate"
+    FAILING = "failing candidate"
+    ORIGINAL = "orig text here"
+
+    def _rewriter(self, monkeypatch, table):
+        import untell.scripts.score as score_mod
+        from untell.rewriter.ensemble import EnsembleRewriter
+
+        class _M:
+            def __init__(self, out):
+                self._out = out
+
+            def rewrite(self, text, score_result, threshold=0.30):
+                return self._out
+
+        rw = EnsembleRewriter()
+        rw._members = [("p", _M(self.PASSING)), ("f", _M(self.FAILING))]
+
+        def _fake_score(text, tier="lite", threshold=0.30):
+            mx, mn = table[text]
+            return {"max": mx, "mean": mn, "detectors": {"a": mx}, "tier": tier}
+
+        monkeypatch.setattr(score_mod, "score_text", _fake_score)
+        return rw
+
+    def test_a_passing_candidate_beats_a_failing_one_inside_the_band(self, monkeypatch):
+        rw = self._rewriter(monkeypatch, {
+            self.ORIGINAL: (0.90, 0.80),
+            self.PASSING: (0.295, 0.290),  # passes 0.30, worse mean
+            self.FAILING: (0.310, 0.100),  # fails 0.30, better mean
+        })
+        assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.30) == self.PASSING
+
+    def test_the_mean_tie_break_still_applies_when_both_pass(self, monkeypatch):
+        """The band heuristic is right whenever passing does not separate the candidates."""
+        rw = self._rewriter(monkeypatch, {
+            self.ORIGINAL: (0.90, 0.80),
+            self.PASSING: (0.200, 0.190),
+            self.FAILING: (0.210, 0.050),  # also passes; lower mean should win
+        })
+        assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.30) == self.FAILING
+
+    def test_the_mean_tie_break_still_applies_when_neither_passes(self, monkeypatch):
+        rw = self._rewriter(monkeypatch, {
+            self.ORIGINAL: (0.90, 0.80),
+            self.PASSING: (0.700, 0.690),
+            self.FAILING: (0.710, 0.400),  # neither passes; lower mean should win
+        })
+        assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.30) == self.FAILING
+
+    def test_a_higher_threshold_moves_the_decision(self, monkeypatch):
+        """Proof the fix reads the real threshold rather than a constant."""
+        rw = self._rewriter(monkeypatch, {
+            self.ORIGINAL: (0.90, 0.80),
+            self.PASSING: (0.295, 0.290),
+            self.FAILING: (0.310, 0.100),
+        })
+        # At 0.40 both pass, so the mean tie-break takes over and the lower mean wins.
+        assert rw.rewrite(self.ORIGINAL, {"tier": "lite"}, threshold=0.40) == self.FAILING
+
+
 def test_ensemble_declines_to_touch_already_clean_text(monkeypatch):
     """No-harm guarantee: if no member beats the original, the ORIGINAL is returned unchanged.
 
