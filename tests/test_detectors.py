@@ -438,3 +438,64 @@ class TestWindowingCoversTextWithoutSentenceTerminators:
         mixed = iter([None, 0.7, None, None, None, None])
         assert windowed_max(doc, lambda w: next(mixed, None)) == 0.7
         assert windowed_max(doc, lambda w: None) is None
+
+
+class TestDetectorsDoNotFlagHumanWriting:
+    """A detector that flags human prose is worse than useless to the person running it.
+
+    MEASURED on 40 HC3 pairs at the default threshold, before the calibration fixes:
+    fast_detectgpt scored human text at a mean of 0.510 and flagged 92% of it, perplexity_burstiness
+    flagged 32%, and because the ensemble aggregates with `max` the full tier flagged 95% of human
+    documents. The loop then rewrites that text, spending meaning-similarity to fix nothing.
+
+    Nothing in the suite failed. `untell-detector-audit` reported both detectors healthy at AUROC
+    0.999+ the entire time, because AUROC is threshold-free: it asks whether a detector RANKS the
+    classes correctly, which both did perfectly, and cannot see one reporting on a scale that puts
+    ordinary human prose over the line. Fixing them moved AUROC by at most 0.001.
+
+    This guards the property AUROC cannot: at the threshold the product actually ships, human text
+    must come back clean.
+    """
+
+    @staticmethod
+    def _human_probes():
+        from eval.detector_audit import HUMAN_PROBES
+
+        return HUMAN_PROBES
+
+    @pytest.mark.parametrize("tier", ["lite", "full"])
+    def test_human_probes_are_not_flagged(self, tier):
+        from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+
+        probes = self._human_probes()
+        scores = [float(score_text(t, tier=tier)["max"]) for t in probes]
+        flagged = [s for s in scores if s >= DEFAULT_THRESHOLD]
+        # One borderline probe out of five is tolerable; a calibration regression flags four or five.
+        assert len(flagged) <= 1, (
+            f"tier={tier}: {len(flagged)}/{len(probes)} human probes flagged at "
+            f"{DEFAULT_THRESHOLD} (scores {[round(s, 3) for s in scores]}). A detector is reporting "
+            "human writing as machine-generated — check its calibration constants, not its AUROC."
+        )
+
+    @pytest.mark.parametrize("tier", ["lite", "full"])
+    def test_human_probes_score_well_below_ai_probes(self, tier):
+        """Separation must survive the calibration, not just the false-positive rate.
+
+        Asserted on the MEANS with a margin, not as strict separation: five hand-written probes per
+        class are too few for the extremes to be stable, and the audit's own verdicts distinguish
+        OK from OK_SEPARATED for the same reason. Measured here, human max 0.272 sits above AI min
+        0.219 on lite, which is noise at this sample size rather than a broken detector — the 40-pair
+        HC3 run gives AUROC 1.000.
+        """
+        import statistics
+
+        from eval.detector_audit import AI_PROBES
+        from untell.scripts.score import score_text
+
+        human = [float(score_text(t, tier=tier)["max"]) for t in self._human_probes()]
+        ai = [float(score_text(t, tier=tier)["max"]) for t in AI_PROBES]
+        gap = statistics.mean(ai) - statistics.mean(human)
+        assert gap > 0.15, (
+            f"tier={tier}: mean gap {gap:.3f} — human {[round(x, 3) for x in human]} "
+            f"vs ai {[round(x, 3) for x in ai]}"
+        )
