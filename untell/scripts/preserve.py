@@ -206,6 +206,14 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"|xml|sql|go|rs|java|rb|php|c|cpp|hpp|swift|kt)\b"  # main.py
             r"|\b[A-Za-z_]\w*\(\)"  # parse_json()
             r"|\b[a-z]+(?:_[a-z0-9]+)+\b"  # snake_case_identifier
+            # Long CLI flags: --tier, --best-of. A rewrite that turns "Pass --tier full" into "use
+            # the full tier" has silently deleted the instruction. Only the `--x` form, because a
+            # single `-x` collides with hyphenated prose and with "--" used as an em-dash.
+            r"|(?<![\w-])--[A-Za-z][\w-]*"
+            # Environment variables and other SCREAMING_SNAKE identifiers: UNTELL_ENABLE_RADAR.
+            # The underscore is required, so ordinary acronyms (AI, NASA, HTTP) are left rewritable
+            # and are handled by the entity pass instead.
+            r"|\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b"
         ),
     ),
 ]

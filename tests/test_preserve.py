@@ -317,3 +317,63 @@ def test_sentinel_pattern_matches_past_9999_spans():
     assert SENTINEL_RE.findall("⟦HZ0000⟧ ⟦HZ9999⟧ ⟦HZ10000⟧ ⟦HZ123456⟧") == [
         "⟦HZ0000⟧", "⟦HZ9999⟧", "⟦HZ10000⟧", "⟦HZ123456⟧"
     ]
+
+
+class TestFlagsAndEnvVars:
+    """CLI flags and environment variables are identifiers, not prose.
+
+    Technical writing is a plausible target for this tool, and "Pass --tier full" rewritten as "use
+    the full tier" has silently deleted the instruction. Fenced code, inline code, paths and
+    snake_case were already locked; these two were not.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("Pass --tier full to enable the ensemble.", "--tier"),
+            ("Use --best-of 3 for stronger results.", "--best-of"),
+            ("Set UNTELL_ENABLE_RADAR=1 before running.", "UNTELL_ENABLE_RADAR"),
+            ("The UNTELL_LITE_NO_TORCH switch disables torch.", "UNTELL_LITE_NO_TORCH"),
+        ],
+    )
+    def test_locked(self, text, expected):
+        _masked, mapping = lock(text)
+        assert expected in mapping.values(), f"{expected!r} not locked in {text!r}"
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "The result -- surprisingly -- was good.",
+            "A well-known, state-of-the-art approach.",
+            "Everything went well - mostly.",
+        ],
+        ids=["em-dash-substitute", "hyphenated-prose", "single-hyphen"],
+    )
+    def test_prose_hyphens_are_not_mistaken_for_flags(self, text):
+        """Only the `--x` form is matched. A single `-x` collides with hyphenated prose, and "--"
+        used as an em-dash substitute must stay rewritable."""
+        _masked, mapping = lock(text)
+        assert not any(v.startswith("-") for v in mapping.values()), mapping
+
+    def test_plain_acronyms_are_not_locked_by_this_rule(self):
+        """The SCREAMING_SNAKE rule requires an underscore, so ordinary acronyms stay rewritable and
+        are left to the entity pass. Asserted on the rule itself, since NER may lock them anyway."""
+        import re as _re
+
+        from untell.scripts.preserve import _PATTERNS
+
+        screaming = [rx for name, rx in _PATTERNS if name == "code"][-1]
+        for word in ("AI", "NASA", "IBM", "HTTP"):
+            assert not _re.search(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b", word), word
+        assert screaming.search("UNTELL_ENABLE_RADAR")
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "Pass --tier full to enable the ensemble.",
+            "Set UNTELL_ENABLE_RADAR=1 before running.",
+            "The result -- surprisingly -- was good.",
+        ],
+    )
+    def test_round_trip(self, text):
+        assert restore(*lock(text)) == text
