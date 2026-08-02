@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "untell",
   "displayName": "untell",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Humanize AI-generated text via a closed-loop, detector-feedback rewrite. Optimizes against GPTZero, ZeroGPT, Originality.ai and other Turnitin-class checkers while preserving meaning, citations and facts. Research/defensive tool.",
   "author": {
     "name": "ssamba1",

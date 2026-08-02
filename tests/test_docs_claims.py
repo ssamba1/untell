@@ -106,3 +106,30 @@ def test_thresholds_reference_documents_every_gate_the_loop_runs():
         assert not missing, (
             f"the loop's meaning gate runs {sorted(modules)} but {rel} never mentions {missing}"
         )
+
+
+def test_every_declared_version_agrees():
+    """One version, four declarations. They had already drifted.
+
+    `pyproject.toml` and `untell/__init__.py` said 0.3.0 while both plugin manifests said 0.1.0, so
+    anyone installing via the Claude Code marketplace saw a version two minor releases behind the
+    package they were getting. Nothing compared them.
+    """
+    import json
+
+    pyproject = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+    expected = re.search(r'^version = "([^"]+)"', pyproject, re.M).group(1)
+
+    found = {"pyproject.toml": expected}
+
+    init = (REPO / "untell" / "__init__.py").read_text(encoding="utf-8")
+    found["untell/__init__.py"] = re.search(r'__version__ = "([^"]+)"', init).group(1)
+
+    plugin = json.loads((REPO / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    found[".claude-plugin/plugin.json"] = plugin["version"]
+
+    market = json.loads((REPO / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    found[".claude-plugin/marketplace.json"] = market["plugins"][0]["version"]
+
+    disagree = {k: v for k, v in found.items() if v != expected}
+    assert not disagree, f"version is {expected} in pyproject.toml but {disagree}"

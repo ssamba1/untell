@@ -10,7 +10,7 @@
       "name": "untell",
       "source": "./",
       "description": "Humanize AI-generated text via a closed-loop detector-feedback rewrite. Preserves meaning, citations and facts.",
-      "version": "0.1.0",
+      "version": "0.3.0",
       "author": { "name": "ssamba1" },
       "homepage": "https://ssamba1.github.io/untell/",
       "repository": "https://github.com/ssamba1/untell",
