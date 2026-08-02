@@ -219,7 +219,13 @@ def role_swap(a: str, b: str) -> bool | None:
         for s, v, o in tb:
             by_verb_b.setdefault(v, []).append((s, o))
         for s, v, o in ta:
-            if not s or not o:
+            # A triple whose two slots hold the SAME key cannot have been swapped — exchanging
+            # identical arguments is a no-op — but it satisfies `s2 == o and o2 == s` against
+            # itself, so it reported a swap for every candidate. MEASURED on an HC3 paragraph:
+            # ("list", "be", "list") vetoed 9 of 9 rewrites and the loop made no progress at all.
+            # Reachable because copulas constantly take a prepositional complement ("is part OF the
+            # list"), which the prepositional-object fallback now fills the object slot from.
+            if not s or not o or s == o:
                 continue
             for s2, o2 in by_verb_b.get(v, []):
                 if s2 == o and o2 == s:

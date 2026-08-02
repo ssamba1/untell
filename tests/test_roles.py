@@ -203,3 +203,36 @@ class TestPrepositionalObjectSwaps:
         """The prepositional fallback must not turn ordinary adjuncts into false swaps — "in Europe"
         and "by the committee" are not the verb's second argument in the relevant sense."""
         assert role_swap(source, candidate) is not True, label
+
+
+class TestSelfReferentialTripleIsNotASwap:
+    """A triple whose two slots hold the SAME key vetoed every candidate.
+
+    Exchanging identical arguments is a no-op, but ("list", "be", "list") satisfies
+    `s2 == o and o2 == s` against ITSELF, so rule 1 reported a swap for every rewrite. Reachable
+    because copulas constantly take a prepositional complement ("is part OF the list"), which the
+    prepositional-object fallback fills the object slot from.
+
+    MEASURED on a real HC3 paragraph: 9 of 9 candidates vetoed, the loop made zero progress
+    (0.616 -> 0.616, stopped=max_iters). Across 8 paragraphs the loop reached 0.358 mean max P(AI)
+    with the bug and 0.301 without it, and the flagged rate went 50% -> 25%.
+    """
+
+    @pytest.mark.skipif(not available(), reason="spaCy model not installed")
+    def test_identical_slots_do_not_veto(self):
+        src = "The list is part of the list of approved items."
+        assert role_swap(src, "The list forms part of the list of approved entries.") is not True
+
+    @pytest.mark.skipif(not available(), reason="spaCy model not installed")
+    @pytest.mark.parametrize(
+        ("source", "candidate"),
+        [
+            ("The cache invalidated the request.", "The request invalidated the cache."),
+            ("Organizations may benefit from these tools.", "These tools may benefit from organizations."),
+            ("The team depends on the vendor.", "The vendor depends on the team."),
+            ("The rule applies to contractors.", "Contractors apply to the rule."),
+        ],
+    )
+    def test_real_swaps_still_caught(self, source, candidate):
+        """The guard must not weaken detection — only drop the degenerate self-match."""
+        assert role_swap(source, candidate) is True
