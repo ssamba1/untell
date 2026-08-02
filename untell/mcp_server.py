@@ -113,6 +113,17 @@ def _server():
         """
         from untell.rewriter import get_rewriter
 
+        # An unknown style is looked up in the STYLES dict, missed, and silently ignored — so a
+        # caller asked for a voice and got a rewrite with no style applied and nothing saying so.
+        # `untell humanize --style` rejects the same input at parse time (argparse `choices`), and
+        # POST /humanize now returns 422. The vocabulary comes from STYLE_NAMES, the same list this
+        # tool's own docstring is generated from, so the check cannot drift from what is advertised.
+        if style is not None and style not in STYLE_NAMES:
+            return {
+                "error": f"unknown style {style!r} — it would have been silently ignored. "
+                f"Valid styles: {', '.join(STYLE_NAMES)}."
+            }
+
         rw = None
         if rewriter not in _FREE_REWRITERS and rewriter != "auto":
             # An unknown name fell through as None and was then silently auto-selected, so a typo

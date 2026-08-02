@@ -564,6 +564,80 @@ class TestTierIsValidated:
         assert set(schemas["VerifyRequest"]["properties"]["tier"]["enum"]) == set(_TIER_RANK) | {""}
 
 
+class TestStyleIsValidated:
+    """`style` was a bare `str`, and an unknown name is a silent no-op.
+
+    The name is looked up in the STYLES dict, missed, and skipped — so a caller asked for a voice,
+    got HTTP 200, and received a rewrite with no style applied and nothing in the response saying
+    so. `untell humanize --style` rejects the same input at parse time via argparse `choices`.
+    """
+
+    @pytest.mark.parametrize("style", ["bogus", "Casual", "CASUAL", "", "casual "])
+    def test_an_unknown_style_is_rejected(self, style):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post(
+            "/humanize",
+            json={"text": "Some text.", "tier": "lite", "rewriter": "surgical", "style": style},
+        )
+        assert resp.status_code == 422, f"accepted style={style!r}"
+
+    def test_every_real_style_is_accepted(self):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+        from untell.rewriter.prompts import STYLE_NAMES
+
+        client = TestClient(app)
+        for style in STYLE_NAMES:
+            resp = client.post(
+                "/humanize",
+                json={"text": "Some text here.", "tier": "lite", "rewriter": "surgical",
+                      "max_iters": 1, "style": style},
+            )
+            assert resp.status_code == 200, style
+
+    def test_openapi_advertises_every_style(self):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+        from untell.rewriter.prompts import STYLE_NAMES
+
+        schemas = TestClient(app).get("/openapi.json").json()["components"]["schemas"]
+        assert schemas["_Style"]["enum"] == STYLE_NAMES
+
+    def test_the_style_reaches_the_loop_as_a_plain_string(self, monkeypatch):
+        """Downstream keys the STYLES dict on the name; a bare Enum member would miss it and
+        reintroduce exactly the silent no-op this field now prevents."""
+        from fastapi.testclient import TestClient
+
+        import untell.api_server as api
+
+        seen: dict = {}
+        monkeypatch.setattr(
+            api, "untell_text", lambda text, **kw: seen.update(kw) or {"final": text, "post": {"max": 0.1}}
+        )
+        TestClient(api.app).post(
+            "/humanize",
+            json={"text": "Some text.", "tier": "lite", "rewriter": "surgical", "style": "casual"},
+        )
+        assert seen["style"] == "casual"
+        assert type(seen["style"]) is str
+
+    def test_no_style_is_still_allowed(self):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        resp = TestClient(app).post(
+            "/humanize",
+            json={"text": "Some text.", "tier": "lite", "rewriter": "surgical", "max_iters": 1},
+        )
+        assert resp.status_code == 200
+
+
 class TestTierDefaultsMatchTheCLI:
     """The loop OPTIMISES against the tier it is given, so a weaker default is a weaker product.
 

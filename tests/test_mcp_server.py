@@ -138,6 +138,27 @@ class TestMcpToolsActuallyRun:
         assert "error" not in result, result["error"]
         assert result["final"]
 
+    @pytest.mark.parametrize("style", ["bogus", "Casual", "CASUAL", "casual "])
+    def test_an_unknown_style_is_refused_not_silently_dropped(self, style):
+        """An unrecognised name is looked up in STYLES, missed, and skipped — so a caller asked
+        for a voice and got a rewrite with no style applied and nothing saying so. The CLI rejects
+        the same input at parse time and POST /humanize now returns 422."""
+        result = _mcp_tools()["untell"](text=self.TEXT, tier="lite", max_iters=1, style=style)
+        assert "error" in result, result
+        assert "unknown style" in result["error"]
+
+    def test_the_error_lists_the_styles_the_tool_advertises(self):
+        from untell.rewriter.prompts import STYLE_NAMES
+
+        err = _mcp_tools()["untell"](text=self.TEXT, tier="lite", max_iters=1, style="nope")["error"]
+        for name in STYLE_NAMES:
+            assert name in err, name
+
+    def test_a_real_style_still_runs(self):
+        result = _mcp_tools()["untell"](text=self.TEXT, tier="lite", max_iters=1, style="casual")
+        assert "error" not in result, result.get("error")
+        assert result["final"]
+
     def test_unknown_rewriter_names_the_rewriter(self):
         """A typo used to fall through to auto-selection, running a DIFFERENT technique and
         reporting the result as the requested one."""

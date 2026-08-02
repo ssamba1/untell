@@ -33,6 +33,7 @@ import hmac
 import logging
 import os
 from contextlib import asynccontextmanager
+from enum import Enum
 from typing import Literal
 
 from fastapi import FastAPI, Request
@@ -41,6 +42,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from untell._env import load_env
+from untell.rewriter.prompts import STYLE_NAMES
 from untell.scripts.run import untell_text
 from untell.scripts.score import DEFAULT_THRESHOLD, MAX_INPUT_CHARS, score_text
 from untell.scripts.sentences import score_sentences
@@ -141,6 +143,12 @@ _TIER = Literal["lite", "full", "heavy", "commercial"]
 # own CLI accepts — the same cross-surface divergence being fixed here, pointing the other way.
 _VERIFY_TIER = Literal["lite", "full", "heavy", "commercial", ""]
 
+# The CLI has `choices=STYLE_NAMES`. This field was a bare `str`, and an unrecognised name is looked
+# up in the STYLES dict, missed, and silently ignored — so a caller asked for a voice, got HTTP 200,
+# and received a rewrite with no style applied and nothing saying so. Built from STYLE_NAMES rather
+# than restated, so the 14 modes cannot drift out of sync with the CLI or the MCP tool's docstring.
+_Style = Enum("_Style", {name: name for name in STYLE_NAMES}, type=str)
+
 
 class ScoreRequest(BaseModel):
     text: str = _TEXT
@@ -157,7 +165,7 @@ class HumanizeRequest(BaseModel):
     # default fixed below: the CLI was strengthened and the network surfaces were left behind.
     tier: _TIER = "full"
     threshold: float = DEFAULT_THRESHOLD
-    style: str | None = None
+    style: _Style | None = None
     max_iters: int = 5
     # "composite", matching the CLI and the MCP tool. MEASURED: POST /humanize with defaults
     # returned "no rewriter configured" on any install without an API key, because "auto" is not
@@ -349,7 +357,10 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
         body.text,
         tier=body.tier,
         threshold=body.threshold,
-        style=body.style,
+        # `str(...)` on the enum member, not the member itself — downstream does a dict lookup on
+        # STYLES and a bare Enum would miss it, reintroducing the silent no-op this field now
+        # prevents. (`type=str` makes it a str subclass, but the value is what STYLES is keyed on.)
+        style=body.style.value if body.style is not None else None,
         max_iters=body.max_iters,
         rewriter=rw,
         best_of=body.best_of,
