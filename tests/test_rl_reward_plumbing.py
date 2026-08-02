@@ -123,11 +123,31 @@ class TestTrainerDefaults:
         import training.rl_humanizer as rl
 
         seen: dict = {}
-        monkeypatch.setattr(
-            ds, "load_samples", lambda dataset="builtin", n=5: seen.update(dataset=dataset, n=n) or ["x"]
-        )
+
+        def fake(dataset="builtin", n=5, strict=False):
+            seen.update(dataset=dataset, n=n, strict=strict)
+            return ["x"]
+
+        monkeypatch.setattr(ds, "load_samples", fake)
         rl.build_dataset("hc3", n=7)
-        assert seen == {"dataset": "hc3", "n": 7}
+        # `strict` matters as much as the name: a GRPO run reports the dataset it trained on, so a
+        # silent fallback would train on 5 padded paragraphs under a real corpus's name.
+        assert seen == {"dataset": "hc3", "n": 7, "strict": True}
+
+    def test_the_builtin_set_is_not_loaded_strictly(self, monkeypatch):
+        """Strictness is for a named corpus. The built-in set IS the fallback; it cannot fall back."""
+        import eval.datasets as ds
+        import training.rl_humanizer as rl
+
+        seen: dict = {}
+
+        def fake(dataset="builtin", n=5, strict=False):
+            seen.update(strict=strict)
+            return ["x"]
+
+        monkeypatch.setattr(ds, "load_samples", fake)
+        rl.build_dataset("builtin", n=2)
+        assert seen == {"strict": False}
 
 
 @pytest.mark.parametrize(
