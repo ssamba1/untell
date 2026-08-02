@@ -274,6 +274,14 @@ def untell_text(
             # Among candidates within the detector noise band of the best, prefer the fewest AI tells
             # (then lowest score as the final deterministic tiebreak).
             near = [v for v in pool if v[1]["max"] <= min_score + _TELLS_EPS]
+            # Never trade a PASS for a lower tell count. The band is +/- _TELLS_EPS (0.02), so when
+            # the best candidate sits just under the threshold the band straddles it and a
+            # fractionally worse, non-passing candidate with fewer tells wins the tie-break. The
+            # loop then has nothing to stop on and burns every remaining iteration before reporting
+            # max_iters — having had a passing candidate in hand. Identical shape to the polish
+            # adoption bug; the tells preference is only ever a tie-break, never a reason to lose.
+            passing = [v for v in near if _passed(v[1])]
+            near = passing or near
             # Within the band: fewest AI tells, then lowest ensemble MEAN (a candidate that also
             # improves the detectors below the max is genuinely better, and `max` alone is blind to
             # that), then lowest max as the final deterministic tiebreak.

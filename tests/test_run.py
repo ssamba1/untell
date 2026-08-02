@@ -461,3 +461,77 @@ def test_work_still_counts_its_iterations(monkeypatch):
     out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=3, rewriter=_Same(),
                               scrub=False, sim_bar=0.0)
     assert out["iterations"] >= 1
+
+
+def test_tells_tiebreak_never_costs_a_pass(monkeypatch):
+    """The near band is +/- _TELLS_EPS (0.02), so when the best candidate sits just under the
+    threshold the band straddles it — and a fractionally worse, NON-passing candidate with fewer
+    tells wins the tie-break. The loop then has nothing to stop on and burns every remaining
+    iteration before reporting max_iters, having had a passing candidate in hand.
+
+    Identical shape to the polish adoption bug above: a preference that is only meant to break ties
+    was allowed to decide a loss.
+    """
+    import untell.scripts.run as run_mod
+
+    src = "Furthermore, the organization leverages robust methodologies to optimize outcomes."
+    passing = "Moreover, furthermore, the org leverages robust methodologies to optimize outcomes."
+    clean = "The organization uses solid methods to improve outcomes for everyone involved."
+
+    monkeypatch.setattr(
+        run_mod, "score_text", _fixed_score({src: 0.90, passing: 0.28, clean: 0.30}, 0.90)
+    )
+
+    class _TwoDraws:
+        name = "two"
+        deterministic = False
+
+        def __init__(self):
+            self.n = 0
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            self.n += 1
+            return passing if self.n % 2 else clean
+
+    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=4, rewriter=_TwoDraws(),
+                              best_of=2, scrub=False, sim_bar=0.0)
+    assert out["stopped"] == "passed"
+    assert out["post"]["max"] == 0.28
+    assert out["final"].strip() == passing
+
+
+def test_tells_tiebreak_still_applies_when_neither_passes(monkeypatch):
+    """The preference must survive where it is legitimate — among equally non-passing candidates,
+    fewer tells still wins."""
+    import untell.scripts.run as run_mod
+
+    src = "Furthermore, the organization leverages robust methodologies to optimize outcomes."
+    telly = "Moreover, furthermore, it leverages robust methodologies to optimize outcomes daily."
+    cleaner = "The organization uses solid methods to improve outcomes for everyone involved daily."
+
+    monkeypatch.setattr(
+        run_mod, "score_text", _fixed_score({src: 0.90, telly: 0.60, cleaner: 0.61}, 0.90)
+    )
+
+    class _TwoDraws:
+        name = "two"
+        deterministic = False
+
+        def __init__(self):
+            self.n = 0
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score, threshold=0.3):
+            self.n += 1
+            return telly if self.n % 2 else cleaner
+
+    # veto_contradictions=False isolates the tie-break: with the NLI gate live it rejects the
+    # heavily-reworded draw before selection ever sees it, so the test would be measuring the gate.
+    out = run_mod.untell_text(src, tier="lite", threshold=0.30, max_iters=1, rewriter=_TwoDraws(),
+                              best_of=2, scrub=False, sim_bar=0.0, veto_contradictions=False)
+    assert out["final"].strip() == cleaner, "fewer tells should still win among non-passing draws"
