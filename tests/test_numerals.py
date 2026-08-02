@@ -92,3 +92,35 @@ def test_meaning_gate_now_rejects_the_leak():
     good = "Just 7 of the 19 tests passed."
     assert not meaning_preserved(src, bad, similarity(src, bad), strict_sim_bar=0.76)
     assert meaning_preserved(src, good, similarity(src, good), strict_sim_bar=0.76)
+
+
+class TestListMarkersAreNotQuantities:
+    """"1." at the start of a line is document structure, not a fact.
+
+    MEASURED at paragraph scale: a numbered HC3 paragraph rewritten into flowing prose ("There are
+    a few reasons why...") was vetoed for "dropping" the 3 in "\n3. HD channels also require more
+    expensive equipment". Converting a list to prose is a legitimate rewrite and the marker carries
+    no quantity. That single shape was the gate's entire false-veto rate — 2 of 30 rewrites, now 0.
+    """
+
+    def test_list_to_prose_is_not_a_dropped_quantity(self):
+        src = "There are three reasons:\n1. Cost is high.\n2. Speed is low.\n3. HD needs bandwidth."
+        prose = "There are a few reasons: cost is high, speed is low, and HD needs bandwidth."
+        assert numbers_kept(src, prose), missing_numbers(src, prose)
+
+    def test_paren_style_markers_too(self):
+        src = "Steps:\n1) Install it.\n2) Run it."
+        assert numbers_kept(src, "Install it, then run it.")
+
+    def test_real_quantities_inside_a_list_are_still_checked(self):
+        """Only the marker is structure — everything else on the line is still a fact."""
+        src = "Findings:\n1. Only 7 of the 19 tests passed.\n2. Latency rose 12%."
+        assert not numbers_kept(src, "Findings: a few of the 19 tests passed, latency rose 12%.")
+        assert "7" in missing_numbers(src, "Findings: a few of the 19 tests passed, latency rose 12%.")
+        assert numbers_kept(src, "Findings: only 7 of the 19 tests passed; latency rose 12%.")
+
+    def test_a_year_opening_a_line_is_not_a_marker(self):
+        """Capped at two digits so "2024." keeps its number checked; list markers past 99 are rare."""
+        src = "2024. That was the turning point for the project."
+        assert not numbers_kept(src, "That was the turning point.")
+        assert "2024" in missing_numbers(src, "That was the turning point.")

@@ -59,8 +59,20 @@ _WORDS = {
 }
 
 
+# List markers ("1.", "2)", at the start of a line) are document structure, not quantities.
+# MEASURED: a numbered HC3 paragraph rewritten into prose ("There are a few reasons why...") was
+# vetoed for "dropping" the 3 in "\n3. HD channels also require...". Converting a list to flowing
+# prose is a legitimate rewrite — the marker carries no fact — and this was 2 of 30 paragraph-scale
+# rewrites, the gate's entire false-veto rate.
+#
+# Capped at two digits so a line that genuinely opens with a year and a full stop ("2024. That was
+# the turning point.") keeps its number checked; list markers past 99 are vanishingly rare.
+_LIST_MARKER_RE = re.compile(r"(?m)^[ \t]*\d{1,2}[.)](?=\s)")
+
+
 def _numbers(text: str) -> list[str]:
-    return _NUMBER_RE.findall(SENTINEL_RE.sub(" ", text))
+    without_structure = _LIST_MARKER_RE.sub(" ", SENTINEL_RE.sub(" ", text))
+    return _NUMBER_RE.findall(without_structure)
 
 
 def _present(number: str, candidate: str, candidate_lower: str) -> bool:
