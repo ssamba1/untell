@@ -17,8 +17,24 @@ Open **http://localhost:8000/docs** for the interactive API documentation.
 | Env var | Default | Description |
 |---|---|---|
 | `UNTELL_API_KEY` | *(none)* | API key for auth. Unset = open access. |
+| `UNTELL_RATE_LIMIT` | `60` | Requests per 60s per caller. `0` disables. |
 | `UNTELL_HOST` | `0.0.0.0` | Bind address |
 | `UNTELL_PORT` | `8000` | Port |
+
+### Rate limiting
+
+Fixed window, 60 requests per 60 seconds, counted per API key when one is presented and per client
+address otherwise — so one noisy caller cannot exhaust everyone else's budget. Exceeding it returns
+`429` with a `Retry-After` header. `/health`, `/docs`, `/openapi.json` and `/redoc` are exempt;
+rate-limiting a health endpoint takes a service down under its own monitoring.
+
+> **Single process only.** The counter lives in the server process, so behind multiple uvicorn
+> workers each worker has its own and the effective limit is *per worker*. That matches the
+> single-process default here; a horizontally scaled deployment needs a shared store (e.g. Redis)
+> instead.
+
+Request bodies are also bounded — `text` is capped at 50,000 characters (the same limit the scorer
+uses) and anything longer is rejected with `422` rather than accepted and worked on.
 
 ## Endpoints
 
