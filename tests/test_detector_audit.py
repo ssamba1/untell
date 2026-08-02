@@ -168,3 +168,89 @@ def test_near_chance_sentence_row_is_reported_but_not_called_broken():
     assert "x [sentence]" not in broken   # chance-level: reported, not fatal
     assert "y [sentence]" in broken       # a true inversion 36 pairs cannot produce by chance
     assert "z" in broken                  # paragraph rows keep the original, stricter treatment
+
+
+def test_pairs_mode_derives_sentence_probes_from_the_labelled_corpus(monkeypatch):
+    """`--pairs` exists to turn this audit into a real measurement. It replaced the PARAGRAPH
+    probes only, so `--pairs 60` produced a report whose paragraph rows rested on 60 labelled
+    pairs while its sentence rows still rested on six hand-written probes — and those six then
+    printed verdicts (one INVERTED) that real data contradicts.
+
+    Sentence labels are derivable from the same corpus: a sentence lifted from a ChatGPT answer is
+    machine-written. That is exactly how the 0.915/0.995 sentence figures cited in this module were
+    obtained.
+    """
+    import eval.detector_audit as A
+
+    human_para = " ".join(
+        f"This is human sentence number {i} and it is comfortably long enough to count." for i in range(12)
+    )
+    ai_para = " ".join(
+        f"Furthermore, this is generated sentence number {i} with ample length to count." for i in range(12)
+    )
+    monkeypatch.setattr(
+        "eval.datasets.load_pairs", lambda dataset, n: [(human_para, ai_para)] * 3
+    )
+
+    seen: list[tuple[int, int]] = []
+
+    class _Stub:
+        name, tier = "stub", "lite"
+
+        def available(self):
+            return True
+
+        def score(self, text):
+            return 0.9 if "Furthermore" in text else 0.1
+
+    monkeypatch.setattr(A, "_SPECS", [("stub", "builtins", "object")])
+    real_audit = A.audit_detector
+
+    def _spy(name, det, probes=None):
+        if probes:
+            seen.append((len(probes[0]), len(probes[1])))
+        return real_audit(name, _Stub(), probes)
+
+    monkeypatch.setattr(A, "audit_detector", _spy)
+
+    report = A.audit_all(pairs=3)
+
+    assert len(seen) == 2, "expected one paragraph pass and one sentence pass"
+    paragraph_n, sentence_n = seen[0][0], seen[1][0]
+    assert paragraph_n == 3, paragraph_n
+    assert sentence_n > 6, (
+        f"sentence probes still came from the 6 packaged ones (n={sentence_n}) despite --pairs"
+    )
+    assert sentence_n <= A._MAX_SENTENCE_PROBES
+    sentence_row = next(r for r in report["results"] if r.get("granularity") == "sentence")
+    assert sentence_row["n"] == sentence_n
+
+
+def test_pairs_mode_keeps_packaged_sentence_probes_when_too_few_derive(monkeypatch):
+    """Short paragraphs yield too few long-enough sentences to measure anything; falling back to
+    the packaged probes is better than a verdict computed on three samples."""
+    import eval.detector_audit as A
+
+    monkeypatch.setattr("eval.datasets.load_pairs", lambda dataset, n: [("Too short.", "Also short.")])
+
+    seen: list[int] = []
+    real_audit = A.audit_detector
+
+    class _Stub:
+        name, tier = "stub", "lite"
+
+        def available(self):
+            return True
+
+        def score(self, text):
+            return 0.5
+
+    monkeypatch.setattr(A, "_SPECS", [("stub", "builtins", "object")])
+
+    def _spy(name, det, probes=None):
+        seen.append(len(probes[0]) if probes else -1)
+        return real_audit(name, _Stub(), probes)
+
+    monkeypatch.setattr(A, "audit_detector", _spy)
+    A.audit_all(pairs=1)
+    assert seen[1] == len(A.SENTENCE_HUMAN_PROBES), seen

@@ -152,6 +152,14 @@ _SPECS = [
 # for information but must not fail a build.
 SENTENCE_BROKEN_AUROC = 0.20
 
+# Cap on sentences drawn per class when --pairs derives them from the labelled corpus. 30 gives
+# 900 pairs for the AUROC — ample to tell 0.5 from 0.9, which is the distinction these verdicts
+# turn on — against 36 pairs from the packaged probes.
+#
+# Kept deliberately low because runtime here is dominated by `local_judge` at ~3.7s per call, so
+# every extra probe costs two of those. Raising it buys precision this audit does not need.
+_MAX_SENTENCE_PROBES = 30
+
 SENTENCE_HUMAN_PROBES = [
     "I went to the store and forgot the milk again.",
     "The build broke because someone bumped the pinned version.",
@@ -273,9 +281,30 @@ def audit_all(pairs: int = 0, dataset: str = "hc3") -> dict:
             rows.append(audit_detector(key, getattr(mod, cls)(), probes))
         except Exception as exc:
             rows.append({"detector": key, "verdict": f"IMPORT_ERR:{type(exc).__name__}"})
-    # Audit the same detectors on single sentences. Only run against the packaged sentence probes:
-    # a labelled paragraph corpus passed via --pairs says nothing about sentence granularity.
+    # Audit the same detectors on single sentences.
+    #
+    # With --pairs, DERIVE the sentence probes from the same labelled corpus rather than falling
+    # back to the six hand-written ones. The label carries over — a sentence lifted from a ChatGPT
+    # answer is machine-written — and this is exactly how the 0.915 / 0.995 figures cited above
+    # were obtained. Without it, `--pairs 60` produced a report whose paragraph rows rested on 60
+    # labelled pairs while its sentence rows still rested on 6 hand-written probes, and the flag
+    # that exists to turn this into a real measurement silently covered only half the table.
+    #
+    # Sentences under 10 words are dropped: the lite heuristic returns no signal below five, and
+    # short fragments are where the small-sample false alarms above came from.
     sentence_probes = (SENTENCE_HUMAN_PROBES, SENTENCE_AI_PROBES)
+    if probes is not None:
+        from untell.text_split import split_sentences
+
+        def _sentences_from(paragraphs: list[str]) -> list[str]:
+            out: list[str] = []
+            for para in paragraphs:
+                out += [s for s in split_sentences(para) if len(s.split()) >= 10]
+            return out[:_MAX_SENTENCE_PROBES]
+
+        derived = (_sentences_from(probes[0]), _sentences_from(probes[1]))
+        if len(derived[0]) >= 10 and len(derived[1]) >= 10:
+            sentence_probes = derived
     for key, module, cls in _SPECS:
         try:
             mod = __import__(module, fromlist=[cls])
