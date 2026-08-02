@@ -98,8 +98,11 @@ def test_thresholds_reference_documents_every_gate_the_loop_runs():
     modules = set(re.findall(r"from untell\.scripts\.(\w+) import", src))
     assert modules, "no sub-check imports found — has meaning_preserved been restructured?"
 
-    doc = (REPO / "untell" / "references" / "thresholds.md").read_text(encoding="utf-8", errors="replace")
-    missing = sorted(m for m in modules if m not in doc)
-    assert not missing, (
-        f"the loop's meaning gate runs {sorted(modules)} but thresholds.md never mentions {missing}"
-    )
+    # Every document that describes the gate has fallen behind at least once. README's "How it
+    # works" block is the first thing a reader sees, so an omission there is the most visible.
+    for rel in ("untell/references/thresholds.md", "README.md"):
+        doc = (REPO / rel).read_text(encoding="utf-8", errors="replace")
+        missing = sorted(m for m in modules if m not in doc)
+        assert not missing, (
+            f"the loop's meaning gate runs {sorted(modules)} but {rel} never mentions {missing}"
+        )

@@ -138,6 +138,9 @@ pip install -e ".[mcp]" && untell-mcp     # (pip install "untell[mcp]" once on P
     sentences = scripts/sentences.py <text>  # which sentences read as AI (target only these)
     meaning = NLI gate: no contradiction AND bidirectional entailment  (scripts/entailment.py)
               + predicate-argument check: roles not permuted            (scripts/roles.py)
+              + quantity check: every number survives                   (scripts/numerals.py)
+              + certainty check: no hedge dropped, no claim added       (scripts/hedges.py)
+              the last two are stdlib-only and run even with no ML installed
     if max(score) < threshold and sim ok: stop
     Claude rewrites the flagged sentences using the per-detector scores as feedback
       (raise burstiness + perplexity, vary sentence architecture, kill clichés/formulaic
