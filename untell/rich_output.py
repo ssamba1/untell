@@ -86,8 +86,15 @@ def print_humanize_result(
 
     from untell.humanness import classification
 
+    # `classification()` takes a HUMANNESS score in 0-100 (higher = more human); `max` is P(AI) in
+    # 0-1. Passing P(AI) straight in meant every value landed under the bottom band, so the Verdict
+    # row printed "AI" -> "AI" for every input, including a run that took 0.86 down to 0.02. It was
+    # not merely wrong, it was constant — the row carried no information at all.
+    def _verdict(p_ai: float) -> str:
+        return classification((1.0 - p_ai) * 100.0)
+
     table.add_row("P(AI) max", f"{before_max:.2f}", f"{after_max:.2f}", f"[{delta_style}]{delta_str}[/]")
-    table.add_row("Verdict", classification(before_max), classification(after_max), "")
+    table.add_row("Verdict", _verdict(before_max), _verdict(after_max), "")
 
     if "tier" in pre_score:
         table.add_row("Tier", pre_score.get("tier", "?"), post_score.get("tier", "?"), "")
@@ -120,7 +127,10 @@ def print_tells_result(tells: dict):
     header.append(f"({tells.get('tells_per_100w', 0)}/100 words)", style="dim")
     _CONSOLE.print(header)
 
-    if tells.get("burstiness_cv"):
+    # `is not None`, not truthiness: a CV of exactly 0.0 means perfectly uniform sentence lengths —
+    # the single strongest burstiness tell there is — and falsy-zero hid that row precisely when it
+    # mattered most. None still means "undefined" (fewer than two sentences).
+    if tells.get("burstiness_cv") is not None:
         cv = tells["burstiness_cv"]
         bstyle = "red" if tells.get("low_burstiness") else "green"
         _CONSOLE.print(f"Burstiness CV: [{bstyle}]{cv}[/]" + (" [dim](uniform = tell)[/]" if tells.get("low_burstiness") else ""))
