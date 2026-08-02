@@ -153,3 +153,52 @@ def test_loop_never_returns_empty_or_truncated_output(monkeypatch):
     assert final.strip()
     # Allow compression from plainer wording, but not the loss of a third of the document.
     assert len(final) > 0.5 * len(text), f"output truncated: {len(final)} vs {len(text)} chars"
+
+
+class TestRepeatedHumanizationConverges:
+    """Running the loop on its own output must converge, not drift.
+
+    Re-running is ordinary user behaviour ("still flagged, try again"), and the failure it invites
+    is silent: each pass is individually gated for meaning, but nothing checks the composition. A
+    loop that kept finding new rewrites would walk away from the ORIGINAL a little at a time while
+    every single step passed its gate.
+
+    MEASURED on three real HC3 paragraphs, three passes each: pass 1 improves, passes 2 and 3 are
+    bit-identical, and similarity to the original holds at 0.96-0.99 throughout. One document needed
+    two passes (0.558 -> 0.388 -> 0.224) and then froze.
+    """
+
+    AI_TEXT = (
+        "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
+        "Moreover, organizations increasingly leverage these robust technologies to optimize "
+        "operational efficiency. Overall, the transformative impact continues to expand across "
+        "various sectors, and it is important to note that adoption keeps accelerating."
+    )
+
+    def _passes(self, n: int):
+        from untell.scripts.quality import similarity
+        from untell.scripts.run import untell_text
+
+        original = current = self.AI_TEXT
+        out = []
+        for _ in range(n):
+            r = untell_text(current, tier="lite", rewriter="composite", threshold=0.30,
+                            max_iters=2, best_of=2)
+            assert "error" not in r, r.get("error")
+            current = r["final"]
+            out.append((current, similarity(original, current)))
+        return out
+
+    def test_a_second_pass_does_not_drift_from_the_original(self):
+        results = self._passes(3)
+        sims = [s for _, s in results]
+        assert sims[-1] >= sims[0] - 0.05, f"similarity to original decayed across passes: {sims}"
+
+    def test_output_stabilises(self):
+        """Once the loop stops flagging, further passes must be a no-op — not an endless reroll."""
+        texts = [t for t, _ in self._passes(3)]
+        assert texts[-1] == texts[-2], "loop kept rewriting text it had already accepted"
+
+    def test_length_does_not_run_away(self):
+        texts = [t for t, _ in self._passes(3)]
+        assert 0.5 * len(self.AI_TEXT) < len(texts[-1]) < 2.0 * len(self.AI_TEXT)
