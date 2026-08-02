@@ -712,3 +712,50 @@ class TestCompositeDoesNotMutateSharedState:
         )
         rw.rewrite(self.SRC, {"tier": "lite"})
         assert sorted(passed) == [0.4, 0.7, 1.0]
+
+
+class TestSeedingDoesNotTouchTheCallersRng:
+    """`seed=` must make THIS call reproducible, not reseed the whole process.
+
+    `random.seed(seed)` reseeds the module-level generator every other library in the process is
+    also drawing from. Measured before the fix: a caller mid-sequence got 0.701325 where it
+    expected 0.080066. The repo already carried evidence of the fallout — a test in this file seeds
+    the global RNG defensively, with a comment about the outcome depending on "whatever random
+    state the PREVIOUS test happened to leave".
+    """
+
+    SRC = (
+        "Furthermore, the organization leverages robust methodologies to optimize outcomes. "
+        "Moreover, stakeholders utilize comprehensive frameworks to drive innovation forward."
+    )
+
+    def test_callers_stream_is_preserved(self):
+        import random
+
+        random.seed(999)
+        expected = [random.random() for _ in range(3)][1:]
+
+        random.seed(999)
+        random.random()
+        structural_rewrite(self.SRC, intensity=0.7, seed=42)
+        assert [random.random() for _ in range(2)] == expected
+
+    def test_seed_still_makes_the_rewrite_reproducible(self):
+        a = structural_rewrite(self.SRC, intensity=0.7, seed=7)
+        b = structural_rewrite(self.SRC, intensity=0.7, seed=7)
+        assert a == b
+
+    def test_different_seeds_still_differ(self):
+        outs = {structural_rewrite(self.SRC, intensity=1.0, seed=s) for s in range(8)}
+        assert len(outs) > 1, "seeding produces no variation at all"
+
+    def test_unseeded_calls_still_follow_the_global_generator(self):
+        """Restoring state must not break callers that seed globally and pass no seed --
+        several tests in this suite rely on exactly that."""
+        import random
+
+        random.seed(1234)
+        a = structural_rewrite(self.SRC, intensity=1.0)
+        random.seed(1234)
+        b = structural_rewrite(self.SRC, intensity=1.0)
+        assert a == b

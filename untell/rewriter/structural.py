@@ -663,9 +663,22 @@ def structural_rewrite(
     Prose is therefore rewritten a line-block at a time and the original separators are restored
     verbatim.
     """
-    if seed is not None:
-        random.seed(seed)
-    return apply_per_block(text, lambda block: _rewrite_prose(block, intensity=intensity, style=style))
+    run = lambda: apply_per_block(  # noqa: E731 - one expression, used twice below
+        text, lambda block: _rewrite_prose(block, intensity=intensity, style=style)
+    )
+    if seed is None:
+        return run()
+    # `random.seed(seed)` reseeds the PROCESS-GLOBAL generator, so asking this function for a
+    # reproducible rewrite silently reset the caller's own random stream — measured: a caller
+    # mid-sequence got 0.701325 where it expected 0.080066. A library has no business doing that.
+    # Save and restore around the seeded run: seeding still works exactly as documented, and
+    # unseeded calls still follow whatever the caller has seeded globally.
+    state = random.getstate()
+    random.seed(seed)
+    try:
+        return run()
+    finally:
+        random.setstate(state)
 
 
 def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
