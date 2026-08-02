@@ -590,14 +590,40 @@ class TestAnUnmodelledFieldIsAnError(_Unlimited):
     been only partly honoured.
     """
 
-    @pytest.mark.parametrize("path", ["/score", "/humanize", "/tells", "/sentences", "/verify"])
+    @pytest.mark.parametrize(
+        "path", ["/score", "/humanize", "/tells", "/sentences", "/verify", "/ceiling"]
+    )
     def test_an_unknown_field_is_rejected(self, path):
         from fastapi.testclient import TestClient
 
         from untell.api_server import app
 
-        resp = TestClient(app).post(path, json={"text": "Some text.", "nonsense_field": 1})
+        body = {"nonsense_field": 1}
+        if path != "/ceiling":  # the only endpoint that takes no text
+            body["text"] = "Some text."
+        resp = TestClient(app).post(path, json=body)
         assert resp.status_code == 422, path
+
+    def test_every_request_model_forbids_extras(self):
+        """Enumerate the models rather than list paths by hand.
+
+        A hand-written path list is exactly what let CeilingRequest keep inheriting BaseModel: it is
+        the one model with no `text` field, so a mechanical edit keyed on `text` skipped it and no
+        test noticed.
+        """
+        import inspect
+
+        import untell.api_server as api
+        from pydantic import BaseModel
+
+        models = [
+            obj
+            for _, obj in inspect.getmembers(api, inspect.isclass)
+            if issubclass(obj, BaseModel) and obj is not BaseModel and obj.__name__.endswith("Request")
+        ]
+        assert models, "no request models found — the discovery is wrong, not the models"
+        lax = [m.__name__ for m in models if m.model_config.get("extra") != "forbid"]
+        assert not lax, f"these request models silently drop unknown fields: {lax}"
 
     def test_the_error_names_the_offending_field(self):
         from fastapi.testclient import TestClient

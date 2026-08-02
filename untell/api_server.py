@@ -225,7 +225,10 @@ class VerifyRequest(_Request):
     browser: str | None = None
 
 
-class CeilingRequest(BaseModel):
+class CeilingRequest(_Request):
+    # `_Request`, not `BaseModel`. This is the one request model with no `text` field, so it was the
+    # one a mechanical edit over `text: str = _TEXT` missed — and it kept silently dropping unknown
+    # fields after every other endpoint had stopped.
     tier: _TIER = "full"
     threshold: float = DEFAULT_THRESHOLD
     max_iters: int = 5
