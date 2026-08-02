@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from unittest.mock import patch
 
 import pytest
 
@@ -174,3 +175,31 @@ def test_diagnostic_sidecar_keys_are_not_reported_as_checkers(monkeypatch):
 
     r = v.verify("some text here", threshold=0.3, tier="lite")
     assert not any("__" in k for k in r["results"]), r["results"].keys()
+
+
+def test_local_max_is_not_counted_as_its_own_checker():
+    """`local:max (<tier>)` summarises the local detector rows above it — it is not an independent
+    checker, and counting it inflated both sides of the headline: four local detectors with two
+    passing read as "2/5 checkers passed".
+
+    It still gets a row (it is the number the loop drives), and `passes_all` is unaffected either
+    way, since the max is below threshold exactly when every local detector is.
+    """
+    import untell.scripts.verify as v
+
+    fake = {
+        "detectors": {"d1": 0.10, "d2": 0.90},
+        "max": 0.90,
+        "tier": "full",
+        "threshold": 0.30,
+    }
+    # commercial_detectors is imported lazily inside verify(), so patch it at its source module.
+    with patch.object(v, "score_text", return_value=fake), \
+         patch.object(C, "commercial_detectors", return_value=[]):
+        r = v.verify("some text to verify here", tier="full")
+
+    assert r["n_configured"] == 2, f"counted the summary row: {r['configured']}"
+    assert r["n_passing"] == 1
+    assert any(name.startswith("local:max") for name in r["results"]), "the summary row was dropped"
+    assert r["passes_all"] is False
+    assert "1/2 checkers passed" in v._render(r)

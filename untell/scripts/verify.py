@@ -121,13 +121,22 @@ def verify(
         except Exception as exc:
             results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}
 
-    passing = [n for n, r in results.items() if r.get("passes")]
+    # `local:max (<tier>)` is a SUMMARY of the local detector rows above it, not an independent
+    # checker. Counting it inflated both sides of the headline: four local detectors with two
+    # passing were reported as "2/5 checkers passed", and a run with one local detector read as
+    # "1/2". It still gets a row — it is the number the loop drives — but it is excluded from the
+    # tally so the count means "checkers", as the sentence says.
+    #
+    # `passes_all` is unaffected either way: the max is below threshold exactly when every local
+    # detector is, so including it could never change that verdict.
+    checkers = [n for n in names if not n.startswith("local:max ")]
+    passing = [n for n in checkers if results.get(n, {}).get("passes")]
     return {
         "configured": names,
         "threshold": threshold,
         "results": results,
         "passes_all": bool(names) and all(r.get("passes") for r in results.values()),
-        "n_configured": len(names),
+        "n_configured": len(checkers),
         "n_passing": len(passing),
     }
 
