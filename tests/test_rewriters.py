@@ -822,3 +822,93 @@ class TestRewritesIntroduceNoMechanicalDefects:
             if introduced:
                 problems.append((label, sorted(introduced), out[:120]))
         assert not problems, problems
+
+
+class TestTargetedFallsBackInsteadOfDoingNothing:
+    """`targeted` was silently inert whenever no sentence cleared min_score.
+
+    MEASURED on 8 real HC3 AI texts (64 sentences), the two lite paths differ completely:
+        torch-backed lite        32/64 sentences >= 0.30  -> targets normally
+        pure stdlib NO_TORCH=1    0/64 sentences >= 0.30  -> targeted NOTHING
+    and through the loop on 15 real texts, stdlib: 0/15 changed, 0.5679 -> 0.5679, tells
+    0.463 -> 0.463. The cause is a scale mismatch: min_score is an ABSOLUTE 0.30 applied per
+    sentence, while a single sentence scores far below the paragraph containing it (mean 0.326
+    vs 0.619 on the same texts). After the fallback: 15/15 changed, 0.5679 -> 0.2518.
+    """
+
+    class _Inner:
+        name = "inner"
+        calls: list
+
+        def __init__(self):
+            self.calls = []
+
+        def available(self):
+            return True
+
+        def rewrite(self, text, score_result, threshold=0.30):
+            self.calls.append(text)
+            return "WHOLE TEXT REWRITE. Second sentence here."
+
+    def _patch_scores(self, monkeypatch, mapping, default):
+        import untell.scripts.score as score_mod
+
+        def _fake(text, tier="lite", threshold=0.30):
+            m = mapping.get(text.strip(), default)
+            return {"max": m, "mean": m, "detectors": {"d": m}, "tier": tier}
+
+        monkeypatch.setattr(score_mod, "score_text", _fake)
+
+    def test_falls_back_to_whole_text_when_no_sentence_is_targetable(self, monkeypatch, caplog):
+        from untell.rewriter.targeted import TargetedRewriter
+
+        text = "First sentence here. Second sentence here."
+        # Every sentence below min_score, but the document itself is flagged - the stdlib case.
+        self._patch_scores(monkeypatch, {}, 0.10)
+        inner = self._Inner()
+        rw = TargetedRewriter(inner=inner, min_score=0.30)
+        with caplog.at_level("WARNING", logger="untell.rewriter.targeted"):
+            out = rw.rewrite(text, {"tier": "lite"}, 0.30)
+        assert out != text, "returned the input unchanged - the silent no-op is back"
+        assert inner.calls == [text], "inner should have been called once, on the WHOLE text"
+        assert "min_score" in caplog.text, "the fallback must say why it happened"
+
+    def test_no_harm_guarantee_survives_when_sentences_were_targeted(self, monkeypatch):
+        """Tried-and-failed must still return the input - only never-tried falls back."""
+        from untell.rewriter.targeted import TargetedRewriter
+
+        text = "First sentence here. Second sentence here."
+        # Both sentences clear min_score, but the rewrite scores WORSE, so nothing is adopted.
+        self._patch_scores(
+            monkeypatch,
+            {
+                "First sentence here.": 0.90,
+                "Second sentence here.": 0.90,
+                "WHOLE TEXT REWRITE. Second sentence here.": 0.99,
+            },
+            0.99,
+        )
+        inner = self._Inner()
+        rw = TargetedRewriter(inner=inner, min_score=0.30)
+        out = rw.rewrite(text, {"tier": "lite"}, 0.30)
+        assert out == text, "a targeted-but-unimproved text must be returned untouched"
+
+    def test_normal_targeting_path_is_unchanged(self, monkeypatch):
+        """The fallback must not fire when targeting works."""
+        from untell.rewriter.targeted import TargetedRewriter
+
+        text = "First sentence here. Second sentence here."
+        self._patch_scores(
+            monkeypatch,
+            {
+                "First sentence here.": 0.90,
+                "Second sentence here.": 0.05,
+                "WHOLE TEXT REWRITE. Second sentence here.": 0.01,
+            },
+            0.50,
+        )
+        inner = self._Inner()
+        rw = TargetedRewriter(inner=inner, min_score=0.30)
+        out = rw.rewrite(text, {"tier": "lite"}, 0.30)
+        assert "Second sentence here." in out, "the clean sentence must survive byte-identical"
+        assert inner.calls == ["First sentence here."], "only the flagged sentence is rewritten"

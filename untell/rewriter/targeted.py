@@ -17,12 +17,15 @@ locked span falls back to the original.
 
 from __future__ import annotations
 
+import logging
 import re
 from collections import Counter
 
 from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE
 
 from .base import Rewriter
+
+logger = logging.getLogger(__name__)
 
 # Split on sentence-final punctuation followed by whitespace, keeping the delimiter with the sentence.
 _SENT_SPLIT = re.compile(r"(?<=[.!?])(\s+)")
@@ -100,6 +103,7 @@ class TargetedRewriter(Rewriter):
 
         out: list[str] = []
         changed = False
+        targetable = 0
         for sent in sentences:
             body = sent.strip()
             if not body:
@@ -114,6 +118,7 @@ class TargetedRewriter(Rewriter):
             if before < self.min_score:
                 out.append(sent)
                 continue
+            targetable += 1
             try:
                 cand = self._inner.rewrite(body, score_result, threshold).strip()
             except Exception:
@@ -135,7 +140,43 @@ class TargetedRewriter(Rewriter):
             else:
                 out.append(sent)
 
-        return "".join(out) if changed else text
+        if changed:
+            return "".join(out)
+        if targetable == 0:
+            # NOT ONE sentence cleared min_score, so nothing was even attempted — a different
+            # outcome from "tried and could not improve", and previously indistinguishable: both
+            # returned the input and said nothing.
+            #
+            # MEASURED on 8 real HC3 AI texts, 64 sentences, comparing the two lite paths:
+            #     torch-backed lite            32/64 sentences >= 0.30   -> targets normally
+            #     pure stdlib (NO_TORCH=1)      0/64 sentences >= 0.30   -> targets NOTHING
+            # and through the loop on 15 real texts, stdlib: 0/15 texts changed, 0.00 adopted,
+            # score and tells both bit-identical to the input.
+            #
+            # The cause is a scale mismatch, not a bug in any one sentence. `min_score` is an
+            # ABSOLUTE 0.30 applied per sentence, but detector scores on a single sentence run
+            # systematically below scores on the paragraph containing it (mean 0.326 per sentence
+            # against 0.619 per document on the same texts). On the stdlib heuristic the gap is
+            # wide enough that a document at 0.57 contains no sentence above 0.30 at all.
+            #
+            # Falling back to a whole-text rewrite is the same answer this method already gives
+            # for a non-scoreable tier a few lines above: when per-sentence targeting cannot be
+            # done, defer to the inner rewriter and let the OUTER loop select against the real
+            # signal. Silently returning the input is strictly worse than that — `--rewriter
+            # targeted` degrades to `composite` instead of to nothing.
+            logger.warning(
+                "targeted: no sentence scored at or above min_score=%.2f, so per-sentence "
+                "targeting had nothing to work on — falling back to a whole-text rewrite. This is "
+                "expected on the pure-stdlib detector path, where single sentences score far below "
+                "the paragraphs containing them; install .[full] for per-sentence scores that "
+                "separate.",
+                self.min_score,
+            )
+            return self._inner.rewrite(text, score_result, threshold)
+        # Sentences WERE targeted and none improved. Keep the input: that is the no-harm guarantee,
+        # and re-running the same inner rewriter over the whole text would spend meaning on
+        # sentences already judged not worth touching.
+        return text
 
     def _accept_or_keep(self, body: str, score_result: dict, threshold: float, tier: str) -> str:
         """Rewrite one unit, returning the candidate only if it is safe AND better.
