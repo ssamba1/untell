@@ -284,6 +284,12 @@ document.** Those guarantees are covered separately by `tests/test_end_to_end_gu
 runs the real loop over fact-bearing text and asserts every locked span survives byte-exact. Read
 the two together; neither alone describes the system.
 
+Measured at scale rather than left as a pointer: 80 runs over 40 real HC3 paragraphs with
+citations, URLs, quoted dates, currency, emails, phone numbers and ratios spliced in, two seeds
+each — **0 sentinels lost, 0 duplicated, 0 facts altered.** The check is now in the suite over the
+packaged corpora, and it is mutation-verified: making the rewriter drop a locked span, or duplicate
+one, each fails it.
+
 Two honest caveats that keep this from being a "solved" claim:
 
 1. ~~**`fast_detectgpt` did not move** (0.312 → ~0.283 in both runs). The curvature signal is
