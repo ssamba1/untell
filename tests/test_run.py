@@ -634,3 +634,85 @@ class TestStrongerRewriterHint:
         assert "try --rewriter neural" in out
         # Above the output text, where it will actually be read.
         assert out.index("try --rewriter neural") < out.index("--- humanized text ---")
+
+
+class TestTheResultNamesTheFidelityGate:
+    """`quality_metric` names the similarity backend and says nothing about the NLI axis — and the
+    NLI axis is the one that catches inversions.
+
+    MEASURED on "The new build runs faster than the old one." -> "...runs slower...", similarity
+    0.983 against a 0.76 bar:
+
+        NLI available    meaning_preserved -> False   (rejected)
+        NLI unavailable  meaning_preserved -> True    (ADMITTED)
+
+    The result shape was identical either way, so a run on an install without the NLI extra could
+    adopt a meaning-INVERTED rewrite and look exactly like one where the gate was fully active.
+    Same class as `detector_modes` on the score result: a guarantee that depends on an optional
+    dependency has to say whether it was in force.
+    """
+
+    TEXT = "Furthermore, the system leverages robust methodologies to optimize outcomes today."
+
+    def _run(self, **kw):
+        from untell.rewriter import get_rewriter
+        from untell.scripts.run import untell_text
+
+        return untell_text(
+            self.TEXT, tier="lite", threshold=0.30, max_iters=1,
+            rewriter=get_rewriter(prefer="surgical"), **kw
+        )
+
+    def test_the_nli_gate_is_named_when_present(self):
+        import untell.scripts.entailment as ent
+
+        if not ent.available():
+            pytest.skip("NLI model not installed here")
+        assert self._run()["meaning_gate"] == "nli"
+
+    def test_an_absent_nli_model_is_named(self, monkeypatch):
+        import untell.scripts.entailment as ent
+
+        monkeypatch.setattr(ent, "available", lambda: False)
+        assert self._run()["meaning_gate"] == "similarity-only (NLI unavailable)"
+
+    def test_disabling_the_veto_is_named_separately(self):
+        """Deliberately off and unavailable are different facts about the same weaker gate, and a
+        reader needs to know which — one is a choice, the other a missing dependency."""
+        gate = self._run(veto_contradictions=False)["meaning_gate"]
+        assert gate == "similarity-only (veto disabled)"
+
+    def test_the_render_warns_when_the_veto_did_not_run(self, monkeypatch):
+        import untell.scripts.entailment as ent
+        from untell.scripts.run import _render
+
+        monkeypatch.setattr(ent, "available", lambda: False)
+        rendered = _render(self._run())
+        assert "meaning gate: similarity-only" in rendered
+        assert "did NOT run" in rendered
+        assert "inversions" in rendered
+
+    def test_the_render_is_quiet_when_the_gate_is_whole(self):
+        import untell.scripts.entailment as ent
+        from untell.scripts.run import _render
+
+        if not ent.available():
+            pytest.skip("NLI model not installed here")
+        rendered = _render(self._run())
+        assert "meaning gate: nli" in rendered
+        assert "did NOT run" not in rendered
+
+    def test_a_broken_availability_check_reports_unknown_rather_than_raising(self, monkeypatch):
+        """The diagnostic must not be the thing that fails.
+
+        Targets the helper directly: `available()` is consulted by the candidate path too, so
+        patching it to raise would abort the loop before this ever ran — which tests the loop's
+        error handling, not this guard.
+        """
+        import untell.scripts.entailment as ent
+        from untell.scripts.run import _meaning_gate_mode
+
+        monkeypatch.setattr(
+            ent, "available", lambda: (_ for _ in ()).throw(RuntimeError("boom"))
+        )
+        assert _meaning_gate_mode(True) == "unknown"

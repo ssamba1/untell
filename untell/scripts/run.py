@@ -411,10 +411,41 @@ def untell_text(
         "tier": best_score.get("tier", tier),
         "sim_bar": sim_bar,
         "quality_metric": method(),
+        # WHICH meaning gate ran. `quality_metric` names the similarity backend but says nothing
+        # about the NLI axis, and that axis is the one that catches inversions. MEASURED on
+        # "The new build runs faster" -> "...runs slower", similarity 0.983 against a 0.76 bar:
+        #
+        #     NLI available    meaning_preserved -> False   (rejected)
+        #     NLI unavailable  meaning_preserved -> True    (ADMITTED)
+        #
+        # Same result shape either way, so a run on an install without the NLI extra could adopt a
+        # meaning-inverted rewrite and look identical to one where the gate was fully active. Same
+        # class as `detector_modes` on the score result: a guarantee that depends on an optional
+        # dependency has to say whether it was in force.
+        "meaning_gate": _meaning_gate_mode(veto_contradictions),
         "flagged": best_score["flagged"],
         "stopped": stopped,
         **_stronger_rewriter_hint(rw, best_score["flagged"], best_score.get("tier", tier)),
     }
+
+
+def _meaning_gate_mode(veto_contradictions: bool) -> str:
+    """Which fidelity checks were actually in force this run.
+
+    ``"nli"`` — contradiction veto + bidirectional entailment + roles, on top of similarity and the
+    always-on mechanical checks (numbers, hedges).
+    ``"similarity-only"`` — the NLI model is unavailable or the veto was switched off, so fidelity
+    rests on the similarity bar alone. That metric admits inversions: measured 0.983 for
+    "runs faster" -> "runs slower" against a 0.76 bar.
+    """
+    from untell.scripts.entailment import available as _nli_available
+
+    if not veto_contradictions:
+        return "similarity-only (veto disabled)"
+    try:
+        return "nli" if _nli_available() else "similarity-only (NLI unavailable)"
+    except Exception:  # a diagnostic must never break the run it describes
+        return "unknown"
 
 
 # Rewriters measured as unable to clear real AI text at the full tier. Naming them explicitly
@@ -466,6 +497,17 @@ def _render(result: dict) -> str:
     lines.append(f"tier={result['tier']}  iterations={result['iterations']}  stopped={result['stopped']}")
     lines.append(f"max P(AI): {pre['max']:.3f} -> {post['max']:.3f}  (threshold {post['threshold']})")
     lines.append(f"similarity: {result['similarity']:.3f} (bar {result['sim_bar']}, {result['quality_metric']})")
+    gate = result.get("meaning_gate", "unknown")
+    lines.append(f"meaning gate: {gate}")
+    if gate.startswith("similarity-only"):
+        # The similarity bar alone admits inversions — measured 0.983 for "runs faster" ->
+        # "runs slower" against a 0.76 bar. A user reading a passing result deserves to know the
+        # check that would have caught that was not running.
+        lines.append(
+            "  WARNING: the contradiction/entailment veto did NOT run. Similarity alone admits "
+            "meaning inversions (measured 0.983 for \"runs faster\" -> \"runs slower\"). "
+            "Install the NLI extra for the full fidelity gate."
+        )
     lines.append("\nper-detector (pre -> post):")
     for name in pre.get("detectors", {}):
         if "__error" in name:
