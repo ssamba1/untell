@@ -126,7 +126,13 @@ re-run on 12 real HC3 AI paragraphs (`untell-compare --file <corpus> --tier lite
 Three things survive the corpus change, and one does not:
 
 - **Synonym swap barely moves anything.** 0.5631 → 0.5601 is half a percent, and every sample stays
-  flagged. This is the mechanism most free humanizers ship.
+  flagged. This is the mechanism most free humanizers ship. Our own `surgical` row (0.5595) is the
+  same mechanism and lands in the same place — but read it as a measurement of the *detector*, not
+  of the technique. On this path (pure stdlib, no torch) `surgical_substitute` makes **zero
+  substitutions on 16 of 30 real HC3 texts**, because the stdlib heuristic's score is unchanged by
+  a synonym swap, so its "is this candidate better" test can never pass. See
+  `untell/attacks/word_importance.py` for the per-candidate numbers. The practical consequence:
+  `composite` owes essentially all of its zero-dependency strength to its *structural* half.
 - **Back-translation makes the text worse on every axis**, as it did on the demo corpus: it *raises*
   P(AI) above the untouched baseline, *raises* the tell count, and costs the most meaning. On the
   easy corpus its low tell count looked like an advantage; on real text that advantage disappears,
