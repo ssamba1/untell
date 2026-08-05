@@ -34,6 +34,14 @@ ensemble that untell can actually put in its loop.**
 > | built-in sample (Results 1–9) | 37 | 0.859 | **0.154** | **0%** |
 > | real HC3 answers ([Result 11](#result-11--the-ceiling-against-real-ai-text-and-the-content-wall-coming-back)) | 195 | 0.999 | **0.860** | **100%** |
 >
+> **The corpus is not the only thing scoped here — so is the rewriter.** Every number in this
+> document, Result 11 included, was measured with `--rewriter composite`. That is the CLI default
+> and the right thing to characterise, but it is the *middle* rung of the ladder the README
+> documents (`surgical` → `structural` → `composite` → `neural` → `ensemble`/`max`), and the rungs
+> above it have never been run against the real-text corpus. So "the free ceiling is 0.860, flagged
+> 1.00" is precisely a statement about **composite** on **real HC3 answers** — read the wall below
+> as a property of that pairing until something stronger has been measured on the same corpus.
+>
 > Every figure below reproduces exactly as written, and each isolates the defect it was measuring.
 > What none of them is, is a claim about real AI documents. Read
 > [Result 10](#result-10--the-corpus-was-doing-more-work-than-anything-measured-above) and
