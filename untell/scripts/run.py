@@ -216,6 +216,13 @@ def untell_text(
     best_masked, best_score = masked, pre
     iters = 0
     rewrites = 0
+    # `rewrites` counts DRAWS, including every candidate the guards rejected — which is a fair
+    # reading of "rewrites attempted" but not the question a caller is actually asking. MEASURED:
+    # a text the loop could not improve came back byte-identical while the result said
+    # `rewrites: 1` (and would say 3 at the default best_of=3), so the only honest indication that
+    # nothing happened was `similarity: 1.0`, which reads as a *quality* number, not a no-op flag.
+    # This is the same contradiction the `iters` comment below describes, one level up.
+    adopted = 0
     stopped = "max_iters"
     for i in range(1, max_iters + 1):
         if _passed(best_score) and similarity(masked, best_masked) >= sim_bar:
@@ -321,6 +328,8 @@ def untell_text(
                 ),
             )
         if cand_best is not None and cand_best_score["max"] <= best_score["max"]:
+            if cand_best != best_masked:
+                adopted += 1
             best_masked, best_score = cand_best, cand_best_score
         if _passed(best_score):
             stopped = "passed"
@@ -386,7 +395,13 @@ def untell_text(
     return {
         "final": final,
         "iterations": iters,
+        # Draws attempted, INCLUDING candidates the sentinel/meaning/score guards threw away.
         "rewrites": rewrites,
+        # Draws actually taken up, and whether the caller's text changed at all. `rewrites` alone
+        # cannot answer "did anything happen": a rejected draft still counts as an attempt, so an
+        # untouched text reports rewrites=3 at the default best_of.
+        "adopted": adopted,
+        "changed": final.strip() != text.strip(),
         "pre": pre,
         "post": best_score,
         # Report meaning-preservation vs the true final output. Pre-polish, ``best_masked`` restores to
