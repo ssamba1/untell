@@ -238,6 +238,24 @@ class PerplexityBurstinessDetector:
     def available(self) -> bool:  # always — the lite path needs nothing
         return True
 
+    def mode(self) -> str:
+        """Which of this detector's two scoring paths would run: ``"gpt2"`` or ``"stdlib"``.
+
+        The two are not interchangeable and the name ``perplexity_burstiness`` hides which one
+        produced a score. MEASURED on the same 100 held-out HC3 pairs at the shipped 0.30
+        threshold:
+
+            path      FPR     TPR     AUROC    human mean
+            gpt2      6.0%    98.0%   0.9972   0.129
+            stdlib   69.0%    93.0%   0.7545   0.399
+
+        An 11.5x difference in false positives under one label, decided by whether ``torch``
+        happens to be importable. On the stdlib path the average HUMAN paragraph scores 0.399 —
+        above the 0.30 threshold — so at ``--tier lite`` on a clean install "flagged" is close to
+        "flagged everything". Callers that report a verdict should report this alongside it.
+        """
+        return "gpt2" if self._torch_ready() else "stdlib"
+
     def _torch_ready(self) -> bool:
         # UNTELL_LITE_NO_TORCH=1 forces the stdlib heuristic even when torch is importable.
         #

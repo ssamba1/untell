@@ -84,6 +84,60 @@ class TestUnknownTierIsNotSilent:
         assert result["tier"] == "lite"
 
 
+class TestTheResultNamesTheScoringPath:
+    """`perplexity_burstiness` is two detectors under one name, and which ran changes the verdict.
+
+    It silently uses GPT-2 when torch is importable and a stdlib heuristic otherwise. MEASURED on
+    the same 100 held-out HC3 pairs at the shipped 0.30 threshold:
+
+        path      FPR     TPR     AUROC    human mean
+        gpt2      6.0%    98.0%   0.9972   0.129
+        stdlib   69.0%    93.0%   0.7545   0.399
+
+    An 11.5x difference in false positives decided by an optional dependency, reported under the
+    same detector name and the same `tier: "lite"` label. On the stdlib path the average HUMAN
+    paragraph scores 0.399 — above the threshold — so "flagged" there is close to "flagged
+    everything". Same class as the corpus and rewriter fields on the ceiling result: a number whose
+    meaning depends on a hidden variable has to carry it.
+    """
+
+    TEXT = (
+        "Furthermore, artificial intelligence has fundamentally transformed numerous industries. "
+        "Moreover, organizations leverage these technologies to optimize operational efficiency."
+    )
+
+    def test_the_mode_is_reported(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        result = score_text(self.TEXT, tier="lite")
+        assert result["detector_modes"]["perplexity_burstiness"] == "stdlib"
+
+    def test_the_stdlib_path_warns_when_it_is_the_whole_verdict(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        result = score_text(self.TEXT, tier="lite")
+        assert "69% of HUMAN text" in result.get("warning", "")
+
+    def test_the_detector_reports_both_paths(self, monkeypatch):
+        from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+
+        det = PerplexityBurstinessDetector()
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        assert det.mode() == "stdlib"
+        monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+        assert det.mode() in ("gpt2", "stdlib")  # gpt2 only where torch is installed
+
+    def test_a_mode_that_raises_cannot_break_scoring(self, monkeypatch):
+        """A diagnostic must never be able to fail the thing it describes."""
+        import untell.detectors.perplexity_burstiness as pb
+
+        monkeypatch.setattr(
+            pb.PerplexityBurstinessDetector, "mode",
+            lambda self: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+        result = score_text(self.TEXT, tier="lite")
+        assert "max" in result
+        assert "perplexity_burstiness" not in result.get("detector_modes", {})
+
+
 def test_dead_detectors_excluded_not_pinned_at_half(monkeypatch):
     """Regression: a full detector that fails to load must be EXCLUDED from the aggregate,
     never folded in as a neutral 0.5 (the real-world bug where a broken NumPy env pinned max=0.5

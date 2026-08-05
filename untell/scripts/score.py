@@ -191,6 +191,22 @@ def _score_with_detectors(
     }
     if failed:
         result["failed_detectors"] = failed
+    # Some detectors have more than one scoring path under one name, and which one ran changes the
+    # verdict. `perplexity_burstiness` silently uses GPT-2 when torch is importable and a stdlib
+    # heuristic otherwise; MEASURED on 100 held-out HC3 pairs at this threshold, that is FPR 6.0%
+    # against 69.0% — an 11.5x difference decided by an optional dependency, reported under the same
+    # detector name and the same tier label. Record it the way `corpus` and `rewriter` are recorded
+    # on the ceiling result: a number whose meaning depends on a hidden variable has to carry it.
+    modes = {}
+    for d in live:
+        get_mode = getattr(d, "mode", None)
+        if callable(get_mode):
+            try:
+                modes[d.name] = get_mode()
+            except Exception:  # a diagnostic must never break scoring
+                pass
+    if modes:
+        result["detector_modes"] = modes
     if out_of_range_raw:
         result["out_of_range_detectors"] = sorted(out_of_range_raw)
         result["out_of_range_raw"] = out_of_range_raw
@@ -211,6 +227,17 @@ def _score_with_detectors(
         result["warning"] = (
             f"unknown tier '{tier}' — no tier matched, so only the always-on '{effective}' "
             f"detectors ran. Valid tiers: {', '.join(_TIER_RANK)}."
+        )
+    # The lite tier running its stdlib path is the one configuration where "flagged" is close to
+    # meaningless, and nothing said so. MEASURED on 100 held-out HC3 pairs at the 0.30 default:
+    # 69% of HUMAN text flags, against 6% when torch is importable and the same detector uses GPT-2
+    # instead. Only warn when that path is the whole verdict — with other detectors live, the max
+    # is not its to decide.
+    elif effective == "lite" and modes.get("perplexity_burstiness") == "stdlib" and len(numeric) == 1:
+        result["warning"] = (
+            "lite tier on the stdlib path: measured on 100 HC3 pairs at this threshold it flags "
+            "69% of HUMAN text (6% when torch is installed and it uses GPT-2). Treat a flag here "
+            "as a prompt to re-run at --tier full, not as a verdict."
         )
     # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
     elif _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
