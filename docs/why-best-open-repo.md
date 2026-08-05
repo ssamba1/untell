@@ -111,6 +111,34 @@ close the loop against real detectors with a verifier and an install.
 
 ---
 
+## The research systems that use detector feedback (2024-2025)
+
+Surveyed 2026-08-05 and verified against each repo's own README and paper. None of these were in
+the matrix above, and together they are the honest answer to "is the closed loop ours alone" — it
+is not. All three are **research artifacts, not products**: no meaning gate inside the pipeline, no
+numeral or citation preservation, no installable package, no test suite. That is the distinction
+this page rests on, and it is a narrower claim than "nobody else closes the loop".
+
+| repo | venue | how the detector is used | what it reports |
+|---|---|---|---|
+| [`chengez/Adversarial-Paraphrasing`](https://github.com/chengez/Adversarial-Paraphrasing) | NeurIPS 2025 | **Inference-time, per text.** An off-the-shelf instruction LLM paraphrases under a detector's guidance. Training-free. | **−87.88% average TPR@1%FPR** across neural, watermark and zero-shot detectors (−98.96% Fast-DetectGPT, −64.49% RADAR) |
+| [`ColinLu50/Evade-GPT-Detector`](https://github.com/ColinLu50/Evade-GPT-Detector) (SICO) | TMLR 2024 | **Optimisation-time.** A proxy detector scores candidates while in-context examples are iteratively optimised (~6 iterations); the resulting prompt is then applied without further scoring. | claims evasion of "all existing AI-generation text detectors, including GPTZero and the OpenAI official detector", on SQuAD / ELI5 / Yelp |
+| [`zhouying20/HMGC`](https://github.com/zhouying20/HMGC) | COLING 2024 | **Training-time.** Distils labels from the victim detector into a surrogate, then attacks the surrogate. | see [arXiv:2404.01907](https://arxiv.org/abs/2404.01907) |
+
+Three things worth stating plainly:
+
+- **SICO's claim bears on ours.** This page and the README say no free tool beats GPTZero. SICO's
+  paper claims exactly that, in 2024. We have not reproduced it, GPTZero has changed since, and SICO
+  needs a paid LLM to run — but "nobody has claimed it" would be false, and the honest position is
+  that we have not tested it rather than that it does not exist.
+- **HMGC is the approach this repo roadmaps as its own next step** (surrogate distillation — see
+  `training/surrogate.py`). It is not a gap in the argument, it is prior art for our own plan, and
+  citing it is better than presenting the idea as novel.
+- **Only chengez is inference-time per text**, which is the shape our loop has. SICO optimises once
+  and then applies a fixed prompt; HMGC trains. Those are different products with different costs.
+
+---
+
 ## The honest caveats (where we are NOT #1)
 
 1. **Raw evasion-model strength:** StealthRL's GPU-trained RL policy is a stronger *attack model* than
