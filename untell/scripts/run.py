@@ -413,6 +413,48 @@ def untell_text(
         "quality_metric": method(),
         "flagged": best_score["flagged"],
         "stopped": stopped,
+        **_stronger_rewriter_hint(rw, best_score["flagged"], best_score.get("tier", tier)),
+    }
+
+
+# Rewriters measured as unable to clear real AI text at the full tier. Naming them explicitly
+# rather than testing "not neural" so a new backend does not silently inherit the advice.
+_WEAK_ON_REAL_TEXT = frozenset({"composite", "surgical", "structural", "targeted"})
+
+
+def _stronger_rewriter_hint(rw, flagged: bool, tier: str) -> dict:
+    """Tell the caller a stronger free rewriter exists, when the one they used is known to fail.
+
+    MEASURED with `untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3 --max-iters 5` —
+    the SAME six texts through both, pre_mean_max identical at 0.9994, only `--rewriter` changed:
+
+                        post    flagged   hc3_roberta   similarity (mean/worst)
+        composite      0.8052    1.00        0.7559        0.986 / 0.965
+        neural         0.5017    0.50        0.4072        0.941 / 0.884
+
+    The repo documented composite's row as the free tier's ceiling and called hc3_roberta a wall
+    immovable by meaning-preserving rewriting. It is a property of the default rewriter: half the
+    samples clear with a different free one, and the "immovable" detector falls to 0.407. A user
+    who runs the default, gets "still flagged" and is told nothing has no way to discover that.
+
+    Deliberately not a silent default change. `neural` needs the `.[full]` extra (a ~850MB T5
+    download), costs several times the wall-clock, and trades meaning — and it is not uniformly
+    better per detector, losing on roberta_openai (0.300 against composite's 0.124) while winning
+    the `max` that decides the verdict. That is the user's call, so this states the numbers and
+    lets them make it.
+    """
+    if not flagged or tier != "full":
+        return {}
+    name = getattr(rw, "name", None)
+    if name not in _WEAK_ON_REAL_TEXT:
+        return {}
+    return {
+        "suggestion": (
+            f"still flagged with rewriter={name!r}. MEASURED on the same six real AI texts at "
+            f"this tier: composite ends at 0.805 with 0% clearing, neural at 0.502 with 50% "
+            f"clearing (hc3_roberta 0.756 vs 0.407). Try --rewriter neural — it needs the .[full] "
+            f"extra, is several times slower, and trades meaning (similarity ~0.94 against ~0.99)."
+        )
     }
 
 
@@ -432,6 +474,11 @@ def _render(result: dict) -> str:
         q = post["detectors"].get(name)
         if isinstance(p, (int, float)) and isinstance(q, (int, float)):
             lines.append(f"  {name}: {p:.3f} -> {q:.3f}")
+    if result.get("suggestion"):
+        # Above the text, not below it: a run that ends still flagged is the one case where the
+        # next action matters more than the output, and a note under a 200-word paragraph is a
+        # note nobody reads.
+        lines.append("\nNOTE: " + result["suggestion"])
     lines.append("\n--- humanized text ---\n" + result["final"])
     return "\n".join(lines)
 

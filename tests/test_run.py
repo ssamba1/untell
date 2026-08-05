@@ -578,3 +578,59 @@ class TestAdoptedAndChangedAreReported:
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
         r = self._run("Furthermore, this groundbreaking paradigm underscores the pivotal role.", 0.30)
         assert r["adopted"] <= r["rewrites"]
+
+
+class TestStrongerRewriterHint:
+    """A run that ends still flagged with a rewriter measured unable to clear real text should
+    say so, because the user has no other way to discover the alternative.
+
+    MEASURED on the same six real HC3 texts, full tier, best_of=3, max_iters=5, pre identical
+    at 0.9994 for both:
+        composite   post 0.8052   flagged 1.00   hc3_roberta 0.7559   sim 0.986/0.965
+        neural      post 0.5017   flagged 0.50   hc3_roberta 0.4072   sim 0.941/0.884
+    """
+
+    class _RW:
+        def __init__(self, name):
+            self.name = name
+
+    def test_fires_for_a_weak_rewriter_that_ended_flagged(self):
+        from untell.scripts.run import _stronger_rewriter_hint
+
+        for name in ("composite", "surgical", "structural", "targeted"):
+            hint = _stronger_rewriter_hint(self._RW(name), True, "full")
+            assert "suggestion" in hint, f"{name} should suggest a stronger rewriter"
+            assert "neural" in hint["suggestion"]
+
+    def test_silent_when_the_run_passed(self):
+        from untell.scripts.run import _stronger_rewriter_hint
+
+        assert _stronger_rewriter_hint(self._RW("composite"), False, "full") == {}
+
+    def test_silent_on_tiers_the_measurement_does_not_cover(self):
+        """The numbers quoted are full-tier. Repeating them under lite would be a false citation."""
+        from untell.scripts.run import _stronger_rewriter_hint
+
+        for tier in ("lite", "heavy", "commercial", "browser:zerogpt"):
+            assert _stronger_rewriter_hint(self._RW("composite"), True, tier) == {}
+
+    def test_silent_for_rewriters_that_are_already_the_advice(self):
+        from untell.scripts.run import _stronger_rewriter_hint
+
+        for name in ("neural", "ensemble", "max", "mt_pivot", None):
+            assert _stronger_rewriter_hint(self._RW(name), True, "full") == {}
+
+    def test_hint_reaches_the_rendered_output(self):
+        from untell.scripts.run import _render
+
+        result = {
+            "pre": {"max": 0.99, "detectors": {}},
+            "post": {"max": 0.80, "threshold": 0.30, "detectors": {}},
+            "similarity": 0.98, "sim_bar": 0.76, "quality_metric": "cosine",
+            "tier": "full", "iterations": 5, "stopped": "max_iters",
+            "final": "some text", "suggestion": "try --rewriter neural",
+        }
+        out = _render(result)
+        assert "try --rewriter neural" in out
+        # Above the output text, where it will actually be read.
+        assert out.index("try --rewriter neural") < out.index("--- humanized text ---")
