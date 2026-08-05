@@ -175,7 +175,8 @@ Three design choices make it work where blind paraphrasers fail:
 
 1. **It drives the `max` across detectors, not the average** — a rewrite only wins when the *hardest*
    detector is satisfied (genuine multi-detector evasion).
-2. **Every rewrite is gated on meaning by an NLI check, not cosine similarity** — it *refuses* the
+2. **Every rewrite is gated on meaning by an NLI check, not cosine similarity** *(when the NLI
+   stack is installed — see the scope note at the end of this item)* — it *refuses* the
    meaning-mangling that wrecks other tools' output. Cosine similarity alone was measured to fail in
    **both** directions: it passed rewrites that INVERT the source ("runs faster" → "runs slower"
    scores 0.974 against a 0.76 bar) while rejecting 6 of 8 faithful formal→casual rewrites, because
@@ -197,6 +198,16 @@ Three design choices make it work where blind paraphrasers fail:
    faithful set it now rejects **0 of 13**, and on **~70 candidates the composite rewriter actually
    produced** (25 texts × 3 runs, since the rewriter is randomised) it passes **96–100%**, mean 99%
    across runs. The only rejection left is the predicate-argument check, at ~1%.
+
+   ⚠️ **Scope: the NLI and role checks need `torch` + `transformers` (the `.[full]` extra).** On a
+   zero-dependency install `available()` returns False and the gate falls back to the similarity bar
+   alone — the metric this very bullet describes as passing inversions. MEASURED on its own example,
+   "The new build runs faster than the old one." → "...runs slower...", similarity 0.983 against the
+   0.76 bar: **rejected with NLI, ADMITTED without it.** The mechanical checks (retained quantities,
+   retained claim strength) run on every path; contradiction, bidirectional entailment and
+   predicate-argument structure do not. Every loop result now reports `meaning_gate`
+   (`"nli"` / `"similarity-only (NLI unavailable)"` / `"similarity-only (veto disabled)"`) and the
+   CLI warns when the veto did not run, so a passing verdict says which gate produced it.
 
    Both numbers moved because the claim-strength check was over-strict in ways that had nothing to
    do with claim strength: "due to", "will", "set to" and "going to" were classed as *intention*
