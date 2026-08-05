@@ -43,6 +43,15 @@ ensemble that untell can actually put in its loop.**
 > `hc3_roberta` — called "the wall", "barely moves", "immovable by meaning-preserving rewriting"
 > throughout Results 11 and 12 — from 0.998 to **0.407**.
 >
+> Those were single runs each. Replicated at `--repeats 3`
+> ([Result 14](#result-14--result-13-replicated-with-repeats-and-the-variance-it-could-not-see)),
+> the gap survives — 0.398 against a worst within-rewriter spread of 0.191 — and the figures settle
+> at **composite 0.778 ± 0.020, flagged 0.94** against **neural 0.380 ± 0.079, flagged 0.28**, with
+> `hc3_roberta` at **0.710** and **0.248**. So **72% of real AI paragraphs clear** with `neural`,
+> and Result 11's "0 of 20 cleared in any configuration measured" is composite's result, not the
+> free tier's. `neural` is also **4x as variable** as composite, so quote it with repeats or not at
+> all.
+>
 > So the wall those results describe is a property of **composite**, not of the free tier. Read
 > every "ceiling" claim below with that scope attached. The cost is real and is stated in Result
 > 13: meaning similarity 0.986 → 0.941, and `neural` needs the `.[full]` extra.
@@ -833,3 +842,58 @@ The general lesson is the one this document keeps relearning, now applied to a s
 ceiling is a property of the corpus **and of the rewriter**, and a number recorded without both is
 a number that will be read as more general than it is. `untell-ceiling` now records `rewriter` in
 its result and prints it in the banner, next to the corpus.
+
+---
+
+## Result 14 — Result 13 replicated with repeats, and the variance it could not see
+
+Result 13 compared `composite` against `neural` on six HC3 answers in a **single run each**, and its
+own point 3 records run-to-run variance of 0.263 on this corpus. A 0.303 gap measured against 0.263
+of noise is a direction, not yet a finding — and this document has twice learned that lesson the
+hard way (Result 6/7: two 3-repeat runs of the identical command gave 0.247 and 0.330). So the same
+comparison, `--repeats 3` on both sides, 36 loop runs total:
+
+| n=6, `--repeats 3`, full tier, best-of-3, max-iters 5 | `composite` | `neural` |
+|---|---|---|
+| mean max P(AI) | 0.9994 → **0.7779 ± 0.0204** | 0.9994 → **0.3795 ± 0.0794** |
+| flagged rate | 1.00 → **0.944** | 1.00 → **0.278** |
+| per-run means | 0.795, 0.749, 0.790 | 0.359, 0.485, 0.294 |
+| **`hc3_roberta`** | 0.998 → **0.710** | 0.998 → **0.248** |
+| `roberta_openai` | → 0.199 | → 0.220 |
+| `fast_detectgpt` | → 0.300 | → 0.140 |
+| `perplexity_burstiness` | → 0.429 | → 0.239 |
+| meaning similarity | 0.978 mean / 0.921 worst | 0.932 mean / 0.831 worst |
+
+**The gap survives.** 0.398 between the rewriters against a worst within-rewriter spread of 0.191.
+Result 13's conclusion holds: `hc3_roberta` is not immovable, and the wall Results 11 and 12
+describe belongs to `composite`.
+
+Two things one run could not show:
+
+1. **`neural` is four times as variable as `composite`** — spread 0.191 against 0.045, stdev 0.0794
+   against 0.0204. The stronger rewriter is also the less predictable one, and a single `neural` run
+   can land at 0.485, most of the way back to composite's band. That is exactly why Result 13's
+   single-run numbers (composite 0.805, neural 0.502) differ from these; both are draws from those
+   distributions. Quote `neural` with repeats or not at all.
+2. **Most real AI text clears with `neural`** — flagged 0.278, so **72% of samples fall below the
+   0.30 threshold**. Result 11 stated "0 of 20 real AI paragraphs cleared in any configuration
+   measured", which was true of every configuration measured *at the time* and is composite's
+   result, not the free tier's.
+
+### What this does to Result 11
+
+Result 11's headline — "the honest free ceiling against real AI text is 0.86, flagged 1.00" — is
+**composite's** ceiling. The free tier's, measured the same way with the rung above it, is
+**0.38, flagged 0.28**. The reasoning in Result 11 was sound and its control (`roberta_openai`
+0.993 → 0.088) still holds; what was wrong was the scope, in exactly the way Result 10 warned about
+one axis earlier and Result 13 caught on this one.
+
+The cost is real and unchanged from Result 13: similarity 0.978 → 0.932 mean and 0.921 → 0.831
+worst, still clear of the 0.76 bar, plus the `.[full]` extra and several times the wall-clock.
+
+Reproduce:
+
+```bash
+UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3 --max-iters 5 \
+  --repeats 3 --rewriter neural    # and again with --rewriter composite
+```
