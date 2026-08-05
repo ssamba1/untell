@@ -253,3 +253,66 @@ def test_render_survives_a_missing_repeats_key():
         "per_detector_pre": {}, "per_detector_post": {},
     })
     assert "(rewrote 2/2)" in out
+
+
+class TestTheResultNamesItsRewriter:
+    """A ceiling is a property of the rewriter as much as of the corpus.
+
+    MEASURED, same corpus and settings, only --rewriter changed:
+        composite   0.999 -> 0.860   flagged 1.00   hc3_roberta 0.810
+        neural      0.999 -> 0.502   flagged 0.50   hc3_roberta 0.407
+    The repo's headline real-text figure was recorded without naming the rewriter and was then
+    read as a property of the free TIER. `rewriter_available` records only THAT one ran.
+    """
+
+    TEXT = ["Moreover, we leverage robust solutions. Furthermore, this underscores the pivotal role."]
+
+    def test_rewriter_name_is_recorded(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from eval.ceiling import measure_ceiling
+        from untell.rewriter import get_rewriter
+
+        r = measure_ceiling(
+            self.TEXT, tier="lite", rewriter=get_rewriter(prefer="composite"),
+            best_of=1, max_iters=1, corpus="probe",
+        )
+        assert r["rewriter"] == "composite"
+
+    def test_an_alias_is_recorded_as_what_actually_ran(self, monkeypatch):
+        """--rewriter max builds an EnsembleRewriter, so the result must say 'ensemble'.
+
+        Recording the user's string would put two names on one method in the record, which is
+        how 'max 0.748 vs ensemble 0.485' looked like two data points instead of one method's
+        run-to-run spread.
+        """
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from eval.ceiling import measure_ceiling
+        from untell.rewriter import get_rewriter
+
+        for alias in ("max", "ensemble"):
+            r = measure_ceiling(
+                self.TEXT, tier="lite", rewriter=get_rewriter(prefer=alias),
+                best_of=1, max_iters=1, corpus="probe",
+            )
+            assert r["rewriter"] == "ensemble", f"{alias} recorded as {r['rewriter']!r}"
+
+    def test_no_rewriter_records_none_not_a_guess(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from eval.ceiling import measure_ceiling
+
+        r = measure_ceiling(
+            self.TEXT, tier="lite", rewriter=None, best_of=1, max_iters=1, corpus="probe"
+        )
+        assert r["rewriter"] is None
+
+    def test_render_shows_the_rewriter_in_the_header(self, monkeypatch):
+        """The banner is where these numbers are actually read."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from eval.ceiling import _render, measure_ceiling
+        from untell.rewriter import get_rewriter
+
+        r = measure_ceiling(
+            self.TEXT, tier="lite", rewriter=get_rewriter(prefer="composite"),
+            best_of=1, max_iters=1, corpus="probe",
+        )
+        assert "rewriter=composite" in _render(r).splitlines()[0]

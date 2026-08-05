@@ -163,6 +163,17 @@ def measure_ceiling(
         # once written down.
         "corpus": corpus,
         "corpus_mean_words": round(sum(len(t.split()) for t in texts) / len(texts), 1) if texts else None,
+        # WHICH rewriter, for exactly the same reason as `corpus` above, and the omission cost the
+        # same kind of mistake. The repo's headline real-text figure — "0.999 -> 0.860, flagged
+        # 1.00, hc3_roberta barely moves" — was recorded without naming the rewriter that produced
+        # it, and was then read as a property of the free TIER. It is not. Same corpus, same
+        # command, same settings, only `--rewriter` changed:
+        #     composite   0.999 -> 0.860   flagged 1.00   hc3_roberta 0.810
+        #     neural      0.999 -> 0.502   flagged 0.50   hc3_roberta 0.407
+        # `rewriter_available` below records only THAT one ran, never which. Prefer the object's
+        # own `name` over the caller's string so an alias is recorded as what actually ran: "max"
+        # and "ensemble" both build the same EnsembleRewriter.
+        "rewriter": getattr(rewriter, "name", None) or (rewriter if isinstance(rewriter, str) else None),
         "tier": tier,
         "threshold": threshold,
         "max_iters": max_iters,
@@ -187,8 +198,8 @@ def measure_ceiling(
 def _render(r: dict) -> str:
     lines = [
         f"untell inference-only ceiling — tier={r['tier']} threshold={r['threshold']} "
-        f"best_of={r['best_of']} n={r['n']} corpus={r.get('corpus', 'builtin')} "
-        f"({r.get('corpus_mean_words')} words avg)",
+        f"best_of={r['best_of']} n={r['n']} rewriter={r.get('rewriter') or 'unknown'} "
+        f"corpus={r.get('corpus', 'builtin')} ({r.get('corpus_mean_words')} words avg)",
         "",
         f"  pre  flagged rate: {r['pre_flagged_rate']}   mean max P(AI): {r['pre_mean_max']}",
     ]
