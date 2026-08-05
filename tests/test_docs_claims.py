@@ -133,3 +133,41 @@ def test_every_declared_version_agrees():
 
     disagree = {k: v for k, v in found.items() if v != expected}
     assert not disagree, f"version is {expected} in pyproject.toml but {disagree}"
+
+
+class TestTheDemoUiOffersWhatTheToolShips:
+    """docs/demo.html is the shipped front-end for the REST API, and its dropdowns are hand-written.
+
+    The style list had drifted to the first 6 of 14, so eight modes the tool ships were invisible in
+    the UI — the same hand-copied-list drift already fixed in the MCP tool's docstring, which is now
+    generated from STYLE_NAMES. This page is static HTML and cannot generate its options, so the
+    list is pinned here instead.
+    """
+
+    @staticmethod
+    def _options(select_id: str) -> list[str]:
+        html = (REPO / "docs" / "demo.html").read_text(encoding="utf-8")
+        block = re.search(rf'<select id="{select_id}">(.*?)</select>', html, re.S)
+        assert block, f"no <select id={select_id!r}> in demo.html"
+        return [v for v in re.findall(r'<option value="([^"]*)"', block.group(1)) if v]
+
+    def test_every_style_is_offered(self):
+        from untell.rewriter.prompts import STYLE_NAMES
+
+        assert self._options("style") == STYLE_NAMES
+
+    def test_every_offered_style_is_real(self):
+        """The other direction: an option the API now rejects with 422 would be a dead control."""
+        from untell.rewriter.prompts import STYLE_NAMES
+
+        bogus = [s for s in self._options("style") if s not in STYLE_NAMES]
+        assert not bogus, f"demo.html offers styles the API rejects: {bogus}"
+
+    def test_every_offered_rewriter_is_free_and_real(self):
+        """The demo has no API key, so every rewriter it offers must be a free backend."""
+        import untell.api_server as api
+
+        offered = self._options("rewriter")
+        assert offered, "no rewriter options found"
+        unusable = [r for r in offered if r not in api._FREE_REWRITERS]
+        assert not unusable, f"demo.html offers rewriters that need a key: {unusable}"
