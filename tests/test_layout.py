@@ -186,7 +186,37 @@ class TestBlocksExposesTheUnits:
     bullet list, transcript or headings outline has none, so the whole document came back as one
     "sentence" and the worst-sentence list named all of it. Measured at 40 lines each, units before
     the fix: bullets 1, headings 1, transcript 1, semicolon run-on 1 — against 40 for prose.
+
+    Only the MARKER cases are fixed by this, and deliberately so. Re-measured through
+    score_sentences: bullets 4/4, headings 5/5, numbered 4/4 — but a transcript still comes back as
+    one unit and so does a semicolon run-on, because both are genuinely one contiguous prose region:
+    `blocks()` gathers consecutive unmarked lines on purpose, so a soft-wrapped paragraph is not
+    shredded into lines. "This whole run-on sentence reads as AI" is useful advice; "this whole
+    document reads as AI" was not, and that is the difference the fix targets.
     """
+
+    @pytest.mark.parametrize(
+        ("label", "doc", "expected_units"),
+        [
+            ("bullets", "- leverage robust methods\n- utilize frameworks\n- foster collaboration", 3),
+            ("headings", "# Summary\n## Findings\n## Method\n## Conclusion", 4),
+            ("numbered", "1. delve into the data\n2. navigate the landscape\n3. showcase results", 3),
+            # NOT split, on purpose — one contiguous prose region either way.
+            ("transcript", "ALICE: ship it\nBOB: not yet\nALICE: tests passed\nBOB: fine", 1),
+            ("semicolon run-on", "It is robust; it scales; it delivers; it fosters innovation", 1),
+        ],
+    )
+    def test_score_sentences_sees_the_units_a_reader_would(self, label, doc, expected_units):
+        """The end-to-end consequence: the worst-sentence list must name a PART of the document.
+
+        Asserted through score_sentences rather than blocks(), because the docstring's claim is
+        about what per-sentence targeting reports, and a partitioner that is right in isolation is
+        worth nothing if its consumer does not use it.
+        """
+        from untell.scripts.sentences import score_sentences
+
+        result = score_sentences(doc, tier="lite", threshold=0.30)
+        assert len(result["sentences"]) == expected_units, result["sentences"]
 
     def test_markers_become_separate_units_with_their_marker_kept(self):
         from untell.layout import blocks
