@@ -305,6 +305,34 @@ class TestEveryCategoryIsReachable:
         "notability_padding": "It has received independent coverage in national media outlets.",
     }
 
+    # Formatting tells are thresholded, so their examples must clear the floor, and they are not in
+    # _CATEGORIES (they are computed, not findall'd) — hence the separate map.
+    FORMATTING_POSITIVES = {
+        "title_case_heading": "## How To Build A Better Thing\n"
+        "## Why This Really Matters Now\n## What You Should Do Next",
+        "diff_anchored": "+ added this line\n+ added another line",
+    }
+
+    @pytest.mark.parametrize("category", sorted(FORMATTING_POSITIVES))
+    def test_formatting_category_fires_on_its_positive(self, category):
+        text = self.FORMATTING_POSITIVES[category]
+        assert score_tells(text)["by_category"].get(category, 0), f"{category} is dead"
+
+    def test_formatting_tells_ignore_fenced_code(self):
+        """A code block is quoted material, not the author's prose. A shell snippet is full of '+'
+        lines that say nothing about the writing."""
+        fenced = "Some text.\n\n```diff\n+ added\n+ more\n```\n\nMore text."
+        assert score_tells(fenced)["by_category"].get("diff_anchored", 0) == 0
+
+    @pytest.mark.parametrize(
+        "heading",
+        ["## Quick Start", "## Installing the package", "# Overview", "## What is new in 2.0"],
+        ids=["short", "sentence-case", "one-word-ish", "sentence-case-long"],
+    )
+    def test_ordinary_headings_are_not_title_case(self, heading):
+        """Three of these repeated would be flagged if the rule were merely 'capitalised heading'."""
+        assert score_tells(heading * 3)["by_category"].get("title_case_heading", 0) == 0
+
     def test_every_registered_category_has_a_positive_example(self):
         """The map above must cover _CATEGORIES exactly, so a new category cannot skip this test."""
         from untell.scripts.tells import _CATEGORIES

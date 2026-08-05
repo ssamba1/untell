@@ -331,6 +331,80 @@ def _semicolon_crutch(text: str) -> int:
     return n if n >= 2 else 0
 
 
+# --- formatting tells -------------------------------------------------------------------------
+# The catalogue's other half is about how a document is LAID OUT, not what it says. These are
+# thresholded, unlike the prose patterns, because every one of them has an honest use: humans write
+# title-case headings, bulleted definition lists and curly quotes all the time. The threshold is the
+# whole design, so it was measured rather than guessed — 135 human-written markdown documents
+# (site-packages READMEs and dist METADATA, overwhelmingly pre-LLM), share of docs that fire:
+#
+#     candidate            share of human docs firing        shipped
+#     diff_anchored          0.0%                             yes (>=2)
+#     title_case_heading     27.4% -> 8.1% at >=3             yes (>=3)
+#     inline_header_list     13.3% at >=3, 8.1% at >=8        NO
+#     curly_quotes           0.7% at >=4                      NO
+#     fragmented_header      55.6% -> 43.7% at >=3            NO
+#
+# Four of the seven candidates in the public catalogue are rejected here, each on a measurement:
+#
+#   fragmented_header  — human READMEs are naturally header-dense with short sections, so "many
+#       headings with little text between them" describes ordinary documentation, not machine
+#       writing. Nothing survives thresholding.
+#   hyphenated pairs   — human markdown already runs a median 1.71 and a p90 of 4.83 hyphenated
+#       pairs per 100 words. Any threshold clearing that is too high to catch anything.
+#   inline_header_list — "- **Speed**: fast" is standard documentation style. The giveaway is that
+#       the false-positive rate barely responds to the threshold (13.3% at 3, still 8.1% at 8): a
+#       pattern that separated would fall off a cliff, this one just loses recall.
+#   curly_quotes       — on the one corpus where direction is testable it points the WRONG WAY:
+#       200 HC3 prose pairs give human 5, ai 0. That is the em-dash failure mode exactly (see
+#       score_tells), and a punctuation tell that fires on human text degrades the metric it is
+#       supposed to improve. Worth revisiting against a modern-model corpus, since HC3's AI side is
+#       2022-era and later models do emit typographic quotes — but not on today's evidence.
+_FENCE_RE = re.compile(r"(?ms)^```.*?^```")
+_HEADING_RE = re.compile(r"(?m)^#{1,6}\s+(.+)$")
+_DIFF_ANCHOR_RE = re.compile(r"(?m)^\s*\+\s+\w")
+# Skipped when deciding whether a heading is title-cased: capitalising these is what distinguishes
+# real Title Case from a merely capitalised sentence, so counting them would flag both.
+_TITLE_STOPWORDS = frozenset(
+    "a an the and or of to in for with on at by is as from but nor so if then than".split()
+)
+
+
+def _title_case_headings(text: str) -> int:
+    """Headings written in Title Case — "How To Build A Better Thing" (§ formatting).
+
+    The first word is ignored: every heading capitalises it, so it carries no signal. A heading
+    qualifies when at least 80% of the remaining non-stopword tokens are capitalised, and only
+    headings of four or more words are considered — "## Quick Start" is a normal heading.
+    """
+    n = 0
+    for heading in _HEADING_RE.findall(text):
+        words = _WORD.findall(heading)
+        if len(words) < 4:
+            continue
+        rest = [w for w in words[1:] if w.lower() not in _TITLE_STOPWORDS]
+        if rest and sum(w[0].isupper() for w in rest) / len(rest) >= 0.8:
+            n += 1
+    return n
+
+
+def _formatting_tells(text: str) -> dict[str, int]:
+    """Layout-level tells, each counted only once it crosses its measured threshold.
+
+    Fenced code is stripped first. A code block is quoted material, not the author's prose, and a
+    README's shell snippet is full of ``+`` lines and hyphens that mean nothing about the writing.
+    """
+    body = _FENCE_RE.sub("\n", text)
+    out: dict[str, int] = {}
+    for name, count, floor in (
+        ("title_case_heading", _title_case_headings(body), 3),
+        ("diff_anchored", len(_DIFF_ANCHOR_RE.findall(body)), 2),
+    ):
+        if count >= floor:
+            out[name] = count
+    return out
+
+
 def _sentences(text: str) -> list[str]:
     from untell.text_split import split_sentences
 
@@ -412,6 +486,7 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
     semi = _semicolon_crutch(text)
     if semi:
         by_category["semicolon_crutch"] = semi
+    by_category.update(_formatting_tells(text))
 
     total = sum(by_category.values())
     cv = _burstiness_cv(text)
