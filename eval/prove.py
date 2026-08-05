@@ -23,11 +23,24 @@ from untell.scripts.score import DEFAULT_THRESHOLD
 from untell.scripts.verify import verify
 
 
-def prove(text: str, threshold: float = DEFAULT_THRESHOLD, margin: float = 0.10, max_iters: int = 5) -> dict:
+def prove(
+    text: str,
+    threshold: float = DEFAULT_THRESHOLD,
+    margin: float = 0.10,
+    max_iters: int = 5,
+    # 3, matching `untell humanize --best-of`. untell_text's own default is 1, and this function did
+    # not pass one — so the tool whose entire purpose is an honest verdict against the REAL paid
+    # checkers was running the weak single-draw path. MEASURED over 6 HC3 paragraphs when this same
+    # default was fixed on the CLI: best_of=1 left 33% still flagged, best_of=3 left 0%. Here the
+    # cost is not just a worse number: every run spends paid credits, so an understated result is
+    # bought twice.
+    best_of: int = 3,
+) -> dict:
     """Verify original -> untell at commercial tier -> verify result. Returns a structured dict."""
     before = verify(text, threshold=threshold)
     result = untell_text(
-        text, tier="commercial", threshold=threshold, margin=margin, max_iters=max_iters
+        text, tier="commercial", threshold=threshold, margin=margin, max_iters=max_iters,
+        best_of=best_of,
     )
     if "error" in result:
         return {"error": result["error"], "before": before}
@@ -79,6 +92,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--margin", type=float, default=0.10)
     parser.add_argument("--max-iters", type=int, default=5)
+    parser.add_argument(
+        "--best-of", type=int, default=3,
+        help="candidates per iteration (default 3, matching `untell humanize`). Each extra draw "
+        "costs another commercial-tier scoring call, so this is the credits/strength dial.",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -93,7 +111,10 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty input"}))
         return 2
 
-    v = prove(text, threshold=args.threshold, margin=args.margin, max_iters=args.max_iters)
+    v = prove(
+        text, threshold=args.threshold, margin=args.margin, max_iters=args.max_iters,
+        best_of=args.best_of,
+    )
     print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))
     return 0 if v.get("passes_all") else 1
 

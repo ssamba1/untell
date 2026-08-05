@@ -68,3 +68,60 @@ def test_prove_cli_exit_codes(monkeypatch, capsys):
     import json
 
     assert json.loads(capsys.readouterr().out)["passes_all"] is True
+
+
+class TestProveRunsTheStrongLoop:
+    """untell-prove is the "does it actually pass the REAL detectors" button, and every run spends
+    paid credits. It called untell_text without best_of, inheriting that function's default of 1 —
+    the weak single-draw path the CLI moved off after best-of-1 was identified as a root cause of
+    understated evasion (measured: 33% still flagged at 1, 0% at 3).
+
+    An understated result here is bought twice: a worse number, paid for.
+    """
+
+    def test_best_of_defaults_to_three(self):
+        import inspect
+
+        from eval.prove import prove
+
+        assert inspect.signature(prove).parameters["best_of"].default == 3
+
+    def test_it_reaches_the_loop(self, monkeypatch):
+        import eval.prove as prove_mod
+
+        seen: dict = {}
+        monkeypatch.setattr(
+            prove_mod, "untell_text",
+            lambda text, **kw: seen.update(kw) or {"final": text, "iterations": 1},
+        )
+        monkeypatch.setattr(prove_mod, "verify", lambda t, **kw: {
+            "configured": [], "results": {}, "passes_all": False, "n_configured": 0, "n_passing": 0,
+        })
+        prove_mod.prove("some text")
+        assert seen["best_of"] == 3
+        assert seen["tier"] == "commercial"
+
+    def test_the_cli_exposes_and_forwards_it(self, monkeypatch):
+        import eval.prove as prove_mod
+
+        seen: dict = {}
+        monkeypatch.setattr(prove_mod, "prove", lambda text, **kw: seen.update(kw) or {
+            "passes_all": True, "before": {}, "after": {"configured": []}, "humanized": text,
+            "iterations": 0,
+        })
+        prove_mod.main(["--best-of", "5", "--json", "some text"])
+        assert seen["best_of"] == 5
+
+    def test_the_cli_default_matches_untell_humanize(self, monkeypatch):
+        """Read both defaults rather than restating either — that is how they drift apart."""
+        import eval.prove as prove_mod
+        from untell.scripts.run import build_parser
+
+        seen: dict = {}
+        monkeypatch.setattr(prove_mod, "prove", lambda text, **kw: seen.update(kw) or {
+            "passes_all": True, "before": {}, "after": {"configured": []}, "humanized": text,
+            "iterations": 0,
+        })
+        prove_mod.main(["--json", "some text"])
+        cli_default = next(a for a in build_parser()._actions if a.dest == "best_of").default
+        assert seen["best_of"] == cli_default
