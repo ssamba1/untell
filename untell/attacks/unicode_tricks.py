@@ -158,6 +158,20 @@ def scrub_hidden(text: str) -> str:
     characters, then maps a conservative Cyrillic/Greek homoglyph set back to ASCII. Uses NFC (not
     NFKC) and keeps emoji ZWJ sequences, variation selectors, and bidirectional format marks intact,
     so legitimate Unicode (emoji, superscripts, ligatures, RTL layout) is preserved.
+
+    Two transformations this ALSO performs, stated here because a caller reading only this docstring
+    would not expect either and both change the output text:
+
+    - **Exotic spaces are normalised to U+0020**, including NBSP and the ideographic space U+3000.
+      Width-encoded steganography uses exactly those codepoints, so the channel is closed by
+      rewriting rather than deleting — the text still reads the same, but U+00A0 loses its
+      non-breaking behaviour and CJK U+3000 becomes a plain space. See ``_EXOTIC_SPACE``.
+    - **Soft hyphens (U+00AD) are removed** as invisible carriers, so a typographic line-break hint
+      does not survive.
+
+    "Bidirectional format marks intact" means marks doing real layout work. An ORPHAN bidi mark —
+    one with no RTL text to act on — is stripped as a carrier. Verified: RLM/LRM adjacent to Arabic,
+    and RLE/PDF and FSI/PDI pairs, all survive unchanged; an RLM between two ASCII words does not.
     """
     text = _WATERMARK_CHARS.sub("", text)
     text = _EXOTIC_SPACE.sub(" ", text)

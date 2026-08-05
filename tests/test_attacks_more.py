@@ -415,6 +415,57 @@ def test_homoglyph_rate_zero_is_noop():
     assert homoglyph_substitute("hello", rate=0.0) == "hello"
 
 
+class TestScrubDoesWhatItsDocstringSays:
+    """The docstring claims bidi marks are kept and legitimate Unicode survives. Both need the
+    DISCRIMINATING cases, not just the easy ones — the existing coverage tested emoji and
+    superscripts, which no plausible implementation would break."""
+
+    ARABIC = "مرحبا"
+
+    @pytest.mark.parametrize(
+        ("label", "text"),
+        [
+            ("RLM next to RTL", f"مرحبا‏ 123"),
+            ("LRM before RTL", f"abc ‎مرحبا"),
+            ("RLE...PDF embedding", "‫مرحبا‬ end"),
+            ("FSI...PDI isolate", "⁨مرحبا⁩ end"),
+        ],
+    )
+    def test_a_bidi_mark_doing_real_layout_work_survives(self, label, text):
+        assert scrub_hidden(text) == text, label
+
+    def test_an_orphan_bidi_mark_is_stripped(self):
+        """No RTL text to act on, so it is a carrier rather than layout."""
+        assert scrub_hidden("abc‏def") == "abcdef"
+
+    @pytest.mark.parametrize(
+        ("label", "text"),
+        [
+            ("CJK", "中文测试。日本語も。"),
+            ("devanagari", "नमस्ते दुनिया"),
+            ("thai", "สวัสดีชาวโลก"),
+            ("arabic", "مرحبا بالعالم"),
+            ("emoji ZWJ family", "\U0001f468‍\U0001f469‍\U0001f467"),
+        ],
+    )
+    def test_real_scripts_survive_byte_for_byte(self, label, text):
+        assert scrub_hidden(text) == text, label
+
+    @pytest.mark.parametrize(
+        ("label", "space"),
+        [("NBSP", " "), ("narrow NBSP", " "), ("figure", " "),
+         ("en", " "), ("em", " "), ("hair", " "), ("ideographic", "　")],
+    )
+    def test_exotic_spaces_normalise_rather_than_disappear(self, label, space):
+        """Width-encoded steganography uses exactly these. They are rewritten, not deleted, so the
+        text still reads the same — the docstring now says so, because U+00A0 losing its
+        non-breaking behaviour is a real change a caller should expect."""
+        assert scrub_hidden(f"10{space}kg") == "10 kg", label
+
+    def test_a_soft_hyphen_is_removed(self):
+        assert scrub_hidden("encyclo­pedia") == "encyclopedia"
+
+
 def test_scrub_preserves_legitimate_unicode():
     # Regression: scrub must not corrupt legitimate Unicode (emoji ZWJ sequences, variation
     # selectors, superscripts) while still stripping watermark carriers.
