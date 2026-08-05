@@ -250,33 +250,40 @@ async function humanize() {
   btn.textContent = 'Processing...';
 
   try {
+    // POST and RAISE on any error the API can return. Two shapes exist: the endpoints' own
+    // {"error": ...} and FastAPI's validation {"detail": [...]}, which arrives with HTTP 422 for a
+    // rejected tier, style or unknown field. Only the first was ever checked, so a 422 fell through
+    // with `final` undefined, the next call posted `text: undefined`, and the user was shown
+    // "NaN%" instead of the reason.
+    const postJSON = async (path, payload) => {
+      const res = await fetch(`${API}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      let data;
+      try { data = await res.json(); } catch { data = {}; }
+      const fail = (msg) => { const err = new Error(msg); err.fromApi = true; throw err; };
+      if (data && data.error) fail(data.error);
+      if (!res.ok) {
+        const d = data && data.detail;
+        fail(Array.isArray(d)
+          ? d.map(e => `${(e.loc || []).slice(1).join('.') || 'request'}: ${e.msg}`).join('; ')
+          : (typeof d === 'string' ? d : `${path} failed (HTTP ${res.status})`));
+      }
+      return data;
+    };
+
     // First score the original
-    const preRes = await fetch(`${API}/score`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: input, tier: 'lite' })
-    });
-    const pre = await preRes.json();
+    const pre = await postJSON('/score', { text: input, tier: 'lite' });
 
     // Then humanize
     const body = { text: input, tier: 'lite', rewriter };
     if (style) body.style = style;
-    const hRes = await fetch(`${API}/humanize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const h = await hRes.json();
-
-    if (h.error) { error.textContent = h.error; btn.disabled = false; btn.textContent = 'Humanize ✦'; return; }
+    const h = await postJSON('/humanize', body);
 
     // Score the result
-    const postRes = await fetch(`${API}/score`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: h.final || h.text || h.result, tier: 'lite' })
-    });
-    const post = await postRes.json();
+    const post = await postJSON('/score', { text: h.final || h.text || h.result, tier: 'lite' });
 
     const beforePct = (pre.max * 100).toFixed(0);
     const afterPct = (post.max * 100).toFixed(0);
@@ -305,11 +312,14 @@ async function humanize() {
     document.getElementById('diffOutput').innerHTML = simpleDiff(input, final);
 
   } catch (e) {
-    error.innerHTML =
-      'Could not reach the untell API at <code>' + API + '</code>. ' +
-      'This page is a front-end for the REST API — it does not score text in the browser. ' +
-      'Start it with <code>pip install -e ".[server]" &amp;&amp; untell-server</code>, then reload as ' +
-      '<code>demo.html?api=http://localhost:8000</code>. (' + e.message + ')';
+    // The API ANSWERING with an error is not the API being unreachable. Telling a user to start the
+    // server when it already replied 422 sends them to fix the wrong thing.
+    error.innerHTML = e.fromApi
+      ? 'The API rejected this request: ' + escapeHtml(e.message)
+      : 'Could not reach the untell API at <code>' + API + '</code>. ' +
+        'This page is a front-end for the REST API — it does not score text in the browser. ' +
+        'Start it with <code>pip install -e ".[server]" &amp;&amp; untell-server</code>, then reload as ' +
+        '<code>demo.html?api=http://localhost:8000</code>. (' + escapeHtml(e.message) + ')';
   }
   btn.disabled = false;
   btn.textContent = 'Humanize ✦';
