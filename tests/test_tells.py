@@ -269,3 +269,64 @@ class TestSignpostingCliche:
         """Overlapping patterns must not double-count — the span resolver keeps the longest match."""
         r = score_tells("It is important to note that this matters.")
         assert r["tells"] == 1
+
+
+class TestEveryCategoryIsReachable:
+    """Every registered category must fire on a known positive.
+
+    MEASURED FAILURE this guards against: six categories shipped with a stray control character
+    where a ``\b`` word boundary was intended, so their patterns could never match anything. They
+    scored zero false positives on 200 real human texts — because they matched no text at all. A
+    zero is not evidence of precision unless the pattern is known to fire somewhere.
+    """
+
+    POSITIVES = {
+        "ai_vocab": "We leverage a robust and seamless framework.",
+        "formulaic_transition": "Moreover, the results were clear.",
+        "steering_opener": "Interestingly, nobody had checked.",
+        "negated_contrast": "It is not just a tool, it is a philosophy.",
+        "participial_trailer": "Sales rose again, underscoring the shift.",
+        "vague_attribution": "Industry reports suggest the trend will hold.",
+        "cliche": "It is important to note that timing matters.",
+        "sycophancy": "Great question! Let me explain.",
+        # NOT "In conclusion" — that is a cliche. meta_closer is the assistant sign-off.
+        "meta_closer": "I hope this helps! Let me know if you have questions.",
+        "chatbot_artifact": "As an AI language model, I cannot browse the web.",
+        # NOT "boasts" — it is in _AI_VOCAB too, and the span resolver awards it there.
+        "inflated_copula": "The report serves as a foundation for the review.",
+        "hedge_stacking": "It may perhaps possibly be somewhat useful.",
+        "false_range": "Everything from marketing to quantum physics benefits.",
+        "markdown_artifact": "## Key Takeaways\nThe project shipped.",
+        "filler_phrase": "Due to the fact that costs rose, we paused.",
+        "aphorism": "Data is the new oil for modern business.",
+        "rhetorical_opener": "Here's the thing: nobody read the spec.",
+        "cutoff_disclaimer": "As of my last training update, the figure was unclear.",
+        "challenges_section": "The project faces several challenges going forward.",
+        "notability_padding": "It has received independent coverage in national media outlets.",
+    }
+
+    def test_every_registered_category_has_a_positive_example(self):
+        """The map above must cover _CATEGORIES exactly, so a new category cannot skip this test."""
+        from untell.scripts.tells import _CATEGORIES
+
+        registered = {name for name, _ in _CATEGORIES}
+        assert registered == set(self.POSITIVES), (
+            f"missing example for {registered - set(self.POSITIVES)}; "
+            f"stale example for {set(self.POSITIVES) - registered}"
+        )
+
+    @pytest.mark.parametrize("category", sorted(POSITIVES))
+    def test_category_fires_on_its_positive(self, category):
+        text = self.POSITIVES[category]
+        got = score_tells(text)["by_category"].get(category, 0)
+        assert got, f"{category} matched nothing in {text!r} — pattern is dead"
+
+    def test_no_stray_control_characters_in_source(self):
+        """A ``\b`` written into a non-raw string becomes U+0008 and silently kills the pattern."""
+        from pathlib import Path
+
+        import untell.scripts.tells as mod
+
+        raw = Path(mod.__file__).read_bytes()
+        for ctrl in (8, 11, 12):
+            assert bytes([ctrl]) not in raw, f"control byte {ctrl} in tells.py"
