@@ -34,13 +34,18 @@ ensemble that untell can actually put in its loop.**
 > | built-in sample (Results 1–9) | 37 | 0.859 | **0.154** | **0%** |
 > | real HC3 answers ([Result 11](#result-11--the-ceiling-against-real-ai-text-and-the-content-wall-coming-back)) | 195 | 0.999 | **0.860** | **100%** |
 >
-> **The corpus is not the only thing scoped here — so is the rewriter.** Every number in this
-> document, Result 11 included, was measured with `--rewriter composite`. That is the CLI default
-> and the right thing to characterise, but it is the *middle* rung of the ladder the README
-> documents (`surgical` → `structural` → `composite` → `neural` → `ensemble`/`max`), and the rungs
-> above it have never been run against the real-text corpus. So "the free ceiling is 0.860, flagged
-> 1.00" is precisely a statement about **composite** on **real HC3 answers** — read the wall below
-> as a property of that pairing until something stronger has been measured on the same corpus.
+> **The corpus is not the only thing scoped here — so is the rewriter, and this one turned out to
+> matter just as much.** Every number in this document, Result 11 included, was measured with
+> `--rewriter composite`: the CLI default, but the *middle* rung of the ladder the README documents
+> (`surgical` → `structural` → `composite` → `neural` → `ensemble`/`max`). Running the rung above
+> it on the same six texts ([Result 13](#result-13--the-wall-is-the-rewriter-not-the-free-tier))
+> moves the headline from **0.805, flagged 1.00** to **0.502, flagged 0.50**, and takes
+> `hc3_roberta` — called "the wall", "barely moves", "immovable by meaning-preserving rewriting"
+> throughout Results 11 and 12 — from 0.998 to **0.407**.
+>
+> So the wall those results describe is a property of **composite**, not of the free tier. Read
+> every "ceiling" claim below with that scope attached. The cost is real and is stated in Result
+> 13: meaning similarity 0.986 → 0.941, and `neural` needs the `.[full]` extra.
 >
 > Every figure below reproduces exactly as written, and each isolates the defect it was measuring.
 > What none of them is, is a claim about real AI documents. Read
@@ -773,3 +778,58 @@ reaches 0.371 from the one that stays at 0.999, so there is no honest warning to
 **None of the ten cleared**, which is Result 11's figure reproduced at a third setting (n=8
 `max_iters=5`, n=2 `max_iters=4`, n=10 `max_iters=3`): 0 out of 20 real AI paragraphs cleared the
 0.30 threshold in any configuration measured.
+
+---
+
+## Result 13 — the wall is the *rewriter*, not the free tier
+
+Every result above, Results 11 and 12 included, was measured with `--rewriter composite`. Composite
+is the CLI default and the right thing to characterise, but it is the **middle** rung of the ladder
+the README documents (`surgical` → `structural` → `composite` → `neural` → `ensemble`/`max`), and
+nobody had run the rungs above it against the real-text corpus. The result dict recorded
+`rewriter_available: true` and never *which* — so "0.999 → 0.860, hc3_roberta barely moves, this is
+a wall not variance" was written down with no record of the one variable it turns out to depend on.
+
+Same six HC3 answers through both, same command, same settings. `pre_mean_max` is identical to four
+decimals (0.9994), so this is a controlled comparison and not a corpus difference:
+
+```bash
+UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3 --max-iters 5 \
+  --rewriter composite   # and again with --rewriter neural
+```
+
+| | `composite` | `neural` |
+|---|---|---|
+| mean max P(AI) | 0.9994 → **0.8052** | 0.9994 → **0.5017** |
+| flagged rate | 1.00 → **1.00** | 1.00 → **0.50** |
+| **`hc3_roberta`** | 0.998 → **0.7559** | 0.998 → **0.4072** |
+| `roberta_openai` | → **0.1237** | → 0.3003 |
+| `fast_detectgpt` | → 0.3168 | → **0.2007** |
+| `perplexity_burstiness` | → 0.4188 | → **0.3265** |
+| meaning similarity | **0.986** mean / **0.965** worst | 0.941 mean / 0.884 worst |
+
+**`hc3_roberta` is not immovable.** Results 11 and 12 called it the wall — "barely moves",
+"the loop is being asked to move the one signal a meaning-preserving rewrite may not change". On the
+same texts a different *free* rewriter takes it from 0.998 to 0.407, and half the samples clear the
+threshold where composite cleared none in any configuration previously measured.
+
+Three things this does **not** say, stated because the earlier results were over-read in exactly
+these ways:
+
+1. **It is not free.** Meaning similarity drops from 0.986 to 0.941 mean and 0.965 to 0.884 worst —
+   still clear of the 0.76 bar, but a real cost, and `neural` needs the `.[full]` extra (~850MB T5)
+   and several times the wall-clock. The CLI now prints the trade when a run ends flagged rather
+   than changing the default silently.
+2. **It is not uniformly better.** `neural` *loses* on `roberta_openai` (0.300 against composite's
+   0.124) and wins on the other three. It wins the `max`, which is what decides the verdict, but a
+   per-detector reading shows a trade rather than a dominance.
+3. **It does not rank the strong rewriters against each other.** An earlier n=3 run gave
+   `neural` 0.322, `ensemble` 0.485 and `max` 0.748 — but `max` **is** `ensemble` (the same
+   `EnsembleRewriter` object; there is no `MaxRewriter`), so that 0.263 spread is one method's
+   run-to-run variance, and it is *wider* than the gap it appeared to establish. Ranking `neural`
+   against `ensemble` needs `--repeats ≥ 3` at n ≥ 8, which has not been run.
+
+The general lesson is the one this document keeps relearning, now applied to a second axis: a
+ceiling is a property of the corpus **and of the rewriter**, and a number recorded without both is
+a number that will be read as more general than it is. `untell-ceiling` now records `rewriter` in
+its result and prints it in the banner, next to the corpus.
