@@ -486,8 +486,45 @@ def _match_case(original: str, replacement: str) -> str:
     return replacement
 
 
+# The loop's own detector-noise band (``run.py::_TELLS_EPS``). A candidate whose score sits inside
+# it is not measurably worse on evasion, so trading it for strictly fewer catalogued tells is the
+# same bargain the loop already makes when breaking ties between best-of-N drafts.
+_TELLS_EPS = 0.02
+
+
+def _tell_count(text: str) -> int:
+    from untell.scripts.tells import score_tells
+
+    return score_tells(text).get("tells", 0)
+
+
+def _tell_ranks(text: str) -> list[tuple[str, int]]:
+    """Words worth swapping because swapping one removes a catalogued tell, most-gain first.
+
+    Detector-independent by construction, which is the point: on the stdlib path the detector has
+    no usable per-word gradient, and at full tier it has one that buys nothing for this operation.
+    The gain is measured with the word's FIRST synonym as a probe — enough to tell whether the word
+    is carrying a tell at all, without scoring every synonym of every word up front.
+    """
+    base = _tell_count(text)
+    ranks: list[tuple[str, int]] = []
+    for word in dict.fromkeys(m.group(0) for m in _WORD.finditer(text)):
+        syns = synonyms(word)
+        if not syns:
+            continue
+        gain = base - _tell_count(substitute_once(text, word, syns[0]))
+        if gain > 0:
+            ranks.append((word, gain))
+    ranks.sort(key=lambda wg: (-wg[1], wg[0]))  # deterministic: most gain, then alphabetical
+    return ranks
+
+
 def surgical_substitute(
-    text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, max_subs: int = 8
+    text: str,
+    tier: str = "lite",
+    threshold: float = DEFAULT_THRESHOLD,
+    max_subs: int = 8,
+    prefer_tells: bool = False,
 ) -> dict:
     """Swap the highest-importance words for score-lowering synonyms. Returns text + stats.
 
@@ -517,12 +554,30 @@ def surgical_substitute(
 
     * it is close to inert on the zero-dependency path, which is exactly the path the free-ceiling
       measurements advertise as "$0, no key, no model download";
-    * the same substitutions that the detector cannot see DO remove catalogued tells. Ranking by
-      tell-removal instead of by deletion-importance, and accepting a swap that leaves the score
-      within the loop's own 0.02 noise band, takes tells/100w from 0.571 to 0.233 rather than to
-      0.458, at a marginally BETTER detector score (0.5653) and unchanged meaning (0.9989). That
-      is not done here yet — it needs the same measurement at full tier, where the detector does
-      provide a usable gradient and the current ranking earns its keep.
+    * the same substitutions that the detector cannot see DO remove catalogued tells.
+
+    ``prefer_tells=True`` switches to that second objective: rank words by whether swapping one
+    removes a catalogued tell, and accept a swap that removes a tell while leaving the score inside
+    the loop's own 0.02 noise band. A strict score improvement is still taken whenever it is
+    available, so this only ever ADDS adoptions the score-only rule refused.
+
+    MEASURED both ways, on real HC3 AI text, tells/100w and mean detector max:
+
+        30 texts, stdlib   shipped  0.571 -> 0.458   score 0.5693 -> 0.5663   16/30 zero-sub
+                           tells    0.571 -> 0.233   score 0.5693 -> 0.5653   14/30 zero-sub
+         5 texts, full     shipped  0.566 -> 0.428   score 0.9993 -> 0.9991    4/5  zero-sub  21s
+                           tells    0.566 -> 0.196   score 0.9993 -> 0.9991    2/5  zero-sub   9s
+
+    The full-tier row is the one that decided it. The reason to keep the deletion-importance
+    ranking was that it should earn its keep where the detector has a usable gradient — measured,
+    it does not: surgical substitution moves the full-tier score by 0.0002 either way. So the
+    ranking is buying nothing there, while costing 2.3x the wall-clock (the leave-one-out pass it
+    needs is exactly what the tells ranking skips).
+
+    It is NOT the default, deliberately. ``eval/compare_humanizers.py`` uses this function as the
+    ``synonym_swap`` baseline standing in for the QuillBot / TextFooler class of tool, and that row
+    has to keep modelling *their* technique — score-driven word-importance substitution — rather
+    than quietly inheriting an improvement of ours. Our own ``SurgicalRewriter`` passes True.
     """
     if not text.strip():
         return {"text": text, "substitutions": 0, "pre": 0.0, "post": 0.0}
@@ -535,7 +590,14 @@ def surgical_substitute(
     # tier this was the difference between 57s and a few seconds, with identical output.
     substitutable = {w.lower() for w in dict.fromkeys(m.group(0) for m in _WORD.finditer(text))
                      if synonyms(w)}
-    word_ranks = importance(text, tier=tier, only=substitutable, base=pre)  # `pre` IS its baseline
+    if prefer_tells:
+        # Rank by "does swapping this word remove a catalogued tell" — detector-independent, and
+        # therefore still informative on the stdlib path where deletion-importance leads nowhere.
+        # This also SKIPS the leave-one-out detector pass entirely, which is where the 2.3x
+        # speed-up at full tier comes from.
+        word_ranks = _tell_ranks(text)
+    else:
+        word_ranks = importance(text, tier=tier, only=substitutable, base=pre)  # `pre` IS its baseline
     # NOTE: ``word_ranks`` is computed ONCE from the original text. After a substitution changes
     # the text, subsequent drop values are stale — a word's true importance may differ in the
     # modified text. This is a performance caveat (we may try an already-deflated word), not a
@@ -546,6 +608,9 @@ def surgical_substitute(
     # forward instead and refresh it only when the text actually changes — same values, same
     # decisions, one pass instead of one per word.
     cur_score = pre
+    # Best score reached so far. Only used by the prefer_tells path, as the fixed point the noise
+    # budget is measured from, so a run of tell-removing swaps cannot ratchet the score upward.
+    floor = pre
     for word, drop in word_ranks:
         if subs >= max_subs or cur_score < threshold:
             break
@@ -559,8 +624,31 @@ def surgical_substitute(
         if not candidates:
             continue
         cand_scores = batch_score_texts(candidates, tier=tier)
-        for cand, s in zip(candidates, cand_scores):
-            if float(s["max"]) < cur_score:
-                cur, subs, cur_score = cand, subs + 1, float(s["max"])
+        if not prefer_tells:
+            for cand, s in zip(candidates, cand_scores):
+                if float(s["max"]) < cur_score:
+                    cur, subs, cur_score = cand, subs + 1, float(s["max"])
+                    break
+            continue
+        # Tells objective: a strict score win is still taken first, so this only ever ADDS
+        # adoptions the score-only rule refused. Failing that, take the candidate that removes a
+        # tell without moving the score outside the loop's noise band, preferring the one that
+        # removes the most tells and then the lowest score, so the choice is deterministic.
+        cur_tells = _tell_count(cur)
+        ranked = sorted(
+            zip(candidates, cand_scores), key=lambda cs: (_tell_count(cs[0]), float(cs[1]["max"]))
+        )
+        for cand, s in ranked:
+            score = float(s["max"])
+            # The noise band is a TOTAL budget measured from the best score reached, not a per-swap
+            # allowance. Spending 0.02 per substitution let the score creep by up to max_subs*0.02
+            # (0.24 at the default 12), and MEASURED that broke the caller that matters: composite
+            # chains structural -> surgical and then picks among its own draws on SCORE alone, so
+            # the creep changed which draw won and its tells/100w went the WRONG way, 0.167 -> 0.294,
+            # even though surgical alone improved (0.307 -> 0.179). Budgeting against `floor` keeps
+            # the whole run inside one noise band, which is what the loop's own tie-break means.
+            if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TELLS_EPS):
+                cur, subs, cur_score = cand, subs + 1, score
+                floor = min(floor, score)
                 break
     return {"text": cur, "substitutions": subs, "pre": round(pre, 4), "post": round(cur_score, 4)}

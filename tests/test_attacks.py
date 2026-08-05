@@ -345,3 +345,77 @@ class TestSurgicalIsInertOnTheStdlibPath:
         r = surgical_substitute(self.TELL_HEAVY, tier="lite", threshold=0.30, max_subs=12)
         assert r["substitutions"] == 0
         assert r["text"].strip() == self.TELL_HEAVY.strip()
+
+
+class TestPreferTellsObjective:
+    """`prefer_tells=True` optimises the axis word substitution can actually move.
+
+    surgical_substitute cannot move a detector score at either tier (stdlib 0.5693 -> 0.5663,
+    full 0.9993 -> 0.9991), so ranking by detector deletion-importance buys nothing. Ranking by
+    tell-removal instead, MEASURED on real HC3 AI text:
+
+        30 texts, stdlib   default  tells 0.571 -> 0.458   16/30 zero-sub   10s
+                           tells    tells 0.571 -> 0.233   14/30 zero-sub    2s
+         5 texts, full     default  tells 0.566 -> 0.428    4/5  zero-sub   21s
+                           tells    tells 0.566 -> 0.196    2/5  zero-sub    9s
+    """
+
+    TELL_HEAVY = (
+        "Moreover, we leverage robust and seamless solutions to delve into the multifaceted "
+        "tapestry. Furthermore, this groundbreaking paradigm underscores the pivotal role of "
+        "innovation in the evolving landscape."
+    )
+
+    def test_default_is_unchanged_so_the_competitor_baseline_is_faithful(self, monkeypatch):
+        """eval/compare_humanizers.py uses this as the QuillBot/TextFooler stand-in. That row must
+        keep modelling THEIR technique, not inherit ours."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.attacks import surgical_substitute
+
+        implicit = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=10)
+        explicit = surgical_substitute(
+            self.TELL_HEAVY, tier="lite", max_subs=10, prefer_tells=False
+        )
+        assert implicit == explicit
+
+    def test_prefer_tells_removes_tells_the_score_rule_cannot(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.attacks import surgical_substitute
+        from untell.scripts.tells import score_tells
+
+        before = score_tells(self.TELL_HEAVY)["tells"]
+        off = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=12, prefer_tells=False)
+        on = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=12, prefer_tells=True)
+        assert score_tells(off["text"])["tells"] == before, "the score-only rule adopts nothing here"
+        assert score_tells(on["text"])["tells"] < before, "prefer_tells should remove tells"
+
+    def test_the_noise_budget_is_total_not_per_swap(self, monkeypatch):
+        """A per-swap allowance let the score ratchet by max_subs * 0.02 (0.24 at the default).
+
+        MEASURED, that broke composite: it chains structural -> surgical then picks among its own
+        draws on SCORE, so the creep changed which draw won and its tells went 0.167 -> 0.294.
+        """
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.attacks import surgical_substitute
+        from untell.attacks.word_importance import _TELLS_EPS
+
+        r = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=12, prefer_tells=True)
+        assert r["post"] <= r["pre"] + _TELLS_EPS + 1e-9, (
+            f"score drifted {r['post'] - r['pre']:.4f} above the input, beyond the one-band budget"
+        )
+
+    def test_prefer_tells_is_deterministic(self, monkeypatch):
+        """The rewriter advertises `deterministic = True`; the loop uses that to stop early."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.attacks import surgical_substitute
+
+        a = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=12, prefer_tells=True)
+        b = surgical_substitute(self.TELL_HEAVY, tier="lite", max_subs=12, prefer_tells=True)
+        assert a == b
+
+    def test_the_rewriter_asks_for_the_tells_objective(self):
+        from pathlib import Path
+
+        import untell.rewriter.surgical as mod
+
+        assert "prefer_tells=True" in Path(mod.__file__).read_text(encoding="utf-8")

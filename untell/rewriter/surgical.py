@@ -13,17 +13,23 @@ surface change, so the meaning-similarity gate in the loop is easy to hold; dete
 measurement is reproducible. Weak on its own — it is the *floor* of the free regime, not the
 ceiling, and the report says so.
 
-**On the pure-stdlib path it is weaker than "weak": it is close to inert.** MEASURED on 30 real
-HC3 AI texts with ``UNTELL_LITE_NO_TORCH=1`` — 16 of 30 get zero substitutions and the mean score
-moves 0.5693 -> 0.5663. This docstring used to attribute that to "a small synonym map", which is
-false and worth correcting because it points at the wrong fix: the map covers every AI-vocabulary
-word in a 13-tell test paragraph. The real cause is that the stdlib detector's score does not
-change when a word is swapped for a synonym, so the "is this candidate better" test can never
-pass. See ``surgical_substitute``'s docstring for the per-candidate numbers.
+**It cannot move the detector at all, at either tier, and that is now designed around.** MEASURED
+on real HC3 AI text: on the pure-stdlib path the score moves 0.5693 -> 0.5663 with 16 of 30 texts
+getting zero substitutions, and at full tier it moves 0.9993 -> 0.9991. The cause is not "a small
+synonym map" — the map covers every AI-vocabulary word in a 13-tell test paragraph — but that a
+detector's score simply does not change when a word is swapped for a synonym, so the "is this
+candidate better on score" test can never pass. See ``surgical_substitute``'s docstring for the
+per-candidate numbers.
 
-It follows that ``composite`` (structural + surgical) owes essentially all of its zero-dependency
-strength to the *structural* half, and that a benchmark row for "surgical" on that path is
-measuring the detector's insensitivity more than the rewriter.
+So this rewriter asks ``surgical_substitute`` for the objective it can actually deliver:
+``prefer_tells=True`` ranks words by whether swapping one removes a catalogued tell and accepts a
+swap that stays inside the loop's 0.02 noise band overall. Measured through the loop on 15 real
+texts, stdlib, this took tells/100w from 0.307 to **0.179** with the detector score slightly better
+(0.5647 -> 0.5633) — a real gain on the one axis word substitution controls.
+
+``composite`` (structural + surgical) still owes most of its strength to the *structural* half, and
+a benchmark row for "surgical" alone is measuring the detector's insensitivity as much as the
+rewriter.
 """
 
 from __future__ import annotations
@@ -55,4 +61,14 @@ class SurgicalRewriter:
         tier = score_result.get("tier", "lite")
         if tier not in _SCOREABLE:
             tier = "full" if "full" in str(tier) else "lite"
-        return surgical_substitute(text, tier=tier, threshold=threshold, max_subs=self.max_subs)["text"]
+        # prefer_tells=True: rank by tell-removal rather than by detector deletion-importance, and
+        # accept a swap that removes a tell while leaving the score inside the loop's own 0.02 noise
+        # band. Measured both ways on real HC3 AI text — tells/100w 0.571 -> 0.233 against
+        # 0.571 -> 0.458 on the stdlib path, and 0.566 -> 0.196 against 0.566 -> 0.428 at full tier,
+        # with the detector score unchanged either way and 2.3x less wall-clock. NOT the default of
+        # `surgical_substitute` itself, because eval/compare_humanizers.py uses that function as the
+        # `synonym_swap` row standing in for the QuillBot / TextFooler class, and that baseline has
+        # to keep modelling their technique rather than inheriting ours.
+        return surgical_substitute(
+            text, tier=tier, threshold=threshold, max_subs=self.max_subs, prefer_tells=True
+        )["text"]
