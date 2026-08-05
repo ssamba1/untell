@@ -46,6 +46,7 @@ _WORD = re.compile(r"[A-Za-z0-9']+")
 
 # High-frequency AI vocabulary (from ai-tells.md §1). Whole-word, case-insensitive.
 _AI_VOCAB = [
+    "ascertain", "relentless",  # documented in ai-tells.md, absent here
     "delve", "leverage", "utilize", "utilizing", "robust", "seamless", "seamlessly", "tapestry",
     "testament", "realm", "landscape", "underscore", "underscores", "underscoring", "pivotal",
     "crucial", "vital", "foster", "fostering", "garner", "garnered", "bolster", "elevate", "embark",
@@ -212,6 +213,17 @@ _CATEGORIES: list[tuple[str, re.Pattern]] = [
 ]
 
 
+    # Documented in ai-tells.md but never implemented â€” found by diffing the reference's own
+    # quoted examples against what score_tells actually detects. Each was verified uncaught first.
+    r"rich cultural heritage",                      # promo register (Â§ "Promo")
+    r"the journey doesn'?t end here",               # meta-closer
+    r"here'?s the kicker",                          # fake-suspense opener
+    r"picture this",                                # fake-personal anecdote (Â§13 list)
+    r"let'?s unpack", r"unpack (?:what|this|how|why)",  # action clichÃ©; bare "unpack" is literal
+    r"unravel the (?:complexit|myster|intricac)\w*",   # same â€” "unravel the boxes" is not a tell
+    r"represents a broader (?:trend|shift)",        # sibling of the implemented "reflects a broader"
+    r"watershed moment",                            # significance inflation (Â§19)
+    r"landmark (?:achievement|moment|decision|ruling)",  # not "landmark building", which is literal
 def _rule_of_three_runs(text: str) -> int:
     """Count runs of 3+ consecutive very-short sentences — the staccato 'Fast. Simple. Effective.'
     tricolon cadence that is a distinctive AI/marketing tell (and rare in ordinary prose). Each run of
