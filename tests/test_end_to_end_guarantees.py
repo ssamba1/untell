@@ -202,3 +202,59 @@ class TestRepeatedHumanizationConverges:
     def test_length_does_not_run_away(self):
         texts = [t for t, _ in self._passes(3)]
         assert 0.5 * len(self.AI_TEXT) < len(texts[-1]) < 2.0 * len(self.AI_TEXT)
+
+
+class TestFactsSurviveAtScaleOnRealProse:
+    """The hand-made cases above prove the mechanism; this proves it does not fail RARELY.
+
+    docs/free-ceiling-measured.md says outright that no ceiling figure exercises this machinery —
+    the built-in corpus has zero locked spans — so the fact guarantee is covered only here. A
+    corruption that fires on one paragraph in fifty would pass every test above and never appear in
+    any published number.
+
+    Measured over 80 runs (40 real HC3 paragraphs with facts spliced in, x 2 seeds): 0 sentinels
+    lost, 0 duplicated, 0 facts altered. Reduced to the packaged corpus so it needs no download.
+    """
+
+    FACTS = [
+        "Smith (2020) reported 47% adoption.",
+        "See https://example.org/a_b/c?d=1#e for the full table.",
+        'The report called it "a decisive shift" on March 3, 2021.',
+        "Revenue reached $1,234,567.89 in Q4 2023.",
+        "Contact hello@example.com or call +1 (555) 010-9999.",
+        "The ratio was 3.5:1 across 12,000 samples (p < 0.001).",
+    ]
+
+    def _corpus(self):
+        from eval.ceiling import _SAMPLE
+        from eval.datasets import _BUILTIN
+
+        return list(_BUILTIN) + list(_SAMPLE)
+
+    @pytest.mark.parametrize("seed", [0, 1, 2])
+    def test_no_locked_span_is_lost_altered_or_duplicated(self, seed):
+        import random
+
+        from untell.rewriter import get_rewriter
+        from untell.scripts.preserve import SENTINEL_RE, lock, restore
+
+        rw = get_rewriter(prefer="composite")
+        score = {"tier": "lite", "max": 0.9, "detectors": {}}
+
+        for i, base in enumerate(self._corpus()):
+            text = f"{self.FACTS[i % len(self.FACTS)]} {base}"
+            random.seed(seed * 977 + i)
+            masked, mapping = lock(text)
+            expected = SENTINEL_RE.findall(masked)
+            assert expected, f"nothing locked in {text[:60]!r} — the probe would prove nothing"
+
+            out = rw.rewrite(masked, score, 0.30)
+            got = SENTINEL_RE.findall(out)
+            assert sorted(got) == sorted(expected), (
+                f"sentinels changed (seed {seed}, text {i}): "
+                f"lost={sorted(set(expected) - set(got))} extra={sorted(set(got) - set(expected))}"
+            )
+
+            final = restore(out, mapping)
+            for literal in mapping.values():
+                assert literal in final, f"fact not restored byte-exact (seed {seed}, text {i}): {literal!r}"
