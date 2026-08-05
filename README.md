@@ -44,6 +44,10 @@ preserves meaning) — and **no shipping tool, open or commercial, actually does
 >                 a stickier one went             100% → 35% → 0%          once the loop
 >                 used per-sentence feedback to target only the flagged spans.
 > ```
+>
+> Two paragraphs against one live checker — a demonstration, not a rate. Real ChatGPT output is
+> harder: against the local ensemble it ends at **0.86, still flagged**
+> ([Result 11](docs/free-ceiling-measured.md)). Read that before treating the line above as typical.
 
 ```bash
 # Zero dependencies. Works right now, in Claude Code:
