@@ -234,6 +234,23 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    and picking the marginally-lower-`max` draft that reads more like AI trades a real gain for a
    rounding error.
 
+   **If the user supplied a sample of their own writing**, add one more tie-break after tells:
+   the draft whose voice sits closest to that sample.
+   ```bash
+   python scripts/voice.py --sample their-writing.txt --draft candidate.txt
+   ```
+   This scores three habits a rewrite can actually change — mean sentence length, rhythm
+   (burstiness) and comma rate. It reports contraction rate, word length and first-person use as
+   well, but does **not** score them: measured across 8 draws of the same text, the free rewriters
+   vary sentence length and rhythm more than different texts differ from each other, while moving
+   contractions by 3% and first person by 1% of that spread. Those three are yours to fix by hand,
+   and worth mentioning to the user when the gap is large — a draft that matches someone's sentence
+   rhythm but never contracts a word still does not sound like them.
+
+   Treat the distance as a drift gauge, not an identity check. On the hardest available test
+   (telling two human authors apart within one homogeneous corpus) it reaches AUROC 0.68 with a
+   150-word sample — real, but modest. Below 150 words it reports a warning and should be ignored.
+
 6. **Restore + report.** Once stopped, restore the protected spans — substitute each sentinel
    back to its original using the `mapping` from step 2:
    ```bash
