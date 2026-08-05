@@ -741,3 +741,21 @@ Result 11 names — not a separate one.
 
 Both of these are recorded because they were plausible, cheap to build, and wrong. Measuring first
 cost two probe runs; building first would have shipped a regression in the first case.
+
+### And a third: "warn the user when the text won't clear"
+
+If some texts are unclearable, the tool could say so up front instead of spending five iterations
+finding out. That needs a cheap pre-signal that predicts the outcome. There isn't one. Ten real HC3
+answers, scored before and run to `max_iters=3`:
+
+| | hc3_roberta | roberta_openai | fast_detectgpt | perplexity_burstiness | tells/100w | post |
+|---|---|---|---|---|---|---|
+| range across the 10 | 0.997–0.999 | 0.971–1.000 | 0.502–0.859 | 0.459–0.769 | 0.0–1.0 | **0.371–0.999** |
+
+The inputs are nearly indistinguishable — `hc3_roberta` spans 0.002 across every text — while the
+outcomes spread across the whole range. Nothing measurable about the input separates the text that
+reaches 0.371 from the one that stays at 0.999, so there is no honest warning to give.
+
+**None of the ten cleared**, which is Result 11's figure reproduced at a third setting (n=8
+`max_iters=5`, n=2 `max_iters=4`, n=10 `max_iters=3`): 0 out of 20 real AI paragraphs cleared the
+0.30 threshold in any configuration measured.
