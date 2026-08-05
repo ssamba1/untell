@@ -136,6 +136,24 @@ def get_rewriter(prefer: str | None = None) -> Rewriter | None:
     if prefer in ("ensemble", "max"):
         # Best-of-all-free-methods selector: runs composite + mt_pivot + neural (whichever are
         # available) and keeps the per-input detector-lowest. Strongest free path; never None.
+        #
+        # "max" is an ALIAS, not a second technique — both names build the same EnsembleRewriter
+        # with the same defaults. Worth stating because they are listed side by side in --rewriter
+        # choices, the README and the MCP docstring, which invites reading a benchmark row for each
+        # as two data points. They are one, and the spread between them is the run-to-run variance
+        # of a single stochastic method. MEASURED at n=3 on real HC3 text, full tier: "max" 0.748
+        # and "ensemble" 0.485 from identical code — a 0.263 spread, which is larger than the gap
+        # to standalone neural (0.322) that spread was briefly taken as evidence about.
+        #
+        # The "keeps the per-input detector-lowest" guarantee is scoped to ONE call: within a
+        # single rewrite() every member sees the same input and the lowest scorer wins, so the
+        # result cannot be worse than any single member on that draw. It does NOT extend to a
+        # best_of>1 loop run. There the outer loop draws N times from each rewriter, and standalone
+        # neural spends all N draws on independent stochastic T5 samples while the ensemble spends
+        # each draw on an internal contest its deterministic composite member can win — so the
+        # ensemble's N candidates can be far less diverse. Do not read "the ensemble is >= any
+        # single method" as "ensemble beats neural at --best-of 3"; that is unproven, and at n=3
+        # the same-code variance above swamps it.
         from .ensemble import EnsembleRewriter
 
         return EnsembleRewriter()

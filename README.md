@@ -464,7 +464,12 @@ above reproducible. (In Claude Code, `/untell` uses Claude itself as the rewrite
 Free rewriter backends, weakest → strongest (all no-key): **`surgical`** (word swaps, zero-dep) →
 **`structural`** (sentence-level transforms) → **`composite`** (structural + surgical, the default) →
 **`neural`** (T5 best-of-N paraphrase + composite; needs `.[full]`) → **`ensemble`** / **`max`** (runs
-composite + mt_pivot + neural and keeps the per-input detector-lowest — `>=` any single method).
+composite + mt_pivot + neural and keeps the per-input detector-lowest — `>=` any single method
+**on a single call**). `max` is an alias for `ensemble`, not a second technique. And the `>=`
+guarantee is per call, not per `--best-of N` run: under an outer best-of loop, `neural` spends every
+draw on an independent stochastic T5 sample while `ensemble` spends each draw on an internal contest
+its deterministic composite member can win, so `ensemble --best-of 3` is **not** guaranteed to beat
+`neural --best-of 3`.
 T5-base paraphrase is high-variance on its own (a single draw can *raise* a detector score), so the
 neural path samples several and keeps the best, and the ensemble only ever adopts a rewrite that beats
 the original — see [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md).

@@ -4,8 +4,24 @@ Measured, different free rewriters win on different inputs: the rule-based compo
 paragraphs while a neural T5 paraphrase crushes others (and backfires on the first). No single free
 method dominates. So the strongest free path is not *a* method but a **selection over all of them**:
 run each member on the text, score every output against the same detector tier the loop uses, and
-return the lowest-scoring one. By construction the ensemble is >= its best member on every input — it
-can only match or beat any single free rewriter.
+return the lowest-scoring one.
+
+By construction the ensemble is >= its best member **on a single call**: every member sees the same
+input, the original text is in the pool too, and the lowest scorer wins, so one `rewrite()` cannot
+return something worse than any single member would have on that same draw.
+
+**That guarantee does not survive `--best-of N`, and this docstring used to imply it did.** Under an
+outer best-of loop the two paths spend their N draws differently: standalone `neural` spends all N
+on independent stochastic T5 samples, while the ensemble spends each draw on an internal contest
+that its *deterministic* composite member can win — and when it does, that draw contributes a
+convergent composite output instead of a fresh neural one. So N ensemble draws can be markedly less
+diverse than N neural draws, and a lucky T5 sample that standalone neural catches in three tries
+may never reach the outer selector at all. "The ensemble is >= any single method" is therefore a
+per-call statement, not a promise that `--rewriter ensemble --best-of 3` beats
+`--rewriter neural --best-of 3`.
+
+Note also that ``max`` is an alias for this class, not a second technique (see
+``rewriter/base.py``), so a benchmark listing both is listing one method twice.
 
 Members (all free, all sentinel-safe):
 - ``composite``  — structural + surgical (always available, deterministic $0)
