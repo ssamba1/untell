@@ -89,6 +89,8 @@ def _server():
         # default polish=False here, so the same loop reached through MCP produced a strictly
         # weaker result than through HTTP, with nothing to indicate a knob was missing.
         polish: bool = False,
+        # The CLI takes a FILE path; over MCP the sample travels as text. Tie-break only.
+        voice_sample: str | None = None,
     ) -> dict:
         """Run the closed untell loop: score -> rewrite -> re-score until the hardest
         detector passes or max_iters is hit. Needs an LLM rewriter key, or pass
@@ -110,6 +112,11 @@ def _server():
             margin: Safety margin below threshold for a comfortable pass.
             polish: Run a final word-level substitution pass over the result, adopted only if it
                 lowers the score without un-passing it. Matches /humanize on the REST API.
+            voice_sample: A sample of the user's own writing (150+ words). Among candidate rewrites
+                already tied on AI tells, prefer the one whose sentence length, rhythm and comma
+                rate sit closest to it. A tie-break only, so it never costs evasion or
+                naturalness — and it scores only those three habits, because those are the ones a
+                free rewriter measurably moves.
         """
         from untell.rewriter import get_rewriter
 
@@ -155,6 +162,7 @@ def _server():
             best_of=best_of,
             margin=margin,
             polish=polish,
+            voice_sample=voice_sample,
         )
 
     # Put the real style list into the tool's advertised description. Generated, not restated, so

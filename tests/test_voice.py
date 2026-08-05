@@ -136,3 +136,58 @@ class TestCLI:
         import untell.scripts.voice as mod
 
         assert '__name__ == "__main__"' in Path(mod.__file__).read_text(encoding="utf-8")
+
+
+class TestLoopIntegration:
+    """The voice term is a tie-break only: it must never displace tells or cost evasion."""
+
+    def test_no_sample_is_a_constant_so_the_default_path_is_unchanged(self):
+        from untell.scripts.run import _voice_key
+
+        assert _voice_key("anything at all", None) == 0.0
+        assert _voice_key("something else entirely, much longer", None) == 0.0
+
+    def test_sentinels_are_stripped_before_scoring(self):
+        """A sentinel is one token to the word regex but stands for a span of any length, so
+        leaving it in would score candidates against a phantom vocabulary."""
+        from untell.scripts.run import _voice_key
+
+        with_sentinel = _voice_key("A short one. \u27e6HZ0001\u27e7 Another.", TERSE * 6)
+        without = _voice_key("A short one.   Another.", TERSE * 6)
+        assert with_sentinel == without
+
+    def test_untell_text_accepts_a_voice_sample(self):
+        """Pin the parameter name — three other surfaces restate this signature."""
+        import inspect
+
+        from untell.scripts.run import untell_text
+
+        assert "voice_sample" in inspect.signature(untell_text).parameters
+
+    def test_cli_exposes_the_flag(self):
+        """--voice must reach untell_text; a flag the parser accepts but drops is worse than none."""
+        from pathlib import Path
+
+        import untell.scripts.run as run_mod
+
+        src = Path(run_mod.__file__).read_text(encoding="utf-8")
+        assert '"--voice-sample"' in src, "run.py does not define the --voice-sample flag"
+        assert "voice_sample=voice_sample" in src, "--voice-sample is parsed but never passed on"
+
+    def test_short_voice_sample_warns_but_still_runs(self, tmp_path, capsys, monkeypatch):
+        """Refusing the flag the user passed would be worse than ranking on noisier statistics."""
+        import untell.scripts.run as run_mod
+
+        sample = tmp_path / "v.txt"
+        sample.write_text("Three words only.", encoding="utf-8")
+        captured = {}
+
+        def fake_untell_text(text, **kw):
+            captured.update(kw)
+            return {"error": "stopped before running the loop"}
+
+        monkeypatch.setattr(run_mod, "untell_text", fake_untell_text)
+        run_mod.main(["some input text here", "--voice-sample", str(sample)])
+        out = capsys.readouterr().out
+        assert "WARNING" in out and str(MIN_SAMPLE_WORDS) in out
+        assert captured.get("voice_sample") == "Three words only."
