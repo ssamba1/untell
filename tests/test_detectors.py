@@ -544,3 +544,44 @@ class TestEverySupervisedAdapterWindows:
             "~380 words of any document and score the rest as if it were not there. Wrap the "
             "per-window call in windowed_max, or add an entry to EXEMPT explaining why not."
         )
+
+
+class TestLiteTierFalsePositiveRateIsDocumented:
+    """AUROC hides calibration, and this repo has been bitten by it before.
+
+    MEASURED on 100 real HC3 pairs, stdlib path, at the shipped 0.30 threshold:
+        HUMAN text flagged 65%      AI text flagged 99%      AUROC 0.810
+    The separation is real; the threshold is mis-placed for this tier (0.55 -> 15%/53%,
+    0.60 -> 9%/41%). This pins the number to the README so it cannot quietly drift, and pins
+    the property that makes it matter: at 0.30 the stdlib tier flags most human writing.
+    """
+
+    HUMAN = [
+        "I walked to the shop this morning and it was shut. Typical. The sign said back at two "
+        "but nobody turned up until nearly three, and by then I had given up and gone home.",
+        "My dad taught me to change a tyre when I was fifteen. I have needed it twice since. Both "
+        "times in the rain, both times on a road with no lay-by, which feels like a rule.",
+    ]
+
+    def test_the_readme_states_the_measured_false_positive_rate(self):
+        """A caveat of 'weak' does not tell a user that most human text gets flagged."""
+        from pathlib import Path
+
+        readme = Path(__file__).resolve().parents[1] / "README.md"
+        row = [ln for ln in readme.read_text(encoding="utf-8").splitlines()
+               if ln.startswith("| **lite**")]
+        assert row, "the lite tier row is missing from the README tier table"
+        assert "65%" in row[0], "the measured human false-positive rate is not stated"
+
+    def test_lite_scores_are_high_enough_on_human_text_to_justify_the_warning(self, monkeypatch):
+        """Guards the direction, not the exact rate: if human text stopped scoring near the
+        threshold the README paragraph would be stale and should be re-measured."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.scripts.score import score_text
+
+        scores = [score_text(t, tier="lite")["max"] for t in self.HUMAN]
+        assert all(0.0 <= s <= 1.0 for s in scores)
+        assert max(scores) > 0.15, (
+            "human text now scores far below the 0.30 threshold on the stdlib path — the "
+            "documented 65% false-positive rate may no longer hold; re-measure it"
+        )
