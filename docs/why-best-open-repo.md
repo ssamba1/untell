@@ -3,7 +3,8 @@
 **Scope of the claim.** "Best humanizer *repo* available" means best **open-source** humanizer codebase
 on GitHub. Commercial tools (Undetectable.ai, StealthGPT, WriteHuman…) are closed SaaS, not repos —
 out of scope. We surveyed the open field ourselves (GitHub topics, papers-with-code, ~110 repos; see
-`humanizer-research-report.md`). Verdict below is evidenced, not asserted, and states honestly where we are *not* #1.
+`humanizer-research-report.md`), and re-swept it on 2026-08-05 across 624 distinct queries turning up
+1124 candidate repos — see the box below for what that sweep changed and where it stopped short. Verdict below is evidenced, not asserted, and states honestly where we are *not* #1.
 
 ---
 
@@ -16,6 +17,30 @@ Our own deep-research survey of the open-source humanizer field (`humanizer-rese
 > detector-feedback loop at inference time, and (d) a user-installable package."
 
 **This repo is the one that has all four** — the only one filling that gap:
+
+> **Re-surveyed 2026-08-05. The four-part conjunction still holds; one of its parts, read alone,
+> does not.** A fresh sweep (624 distinct queries, 1124 candidate repos) turned up a genuine
+> counterexample on criterion (c): **[`chengez/Adversarial-Paraphrasing`](https://github.com/chengez/Adversarial-Paraphrasing)**
+> (NeurIPS 2025, [arXiv:2506.07001](https://arxiv.org/abs/2506.07001)) paraphrases *under the
+> guidance of an AI text detector* — an inference-time detector-feedback loop, training-free, and
+> with far stronger published numbers than anything here: **87.88% average TPR@1%FPR reduction**
+> across neural, watermark-based and zero-shot detectors (98.96% against Fast-DetectGPT, 64.49%
+> against RADAR).
+>
+> So "(c) at inference time" is **not** ours alone, and this page previously read as if it were.
+> What survives is the conjunction: chengez is research code — its quality check is a post-hoc
+> GPT-4o evaluation for the paper, not a gate inside the pipeline, and there is no installable
+> package — so it has (a) and (c) without (b) or (d).
+>
+> Two claims in the same sweep were checked and **did not hold up**, recorded so they are not
+> repeated: `rudra496/StealthHumanizer` was reported as looping and does not ("the detector runs
+> after humanization to show results, not to drive refinement"; its score is a 12-metric internal
+> heuristic), and `devswha/patina` was too ("one-shot rewrite with post-hoc verification, not
+> iterative detector-driven loops"). Both characterisations in the matrix below were already right.
+>
+> The sweep did **not** finish: it stopped on an API spend limit after the discovery phase, so
+> none of the 1124 candidates were profiled and no completeness critic ran. Read the conjunction
+> claim as "not refuted by a partial survey", not as "verified exhaustively".
 
 | Gap criterion | This repo |
 |---|---|
@@ -37,7 +62,7 @@ Our own deep-research survey of the open-source humanizer field (`humanizer-rese
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
-| Automated tests | ✅ 16 modules | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
+| Automated tests | ✅ **1694** tests, 61 modules | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
 | CI (lite + full-tier, real models) | ✅ 4 jobs | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs without a GPU | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | License | MIT | MIT | MIT | MIT | Apache | MIT | MIT |
@@ -57,12 +82,22 @@ close the loop against real detectors with a verifier and an install.
   validation, no verifier for end users, no CI, needs serious GPU. We are the **usable, complete,
   installable** system; it is the **strongest attack model**. (We roadmap exactly its approach as our
   GPU moat — see `ROADMAP.md`.)
-- **patina** (196★) — best-designed *consumer* tool: pattern analysis + LLM rewrite + meaning-rollback
+- **patina** (311★ as of 2026-08-05, was 196★) — best-designed *consumer* tool: pattern analysis + LLM rewrite + meaning-rollback
   + CI. But its AI score is its **own heuristic** — no validation against real detectors, no
   commercial/live integration. We add the real-detector ensemble, commercial adapters, and live proof.
 - **StealthHumanizer** (58★) — most features + CI, but a **12-metric internal** score, not real
   detectors. Same gap.
 - **DIPPER** (199★) — credible research paraphraser, but **one-shot, GPU-only, no loop, no install**.
+- **chengez/Adversarial-Paraphrasing** (NeurIPS 2025, arXiv:2506.07001) — **the strongest published
+  inference-time detector-guided attack, and the counterexample to criterion (c) above.** Training-free:
+  an off-the-shelf instruction LLM paraphrases under a detector's guidance. **87.88% average TPR@1%FPR
+  reduction** across neural, watermark-based and zero-shot detectors (98.96% vs Fast-DetectGPT, 64.49%
+  vs RADAR) — numbers far beyond anything measured here, peer-reviewed, and on a proper evaluation set
+  rather than our n=6..12. What it is not: a product. No meaning gate inside the pipeline (quality is a
+  post-hoc GPT-4o evaluation for the paper), no numeral/citation preservation, no installable package,
+  no test suite. **If someone packaged its mechanism behind our meaning gates, the result would beat
+  this repo outright** — that is the most credible threat in the field, and it is stated here rather
+  than left out.
 - **Skill-file repos** (harshaneel 51★, Aboudjem 96★) — pure-markdown heuristic skills (like our
   `SKILL.md`) but with **no detector backend, no loop, no tests**. Ours is a skill *backed by* a real
   detector ensemble + loop + verify + CI.

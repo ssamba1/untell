@@ -189,3 +189,46 @@ def test_console_script_count_in_why_best_matches_pyproject():
     assert f"**{len(names)}** console scripts" in doc, (
         f"pyproject defines {len(names)} console scripts; why-best-open-repo.md does not say so"
     )
+
+
+def test_why_best_test_count_is_not_stale():
+    """The completeness argument leans on test coverage, so the number must track reality.
+
+    It said "16 modules" while the suite had grown to 1694 tests across 61 modules.
+    """
+    import re
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    doc = (root / "docs" / "why-best-open-repo.md").read_text(encoding="utf-8")
+    m = re.search(r"\|\s*Automated tests\s*\|\s*✅\s*\*\*(\d+)\*\*\s*tests", doc)
+    assert m, "why-best-open-repo.md no longer states a machine-checkable test count"
+    claimed = int(m.group(1))
+    out = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:randomly"],
+        cwd=root, capture_output=True, text=True, timeout=600,
+    ).stdout
+    actual = int(re.search(r"(\d+) tests collected", out).group(1))
+    # Only fails when the doc OVERSTATES, or understates by more than a session's growth.
+    assert claimed <= actual, f"doc claims {claimed} tests, suite collects {actual}"
+    assert actual - claimed < 200, (
+        f"doc claims {claimed} tests, suite collects {actual} — the completeness claim is stale"
+    )
+
+
+def test_why_best_records_the_detector_loop_counterexample():
+    """(c) 'iterative detector-feedback loop at inference' is NOT unique to this repo.
+
+    chengez/Adversarial-Paraphrasing (NeurIPS 2025, arXiv:2506.07001) paraphrases under detector
+    guidance with 87.88% average TPR@1%FPR reduction. The page used to read as if nobody else
+    did this. Verified against the repo README and the paper abstract on 2026-08-05.
+    """
+    from pathlib import Path
+
+    doc = (Path(__file__).resolve().parents[1] / "docs" / "why-best-open-repo.md").read_text(
+        encoding="utf-8"
+    )
+    assert "chengez" in doc, "the detector-loop counterexample is not recorded"
+    assert "87.88" in doc, "the counterexample's published bypass number is not stated"
