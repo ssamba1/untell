@@ -298,14 +298,20 @@ it is another chance to contain a text the loop cannot clear.
 > table above is one rewriter, and swapping it changes the headline. Same six HC3 answers, same
 > command, `pre` identical at 0.9994 ([Result 13](docs/free-ceiling-measured.md)):
 >
-> | | `composite` | `neural` |
-> |---|---|---|
-> | mean max P(AI) | 0.999 → **0.805** | 0.999 → **0.502** |
-> | flagged rate | 1.00 → **1.00** | 1.00 → **0.50** |
-> | **`hc3_roberta`** | 1.00 → **0.756** | 1.00 → **0.407** |
-> | meaning similarity | 0.986 / 0.965 worst | 0.941 / 0.884 worst |
+> Replicated at `--repeats 3` (36 loop runs) so the gap can be told from the noise — the single-run
+> figures below it were within one run's spread of each other:
 >
-> Half the samples clear where composite cleared none. It is **not free**: meaning drops, `neural`
+> | n=6, `--repeats 3` | `composite` | `neural` |
+> |---|---|---|
+> | mean max P(AI) | 0.999 → **0.778 ± 0.020** | 0.999 → **0.380 ± 0.079** |
+> | flagged rate | 1.00 → **0.94** | 1.00 → **0.28** |
+> | **`hc3_roberta`** | 1.00 → **0.710** | 1.00 → **0.248** |
+> | meaning similarity | 0.978 / 0.921 worst | 0.932 / 0.831 worst |
+>
+> **72% of real AI paragraphs clear** where composite cleared almost none, and the gap (0.398)
+> is twice the worst within-rewriter spread (0.191), so it is a finding rather than a draw.
+> `neural` is **4× as variable** as composite, though — a single run of it can land at 0.485,
+> most of the way back — so quote it with repeats or not at all. It is **not free**: meaning drops, `neural`
 > needs the `.[full]` extra (~850MB T5) and several times the wall-clock, and it is not uniformly
 > better per detector — it loses on `roberta_openai` (0.30 vs 0.12) while winning the `max` that
 > decides the verdict. The default is unchanged; a run that ends flagged now prints the trade so
