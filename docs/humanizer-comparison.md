@@ -108,6 +108,35 @@ scored the same way). Full local ensemble, n=3 formulaic AI paragraphs, threshol
    technique simply removes the words the counter looks for. (Stated as a limitation of the metric, not
    hidden — the tells score is necessary, not sufficient.)
 
+### The same comparison on real text, which changes the story
+
+The table above runs on three hand-written formulaic paragraphs. That corpus is **31x more
+tell-dense than real AI text** — 14.41 catalogued tells per 100 words, against 0.46 for genuine
+ChatGPT answers. Numbers taken on it describe an unusually easy case, so the same techniques were
+re-run on 12 real HC3 AI paragraphs (`untell-compare --file <corpus> --tier lite`):
+
+| Technique | AI P(AI) ↓ | flagged ↓ | **tells/100w ↓** | meaning ↑ |
+|---|---|---|---|---|
+| none (raw AI) — baseline | 0.5631 | 1.00 | 0.46 | 1.00 |
+| synonym_swap (*QuillBot, Clever Humanizer*) | 0.5601 | 1.00 | 0.32 | 1.00 |
+| back_translation (*lynote / pivot-language*) | **0.5847** | 0.92 | 0.61 | 0.923 |
+| ours_loop — surgical (control, same class as synonym_swap) | 0.5595 | 1.00 | 0.32 | 1.00 |
+| **ours_loop — composite (the CLI default)** | **0.2775** | **0.17** | **0.23** | 0.987 |
+
+Three things survive the corpus change, and one does not:
+
+- **Synonym swap barely moves anything.** 0.5631 → 0.5601 is half a percent, and every sample stays
+  flagged. This is the mechanism most free humanizers ship.
+- **Back-translation makes the text worse on every axis**, as it did on the demo corpus: it *raises*
+  P(AI) above the untouched baseline, *raises* the tell count, and costs the most meaning. On the
+  easy corpus its low tell count looked like an advantage; on real text that advantage disappears,
+  which supports reading the demo-corpus figure as the artifact it was called.
+- **Our loop is the only technique that moves the needle**: P(AI) halved, flagged 100% → 17%, tells
+  halved, meaning 0.987.
+- **What does not survive:** the demo corpus reaches zero tells, real text does not. 0.46 → 0.23 is
+  a halving, not an elimination, because genuine AI prose carries far fewer catalogued tells to
+  begin with. Any claim of "drives the tell rate to zero" is a property of the demo corpus alone.
+
 ### Why three metrics, and what they show
 
 The local detector P(AI) is an evasion proxy that **anti-correlates with human-ness** on some text
@@ -127,9 +156,10 @@ What the numbers show, consistently:
 - **Translation laundering (the lynote class)** rephrases away many catalogued tells (its tells rate
   can look great) but **raises the detector score** and risks translationese and meaning drift — it
   trades one tell for a different unnaturalness the catalogue doesn't count.
-- **Our closed loop** is the only mechanism that drives the tells rate toward zero **and** holds the
-  meaning gate, because the rewriter (Claude, or the no-key surgical fallback) is told to remove *every*
-  catalogued tell, not just swap words.
+- **Our closed loop** is the only mechanism that lowers the tells rate **and** holds the meaning gate,
+  because the rewriter (Claude, or the no-key surgical fallback) is told to remove *every* catalogued
+  tell, not just swap words. "Toward zero" holds on the formulaic demo corpus; on real HC3 text it
+  halves the rate (0.46 → 0.23) rather than eliminating it.
 
 ---
 
@@ -137,9 +167,12 @@ What the numbers show, consistently:
 
 **Yes on the measurable, reproducible axes; honestly unprovable on the one axis that needs paid keys.**
 
-- **More natural to read (AI-tells):** ✅ measured. Our loop produces the lowest catalogued-tell rate of
-  any technique class while keeping meaning ≥ 0.76 similarity. This is the closest thing to an objective
-  "reads more human" number, and it does not depend on the (anti-correlating) detectors.
+- **More natural to read (AI-tells):** ✅ measured, on both corpora. Our loop produces the lowest
+  catalogued-tell rate of any technique class while keeping meaning ≥ 0.76 similarity — 16 → 0 on the
+  formulaic demo corpus, 0.46 → 0.23 per 100 words on 12 real HC3 paragraphs. This is the closest
+  thing to an objective "reads more human" number, and it does not depend on the (anti-correlating)
+  detectors. Note the second figure is the one to quote: the demo corpus is 31x more tell-dense than
+  real AI text, so its headline is flattering.
 - **Meaning / citations preserved:** ✅ measured. The semantic gate + byte-exact preserve-lock are a
   capability **no free competitor ships**; QuillBot-class tools are known to drift or break facts.
 - **Beats the *free* web checkers (ZeroGPT):** ✅ live-proven elsewhere in the repo (100% → 0%).
