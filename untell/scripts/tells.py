@@ -118,9 +118,72 @@ _PARTICIPIAL_TRAILER_RE = re.compile(
 )
 
 # Vague attribution (§7).
+#
+# The old list was nine literal bigrams, so the category shipped while missing most of its own
+# construction: "reports suggest", "analysts note", "critics argue", "industry reports indicate"
+# all scored clean. The shape is what makes it a tell — an unnamed plural authority plus a
+# reporting verb — so it is matched as a shape. The subject list stays closed (no bare "people
+# say") to keep it off ordinary prose that names its source: "Chen's studies show" is preceded by
+# a possessive, and "the 2019 survey shows" is singular with a determiner.
 _VAGUE_ATTR_RE = re.compile(
-    r"\b(studies show|research suggests?|experts? (?:believe|say|agree)|scientists? believe|"
-    r"it is (?:widely )?believed|many believe|some argue)\b",
+    r"\b(?<!'s )(?:studies|research|reports|surveys|analysts|observers|critics|experts|"
+    r"scientists|researchers|sources)\s+"
+    r"(?:show|shows|suggest|suggests|indicate|indicates|say|says|note|notes|argue|argues|"
+    r"believe|believes|agree|agrees|point to|have shown|have found)\b"
+    r"|\b(?:it is (?:widely |often |generally )?(?:believed|said|understood|accepted)|"
+    r"many (?:believe|argue|say)|some (?:argue|say|believe)|"
+    r"(?:studies|research) (?:has|have) shown)\b",
+    re.IGNORECASE,
+)
+
+# --- patterns measured as MISSING against the public catalogue -------------------------------
+# Coverage was 17 of the 33 patterns in blader/humanizer's list (itself derived from Wikipedia's
+# "Signs of AI writing"). These close the prose half of that gap. Each is deliberately narrow: a
+# tell catalogue that fires on ordinary human writing is worse than one with holes, because the
+# loop's tie-break prefers fewer tells and would start rewriting away normal prose.
+
+# Filler that adds words without meaning. NOT "in order to" alone — that is ordinary English and
+# appears constantly in careful human writing; only the padded variants are listed.
+_FILLER_RE = re.compile(
+    r"\b(?:due to the fact that|at this point in time|in the event that|for the purpose of|"
+    r"in spite of the fact that|it is worth mentioning that|needless to say|"
+    r"as a matter of fact|when all is said and done)\b",
+    re.IGNORECASE,
+)
+
+# Aphorism formulas — "X is the new Y", "the X of Y" equivalences that sound profound and say little.
+_APHORISM_RE = re.compile(
+    r"\b(?:is|are|becomes?|remains?)\s+the\s+new\s+\w+"
+    r"|\bis\s+the\s+\w+\s+of\s+(?:the\s+)?\w+(?:\s+(?:web|internet|world|age|era))\b"
+    r"|\bbecomes?\s+a\s+trap\b",
+    re.IGNORECASE,
+)
+
+# Theatrical rhetorical openers used as standalone hooks.
+_RHETORICAL_OPENER_RE = re.compile(
+    r"(?:^|(?<=[.!?]\s))\s*(?:Honestly\?|Look,|Here'?s the thing|The thing is,|Truth is,)",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+# Knowledge-cutoff disclaimers and speculative gap-filling — unmistakably assistant output.
+_CUTOFF_RE = re.compile(
+    r"\b(?:as of my (?:last|latest)\s+(?:training|update|knowledge)|"
+    r"up to my last training|my training data|as of my knowledge cutoff|"
+    r"maintains a low profile|i do not have access to real-?time)\b",
+    re.IGNORECASE,
+)
+
+# "Challenges and future prospects" outline sections — the shape of a generated article.
+_CHALLENGES_RE = re.compile(
+    r"\b(?:faces? (?:several|numerous|a number of|many) challenges|"
+    r"challenges and (?:legacy|opportunities|future)|future (?:outlook|prospects|directions))\b",
+    re.IGNORECASE,
+)
+
+# Notability / media-coverage padding, straight out of generated encyclopedia entries.
+_NOTABILITY_RE = re.compile(
+    r"\b(?:independent coverage|(?:local|regional|national|international) media outlets|"
+    r"has been (?:widely )?(?:covered|featured) (?:in|by)|written by a leading expert)\b",
     re.IGNORECASE,
 )
 
@@ -150,6 +213,17 @@ _CLICHES = [
     r"paradigm shift", r"sea change", r"at the forefront of", r"push the boundaries",
     r"break new ground", r"move the needle", r"low-hanging fruit", r"circle back",
     r"when we consider", r"look no further", r"the key takeaway",
+    # Documented in ai-tells.md but never implemented — found by diffing the reference's own
+    # quoted examples against what score_tells actually detects. Each was verified uncaught first.
+    r"rich cultural heritage",                      # promo register (§ "Promo")
+    r"the journey doesn'?t end here",               # meta-closer
+    r"here'?s the kicker",                          # fake-suspense opener
+    r"picture this",                                # fake-personal anecdote (§13 list)
+    r"let'?s unpack", r"unpack (?:what|this|how|why)",  # action cliché; bare "unpack" is literal
+    r"unravel the (?:complexit|myster|intricac)\w*",   # same — "unravel the boxes" is not a tell
+    r"represents a broader (?:trend|shift)",        # sibling of the implemented "reflects a broader"
+    r"watershed moment",                            # significance inflation (§19)
+    r"landmark (?:achievement|moment|decision|ruling)",  # not "landmark building", which is literal
 ]
 _CLICHE_RE = re.compile(r"\b(" + "|".join(_CLICHES) + r")\b", re.IGNORECASE)
 
@@ -182,7 +256,13 @@ _HEDGE_STACK_RE = re.compile(
 # False-range / unearned breadth (§17) — "whether you're a X or a Y", "from X to Y" sweeping scope.
 _FALSE_RANGE_RE = re.compile(
     r"\bwhether you'?re\s+(?:an?\s+)?\w+[^.!?]{0,40}\bor\s+(?:an?\s+)?\w+"
-    r"|\bfrom\s+(?:ancient|the everyday|the mundane|individual|small|humble)\b[^.!?]{0,50}\bto\s+the\b",
+    r"|\bfrom\s+(?:ancient|the everyday|the mundane|individual|small|humble)\b[^.!?]{0,50}\bto\s+the\b"
+    # The generic sweep, which is the form that actually appears: "everything from X to Y",
+    # "from startups to enterprises". The list above only caught six hand-picked openers, so the
+    # category shipped while missing its own headline construction. Requires a scope word
+    # (everything/anything/from) so ordinary ranges ("from Monday to Friday") do not match.
+    r"|\b(?:everything|anything|all)\s+from\s+\w+[^.!?]{0,45}?\s+to\s+\w+"
+    r"|\bfrom\s+\w+s\s+to\s+\w+s\b",
     re.IGNORECASE,
 )
 
@@ -194,6 +274,14 @@ _MARKDOWN_ARTIFACT_RE = re.compile(
     re.MULTILINE | re.IGNORECASE,
 )
 
+
+# A corpus that writes " , " or " . " has spaces around ALL punctuation, so its hyphens carry no
+# information about dash usage. Two occurrences are required so a single stray " . " in ordinary
+# prose (an ellipsis, a spaced initial) does not disable the check for the whole text.
+_SPACE_TOKENIZED_RE = re.compile(r"(?:\s[,.]\s.*){2}", re.DOTALL)
+# The spaced hyphen as a dash: not between digits ("2020 - 2025"), and not a list bullet — at the
+# start of a line, or introducing items after a colon.
+_SPACED_DASH_RE = re.compile(r"(?<!\d)(?<!^)(?<!:) - (?!\d)", re.MULTILINE)
 
 _CATEGORIES: list[tuple[str, re.Pattern]] = [
     ("ai_vocab", _AI_VOCAB_RE),
@@ -210,20 +298,15 @@ _CATEGORIES: list[tuple[str, re.Pattern]] = [
     ("hedge_stacking", _HEDGE_STACK_RE),
     ("false_range", _FALSE_RANGE_RE),
     ("markdown_artifact", _MARKDOWN_ARTIFACT_RE),
+    ("filler_phrase", _FILLER_RE),
+    ("aphorism", _APHORISM_RE),
+    ("rhetorical_opener", _RHETORICAL_OPENER_RE),
+    ("cutoff_disclaimer", _CUTOFF_RE),
+    ("challenges_section", _CHALLENGES_RE),
+    ("notability_padding", _NOTABILITY_RE),
 ]
 
 
-    # Documented in ai-tells.md but never implemented â€” found by diffing the reference's own
-    # quoted examples against what score_tells actually detects. Each was verified uncaught first.
-    r"rich cultural heritage",                      # promo register (Â§ "Promo")
-    r"the journey doesn'?t end here",               # meta-closer
-    r"here'?s the kicker",                          # fake-suspense opener
-    r"picture this",                                # fake-personal anecdote (Â§13 list)
-    r"let'?s unpack", r"unpack (?:what|this|how|why)",  # action clichÃ©; bare "unpack" is literal
-    r"unravel the (?:complexit|myster|intricac)\w*",   # same â€” "unravel the boxes" is not a tell
-    r"represents a broader (?:trend|shift)",        # sibling of the implemented "reflects a broader"
-    r"watershed moment",                            # significance inflation (Â§19)
-    r"landmark (?:achievement|moment|decision|ruling)",  # not "landmark building", which is literal
 def _rule_of_three_runs(text: str) -> int:
     """Count runs of 3+ consecutive very-short sentences — the staccato 'Fast. Simple. Effective.'
     tricolon cadence that is a distinctive AI/marketing tell (and rare in ordinary prose). Each run of
@@ -275,14 +358,6 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
     matches: dict[str, list[str]] = {}
 
     # True em-dash plus the spaced-hyphen " - " used as a dash — but NOT digit ranges ("2020 - 2025"),
-# A corpus that writes " , " or " . " has spaces around ALL punctuation, so its hyphens carry no
-# information about dash usage. Two occurrences are required so a single stray " . " in ordinary
-# prose (an ellipsis, a spaced initial) does not disable the check for the whole text.
-_SPACE_TOKENIZED_RE = re.compile(r"(?:\s[,.]\s.*){2}", re.DOTALL)
-# The spaced hyphen as a dash: not between digits ("2020 - 2025"), and not a list bullet — at the
-# start of a line, or introducing items after a colon.
-_SPACED_DASH_RE = re.compile(r"(?<!\d)(?<!^)(?<!:) - (?!\d)", re.MULTILINE)
-
     # which a spaced hyphen between numbers represents.
     #
     # The surrogate needs two more exclusions, both measured on 200 HC3 pairs where this category
