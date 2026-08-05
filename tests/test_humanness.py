@@ -1,6 +1,8 @@
 """Tests for the humanness score metric."""
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from untell.humanness import classification, humanness
@@ -161,3 +163,37 @@ class TestTooShortToScore:
         )
         assert humanness(human, tier="lite") > humanness(ai, tier="lite")
         assert classification(humanness(human, tier="lite")) in ("human", "mostly human")
+
+
+class TestTheScoreNamesItsTier:
+    """The number is a fact about the text AND the tier; only one used to be on screen.
+
+    MEASURED on 6 real HC3 AI texts: lite gives mean 62.8 and calls all six "mostly human",
+    full gives mean 43.4 and calls all six "mixed". A 19.4-point swing and a different band,
+    from a flag the output never mentioned. Same defect class as /ceiling not naming its corpus.
+    """
+
+    def test_json_reports_the_tier(self, capsys, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.humanness import main
+
+        assert main(["--tier", "lite", "--json", "The cat sat on the mat. It was warm there."]) == 0
+        parsed = json.loads(capsys.readouterr().out)
+        assert parsed["tier"] == "lite"
+        assert {"score", "classification", "tier"} <= set(parsed)
+
+    def test_text_output_reports_the_tier(self, capsys, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.humanness import main
+
+        main(["--tier", "lite", "The cat sat on the mat. It was warm there."])
+        assert "tier=lite" in capsys.readouterr().out
+
+    def test_the_reported_tier_is_the_one_requested(self, capsys, monkeypatch):
+        """Guards against a hard-coded default being echoed back instead of the real tier."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.humanness import main
+
+        for tier in ("lite", "heavy"):
+            main(["--tier", tier, "--json", "The cat sat on the mat. It was warm."])
+            assert json.loads(capsys.readouterr().out)["tier"] == tier

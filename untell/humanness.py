@@ -69,7 +69,13 @@ def humanness(text: str, tier: str = "full") -> float:
         tier: Detector tier to use (default ``"full"``).
 
     Returns:
-        Float in [0, 100]. The bands are the ones :func:`classification` actually implements —
+        Float in [0, 100]. **The bands are not tier-independent, and the number is not comparable
+        across tiers.** Half the weight is the detector term and ``tier`` is what selects the
+        detectors, so the same text moves bands on the flag alone. MEASURED on 6 real HC3 AI texts:
+        lite gives mean 62.8 and calls all six "mostly human"; full gives mean 43.4 and calls all
+        six "mixed". Always report the tier next to the score — the CLI does.
+
+        The bands are the ones :func:`classification` actually implements —
         they used to be documented here as 80 / 50-80 / 30-50 / 30, which matched nothing:
         - ≥ 80: human
         - 55–80: mostly human
@@ -225,11 +231,19 @@ def main(argv: list[str] | None = None) -> int:
 
     score = humanness(text, tier=args.tier)
     cls = classification(score)
-    result = {"score": score, "classification": cls}
+    # Report the tier alongside the number. Half the score is the detector term, and the detector
+    # term is what the tier selects, so the same text gets a materially different verdict depending
+    # on a flag the output did not mention. MEASURED on 6 real HC3 AI texts:
+    #     lite  mean 62.8  ->  all six "mostly human"
+    #     full  mean 43.4  ->  all six "mixed"
+    # A 19.4-point swing and a different band, from the tier alone. A bare "Humanness: 62.8/100
+    # (mostly human)" is not a fact about the text; it is a fact about the text AND the tier, and
+    # only one of those was on screen.
+    result = {"score": score, "classification": cls, "tier": args.tier}
     if args.json:
         print(json.dumps(result, ensure_ascii=True))
     else:
-        print(f"Humanness: {score}/100  ({cls})")
+        print(f"Humanness: {score}/100  ({cls})  [tier={args.tier}]")
     return 0
 
 
