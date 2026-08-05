@@ -185,18 +185,69 @@ def parse_ai_percent(text: str) -> float | None:
     return None
 
 
+def _split_selectors(spec: str) -> list[str]:
+    """Split a comma-separated candidate list, preserving CSS that legitimately contains commas.
+
+    A CSS selector list (``.a, .b``) already means "either", so splitting on commas costs nothing
+    semantically — but ``:is(.a, .b)`` and ``[data-x="a,b"]`` do not survive a naive split, so
+    commas inside brackets or parentheses are left alone.
+    """
+    out, depth, cur = [], 0, []
+    for ch in spec:
+        if ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth = max(0, depth - 1)
+        if ch == "," and depth == 0:
+            out.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    out.append("".join(cur))
+    return [s.strip() for s in out if s.strip()]
+
+
+class SelectorMiss(RuntimeError):
+    """No configured selector matched — the site's layout almost certainly changed.
+
+    Distinct from a parse failure (the element was found but held no readable percentage) and from
+    a network error, because the three need different responses and a bare Playwright timeout tells
+    the operator none of that.
+    """
+
+    def __init__(self, site: str, role: str, selectors: list[str], url: str):
+        self.site, self.role, self.selectors_tried, self.url = site, role, selectors, url
+        super().__init__(
+            f"{site}: no {role} element matched any of {selectors!r} on {url}. The site's layout "
+            f"has probably changed. Override it without touching this file by passing a JSON site "
+            f"config via --sites, where the selector fields accept a comma-separated candidate list."
+        )
+
+
 @dataclass
 class SiteConfig:
     """How to drive one free web detector."""
 
     name: str
     url: str
+    # Both selector fields accept a COMMA-SEPARATED list of candidates, tried in order. A free web
+    # detector is somebody else's website: it gets redesigned without notice, and when it does, a
+    # single hard-coded class name turns the whole checker into a 45-second timeout with no
+    # indication that the selector — rather than the network, or the site being down — is at fault.
+    # Candidates cost nothing when the first one hits, and `selectors_tried` on the raised error
+    # names every one that missed.
     input_selector: str
     input_mode: str = "textarea"  # "textarea" | "contenteditable"
     submit_button_text: str = "detect"  # JS-click the first <button> whose text matches (regex, i)
     result_selector: str = ".result"
     wait_s: float = 45.0
     extra: dict = field(default_factory=dict)
+
+    def input_selectors(self) -> list[str]:
+        return _split_selectors(self.input_selector)
+
+    def result_selectors(self) -> list[str]:
+        return _split_selectors(self.result_selector)
 
 
 ZEROGPT = SiteConfig(
@@ -232,15 +283,31 @@ class WebUIChecker:
             page = browser.new_page()
             try:
                 page.goto(c.url, wait_until="domcontentloaded", timeout=c.wait_s * 1000)
-                if c.input_mode == "contenteditable":
-                    page.evaluate(
-                        "([sel, txt]) => { const e = document.querySelector(sel);"
-                        " if (e) { e.focus(); e.textContent = txt;"
-                        " e.dispatchEvent(new InputEvent('input', {bubbles: true})); } }",
-                        [c.input_selector, text],
-                    )
-                else:
-                    page.fill(c.input_selector, text, timeout=c.wait_s * 1000)
+                # Budget the wait across candidates rather than per candidate: three selectors at
+                # the full 45s each would turn one dead site into a 135-second hang.
+                inputs = c.input_selectors()
+                per_input = max(1.0, c.wait_s / len(inputs))
+                filled = None
+                for sel in inputs:
+                    try:
+                        if c.input_mode == "contenteditable":
+                            ok = page.evaluate(
+                                "([sel, txt]) => { const e = document.querySelector(sel);"
+                                " if (!e) return false; e.focus(); e.textContent = txt;"
+                                " e.dispatchEvent(new InputEvent('input', {bubbles: true}));"
+                                " return true; }",
+                                [sel, text],
+                            )
+                            if not ok:
+                                continue
+                        else:
+                            page.fill(sel, text, timeout=per_input * 1000)
+                        filled = sel
+                        break
+                    except Exception:
+                        continue
+                if filled is None:
+                    raise SelectorMiss(c.name, "input", inputs, c.url)
                 # JS-click the submit control (ad overlays steal normal pointer events on some
                 # sites; some sites use <a> or <input> rather than <button>).
                 page.evaluate(
@@ -249,8 +316,18 @@ class WebUIChecker:
                     ".find(x => rx.test((x.textContent || x.value || '').trim())); if (b) b.click(); }",
                     c.submit_button_text,
                 )
-                page.wait_for_selector(c.result_selector, timeout=c.wait_s * 1000)
-                raw = page.inner_text(c.result_selector)
+                results = c.result_selectors()
+                per_result = max(1.0, c.wait_s / len(results))
+                raw = None
+                for sel in results:
+                    try:
+                        page.wait_for_selector(sel, timeout=per_result * 1000)
+                        raw = page.inner_text(sel)
+                        break
+                    except Exception:
+                        continue
+                if raw is None:
+                    raise SelectorMiss(c.name, "result", results, c.url)
                 pct = parse_ai_percent(raw)
                 if pct is None:
                     # NEVER fabricate 0.5 here. wait_for_selector can return the moment a

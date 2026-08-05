@@ -263,3 +263,107 @@ def test_human_only_readout_is_still_refused(readout):
     """A human-labelled percentage is the inverse of what the loop needs, and there is no AI figure
     to fall back to. Refusing excludes the checker; guessing hands the loop a backwards verdict."""
     assert parse_ai_percent(readout) is None
+
+
+class TestSelectorCandidates:
+    """A free web detector is somebody else's website, and it gets redesigned without notice.
+
+    When that happens a single hard-coded class name turns the checker into a 45-second timeout
+    that names neither the cause nor the fix. These pin the two behaviours that make a layout
+    change survivable: try several selectors, and fail with a diagnostic rather than a timeout.
+    """
+
+    @pytest.mark.parametrize(
+        "spec,expected",
+        [
+            (".a", [".a"]),
+            (".a,.b", [".a", ".b"]),
+            ("  .a , .b  ", [".a", ".b"]),
+            ("", []),
+            (",,", []),
+            # CSS that legitimately contains commas must survive intact.
+            (":is(.a, .b)", [":is(.a, .b)"]),
+            ('[data-x="a,b"], .c', ['[data-x="a,b"]', ".c"]),
+            ("div:nth-child(2), #out", ["div:nth-child(2)", "#out"]),
+        ],
+    )
+    def test_split_selectors(self, spec, expected):
+        from untell.browser_check import _split_selectors
+
+        assert _split_selectors(spec) == expected
+
+    def test_site_config_exposes_candidate_lists(self):
+        from untell.browser_check import SiteConfig
+
+        c = SiteConfig(name="x", url="u", input_selector="#a, #b", result_selector=".p, .q")
+        assert c.input_selectors() == ["#a", "#b"]
+        assert c.result_selectors() == [".p", ".q"]
+
+    def test_selector_miss_names_what_it_tried(self):
+        from untell.browser_check import SelectorMiss
+
+        e = SelectorMiss("zerogpt", "result", [".percentage-div", ".score"], "https://x/")
+        assert e.selectors_tried == [".percentage-div", ".score"]
+        assert e.role == "result"
+        # The operator needs the fix, not just the failure.
+        assert "--sites" in str(e) and ".percentage-div" in str(e)
+        assert isinstance(e, RuntimeError)  # callers catching RuntimeError still work
+
+
+@pytest.fixture(scope="module")
+def _chromium_page(tmp_path_factory):
+    """A local page standing in for a redesigned detector site, or skip if chromium is absent."""
+    playwright = pytest.importorskip("playwright.sync_api")
+    try:
+        with playwright.sync_playwright() as p:
+            p.chromium.launch(headless=True).close()
+    except Exception as exc:  # browser binaries not downloaded in this environment
+        pytest.skip(f"chromium unavailable: {str(exc)[:60]}")
+    html = (
+        "<html><body><textarea id='newTextArea'></textarea>"
+        "<button onclick=\"document.getElementById('out').innerText='73% AI Generated'\">"
+        "Detect</button><div id='out'></div></body></html>"
+    )
+    f = tmp_path_factory.mktemp("site") / "p.html"
+    f.write_text(html, encoding="utf-8")
+    return f.as_uri()
+
+
+class TestSelectorFallbackAgainstARealBrowser:
+    """Driven against a local file, so it exercises the real Playwright path with no network."""
+
+    def test_falls_back_to_a_later_candidate(self, _chromium_page):
+        from untell.browser_check import SiteConfig, WebUIChecker
+
+        # The first candidate of each pair is the stale one.
+        cfg = SiteConfig(
+            name="local",
+            url=_chromium_page,
+            input_selector="#textArea, #newTextArea",
+            result_selector=".percentage-div, #out",
+            wait_s=10,
+        )
+        assert WebUIChecker(cfg).check("hello world", headless=True) == 0.73
+
+    def test_missing_input_raises_selector_miss(self, _chromium_page):
+        from untell.browser_check import SelectorMiss, SiteConfig, WebUIChecker
+
+        cfg = SiteConfig(
+            name="local", url=_chromium_page, input_selector="#nope", result_selector="#out",
+            wait_s=6,
+        )
+        with pytest.raises(SelectorMiss) as e:
+            WebUIChecker(cfg).check("x", headless=True)
+        assert e.value.role == "input"
+
+    def test_missing_result_raises_selector_miss(self, _chromium_page):
+        from untell.browser_check import SelectorMiss, SiteConfig, WebUIChecker
+
+        cfg = SiteConfig(
+            name="local", url=_chromium_page, input_selector="#newTextArea",
+            result_selector=".gone, .also-gone", wait_s=6,
+        )
+        with pytest.raises(SelectorMiss) as e:
+            WebUIChecker(cfg).check("x", headless=True)
+        assert e.value.role == "result"
+        assert e.value.selectors_tried == [".gone", ".also-gone"]
