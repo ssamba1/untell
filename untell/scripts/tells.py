@@ -275,8 +275,30 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
     matches: dict[str, list[str]] = {}
 
     # True em-dash plus the spaced-hyphen " - " used as a dash — but NOT digit ranges ("2020 - 2025"),
+# A corpus that writes " , " or " . " has spaces around ALL punctuation, so its hyphens carry no
+# information about dash usage. Two occurrences are required so a single stray " . " in ordinary
+# prose (an ellipsis, a spaced initial) does not disable the check for the whole text.
+_SPACE_TOKENIZED_RE = re.compile(r"(?:\s[,.]\s.*){2}", re.DOTALL)
+# The spaced hyphen as a dash: not between digits ("2020 - 2025"), and not a list bullet — at the
+# start of a line, or introducing items after a colon.
+_SPACED_DASH_RE = re.compile(r"(?<!\d)(?<!^)(?<!:) - (?!\d)", re.MULTILINE)
+
     # which a spaced hyphen between numbers represents.
-    em_dashes = text.count("—") + len(re.findall(r"(?<!\d) - (?!\d)", text))
+    #
+    # The surrogate needs two more exclusions, both measured on 200 HC3 pairs where this category
+    # alone counted 190 on HUMAN text and 0 on AI, single-handedly inverting tells/100w (human 0.602
+    # vs ai 0.468 — the metric pointed the wrong way). Only 5 of the 190 were real em-dashes. The
+    # other 185 were:
+    #   - space-tokenized compounds: "oscar - winning", "Kim Jong - Un", "mass - production". Not
+    #     dashes at all, just a corpus that puts spaces around every punctuation mark. Detected by
+    #     the same corpus writing " , " and " . ", which no ordinary prose does;
+    #   - list bullets: ": - Summon a creature", "- Create a lasting effect". A bullet is document
+    #     structure and is already the markdown_artifact category's business.
+    # Both exclusions are properties of the text, not of HC3, so they generalise.
+    spaced = 0
+    if not _SPACE_TOKENIZED_RE.search(text):
+        spaced = len(_SPACED_DASH_RE.findall(text))
+    em_dashes = text.count("—") + spaced
     if em_dashes:
         by_category["em_dash"] = em_dashes
         if include_matches:
