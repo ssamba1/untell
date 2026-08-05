@@ -138,21 +138,27 @@ def humanness(text: str, tier: str = "full") -> float:
     # not one of thirty real ChatGPT samples reached "likely AI", and on the lite tier 27 of 30
     # landed in "mostly human". A user pasting obvious AI text is told it is mixed, or mostly human.
     #
-    # The cause is signal quality, per-signal AUROC on that corpus:
+    # The cause was read as signal quality. Per-signal AUROC as originally recorded:
     #     detector  1.000     (weight 0.50)
     #     bursty    0.896     (weight 0.25)
     #     tells     0.523     (weight 0.25)   <- chance; human 0.026 vs ai 0.023
-    # A quarter of the score comes from a term that cannot separate the classes at all here, and it
-    # pulls AI text UP because HC3's answers carry marginally fewer catalogued tells than the human
-    # ones. Raising the detector weight to 0.70 would move AI to "likely AI" (25.5) while leaving
-    # human at "human" (86.7).
     #
-    # NOT reweighted, deliberately. HC3 is 2022-era ChatGPT and predates most of the vocabulary the
-    # tells catalogue targets ("delve", "tapestry", "leverage") — score_tells catches 18 of 18
-    # modern tell sentences with 0 false positives on human prose, so the term is informative on
-    # current AI text and merely silent on this corpus. Refitting weights against one dated corpus
-    # would trade a real signal for a better number on a benchmark. Fixing this properly needs a
-    # labelled sample of MODERN generated text; until then the gap is documented rather than tuned.
+    # THAT DIAGNOSIS WAS AN ARTEFACT OF A BUG IN score_tells, now fixed. Its em-dash category was
+    # counting a spaced hyphen inside space-tokenized compounds ("oscar - winning") and list
+    # bullets, which fired 190 times on HC3's human side and 0 on its AI side — enough on its own
+    # to flatten the whole term. Re-measured on 60 HC3 pairs after the fix:
+    #     bursty    0.843     human mean 0.097  ai mean 0.268
+    #     tells     0.789     human mean 0.100  ai mean 0.540
+    # The tells term is not at chance and never was; it separates about as well as burstiness. It
+    # also runs the other way from what the old note claimed: AI text now carries roughly five
+    # times the catalogued tells of human text, so the term pushes AI text DOWN, as intended.
+    #
+    # STILL NOT reweighted, but for the remaining reason rather than the retracted one. The bands
+    # continue to understate — see the measurement above this comment — and raising the detector
+    # weight to 0.70 would move AI into "likely AI" while leaving human in "human". That is fitting
+    # three weights to one dated corpus: HC3 is 2022-era ChatGPT and predates most of the
+    # vocabulary the catalogue targets ("delve", "tapestry", "leverage"). Doing it properly needs a
+    # labelled sample of MODERN generated text; until then the gap stays documented, not tuned.
     weights = {"tells": _W_TELLS, "detector": _W_DETECTOR, "bursty": _W_BURSTY}
     parts = {"tells": normalized_tells, "bursty": bursty_penalty}
     if detector_max is not None:
