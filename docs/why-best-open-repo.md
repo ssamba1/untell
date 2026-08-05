@@ -19,7 +19,7 @@ Our own deep-research survey of the open-source humanizer field (`humanizer-rese
 
 | Gap criterion | This repo |
 |---|---|
-| (a) validated vs **multiple live detectors** | 8 local adapters — 5 run by default (RoBERTa-OpenAI, HC3, Fast-DetectGPT, MAGE, GPT-2 perplexity); RADAR is opt-in via `UNTELL_ENABLE_RADAR=1` (non-commercial license) and Binoculars needs CUDA — + **7 commercial API adapters** + browser checkers; **live-proven 100%→0% on ZeroGPT** |
+| (a) validated vs **multiple live detectors** | 8 local adapters — 5 run by default (RoBERTa-OpenAI, HC3, Fast-DetectGPT, MAGE, GPT-2 perplexity); RADAR is opt-in via `UNTELL_ENABLE_RADAR=1` (non-commercial license) and Binoculars needs CUDA — + **7 commercial API adapters** + browser checkers; **live-proven 100%→0% on ZeroGPT** (measured 2026-06-25 on the formulaic demo paragraphs; a third-party site that can change without notice — re-run `--browser zerogpt` before citing it) |
 | (b) quality/meaning **verifier** | semantic-similarity gate + preserve-lock (citations/numbers/entities) + `untell-verify` |
 | (c) **iterative detector-feedback loop at inference** | the core loop + **per-sentence targeting** (rewrite only the flagged sentences) |
 | (d) **user-installable package** | `pip install` + 5 console scripts (`untell-score/loop/verify/prove/sentences`) **and** a Claude skill |
@@ -33,7 +33,7 @@ Our own deep-research survey of the open-source humanizer field (`humanizer-rese
 | Inference-time detector-feedback loop | ✅ | ◑ (train-time) | ◑ (own heuristic) | ◑ (multi-pass) | ❌ | ❌ | ◑ (manual) |
 | Multiple real detectors in the loop | ✅ (14) | ✅ (ensemble) | ❌ (own score) | ❌ (internal) | ❌ | ❌ | ◑ (Binoculars only) |
 | Commercial-detector adapters (Originality/GPTZero/Turnitin-class) | ✅ (6) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Live-detector validation (real bypass shown) | ✅ (ZeroGPT 100→0) | ✅ (AUROC, paper) | ❌ | ❌ | ✅ (paper) | ❌ | ◑ (Binoculars) |
+| Live-detector validation (real bypass shown) | ✅ (ZeroGPT 100→0, 2026-06-25, demo corpus) | ✅ (AUROC, paper) | ❌ | ❌ | ✅ (paper) | ❌ | ◑ (Binoculars) |
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
@@ -95,6 +95,6 @@ repo available** — the only one combining a real multi-detector-validated, qua
 open humanizer. The single thing that would also make it the strongest *attack model* — GPU-trained
 RL-against-ensemble — is the one item explicitly roadmapped and honestly deferred for hardware.
 
-**Proof, not marketing:** measured live (ZeroGPT 100%→0%, and 100%→35%→0% via per-sentence feedback),
+**Proof, not marketing:** measured live on 2026-06-25 against the formulaic demo paragraphs (ZeroGPT 100%→0%, and 100%→35%→0% via per-sentence feedback),
 CI-green across real torch detectors, and feature-for-feature ahead of every open competitor on
 completeness — with the one exception (StealthRL's raw model) named honestly.

@@ -19,7 +19,9 @@ Free. Open source. Honest about what it can and can't do.
 [![good first issues](https://img.shields.io/github/issues/ssamba1/untell/good%20first%20issue.svg?label=good%20first%20issues&color=7057ff)](https://github.com/ssamba1/untell/labels/good%20first%20issue)
 
 **Optimize against real detectors — with the detector *in the loop*, not blind guessing.** Out of the box it
-beats the **free web checkers** (ZeroGPT, live-proven 100%→0%). To actually beat **GPTZero · Originality.ai ·
+beats the **free web checkers** (ZeroGPT 100%→0%, measured live on 2026-06-25 against the formulaic
+demo paragraphs — a third-party site that can change without notice, so re-verify with
+`--browser zerogpt` rather than trusting the figure). To actually beat **GPTZero · Originality.ai ·
 Turnitin-class · Copyleaks**, you wire *their* API into the loop (key-gated, paid) — the bundled **local
 proxies alone do *not* predict those, and we [say so plainly](#honest-caveats)** rather than fake a "99% human."
 [Why this is the most complete open humanizer →](#-why-this-is-the-best-open-source-ai-humanizer)
