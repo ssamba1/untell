@@ -200,3 +200,29 @@ def test_the_free_rewriter_list_is_the_same_on_both_network_surfaces():
     import untell.mcp_server as mcp
 
     assert api._FREE_REWRITERS == mcp._FREE_REWRITERS
+
+
+def test_the_free_rewriter_list_matches_the_cli_minus_its_two_special_names():
+    """Three places enumerate the rewriters, and the relationship between them is exact.
+
+    `untell humanize --rewriter` offers the free backends plus two names that are not free
+    backends: "auto" (let get_rewriter choose, which may be a PAID hosted LLM) and "base" (the
+    untrained local policy, a training/debug backend). _FREE_REWRITERS is exactly the rest, and
+    that is what both network surfaces resolve against — so a backend added to the CLI and not to
+    the frozenset would be rejected over HTTP while working on the command line.
+    """
+    from untell.scripts.run import build_parser
+
+    action = next(a for a in build_parser()._actions if a.dest == "rewriter")
+    cli = set(action.choices)
+    assert {"auto", "base"} <= cli
+    assert cli - {"auto", "base"} == set(api._FREE_REWRITERS)
+
+
+def test_the_ceiling_cli_offers_the_same_backends():
+    """eval/ceiling.py restates the list too; it omits only "base", which is not an evasion path."""
+    from eval.ceiling import main as ceiling_main  # noqa: F401
+    from eval.ceiling import build_parser as ceiling_parser
+
+    action = next(a for a in ceiling_parser()._actions if a.dest == "rewriter")
+    assert set(action.choices) - {"auto"} == set(api._FREE_REWRITERS)

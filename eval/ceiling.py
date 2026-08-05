@@ -250,11 +250,13 @@ def _read_corpus(path: str) -> list[str]:
     return [b for b in blocks if b]
 
 
-def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    from untell.scripts.io_utils import configure_utf8_io
+def build_parser() -> argparse.ArgumentParser:
+    """The `untell-ceiling` argument parser.
 
-    configure_utf8_io()
+    Split out of ``main`` so its vocabularies can be read without running the command — the tier
+    and rewriter lists are restated here and pinned against the loader's table and
+    ``api_server._FREE_REWRITERS`` by tests/test_surface_parity.py.
+    """
     parser = argparse.ArgumentParser(prog="untell-ceiling", description=__doc__)
     parser.add_argument("--file", "-f", help="corpus file (paragraphs separated by blank lines)")
     parser.add_argument(
@@ -290,7 +292,15 @@ def main(argv: list[str] | None = None) -> int:
         "'ensemble'/'max' (best of all free methods), 'neural' (T5 best-of-N; needs .[full]).",
     )
     parser.add_argument("--json", action="store_true")
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+    from untell.scripts.io_utils import configure_utf8_io
+
+    configure_utf8_io()
+    args = build_parser().parse_args(argv)
 
     from untell._env import load_env
 
