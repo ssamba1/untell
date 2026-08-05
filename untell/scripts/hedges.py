@@ -247,7 +247,35 @@ def dropped_hedges(source: str, candidate: str) -> list[str]:
 
 
 def certainty_kept(source: str, candidate: str) -> bool:
-    """True when the rewrite hedges every claim class the source hedged."""
+    """True when the rewrite hedges every claim class the source hedged.
+
+    Two FALSE VETOES are known and deliberately left, because the cure is worse than the disease:
+
+        "If you click the button, the form submits."
+          -> "Clicking the button submits the form."          vetoed, class 'modality'
+        "Nothing in the trial data suggests that X causes Y."
+          -> "Nothing in the trial data shows that X causes Y."  vetoed, class 'evidential'
+
+    Both are faithful. The first moves a conditional into a gerund subject, which carries the same
+    generic force; the second weakens an evidential UNDER negation, where weaker is a smaller claim,
+    not a larger one. Teaching the check either would mean recognising conditional force in a
+    gerund, and polarity-flipping the evidential scale inside a negation — each a new way for a
+    real hedge drop to slip through.
+
+    The trade is settled by measurement and by which direction is safe:
+
+    - MEASURED over 80 runs (40 real HC3 texts x 2 seeds, composite): **0 candidates vetoed** by
+      this check at all. The shipped free rewriters substitute words and restructure sentences;
+      they do not produce either shape, so the false veto costs nothing on the path that can be
+      verified here.
+    - The directions are not symmetric. A false veto discards one candidate and the loop draws
+      another — a cost. A leak ships a strengthened claim in the user's document — a corruption.
+      For a HARD gate in the meaning path, erring toward the veto is the correct bias.
+
+    Revisit only with a measured false-veto rate from the hosted-LLM path, which does restructure
+    freely enough to hit these. See ``numbers_kept`` for the same reasoning reaching the opposite
+    conclusion, because there the unsafe direction pointed the other way.
+    """
     return not dropped_hedges(source, candidate)
 
 
