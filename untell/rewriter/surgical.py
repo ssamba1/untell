@@ -10,8 +10,20 @@ literature is missing (see ``docs/free-ceiling-report.md``).
 It rewrites by ranking each word by how much it drives the detector score, then swapping the
 highest-importance words for score-lowering synonyms (``untell.attacks.surgical_substitute``). Minimal
 surface change, so the meaning-similarity gate in the loop is easy to hold; deterministic, so the
-measurement is reproducible. Weak on its own (a small synonym map, ``max_subs`` swaps) — it is the
-*floor* of the free regime, not the ceiling, and the report says so.
+measurement is reproducible. Weak on its own — it is the *floor* of the free regime, not the
+ceiling, and the report says so.
+
+**On the pure-stdlib path it is weaker than "weak": it is close to inert.** MEASURED on 30 real
+HC3 AI texts with ``UNTELL_LITE_NO_TORCH=1`` — 16 of 30 get zero substitutions and the mean score
+moves 0.5693 -> 0.5663. This docstring used to attribute that to "a small synonym map", which is
+false and worth correcting because it points at the wrong fix: the map covers every AI-vocabulary
+word in a 13-tell test paragraph. The real cause is that the stdlib detector's score does not
+change when a word is swapped for a synonym, so the "is this candidate better" test can never
+pass. See ``surgical_substitute``'s docstring for the per-candidate numbers.
+
+It follows that ``composite`` (structural + surgical) owes essentially all of its zero-dependency
+strength to the *structural* half, and that a benchmark row for "surgical" on that path is
+measuring the detector's insensitivity more than the rewriter.
 """
 
 from __future__ import annotations

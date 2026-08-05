@@ -493,6 +493,36 @@ def surgical_substitute(
 
     Optimised via batched scoring: importance ranks are computed with one detector load,
     and each round of synonym candidates is scored together in a single batch.
+
+    HOW OFTEN THIS DOES NOTHING, and why. MEASURED on 30 real HC3 AI texts on the pure-stdlib
+    path (``UNTELL_LITE_NO_TORCH=1``): **16 of 30 get zero substitutions**, mean 0.53 swaps, and
+    the mean score moves 0.5693 -> 0.5663 — three thousandths.
+
+    The cause is not the one the rewriter's own docstring used to give ("a small synonym map").
+    The map is not the problem: on a paragraph carrying 13 catalogued tells it covers every one of
+    leverage, robust, seamless, delve, multifaceted, tapestry, groundbreaking, paradigm,
+    underscores, pivotal and landscape. Nor is it the ``drop <= 0`` filter — 7 of 13 words there
+    ranked positive. The acceptance test is what never fires:
+
+        leverage -> use / lean on / tap into    0.8016  0.8190  0.8190   (baseline 0.7522)
+        tapestry -> mix / array / range         0.7522  0.7522  0.7522
+        pivotal  -> key / central / critical    0.7522  0.7522  0.7522
+
+    The stdlib heuristic is **insensitive to synonym substitution**: replacing the word leaves its
+    score bit-identical, or raises it. `< cur_score` is therefore unreachable, so nothing is
+    adopted. Note this is a different failure from ranking — deleting "leverage" *does* move the
+    score by 0.0207, which is why importance ranks it highly and then nothing comes of it.
+
+    Two consequences worth knowing before trusting a number from this function:
+
+    * it is close to inert on the zero-dependency path, which is exactly the path the free-ceiling
+      measurements advertise as "$0, no key, no model download";
+    * the same substitutions that the detector cannot see DO remove catalogued tells. Ranking by
+      tell-removal instead of by deletion-importance, and accepting a swap that leaves the score
+      within the loop's own 0.02 noise band, takes tells/100w from 0.571 to 0.233 rather than to
+      0.458, at a marginally BETTER detector score (0.5653) and unchanged meaning (0.9989). That
+      is not done here yet — it needs the same measurement at full tier, where the detector does
+      provide a usable gradient and the current ranking earns its keep.
     """
     if not text.strip():
         return {"text": text, "substitutions": 0, "pre": 0.0, "post": 0.0}

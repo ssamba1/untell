@@ -281,3 +281,67 @@ def test_legitimate_unicode_is_not_counted_as_hidden(desc, text):
     a pair but neither character changes alone, so only true singletons are counted. Otherwise every
     accented document would report as watermarked."""
     assert count_hidden(text) == 0, desc
+
+
+class TestSurgicalIsInertOnTheStdlibPath:
+    """Pin the measured limitation so a future reader does not rediscover it as a mystery.
+
+    surgical_substitute makes ZERO substitutions on 16 of 30 real HC3 AI texts on the pure-stdlib
+    path. The cause is not the synonym map and not the drop<=0 filter: the stdlib detector's score
+    is unchanged by a synonym swap, so `candidate < cur_score` is unreachable.
+    """
+
+    TELL_HEAVY = (
+        "Moreover, we leverage robust and seamless solutions to delve into the multifaceted "
+        "tapestry. Furthermore, this groundbreaking paradigm underscores the pivotal role of "
+        "innovation in the evolving landscape."
+    )
+
+    def test_the_synonym_map_is_not_the_limitation(self):
+        """Every AI-vocabulary word in the test paragraph has a substitute available."""
+        from untell.attacks import synonyms
+
+        for word in (
+            "leverage", "robust", "seamless", "delve", "multifaceted", "tapestry",
+            "groundbreaking", "paradigm", "underscores", "pivotal", "landscape",
+        ):
+            assert synonyms(word), f"{word} has no synonym — the map really would be the problem"
+
+    def test_swapping_does_not_move_the_stdlib_score(self, monkeypatch):
+        """The acceptance test's premise fails: a synonym swap leaves the score where it was."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.attacks import synonyms
+        from untell.attacks.word_importance import _score_max, batch_score_texts, substitute_once
+
+        base = _score_max(self.TELL_HEAVY, "lite")
+        for word in ("tapestry", "pivotal"):
+            cands = [substitute_once(self.TELL_HEAVY, word, s) for s in synonyms(word)]
+            assert all(c.strip() != self.TELL_HEAVY.strip() for c in cands), "no swap happened"
+            scores = [float(s["max"]) for s in batch_score_texts(cands, tier="lite")]
+            assert not any(s < base for s in scores), (
+                f"{word}: a candidate now beats the baseline — the documented inertness has "
+                f"changed, so re-measure the 16/30 figure before trusting it"
+            )
+
+    def test_deletion_importance_still_ranks_those_words(self, monkeypatch):
+        """Ruling out the other candidate explanation: ranking is not the blocker."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.attacks import synonyms
+        from untell.attacks.word_importance import _WORD, _score_max, importance
+
+        pre = _score_max(self.TELL_HEAVY, "lite")
+        sub = {
+            w.lower()
+            for w in dict.fromkeys(m.group(0) for m in _WORD.finditer(self.TELL_HEAVY))
+            if synonyms(w)
+        }
+        ranks = importance(self.TELL_HEAVY, tier="lite", only=sub, base=pre)
+        assert sum(1 for _w, d in ranks if d > 0) >= 3, "deletion importance found nothing to rank"
+
+    def test_surgical_makes_no_substitutions_here(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.attacks import surgical_substitute
+
+        r = surgical_substitute(self.TELL_HEAVY, tier="lite", threshold=0.30, max_subs=12)
+        assert r["substitutions"] == 0
+        assert r["text"].strip() == self.TELL_HEAVY.strip()
