@@ -226,6 +226,18 @@ def meaning_preserved(
     bar. Loosening the bar in that case would be pure risk: the metric that would have to catch the
     bad rewrites is the very one measured to be blind to them.
 
+    TIGHTENING it does not work either, and that is worth stating because it is the obvious next
+    idea. Measured on the embedding backend, 5 faithful rewrites against 5 meaning inversions:
+
+        faithful    0.376 - 0.954   (register shift 0.376, voice change 0.954)
+        inversions  0.730 - 0.991   (negation added 0.730, role swap 0.991)
+
+    The ranges overlap and the ordering is backwards — the *most* similar pair in the whole set is a
+    role swap at 0.991, and the *least* similar is a faithful register shift at 0.376. No threshold
+    admits the faithful set and rejects the inversions, so this fallback is not a bar that needs
+    tuning; it is a check that cannot be built from this metric. The only fixes are installing the
+    NLI stack, or saying that it is missing — which the loop result now does via ``meaning_gate``.
+
     NLI has one blind spot of its own, and :mod:`untell.scripts.roles` covers it: rewrites that keep
     every content word and only permute the *roles* ("the company sued the regulator" -> "the
     regulator sued the company") score as near-perfect paraphrases, because as bags of tokens they
