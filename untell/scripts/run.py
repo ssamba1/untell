@@ -432,11 +432,15 @@ def untell_text(
 def _meaning_gate_mode(veto_contradictions: bool) -> str:
     """Which fidelity checks were actually in force this run.
 
-    ``"nli"`` — contradiction veto + bidirectional entailment + roles, on top of similarity and the
-    always-on mechanical checks (numbers, hedges).
-    ``"similarity-only"`` — the NLI model is unavailable or the veto was switched off, so fidelity
-    rests on the similarity bar alone. That metric admits inversions: measured 0.983 for
-    "runs faster" -> "runs slower" against a 0.76 bar.
+    ``"nli"`` — the full conjunction: retained quantities and claim strength (mechanical, always
+    on), plus the similarity floor, contradiction veto, bidirectional entailment and the
+    predicate-argument role check.
+    ``"similarity-only (...)"`` — the model-backed half is absent, because NLI could not be
+    imported or the veto was switched off. The mechanical checks still run; what is missing is
+    every check that needs the model, and those are the ones that catch an INVERSION. Measured:
+    "runs faster" -> "runs slower" scores similarity 0.983 against a 0.76 bar and is admitted here,
+    rejected under ``"nli"``. The name says "similarity-only" because similarity is the only thing
+    still judging the *semantics* — not because it is the only check running.
     """
     from untell.scripts.entailment import available as _nli_available
 
@@ -504,9 +508,10 @@ def _render(result: dict) -> str:
         # "runs slower" against a 0.76 bar. A user reading a passing result deserves to know the
         # check that would have caught that was not running.
         lines.append(
-            "  WARNING: the contradiction/entailment veto did NOT run. Similarity alone admits "
-            "meaning inversions (measured 0.983 for \"runs faster\" -> \"runs slower\"). "
-            "Install the NLI extra for the full fidelity gate."
+            "  WARNING: the contradiction/entailment/roles checks did NOT run. Quantities and "
+            "claim strength were still checked, but semantics rested on similarity alone, which "
+            "admits inversions (measured 0.983 for \"runs faster\" -> \"runs slower\" against a "
+            "0.76 bar). Install torch + transformers for the full fidelity gate."
         )
     lines.append("\nper-detector (pre -> post):")
     for name in pre.get("detectors", {}):
