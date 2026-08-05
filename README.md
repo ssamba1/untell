@@ -266,18 +266,37 @@ going to 0.09 on that same text proves the rewriter is working. `hc3_roberta` me
 matter*, and a meaning-preserving rewrite is not allowed to change that. Similarity stays at 0.98
 for the same reason — it is a content metric too.
 
-So the honest summary: **style detectors fall, the content detector does not, and one unclearable
-passage flags the whole document** because the ensemble aggregates with `max`. Measured per text,
-the spread is between texts rather than along length — a 207-word paragraph reaches 0.40 while a
-199-word one never leaves 0.999 — so a longer document is worse mainly because it is another chance
-to contain a text the loop cannot clear.
+So the honest summary for **this rewriter**: style detectors fall, the content detector does not,
+and one unclearable passage flags the whole document because the ensemble aggregates with `max`.
+Measured per text, the spread is between texts rather than along length — a 207-word paragraph
+reaches 0.40 while a 199-word one never leaves 0.999 — so a longer document is worse mainly because
+it is another chance to contain a text the loop cannot clear.
+
+> **`hc3_roberta` is not immovable — that was a property of `composite`, the default.** The whole
+> table above is one rewriter, and swapping it changes the headline. Same six HC3 answers, same
+> command, `pre` identical at 0.9994 ([Result 13](docs/free-ceiling-measured.md)):
+>
+> | | `composite` | `neural` |
+> |---|---|---|
+> | mean max P(AI) | 0.999 → **0.805** | 0.999 → **0.502** |
+> | flagged rate | 1.00 → **1.00** | 1.00 → **0.50** |
+> | **`hc3_roberta`** | 1.00 → **0.756** | 1.00 → **0.407** |
+> | meaning similarity | 0.986 / 0.965 worst | 0.941 / 0.884 worst |
+>
+> Half the samples clear where composite cleared none. It is **not free**: meaning drops, `neural`
+> needs the `.[full]` extra (~850MB T5) and several times the wall-clock, and it is not uniformly
+> better per detector — it loses on `roberta_openai` (0.30 vs 0.12) while winning the `max` that
+> decides the verdict. The default is unchanged; a run that ends flagged now prints the trade so
+> you can choose. Note also that `max` is an **alias** for `ensemble`, so a table listing both is
+> listing one method twice.
 
 Two obvious-looking fixes were measured and **refuted**: exiting early when the loop stalls (it
 would have cost the improvable text more than half its gain), and clearing each paragraph separately
 before reassembling (no difference — the paragraphs do not clear either). Full method, the falsified
 claims and the corpus caveat: [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)
-(Results 10–12). Every result now carries the `corpus` it came from, and a built-in-sample run says
-so in its output.
+(Results 10–13). Every result now carries the `corpus` **and the `rewriter`** it came from — the
+missing rewriter field is exactly why the wall above was read as a property of the free tier — and
+a built-in-sample run says so in its output.
 
 ¹ Figures marked `--best-of 8` predate the detector calibration fixes and are indicative only. The
 "after" number improved (0.26 → 0.18, flagged 0.15 → 0.07) when two detectors were recalibrated —
