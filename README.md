@@ -38,8 +38,17 @@ score as feedback (targeting the exact sentences that read as AI), and *re-score
 hardest detector stops flagging it **and** a semantic-similarity gate confirms the meaning is unchanged.
 
 That iterative, detector-feedback approach is the strongest *training-free* technique in the published
-literature ([arXiv 2506.07001](https://arxiv.org/abs/2506.07001): −88% TPR@1%FPR, transfers across detectors,
-preserves meaning) — and **no shipping tool, open or commercial, actually does it.** This repo does.
+literature ([arXiv 2506.07001](https://arxiv.org/abs/2506.07001): −87.88% average TPR@1%FPR, transfers
+across neural, watermark-based and zero-shot detectors) — and **no shipping tool, open or commercial,
+actually does it.** This repo does.
+
+> That paper has code — [`chengez/Adversarial-Paraphrasing`](https://github.com/chengez/Adversarial-Paraphrasing)
+> — so "no shipping tool" is the precise claim, not "nobody implements it". It is research code: no
+> meaning gate inside the pipeline (quality is a post-hoc GPT-4o evaluation for the paper, which reports
+> "mostly a slight degradation in text quality" rather than preserved meaning), no numeral or citation
+> preservation, no installable package, no tests. Its bypass numbers are far stronger than anything
+> measured here. See [why-best-open-repo.md](docs/why-best-open-repo.md) for the full comparison —
+> including the honest note that packaging its mechanism behind these meaning gates would beat this repo.
 
 > ```
 > Measured live:  a formulaic AI paragraph went  100% → 0% AI on ZeroGPT  in one loop.
