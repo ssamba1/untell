@@ -171,3 +171,21 @@ class TestTheDemoUiOffersWhatTheToolShips:
         assert offered, "no rewriter options found"
         unusable = [r for r in offered if r not in api._FREE_REWRITERS]
         assert not unusable, f"demo.html offers rewriters that need a key: {unusable}"
+
+
+def test_console_script_count_in_why_best_matches_pyproject():
+    """A claim about the package's own surface should not be able to go stale.
+
+    It said "5 console scripts" while pyproject defined 21 — understating the tool by 4x in the
+    document whose whole job is the completeness comparison.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    block = (root / "pyproject.toml").read_text(encoding="utf-8").split("[project.scripts]")[1]
+    names = re.findall(r"(?m)^([A-Za-z0-9_-]+)\s*=", block.split("\n[")[0])
+    doc = (root / "docs" / "why-best-open-repo.md").read_text(encoding="utf-8")
+    assert f"**{len(names)}** console scripts" in doc, (
+        f"pyproject defines {len(names)} console scripts; why-best-open-repo.md does not say so"
+    )
