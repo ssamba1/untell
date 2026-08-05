@@ -591,6 +591,13 @@ demo number under a real corpus's name.
 of a 600-word document is not, and `max`-over-windows means the second does not follow from the
 first.
 
+> **CORRECTION (Result 12).** That last paragraph overstates the length effect. Measured per text,
+> a *single* 199-word HC3 paragraph already ends at 0.999 on its own, while a 207-word one reaches
+> 0.403 — the spread is between texts, not along length. What the sweep above actually shows is
+> `max` over a corpus of uneven difficulty: adding paragraphs adds chances to include a hard one,
+> and `max` reports the worst. Both descriptions predict the same table; only the second survives
+> measuring a single paragraph. See Result 12.
+
 ---
 
 ## Result 11 — the ceiling against real AI text, and the content wall coming back
@@ -681,3 +688,56 @@ reports. That is the documented cost of using `max` as a verdict rather than as 
 The two frontiers this leaves are length (Result 10) and the content signal itself. Neither is a
 phrasing problem, which is the only thing an inference-only loop can attack, and that — not a
 better rewriter — is what bounds the free path.
+
+---
+
+## Result 12 — two fixes that looked obvious, both refuted by measuring them
+
+Results 10 and 11 suggested two levers. Both were measured before being built, and neither survived.
+
+### "The loop wastes iterations 2–N, so exit early when it stalls"
+
+Result 11 hits `max_iters` on every sample, and the stall guard in `run.py` only fires for
+rewriters flagged `deterministic` — a stochastic one always spends the full budget. That reads like
+4× the CPU for nothing. Running the same text at budgets 1 through 4, same seed, only `--max-iters`
+changed:
+
+| text | words | before | max_iters=1 | 2 | 3 | 4 |
+|---|---|---|---|---|---|---|
+| A | 207 | 1.000 | 0.927 | 0.542 | 0.514 | **0.403** |
+| B | 199 | 1.000 | 0.999 | 0.999 | 0.999 | 0.999 |
+
+Text A more than halves after the first iteration and keeps improving to the budget. Text B never
+moves at all. **A no-progress early exit would have cost A most of its improvement**, and nothing at
+iteration 1 distinguishes A from B. The existing guard — deterministic rewriters only, where a
+repeat is provably a no-op — is exactly as aggressive as it can safely be. No change made.
+
+### "Clear each paragraph separately, then reassemble"
+
+If `max`-over-windows is what pins a long document, clearing each block on its own and reassembling
+should beat rewriting the whole thing. Measured:
+
+| doc | words | before | whole-document loop | per-block then join |
+|---|---|---|---|---|
+| 0 | 406 | 1.000 | 0.999 | **0.999** |
+| 1 | 291 | 1.000 | 0.999 | **0.999** |
+
+No difference — because the individual paragraphs do not clear either. Text B above is a single
+199-word paragraph that ends at 0.999 on its own.
+
+### What this corrects in Result 10
+
+Result 10 concluded "the next frontier is length". That overstates it. The per-text spread
+(0.403 to 0.999 at essentially the same length) is larger than anything the length sweep attributed
+to length. The sweep's real mechanism is `max` over a corpus of uneven difficulty: each added
+paragraph is another chance to include a text the loop cannot clear, and `max` reports the worst
+one. Length and worst-element predict the same table, and only measuring a single paragraph tells
+them apart.
+
+So the frontier is not document length. It is that **some AI text is unclearable by
+meaning-preserving rewriting at all**, and `max` aggregation means one such passage is enough to
+flag a whole document. That is a harder problem than windowing, and it is the same content wall
+Result 11 names — not a separate one.
+
+Both of these are recorded because they were plausible, cheap to build, and wrong. Measuring first
+cost two probe runs; building first would have shipped a regression in the first case.

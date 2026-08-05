@@ -262,10 +262,17 @@ going to 0.09 on that same text proves the rewriter is working. `hc3_roberta` me
 matter*, and a meaning-preserving rewrite is not allowed to change that. Similarity stays at 0.98
 for the same reason — it is a content metric too.
 
-So the honest summary: **style detectors fall, the content detector does not, and a longer document
-makes it worse** because `max`-over-windows means every window has to clear. Full method, the
-falsified claims and the corpus caveat: [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)
-(Results 10–11). Every result now carries the `corpus` it came from, and a built-in-sample run says
+So the honest summary: **style detectors fall, the content detector does not, and one unclearable
+passage flags the whole document** because the ensemble aggregates with `max`. Measured per text,
+the spread is between texts rather than along length — a 207-word paragraph reaches 0.40 while a
+199-word one never leaves 0.999 — so a longer document is worse mainly because it is another chance
+to contain a text the loop cannot clear.
+
+Two obvious-looking fixes were measured and **refuted**: exiting early when the loop stalls (it
+would have cost the improvable text more than half its gain), and clearing each paragraph separately
+before reassembling (no difference — the paragraphs do not clear either). Full method, the falsified
+claims and the corpus caveat: [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md)
+(Results 10–12). Every result now carries the `corpus` it came from, and a built-in-sample run says
 so in its output.
 
 ¹ Figures marked `--best-of 8` predate the detector calibration fixes and are indicative only. The
