@@ -142,7 +142,27 @@ def missing_numbers(source: str, candidate: str) -> list[str]:
 
 
 def numbers_kept(source: str, candidate: str) -> bool:
-    """True when every numeral in ``source`` survives in ``candidate``."""
+    """True when every numeral in ``source`` survives in ``candidate``.
+
+    ONE-DIRECTIONAL, deliberately. A number INVENTED where the source had only a vague quantifier
+    ("Several sites joined." -> "12 sites joined.") is a meaning change and is NOT vetoed here.
+    That was measured before being left alone, because the obvious fix is worse than the leak:
+
+    - The free rewriters cannot invent a number at all. They substitute words and restructure
+      sentences; there is no path that generates a digit. MEASURED over 80 runs (40 real HC3
+      texts x 2 seeds, composite): **0 runs** produced a digit absent from the input. So the veto
+      would never fire on the path it could be measured on.
+    - It would fire on the hosted-LLM path, which cannot be measured here without a key — and that
+      is exactly where the FALSE vetoes live, because an LLM renders quantities differently.
+      "Half the cohort" -> "50% of the cohort", "a couple of sites" -> "2 sites", "the rate
+      doubled" -> "2x", "last decade" -> "the 2010s" are all faithful and all introduce a number
+      with no digit in the source. Licensing them needs a source-side loose-quantity map far larger
+      than ``_WORDS``, and each entry is a new false-veto surface.
+
+    So the trade on today's evidence is: no protection where it can be verified, real false-veto
+    risk where it cannot. If the LLM path is ever measured for invented numbers, revisit — the
+    check itself is easy, and ``_numbers`` already reads both sides.
+    """
     return not missing_numbers(source, candidate)
 
 
