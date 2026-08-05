@@ -695,6 +695,23 @@ class TestAnUnmodelledFieldIsAnError(_Unlimited):
         assert modelled <= set(seen), f"modelled but never forwarded: {sorted(modelled - set(seen))}"
 
 
+def test_score_response_names_the_scoring_path(monkeypatch):
+    """`perplexity_burstiness` is two detectors under one name — GPT-2 when torch is importable,
+    a stdlib heuristic otherwise — and measured on 100 held-out HC3 pairs that is FPR 6.0% against
+    69.0% at the shipped threshold. score_text reports `detector_modes`; this pins that the REST
+    surface passes it through, because a field a caller cannot see is not a disclosure."""
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    with patch("untell.api_server.load_env"):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        body = TestClient(app).post(
+            "/score", json={"text": "A sufficiently long sentence for the heuristic.", "tier": "lite"}
+        ).json()
+        assert body["detector_modes"]["perplexity_burstiness"] == "stdlib"
+
+
 class TestStyleIsValidated(_Unlimited):
     """`style` was a bare `str`, and an unknown name is a silent no-op.
 
