@@ -86,3 +86,34 @@ def test_the_signatures_can_actually_fire():
     }
     for label, pattern in SIGNATURES:
         assert pattern.search(broken[label]), f"{label} does not match its own example"
+
+
+CONNECTIVE_SAMPLES = [
+    "Moreover, the budget is approved. However, the timeline slipped by two weeks. "
+    "Additionally, the team is smaller than planned, which makes the remaining work harder.",
+    "However, salt is often the most effective and affordable option for many communities. "
+    "Moreover, it is widely available. Furthermore, it stores well in most climates.",
+]
+
+
+@pytest.mark.parametrize("text", CONNECTIVE_SAMPLES)
+def test_the_surgical_rewriter_emits_no_breakage_signatures(text):
+    """The word-level path produced two of the three bugs this file was written for.
+
+    Its swaps are punctuation-sensitive in a way the score cannot see: "however -> though" and
+    "moreover -> and" are both correct words in the wrong syntactic position, and a detector reads
+    the result as no worse — often better, since it is now less formulaic.
+    """
+    from untell.attacks import surgical_substitute
+
+    out = surgical_substitute(text, tier="lite", threshold=0.30)["text"]
+
+    extra = [
+        ("sentence-initial subordinator", re.compile(r"(?:^|[.!?]\s+)(Though|Although|Whereas)\s*,", re.I)),
+        ("coordinator with a comma", re.compile(r"\b(and|but|or|nor)\s*,\s", re.I)),
+    ]
+    for label, pattern in SIGNATURES + extra:
+        if pattern.search(text):
+            continue
+        match = pattern.search(out)
+        assert not match, f"{label}: {match.group(0)!r} in {out!r}"
