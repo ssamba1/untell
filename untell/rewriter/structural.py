@@ -771,31 +771,46 @@ def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves:
 # `contractions`: inject "it is" -> "it's" etc. The single strongest formality signal in English,
 #   and wrong for academic prose, which contracts far less than speech.
 # `register`: how much of the formal->plain vocabulary map to apply (0 = keep the formal word).
+# `sentences`: multiplier on how often a long sentence is SPLIT.
+# `openers`: multiplier on how often a transitional opener is added.
+#
+# Those two exist because four styles were inert. With only `contractions` and `register` to set,
+# casual, conversational, blunt and minimalist all resolved to the neutral default's exact values —
+# so `--style minimalist` produced byte-identical output to no style at all. MEASURED over 20 HC3
+# texts before this: those four differed from no-style on 0 of 20, while academic, professional and
+# technical differed on 19 of 20. A flag the CLI advertises in its own help text, that cannot
+# change anything, is worse than one that is missing.
+#
+# The knobs are the ones the pipeline already had at fixed rates, so this sets existing dials
+# rather than adding transforms: shorter sentences for minimalist and blunt, more connective
+# variation for conversational, longer flowing sentences for storytelling.
+_NEUTRAL = {"contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0}
+
 _STYLE_PROFILES: dict[str, dict] = {
-    "casual":        {"contractions": True,  "register": 1.0},
-    "conversational": {"contractions": True, "register": 1.0},
-    "blunt":         {"contractions": True,  "register": 1.0},
-    "storytelling":  {"contractions": True,  "register": 0.8},
-    "humorous":      {"contractions": True,  "register": 0.9},
-    "journalistic":  {"contractions": False, "register": 0.8},
-    "persuasive":    {"contractions": True,  "register": 0.7},
-    "empathetic":    {"contractions": True,  "register": 0.8},
-    "instructional": {"contractions": True,  "register": 0.8},
-    "minimalist":    {"contractions": True,  "register": 1.0},
+    "casual":        {"contractions": True,  "register": 1.0,  "sentences": 1.0, "openers": 1.2},
+    "conversational": {"contractions": True, "register": 1.0,  "sentences": 1.1, "openers": 1.5},
+    "blunt":         {"contractions": True,  "register": 1.0,  "sentences": 1.6, "openers": 0.0},
+    "storytelling":  {"contractions": True,  "register": 0.8,  "sentences": 0.5, "openers": 1.0},
+    "humorous":      {"contractions": True,  "register": 0.9,  "sentences": 1.0, "openers": 1.3},
+    "journalistic":  {"contractions": False, "register": 0.8,  "sentences": 1.3, "openers": 0.5},
+    "persuasive":    {"contractions": True,  "register": 0.7,  "sentences": 1.0, "openers": 1.0},
+    "empathetic":    {"contractions": True,  "register": 0.8,  "sentences": 0.8, "openers": 1.0},
+    "instructional": {"contractions": True,  "register": 0.8,  "sentences": 1.3, "openers": 0.6},
+    "minimalist":    {"contractions": True,  "register": 1.0,  "sentences": 1.8, "openers": 0.0},
     # Formal registers: contractions OFF and the plain-word swap held back, because "utilize" ->
     # "use" is the right move for casual prose and the wrong one for a paper.
-    "academic":      {"contractions": False, "register": 0.15},
-    "professional":  {"contractions": False, "register": 0.4},
-    "technical":     {"contractions": False, "register": 0.3},
-    "poetic":        {"contractions": True,  "register": 0.5},
+    "academic":      {"contractions": False, "register": 0.15, "sentences": 0.7, "openers": 0.4},
+    "professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "openers": 0.6},
+    "technical":     {"contractions": False, "register": 0.3,  "sentences": 1.2, "openers": 0.3},
+    "poetic":        {"contractions": True,  "register": 0.5,  "sentences": 0.6, "openers": 0.8},
 }
 
 
 def style_profile(style: str | None) -> dict:
     """Knob settings for a style name. Unknown/None -> the neutral default (previous behaviour)."""
     if not style:
-        return {"contractions": True, "register": 1.0}
-    return _STYLE_PROFILES.get(style.strip().lower(), {"contractions": True, "register": 1.0})
+        return dict(_NEUTRAL)
+    return {**_NEUTRAL, **_STYLE_PROFILES.get(style.strip().lower(), {})}
 
 
 def structural_rewrite(
@@ -882,10 +897,10 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         merge_rate = min(0.7, intensity * 0.6)
         sents = _merge_sentences(sents, rate=merge_rate)
 
-        split_rate = min(0.6, intensity * 0.5)
+        split_rate = min(0.9, intensity * 0.5 * profile["sentences"])
         sents = _split_long_sentences(sents, rate=split_rate)
 
-        open_rate = min(0.6, intensity * 0.6)
+        open_rate = min(0.9, intensity * 0.6 * profile["openers"])
         sents = _vary_openers(sents, rate=open_rate)
 
         # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single

@@ -578,10 +578,18 @@ class TestStyleProfiles:
     def test_unknown_and_missing_style_keep_previous_behaviour(self):
         from untell.rewriter.structural import style_profile
 
-        neutral = {"contractions": True, "register": 1.0}
-        assert style_profile(None) == neutral
-        assert style_profile("not-a-real-style") == neutral
+        # The neutral profile is the single source for "no style", so the test reads it rather than
+        # restating it — the previous hard-coded copy broke the moment two knobs were added, while
+        # the behaviour it exists to protect (unknown style == no style) was intact.
+        from untell.rewriter.structural import _NEUTRAL
+
+        assert style_profile(None) == _NEUTRAL
+        assert style_profile("not-a-real-style") == _NEUTRAL
         assert style_profile("ACADEMIC")["contractions"] is False  # case-insensitive
+        # Every knob the pipeline reads must be present on every profile, or a style that omits one
+        # raises KeyError deep inside a rewrite instead of falling back.
+        for name in ("casual", "academic", "not-a-real-style"):
+            assert set(style_profile(name)) == set(_NEUTRAL)
 
 
 ABBREVIATION_SPLITS = [
@@ -912,3 +920,65 @@ class TestTargetedFallsBackInsteadOfDoingNothing:
         out = rw.rewrite(text, {"tier": "lite"}, 0.30)
         assert "Second sentence here." in out, "the clean sentence must survive byte-identical"
         assert inner.calls == ["First sentence here."], "only the flagged sentence is rewritten"
+
+
+class TestEveryStyleActuallyChangesTheFreePath:
+    """Four styles were byte-identical to no style at all.
+
+    `--style` is advertised in the CLI's own help with 14 modes, but the profile table set only
+    `contractions` and `register`, and casual, conversational, blunt and minimalist all resolved to
+    the neutral default's exact values. MEASURED over 20 HC3 texts before: those four differed from
+    no-style on 0 of 20, while academic and technical differed on 19. A flag that cannot change
+    anything is worse than one that is missing.
+
+    Two knobs the pipeline already had at fixed rates — split frequency and opener frequency — are
+    now set per profile. After: casual 9/20, blunt 16/20, conversational 16/20, minimalist 16/20.
+    `persuasive` and `empathetic` stay at 1/20; they are register-only variations by design, and
+    that is a real limit rather than a fixed one.
+    """
+
+    # Six sentences, several of them long. The knobs set RATES over sentences, so a two-sentence
+    # sample gives them almost nothing to act on — the first version of this test used one and
+    # "casual" (whose only lever is a 1.2x opener rate) could not differ at any seed.
+    SRC = (
+        "Furthermore, the organization leverages robust methodologies to optimize operational "
+        "efficiency across diverse sectors and geographies. Moreover, stakeholders must navigate "
+        "the evolving landscape of digital transformation while maintaining rigorous internal "
+        "standards. The team reviewed the results. Additionally, the reporting cadence was "
+        "adjusted so that every regional lead receives a consolidated summary before the quarterly "
+        "planning meeting. Costs fell. Overall, the programme is considered a success by the "
+        "steering committee, although several workstreams remain behind their original schedule."
+    )
+
+    @pytest.mark.parametrize("style", ["casual", "blunt", "conversational", "minimalist"])
+    def test_the_previously_inert_styles_now_bite(self, style):
+        """Across seeds, not on any single one.
+
+        The knobs set RATES, so a given seed can land on a draw where the styled and unstyled paths
+        coincide — asserting a difference at one seed asks for something the transform does not
+        promise, and the first version of this test duly failed on one style at seed 7. What must
+        hold is that the style is capable of changing the output at all, which is exactly what was
+        broken: these four could not, at any seed, on any text.
+        """
+        import random
+
+        from untell.rewriter.structural import StructuralRewriter
+
+        rw = StructuralRewriter()
+        differs = 0
+        for seed in range(8):
+            random.seed(seed)
+            base = rw.rewrite(self.SRC, {"max": 0.9})
+            random.seed(seed)
+            styled = rw.rewrite(self.SRC, {"max": 0.9, "style": style})
+            differs += styled != base
+        assert differs > 0, f"{style} never differs from no-style across 8 seeds"
+
+    def test_the_default_path_is_untouched(self):
+        """The knobs multiply by 1.0 on the neutral profile, so a run with no style must be
+        byte-identical to the behaviour before they existed — verified against the previous commit
+        on 25 HC3 texts, and pinned here against the rates themselves."""
+        from untell.rewriter.structural import _NEUTRAL
+
+        assert _NEUTRAL["sentences"] == 1.0
+        assert _NEUTRAL["openers"] == 1.0
