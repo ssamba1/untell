@@ -99,14 +99,27 @@ def test_every_free_backend_is_reachable_from_every_surface():
     for name in ("surgical", "structural", "composite", "targeted"):
         assert get_rewriter(prefer=name) is not None, f"{name} does not resolve"
 
-    # Every one must appear in both CLI choice lists.
-    for rel in ("untell/scripts/run.py", "eval/ceiling.py"):
-        src = (root / rel).read_text(encoding="utf-8")
-        choices = re.search(r"--rewriter\"?,?\s*\n?\s*choices=\[(.*?)\]", src, re.S)
-        assert choices, f"could not find --rewriter choices in {rel}"
-        listed = choices.group(1)
-        for name in free:
-            assert f'"{name}"' in listed, f"{name} missing from --rewriter choices in {rel}"
+    # Every one must be accepted by the loop CLI. Asked of the PARSER rather than of the source
+    # text: the previous version grepped for a literal `choices=[...]`, so hoisting that list into
+    # a named constant — the fix for it being written out twice — broke the test while the CLI
+    # kept accepting every name. A source scan cannot tell "the list moved" from "the list lost an
+    # entry"; the parser can.
+    from untell.scripts.run import build_parser
+
+    accepted = {
+        a.dest: set(a.choices or ())
+        for a in build_parser()._actions
+        if a.dest == "rewriter"
+    }["rewriter"]
+    for name in free:
+        assert name in accepted, f"{name} missing from untell humanize --rewriter choices"
+
+    # eval/ceiling.py has no equivalent accessor, so it is still read as source.
+    src = (root / "eval/ceiling.py").read_text(encoding="utf-8")
+    choices = re.search(r"--rewriter\"?,?\s*\n?\s*choices=\[(.*?)\]", src, re.S)
+    assert choices, "could not find --rewriter choices in eval/ceiling.py"
+    for name in free:
+        assert f'"{name}"' in choices.group(1), f"{name} missing from ceiling --rewriter choices"
 
     # And in the server-side allow-lists.
     from untell.mcp_server import _FREE_REWRITERS
