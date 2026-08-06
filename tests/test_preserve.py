@@ -464,3 +464,27 @@ class TestWeekdayAbbreviationsDoNotLockOrdinaryWords:
 
         _, mapping = lock("it happened on sunday afternoon")
         assert "sunday" in mapping.values()
+
+
+def test_restore_is_idempotent_and_a_literal_sentinel_is_neutralised():
+    """Two properties the loop now leans on, made explicit.
+
+    `untell_text` scores restored text, so `restore` runs on strings that are sometimes already
+    restored (the polish and confirm paths both hand it `final`). That is only safe because:
+
+      1. `restore` is idempotent — a second pass finds no sentinels left to replace, so it is a
+         no-op rather than a second round of substitution.
+      2. A literal sentinel-lookalike in the CALLER's own text cannot collide with a real one:
+         `lock` masks it too, mapping it to itself, so it is inert on the way back out.
+
+    Without (2), idempotence alone would not be enough — a lookalike surviving into `final` would
+    be replaced by whatever span happened to own that number on the second pass, silently swapping
+    the user's text for someone else's citation.
+    """
+    text = "Report ⟦HZ0000⟧ says Smith (2020) rose 47%."
+    masked, mapping = lock(text)
+    once = restore(masked, mapping)
+
+    assert once == text  # round-trips despite the lookalike
+    assert restore(once, mapping) == once  # idempotent
+    assert mapping["⟦HZ0000⟧"] == "⟦HZ0000⟧"  # the lookalike maps to itself
