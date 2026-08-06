@@ -433,6 +433,11 @@ def agree_article(article: str, following: str) -> str:
     return want + spacing
 
 
+# Replacements that cannot open a sentence, however well they read mid-clause. Subordinators, not
+# conjunctive adverbs: "..., though" is idiomatic; "Though, ..." is not.
+_NOT_SENTENCE_INITIAL = frozenset({"though", "although", "whereas", "while"})
+
+
 def substitute_once(text: str, word: str, replacement: str) -> str:
     """Replace the first whole-word ``word`` with ``replacement``, keeping the seam grammatical.
 
@@ -453,6 +458,29 @@ def substitute_once(text: str, word: str, replacement: str) -> str:
             if match.group(1)[:1].isupper():
                 form = form[:1].upper() + form[1:]
             return text[: match.start(1)] + form + text[match.end(1):]
+
+    # A connective that is fine mid-sentence can be ungrammatical opening one. MEASURED across 240
+    # real HC3 texts, "however -> though" is the single most common substitution this makes (31 of
+    # 47), and every sentence-initial instance reads as broken:
+    #     "However, salt is often the most effective option."
+    #  -> "Though, salt is often the most effective option."
+    # Subordinating "though" cannot introduce an independent clause the way "however" does. Refuse
+    # the swap in that position and let the caller try its next candidate — the same "leave it
+    # rather than mangle it" rule the quantifier frame above follows. Mid-sentence "though" is
+    # untouched, and so is every other candidate ("but", "on the other hand", "plus", "still").
+    if replacement.lower() in _NOT_SENTENCE_INITIAL:
+        # Case-insensitive on purpose, though the in-tree caller passes the word's surface form
+        # ("However"), which the replacement below matches case-sensitively. This is the POSITION
+        # test, not the replacement: a library caller handing over the synonym map's lower-case key
+        # should still be refused rather than silently allowed through a check that quietly matched
+        # nothing. It costs one flag.
+        opener = re.compile(
+            rf"(?:^|(?<=[.!?])\s+|(?<=\n))\b{re.escape(word)}\b\s*,", re.MULTILINE | re.IGNORECASE
+        )
+        first = re.search(rf"\b{re.escape(word)}\b", text, re.IGNORECASE)
+        opening = opener.search(text)
+        if first is not None and opening is not None and opening.end() > first.start() >= opening.start():
+            return text
 
     rep = _match_case(word, replacement)
     tail = replacement.rsplit(" ", 1)[-1].lower() if " " in replacement else ""

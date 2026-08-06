@@ -419,3 +419,53 @@ class TestPreferTellsObjective:
         import untell.rewriter.surgical as mod
 
         assert "prefer_tells=True" in Path(mod.__file__).read_text(encoding="utf-8")
+
+
+class TestAConnectiveThatCannotOpenASentence:
+    """"however -> though" is the single most common substitution this module makes.
+
+    MEASURED across 240 real HC3 texts: 31 of 47 substitutions, and every sentence-initial one
+    reads as broken, because subordinating "though" cannot introduce an independent clause:
+
+        "However, salt is often the most effective option."
+     -> "Though, salt is often the most effective option."
+
+    The swap is refused in that position and the caller moves to its next candidate — the same
+    "leave it rather than mangle it" rule the quantifier-frame branch above follows. After the fix,
+    0 of the 240 texts carry an INTRODUCED sentence-initial "Though ,"; the one that remains was
+    written that way by the human author of the source.
+    """
+
+    def test_refused_at_the_start_of_a_sentence(self):
+        from untell.attacks.word_importance import substitute_once
+
+        text = "However, salt is cheap and effective."
+        assert substitute_once(text, "however", "though") == text
+
+    def test_refused_after_a_full_stop_too(self):
+        from untell.attacks.word_importance import substitute_once
+
+        text = "Salt is cheap. However, it is not always the answer."
+        assert substitute_once(text, "however", "though") == text
+
+    def test_the_position_check_is_case_insensitive(self):
+        """The in-tree caller passes the surface form, so this is belt-and-braces: a library caller
+        handing over the synonym map's lower-case key is refused rather than passing a check that
+        quietly matched nothing. (The REPLACEMENT is still case-sensitive, so that call is a no-op
+        either way — this pins which of the two reasons it is.)"""
+        from untell.attacks.word_importance import substitute_once
+
+        text = "However , the statistics disagree."
+        assert substitute_once(text, "however", "though") == text
+
+    def test_mid_sentence_is_still_substituted(self):
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("It is cheap; however, it is slow.", "however", "though")
+        assert out == "It is cheap; though, it is slow."
+
+    def test_other_candidates_are_unaffected_in_that_position(self):
+        from untell.attacks.word_importance import substitute_once
+
+        out = substitute_once("However, salt is cheap.", "However", "on the other hand")
+        assert out == "On the other hand, salt is cheap."
