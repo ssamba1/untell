@@ -837,3 +837,30 @@ def test_browser_mode_does_not_pay_an_extra_web_request_to_re_score(monkeypatch)
     assert SENTINEL_RE.findall(lock(AI)[0]), "probe text locks nothing — the guard is untested"
     assert res["stopped"] == "passed"
     assert calls["n"] == 1, f"expected exactly one web check, got {calls['n']}"
+
+
+class TestVoiceSampleWarning:
+    """The CLI warns about a too-short --voice-sample on stderr. REST and MCP take the sample as
+    TEXT, and those are exactly the callers who never see stderr."""
+
+    def _run(self, monkeypatch, **kw):
+        import untell.scripts.run as run_mod
+
+        monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _GoodRW())
+        return untell_text(AI, tier="lite", max_iters=1, **kw)
+
+    def test_a_short_sample_is_reported_in_the_result(self, monkeypatch):
+        from untell.scripts.voice import MIN_SAMPLE_WORDS
+
+        res = self._run(monkeypatch, voice_sample="I write short. Like this.")
+        assert str(MIN_SAMPLE_WORDS) in res["voice_warning"]
+        assert "5 words" in res["voice_warning"]
+
+    def test_a_long_enough_sample_is_silent(self, monkeypatch):
+        from untell.scripts.voice import MIN_SAMPLE_WORDS
+
+        sample = "word " * (MIN_SAMPLE_WORDS + 10)
+        assert "voice_warning" not in self._run(monkeypatch, voice_sample=sample)
+
+    def test_no_sample_adds_no_key(self, monkeypatch):
+        assert "voice_warning" not in self._run(monkeypatch)
