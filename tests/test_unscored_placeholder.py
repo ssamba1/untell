@@ -116,6 +116,11 @@ _EXEMPT = {
     "untell/scripts/sentences.py": "ranks sentences within one text, no pass/fail verdict",
     "untell/scripts/cli.py": "prints a demo score, makes no verdict",
     "untell/rich_output.py": "renders numbers it is handed, does not decide",
+    # The scan is textual, so a DOCSTRING that names score_text trips it. This module is the
+    # Rewriter Protocol: it defines the signature and documents that `score_result` is a hint
+    # rather than the score of `text`. It makes no scoring call at all — verified by there being
+    # no import of score_text anywhere in it.
+    "untell/rewriter/base.py": "protocol definition; mentions score_text in prose, never calls it",
 }
 
 
@@ -147,3 +152,20 @@ def test_every_score_text_consumer_handles_or_is_exempt_from_the_placeholder():
         f"{unhandled}. Either handle `scored is False` or add an entry to _EXEMPT explaining why "
         "the placeholder cannot be misread as a pass."
     )
+
+
+def test_the_protocol_exemption_is_true():
+    """`untell/rewriter/base.py` is exempt on the grounds that it never scores anything.
+
+    An exemption that is merely asserted is a hole in the guard, so check the claim: the module
+    must not import or call score_text. It trips the textual scan only because its Protocol
+    docstring NAMES score_text while explaining that `score_result` is a hint rather than the score
+    of `text` — a distinction that exists precisely to stop an implementer reusing it as a baseline.
+    """
+    body = (_ROOT / "untell" / "rewriter" / "base.py").read_text(encoding="utf-8")
+    code = "\n".join(
+        line for line in body.splitlines()
+        if not line.lstrip().startswith(("#", '"""', "'''"))
+    )
+    assert "import score_text" not in code
+    assert "score_text(" not in code.replace("``score_text(text)``", "")
