@@ -121,13 +121,18 @@ def load() -> dict[str, Any]:
     return {}
 
 
-def _coerce(value: str, default: Any) -> Any:
+def _coerce(value: str, default: Any, key: str = "") -> Any:
     """Convert an env-var string to the type of ``default``.
 
     Environment variables are always strings, config files are typed. Without this, the SAME key
     answers ``0.30`` (float) from a file and ``"0.30"`` (str) from the environment, so
     ``get("threshold", 0.30) < 0.5`` raises TypeError only when the env var happens to be set —
     the worst kind of conditional failure.
+
+    A value that will not convert falls back to the default AND SAYS SO. Both file readers above
+    already warn when a setting the user wrote is being dropped; the environment was the one path
+    that did it silently, so ``UNTELL_MAX_ITERS=3.7`` looked exactly like never setting it at all —
+    and looked it while the user was staring at the variable in their shell.
     """
     if isinstance(default, bool):
         return value.strip().lower() in ("1", "true", "yes", "on")
@@ -135,6 +140,10 @@ def _coerce(value: str, default: Any) -> Any:
         try:
             return caster(value)
         except ValueError:
+            logger.warning(
+                "ignoring UNTELL_%s=%r: expected %s, using the default %r instead.",
+                (key or "?").upper(), value, caster.__name__, default,
+            )
             return default
     return value
 
@@ -147,5 +156,5 @@ def get(key: str, default: Any = None) -> Any:
     """
     val = os.environ.get(f"UNTELL_{key.upper()}")
     if val is not None:
-        return _coerce(val, default) if default is not None else val
+        return _coerce(val, default, key) if default is not None else val
     return load().get(key, default)

@@ -155,3 +155,31 @@ def test_env_beats_the_config_file(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("UNTELL_TIER", "lite")
     assert config.get("tier", "full") == "lite"
+
+
+def test_an_unconvertible_env_value_is_reported_not_silently_dropped(monkeypatch, caplog):
+    """Both file readers warn when a setting the user wrote is dropped. The environment did not.
+
+    `UNTELL_MAX_ITERS=3.7` fell back to the default and said nothing, so a value the user could see
+    in their own shell behaved exactly as if it had never been set.
+    """
+    import logging
+
+    from untell import config
+
+    monkeypatch.setenv("UNTELL_MAX_ITERS", "3.7")
+    with caplog.at_level(logging.WARNING, logger="untell.config"):
+        assert config.get("max_iters", 5) == 5
+    assert "UNTELL_MAX_ITERS" in caplog.text
+    assert "3.7" in caplog.text
+
+
+def test_a_convertible_env_value_stays_quiet(monkeypatch, caplog):
+    import logging
+
+    from untell import config
+
+    monkeypatch.setenv("UNTELL_MAX_ITERS", "7")
+    with caplog.at_level(logging.WARNING, logger="untell.config"):
+        assert config.get("max_iters", 5) == 7
+    assert caplog.text == ""
