@@ -358,3 +358,55 @@ class TestEveryCategoryIsReachable:
         raw = Path(mod.__file__).read_bytes()
         for ctrl in (8, 11, 12):
             assert bytes([ctrl]) not in raw, f"control byte {ctrl} in tells.py"
+
+
+class TestNonEnglishIsNotReportedAsClean:
+    """Every pattern here is an English regex and _WORD is [A-Za-z0-9']+, so non-Latin script
+    matches nothing and reports zero.
+
+    MEASURED before `language_supported` existed — all three returned tells=0, words=0, and the
+    CLI printed "no catalogued tells found":
+        Chinese AI text / Korean AI text / Japanese AI text  ->  reported perfectly clean
+    A zero from an inapplicable catalogue is not a clean bill of health. This does NOT add
+    non-English coverage; it refuses to pretend. 42 of the 183 repos in docs/humanizer-census.md
+    target another language, including four of the eight largest in the field.
+    """
+
+    NON_LATIN = {
+        "chinese": "此外，我们利用强大的解决方案深入探讨这个多方面的领域。总而言之，这至关重要。",
+        "korean": "또한, 우리는 강력한 솔루션을 활용하여 다각적인 영역을 탐구합니다.",
+        "japanese": "さらに、私たちは堅牢なソリューションを活用して、多面的な領域を掘り下げます。",
+        "russian": "Более того, мы используем надёжные решения для изучения этой области.",
+    }
+
+    @pytest.mark.parametrize("lang", sorted(NON_LATIN))
+    def test_flagged_as_unsupported_with_a_warning(self, lang):
+        r = score_tells(self.NON_LATIN[lang])
+        assert r["language_supported"] is False
+        assert "warning" in r
+        assert "English-only" in r["warning"]
+
+    @pytest.mark.parametrize("lang", sorted(NON_LATIN))
+    def test_cli_does_not_say_no_tells_found(self, lang, capsys):
+        """"no catalogued tells found" reads as a verdict on the text, not on the catalogue."""
+        assert main([self.NON_LATIN[lang]]) == 0
+        out = capsys.readouterr().out
+        assert "no catalogued tells found" not in out
+        assert "WARNING" in out
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "Moreover, we leverage robust solutions to delve into the tapestry.",
+            "I walked to the shop and it was shut. Typical. Went home instead.",
+            "",
+            "Numbers 123 and punctuation -- all fine!",
+            # Mostly English, quoting a foreign phrase: must stay supported.
+            "The sign said 你好 which means hello, and moreover we leverage robust solutions.",
+        ],
+        ids=["ai", "human", "empty", "punctuation", "english-quoting-chinese"],
+    )
+    def test_english_text_stays_supported(self, text):
+        r = score_tells(text)
+        assert r["language_supported"] is True
+        assert "warning" not in r

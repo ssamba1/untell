@@ -39,6 +39,8 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
+logger = logging.getLogger(__name__)
+
 _WORD = re.compile(r"[A-Za-z0-9']+")
 # Sentence splitting lives in untell.text_split — see the note there. A naive split made "Dr." a
 # one-word sentence, which feeds straight into the burstiness coefficient of variation below and so
@@ -425,6 +427,29 @@ def _burstiness_cv(text: str) -> float | None:
     return round((var**0.5) / mean, 4)
 
 
+# Scripts this catalogue cannot read at all: CJK ideographs, Hangul, Hiragana/Katakana, Cyrillic,
+# Arabic, Hebrew, Devanagari, Thai. Deliberately a rough test — the question is only "is this
+# mostly not-Latin", not "which language is it".
+_NON_LATIN_RE = re.compile(
+    "[぀-ヿ㐀-䶿一-鿿가-힯"
+    "Ѐ-ӿ֐-׿؀-ۿऀ-ॿ฀-๿]"
+)
+
+
+def _language_supported(text: str) -> bool:
+    """False when the text is mostly a script none of these English patterns can match.
+
+    Compared against Latin letters rather than against total length, so punctuation, digits and
+    whitespace do not sway it. A passage that is majority non-Latin gets a warning; a mostly-English
+    passage quoting a Chinese phrase does not.
+    """
+    non_latin = len(_NON_LATIN_RE.findall(text))
+    latin = sum(1 for ch in text if ch.isascii() and ch.isalpha())
+    if non_latin == 0:
+        return True
+    return latin > non_latin
+
+
 def score_tells(text: str, *, include_matches: bool = False) -> dict:
     """Count AI tells in ``text`` per the catalogue. Lower is more human-reading."""
     words = len(_WORD.findall(text))
@@ -497,7 +522,23 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         "by_category": by_category,
         "burstiness_cv": cv,
         "low_burstiness": (cv is not None and cv < 0.35),  # uniform sentence length is itself a tell
+        # Every pattern in this module is an English regex, and ``_WORD`` is ``[A-Za-z0-9']+``, so
+        # text in a non-Latin script matches nothing and divides by nothing. MEASURED, before this
+        # field existed:
+        #     Chinese AI text   tells 0   words 0   -> reported as perfectly clean
+        #     Korean AI text    tells 0   words 0   -> reported as perfectly clean
+        #     Japanese AI text  tells 0   words 0   -> reported as perfectly clean
+        # A zero from an inapplicable catalogue is not a clean bill of health, and returning one is
+        # the same defect as a detector that saturates: silence read as a verdict. Callers get an
+        # explicit signal instead. This does NOT add non-English coverage — it refuses to pretend.
+        "language_supported": _language_supported(text),
     }
+    if not result["language_supported"]:
+        result["warning"] = (
+            "this catalogue is English-only, and the text is mostly non-Latin script — a score of "
+            f"{total} tells means the patterns did not apply, NOT that the text reads as human"
+        )
+        logger.warning(result["warning"])
     if include_matches:
         result["matches"] = matches
     return result
@@ -513,6 +554,10 @@ def _render(r: dict) -> str:
         lines.append("by category:")
         for k, v in sorted(r["by_category"].items(), key=lambda kv: -kv[1]):
             lines.append(f"  {k:22} {v}")
+    elif r.get("warning"):
+        # NOT "no catalogued tells found" — that sentence reads as a clean bill of health, and on
+        # non-Latin input it would be reporting the catalogue's blindness as the text's virtue.
+        lines.append(f"WARNING: {r['warning']}")
     else:
         lines.append("no catalogued tells found.")
     return "\n".join(lines)
