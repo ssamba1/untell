@@ -30,7 +30,24 @@ class Rewriter(Protocol):
         ...
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
-        """Return a rewritten version of ``text`` guided by ``score_result``."""
+        """Return a rewritten version of ``text`` guided by ``score_result``.
+
+        ``score_result`` is a HINT, **not the score of** ``text``. Two in-tree callers pass a
+        score computed from something else, deliberately:
+
+        - ``CompositeRewriter`` chains structural into surgical and passes the ORIGINAL text's
+          score alongside the already-restructured string.
+        - ``TargetedRewriter`` rewrites one sentence at a time and passes the WHOLE document's
+          score alongside a single sentence.
+
+        Both are fine, because the field is used to steer a rewrite (which detectors are hot, what
+        tier is live), not as a measurement of the argument. But it means an implementation must
+        NOT treat it as ``score_text(text)`` — e.g. reusing it as the baseline in a
+        "only adopt a candidate that beats the original" comparison would silently compare against
+        the wrong text. ``EnsembleRewriter`` re-scores the input for exactly that reason, and the
+        redundant-looking call is deliberate. The one field that IS safe to read is ``tier``:
+        every caller passes the tier the loop is actually judging on.
+        """
         ...
 
 
