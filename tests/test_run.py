@@ -38,6 +38,15 @@ class _GoodRW:
 def test_untell_text_runs_loop_and_restores(monkeypatch):
     import untell.scripts.run as run_mod
 
+    # Pin the stdlib detector path. `tier="lite"` silently upgrades to GPT-2 perplexity whenever
+    # torch happens to be importable (documented in the README tier table), and the two paths
+    # disagree about this very text: stdlib scores it 0.3643 (flagged at the 0.30 default) while
+    # the torch-backed path scores it 0.2146 (already passing). So the loop correctly did NOTHING
+    # on any machine with torch installed, `iterations` was 0, and this assertion failed there
+    # while passing on a clean install. The product behaviour is right; the test was reading an
+    # unpinned configuration.
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+
     monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _GoodRW())
     res = untell_text(AI, tier="lite", max_iters=3)
     assert "error" not in res
@@ -94,6 +103,15 @@ def test_untell_text_survives_rewriter_exception(monkeypatch):
 
 def test_cli_json_output(monkeypatch, capsys):
     import untell.scripts.run as run_mod
+
+    # Pin the stdlib detector path. `tier="lite"` silently upgrades to GPT-2 perplexity whenever
+    # torch happens to be importable (documented in the README tier table), and the two paths
+    # disagree about this very text: stdlib scores it 0.3643 (flagged at the 0.30 default) while
+    # the torch-backed path scores it 0.2146 (already passing). So the loop correctly did NOTHING
+    # on any machine with torch installed, `iterations` was 0, and this assertion failed there
+    # while passing on a clean install. The product behaviour is right; the test was reading an
+    # unpinned configuration.
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
 
     monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _GoodRW())
     rc = main(["--tier", "lite", "--json", AI])

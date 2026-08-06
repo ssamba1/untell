@@ -520,7 +520,19 @@ class TestSoftwareIdentifiersLockWhole:
     )
     def test_the_whole_span_is_one_sentinel(self, text, span):
         masked, mapping = lock(text)
-        assert list(mapping.values()) == [span], f"partial lock: {masked!r}"
+        # The failure this guards is a PARTIAL lock — the span carved across sentinels with some
+        # of it left mutable, as the docstring above records. It is NOT a failure for the span to
+        # sit inside a WIDER single lock: everything is still protected, only rewrite freedom is
+        # narrower.
+        #
+        # That distinction matters because it decides whether this test passes. When spaCy's NER
+        # model is installed the entity pass spans "Release v1.2.3-rc4" and
+        # "Path C:\\Users\\me\\file.txt" as single entities, swallowing the leading word. Asserting
+        # exact equality therefore made the test pass on a clean install and fail on any machine
+        # with en_core_web_sm — an unpinned configuration deciding the result, not the code.
+        assert len(mapping) == 1, f"partial lock, {len(mapping)} sentinels: {masked!r}"
+        locked = next(iter(mapping.values()))
+        assert span in locked, f"partial lock: {span!r} not inside {locked!r} ({masked!r})"
         assert restore(masked, mapping) == text
 
     def test_ordinary_prose_is_not_swept_up(self):
@@ -540,7 +552,7 @@ class TestSoftwareIdentifiersLockWhole:
 
 
 class TestLaTeXIsLocked:
-    """MEASURED before these patterns existed: lock() protected ZERO spans of
+    r"""MEASURED before these patterns existed: lock() protected ZERO spans of
 
         r"As \citep{smith2020} shows, see Eq.~\ref{eq:main}. We use $E = mc^2$ and \cite{jones}."
 
