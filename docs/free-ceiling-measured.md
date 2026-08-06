@@ -90,6 +90,13 @@ ensemble that untell can actually put in its loop.**
   facts needed — this measures detector *movement*, not meaning preservation (which the loop's
   similarity gate and sentinel lock handle separately and are tested elsewhere).
 - **Reproduce:** `untell-ceiling --rewriter surgical --tier full` (the deterministic, no-key path).
+- **A later change to the loop does not move these numbers.** The loop now re-scores the RESTORED
+  text rather than reporting the masked one, because on fact-bearing prose those differ by up to
+  0.1535 and can flip a verdict. Every corpus used here is essentially unaffected: `_SAMPLE` and
+  `eval.datasets._BUILTIN` lock **0 spans** in every paragraph, so the two strings are identical;
+  the HC3 slice behind Results 11 and 14 locks spans in 5 of 8 texts but shifts by **mean +0.0006,
+  max +0.0015** — the fourth decimal. Stated so a reader reproducing these figures after that
+  change knows the difference is not a regression.
 
 ## Result 1 — three free rewriters, head to head (n=3, full tier)
 
