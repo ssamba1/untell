@@ -49,6 +49,14 @@ actually does it.** This repo does.
 > preservation, no installable package, no tests. Its bypass numbers are far stronger than anything
 > measured here. See [why-best-open-repo.md](docs/why-best-open-repo.md) for the full comparison —
 > including the honest note that packaging its mechanism behind these meaning gates would beat this repo.
+>
+> On the **commercial** half of that sentence: those products are closed, so "no commercial tool does
+> it" is not something anyone can verify — what is true is that none of them *documents* a
+> detector-feedback loop. StealthGPT describes model-level training, HumanizerAI offers user-driven
+> re-runs (iteration by the person, not by a detector). Treat our claim as "none publishes one",
+> which is weaker than it reads. Independent 2026 testing also has StealthGPT still failing Turnitin
+> (86% AI), Originality.ai (100%) and GPTZero (48%) — consistent with the caveat below that nobody,
+> paid or free, reliably beats that class of detector.
 
 > ```
 > Measured live:  a formulaic AI paragraph went  100% → 0% AI on ZeroGPT  in one loop.
