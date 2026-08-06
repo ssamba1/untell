@@ -904,3 +904,43 @@ Reproduce:
 UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3 --max-iters 5 \
   --repeats 3 --rewriter neural    # and again with --rewriter composite
 ```
+
+---
+
+## Result 15 — `ensemble` vs `neural`: the point estimate favours `ensemble`, the noise swallows it
+
+`--rewriter ensemble` runs composite + mt_pivot + neural and keeps the per-input detector-lowest,
+so on the score it selects on it is **>= any single member by construction**. The CLI help says so.
+What the help does not say is how big the margin is, which is the number that decides whether it is
+worth several times the wall-clock.
+
+Same corpus and protocol as Results 13 and 14 — 6 HC3 AI answers, full tier, `--best-of 3`,
+`--max-iters 5`, `--repeats 3`:
+
+| rewriter   | post          | flagged | per-run                  | similarity (mean / worst) |
+|------------|---------------|---------|--------------------------|---------------------------|
+| `neural`   | 0.4364 ± 0.066 | 0.333   | 0.346 / 0.460 / 0.503    | 0.918 / 0.746             |
+| `ensemble` | 0.3352 ± 0.084 | 0.278   | 0.228 / 0.344 / 0.434    | 0.935 / 0.840             |
+
+The gap is **+0.1012 in ensemble's favour, and the worst within-method spread is 0.2052** — twice
+the gap. Three runs of `ensemble` span 0.228 to 0.434; three of `neural` span 0.346 to 0.503. The
+bands overlap heavily, so at this sample size the honest statement is:
+
+> `ensemble` selects the best of its members per input, and measured that way it is never worse.
+> Its *advantage over `neural` alone* is smaller than the run-to-run variation of either, so a
+> single comparison run cannot establish it and neither can this one.
+
+This is the same lesson as Result 14, applied to the rung above: `neural`'s variance was what made
+Result 13's single run misleading, and it is what makes this comparison inconclusive rather than
+favourable. The direction is what the construction guarantees; the *size* is not measured here.
+
+Similarity is the one place the difference is clean: `ensemble` holds 0.840 worst-case against
+`neural`'s 0.746, both above the 0.76 bar — meaning `neural` alone came within 0.014 of tripping
+the meaning gate on its worst input, and the ensemble's per-input selection did not.
+
+Reproduce:
+
+```bash
+UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3 --max-iters 5 \
+  --repeats 3 --rewriter ensemble   # and again with --rewriter neural
+```
