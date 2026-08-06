@@ -410,3 +410,46 @@ class TestNonEnglishIsNotReportedAsClean:
         r = score_tells(text)
         assert r["language_supported"] is True
         assert "warning" not in r
+
+
+class TestEvidenceStrength:
+    """Not every tell is equally incriminating, and the catalogue counted them the same.
+
+    MEASURED on 400 real HC3 pairs, precision = P(text is AI | category fires):
+        meta_closer 1.00 · cliche 0.90 · formulaic_transition 0.87 · ai_vocab 0.55 · em_dash 0.33
+    The flagship "delve/leverage" cluster is a coin flip on real text, and five categories fire
+    MORE on human writing than AI. They are reported, not dropped: ten categories never fire on
+    HC3 at all because it is 2022-era and predates the modern tells they target.
+    """
+
+    def test_same_count_different_evidence(self):
+        strong = score_tells("Great question! I hope this helps. Let me know if you have questions.")
+        weak = score_tells("The plan failed — nobody checked; the logs were empty; we moved on.")
+        assert strong["tells"] == weak["tells"], "the point is equal totals"
+        assert strong["by_evidence"] == {"strong": strong["tells"]}
+        assert weak["by_evidence"] == {"weak": weak["tells"]}
+
+    def test_buckets_sum_to_the_total(self):
+        r = score_tells("Moreover, we leverage robust solutions. In conclusion, I hope this helps.")
+        assert sum(r["by_evidence"].values()) == r["tells"]
+
+    def test_empty_when_no_tells(self):
+        assert score_tells("The cat sat on the mat and then went to sleep.")["by_evidence"] == {}
+
+    def test_every_evidence_key_is_a_real_category(self):
+        """A typo'd key would silently classify nothing and read as an unmeasured category."""
+        from untell.scripts.tells import _CATEGORIES, _EVIDENCE
+
+        computed = {"em_dash", "rule_of_three", "semicolon_crutch"}
+        known = {n for n, _ in _CATEGORIES} | computed
+        assert set(_EVIDENCE) <= known, f"unknown: {set(_EVIDENCE) - known}"
+
+    def test_unmeasured_is_not_silently_called_weak(self):
+        """A category with no HC3 evidence must not be presented as measured-weak."""
+        from untell.scripts.tells import _by_evidence
+
+        assert _by_evidence({"title_case_heading": 2}) == {"unmeasured": 2}
+
+    def test_cli_shows_the_split(self, capsys):
+        assert main(["Great question! I hope this helps. Let me know if you have questions."]) == 0
+        assert "by evidence:" in capsys.readouterr().out

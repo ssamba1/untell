@@ -41,6 +41,51 @@ if __package__ in (None, ""):
 
 logger = logging.getLogger(__name__)
 
+# --- how much each category is worth as EVIDENCE -----------------------------------------------
+# Not every tell is equally incriminating. "As an AI language model" is near-proof; an em-dash is
+# a punctuation preference. The catalogue counted them the same, so a text with three weak style
+# markers scored like one with three chatbot artifacts.
+#
+# MEASURED on 400 real HC3 pairs — precision = P(the text is AI | this category fires at all):
+#
+#     sycophancy            human   0  ai   2   1.00
+#     meta_closer           human   0  ai  26   1.00
+#     filler_phrase         human   0  ai   1   1.00
+#     cliche                human   7  ai  64   0.90
+#     formulaic_transition  human  20  ai 132   0.87
+#     vague_attribution     human   1  ai   6   0.86
+#     hedge_stacking        human  12  ai  18   0.60
+#     negated_contrast      human   5  ai   7   0.58
+#     ai_vocab              human  17  ai  21   0.55   <- the flagship cluster, near chance
+#     false_range           human   3  ai   2   0.40
+#     em_dash               human   6  ai   3   0.33
+#     inflated_copula       human   1  ai   0   0.00
+#     markdown_artifact     human   2  ai   0   0.00
+#     rule_of_three         human   3  ai   0   0.00
+#     semicolon_crutch      human   7  ai   0   0.00
+#
+# Two findings worth stating rather than burying. The "delve / leverage / tapestry" vocabulary
+# cluster this catalogue is best known for is a **coin flip** on real text. And five categories
+# fire MORE on human writing than on AI: dropping them raises separation from +0.307 to +0.332 and
+# AUROC from 0.7047 to 0.7177.
+#
+# They are NOT dropped or reweighted. Ten categories never fire on this corpus at all —
+# chatbot_artifact, cutoff_disclaimer, aphorism, notability_padding and the formatting ones — and
+# those are precisely the MODERN tells: HC3 is 2022-era ChatGPT and predates them. Refitting to it
+# would delete the patterns aimed at current models to score better on a dated benchmark, which is
+# the same trap `humanness.py` documents declining. What ships instead is the split below, so a
+# caller can see whether a score rests on strong evidence or on style preferences.
+#
+# "unmeasured" means exactly that: no evidence either way from this corpus, not "weak".
+_EVIDENCE: dict[str, str] = {
+    "sycophancy": "strong", "meta_closer": "strong", "filler_phrase": "strong",
+    "cliche": "strong", "chatbot_artifact": "strong", "cutoff_disclaimer": "strong",
+    "formulaic_transition": "moderate", "vague_attribution": "moderate",
+    "hedge_stacking": "weak", "negated_contrast": "weak", "ai_vocab": "weak",
+    "false_range": "weak", "em_dash": "weak", "inflated_copula": "weak",
+    "markdown_artifact": "weak", "rule_of_three": "weak", "semicolon_crutch": "weak",
+}
+
 _WORD = re.compile(r"[A-Za-z0-9']+")
 # Sentence splitting lives in untell.text_split — see the note there. A naive split made "Dr." a
 # one-word sentence, which feeds straight into the burstiness coefficient of variation below and so
@@ -436,6 +481,14 @@ _NON_LATIN_RE = re.compile(
 )
 
 
+def _by_evidence(by_category: dict[str, int]) -> dict[str, int]:
+    """Roll the per-category counts up into strong / moderate / weak / unmeasured buckets."""
+    out = {"strong": 0, "moderate": 0, "weak": 0, "unmeasured": 0}
+    for name, n in by_category.items():
+        out[_EVIDENCE.get(name, "unmeasured")] += n
+    return {k: v for k, v in out.items() if v}
+
+
 def _language_supported(text: str) -> bool:
     """False when the text is mostly a script none of these English patterns can match.
 
@@ -532,6 +585,10 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         # the same defect as a detector that saturates: silence read as a verdict. Callers get an
         # explicit signal instead. This does NOT add non-English coverage — it refuses to pretend.
         "language_supported": _language_supported(text),
+        # Counts split by how incriminating each category measured on real text (see _EVIDENCE).
+        # A caller can now tell "3 tells, all strong" from "3 tells, all punctuation habits" —
+        # the same total, very different verdicts.
+        "by_evidence": _by_evidence(by_category),
     }
     if not result["language_supported"]:
         result["warning"] = (
@@ -550,6 +607,12 @@ def _render(r: dict) -> str:
         f"burstiness CV: {r['burstiness_cv']}"
         + ("  [LOW — uniform sentence length is itself a tell]" if r["low_burstiness"] else ""),
     ]
+    if r.get("by_evidence"):
+        lines.append(
+            "by evidence: "
+            + ", ".join(f"{k} {v}" for k, v in r["by_evidence"].items())
+            + "   (strong = measured near-certain on real text; weak = style preference)"
+        )
     if r["by_category"]:
         lines.append("by category:")
         for k, v in sorted(r["by_category"].items(), key=lambda kv: -kv[1]):
