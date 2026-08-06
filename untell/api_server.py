@@ -34,7 +34,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -149,6 +149,30 @@ _VERIFY_TIER = Literal["lite", "full", "heavy", "commercial", ""]
 # than restated, so the 14 modes cannot drift out of sync with the CLI or the MCP tool's docstring.
 _Style = Enum("_Style", {name: name for name in STYLE_NAMES}, type=str)
 
+# Every numeric field was an unbounded `float`/`int`. MEASURED: POST /score with `threshold: 50`
+# returns HTTP 200 and a result in which nothing can ever be flagged, because the scores it is
+# compared against live in [0, 1] — a caller who thought the field was a percentage got a clean
+# bill of health for every text they sent. The counts have the mirror problem: `max_iters` and
+# `best_of` each multiply the work a single request does, so an unbounded value is an open
+# invitation to occupy a worker indefinitely, and a negative one silently means "do nothing".
+#
+# The bounds are the ones the flags already imply, enforced at the edge like `_TIER` and `_Style`.
+# `threshold` is a probability. The upper limits on the counts are deliberately generous — they
+# exist to stop a runaway, not to second-guess a caller.
+_Probability = Annotated[float, Field(ge=0.0, le=1.0)]
+_Iters = Annotated[int, Field(ge=1, le=100)]
+_BestOf = Annotated[int, Field(ge=1, le=32)]
+_Confirm = Annotated[int, Field(ge=0, le=32)]
+_SampleN = Annotated[int, Field(ge=1, le=1000)]
+
+# The CLI validates --rewriter against this list; this field was a bare `str`. An unknown name
+# reaches `get_rewriter(prefer=...)`, which returns the "rewriter is not available" error dict —
+# a 200 response whose body says the request failed, where the CLI exits 2 at parse time.
+_Rewriter = Literal[
+    "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
+    "max", "t5_paraphrase", "mt_pivot", "base",
+]
+
 
 class _Request(BaseModel):
     """Base for every request model: an unmodelled field is an ERROR, not a silent drop.
@@ -169,7 +193,7 @@ class _Request(BaseModel):
 class ScoreRequest(_Request):
     text: str = _TEXT
     tier: _TIER = "full"
-    threshold: float = DEFAULT_THRESHOLD
+    threshold: _Probability = DEFAULT_THRESHOLD
 
 
 class HumanizeRequest(_Request):
@@ -180,21 +204,21 @@ class HumanizeRequest(_Request):
     # verdict the CLI's four-detector ensemble would have rejected. Same shape as the best_of=1
     # default fixed below: the CLI was strengthened and the network surfaces were left behind.
     tier: _TIER = "full"
-    threshold: float = DEFAULT_THRESHOLD
+    threshold: _Probability = DEFAULT_THRESHOLD
     style: _Style | None = None
-    max_iters: int = 5
+    max_iters: _Iters = 5
     # "composite", matching the CLI and the MCP tool. MEASURED: POST /humanize with defaults
     # returned "no rewriter configured" on any install without an API key, because "auto" is not
     # in _FREE_REWRITERS and auto-select declines to pick a backend without a key — even though
     # composite is free, always available, and the documented zero-dependency path.
-    rewriter: str = "composite"
+    rewriter: _Rewriter = "composite"
     # 3, matching the CLI's --best-of default. MEASURED over 6 real HC3 paragraphs:
     # best_of=1 -> 33% still flagged; best_of=3 -> 0%. The CLI moved to 3 after best-of-1 was
     # identified as a root cause of understated evasion; MCP and this surface were left behind.
     # (CeilingRequest stays at 1 — that matches eval/ceiling.py, where the single-draw baseline
     # is what is being measured.)
-    best_of: int = 3
-    margin: float = 0.0
+    best_of: _BestOf = 3
+    margin: _Probability = 0.0
     polish: bool = False
     # Both are `untell humanize` flags that this surface modelled nowhere, so sending them was a
     # silent no-op. `confirm` re-scores a pass N more times and keeps "passed" only if every re-scan
@@ -202,7 +226,7 @@ class HumanizeRequest(_Request):
     # detectors to their own stricter gates on top of the global threshold. Neither needs an extra
     # dependency, and both change the verdict, which is precisely why dropping them quietly was
     # worse than refusing them.
-    confirm: int = 0
+    confirm: _Confirm = 0
     detector_thresholds: dict[str, float] | None = None
     # The CLI takes a FILE path here; over HTTP the sample travels as text. Among candidate
     # rewrites already tied on AI tells, the one whose sentence length, rhythm and comma rate sit
@@ -219,12 +243,12 @@ class TellsRequest(_Request):
 class SentencesRequest(_Request):
     text: str = _TEXT
     tier: _TIER = "lite"
-    threshold: float = DEFAULT_THRESHOLD
+    threshold: _Probability = DEFAULT_THRESHOLD
 
 
 class VerifyRequest(_Request):
     text: str = _TEXT
-    threshold: float = DEFAULT_THRESHOLD
+    threshold: _Probability = DEFAULT_THRESHOLD
     tier: _VERIFY_TIER = "full"
     sandbox: bool = False
     browser: str | None = None
@@ -235,11 +259,15 @@ class CeilingRequest(_Request):
     # one a mechanical edit over `text: str = _TEXT` missed — and it kept silently dropping unknown
     # fields after every other endpoint had stopped.
     tier: _TIER = "full"
-    threshold: float = DEFAULT_THRESHOLD
-    max_iters: int = 5
+    threshold: _Probability = DEFAULT_THRESHOLD
+    max_iters: _Iters = 5
+    # Deliberately NOT `_Rewriter`. /ceiling's handler validates against `_FREE_REWRITERS`, a
+    # narrower set than the CLI's: "base" and "auto" reach the paid hosted path, and a measurement
+    # endpoint that quietly bills is worse than one that refuses. It answers with its own
+    # "unknown rewriter" message naming the free names, which a Literal here would pre-empt.
     rewriter: str = "surgical"
-    best_of: int = 1
-    n: int = 3
+    best_of: _BestOf = 1
+    n: _SampleN = 3
 
 
 # ---------------------------------------------------------------------------

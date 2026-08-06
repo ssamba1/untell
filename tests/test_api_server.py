@@ -812,3 +812,53 @@ class TestTierDefaultsMatchTheCLI:
         tier_action = next(a for a in parser._actions if a.dest == "tier")
         assert tier_action.default == "full"
         assert set(tier_action.choices or ()) == {"lite", "full", "heavy", "commercial"}
+
+
+class TestNumericFieldsAreBounded:
+    """Every numeric field was an unbounded float/int.
+
+    MEASURED: POST /score with `threshold: 50` returned HTTP 200 and a result in which nothing can
+    ever be flagged, because the scores it is compared against live in [0, 1] — a caller who read
+    the field as a percentage got a clean bill of health for every text they sent. The counts have
+    the mirror problem: `max_iters` and `best_of` each multiply the work one request does.
+    """
+
+    TEXT = "Furthermore, the system leverages robust methodologies to optimize outcomes."
+
+    def _client(self):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        return TestClient(app)
+
+    @pytest.mark.parametrize(
+        ("endpoint", "payload"),
+        [
+            ("/score", {"threshold": 50}),
+            ("/score", {"threshold": -0.1}),
+            ("/humanize", {"max_iters": 0}),
+            ("/humanize", {"max_iters": 10**6}),
+            ("/humanize", {"best_of": 0}),
+            ("/humanize", {"best_of": 99}),
+            ("/humanize", {"confirm": -1}),
+            ("/humanize", {"margin": 5}),
+            ("/humanize", {"rewriter": "nope"}),
+        ],
+    )
+    def test_out_of_range_is_a_422(self, endpoint, payload):
+        with patch("untell.api_server.load_env"):
+            resp = self._client().post(endpoint, json={"text": self.TEXT, **payload})
+        assert resp.status_code == 422, resp.text
+
+    def test_ceiling_sample_size_is_bounded(self):
+        with patch("untell.api_server.load_env"):
+            resp = self._client().post("/ceiling", json={"n": 10**7, "tier": "lite"})
+        assert resp.status_code == 422, resp.text
+
+    def test_values_inside_the_range_still_work(self):
+        with patch("untell.api_server.load_env"):
+            resp = self._client().post(
+                "/score", json={"text": self.TEXT, "threshold": 0.3, "tier": "lite"}
+            )
+        assert resp.status_code == 200, resp.text
