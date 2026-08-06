@@ -181,8 +181,61 @@ def scrub_hidden(text: str) -> str:
     # Drop C0/C1 control characters (category Cc) except common whitespace; KEEP format characters
     # (category Cf) such as bidi marks, which carry layout meaning.
     text = "".join(ch for ch in text if ch in "\t\n\r" or unicodedata.category(ch) != "Cc")
-    text = "".join(_UNHOMOGLYPH.get(ch, ch) for ch in text)
+    text = _unhomoglyph(text)
     return unicodedata.normalize("NFC", text)
+
+
+_WORD_RE = re.compile(r"\w+", re.UNICODE)
+
+
+def _unhomoglyph(text: str) -> str:
+    """Fold confusables to ASCII where they are INTRUDERS, not where they are the language.
+
+    A blanket per-character map destroys any text actually written in Cyrillic or Greek, which is
+    most of the alphabet's high-frequency letters. MEASURED, before this was scoped:
+
+        "Это очень простой текст про кота."  ->  "Этo oчeнь пpocтoй тeкcт пpo кoтa."
+        "Αυτό είναι ένα απλό κείμενο."       ->  "Ayτό eίvai έva aπλό keίμevo."
+
+    Unreadable mixed-script garbage, from a function whose whole promise is that it "leaves visible
+    text byte-identical". Scrubbing is the DEFENSIVE path — the one a user runs on text they care
+    about — so silently corrupting their Russian was the worst available failure.
+
+    The distinction is per word, following the mixed-script logic of UTS #39:
+
+    - A word holding at least one ASCII letter is Latin text with intruders in it — "pаper" with a
+      Cyrillic а. Fold every confusable in it.
+    - A word made ENTIRELY of confusables is folded too, but only inside a document that is
+      otherwise mostly ASCII: "оре" among English words is an attack, while the same three letters
+      inside Russian prose are a word. Real Cyrillic and Greek words almost always carry at least
+      one letter with no ASCII lookalike (ч, б, я, λ, μ, π), which is what keeps them out of this
+      branch.
+    - Everything else is left alone. That leaves one hole open by construction: an all-confusable
+      word inside genuinely non-Latin text. Nothing in the string distinguishes it from the real
+      word, and mangling every Russian document is too high a price for closing it.
+    """
+    # "Is this a Latin document?" — judged on letters that are EVIDENCE either way, which means
+    # ignoring the confusables themselves. Counting them as non-Latin lets the attack vote on
+    # whether it is an attack: `homoglyph_substitute("america cocoa")` renders cocoa entirely in
+    # Cyrillic, and a raw ratio then reads 7/12 ASCII and declares the document mixed-script.
+    # Native letters — the ones with no ASCII lookalike — are what actually distinguishes Russian
+    # prose from Latin prose wearing a costume.
+    evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UNHOMOGLYPH)]
+    mostly_ascii = bool(evidence) and sum(ch.isascii() for ch in evidence) / len(evidence) >= 0.8
+
+    def fold(match: re.Match) -> str:
+        word = match.group(0)
+        alpha = [ch for ch in word if ch.isalpha()]
+        if not any(ch in _UNHOMOGLYPH for ch in word):
+            return word
+        native = any(ch.isalpha() and not ch.isascii() and ch not in _UNHOMOGLYPH for ch in word)
+        if any(ch.isascii() and ch.isalpha() for ch in word) and not native:
+            return "".join(_UNHOMOGLYPH.get(ch, ch) for ch in word)
+        if mostly_ascii and alpha and all(ch in _UNHOMOGLYPH for ch in alpha):
+            return "".join(_UNHOMOGLYPH.get(ch, ch) for ch in word)
+        return word
+
+    return _WORD_RE.sub(fold, text)
 
 
 def homoglyph_substitute(text: str, rate: float = 0.15) -> str:

@@ -184,3 +184,45 @@ def test_count_is_zero_exactly_when_scrub_is_a_no_op(label, char):
         f"{label}: count_hidden says {count_hidden(text)} but scrub_hidden "
         f"{'changed' if scrub_hidden(text) != text else 'did not change'} the text"
     )
+
+
+class TestScrubDoesNotDestroyNonLatinProse:
+    """`scrub_hidden` folds confusables to ASCII. Unscoped, that ate whole languages.
+
+    MEASURED before the fix — the defensive path, run on text the user cares about:
+
+        "Это очень простой текст про кота."  ->  "Этo oчeнь пpocтoй тeкcт пpo кoтa."
+        "Αυτό είναι ένα απλό κείμενο."       ->  "Ayτό eίvai έva aπλό keίμevo."
+
+    Mixed-script garbage, from a function documented as leaving visible text alone.
+    """
+
+    def test_russian_prose_is_untouched(self):
+        text = "Это очень простой текст про кота."
+        assert scrub_hidden(text) == text
+
+    def test_greek_prose_is_untouched(self):
+        text = "Αυτό είναι ένα απλό κείμενο."
+        assert scrub_hidden(text) == text
+
+    def test_serbian_prose_is_untouched(self):
+        """Includes "је" — a whole word made only of confusables. Its own letters cannot tell you
+        what it is; the surrounding document can, and that document is Cyrillic."""
+        text = "Ово је обичан текст."
+        assert scrub_hidden(text) == text
+
+    def test_a_greek_word_quoted_inside_english_survives(self):
+        text = "The word περί means about."
+        assert scrub_hidden(text) == text
+
+    def test_an_intruder_inside_a_latin_word_is_still_folded(self):
+        assert scrub_hidden("This pаper is about wοrds.") == "This paper is about words."
+
+    def test_an_all_confusable_word_inside_english_is_still_folded(self):
+        """The costume covers a whole word: every letter of "cocoa" has a Cyrillic lookalike."""
+        assert scrub_hidden("I like сосоа in winter.") == "I like cocoa in winter."
+
+    def test_the_documented_hole_is_the_documented_hole(self):
+        """An all-confusable word with no Latin context around it is indistinguishable from the
+        real Cyrillic word, and is left alone. Asserted so the limit is a decision, not a surprise."""
+        assert scrub_hidden("сосоа") == "сосоа"
