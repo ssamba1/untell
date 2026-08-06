@@ -716,3 +716,81 @@ class TestTheResultNamesTheFidelityGate:
             ent, "available", lambda: (_ for _ in ()).throw(RuntimeError("boom"))
         )
         assert _meaning_gate_mode(True) == "unknown"
+
+
+class TestPostDescribesTheDeliveredText:
+    """`post` must be the score of `final`, the string the caller receives.
+
+    The loop optimises the MASKED text — facts replaced by sentinels — but returns the RESTORED
+    one, and they do not score the same. MEASURED on 14 real human paragraphs at the full tier:
+    masking moved max P(AI) by up to 0.1535 (mean 0.0317) and flipped the verdict across the 0.30
+    threshold on 2 of them, always in the OPTIMISTIC direction because a sentinel is blander than
+    the citation or number it replaced. So the loop could report `stopped='passed'` for text that
+    flags the moment its facts come back.
+
+    Texts with nothing locked are provably unaffected (measured delta exactly 0.0000), which is why
+    the re-score is skipped for them and why the built-in ceiling corpus — which locks nothing — is
+    unchanged.
+    """
+
+    FACTS = "Smith (2020) reported 47% adoption, per https://example.org/a?b=1, on March 3, 2021."
+
+    def _run(self, text, **kw):
+        from untell.rewriter import get_rewriter
+        from untell.scripts.run import untell_text
+
+        return untell_text(text, tier="lite", threshold=0.30, max_iters=2,
+                           rewriter=get_rewriter(prefer="surgical"), **kw)
+
+    def test_post_equals_the_score_of_final_when_facts_are_locked(self):
+        from untell.scripts.preserve import SENTINEL_RE, lock
+        from untell.scripts.score import score_text
+
+        text = f"{self.FACTS} Furthermore, the system leverages robust methodologies throughout."
+        assert SENTINEL_RE.findall(lock(text)[0]), "probe text locks nothing — it proves nothing"
+
+        res = self._run(text)
+        assert res["post"]["max"] == score_text(res["final"], tier="lite")["max"]
+
+    def test_a_pass_that_does_not_survive_restore_is_downgraded(self, monkeypatch):
+        """The masked text passes, the restored text does not — the verdict must follow the text
+        the user gets, not the intermediate the loop happened to optimise."""
+        import untell.scripts.run as run_mod
+
+        real = run_mod.score_text
+        calls = {"n": 0}
+
+        def fake(text, tier="full", threshold=0.30, **kw):
+            # Sentinels present -> the masked string -> report a pass. Restored -> report a fail.
+            calls["n"] += 1
+            from untell.scripts.preserve import SENTINEL_RE
+
+            val = 0.10 if SENTINEL_RE.search(text) else 0.90
+            return {"tier": tier, "detectors": {"stub": val}, "max": val, "mean": val,
+                    "threshold": threshold, "flagged": val >= threshold}
+
+        monkeypatch.setattr(run_mod, "score_text", fake)
+        try:
+            res = self._run(f"{self.FACTS} More prose here to rewrite.")
+        finally:
+            monkeypatch.setattr(run_mod, "score_text", real)
+
+        assert res["post"]["max"] == 0.90
+        assert res["stopped"] == "passed_unconfirmed"
+        assert res["flagged"] is True
+
+    def test_the_invariant_holds_for_text_with_nothing_locked_too(self):
+        """No locked spans means the restored text IS the masked text, so the re-score is skipped —
+        but the property it guarantees must hold either way, and that is what is worth asserting.
+
+        (An earlier version of this test counted score_text calls to prove the skip. It compared
+        two DIFFERENT texts whose loop paths differ, so the counts coincided for unrelated reasons
+        — it was measuring loop control flow, not the optimisation.)"""
+        from untell.scripts.preserve import SENTINEL_RE, lock
+        from untell.scripts.score import score_text
+
+        plain = "Furthermore the system leverages robust methodologies to optimize outcomes."
+        assert not SENTINEL_RE.findall(lock(plain)[0]), "probe text locks something"
+
+        res = self._run(plain)
+        assert res["post"]["max"] == score_text(res["final"], tier="lite")["max"]

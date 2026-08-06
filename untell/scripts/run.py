@@ -345,6 +345,26 @@ def untell_text(
     # Restore sentinels to get the final human-readable text before any confirm/polish/return.
     final = restore(best_masked, mapping)
 
+    # Re-score the RESTORED text, because that is the text the caller receives. The loop optimises
+    # the MASKED string, and the two do not score the same. MEASURED on 14 real human paragraphs
+    # (full tier): masking moved max P(AI) by up to 0.1535, mean 0.0317, and flipped the verdict
+    # across the 0.30 threshold on 2 of them — systematically in the OPTIMISTIC direction, because
+    # a sentinel is blander than the citation or number it replaced. So `post` could report a pass
+    # for text that flags again the moment its facts are back, which is the one direction a verdict
+    # must not be wrong in.
+    #
+    # This also makes the polish comparison below apples-to-apples. `polished_score` is computed on
+    # RESTORED text and was being compared against a masked-text baseline biased low, so polish had
+    # to clear an unfairly good incumbent and was under-adopted.
+    #
+    # Skipped when nothing was locked: measured delta is then exactly 0.0000, so the extra scoring
+    # call buys nothing. That is also why the built-in ceiling corpus is unaffected — it contains
+    # no locked spans at all.
+    if mapping:
+        best_score = score(final)
+        if stopped == "passed" and not _passed(best_score):
+            stopped = "passed_unconfirmed"
+
     # Reproducibility guard: re-score the winner a few times on the FINAL (restored) text;
     # detectors are noisy and a one-off pass on masked text can re-flag once sentinels are
     # replaced by the real citations/numbers/URLs the detector might key on.
