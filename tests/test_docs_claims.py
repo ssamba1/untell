@@ -276,3 +276,47 @@ def test_the_research_report_link_resolves():
     readme = (root / "README.md").read_text(encoding="utf-8")
     for target in re.findall(r"\]\((humanizer-research-report\.md)\)", readme):
         assert (root / target).exists(), f"README links to {target}, which does not exist"
+
+
+def test_census_numbers_match_the_census_data():
+    """The census prose and its raw data must not drift apart.
+
+    The census is the evidence for retracting three claims on why-best-open-repo.md, so its
+    headline counts are load-bearing.
+    """
+    import json
+    import re
+    from pathlib import Path
+
+    docs = Path(__file__).resolve().parents[1] / "docs"
+    data = json.loads((docs / "humanizer-census.json").read_text(encoding="utf-8"))
+    prose = (docs / "humanizer-census.md").read_text(encoding="utf-8")
+
+    def counted(field):
+        return sum(
+            1
+            for x in data
+            if x.get(field)
+            and not str(x[field]).lower().strip().startswith(("none", "no ", "nothing"))
+        )
+
+    loop = sum(1 for x in data if str(x.get("detector_in_loop", "")).lower().startswith("yes"))
+    assert len(data) == 183, f"census json has {len(data)} profiles"
+    assert f"{len(data)} read" in prose or f"{len(data)} profiled" in prose
+    assert re.search(rf"\b{loop} of {len(data)}\b", prose), (
+        f"{loop} repos close a detector loop; the prose does not say so"
+    )
+    assert re.search(rf"\b{counted('meaning_verification')} of {len(data)}\b", prose), (
+        "the meaning-verification count in the prose does not match the data"
+    )
+
+
+def test_why_best_does_not_claim_the_loop_is_unique():
+    """31 profiled repos close a detector loop. The page must not imply otherwise."""
+    from pathlib import Path
+
+    doc = (Path(__file__).resolve().parents[1] / "docs" / "why-best-open-repo.md").read_text(
+        encoding="utf-8"
+    )
+    assert "not ours alone" in doc or "is not ours" in doc
+    assert "humanizer-census.md" in doc, "why-best does not link the census that corrects it"

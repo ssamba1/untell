@@ -4,7 +4,8 @@
 on GitHub. Commercial tools (Undetectable.ai, StealthGPT, WriteHuman…) are closed SaaS, not repos —
 out of scope. We surveyed the open field ourselves (GitHub topics, papers-with-code, ~110 repos; see
 `humanizer-research-report.md`), and re-swept it on 2026-08-05 across 624 distinct queries turning up
-1124 candidate repos — see the box below for what that sweep changed and where it stopped short. Verdict below is evidenced, not asserted, and states honestly where we are *not* #1.
+**1287 candidate repos, 183 read individually** ([`humanizer-census.md`](humanizer-census.md)) — see the box
+below for what that census changed. Verdict below is evidenced, not asserted, and states honestly where we are *not* #1.
 
 ---
 
@@ -19,6 +20,23 @@ ranks the exploitable gaps. Its **first** one, quoted exactly:
 
 The four criteria below are **our own framing** of what it would take to close that gap end to end —
 they are not a quotation, and a previous version of this page presented them as one:
+
+> **Superseded in part by the 2026-08-05 census** ([`humanizer-census.md`](humanizer-census.md) —
+> 1287 repos found, 183 read individually). Three things on this page are now known to be wrong or
+> too strong, and they are corrected there rather than quietly here:
+>
+> - **The detector loop is not ours alone.** 31 of 183 profiled repos put a detector in the loop,
+>   29 of them at inference time. `chengez/Adversarial-Paraphrasing` couples it *per token*.
+> - **Automated meaning verification is not ours alone.** 40 of 183 verify meaning, 36 with a real
+>   semantic check. `Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI
+>   entailment gate this repo does. 40 also do some fact preservation.
+> - **"Most complete open humanizer" holds only in English.** 42 of the 183 target another
+>   language, including four of the eight largest repos in the field — `Humanizer-zh-TW` (68.5k★),
+>   `Humanizer-zh` (14.7k★), Korean `k-skill` (7.0k★) and `im-not-ai` (4.2k★). Our catalogue, the
+>   voice matcher's constants and every measurement here are English-only.
+>
+> What survives is the **conjunction plus an installable package**, and the measurement discipline.
+> No profiled repo has all four criteria and ships as a package.
 
 > **Correction, 2026-08-05.** This section used to open with a block quote attributed *"verbatim"*
 > to that report: *"There is no open-source repo that combines (a) a real evasion approach validated
@@ -36,29 +54,13 @@ they are not a quotation, and a previous version of this page presented them as 
 
 Against our own four criteria, this repo has all four:
 
-> **Re-surveyed 2026-08-05. The four-part conjunction still holds; one of its parts, read alone,
-> does not.** A fresh sweep (624 distinct queries, 1124 candidate repos) turned up a genuine
-> counterexample on criterion (c): **[`chengez/Adversarial-Paraphrasing`](https://github.com/chengez/Adversarial-Paraphrasing)**
-> (NeurIPS 2025, [arXiv:2506.07001](https://arxiv.org/abs/2506.07001)) paraphrases *under the
-> guidance of an AI text detector* — an inference-time detector-feedback loop, training-free, and
-> with far stronger published numbers than anything here: **87.88% average TPR@1%FPR reduction**
-> across neural, watermark-based and zero-shot detectors (98.96% against Fast-DetectGPT, 64.49%
-> against RADAR).
->
-> So "(c) at inference time" is **not** ours alone, and this page previously read as if it were.
-> What survives is the conjunction: chengez is research code — its quality check is a post-hoc
-> GPT-4o evaluation for the paper, not a gate inside the pipeline, and there is no installable
-> package — so it has (a) and (c) without (b) or (d).
->
-> Two claims in the same sweep were checked and **did not hold up**, recorded so they are not
-> repeated: `rudra496/StealthHumanizer` was reported as looping and does not ("the detector runs
-> after humanization to show results, not to drive refinement"; its score is a 12-metric internal
-> heuristic), and `devswha/patina` was too ("one-shot rewrite with post-hoc verification, not
-> iterative detector-driven loops"). Both characterisations in the matrix below were already right.
->
-> The sweep did **not** finish: it stopped on an API spend limit after the discovery phase, so
-> none of the 1124 candidates were profiled and no completeness critic ran. Read the conjunction
-> claim as "not refuted by a partial survey", not as "verified exhaustively".
+> The counterexample on criterion (c) is
+> **[`chengez/Adversarial-Paraphrasing`](https://github.com/chengez/Adversarial-Paraphrasing)**
+> (NeurIPS 2025, [arXiv:2506.07001](https://arxiv.org/abs/2506.07001)): **−87.88% average
+> TPR@1%FPR** across neural, watermark and zero-shot detectors, and its loop runs **per token**
+> (`Paraphraser.paraphrase()` scores every top-k candidate's partial decode). It has (a) and (c)
+> without (b) or (d) — research code, no meaning gate in the pipeline, no package, no tests.
+> Thirty other repos also close a loop; see the census for all of them.
 
 | Gap criterion | This repo |
 |---|---|

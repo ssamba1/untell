@@ -1,0 +1,1649 @@
+[
+ {
+  "name": "binary-husky/gpt_academic",
+  "stars": 71185,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no AI-text detector anywhere in the codebase. The pipeline is single-pass: input text → prompt template → one LLM call → output. No score, no re-score, no iterative loop.",
+  "meaning_verification": "none. No cosine similarity, NLI, hedge/numeral checks, or semantic-role comparison. Output is accepted as-is from the LLM.",
+  "fact_preservation": "Instruction-only, not programmatic. The LaTeX polishing prompt tells the model \"Do not modify any latex command such as \\section, \\cite, \\begin, \\item and equat",
+  "mechanism": "Prompt-engineered LLM rewriting via predefined prefix/suffix templates. `core_functional.py` defines named functions (academic polish, grammar check, translation) each as a prompt string prepended/appended to user text. Larger plugins in `crazy_functions/Latex_Project_Polish.py` strip LaTeX comments, split oversized files into token-limited chunks (via `PaperFileGroup.run_file_split`), fan out par"
+ },
+ {
+  "name": "kevintsai1202/Humanizer-zh-TW",
+  "stars": 68545,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the tool explicitly states \"this tool is not designed to fool AI detectors, but to genuinely improve writing quality.\" No detector is called at any stage.",
+  "meaning_verification": "none automated. The SKILL.md instructs the LLM to \"verify natural-sounding output with varied structure\" and apply a 50-point self-scoring rubric, but this is the same LLM doing the rewrite — no independent semantic chec",
+  "fact_preservation": "none. No mention of numeral retention, citation locking, or byte-exact preservation anywhere in the skill or README.",
+  "mechanism": "Entirely a SKILL.md prompt file — no executable code. When invoked as a Claude Code / AI agent skill (via /humanizer-zh-tw), the LLM is instructed to act as a text editor, scan input for 24 labelled AI-writing patterns across four categories (content, language/grammar, style, communication), rewrite offending passages, then score the result on a 50-point rubric (10 pts each: directness, rhythm, tr"
+ },
+ {
+  "name": "blader/humanizer",
+  "stars": 33761,
+  "category": "prompt-guide",
+  "detector_in_loop": "No. The \"audit\" step is the hosting LLM asking itself the question \"What makes this obviously AI generated?\" — it is not a detector score, not a classifier call, and does not iterate on a numeric signal. There is no scor",
+  "meaning_verification": "None mechanical. The skill carries a \"no-fabrication rule\" as a plain instruction: the rewrite may not add any fact, name, number, date, quote, or citation absent from the source. There is no cosine similarity gate, no N",
+  "fact_preservation": "Instruction-level only. The no-fabrication rule is a prompt directive, not byte-exact preserve-locking. Numbers and citations in the source are expected to surv",
+  "mechanism": "Pure Markdown skill prompt (SKILL.md, under 500 lines by enforced budget). No code transforms text directly. The skill instructs whatever LLM agent loads it to: (1) scan input for 33 documented AI-tell patterns across five categories (content, language/grammar, style, communication, filler/hedging); (2) produce a draft rewrite avoiding those patterns; (3) perform a self-audit by asking \"What makes"
+ },
+ {
+  "name": "linexjlin/GPTs",
+  "stars": 32043,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no scoring step, no re-score, and no iteration. Each prompt produces one output and stops.",
+  "meaning_verification": "none — no semantic similarity check, no NLI gate, no entailment, no diffing of any kind.",
+  "fact_preservation": "none — numbers, citations, and quotes receive no special handling. The Humanizer Pro prompt says \"without changing its meaning\" as a bare instruction to the LLM",
+  "mechanism": "A static archive of 282 leaked OpenAI custom-GPT system prompts stored as markdown files under prompts/. There is no runnable code. The three humanizer entries work as follows. \"Humanizer Pro\" (prompts/Humanizer Pro.md) instructs ChatGPT to rewrite submitted text \"without changing its meaning\" in a single LLM pass; its knowledge base cites two academic papers on AI detection and two blog articles "
+ },
+ {
+  "name": "op7418/Humanizer-zh",
+  "stars": 14700,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector anywhere. The skill performs a single-pass edit driven entirely by the pattern catalogue in the prompt. No scoring before or after the rewrite.",
+  "meaning_verification": "none — the prompt text says \"保留含义\" (preserve meaning) as a human instruction to Claude, but there is no automated check: no cosine-similarity gate, no NLI entailment, no semantic-role comparison. Whether meaning survived",
+  "fact_preservation": "none — there is no byte-exact locking, no numeral retention check, no citation preservation logic. Numbers and quotes receive no special treatment beyond the ge",
+  "mechanism": "Pure prompt/instruction file delivered as a Claude Code skill. The entire implementation is SKILL.md — a ~300-line system-prompt that instructs Claude to act as a Chinese-language text editor. It lists 24 AI writing pattern categories with Chinese-language before/after examples (e.g. overuse of dashes, three-part lists, \"-ing\" tail phrases, \"AI vocabulary\" word lists, promotional language, vague a"
+ },
+ {
+  "name": "NomaDamas/k-skill (korean-humanizer)",
+  "stars": 7019,
+  "category": "prompt-guide",
+  "detector_in_loop": "No. There is no external detector called at any stage. The \"audit\" step is the LLM scanning its own output for residual pattern hits from the same A–J catalogue — a heuristic self-check, not a score-then-iterate loop aga",
+  "meaning_verification": "Yes, and it is explicit and layered. Four hard rules (4대 철칙): (1) Meaning invariant — facts, claims, numbers, proper nouns, direct quotes preserved 100%, not a single character changed or invented; (2) Evidence-based edi",
+  "fact_preservation": "Explicit Do-NOT list in instruction.md: proper nouns, product names, model names, institution names, personal names, place names; numbers, dates, units, statist",
+  "mechanism": "All logic lives in `korean-humanizer/instruction.md` (source read directly) and a 60+ sub-pattern taxonomy in `references/ai-tell-taxonomy.md`. The skill is loaded into an LLM agent via `npx -y @nomadamas/k-skill@0 instruct korean-humanizer`, which prints the instruction for the runtime. The LLM then runs a four-step loop: (0) Triage — decide scope, note whether only formatting or full prose needs"
+ },
+ {
+  "name": "epoko77-ai/im-not-ai (Humanize KR)",
+  "stars": 4182,
+  "category": "prompt-guide",
+  "detector_in_loop": "No. There is no AI-text detector scoring output and feeding back into rewriting. The verification loop is: change-rate gate + structural gate (both deterministic Python scripts, exit-coded). Route selection is also deter",
+  "meaning_verification": "Substantial, layered. (1) `verify_change_rate.py`: character-level difflib change rate; warns at 30%, blocks at 50%, strips the summary metadata block before comparing. (2) `verify_gates.py`: 4-axis structural gate — goa",
+  "fact_preservation": "Yes, explicitly and code-enforced. \"철칙 #1 (Fidelity First)\": facts, claims, numerals, dates, proper nouns, product names, model names, legal terms, direct quota",
+  "mechanism": "Claude Code skill that orchestrates LLM sub-agents to rewrite Korean AI-generated text. Core flow: (1) a Python input shim (`scripts/prepare_monolith_input.py`) computes 22 quantitative metrics (8 v1.6 heuristics + 14 v2.0 post-editese signals from Korean MT literature, all regex/stdlib — no ML libraries) and emits a `route_hint` (light/standard/heavy); (2) the orchestrator skill (`SKILL.md`) rout"
+ },
+ {
+  "name": "conorbronsdon/avoid-ai-writing",
+  "stars": 2826,
+  "category": "prompt-guide",
+  "detector_in_loop": "No. The skill's \"second pass\" is a second LLM prompt instruction — the model re-reads its own rewrite for surviving patterns — not a programmatic score-threshold loop. The JS detector engine exists and produces a numeric",
+  "meaning_verification": "None. There is no cosine similarity gate, NLI entailment check, numeral retention verification, hedge preservation count, or semantic-role comparison. The skill does instruct the LLM not to edit quoted material, code blo",
+  "fact_preservation": "Partial policy only, no enforcement. SKILL.md instructs the agent: \"Don't edit quoted material, code blocks, tables, or text attributed to someone else — flag t",
+  "mechanism": "The primary deliverable is SKILL.md — a ~14,000-word markdown prompt file that tells any compatible LLM agent (Claude Code, Cursor, Hermes, Copilot, etc.) how to audit and rewrite text for AI writing patterns. The agent reads the skill, runs a structured audit using the embedded 112-entry tiered word-replacement table and 61 pattern categories, rewrites the text, and then runs a mandatory second-p"
+ },
+ {
+  "name": "chi111i/BypassAIGC",
+  "stars": 2029,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — there is no detector at any stage. The pipeline is a pure forward pass: segment → polish → enhance → output. No score is computed before or after rewriting, and there is no iteration conditional on detection results",
+  "meaning_verification": "none — no cosine similarity, no NLI entailment, no semantic-role matching, no back-translation comparison, no numeral or hedge checks. The prompts instruct the model to stay within ±30 characters of source length and pre",
+  "fact_preservation": "none — technical terms, code, and API names are listed as \"unchanged\" in the system prompts, but there is no programmatic extraction, locking, or post-hoc verif",
+  "mechanism": "Two-stage LLM rewriting pipeline implemented in `package/backend/app/services/optimization_service.py` and `ai_service.py`. Stage 1 (\"polish\"): sends each text segment to an OpenAI-compatible API using a prompt that targets Nature/Science publication standards; for Chinese text it applies \"dynamic explanation expansion\" via extended verb phrases and systematic lexical substitution; for English tex"
+ },
+ {
+  "name": "iniwap/AIWriteX",
+  "stars": 1787,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — The README documentation claims \"提供对抗检测分数，优化后续处理工作流\" (provides opposition detection scores to optimize subsequent workflows), but reading the source code finds zero detector integration. `unified_workflow.py` has no",
+  "meaning_verification": "none. The `preserve_core_info` config flag, when set, appends the string \"要求：在创意变换中保持文章核心信息不变\" (\"keep core article information unchanged\") to the LLM prompt. That is the entire meaning gate — a natural-language request t",
+  "fact_preservation": "none. No byte-exact locking, no numeral-retention check, no citation preservation. Numbers, dates, and quotes pass through the LLM rewrite step with no protecti",
+  "mechanism": "AIWriteX is a WeChat official-account content-automation platform whose \"去AI味\" (AI-flavor removal) and Zhuque-bypass features are implemented entirely through prompt engineering, not a separate rewriting model or detector loop. The pipeline is: (1) a CrewAI \"writer\" agent generates an article via whatever LLM the user has configured; (2) optionally, `DimensionalCreativeEngine.apply_dimensional_cre"
+ },
+ {
+  "name": "thunlp/TAADpapers",
+  "stars": 1577,
+  "category": "other",
+  "detector_in_loop": "no — the repo contains no executable attack or rewrite logic of any kind",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "No text transformation is implemented. The repo is a curated bibliography of 155+ papers organized into categories: sentence-level attacks, word-level attacks (synonym substitution, etc.), character-level attacks, multi-level attacks, defenses, and certified robustness. The only code file is count_paper_number.py, which is a trivial Markdown parser that counts numbered entries in the README — it p"
+ },
+ {
+  "name": "lynote-ai/humanize-text",
+  "stars": 1551,
+  "category": "back-translation",
+  "detector_in_loop": "yes, but only in Method 3 (detection_pipeline.py), and it is very shallow: the loop runs at most 2 rounds, the \"Binoculars\" detector is a simplified single-GPT-2 perplexity wrapper (not the real observer/performer dual-m",
+  "meaning_verification": "none — no cosine similarity gate, no NLI check, no semantic-role comparison, no hedge/numeral retention test. The showcase claims \"100% information retention\" but this is stated as human expert assessment on 50 texts, no",
+  "fact_preservation": "none — PostProcessor applies regex substitutions on a 30-word dict with no special handling for numerals, citations, or quoted strings. Numbers and citations ca",
+  "mechanism": "Two distinct paths. Recommended standard pipeline (src/standard/pipeline.py, run_standard_pipeline): 4-step fixed chain — (1) LLM rewrite English→Chinese via DeepSeek/OpenRouter at temperature 1.3, (2) LLM rewrite Chinese→Japanese carrying step-1 as conversation history, (3) Google Translate Japanese→Finnish, (4) Niutrans Finnish→English. No detector consulted. Four reference methodologies (src/me"
+ },
+ {
+  "name": "THU-BPM/MarkLLM",
+  "stars": 1018,
+  "category": "research-code",
+  "detector_in_loop": "no — The detection pipeline is strictly linear: edits are applied once, then detection runs once per item. There is no outer closed loop that re-scores after a rewrite and iterates toward a target. The RandomWalkAttack h",
+  "meaning_verification": "RandomWalkAttack only: uses the OpenAssistant/reward-model-deberta-v3-large-v2 DeBERTa reward model as a quality oracle (oracle.py). It compares paraphrased vs. original bidirectionally via logit scores and softmax, with",
+  "fact_preservation": "none — No specific mechanism protects numbers, citations, or quoted passages from modification. WordDeletion and substitution attacks operate randomly over all ",
+  "mechanism": "MarkLLM is primarily a watermark-embedding and watermark-removal research toolkit, not a post-hoc text humanizer. It operates on two distinct planes:\n\n1. Watermark embedding (generation-time): Modifies LLM token logits during decoding to bias toward a \"greenlist\" of tokens (KGW family, e.g. watermark/kgw/kgw.py, KGWLogitsProcessor.__call__) or uses semantic/continuous schemes (Christ family: EXP, "
+ },
+ {
+  "name": "AIScientists-Dev/academic-humanizer",
+  "stars": 785,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector of any kind in the loop. The tool is a one-shot LLM rewrite guided by static rules; it never scores output against a detector, never iterates, and never re-scores after rewriting.",
+  "meaning_verification": "none — the SKILL.md instructs the LLM to preserve content semantically, but there is no automated check (no cosine similarity gate, no NLI entailment, no semantic-role match). Preservation is entirely prompt-trust; the L",
+  "fact_preservation": "Stated as \"non-negotiables\" in the SKILL.md: never alter numbers, equations, citations, or formal definitions. This is a prompt instruction only — there is no b",
+  "mechanism": "Pure prompt-guide distributed as a single SKILL.md file (~17 KB) with no executable code. The file is loaded as a skill into Claude Code, Codex, or MorphMind; the host LLM then performs all editing. The workflow is four steps embedded in the prompt: (1) read the manuscript and any author samples, (2) audit for AI tells and evidence gaps without editing, (3) rewrite with tells removed and claims ca"
+ },
+ {
+  "name": "DadaNanjesha/AI-Text-Humanizer-App",
+  "stars": 413,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — there is no detector call anywhere in the codebase. Transformation is one-shot with fixed random probabilities; no scoring, no iteration.",
+  "meaning_verification": "none — SentenceTransformer is used only inside _select_closest_synonym to rank individual word replacements by embedding similarity, not to verify the output sentence or document retains the original meaning.",
+  "fact_preservation": "none — numbers, citations, and quoted strings receive no special handling; they can be mangled by contraction expansion or synonym replacement like any other to",
+  "mechanism": "Single-pass rule-based rewriting implemented in transformer/app.py (class AcademicTextHumanizer, method humanize_text). Per sentence it: (1) expands contractions via a hardcoded dictionary; (2) with probability 0.4 prepends a random academic transition phrase (\"Moreover,\", \"Furthermore,\", etc.) from a fixed 8-item list; (3) optionally converts sentences to passive voice using spaCy dependency labe"
+ },
+ {
+  "name": "harshaneel/humanize",
+  "stars": 332,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — README explicitly states \"no detector-in-the-loop; the skill is a rulebook.\" An optional advanced pattern of generating 3-5 variants and picking the lowest-scoring against GPTZero or Binoculars is documented but is ",
+  "meaning_verification": "none — no cosine similarity gate, no NLI entailment check, no semantic-role match, no numeral-retention check. The skill is a pure stylistic pass. The README explicitly acknowledges: \"humanizing form is one thing; humani",
+  "fact_preservation": "none — no number locking, no citation preservation, no quote protection. The skill operates entirely at the surface stylistic level.",
+  "mechanism": "Two SKILL.md natural-language rulebooks loaded into an LLM agent — no executable code exists. humanize/SKILL.md instructs the agent to apply nine levers in a single-pass rewrite: (1) perplexity — replace predictable verbs with domain-specific ones; (2) burstiness — enforce aggressive sentence-length variance, longest minus shortest >= 20 words; (3) hedge surgery — delete softeners, assert directly"
+ },
+ {
+  "name": "devswha/patina",
+  "stars": 311,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "No. There is no external AI-text detector in the loop. The verify path scores meaning preservation (MPS + fidelity via LLM) not detector confidence. The playground displays a \"deterministic AI signal\" before/after, but t",
+  "meaning_verification": "Yes, two layers. (1) Deterministic: `droppedNumbers()` in `src/verify.js` extracts every numeric token from source and rewrite, normalizes thousand-grouped forms, and warns on any that vanish. (2) LLM-scored: `scoreMPS()",
+  "fact_preservation": "Partial. Numbers: `droppedNumbers()` checks every numeric token survives the rewrite (normalized for thousands grouping). No byte-exact citation locking, no quo",
+  "mechanism": "Two-lane pipeline. Lane A (deterministic, LLM-free): `src/features/index.js` runs `analyzeText()`, combining stylometry (burstiness CV, MATTR via `stylometry.js`), AI-vocab lexicon density (`lexicon.js`), discourse-tell detection (`discourse-tells.js`), translationese signals (`translationese.js`), markup-leakage detection (`markup-leakage.js`), and a structural classifier (`structural-classifier."
+ },
+ {
+  "name": "Eric-Wallace/universal-triggers",
+  "stars": 300,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — The loop scores loss/accuracy on the TARGET NLP MODEL (SNLI classifier, SST sentiment model, SQuAD reader, or GPT-2 language model), not on any AI-text detector. The iteration goal is to flip model predictions, not ",
+  "meaning_verification": "none — The entire point of the method is to CHANGE model outputs (break meaning), not preserve it. No cosine similarity, NLI check, or any other meaning gate exists.",
+  "fact_preservation": "none",
+  "mechanism": "Gradient-based hotflip attack that searches for short universal trigger token sequences (typically 1–3 tokens) to prepend to any input, causing target NLP models to produce attacker-chosen wrong outputs. The core is in attacks.py (hotflip_attack, random_attack, nearest_neighbor_grad) and utils.py (add_hooks, get_average_grad, get_best_candidates). The hotflip step linearizes the loss surface aroun"
+ },
+ {
+  "name": "modu-ai/cowork-plugins (humanize-korean)",
+  "stars": 265,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — metrics.py measures Korean linguistic features (comma patterns, sentence-length variance, nominalizer density, conclusion-pivot counts) as a proxy for AI-tell density, but it does not call an AI-text detector. The b",
+  "meaning_verification": "LLM self-check only, no external semantic gate. After each edit, the LLM checks 6 items inline: (1) proper nouns/numbers/dates/citations 100% preserved, (2) change rate ≤ 30%, (3) no genre drift, (4) register (formal/inf",
+  "fact_preservation": "yes — explicit Do-NOT list enforced across all phases: proper nouns, product/model/institution names, numbers, dates, units, directly quoted material (in quotat",
+  "mechanism": "A Claude Code / Cowork skill (SKILL.md instruction set) that directs Claude to apply a 10-category x 40+ pattern substitution rulebook to Korean text. The pipeline is: (1) Phase 2 — run `references/metrics.py` (pure Python, stdlib only) on the input to measure comma usage, sentence-length variance, Chinese-character nominalizer density, conclusion-pivot counts, and lexical diversity as pre-edit ba"
+ },
+ {
+  "name": "redbaronyyyyy-eng/humanizer-zh-academic",
+  "stars": 236,
+  "category": "prompt-guide",
+  "detector_in_loop": "No. There is no real detector called at any stage. The 6-dimensional post-revision quality score includes an \"anti-detection\" dimension, but it is Claude's own self-assessment of whether structural patterns are sufficien",
+  "meaning_verification": "No automated gates. The 6-point quality matrix includes \"authenticity\" (reads as genuine scholar voice), \"information density\" (no wasted clauses), and \"academic rigor\" (specific attribution, calibrated hedging) — all ju",
+  "fact_preservation": "Partial and informal. Two hard constraints address attribution: \"vague attribution (unattributed claims) = 0 instances\" and \"unattributed claims = 0 instances\" ",
+  "mechanism": "Two markdown files (SKILL.md ~414 lines, SKILL_full.md ~554 lines) installed into Claude Code's skills directory. When invoked, Claude follows a 4-step SOP: (1) risk scan — each paragraph scored against 11 AI-pattern markers, paragraphs scoring ≥4 flagged high-risk; (2) staged rewriting — apply 16 named pattern rules (8 content, 5 language, 3 style) covering theory-fronted openings, symmetrical en"
+ },
+ {
+  "name": "BERT-Attack (LinyangLee/BERT-Attack)",
+  "stars": 207,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — but the model in the loop is the TARGET NLP CLASSIFIER (a fine-tuned BERT for sentiment/NLI), not an AI-text detector. After each candidate substitution, tgt_model is queried to see if the label flips (lines 303-30",
+  "meaning_verification": "Partial. Counter-fitted embedding cosine similarity >= 0.4 filters antonym substitutions when --use_sim_mat 1 is set. Universal Sentence Encoder (USE) similarity is computed in evaluate() but do_use is hardcoded to 0, so",
+  "fact_preservation": "None. The entire input is lowercased unconditionally (seq.replace('\\n', '').lower() in _tokenize). Numbers are not excluded from substitution candidates. No cit",
+  "mechanism": "Two-phase word-substitution attack implemented in bertattack.py::attack(). Phase 1 (get_important_scores): each content word is masked with [UNK] in turn; the drop in the target classifier's confidence on the original label is the importance score. Words are ranked highest-first. Phase 2: for each high-importance word, BERT MLM (bert-base-uncased) predicts the top-k (default 48) token substitutes "
+ },
+ {
+  "name": "martiansideofthemoon/ai-detection-paraphrases (DIPPER)",
+  "stars": 201,
+  "category": "paraphrase-model",
+  "detector_in_loop": "no. Detection scripts (`detect_detectgpt.py`, `detect_openai.py`, `detect_gptzero.py`, `detect_watermark.py`, `detect_rankgen.py`, `detect_retrieval.py`) are run after paraphrasing as offline evaluation only. There is no",
+  "meaning_verification": "A semantic similarity submodule lives in `sim/` — an averaging or LSTM sentence encoder trained with a margin-based contrastive loss (`sim/main.py`, `sim/models.py`). The `utils.py` functions `load_sim_stuff` / `do_sim_s",
+  "fact_preservation": "none. No mechanism protects numbers, citations, proper nouns, or quoted strings.",
+  "mechanism": "DIPPER is an 11B-parameter T5-v1.1-XXL model fine-tuned specifically for controllable paraphrasing. Implemented in `dipper_paraphrases/paraphrase_minimal.py` (`DipperParaphraser.paraphrase`) and `paraphrase.py`. The pipeline: (1) NLTK `sent_tokenize` splits input into sentences; (2) sentences are processed in sliding windows of 3 (`sent_interval=3`); (3) each window is prepended with two integer c"
+ },
+ {
+  "name": "liamdugan/raid",
+  "stars": 201,
+  "category": "dataset",
+  "detector_in_loop": "no. The pipeline is strictly single-pass: apply attack → write CSV. Detectors are run separately afterward via detect_cli.py / raid/detect.py, and evaluation (raid/evaluate.py) computes TPR/AUROC at a target FPR against ",
+  "meaning_verification": "none at the document level. The synonym attacker applies a per-word cosine similarity gate (FastText embeddings, threshold 0.5) and POS-tag match before substituting a single token, but there is no sentence- or document-",
+  "fact_preservation": "none. Numbers are actively attacked (alter_number.py randomly replaces digits), citations are not identified or locked, and there is no preserve-locking of any ",
+  "mechanism": "RAID is a benchmark dataset and evaluation framework, not a pipeline that rewrites text on demand. It ships 12 pre-built adversarial attack implementations used to generate the dataset, each a one-shot, single-pass transformation with no feedback loop:\n\n1. Homoglyph (homoglyph.py): random substitution of Latin characters with visually identical Cyrillic/Greek Unicode codepoints (e.g. Latin \"a\" → C"
+ },
+ {
+  "name": "kalpeshk2011/dipper-paraphraser-xxl",
+  "stars": 201,
+  "category": "fine-tuned-model",
+  "detector_in_loop": "no — The GitHub repo (martiansideofthemoon/ai-detection-paraphrases) includes detector scripts (detect_watermark.py, detect_openai.py, detect_gptzero.py, detect_detectgpt.py, detect_rankgen.py, detect_retrieval.py) but t",
+  "meaning_verification": "none — the paper reports BERTScore and uses it as a post-hoc evaluation metric, but the runtime pipeline has no gate that rejects an output if meaning diverged. The user picks control codes upfront and accepts whatever t",
+  "fact_preservation": "none — no byte-exact locking of numbers, citations, or quotes. The order diversity control can reorder sentences, which can move or orphan numeric context. Noth",
+  "mechanism": "Single-pass seq2seq paraphrase generation. T5-XXL (11B parameters) fine-tuned on PAR3 — a dataset of paragraph-aligned translations from novels — to produce paragraph-level paraphrases. At inference, the prompt is formatted as \"lexical = X, order = Y [optional_prefix] <sent> [sentence] </sent>\", where X and Y are integer control codes (0–100 in multiples of 20) that the model was trained to obey. "
+ },
+ {
+  "name": "google-research/google-research dipper (DIPPER)",
+  "stars": 201,
+  "category": "paraphrase-model",
+  "detector_in_loop": "no — the detect_*.py scripts (detect_detectgpt.py, detect_watermark.py, detect_gptzero.py, detect_openai.py, detect_rankgen.py, detect_retrieval.py) are separate evaluation scripts run independently to measure evasion ef",
+  "meaning_verification": "none — no cosine similarity check, no NLI entailment gate, no ROUGE/BERTScore threshold, no hedge or numeral retention check. The model is trusted to preserve meaning by virtue of its training; no post-hoc verification o",
+  "fact_preservation": "none — numbers, citations, and quoted strings receive no special handling. Sentences are tokenized uniformly and passed through the model; there is no preserve-",
+  "mechanism": "Fine-tuned T5-XXL (11B parameters) paraphrase model (`kalpeshk2011/dipper-paraphraser-xxl` on HuggingFace). Text is split into sentences via NLTK, then processed in sliding windows (default: 3 sentences at a time). Each window is fed to the model as a prompt in the format `\"lexical = {code}, order = {code} {prior_context} <sent> {window} </sent>\"`, where the control codes are derived by subtractin"
+ },
+ {
+  "name": "ilyautov/humanizer-ru",
+  "stars": 191,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the eval harness (eval/run_eval.py) supports optional external detectors (GPTZero, Originality.ai, a local Ollama model) and an LLM judge that score texts before and after humanization, but they are purely observati",
+  "meaning_verification": "The skill has a \"Fact-lock\" rule in the prompt (Step 3 in SKILL.md): numbers, dates, names, percentages from the source must be transferred without distortion and no invented facts may be added. This is enforced by the L",
+  "fact_preservation": "Prompt-level \"Fact-lock\" rule forbids altering or inventing numbers/dates/names/citations. Not enforced by code during rewriting; only checked post-hoc in the o",
+  "mechanism": "A Claude Code skill (SKILL.md loaded into the LLM's context) that instructs the model to act as a Russian-language editor. The skill has no rewriting code of its own — the LLM does all the text transformation in a single pass. The process is: (1) diagnose a text against a 54-pattern catalogue (references/katalog.md), traffic-light each paragraph red/yellow/green; (2) calibrate a \"voice passport\" f"
+ },
+ {
+  "name": "B1lli/remove-ai-flavor-writing-skill",
+  "stars": 190,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the audit script (audit_ai_flavor.py) is a standalone CLI tool run manually after rewriting; it does not feed scores back to trigger another rewrite pass. There is no iterative score→rewrite→rescore cycle.",
+  "meaning_verification": "none mechanically enforced. SKILL.md includes a checklist item \"Original meaning preserved\" as an instruction to the model, but there is no cosine similarity check, NLI gate, semantic-role comparison, or any automated ve",
+  "fact_preservation": "none. Instructions say to preserve facts and tone, but there is no byte-exact locking of numbers, citations, or quoted strings, and no technical mechanism to en",
+  "mechanism": "A Codex CLI skill (OpenAI agent framework) that transforms Chinese text by instructing an LLM via a detailed system prompt in SKILL.md. The prompt defines a 5-step workflow: classify text type (social/essay/academic/fiction), scan for pattern categories in order, rewrite locally or at paragraph level, preserve functional lists/contrasts, output revised text. The pattern catalogue targets 11+ Chine"
+ },
+ {
+  "name": "matsuikentaro1/humanizer_academic",
+  "stars": 158,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — The README documents offline experiments with desklib and Binoculars detectors used to validate pattern importance during development (specifically crediting Pattern 34 sentence rhythm with \"~90% of achievable impro",
+  "meaning_verification": "none automated. The skill instructs Claude to \"preserve meaning\" and \"maintain data integrity (numbers, statistics, findings)\" but provides no NLI entailment gate, no cosine similarity check, and no numeral retention gua",
+  "fact_preservation": "instructional only. Pattern 3 and Pattern 11 examples show statistics being retained verbatim in rewrites, and the skill explicitly says to keep numbers/data. T",
+  "mechanism": "A Claude Code SKILL.md instruction file (748 lines, no executable code). The transformation is performed entirely by Claude (the LLM) following 34 named rewriting rules documented in SKILL.md. Rules cover: content-inflation removal (Patterns 1–6), AI vocabulary substitution (Patterns 7–12, 19–26), style normalization such as zero-tolerance em dash elimination and title-case correction (Patterns 13"
+ },
+ {
+  "name": "obaskly/AiTextDetectionBypass",
+  "stars": 125,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — The scanner tab (ai_scanner.py) and the paraphraser (paraphraser.py) are entirely decoupled. The user must manually invoke the scanner; there is no automated score-then-rewrite-then-rescore iteration anywhere in the",
+  "meaning_verification": "none — The README disclaimer explicitly states the script is \"NOT responsible for the quality or accuracy of the output.\" No cosine similarity, NLI, semantic-role, or any other semantic check is present.",
+  "fact_preservation": "none — Text is chunked at 250-word word-count boundaries with no special handling for numbers, citations, or quoted strings. The only text transformation before",
+  "mechanism": "Selenium browser automation (paraphraser.py, main()) that drives Chrome in incognito mode to undetectable.ai/ai-humanizer. Text is chunked to 250-word segments (split_text_preserve_sentences from utils/text_splitter.py or naive word-split). Each chunk is pasted into the site's textarea, tone/readability/purpose dropdowns are set, and the \"Humanize\" button is clicked. To bypass undetectable.ai's fr"
+ },
+ {
+  "name": "DaleSeo/korean-skills",
+  "stars": 125,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — single-pass rewrite only. The tool instructs the agent to detect patterns and correct them in one pass; it does not call a detector, score output, or iterate. The SKILL.md says to \"self-validate across 6 dimensions ",
+  "meaning_verification": "Soft/prompt-only. SKILL.md instructs the agent to \"preserve meaning — never alter facts, dates, proper nouns, or logical relationships\" and to assign a Naturalness Grade (A/B/C/D) post-revision. No code enforces this; it",
+  "fact_preservation": "Prompt instruction only: \"never alter facts, dates, proper nouns.\" No byte-exact locking, no numeral retention gate, no regex preserve-lock mechanism.",
+  "mechanism": "Pure prompt-instruction bundle — no executable code. The repo contains markdown files (SKILL.md + six reference docs per skill) that are loaded into whichever AI agent (Claude Code, Cursor, Windsurf, Copilot) the user installs them into. The humanizer skill encodes 40 Korean AI-writing patterns across 6 categories (punctuation, spacing, POS diversity, vocabulary, sentence structure, translation-es"
+ },
+ {
+  "name": "gonta223/humanizer-ja",
+  "stars": 121,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector, no scoring step, no re-score, no iteration. One-shot rewrite only.",
+  "meaning_verification": "none — SKILL.md says \"never just remove, replace with human-like expression\" but this is advice to the LLM, not an automated gate. No cosine similarity check, no NLI pass, no semantic-role comparison.",
+  "fact_preservation": "none — no mention of number locking, citation preservation, or quote protection anywhere in the repo.",
+  "mechanism": "Pure Claude Code skill — the entire repo is two markdown files (README.md, 2.3 KB; SKILL.md, 10 KB) and a LICENSE. SKILL.md is a 20-pattern checklist partitioned into five categories: (1) vocabulary/expression (remove overwrought emphasis, replace generic evaluative phrases like 浮き彫りにしており, reduce katakana overuse, demand concrete sources); (2) format (eliminate bold-colon bullets, resist artificia"
+ },
+ {
+  "name": "zero-zerogpt",
+  "stars": 108,
+  "category": "unicode-trickery",
+  "detector_in_loop": "no — there is no scoring step, no iteration, and no feedback. The tool produces all 12 Unicode-space variants simultaneously in one pass and lets the user pick one to copy or download.",
+  "meaning_verification": "none — text content is completely unchanged; only the space codepoints differ. Meaning is trivially preserved by construction but is never verified.",
+  "fact_preservation": "incidental — numbers, citations, and quotes are preserved because the tool only touches space characters, not any other content. There is no explicit protection",
+  "mechanism": "Pure Unicode space substitution with no text rewriting. The entire transformation is a single function in src/App.js: `replaceSpaces = (text, unicodeCharacter) => text.split(' ').join(unicodeCharacter)`. Every ASCII space (U+0020) in the input is replaced with one of 12 Unicode space characters defined in src/constants/unicodeSpaces.js — Em Space (U+2003), En Space (U+2002), Thin Space (U+2009), H"
+ },
+ {
+  "name": "brandonwise/humanizer",
+  "stars": 108,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — scores once, emits suggestions, stops. There is no re-score after applying fixes, no iteration, and no convergence criterion. The autofix path in humanizer.js applies transforms and returns immediately; it never re-",
+  "meaning_verification": "none — no cosine similarity, no NLI entailment check, no round-trip back-translation, no semantic-role comparison. The autofix substitutions are short phrase contractions unlikely to destroy meaning, but nothing verifies",
+  "fact_preservation": "none — numbers, citations, and quotes are not tracked or locked. The autofix does not touch numerals, but there is no byte-exact preserve-locking or any explici",
+  "mechanism": "Two-phase pipeline, both implemented in JavaScript with no LLM. Phase 1 (src/analyzer.js): runs 30 regex/vocabulary pattern detectors (src/patterns.js, 500+ vocabulary terms) plus statistical analysis (src/stats.js: burstiness, type-token ratio, trigram repetition, sentence CoV, Flesch-Kincaid). Phase 2 (src/humanizer.js): `autoFix()` applies safe regex substitutions — curly-quote normalization, f"
+ },
+ {
+  "name": "crabin/paper-humanizer-skill",
+  "stars": 103,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector, no scoring step, no re-scoring, and no iteration. Single LLM call only.",
+  "meaning_verification": "none (mechanical). The system prompt instructs the LLM not to alter meaning, facts, numbers, or citations, but there is no automated check (no cosine similarity gate, no NLI pass, no diff or assertion) to verify the LLM ",
+  "fact_preservation": "Instruction-based, not mechanical. The system prompt states \"never change numeric values, hyperparameters, thresholds, or comparative outcomes\" and \"preserve ci",
+  "mechanism": "Pure prompt-composition tool. The Python script `scripts/paper_humanizer.py` assembles a system prompt (`references/system_prompt.md`) and a parameterised user template (`references/user_template.md`) into a single composed prompt string, then prints it to stdout. Nothing else happens in code — the composed prompt is fed to Claude (via the Claude Code skill surface). The LLM does all the rewriting"
+ },
+ {
+  "name": "AgentGuard (numbergroup/AgentGuard)",
+  "stars": 102,
+  "category": "other",
+  "detector_in_loop": "no — single-pass analysis; no score→rewrite→re-score loop exists anywhere in the code",
+  "meaning_verification": "none — the tool is not trying to preserve meaning during rewriting; it strips attack patterns and is indifferent to whether the remaining text is semantically intact",
+  "fact_preservation": "none — not applicable; the tool does not rewrite factual content",
+  "mechanism": "Pure pattern-based detection and sanitization — no text humanization or evasion generation. The pipeline in agent_guard.py applies: (1) NFKC Unicode normalization, (2) combining-character stripping, (3) zero-width character removal (U+200B, U+200C, etc.), (4) homoglyph-to-ASCII mapping for 50+ Cyrillic/Greek/math lookalikes (e.g. Cyrillic 'а'→'a', Greek 'α'→'a'), (5) regex matching across six comp"
+ },
+ {
+  "name": "aloshdenny/reverse-SynthID-text",
+  "stars": 95,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes, but weakly — WatermarkDetector.compute_score() runs SynthID's own g-value calculation before and after the attack and prints the mean-g score; however there is NO iteration loop (no rescore-and-retry until threshold",
+  "meaning_verification": "none. The paraphrase path trusts the LLM to preserve meaning by prompt instruction only (\"Paraphrase while keeping the same meaning\"). No cosine similarity check, no NLI gate, no semantic-role comparison, no numeral rete",
+  "fact_preservation": "none. No special handling for numbers, citations, or quoted strings. The synonym table does not filter numerals. Paraphrasing model may freely alter figures.",
+  "mechanism": "Five independent attack classes in reverse_synthid.py, each targeting SynthID's n-gram hash mechanism specifically. (1) ParaphrasingAttack: loads a non-watermarked HuggingFace model (default google/gemma-2b-it) and fully regenerates the text from a prompt, destroying the token-sequence hash patterns SynthID relies on. (2) TokenPerturbationAttack: hardcoded synonym table (~30 word pairs) for word-l"
+ },
+ {
+  "name": "gpthuman/ai-humanizer",
+  "stars": 95,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — there is no detector call, no rewrite, and no iteration of any kind in the published source",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "The Space is a pure freemium funnel, not a functioning humanizer. app.py (18.8 kB) is entirely Gradio UI scaffolding. The humanize() function sleeps for 3 seconds, HTML-escapes the input unchanged, and returns it hidden behind a blurred overlay. A call-to-action overlay tells the user their text is \"100% undetectable\" and prompts account creation at gpthuman.ai to see the output. No text transform"
+ },
+ {
+  "name": "vinusankars/Reliability-of-AI-text-detectors",
+  "stars": 92,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — detection is a separate offline evaluation step. `rephrase/detect.py` and `rephrase/eval.py` score outputs after paraphrasing is complete; no detector score is fed back to influence paraphrase decisions or trigger a",
+  "meaning_verification": "none — the system applies no semantic similarity check, NLI gate, or any other post-hoc meaning gate. The Parrot model's internal adequacy/fluency thresholds (lowered progressively via the \"knob\") are a generation-time f",
+  "fact_preservation": "none — no special handling of numbers, citations, or quoted material.",
+  "mechanism": "Three distinct attack vectors, all open-loop (paraphrase first, evaluate separately). (1) Recursive paraphrasing via DIPPER (kalpeshk2011/dipper-paraphraser-xxl, a T5-xxl model): `rephrase/recursive_paraphrase.py` runs P=5 rounds, each round feeding the prior output as the next input, sentence-windowed with lex_diversity=60 and order_diversity=60 on the final round. (2) Single-pass paraphrasing vi"
+ },
+ {
+  "name": "Vladimir-Human/humanizer-ru",
+  "stars": 91,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no score-rewrite-re-score feedback loop. The decision tree is one-shot: detect patterns, then rewrite. blind_eval.py is a post-hoc evaluation tool that compares outputs after the fact, not a runtime gate. c",
+  "meaning_verification": "Narrow fact-preservation rule only: the six core editing principles in SKILL.md prohibit introducing numbers, dates, names, units, or causal links not in the source (\"no new facts\"). check_examples.py mechanically enforc",
+  "fact_preservation": "Yes, explicitly: SKILL.md principle #6 forbids adding facts absent from the source. The check_examples.py script enforces this for before/after documentation pa",
+  "mechanism": "An agentskills.io skill — primarily a structured prompt document (SKILL.md) that an LLM agent (Claude, opencode, etc.) follows, not a standalone pipeline. Transformation logic: (1) SKILL.md's decision tree routes by genre (fiction/contract/academic/blog) and text date; (2) check_markers.py / chatbot-artifacts.md runs 38 regex patterns (class A = high-confidence LLM artifact, class B = contextual) "
+ },
+ {
+  "name": "jthickstun/watermark",
+  "stars": 88,
+  "category": "research-code",
+  "detector_in_loop": "no — the watermark is embedded at token-sampling time during generation; there is no post-hoc rewrite-and-re-score loop of any kind",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "Generation-time keyed pseudorandom watermarking. Two strategies are implemented under watermarking/gumbel/ and watermarking/transform/. Gumbel strategy (gumbel/sampler.py): at each generation step, token is chosen by argmax(xi^(1/p)) where xi is a seeded random matrix drawn from a keyed generator — this is inverse-transform Gumbel sampling tied to a secret key. Transform strategy (transform/sample"
+ },
+ {
+  "name": "JHL-HUST/PWWS",
+  "stars": 85,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — but the \"detector\" is the specific target text classifier being attacked (word-CNN, Bi-LSTM, LSTM, or char-CNN trained on sentiment/topic datasets), not an AI-text detector. After each synonym substitution the code",
+  "meaning_verification": "minimal. The synonym filter (_synonym_prefilter_fn in paraphrase.py) enforces same POS tag and rejects multi-word synonyms and identity substitutions. Candidates are ranked by context-window spaCy vector similarity (vsm_",
+  "fact_preservation": "none for numbers, citations, or quotes. CARDINAL and ORDINAL NER tags are in the NE substitution pool, meaning numeric expressions are candidates for replacemen",
+  "mechanism": "Word-level synonym substitution guided by two signals combined multiplicatively. Step 1 (evaluate_word_saliency.py: evaluate_word_saliency()): for every token, zeroes its embedding vector and measures how much the target classifier's confidence in the true class drops — this is word saliency S(x, w_i). Step 2 (paraphrase.py: PWWS(), adversarial_tools.py: adversarial_paraphrase()): for each word, g"
+ },
+ {
+  "name": "StealthHumanizer (rudra496/StealthHumanizer)",
+  "stars": 84,
+  "category": "api-wrapper",
+  "detector_in_loop": "yes — the local heuristic detector (detectAI from lib/detector.ts) is called between passes; sentences scored \"ai\" or \"maybe\" are re-humanized in-place, up to 3 passes total. However the in-loop detector is entirely heur",
+  "meaning_verification": "Computed but not a blocking gate. lib/semantic-fidelity.ts — assessSemanticFidelity() — produces a weighted score from unigram/bigram cosine similarity, keyword recall, length ratio, sentence-count alignment, entity reca",
+  "fact_preservation": "Structural regions (fenced code, inline code, markdown images, markdown links, bare URLs, email addresses, @-mentions, hashtags, blockquotes) are extracted befo",
+  "mechanism": "Four-layer pipeline orchestrated in lib/humanizer.ts. Layer 1: LLM rewrite via generateWithProvider() using anti-detection system prompts from lib/prompts.ts (length anchors, style/tone/domain configuration, burstiness and perplexity injection instructions). Layer 2: deterministic post-processing in lib/postprocess.ts — 500+ synonym swaps, 230+ collocation replacements, AI-phrase removal, sentence"
+ },
+ {
+  "name": "lengsukq/ParaphrasingToolClient",
+  "stars": 78,
+  "category": "api-wrapper",
+  "detector_in_loop": "No. The AIGC probability scores shown in the UI are parsed directly from an already-generated PaperYY HTML report uploaded by the user — this tool never calls a detector itself. The workflow is: user runs PaperYY externa",
+  "meaning_verification": "None. The LLM prompt instructs the model to \"maintain the same meaning,\" but no automated check (cosine similarity, NLI, semantic-role matching, or any other gate) verifies whether the output actually preserved meaning.",
+  "fact_preservation": "None. Numbers, citations, and quotes receive no special handling; they pass through the LLM prompt unchanged and can be freely altered by the model.",
+  "mechanism": "Single-shot LLM paraphrasing via an OpenAI-compatible API. The tool has two phases: (1) client-side HTML parsing of uploaded plagiarism/AIGC detection reports (PaperYY, DaYa formats) using a CSS-selector rule engine in src/lib/rule-parser.ts, extracting flagged text segments; (2) each segment is sent to an LLM via src/composables/useParaphrase.ts → src/lib/request.js (openAIAct function), which PO"
+ },
+ {
+  "name": "IBM/RADAR",
+  "stars": 76,
+  "category": "detector-with-evasion",
+  "detector_in_loop": "no — The notebook is strictly sequential: generate AI text, paraphrase once, score with detector. The three stages are independent cells with no feedback. There is no re-score-and-iterate cycle anywhere in the published ",
+  "meaning_verification": "none — No cosine similarity, no NLI check, no BLEU, no semantic-role gate. The paraphrased text is used directly with no validation that meaning survived.",
+  "fact_preservation": "none — Numbers, citations, and quotes receive no special handling. The GPT prompt asks only for word-choice enhancement; there is no preserve-locking or bypass ",
+  "mechanism": "RADAR is primarily a robust AI-text DETECTOR (RoBERTa-large fine-tuned via joint adversarial training against a paraphraser), with a companion evasion demo. The repo ships no training code — only inference. The evasion side is a single-shot paraphrase: either a GPT-3.5-turbo/GPT-4 API call with the fixed system prompt \"Enhance the word choices in the sentence to sound more like that of a human\" (f"
+ },
+ {
+  "name": "GPTZzzs",
+  "stars": 72,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — single-pass transformation with no scoring, no detector call, and no iteration. The output is produced once and written to output.txt. There is no feedback mechanism of any kind.",
+  "meaning_verification": "none — words are replaced by a random entry from a thesaurus list with no context check. The README explicitly warns that \"synonyms can be very odd and would require fixing by humans.\" No similarity metric, no NLI, no ba",
+  "fact_preservation": "Partial quote protection only: the ignore_quotes flag (default True) tracks double-quote parity and skips swapping tokens that fall inside a quoted span. Number",
+  "mechanism": "Two-pass rule-based text mutation, no LLM or API involved. All logic lives in src/gptzzzs/normal_change.py (change_text function) and src/gptzzzs/__init__.py (Gptzzzs class). Pass 1: randomly selects N% of whitespace-delimited tokens (default 50%), strips trailing punctuation, checks word length > 3 and presence in a bundled JSON synonym dictionary (FinNLP or Zaibacu thesaurus), then swaps to a ra"
+ },
+ {
+  "name": "ksanyok/TextHumanize",
+  "stars": 71,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "yes — two separate loops. (1) humanize_until_human() in texthumanize/core.py runs the full pipeline, scores with the internal three-layer detector ensemble (heuristic 18-metric, 35-feature logistic regression, MLP neural",
+  "meaning_verification": "Weak structural checks only. SentenceValidator™ (texthumanize/sentence_validator.py) fires at 7 pipeline checkpoints and catches surface artifacts: duplicate adjacent words, broken contractions, orphaned punctuation, dou",
+  "fact_preservation": "Yes, explicit. Segmentation stage protects URLs, emails, code blocks, Markdown/HTML markup, named entities (multi-token), and explicit keyword/brand allowlists ",
+  "mechanism": "38-stage adaptive pipeline implemented across ~131 Python modules (orchestrated in texthumanize/pipeline.py). Stages run in order: watermark scrubbing (zero-width, homoglyphs, invisible Unicode) → segmentation with URL/code/email protection → typography normalisation → debureaucratisation → structure diversification → repetition reduction → liveliness injection → semantic paraphrasing → syntax rew"
+ },
+ {
+  "name": "ColinLu50/Evade-GPT-Detector",
+  "stars": 70,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — the proxy detector is called inside _optimize_ic_outputs via a _human_score closure that calls self.detector(text_list) and returns 1 - AI_prob. Candidate in-context examples are ranked by this score and the best-s",
+  "meaning_verification": "none — no cosine similarity gate, no NLI check, no semantic-role match, no numeral retention check. The only optimization signal is the detector score. Semantic preservation of in-context examples is not enforced.",
+  "fact_preservation": "none — word and sentence substitutions can replace anything in the in-context examples; numbers and proper nouns are not locked.",
+  "mechanism": "SICO (Substitution-based In-Context example Optimization). Two-phase: (1) Training — the LLM is asked to extract a \"feature\" text describing differences between human and AI outputs (extract_feature in incontext_trainer.py), then that feature is used to paraphrase AI outputs into human-sounding in-context examples (construct_incontext_outputs). Those examples are then iteratively improved via gree"
+ },
+ {
+  "name": "sanjaysah101/humanize-ai",
+  "stars": 62,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — The `src/services/verification/authenticityVerifier.ts` produces a weighted heuristic score (language 0.3, style 0.3, pattern 0.2, emotional 0.2) using Compromise NLP features and the `PatternDetector` (which checks",
+  "meaning_verification": "Minimal. After the LLM call, `transformerModel.ts` computes a combined score from weighted Levenshtein distance and a \"semantic overlap\" measure; if it falls below 0.2 (a very loose floor) the code reinserts key phrases.",
+  "fact_preservation": "Partial and shallow. `wordLevel.ts` skips tokens matching `^\\d+$` (bare integers) and ALL-CAPS tokens. There is no byte-exact preserve-locking, no citation patt",
+  "mechanism": "Three-layer pipeline in a Next.js web app. (1) Word-level synonym replacement: `src/services/transformation/wordLevel.ts` uses the Datamuse API via `src/infrastructure/apis/datamuse.ts` to fetch candidates, ranks them with POS matching and contextual scoring via `src/services/transformation/synonymSelector.ts`, and skips pure numerals (`^\\d+$`), ALL-CAPS tokens, and a hardcoded list of technical t"
+ },
+ {
+  "name": "zhouying20/HMGC",
+  "stars": 60,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — via surrogate only. The surrogate RoBERTa classifier is in the loop as the goal function; the search iterates until the surrogate flips from AI to human. The live victim detector is never queried during the attack ",
+  "meaning_verification": "Cosine similarity constraint via Universal Sentence Encoder (threshold 0.75, window_size=50) is enforced on every candidate swap during the attack — candidates that fall below the threshold are discarded. Post-hoc qualit",
+  "fact_preservation": "none. Word substitutions are applied to any non-stopword position including numerals, proper nouns, and quoted text. There is no preserve-locking or special han",
+  "mechanism": "Two-stage adversarial word-substitution attack built on top of the TextAttack and TextFlint frameworks. Stage 1 (train_detector.py): fine-tune a RoBERTa surrogate detector that mimics the target (\"victim\") AI-text detector by distilling its labels. Stage 2 (attack/multi_flint_attack.py + attack/recipes/rspmu_mlm_dualir.py): run a greedy dual Word Importance Ranking (WIR) search over word positions"
+ },
+ {
+  "name": "Text2Go/ai-humanizer-mcp-server",
+  "stars": 58,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — the only tool is detect; there is no rewrite tool, no scoring loop, and no iteration of any kind",
+  "meaning_verification": "none — no rewriting occurs in this codebase",
+  "fact_preservation": "none — no rewriting occurs in this codebase",
+  "mechanism": "A single TypeScript file (src/index.ts) registers one MCP tool called \"detect\". It POSTs text to https://api.edgeshop.ai/rewrite/text-detection with a list of detector names (COPYLEAKS, HEMINGWAY). The tool's own description string instructs the host LLM to build a URL from the returned taskId and show it to the user (https://pre-www.text2go.ai/?utm_source=claude_mcp&taskId={taskId}), redirecting "
+ },
+ {
+  "name": "Squirbie/im-not-ai-codex",
+  "stars": 55,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "yes — in strict mode the naturalness-reviewer agent re-runs the full tell-detector on the rewritten output and compares severity-weighted scores against the original detection JSON. If S1 patterns remain or S2 count exce",
+  "meaning_verification": "13-item checklist enforced by the content-fidelity-auditor agent (references/agents/content-fidelity-auditor.md): absolute-immutable items — proper nouns, numbers/units, dates/times, direct quotes, legal citations, formu",
+  "fact_preservation": "Explicit byte-exact Do-NOT list applied at every stage: numbers/units/dates, proper nouns (names, products, models, institutions), content inside double-quotati",
+  "mechanism": "LLM-prompt-driven rewriting with regex-based quantitative pre-scoring. Before calling the LLM, `plugins/im-not-ai/scripts/prepare_monolith_input.py` runs `metrics_v2.py` (falling back to `metrics.py`) to compute 8+14 quantitative signals — comma-inclusion rate, connective-ending-before-comma rate, hanja nominalizer density (-성/-적/-화), lexical diversity, post-editese axes (simplification/normalisat"
+ },
+ {
+  "name": "OUTFOX",
+  "stars": 53,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes, but offline not real-time. The loop is: run detector on training essays -> label each as Good/Bad -> store labels -> use stored labels as in-context examples for next attacker generation round. There is no real-time",
+  "meaning_verification": "none. No cosine similarity check, no NLI gate, no semantic-role comparison. The code validates nothing about the generated essay beyond parsing the ChatGPT response string.",
+  "fact_preservation": "none. No numeral retention, no citation locking, no quote preservation of any kind.",
+  "mechanism": "Dual adversarial in-context learning system. The attacker (src/attacking/outfox_attacking.py) builds a 10-shot prompt for ChatGPT that embeds pre-labelled LM-generated essays: examples where detection was fooled are labelled \"Good\", examples that were caught are labelled \"Bad\". The `make_prompt_for_attack` function (utils/utils.py) assembles this prompt and instructs ChatGPT to write an essay that"
+ },
+ {
+  "name": "chengez/Adversarial-Paraphrasing",
+  "stars": 46,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — the detector is called at every single token step, not just between full rewrites. For each of the top-k candidate next tokens the partial output is scored and the least-AI-looking token wins. This is deeper coupli",
+  "meaning_verification": "none programmatic. The LLM system prompt instructs \"rephrase without changing meaning\" but there is no cosine, NLI, or any automated gate checking that meaning survived. GPT-4o quality evaluation is provided as optional ",
+  "fact_preservation": "none. No numeral-locking, citation-locking, or any byte-exact preservation mechanism exists in the codebase.",
+  "mechanism": "Token-level adversarial decoding, implemented in `utils.py` in the `Paraphraser.paraphrase()` method. At every autoregressive generation step the model produces top-k candidate tokens; each candidate is decoded into a partial string (generated-so-far + new token) and fed to the guidance detector (`classifier.get_scores()`). The token whose partial decode yields the lowest detector \"AI\" score is th"
+ },
+ {
+  "name": "cookielee77/CLARE",
+  "stars": 44,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — but the \"detector\" is the target NLP classifier being attacked (a BERT or TextCNN sentiment/NLI classifier), not an AI-text detector. The attack loop in bert_attack_classification.py queries classifier confidence a",
+  "meaning_verification": "USE (Universal Sentence Encoder) cosine similarity via TensorFlow Hub (models/similarity_model.py). Each of the three operations calls similarity_calculation() and rejects candidates below a per-operation threshold (thre",
+  "fact_preservation": "none. No special handling for numbers, citations, or quotes.",
+  "mechanism": "Mask-then-infill procedure using RoBERTa as a masked language model (models/Roberta.py, models/pipeline.py). Three perturbation operations implemented in models/attack_operations.py: (1) word_replacement — masks the target token and samples RoBERTa candidates; (2) word_insertion — masks a gap position and infills a new word; (3) word_merge — replaces two adjacent tokens with a single RoBERTa-gener"
+ },
+ {
+  "name": "samrand96/Undetectable-AI",
+  "stars": 43,
+  "category": "detector-with-evasion",
+  "detector_in_loop": "yes — writer.com public AJAX endpoint is polled after every transformation step; the loop continues until writer.com returns \"Human-Generated\". Only one detector; no ensemble. The zerogpt function is dead code.",
+  "meaning_verification": "none — no cosine similarity, no NLI, no semantic-role check, no hedge or numeral audit. The rewritten text is accepted as long as the detector approves it.",
+  "fact_preservation": "none — numbers, citations, and quotes receive no special handling and can be altered or dropped by the back-translation or LLM steps.",
+  "mechanism": "Single Python file (main.py, ~200 lines). Processes a DOCX paragraph by paragraph. For each paragraph: (1) scrapes writer.com's undocumented AJAX endpoint (`/wp-admin/admin-ajax.php`, action `ai_content_detector_v2`) to get a human/AI label; (2) if already labeled human, copies it as-is; (3) otherwise enters a `while True` loop that alternates between back-translation (English → target_lang → Engl"
+ },
+ {
+  "name": "BoHeFan/academic-paper-writer-pro-2",
+  "stars": 42,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — no detector or score is ever computed. The system applies a fixed rule set and asks the LLM to qualitatively judge whether the text \"already appears natural\"; it does not query any detector, threshold, or numeric si",
+  "meaning_verification": "none — no cosine similarity, no NLI entailment, no semantic-role check, no round-trip back-translation. The only constraint is a qualitative prompt instruction not to alter logical relationships and technical terms.",
+  "fact_preservation": "Technical terms protected via regex token-masking ([[TECH:term]] placeholder protocol) with post-processing verification that they survived. Math formulas prese",
+  "mechanism": "A Claude Code Skill (prompt-file collection) that drives an LLM agent through a five-pipeline academic-paper workflow. The AI-reduction component (Pipeline E / 降AI率) is a single-pass, rule-based LLM rewriting step guided by two prompt files: ai_reduction/prompts/chinese_rewrite.md and ai_reduction/prompts/english_latex.md. Chinese rewriting expands concise verbs into longer phrases, performs syste"
+ },
+ {
+  "name": "jpeggdev/humanize-writing",
+  "stars": 40,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector, no scoring step, no iterative loop. It is a single editorial pass executed by Claude based on the checklist in SKILL.md. There is no re-score or threshold check.",
+  "meaning_verification": "none — the skill includes editorial instructions to \"preserve technical accuracy and specific data points\" and \"keep the core argument and structure,\" but these are natural-language instructions to the model, not mechani",
+  "fact_preservation": "none mechanical — the skill instructs the model to preserve \"proper nouns, product names, and attributions\" and \"specific data points,\" but there is no byte-exa",
+  "mechanism": "Pure prompt-engineering skill. The entire transformation logic lives in SKILL.md, a natural-language instruction file that Claude Code loads and follows. It specifies an 8-pass editorial workflow: (1) kill structural tells — formulaic section endings, identical list lengths, \"Despite X... Despite these challenges...\" loops; (2) strip significance inflation and promotional language; (3) replace AI "
+ },
+ {
+  "name": "frolvanya/ai-humanizer",
+  "stars": 37,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — single-shot API call, no scoring, no iteration",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "Single HTTP POST to the Rephrasy.ai commercial API (endpoint: https://v1-humanizer.rephrasy.ai/api). The entire transformation logic is one axios call in src/index.tsx, function humanize(). The repo is a Raycast macOS launcher extension; it contributes zero rewriting logic itself — it just forwards text and a model choice (\"undetectable\" or \"SEO Model\") to the third-party service and displays the "
+ },
+ {
+  "name": "jooray/humanizer",
+  "stars": 34,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector of any kind. The two-pass \"loop\" (draft → self-audit → final) is a single LLM call chain with a prompted self-check question, not a score-and-iterate cycle.",
+  "meaning_verification": "LLM self-check only: step 3 of the process asks the model \"Does the rewrite state any fact, name, number, date, or citation that isn't in the source?\" and instructs it to treat a fabrication as a defect. No mechanical ga",
+  "fact_preservation": "Prompt instruction only: \"The rewrite must not contain any fact, name, number, date, quote, or citation that isn't in the source text.\" No byte-exact locking, n",
+  "mechanism": "Pure prompt engineering: the entire product is SKILL.md, a Markdown file with YAML frontmatter that, when loaded as a system prompt by Claude Code (or any compatible agent harness), instructs the LLM to follow a two-pass process — draft rewrite, self-audit (\"what makes this obviously AI generated?\"), then final rewrite. The file defines 35 numbered AI-writing patterns across six categories (conten"
+ },
+ {
+  "name": "qingshanliuci/cnki-aigc---skill",
+  "stars": 34,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — The workflow includes a \"self-check\" step but it is Claude internally reviewing its own output against the prompt's rules, not submitting text to CNKI or any other detector and reading back a score. There is no scor",
+  "meaning_verification": "Prompt-level only. The self-check step instructs Claude to verify that numbers, citations, statistics, and domain terms are unchanged and that segment length stays within ±15% of the original. There is no cosine similari",
+  "fact_preservation": "Prompt-level instruction only. The SKILL.md hard-constraints section explicitly lists numbers, variables, statistics, p-values, coefficients, years, citation ma",
+  "mechanism": "A Claude Skill encoded entirely in SKILL.md — no executable code. The file is a structured prompt that instructs Claude to identify and rewrite five linguistic patterns CNKI's detector targets: (1) sentence-length clustering at 20-35 chars, (2) uniform information density across paragraphs, (3) fixed subject-position placement of domain terms, (4) repeated causal connectors (因此/从而), and (5) templa"
+ },
+ {
+  "name": "RAIDAR (cvlab-columbia/RaidarLLMDetect)",
+  "stars": 34,
+  "category": "detector-with-evasion",
+  "detector_in_loop": "yes — RAIDAR's detection signal IS the rewrite loop: LLM rewrites the text, then edit distance is measured. There is no iterative humanization loop; the single rewrite pass is the detection mechanism, not a score-then-im",
+  "meaning_verification": "none — RAIDAR does not verify meaning preservation. It deliberately measures how much the LLM changes text (more change = more likely human); preserving meaning is not a goal and no gates exist for it.",
+  "fact_preservation": "none — no special handling for numerals, citations, or quotes. This is a detector, not a humanizing rewriter, so byte-exact locking of facts is out of scope.",
+  "mechanism": "RAIDAR is an AI-text DETECTOR, not a humanizer. It exploits the observation that LLMs perceive AI-generated text as high-quality and therefore make fewer edits when asked to rewrite it. The pipeline: (1) send the candidate text to an LLM with one of several rewrite prompts (e.g. \"Concise this for me and keep all the information\", \"Help me polish this\"); (2) compute n-gram overlap features (1-gram "
+ },
+ {
+  "name": "CarlanLark/Robust-AIGC-Detector",
+  "stars": 33,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — textattack's Attacker loop scores the candidate text against the wrapped detector after every perturbation and continues until the detector's prediction flips (or the attack exhausts candidates). However this is cl",
+  "meaning_verification": "none — the only constraints are RepeatModification (don't re-substitute already-changed words) and StopwordModification (skip stopwords). No cosine similarity, no NLI entailment, no semantic-role check, no numeral retent",
+  "fact_preservation": "none — numbers, citations, and quotes receive no special handling.",
+  "mechanism": "Three textattack-library attack recipes applied against a target detector model wrapper. PWWS (Ren 2019): WordNet synonym substitution ranked by weighted saliency score — implemented via `textattack.attack_recipes.PWWSRen2019` in `run_attack.py`. Pruthi 2019: character-level typo attacks (substitution/deletion/insertion) capped by `max_num_word_swaps`. DeepWordBug (Gao 2018): combined token and ch"
+ },
+ {
+  "name": "THU-KEG/WaterBench",
+  "stars": 32,
+  "category": "research-code",
+  "detector_in_loop": "no — detection (detect.py, which computes z-scores) is a measurement step only. The pipeline is one-directional: generate watermarked text → detect → score quality. There is no re-generation or optimization loop driven b",
+  "meaning_verification": "none — metrics.py contains ROUGE, F1, and fuzzy-match scorers measuring downstream NLP task accuracy, but these assess whether watermarking degrades task utility, not whether any paraphrase preserved meaning. No NLI gate",
+  "fact_preservation": "none — no special handling of numbers, citations, or quotes in any of the generation or detection code paths.",
+  "mechanism": "WaterBench is a benchmark framework for evaluating LLM watermarking schemes — it does NOT transform existing text to evade detection. The actual mechanism is generation-time logit biasing: during LLM inference, a LogitsProcessor (BlacklistLogitsProcessor in watermark/old_watermark.py, GPTWatermarkLogitsWarper in watermark/gptwm.py, WatermarkLogitsProcessor in watermark/watermark_v2.py) partitions "
+ },
+ {
+  "name": "ADEMOLA200/Humanize-AI",
+  "stars": 31,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — there is no detector, no scoring step, and no iteration. Text goes in once, paraphrase comes back once.",
+  "meaning_verification": "none — no cosine similarity, no NLI, no semantic-role check, no entailment gate of any kind",
+  "fact_preservation": "none — numbers, citations, and quotes receive no special handling; they pass through the T5 model unchanged (or corrupted)",
+  "mechanism": "Two-service pipeline: (1) A Python/Flask server (Humanize-AI-Server repo, api/index.py) calls the Hugging Face Inference API with model humarin/chatgpt_paraphraser_on_T5_base (beam search, top-k sampling, max 512 tokens). (2) A Go/Fiber service (DSk/services/rewrite.go, function RewriteText) calls that Flask endpoint via HTTP and returns the result. The active code path is a thin pass-through — Re"
+ },
+ {
+  "name": "SemStamp",
+  "stars": 30,
+  "category": "research-code",
+  "detector_in_loop": "no — the watermark is baked in during generation via rejection sampling; the detector is a separate z-test run after the fact on completed text, not used to steer rewriting. There is no detect-rewrite-rescore loop at any",
+  "meaning_verification": "none for the watermark embedding itself. The paraphrase robustness test in paraphrase_gen.py uses a bert_threshold to filter paraphrase candidates that drift too far semantically, but this is for testing watermark surviv",
+  "fact_preservation": "none",
+  "mechanism": "SemStamp is a watermark EMBEDDER and DETECTOR for LLM-generated text, not a humanizer or evasion tool. It works at generation time, not as a post-hoc rewriter. Two variants: (1) LSH mode — `sampling_lsh_utils.py::lsh_reject_completion()` encodes each candidate sentence with a fine-tuned sentence-transformer (SBERTLSHModel), computes its LSH signature via random hyperplane dot-products, and rejecti"
+ },
+ {
+  "name": "eth-sri/watermark-stealing",
+  "stars": 30,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no. The detector (KGW z-score) is called in the evaluator after generation for measurement, but its output never feeds back to trigger a rewrite. Generation is a single forward pass through the attacker LLM with SpoofedP",
+  "meaning_verification": "PSP (Paraphrase Semantic Preservation, via a downloaded PSP model) is computed as an evaluation metric and logged per-sample, with a threshold of 0.7 used in the is_good flag (evaluator.py). For scrubbing configs the par",
+  "fact_preservation": "none. No mechanism protects numbers, citations, or quoted strings. The logit-bias approach in SpoofedProcessor operates at the token level with no awareness of ",
+  "mechanism": "Three-phase black-box attack against KGW-family LLM watermarks. (1) Querying: the attacker calls the watermarked API with C4 corpus prompts and saves token-level responses as JSONL files (src/attackers/our_attacker.py, query_server_and_save). (2) Learning: a CountStore (src/attackers/count_store.py) accumulates context-keyed token frequency tables over the watermarked vs. baseline outputs across a"
+ },
+ {
+  "name": "jmpu/DeepfakeTextDetection",
+  "stars": 30,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — explicitly designed to be query-free; no victim classifier is queried before, during, or after substitution. The only model consulted is the backend LM (BERT or GPT-2 XL) used to measure token probability, which is ",
+  "meaning_verification": "Partial. Two gates are applied per substitution: (a) Universal Sentence Encoder cosine similarity on a local 15-token window around the changed position (threshold 0.7, implemented in sentence_similarity_filter); (b) POS",
+  "fact_preservation": "none — numbers, citations, and quoted strings have no special handling; they could be altered if they appear in the counter-fitted vocabulary and pass the filte",
+  "mechanism": "DFTFooler performs query-free word-substitution adversarial attack in DFTFooler/DFTFooler_attack.py. The pipeline: (1) score every non-stop-word in the AI-generated text with a backend LM (BERT-large or GPT-2 XL) to get per-token probabilities; (2) rank words by descending probability — high-probability tokens are the \"AI tells\"; (3) for each candidate word, look up counter-fitted embedding synony"
+ },
+ {
+  "name": "SemStamp (abehou/SemStamp)",
+  "stars": 30,
+  "category": "research-code",
+  "detector_in_loop": "no — There is no score-rewrite-rescore loop. The watermark is embedded during generation by rejection sampling; a detector runs separately in evaluation experiments to measure watermark survival after paraphrase attack. ",
+  "meaning_verification": "none — Rejection sampling enforces only the LSH hash constraint, not semantic fidelity. The margin parameter filters out boundary-ambiguous sentences for robustness but does not compare meaning to any original. No NLI ga",
+  "fact_preservation": "none",
+  "mechanism": "SemStamp is a watermarking system that embeds hidden signals INTO AI-generated text during generation — the inverse of a humanizer. It does NOT transform already-written text to evade detectors; it constrains the LLM's output at generation time so that a matching detector can later confirm provenance.\n\nTechnically, it uses sentence-level rejection sampling guided by Locality-Sensitive Hashing (LSH"
+ },
+ {
+  "name": "AATMF-Adversarial-AI-Threat-Modeling-Framework",
+  "stars": 27,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no scoring, no rewriting loop, no iteration. The framework documents techniques humans or attackers can apply manually; it does not automate any feedback cycle.",
+  "meaning_verification": "none — no automated check of any kind that meaning survived a transformation.",
+  "fact_preservation": "none — no mechanism to preserve numbers, citations, or quotes.",
+  "mechanism": "Pure taxonomy and documentation: 15 adversarial AI tactics, 240 techniques, 2,152+ attack procedures, and 4,980+ curated prompts organized in Markdown chapters. It does NOT transform text programmatically. The three Python files (scripts/aatmf_taxonomy.py, scripts/build_export.py, scripts/validate.py) are Markdown parsers and CI integrity checkers for the documentation itself — they parse chapter "
+ },
+ {
+  "name": "Advancing-Machine-Human-Reasoning-Lab/apt",
+  "stars": 25,
+  "category": "research-code",
+  "detector_in_loop": "no — a paraphrase-detector (sentence equivalence classifier) is the downstream evaluation target, but it is not in the generation loop. The in-loop gate is a RoBERTa-NLI bidirectional entailment check used as a meaning q",
+  "meaning_verification": "Yes, bidirectional NLI entailment via RoBERTa-NLI (`get_mi_score()` in `nap_generation.py`): both s1→s2 and s2→s1 must be predicted \"entailment\" for a candidate to be accepted. BLEURT similarity is also computed but used",
+  "fact_preservation": "none — no special handling for numerals, citations, or quoted strings",
+  "mechanism": "Fine-tuned T5-base model (`coderpotter/T5-for-Adversarial-Paraphrasing`, trained on MSRP + TwitterPPDB) generates up to 10 paraphrase candidates per sentence using top-k / top-p sampling. `nap_generation.py` then filters candidates: a RoBERTa-NLI model scores bidirectional entailment (`get_mi_score()`), BLEURT measures surface similarity (`get_bleurt()`), and candidates are classified as APT (high"
+ },
+ {
+  "name": "shizhouxing/LLM-Detector-Robustness",
+  "stars": 24,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — but only in the instructional-prompt attack. prompt_attack.py calls the OpenAI AI Text Classifier on every generated candidate and iterates over prompts to minimise detection score. The word-substitution and DIPPER",
+  "meaning_verification": "none. No cosine similarity gate, no NLI entailment check, no semantic-role comparison. The genetic algorithm's fitness is LM log-likelihood of the output, which encourages fluency but is not a semantic equivalence test.",
+  "fact_preservation": "none. Numbers, citations, and quotes receive no special handling; any word in the text is a candidate for substitution.",
+  "mechanism": "Three distinct attack strategies, all implemented in Python. (1) Word-substitution attacks: an LLM (ChatGPT or LLaMA) generates synonym candidates for each content word; a genetic algorithm (genetic_attack_agent in DetectGPT/attackers.py) then evolves a population of substituted sentences, using language-model log-likelihood as fitness, with crossover and perturbation operators — or a simpler rand"
+ },
+ {
+  "name": "hlzhang109/impossibility-watermark",
+  "stars": 24,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — the watermark detector is used only in post-hoc evaluation (detection.py) to measure whether the watermark survived; it does not drive iteration. The quality oracle (reward model or GPT) IS in the inner loop, but it",
+  "meaning_verification": "indirect proxy only — the quality oracle (evaluation/tools/oracle.py, class QualityOracle) scores grammar, coherence, relevance, and accuracy using either a HuggingFace reward model (OpenAssistant deberta or sfairX LLaMA",
+  "fact_preservation": "none — no byte-exact locking of numbers or citations, no numeral-retention gate, no quote-preservation mechanism.",
+  "mechanism": "Random-walk attack on watermarked text. Core loop (text/evaluation/tools/text_editor.py, class RandomWalkAttack.perturb()): randomly mask a span of tokens in the watermarked output, use T5 span-infilling to regenerate the span, accept the replacement if a quality oracle approves (reward model score above threshold, or GPT-3.5/4 rating), and repeat until the iteration budget is exhausted. Additiona"
+ },
+ {
+  "name": "zhouxingshi/red_team_text_detectors (claimed) → actual: shizhouxing/LLM-Detector-Robustness",
+  "stars": 24,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — both main attacks use detector feedback. The genetic word-substitution attack minimises the detector's score directly: each candidate substitution set is evaluated against the target detector, and the evolutionary ",
+  "meaning_verification": "none automated. The only quality check is a post-hoc human evaluation (Amazon Mechanical Turk) reported in the paper for fluency and plausibility. No NLI gate, no cosine-similarity threshold, no numeral retention check, ",
+  "fact_preservation": "none. Word substitution can replace numerals and named entities; no preserve-lock or bypass list for citations, numbers, or quoted text exists in the code.",
+  "mechanism": "Two complementary attack strategies, both implemented at shizhouxing/LLM-Detector-Robustness. (1) Word-substitution attack (DetectGPT/attackers.py, classes genetic_attack_agent and random_attack_agent): an auxiliary LLM (LLaMA-65B or ChatGPT) proposes synonym candidates for each non-stop word; selection is either random (\"query-free\") or genetic/evolutionary — a population of substitution sets is "
+ },
+ {
+  "name": "ai-kunkun/PASA",
+  "stars": 23,
+  "category": "research-code",
+  "detector_in_loop": "no — the detection score is computed once over completed text to measure the watermark hit rate; there is no generate-score-rewrite-repeat loop",
+  "meaning_verification": "none — watermarking biases token-level sampling probabilities but has no semantic-equivalence check; the paper claims \"semantic-invariant\" in the opposite sense (the watermark survives paraphrase attacks that preserve me",
+  "fact_preservation": "none — numbers and names are tokenized and may be biased toward a particular cluster like any other tokens; no byte-exact locking or numeral protection logic ex",
+  "mechanism": "Generation-time embedding-space watermarking. During autoregressive token sampling, PASA clusters the entire vocabulary into K semantic groups via a pre-computed token-to-cluster CSV (`key_map_path`). At each generation step (after position `start`), it hashes the previous `window_size` tokens (mapped to their cluster IDs) with a secret key via SHA-256 to derive a PRNG seed, then draws Gumbel-max "
+ },
+ {
+  "name": "THU-BPM/Watermark-Radioactivity-Attack",
+  "stars": 23,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — `detect.py` (median p-value across chunked token groups, supports KGW/Unigram/SynthID) is evaluation-only. It runs before and after neutralization to measure success, but is never used as a feedback signal to steer ",
+  "meaning_verification": "none at the sentence or document level. Capability retention is checked at the model level via ARC Challenge (multiple-choice benchmark) and MT-Bench (instruction-following, judged by GPT-4o), not per-output semantic pre",
+  "fact_preservation": "none. Numbers, citations, and quotes receive no special treatment. The attack manipulates token probability distributions, not content.",
+  "mechanism": "Three attack strategies against LLM watermark radioactivity (the property that lets auditors detect when a student model was distilled from a watermarked teacher). (1) Untargeted Paraphrasing: rewrites all watermarked training data before distillation, breaking watermark signal. (2) Targeted Paraphrasing: same but selectively targets high-watermark-signal tokens. (3) Watermark Neutralization (WN) "
+ },
+ {
+  "name": "lguz/humanize-writing-skill",
+  "stars": 23,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — no detector is invoked at any stage. The skill rewrites once and returns. There is no scoring step, no iteration, and no feedback loop of any kind.",
+  "meaning_verification": "none — SKILL.md contains a prose directive (\"keep the meaning and factual content intact\") addressed to the rewriting LLM, but no automated check is performed. The 17-point quality checklist is entirely pattern-based (ze",
+  "fact_preservation": "none — numbers, citations, and quotes receive no special handling. The only protection is the prose directive to keep factual content intact, which is evaluated",
+  "mechanism": "Pure prompt-engineering skill packaged as a Claude Code plugin. The two operative files are `skills/humanize-writing/SKILL.md` (instructions) and `skills/humanize-writing/references/ai-patterns-dictionary.md` (word/pattern lists). SKILL.md instructs the host LLM to run a 3-pass edit: Pass 1 scans word-by-word for items on the tiered banned-vocabulary list (Tier 1: 18 high-signal words such as \"del"
+ },
+ {
+  "name": "syq-cmdi/Academic-DeAI",
+  "stars": 23,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector, no scoring, no re-score, no iteration of any kind. The rewrite is one-shot. Detection evasion is not the stated goal; the stated goal is academic writing quality.",
+  "meaning_verification": "Instruction-only, not mechanical. SKILL.md instructs the LLM to preserve all LaTeX equations, BibTeX entries, citation keys, numerical results (coefficients, p-values, t-values, standard errors, confidence intervals), en",
+  "fact_preservation": "Explicit instruction-level protection for: LaTeX math and commands, BibTeX entries, citation keys (`\\citep{}`, `\\citet{}`, `\\cite{}`, `[1]`, `(Smith, 2020)`), a",
+  "mechanism": "Pure prompt-skill file. The entire tool is SKILL.md — a Markdown file with a YAML frontmatter (`name`, `version`, `description`, `allowed-tools`) that Claude Code or OpenCode loads as an agent skill. When invoked via `/academic-deai`, the host LLM reads the instructions and applies them to input text in a single inference pass. No code runs; there are no scripts, no detector calls, no API integrat"
+ },
+ {
+  "name": "StealthRL (suraj-ranganath/StealthRL)",
+  "stars": 18,
+  "category": "fine-tuned-model",
+  "detector_in_loop": "yes — during training only. Detectors (FastDetectGPT, Ghostbuster, Binoculars, defined in stealthrl/detectors/) are queried each GRPO step to produce the detector-evasion reward signal. At inference the trained model run",
+  "meaning_verification": "Cosine similarity (threshold 0.90 in training reward) and BERTScore F1 (threshold 0.80) are baked into the GRPO reward, so the model is penalised during training for dropping below these bars. GPT-based Likert ratings ar",
+  "fact_preservation": "none — the repository explicitly excludes protection mechanisms for numbers, citations, or specific factual references.",
+  "mechanism": "Trains a paraphrase policy (Qwen3-4B-Instruct + LoRA rank 32) using GRPO (Group Relative Policy Optimization) against a weighted detector ensemble (RoBERTa 0.6 + Fast-DetectGPT 0.4 during training; FastDetectGPT, Ghostbuster, Binoculars in the full detector module). The composite reward in stealthrl/rewards/composite_reward.py is R = -w1*D' + w2*S' + w3*Q' - w4*F' (weights 1.0/1.0/0.5/0.2). Semant"
+ },
+ {
+  "name": "obaskly/AiDetectionBypass",
+  "stars": 18,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — there is no detector, no scoring, no re-score, and no iteration. Text goes in once, paraphrased text comes out once. No quality gate of any kind.",
+  "meaning_verification": "none",
+  "fact_preservation": "none — numbers, citations, and quotes pass through gptinf.com's black-box rewriter with no guards; whatever gptinf.com changes, the script accepts",
+  "mechanism": "Browser automation wrapper around gptinf.com, a commercial AI-humanizer SaaS. The repo does zero text transformation itself. main.py uses Selenium to: (1) auto-register throwaway Gmail variants on gptinf.com via create_new_account(), bypassing reCAPTCHA with an audio-challenge technique (RecaptchaSolver.py — downloads the audio challenge, transcribes it with SpeechRecognition/pydub, submits the an"
+ },
+ {
+  "name": "vardhin/Humanizer",
+  "stars": 15,
+  "category": "paraphrase-model",
+  "detector_in_loop": "no — the detector is a completely separate REST service. HumanizerService.humanize_text() never calls any scoring function; it runs paraphrase then rewrite then returns. The detector endpoints exist in main.py (/detect, ",
+  "meaning_verification": "none — no cosine similarity, no NLI entailment, no semantic-role check, no numeral retention gate. The rewrite stage applies transformations blindly and returns without any verification that meaning survived.",
+  "fact_preservation": "none — numbers, citations, and quoted material receive no special handling. WordNet synonym substitution and phrase replacement operate on all tokens indiscrimi",
+  "mechanism": "Two-stage open-loop pipeline. Stage 1 (paraphraser.py, paraphrase_text()): loads a HuggingFace seq2seq model (T5-small/base, Vamsi/T5_Paraphrase_Paws, humarin/chatgpt_paraphraser_on_T5_base, facebook/bart-base, facebook/bart-large, or tuner007/pegasus_paraphrase) and runs beam-search generation with temperature sampling. Stage 2 (rewriter.py, TextRewriteService.rewrite_text_with_modifications()): "
+ },
+ {
+  "name": "XiangJinyu/humanize-zh",
+  "stars": 14,
+  "category": "fine-tuned-model",
+  "detector_in_loop": "no — detectors are used only post-hoc to report a single before/after number (AI-flagging rate ~30% → <10% on an unspecified sample subset). There is no score-rewrite-re-score iteration at inference time.",
+  "meaning_verification": "none automated — README states \"manual spot-checks indicate that key semantics and factual content are largely preserved.\" No cosine-similarity gate, no NLI entailment check, no semantic-role match, no hedge or numeral a",
+  "fact_preservation": "none — no mention of byte-exact locking, numeral retention, citation preservation, or any structured guard for factual content.",
+  "mechanism": "Three-stage fine-tune of Qwen3.5-9B. Stage 1 (SFT): ~18,000 (AI-rewrite, original-human) pairs drawn from the CSL Chinese academic-abstract corpus, trained for ~900 steps. Stage 2 (DPO Round 1): 4,000 dual-direction rejected samples (2,000 formal + 2,000 casual) so the model learns the human writing distribution rather than drifting toward colloquial text. Stage 3 (DPO Round 2): self-play — model'"
+ },
+ {
+  "name": "lazyjerry/Humanizer-zh",
+  "stars": 14,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the 6-dimension quality rubric is self-scored by Claude, not an AI-text detector. No external detector is queried, no score threshold gates iteration, and there is no loop at all; rewriting is a single-pass operatio",
+  "meaning_verification": "none automated — the skill prompt instructs Claude to \"preserve core information intact\" and \"match the intended tone,\" but there is no programmatic similarity check, NLI gate, or numeral-retention test. Compliance is en",
+  "fact_preservation": "none — the prompt says \"preserve core information\" but there is no byte-exact locking, numeral-retention check, citation preservation rule, or any mechanical en",
+  "mechanism": "A Claude Code skill defined entirely in markdown files (SKILL.md, patterns.md, taiwan-vocab.md). When invoked, it instructs Claude to read the 24-pattern catalogue (patterns.md) and Taiwan vocabulary table (taiwan-vocab.md), then rewrite the submitted text by: (1) identifying instances of each AI-tell pattern, (2) replacing them with natural alternatives, (3) substituting simplified-Chinese or mai"
+ },
+ {
+  "name": "CAU-ISS-Lab/AIGT-Detection-Evade-Detection",
+  "stars": 13,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes, but only during the training/feature-optimization phase. feature_construct.py scores each generated candidate with a local detector and uses pass/fail to determine which examples feed the feature refinement step. At",
+  "meaning_verification": "none. No cosine similarity check, no NLI gate, no ROUGE/BERTScore guard on the output. The only signal used is the detector's binary pass/fail.",
+  "fact_preservation": "none. Numbers, citations, and quotes receive no special treatment.",
+  "mechanism": "The repo has three components. Two are pure detectors (C-Net: compression-based classifier; DP-Net: DDPG-RL perturbation encoder). The evasion component is SDA (Self-Disguise Attack), in SDA/. It works in two phases. Phase 1 — Adversarial Feature Extraction (feature_construct.py + prompt_constructor.py): a training loop generates LLM responses to domain prompts, scores each with a proxy detector ("
+ },
+ {
+  "name": "OrbitWebTools/Humanize-AI",
+  "stars": 13,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — no detector is consulted at any point. The tool makes no network requests and calls no scoring API. The output is produced in a single deterministic pass.",
+  "meaning_verification": "none — the substitution is unconditional. Words are replaced regardless of context; there is no similarity check, NLI gate, or any other semantic guard. Meaning corruption is likely on ambiguous words (e.g. \"fundamental\"",
+  "fact_preservation": "none — numbers, citations, and quoted strings receive no special handling. They pass through only because they happen not to match any SYNONYMS key, not by desi",
+  "mechanism": "Pure client-side JavaScript synonym substitution, implemented entirely inside index.html in the humanize() function (lines 805–841). The transform has three steps: (1) a hardcoded ~30-entry SYNONYMS dictionary performs multi-word phrase replacement first (e.g. \"in conclusion\" → \"to wrap up\", \"in order to\" → \"to\") then single-word swaps (e.g. \"utilize\" → \"use\", \"leverage\" → \"use\", \"paradigm\" → \"app"
+ },
+ {
+  "name": "OrbitWebTools/Free-Unlimited-Humanize-AI-Text-Bypass-Turnitin-2026",
+  "stars": 13,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — there is no scoring step at any point. The tool does not call Turnitin, ZeroGPT, Originality.ai, or any local detector. It rewrites once and stops.",
+  "meaning_verification": "none — no similarity check, no NLI, no semantic role match. The synonym pairs are manually curated and assumed safe.",
+  "fact_preservation": "none — numbers, citations, and quoted strings pass through only because the synonym dictionary happens not to match them; there is no explicit preserve-lock or ",
+  "mechanism": "Pure client-side JavaScript synonym substitution. The core is a static dictionary of roughly 30 word pairs (e.g. \"moreover\"->\"also\", \"utilize\"->\"use\", \"demonstrate\"->\"show\") applied via regex replace over the input text. Multi-word phrases are substituted first, then single words sentence by sentence with capitalization preserved. A small amount of randomized variation is layered on top: sentence-"
+ },
+ {
+  "name": "YichenZW/Robust-Det",
+  "stars": 13,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — detectors are applied only for post-hoc evaluation; no feedback loop drives further rewrites. The attack is one-shot: transform text, then score. The distance_measure.py computes cosine similarity (BART embeddings),",
+  "meaning_verification": "none at runtime. distance_measure.py computes semantic similarity (BART cosine, BARTScore, BERTScore, MAUVE) and edit distance as post-hoc research metrics for the paper, not as automated filters that block or retry outp",
+  "fact_preservation": "none. No mechanism protects numerals, citations, or quoted strings from alteration by any of the attack methods.",
+  "mechanism": "Research benchmark framework for stress-testing AI-text detectors across 15+ attack types organized into three phases. Post-generation attacks (applied after text is created): character-level typo variants (transposition, substitution, deletion, insertion via post_attack.py), homoglyph substitution using the VIPER neighbor-dictionary approach (ECES/ICES in VIPER/viper_eces.py — probabilistic per-w"
+ },
+ {
+  "name": "aoi3142/Waterfall",
+  "stars": 13,
+  "category": "research-code",
+  "detector_in_loop": "no — STS similarity scores each beam candidate during group beam search to select the semantically closest paraphrase, but there is no detect-rewrite-re-score loop. The watermark score (q) is only computed at verificatio",
+  "meaning_verification": "STS cosine similarity via sentence-transformers/all-mpnet-base-v2 (sts.py, STS_scorer / STS_scorer_batch). Used during beam selection to pick the highest-similarity candidate among group beam search outputs. Scaled by ST",
+  "fact_preservation": "none — no special handling of numbers, citations, named entities, or quotes. The LLM paraphraser can freely alter any content; only overall STS similarity is ch",
+  "mechanism": "Training-free text watermarking via LLM-based paraphrasing with logit-space perturbation. Concretely: the original text is fed to an LLM paraphraser (default: Llama-3.1-8B-Instruct); before token sampling, a pseudo-random permutation keyed on (watermark ID, preceding n-gram) reorders the logit vector into a \"watermark vocabulary space\"; a Fourier or square-wave basis function (WatermarkingFnFourie"
+ },
+ {
+  "name": "GREATER (Liyuuuu111/GREATER)",
+  "stars": 11,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — partially. The target discriminator is queried each iteration inside the attack loop; the loop halts early when the classifier flips (label change = attack success). This is an adversarial-ML inner loop, not a huma",
+  "meaning_verification": "none as a gate. GPT-2 perplexity, Universal Sentence Encoder cosine similarity, and Flesch-Kincaid readability are computed and logged as evaluation metrics (attack.py), but they do not block or roll back a transformatio",
+  "fact_preservation": "none. No special handling of numbers, citations, or quoted strings anywhere in the codebase.",
+  "mechanism": "Two-component adversarial ML framework. GREATER-A (attack): a trainable importance module scores tokens by MSE alignment with a proxy GPT-2 model's gradients; top-scoring tokens are either substituted via RoBERTa masked-LM (top-5 candidates, `generate_adversarial_text_mask` in attack.py) or perturbed in embedding space (`generate_adversarial_text_perturbation`). An inner loop iterates up to a toke"
+ },
+ {
+  "name": "MASH (githigher/MASH)",
+  "stars": 10,
+  "category": "fine-tuned-model",
+  "detector_in_loop": "yes — two distinct uses. Offline (training): Stage 1 uses detector to filter training data; Stage 2-to-3 uses detector to identify hard negatives for DPO. Online (inference): Stage 4 queries the detector once per candida",
+  "meaning_verification": "none. No cosine similarity, no NLI entailment check, no semantic-role match, no hedge or numeral retention gate. The LLM in Stage 4 receives the sentence as context but the only acceptance criterion is the detector's bin",
+  "fact_preservation": "none. Numbers, citations, and quoted material are treated as ordinary tokens throughout all stages. No byte-exact locking, no numeral-retention check, no specia",
+  "mechanism": "Four-stage offline-training-then-inference pipeline. Stage 1 (stage1_data_construction.py): streams a HuggingFace dataset and retains only samples that a RoBERTa detector classifies as human-written, building a parallel AI-human corpus. Stage 2 (stage2_style_sft.py): fine-tunes facebook/bart-base (~0.1B params) with a dual-objective loss — reconstruction (preserving content) plus style transfer (m"
+ },
+ {
+  "name": "Qi-Pang/LLM-Watermark-Attacks",
+  "stars": 10,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — the query-based attack (attack_query.py) is a tight detector-in-the-loop: for every token position it queries the detector with each top candidate appended to the growing sequence, reads back the z-score, and greed",
+  "meaning_verification": "none — and one attack deliberately destroys meaning: modify_words() prompts GPT-4 to make text \"inaccurate or have opposite meanings.\" No semantic similarity check, NLI gate, or any other meaning gate exists anywhere in ",
+  "fact_preservation": "none — numbers, citations, and quotes receive no protection. The banned-word insertion inserts arbitrary tokens anywhere in the text; the GPT-4 modify attack is",
+  "mechanism": "Three distinct attack families, all targeting statistical watermark signals (z-scores) embedded during LLM generation rather than surface-level \"AI tells\":\n\n1. Query-based attack (KGW-Watermark/attack_query.py, Unigram-Watermark/attack_query.py, Exp-Watermark/experiments/attack_query.py): Token-by-token greedy generation that queries the watermark detector after appending each candidate token, the"
+ },
+ {
+  "name": "bypassessay/bypass-ai-detectors",
+  "stars": 10,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no scoring step at all. The repo contains no code, no API calls, and no feedback mechanism. It is a static reading guide.",
+  "meaning_verification": "none",
+  "fact_preservation": "none — numbers, citations, and quotes are not mentioned as requiring protection. The only citation-adjacent advice is \"add authentic citations and statistics\" a",
+  "mechanism": "Pure markdown documentation with no executable code. Describes manual human-editing techniques: paraphrasing and sentence restructuring, synonym replacement, sentence-length variation, adding contractions and rhetorical questions, injecting personal anecdotes and conversational openers, blending AI text with human-written sections, and reordering paragraphs. Also lists third-party commercial tools"
+ },
+ {
+  "name": "xszcs546/ai-text-humanizer",
+  "stars": 10,
+  "category": "other",
+  "detector_in_loop": "no — the repo itself has no loop or any runnable code. Several of the listed commercial products claim to include built-in detection testing (Undetectable AI claims scoring against 8 detectors, Humbot claims a \"detection",
+  "meaning_verification": "none — no code exists in the repo. The README reproduces marketing copy from listed services that claim meaning preservation, but provides no technical detail and no verifiable method.",
+  "fact_preservation": "none — no code. One listed product (Humanize AI Tool) is mentioned to have a \"Keywords Freezer\" feature for locking specific terms, but that is a description of",
+  "mechanism": "The repository contains no code. It is a single README.md (32 KB) that is a curated affiliate/marketing directory of 13+ closed-source commercial AI humanizer SaaS products (AISEO, Undetectable AI, StealthGPT, WriteHuman, Humbot, Smodin, Bypass GPT, Quillbot, Humanize AI Pro, HumanizeAI.com, GrubbyAI, JustDone, StealthWriter, Monica AI) plus an image/ directory of screenshots. There are no files o"
+ },
+ {
+  "name": "SilverSpeak (ACMCMC/silverspeak)",
+  "stars": 8,
+  "category": "unicode-trickery",
+  "detector_in_loop": "no — the attack runs once to a target percentage; no detector is consulted before, during, or after substitution; no re-scoring loop of any kind",
+  "meaning_verification": "none — substitution is purely at the character byte level; no semantic, syntactic, or lexical check is performed",
+  "fact_preservation": "none — numbers, citations, and quoted strings are processed identically to all other characters; if a homoglyph mapping exists for a digit or punctuation charac",
+  "mechanism": "Character-level Unicode homoglyph substitution. Four JSON maps are loaded at runtime: identical-character map, Unicode confusables map, OCR-error map, and refined-OCR map (`silverspeak/homoglyphs/homoglyph_replacer.py`). Three attack modes exist: `random_attack` (random substitution up to a target percentage), `greedy_attack` (sequential substitution, `greedy_attack.py`), and `targeted_attack` (co"
+ },
+ {
+  "name": "cashwu/Humanizer-tw",
+  "stars": 8,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector of any kind. The skill contains no scoring step, no external API call, and no feedback loop. Rewriting is single-pass based solely on the pattern catalogue and rubric in the prompt.",
+  "meaning_verification": "The 50-point rubric asks Claude to self-assess the rewrite on five named dimensions, but this is a prose checklist inside the prompt, not an automated gate. No cosine similarity, no NLI, no numeral retention check. Effec",
+  "fact_preservation": "none — no mechanism for preserving numbers, citations, or named entities. The prompt does mention keeping technical abbreviations and product names intact, but ",
+  "mechanism": "Pure LLM prompt-guide packaged as a Claude Code skill. The entire implementation is a single SKILL.md file (in skills/humanizer-tw/SKILL.md) containing: a catalogue of 24 AI-writing tells across four categories (content, language/grammar, style, communication), rewriting instructions, a 50-point quality rubric across five dimensions (directness, rhythm, reader trust, authenticity, conciseness), an"
+ },
+ {
+  "name": "MadsDoodle/Detecting-the-Machine-A-Comprehensive-Benchmark-of-AI-Generated-Text-Detectors-Across-Architectures",
+  "stars": 7,
+  "category": "research-code",
+  "detector_in_loop": "no — the detector is evaluated AFTER humanization to measure degradation, not used to guide or gate the rewrite. There is no score→rewrite→re-score loop of any kind.",
+  "meaning_verification": "none — the rewrite prompts instruct the model not to add information or change meaning, but there is no programmatic verification: no cosine similarity check, no NLI entailment gate, no semantic-role comparison.",
+  "fact_preservation": "none — no numeral retention check, no citation locking, no byte-exact preservation. Input texts are also hard-truncated to 800 chars before rewriting.",
+  "mechanism": "Primarily a detector benchmark, not a humanizer. The evasion component lives entirely in notebooks/09_adversarial_humanization.ipynb. It applies a one-shot prompt-based rewrite using Qwen2.5-1.5B-Instruct (4-bit NF4 quantized) at two intensity levels: L1 (\"sound more natural and human, varied sentence lengths, occasional informal language\") and L2 (\"reads exactly like something a real person typed"
+ },
+ {
+  "name": "haidrrrry/humanize-ai-writing",
+  "stars": 7,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — There is no detector score used at any point. The SKILL.md workflow has the LLM self-check its own output against the rule catalog, but that is the same LLM re-reading its draft against the same regex-equivalent rul",
+  "meaning_verification": "none — SKILL.md instructs \"Keep meaning, facts, numbers, names, and the author's position intact\" and warns against mangling sentences to remove a single flagged word. These are plain-English instructions to the LLM; the",
+  "fact_preservation": "none automated — Numbers, names, and citations are mentioned in the instruction text (\"keep facts, numbers, names\") but there is no byte-exact preserve-locking,",
+  "mechanism": "Two surfaces, same ruleset. (1) PROMPT.md: a paste-in system prompt with 12 hard rules — a banned-vocabulary list (~40 words: delve, tapestry, pivotal, etc.), banned phrase patterns (em dashes, \"not just X but Y\", hollow conclusions, weasel attribution, promotional tone, fake significance, trailing -ing clauses), and voice defaults. The LLM receiving this prompt is responsible for applying the rul"
+ },
+ {
+  "name": "Khizer-Data/AI-Text-Humanizer",
+  "stars": 6,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — the RewardModel.score() used to decide a 3rd pass is a pure heuristic: it checks average word length, average sentence length, presence of an apostrophe, and presence of filler words like \"well\"/\"like\". It calls no ",
+  "meaning_verification": "none — the preserve_meaning flag only controls whether the most aggressive transformations are skipped. No cosine similarity, NLI entailment, semantic-role match, or any other semantic comparison is performed.",
+  "fact_preservation": "none — numbers, citations, and quoted strings receive no special treatment. The synonym dictionary does include \"number\" as a replaceable noun, which risks corr",
+  "mechanism": "Rule-based pipeline in app/core/agent.py (HumanizerAgent). Three stacked layers: (1) synonym substitution via a hardcoded ~300-entry dictionary (_load_synonyms); (2) sentence restructuring — clause reordering, passive/active voice flip, sentence split/merge (_reorder_clauses, _change_voice, etc.); (3) unicode/homoglyph injection — Cyrillic, Greek, and Coptic lookalikes substituted for Latin letter"
+ },
+ {
+  "name": "SocialYjj/bypassAIGC",
+  "stars": 5,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — there is no detector, no scoring, no re-scoring, and no iteration. The pipeline is a strictly linear single-pass: polish → enhance, then done.",
+  "meaning_verification": "none. The prompt instructs the LLM to keep word count within 30 characters of the original and preserve technical terms, but this is enforced only by instruction, not by any automated gate (no cosine similarity check, no",
+  "fact_preservation": "partial, by instruction only. The system prompt says \"absolutely do not modify technical terms, proper nouns, code snippets, library names, configuration items ",
+  "mechanism": "Two-stage prompt-based LLM rewriting with no detector loop. Text is split into segments (max 500 Chinese chars) in `split_text_into_segments()` (ai_service.py). Each segment is sent sequentially to an OpenAI-compatible API in a \"polish\" pass (get_default_polish_prompt), then an \"enhance\" pass (get_default_enhance_prompt). For Chinese text the prompts instruct verbose elaboration — expanding compac"
+ },
+ {
+  "name": "ryuryukke/MINT",
+  "stars": 5,
+  "category": "research-code",
+  "detector_in_loop": "no — there is no rewrite step anywhere in the codebase. It is a static evaluation pipeline: load texts, score with detectors/MIAs, compute AUROC, save. No generation, no paraphrasing, no iterative loop.",
+  "meaning_verification": "none — no text is produced or transformed, so meaning verification is not applicable.",
+  "fact_preservation": "none — not applicable; the tool never modifies text.",
+  "mechanism": "MINT does not transform text at all. It is a unified evaluation suite that benchmarks membership inference attacks (MIAs) and AI-text detectors under a shared scoring interface. run.py loads texts from MIMIR (MIA benchmark) or RAID (detection benchmark), passes them through whichever methods are selected (loss, entropy, rank, logrank, reference, zlib, neighborhood, min_k, min_k_plus, recall, dc_pd"
+ },
+ {
+  "name": "humanizer-ja",
+  "stars": 5,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — The \"anti-AI pass\" is a prompted self-critique step where Claude asks itself \"what still reads as AI-generated?\" and checks a qualitative checklist (sentence-length uniformity, connector-word frequency via mental Ct",
+  "meaning_verification": "none automated. SKILL.md instructs Claude to \"preserve the core of what you want to convey\" (意味を保つ) but provides no programmatic gate — no cosine similarity check, no NLI entailment, no semantic-role comparison. Preserva",
+  "fact_preservation": "none. Numbers, citations, and quotes receive no special treatment. The instructions do not mention byte-exact locking or any preserve mechanism for numerics.",
+  "mechanism": "Purely a Claude Code skill — the entire implementation is SKILL.md, a system-prompt that instructs Claude to act as a Japanese-text editor. When invoked via `/humanizer-ja`, Claude receives the prompt and applies a catalogued 25-pattern scan-and-rewrite in three layers: Layer 1 removes formatting residue (colons, Markdown fragments, emoji); Layer 2 rewrites vocabulary and sentence-ending patterns "
+ },
+ {
+  "name": "jiji262/humanizer-chinese",
+  "stars": 5,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector, scorer, or automated feedback. The only \"loop\" is the LLM agent's own internal three-question self-audit before producing the final draft, which is cognitive/prompt-level not mechanical.",
+  "meaning_verification": "Prompt-level only. Task rule 2 says \"preserve every claim from the original, information takes priority over structure.\" Task rule 3 is the strongest gate: no new facts, names, numbers, dates, quotes, or citations may ap",
+  "fact_preservation": "Prompt-level only. Task rule 3 explicitly forbids adding facts, names, numbers, dates, citations not in the original. The DeepSeek fingerprint section additiona",
+  "mechanism": "Pure Markdown agent skill (SKILL.md, ~465 lines). A fork of blader/humanizer localized for Chinese. The entire product is a structured LLM system prompt that instructs an agent to: (1) scan the input against 36 numbered Chinese AI-writing patterns (each with a curated 盯防词 watchlist and before/after example), (2) rewrite while preserving all information, (3) run a three-question internal audit (\"st"
+ },
+ {
+  "name": "imethanlee/AliMark",
+  "stars": 4,
+  "category": "research-code",
+  "detector_in_loop": "no. The pipeline is linear: generate watermarked text → paraphrase-attack (offline) → detect. There is no rewrite-score-rewrite loop. The detection step in 3_detection.py runs once over pre-attacked files and emits a sco",
+  "meaning_verification": "none. The paraphrase-attack scripts apply Pegasus/Parrot/DIPPER/GPT-3.5 to the watermarked text with no check that meaning survived. No cosine similarity gate, no NLI, no semantic-role check.",
+  "fact_preservation": "none. No special handling of numbers, citations, or quoted text anywhere in the codebase.",
+  "mechanism": "AliMark is a sentence-level LLM watermarking system, not a humanizer. During generation (watermark/alimark.py: generate_watermarked_text), the LLM produces Q candidate next-sentences (default Q=64 via vLLM); each candidate is embedded with a SentenceTransformer (all-mpnet-base-v2) and dot-producted against secret vectors to extract a bit block; the candidate whose bit block best matches the pre-co"
+ },
+ {
+  "name": "RAFT (JamesLWang/RAFT)",
+  "stars": 4,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — the target detector's `crit()` score is evaluated after every candidate substitution; a replacement is accepted only if it strictly lowers that score. This is a true score-guided greedy search, not a one-shot rewri",
+  "meaning_verification": "POS-tag matching only (NLTK): replacement words must share the original word's part-of-speech tag. The GPT-3.5 prompt requests \"semantic fluency\" but there is no post-generation validation of that claim — no cosine simil",
+  "fact_preservation": "none — no special handling for numerals, citations, quoted strings, or named entities. Numbers and proper nouns are eligible for substitution the same as any ot",
+  "mechanism": "Proxy-model-guided word substitution. The core `raft()` method in `experiment.py` (lines 497–671) ranks every word in the target text by token probability under a proxy LLM (GPT-2, OPT, Neo, or GPT-J for autoregressive mode; fine-tuned RoBERTa-GPT2 for detection-proxy mode). The lowest-probability tokens are selected as candidates — these are the positions where the text looks least \"human\" to the"
+ },
+ {
+  "name": "icarodredd/HumanizeAI",
+  "stars": 4,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — single pass, no scoring step at any point",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "Single POST to AI21 Studio's paraphrase endpoint (`https://api.ai21.com/studio/v1/paraphrase`) using `jamba-instruct`. A one-line system prompt instructs the model to rewrite AI text to sound human. The call is made in `background.js` (the only logic file, 31 lines). Result is rendered in the popup and a Copy button is appended. No iteration, no local model, no pattern catalogue."
+ },
+ {
+  "name": "nifzaa0/ai-humanizer-tools",
+  "stars": 4,
+  "category": "other",
+  "detector_in_loop": "no — the repo has no executable code at all. Some listed commercial products (Walter Writes AI, Uncheck AI, WriteHuman) are described as bundling a detector alongside the rewriter, but this is marketing copy about third-",
+  "meaning_verification": "none — no code exists to verify anything. The README mentions that \"good humanizers keep your key points and facts intact\" in an FAQ section, but this is marketing prose, not an implemented check.",
+  "fact_preservation": "none — no code. GPTinf is described as having a \"freeze list\" feature that locks specific words or phrases, but that is a feature of a third-party closed-source",
+  "mechanism": "This repo contains no code whatsoever. It is a single README.md file (plus a folder of screenshots) that lists and describes 25 commercial AI humanizer SaaS products — Walter Writes AI, Undetectable AI, QuillBot, Writesonic, HIX.AI Bypass, StealthWriter, WriteHybrid, etc. The repo itself performs no text transformation. Each tool entry is a marketing blurb (3-6 sentences) describing what the vendo"
+ },
+ {
+  "name": "tweetpie/stance-directed-humanizing-ai",
+  "stars": 4,
+  "category": "fine-tuned-model",
+  "detector_in_loop": "yes — but for a completely different purpose. The toxic content classifier runs on every generated tweet and presumably gates re-generation until the output is non-toxic. It is NOT an AI-text detector; it classifies soci",
+  "meaning_verification": "none — the system generates new tweets from structured prompts; it does not transform an existing passage, so there is no input meaning to preserve or verify.",
+  "fact_preservation": "none",
+  "mechanism": "Three-stage pipeline applied to tweet generation from scratch (not transformation of existing text): (1) a fine-tuned LLM (tweetpie/stance-directed-tweet-generator on HuggingFace) generates tweets conditioned on ideology camp, pro/anti/neutral aspects and entities; (2) a toxic content classifier (tweetpie/toxic-content-detector) labels each output toxic or non-toxic; (3) a stance-aware ABSA model "
+ },
+ {
+  "name": "saplingai/sapling-py",
+  "stars": 4,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — the library exposes individual API calls; it implements no score-rewrite-rescore loop. A consumer would have to build that loop themselves by alternating aidetect() and rephrase() calls.",
+  "meaning_verification": "none — the client forwards text to the API and returns raw JSON; no cosine similarity, NLI, or any other semantic check is performed at any layer of this library.",
+  "fact_preservation": "none — no numeral retention, quote locking, or citation preservation logic exists anywhere in the codebase.",
+  "mechanism": "Thin synchronous HTTP wrapper around Sapling's REST API using `requests.Session`. The relevant method for detection evasion use is `aidetect(text, sent_scores=None)` in `sapling/client.py` — it POSTs to `/api/v1/aidetect` and returns a float 0-1 probability that the text is AI-generated, plus optional per-sentence scores. A separate `rephrase(text, mapping=...)` method wraps Sapling's paraphrase/t"
+ },
+ {
+  "name": "xzy111222333/paper-ai-humanizer",
+  "stars": 3,
+  "category": "other",
+  "detector_in_loop": "no — there is no detector call anywhere in the source. The metric field returned by runLocalAdapter is the string literal \"未接入检测服务\" (detection service not connected).",
+  "meaning_verification": "none — the output is not derived from the input at all, so meaning verification is moot.",
+  "fact_preservation": "none — numbers, citations, and quotes in the input are discarded; the output is always one of two fixed sample sentences.",
+  "mechanism": "The repo is a static HTML/JS frontend demo shell with zero transformation logic. The single processing file, src/pipeline.js, exports a runPipeline function that walks through four named stages (prepare, segment, rewrite, review) by sleeping 180 ms between each, then calls runLocalAdapter, which sleeps another 260 ms and returns one of exactly two hardcoded Chinese strings (LOCAL_RESULTS.balanced "
+ },
+ {
+  "name": "Zeng-xiangkai/humanizer-document-zh",
+  "stars": 3,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector of any kind. No scoring, no iteration, no re-score step. Single-pass rewrite driven entirely by pattern rules in the prompt.",
+  "meaning_verification": "none automated. The \"零捏造原则\" (zero-fabrication principle) in SKILL.md is a prompt-level instruction telling Claude not to add data, metrics, citations, or new assertions — it is not a mechanical check. The L3/L4 checklist",
+  "fact_preservation": "Prompt-level only. The zero-fabrication principle explicitly lists: no new numbers, no new experimental setups, no new citations, no new contribution claims. No",
+  "mechanism": "Pure prompt engineering packaged as a Claude Code Skill. The repo contains no executable code — only markdown files. SKILL.md instructs Claude to act as an \"INFP paper editor\" and process text in a single pass: (1) read references/patterns.md to identify 28 Chinese AI-writing patterns (grouped into first/second/third priority tiers), (2) rewrite flagged spans using natural-language substitution ru"
+ },
+ {
+  "name": "peggywritesforyou",
+  "stars": 3,
+  "category": "detector-with-evasion",
+  "detector_in_loop": "yes — local RoBERTa (roberta-base-openai-detector) is the inner loop gate for every sentence rewrite in the adversarial_loop; Sapling AI and ZeroGPT APIs are queried at the end of each full pipeline run via multi_detecto",
+  "meaning_verification": "none — the only output quality check is a length ratio guard (candidate must be ≥40% of the original's word count). No cosine similarity gate, no NLI entailment check, no hedge/numeral/citation retention check of any kin",
+  "fact_preservation": "none — no numeral retention, no citation detection, no preserve-locking. Numbers, quotes, and citations are passed through the LLM rewrites unprotected and can ",
+  "mechanism": "7-phase pipeline implemented in pipeline.py / nlp_utils.py. Phase 0: spaCy splits long sentences at subordinate conjunctions (spacy_restructure). Phase 1: for texts ≥150 words, runs semantic extraction → regeneration across two different LLMs (run_semantic_regen); shorter texts run a 4-pass chunked LLM loop (process_chunk) with different Groq models per pass. Phase 2: deterministic Python post-pro"
+ },
+ {
+  "name": "skpig/B4-watermark-attack",
+  "stars": 3,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — attack.sh runs the paraphrase once, then calls the detector once for evaluation only; there is no score-rewrite-re-score loop",
+  "meaning_verification": "none — the paraphrase prompts instruct the LLM to preserve meaning in natural language, but there is no automated semantic check, NLI gate, cosine similarity filter, or any other programmatic verification that meaning su",
+  "fact_preservation": "none — no special handling for numbers, citations, named entities, or quoted text",
+  "mechanism": "Black-box bi-directional contrastive decoding. Three models are loaded simultaneously: a paraphrase model (P_f, the fluent generator), an amateur proxy model (P_w, fine-tuned to approximate the watermarked distribution), and the clean base checkpoint of P_w (for approximation-error adjustment). At every beam-search step the custom LogitsProcessor in attack/contra.py::ContrastiveProcessor.__call__ "
+ },
+ {
+  "name": "amondnet/yoonmoon",
+  "stars": 3,
+  "category": "prompt-guide",
+  "detector_in_loop": "yes, weakly. The polish-all orchestrator runs yoonmoon:detect at Phase 1 (pre-diagnosis) and again at Phase 6 (QA re-detection) to confirm AI signals decreased. However both calls go to the same Claude LLM following prom",
+  "meaning_verification": "Yes, prompt-based. humanize Phase 3 runs a 6-point LLI self-check against the original: (1) fact preservation, (2) meaning equivalence, (3) change rate appropriateness, (4) genre/register consistency, (5) zero remaining ",
+  "fact_preservation": "Explicitly required by prompt instruction: proper nouns, numbers with units, dates, currency, direct quotations, code/URL/identifiers, and claim direction/causa",
+  "mechanism": "Pure prompt-guide Claude Code plugin. All six skills (humanize, detect, proofread, translate-polish, restyle, polish-all) are SKILL.md markdown files with structured workflow instructions for Claude to follow. The package.json has zero runtime dependencies — only eslint and prettier as devDependencies. No JavaScript code performs any text transformation. The humanize skill instructs Claude to: (Ph"
+ },
+ {
+  "name": "UndetectableAIDiscord",
+  "stars": 2,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — single-pass API call, no scoring at any point, no iteration",
+  "meaning_verification": "none",
+  "fact_preservation": "none — numbers, citations, and quotes are passed through unmodified only insofar as the Undetectable AI API happens to preserve them; the bot applies no protect",
+  "mechanism": "Thin Discord bot wrapper around the Undetectable AI commercial API. In undetectable.js, the `humanizeText(content, readability, purpose)` function POSTs to `https://api.undetectable.ai/submit` with the message text and two parameters (readability tier and purpose), then polls `https://api.undetectable.ai/document` every 30 seconds until status is \"done\", and returns the API's output verbatim. In i"
+ },
+ {
+  "name": "danieleschmidt/lm-watermark-lab",
+  "stars": 2,
+  "category": "research-code",
+  "detector_in_loop": "No. The RobustnessEvaluator applies random synonym swaps then calls detect() to measure watermark survival — a one-shot stress test, not a score→rewrite→re-score loop. There is no iterative rewriting driven by a detector",
+  "meaning_verification": "None. The paraphrase simulation replaces tokens with hardcoded synonyms (a ~50-word dict in robustness.py) and never checks semantic equivalence of the result.",
+  "fact_preservation": "None. Numbers, citations, and proper nouns receive no special handling.",
+  "mechanism": "Implements three post-generation watermarking algorithms on word/token sequences — no LLM or logit access required. (1) GreenRedWatermark (green_red.py): hashes the previous token with a secret key to partition the vocabulary into green/red lists; replaces red tokens with same-first-letter green alternatives; detects via one-sided z-test on green fraction. (2) SemanticWatermark (semantic.py): HMAC"
+ },
+ {
+  "name": "RLCracker",
+  "stars": 2,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "No during training — the core novelty is detector-free: it never queries the watermark detector while learning, using distributional KL rewards instead. Yes at evaluation time only: evaluation.py calls WatermarkDetector.",
+  "meaning_verification": "Partial — PSP semantic similarity (a trained paraphrase-quality model from metrics/p_sp_utils/psp/) and sentence-level cosine similarity (sentence-transformers/all-MiniLM-L6-v2) are used as reward signals during training",
+  "fact_preservation": "None. No protection for numerals, citations, or quoted strings is implemented anywhere in the codebase.",
+  "mechanism": "Trains a rephrasing LLM (e.g., Qwen3-8B) via GRPO (Group Relative Policy Optimization, a PPO variant) to paraphrase watermarked text in a way that removes watermark signals. The training reward in GRPOTrainer_reph.py is a weighted sum of three signals: (1) a distributional KL reward — kl_reward = KL_wm - KL_h — which rewards moving the output token distribution away from watermarked text patterns "
+ },
+ {
+  "name": "yllscar728/academic-humanizer-zh",
+  "stars": 2,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector call, no scoring step, no iteration. A single LLM pass is directed by the prompt rules. No re-scoring loop of any kind.",
+  "meaning_verification": "none — the SKILL.md instructs the LLM to preserve meaning (terms, data, conclusions) but there is no automated gate, cosine-similarity check, NLI pass, or any programmatic verification that meaning survived. Compliance i",
+  "fact_preservation": "Prompt-level only. SKILL.md lists locked items (terminology, data, years, institution/person names, research conclusions, citation pointers) and instructs the m",
+  "mechanism": "Pure Codex skill (structured markdown prompt set). The repo contains three files — README.md, SKILL.md, and references/rewrite-checklist.md — and zero executable code. SKILL.md is a ~200-line system prompt that instructs Claude Code / Codex to rewrite Chinese academic text by: (1) scanning for a named catalogue of Chinese AI tells (套话 openers like \"随着……发展\", vague attributions like \"研究表明\", AI buzzw"
+ },
+ {
+  "name": "ywy5734/paper-humanizer-skill",
+  "stars": 2,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector at any stage. The skill is single-pass prompt-guided rewriting. No scoring, no iteration, no re-check after rewriting.",
+  "meaning_verification": "Prompt-only self-check via a \"Quality Checklist\" section in SKILL.md (verify citation markers, formulas, variables, abbreviations, figure/table labels, and data are not lost; no unsupported facts added; domain terms not ",
+  "fact_preservation": "Instructional only. SKILL.md explicitly tells the LLM not to change \"data, metrics, sample sizes, statistical claims, years, or citation markers\" and to preserv",
+  "mechanism": "Pure LLM prompt/instruction skill. There is no executable code. The entire implementation is academic-humanizer/SKILL.md — a detailed system-prompt document that instructs a language model to (1) diagnose nine named AI-tell pattern categories (generic openings, empty significance, mechanical parallelism, synonym-substitution damage, excessive hedging, vague attribution, translationese syntax, repe"
+ },
+ {
+  "name": "Para_Paper (noora-noureldin2000/Para_Paper)",
+  "stars": 2,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — there is no detector anywhere in the codebase. The pipeline is strictly one-way: text in, transformed text out. No scoring, no threshold check, no re-rewrite loop.",
+  "meaning_verification": "none — no cosine similarity, no NLI gate, no back-translation, no semantic-role check. The Gemini path asks the model to preserve meaning in the prompt but does not verify that it did.",
+  "fact_preservation": "Partial, medical domain only. The medical_paraphrase() function leaves unknown words untouched and only substitutes words found in MEDICAL_SYNONYMS / MEDICAL_AC",
+  "mechanism": "Two-tier pipeline in backend/agent_wrapper.py. Primary path (no API key): run_local_simulation() applies a hardcoded SIMULATION_DICTIONARY (~15 word entries, e.g. \"show\"→\"elucidate\") for synonym swaps, plus clean_cliches() removing a fixed list of AI clichés (delve, tapestry, underscore, em-dashes), and medical_paraphrase() which substitutes against the MEDICAL_SYNONYMS and MEDICAL_ACADEMIC_PHRASE"
+ },
+ {
+  "name": "hsannn/ditto",
+  "stars": 2,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — detect.py is a post-hoc evaluation tool only. It measures TPR / p-value / perplexity on already-generated spoofed text. There is no generate-score-rewrite loop.",
+  "meaning_verification": "none — the only quality signal checked is perplexity (via a Llama-2-7b PPL model in detect.py). No semantic similarity, NLI, or any content-preservation gate is applied.",
+  "fact_preservation": "none",
+  "mechanism": "Three-stage knowledge-distillation watermark forgery. (1) A student model (e.g., Llama-3.2-3B) is supervised-fine-tuned with LLaMA-Factory on 10 000 samples generated by a watermarked victim/teacher model (generate_training_data.py / generate_watermarked_data.py). (2) The Extracted Watermark Signal (EWS) is computed by diffing the logit distributions of the pre- and post-training student checkpoin"
+ },
+ {
+  "name": "AInnovateLab/watermark-collision",
+  "stars": 2,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — detectors are run at the end of each generation pass (rephrase.py scores with both old and new detector and writes results to JSONL) but the scores are not used to gate further rewrites. There is no iterative re-sco",
+  "meaning_verification": "none — no cosine similarity, NLI, BLEU, or any semantic check is applied to the rephrased output before it is accepted.",
+  "fact_preservation": "none — numbers, citations, and quotes receive no special treatment; the LLM paraphraser can freely alter them.",
+  "mechanism": "Watermark collision attack: takes text already watermarked by LLM A (scheme KGW/SIR/PRW/RDW/GS, key K1) and feeds it through a second LLM (default: Llama-2-7B-GPTQ) configured to generate with its own watermarking scheme (key K2). Because the second watermark's logit bias interferes with the token distribution shaped by the first, the original watermark signal degrades or is \"overwritten.\" Three a"
+ },
+ {
+  "name": "ia-espana/humanizador-de-ia",
+  "stars": 2,
+  "category": "other",
+  "detector_in_loop": "no — there is no code of any kind, so no loop is possible",
+  "meaning_verification": "none — no implementation exists to verify anything",
+  "fact_preservation": "none",
+  "mechanism": "No code exists. The repository contains a single README.md (13 KB) that is a Spanish-language promotional guide for a closed-source commercial SaaS product called \"Bypass de Hix AI\" (part of HIX.AI). The README explains humanization conceptually — vocabulary/syntax/style adjustments — but provides zero implementation. It links to the commercial service via a tracked affiliate URL (fas.st/t/ddTcpd5"
+ },
+ {
+  "name": "ml-postech/Bias-Inversion-Rewriting-Attack",
+  "stars": 1,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "No. The watermark detector is NOT in the rewrite loop. It runs once after rewriting as an evaluation step (attach_detectability in evaluation/tpr.py). The per-sample adaptive loop only monitors text degeneration (n-gram ",
+  "meaning_verification": "Evaluated post-hoc only, not as a gate. evaluation/evaluate_quality.py offers: SBERT cosine similarity (all-mpnet-base-v2), NLI entailment (cross-encoder/nli-deberta-v3-large via NLIEquivalenceScorePipeline), perplexity,",
+  "fact_preservation": "None enforced mechanically. The system prompt passed to the rewriter LLM instructs \"Retain all specific details, numbers, names, and technical terms exactly as ",
+  "mechanism": "BIRA targets LLM watermarks (KGW, SIR, Unigram, UPV, EWD, DIP, EXP, and others), not general AI-text detectors. The transformation is a two-step logit-bias paraphrase. Step 1: a SelfInformationCalculator (attack_utils/attacks.py, class SelfInformationCalculator) runs the source text through a local causal LM (aux_model, default Llama-3.2-3B or the same Llama-3.1-8B used for rewriting), computes pe"
+ },
+ {
+  "name": "SamCuipogobongo/bypass-aigc-skill",
+  "stars": 1,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector call anywhere. Text goes in, two prompt passes run sequentially, output comes out. No scoring, no re-scoring, no iteration. The original upstream project (chi111i/BypassAIGC) also has no detecto",
+  "meaning_verification": "none automated. The prompts instruct Claude to preserve core logic, keep word-count within ±30 Chinese characters, and pass a self-check before outputting. No cosine similarity gate, no NLI entailment check, no semantic-",
+  "fact_preservation": "partial, prompt-only. Technical terms, code snippets, library names, API paths (e.g. Django, views.py, /accounts/api/token/refresh/) are protected by prompt ins",
+  "mechanism": "A Claude Code skill (SKILL.md + prompt files + segmenter.py) that ports the core pipeline from chi111i/BypassAIGC. Text is first split into segments of ≤500 characters by segmenter.py (a faithful Python port of split_text_into_segments from the upstream ai_service.py). Each segment is then run through two sequential passes driven by prompt files: (1) \"polish\" (prompts/polish.md) — expands terse ve"
+ },
+ {
+  "name": "marynacleo/humanizer-plus",
+  "stars": 1,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "yes — but the detector is the regex scanner (ai_tells.py), not a statistical AI-text detector. The README flowchart shows Draft → Detector → Rewrite → Detector again → Read aloud → Publish. The loop is human-mediated: th",
+  "meaning_verification": "none — meaning preservation is a prompt instruction (\"Keep the information, drop the shape. Every claim in the source survives. Never invent a fact.\"), not a mechanical gate. No cosine similarity, no NLI entailment check",
+  "fact_preservation": "Prompt-level instruction only: SKILL.md forbids introducing \"a fact, name, number, date or citation that was not in the source.\" The detector's strip_noise() bl",
+  "mechanism": "Two-part system. (1) SKILL.md is a prompt-guide loaded by an LLM agent (Claude Code, OpenAI Codex): it instructs the model to rewrite prose against 33 numbered AI-tell patterns sourced from Wikipedia:Signs_of_AI_writing, plus French and Russian language-specific extensions. The rewriting is done entirely by the LLM — no code in the repo performs the transformation. (2) scripts/ai_tells.py is a sta"
+ },
+ {
+  "name": "undetectable-ai-free/undetectable-ai",
+  "stars": 1,
+  "category": "api-wrapper",
+  "detector_in_loop": "unclear — The README describes a detect-then-humanize flow and mentions \"multiple detection systems,\" but there is no code, so whether a real score-rewrite-rescore loop exists in the product cannot be verified from this ",
+  "meaning_verification": "none — README claims content preserves \"original meaning\" but provides no implementation. No similarity check, NLI gate, or any other meaning gate is described or coded.",
+  "fact_preservation": "none — No mention of numeral protection, citation locking, or quote preservation anywhere in the README.",
+  "mechanism": "No source code exists. The repo contains only a README.md (the entire repo is 4 KB, one file). The README is a marketing document for genspeed.ai, a closed-source commercial SaaS. It claims to run text through \"advanced algorithms,\" cross-validate with GPTZero, ZeroGPT, and Copyleaks, then apply unspecified \"humanization\" and \"paraphrasing.\" No files, functions, or implementation details are prese"
+ },
+ {
+  "name": "AI-Detection-Bypassers (d4r14h/AI-Detection-Bypassers)",
+  "stars": 1,
+  "category": "unicode-trickery",
+  "detector_in_loop": "no — there is no detector call anywhere. The script takes text in and emits corrupted text out in a single pass. No scoring, no re-scoring, no iteration.",
+  "meaning_verification": "none",
+  "fact_preservation": "none — numerals and citations receive ZWJ insertion at the same 20% random rate as everything else; there is no preservation or exclusion logic.",
+  "mechanism": "Two-pass character-level corruption implemented in a single file, GPTZero-Bypasser.py. Function `replace_letters` substitutes 9 Latin letters (a, q, u, n, t, m, c, o, l) with visually indistinguishable Mathematical Monospace Unicode codepoints (e.g., 'a' -> U+1D68A range). Function `insert_zwj` then walks every character of the substituted text and appends a Zero Width Joiner (U+200D) after each c"
+ },
+ {
+  "name": "1003715231/humanize-ai",
+  "stars": 1,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — no code of any kind is present",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "No source code exists. The repo contains a single README.md (two commits, last touched 2024-06-21) that is a marketing description for the commercial web service aihumanize.io. No transformation logic, no scripts, no dependencies — the \"tool\" is the closed-source SaaS it advertises."
+ },
+ {
+  "name": "cammycurry/humanize-ai-text-pypi",
+  "stars": 1,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — the package makes a single API call and returns the result; there is no scoring, no iteration, and no feedback loop of any kind",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "Pure thin HTTP wrapper. The entire implementation is one class, `HumanizedAI`, in `humanize_ai_text/humanized_ai.py`. Its `run()` method JSON-encodes the input text and POSTs it to `https://api.humanize-ai-text.ai/v1/humanize` with a Bearer token, then returns the parsed JSON response. There is no local transformation logic of any kind — all processing happens inside the closed-source commercial A"
+ },
+ {
+  "name": "ankshvayt/humanizer",
+  "stars": 1,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the self-audit in step 2 is the LLM re-reading its own draft against the pattern list, not an external detector scoring the output. There is no score, no threshold, no iteration triggered by a detection signal.",
+  "meaning_verification": "none — the instructions say to \"preserve meaning\" but this is an unverified LLM-judgment instruction, not an automated check. No cosine similarity, no NLI entailment gate, no semantic-role matching, no numeral retention ",
+  "fact_preservation": "none — numbers, citations, and quotes are not specifically protected. No byte-exact preserve-locking or any mechanism to flag invented or mutated facts.",
+  "mechanism": "Pure prompt engineering via a single markdown file (SKILL.md). The file is pasted as a system prompt or skill definition into any LLM. The LLM then follows a three-step process when given text to humanize: (1) draft a rewrite that removes the 24 catalogued AI-tell patterns, (2) self-audit the draft by running through the pattern checklist, (3) output the final version with a summary of changes. Th"
+ },
+ {
+  "name": "songkq/GPTs — Humanizer Pro.md",
+  "stars": 1,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — no scoring, no iteration, no re-check. One prompt → one rewrite, nothing else.",
+  "meaning_verification": "none — the prompt says \"without changing its meaning\" but there is no programmatic gate, similarity check, or NLI step of any kind.",
+  "fact_preservation": "none — no numeral retention, citation locking, or quote preservation logic anywhere in the prompt.",
+  "mechanism": "Pure system-prompt instruction. The file `prompts/Humanizer Pro.md` is the leaked ChatGPT custom GPT configuration for \"Humanizer Pro\" by charly-ai.com. The system prompt tells the model to \"convert any AI generated content to human-like content without changing its meaning,\" \"mimic the user's previous writing style,\" and draw on four PDFs loaded into the GPT's knowledge base (two academic papers "
+ },
+ {
+  "name": "geonwoo-jeong/japanese-humanizer",
+  "stars": 1,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the rewrite_priority_score in profile-japanese-text.mjs is a weighted sum of rule-based style-issue hits (not an AI-text detector score), and there is no re-scoring or iteration loop of any kind. The script runs onc",
+  "meaning_verification": "none — meaning preservation is enforced only via LLM prompt instructions (SKILL.md lists facts, numbers, dates, proper nouns, conditions, negations, and attribution as off-limits). There is no automated cosine similarity",
+  "fact_preservation": "Partial, prompt-level only. The diagnostic script masks code blocks, table rows, blockquotes, URLs, inline code, and quoted spans (「…」 and \"…\") before running i",
+  "mechanism": "Two-layer approach. Layer 1 is a Node.js static analysis script (`plugins/japanese-humanizer/skills/japanese-humanizer/scripts/profile-japanese-text.mjs`) that performs rule-based detection of Japanese-specific style issues on the input text: it masks protected spans (code blocks, tables, URLs, inline code, 「」/double-quoted direct quotes), then runs regex patterns for long sentences (>100 chars), "
+ },
+ {
+  "name": "majiayu000/claude-skill-registry (via ToniPerea/humanizar-texto-es)",
+  "stars": 1,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the skill computes a \"humanity score\" (0-100) using a 5-criterion rubric that Claude applies to its own output, but no actual detector is invoked and there is no iterative rewrite-and-rescore loop",
+  "meaning_verification": "none — the analysis output file shows before/after fragment pairs for human inspection, but there is no NLI gate, cosine similarity check, semantic-role match, or any automated meaning gate",
+  "fact_preservation": "none — numbers, citations, and quoted material receive no explicit protection or byte-exact locking",
+  "mechanism": "The registry (majiayu000/claude-skill-registry, 160,983 indexed skills) is a meta-catalog; the actual humanizer is ToniPerea/humanizar-texto-es, a Claude Code skill consisting entirely of a SKILL.md instruction file with no executable code. It instructs Claude to: (1) ask the user to pick \"informal/divulgative\" or \"academic/scientific\" mode; (2) detect AI patterns in the input text; (3) apply 11 l"
+ },
+ {
+  "name": "ML-Watermarking/ada-llm-wm",
+  "stars": 1,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes — the watermark detector is the optimization target; the attacker is tuned against detector scores, which is the core of the adaptive attack formulation (paper: arXiv:2410.02440, ICML 2025)",
+  "meaning_verification": "none visible in the repo (README only); the paper likely reports quality metrics but these are not surfaced in the public repository",
+  "fact_preservation": "none",
+  "mechanism": "Preference-based optimization (analogous to DPO/RLHF-style tuning) is used to train paraphrasers that adaptively evade specific LLM watermarking detectors. The optimizer treats watermark robustness as an objective function and iteratively tunes the paraphraser against a target watermarking scheme. The paper reports that optimization transfers: a paraphraser tuned against one watermark generalizes "
+ },
+ {
+  "name": "pan-webis-de/pan24-generative-ai-authorship-verification",
+  "stars": 1,
+  "category": "research-code",
+  "detector_in_loop": "no — there is no rewrite loop at all. The baselines score a text pair once and output a probability. The perturbators (T5MaskPerturbator) used by DetectGPT and DetectLLM generate internal candidate perturbations to estim",
+  "meaning_verification": "none — the repo contains no meaning-preservation check of any kind. It is a detection benchmark, not a text transformation pipeline.",
+  "fact_preservation": "none — not applicable; the repo does not rewrite text.",
+  "mechanism": "Shared-task infrastructure for a comparative authorship verification challenge. The task framing is Voight-Kampff style: given a pair of texts (text1, text2 — one human-written, one LLM-generated on the same topic), output a score in [0,1] indicating which is human. The repo contains three distinct layers. (1) Dataset generation (`pan24_llm_dataset/llm_generate.py`): prompts GPT-4/GPT-3.5, Gemini/"
+ },
+ {
+  "name": "XuandongZhao/WatermarkAttack",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo does not exist, cannot be assessed",
+  "meaning_verification": "none — repo does not exist",
+  "fact_preservation": "none — repo does not exist",
+  "mechanism": "Repository does not exist. GitHub API returns 404. A full enumeration of XuandongZhao's public repos (50 listed) contains no repo named WatermarkAttack. The nearest repos are WatermarkAttacker (NeurIPS 2024, removes invisible image watermarks via generative AI — image domain, not text) and Unigram-Watermark (ICLR 2024, builds robust text watermarks that resist paraphrasing — a watermarking paper, "
+ },
+ {
+  "name": "wrightprosper7-bit/paper-humanizer",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "no — no code exists",
+  "meaning_verification": "none — no code exists",
+  "fact_preservation": "none — no code exists",
+  "mechanism": "No code exists. The repository has exactly one commit and two files: a stock Node.js .gitignore template and a README.md whose entire content is the Chinese description \"中文论文自然化修改网站\" (Chinese paper naturalization modification website). There are no source files, no functions, no transformation logic of any kind to describe."
+ },
+ {
+  "name": "gtskevin/ob-paper-humanizer",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — no external detector is queried at any point; pattern recognition is performed by the same LLM that does the rewriting; no numerical score, no rewrite-rescore iteration",
+  "meaning_verification": "none mechanically — the quality checklist instructs the LLM to verify \"Technical accuracy preserved\" and the prompt warns against meaning drift with a revert instruction, but there are no cosine-similarity, NLI, or seman",
+  "fact_preservation": "instructions only — Category 15 (False Precision) explicitly prohibits fabricating statistics, effect sizes, or p-values; Common Trap 9 prohibits misrepresentin",
+  "mechanism": "Structured LLM system-prompt delivered as SKILL.md. The file instructs the host LLM to act as an OB writing coach: scan submitted text for 17 named AI-pattern categories (hollow framing, transition monotony, hedging overload, generic contribution claims, sentence-length uniformity, formulaic section patterns, post-hypothesis summaries, methods without rationale, implications inflation, decorative "
+ },
+ {
+  "name": "aken1023/academic-humanizer",
+  "stars": 0,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no — the detector (detect_ai_patterns.py) and the rewriter (humanize_text.py) are completely separate scripts with no shared code or IPC. The user must run them manually in sequence. There is no score-then-rewrite-then-r",
+  "meaning_verification": "none — no cosine similarity, no NLI, no semantic-role check, no back-translation. The README explicitly tells users to check accuracy themselves after rewriting.",
+  "fact_preservation": "none — the replacement loop runs str.replace() over the entire raw text with no exclusion zones. Numbers, inline citations, quoted strings, and LaTeX/Markdown m",
+  "mechanism": "Pure dictionary substitution on Traditional Chinese text. `scripts/humanize_text.py` defines a hardcoded `REPLACEMENTS` dict of ~200 Chinese phrases, each mapped to a list of alternatives (e.g., \"然而\" → [\"但是\",\"不過\",\"話說回來\",…]). The `humanize_text()` function iterates the dict, counts occurrences of each key in the input, replaces 80% of them (95% in --aggressive mode) by calling `str.replace()` with "
+ },
+ {
+  "name": "gitoneuunn/Paper_Master_Humanization",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — no code exists to inspect",
+  "meaning_verification": "none — repo is empty",
+  "fact_preservation": "none — repo is empty",
+  "mechanism": "The repository exists on GitHub but contains no files whatsoever — no README, no source code, no commits. The repo was created on 2026-06-21 and has a description reading \"this is a skill for paper humanization\" but was never populated. There is nothing to analyze."
+ },
+ {
+  "name": "tyreekb046-ux/paper-humanizer",
+  "stars": 0,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — the pipeline is strictly one-way: user text in, Claude rewrite out. No detector is called at any stage, no score is computed, and no iteration occurs.",
+  "meaning_verification": "none — the rewritten text is returned directly to the user with no cosine similarity check, NLI gate, numeral comparison, or any other semantic guard.",
+  "fact_preservation": "none — there is no byte-locking of citations, numbers, or quotes. The system prompt says \"preserve all original information\" as a prose instruction to the model",
+  "mechanism": "Single-pass rewrite via the Anthropic Claude API (claude-opus-4-6 model) with a hardcoded system prompt. The prompt instructs Claude to vary sentence length, add natural transitions, insert subtle hedges, and replace formal vocabulary with conversational alternatives. The rewritten output is streamed directly to the client browser. All logic is in server.js; the relevant route POSTs the user's tex"
+ },
+ {
+  "name": "academic-humanizer-kr",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "yes, partially — but the \"detector\" is Claude itself, not an external AI-text classifier. In Strict mode, `academic-tell-detector` scores the rewritten text for residual AI tells and re-triggers `academic-style-rewriter`",
+  "meaning_verification": "yes — two layers. (1) Deterministic Python: `tests/preservation_lint.py` uses regex to extract numbers, citation signatures (3 patterns covering Korean 홍길동(2020), parenthetical, and Western author-year forms), and direct",
+  "fact_preservation": "strong relative to repo class. Three distinct protections: numbers and statistics extracted by regex and multiset-compared (NUMBER_DRIFT, NUMBER_INVENTED violat",
+  "mechanism": "Entirely a Claude Code skill/plugin — no standalone executable or fine-tuned model. The transform is driven by a structured prompt pipeline whose instructions live in `skills/humanize-academic/SKILL.md`. Two paths exist. Fast path (≤5 000 chars): a single Claude agent (`agents/academic-humanize-monolith.md`) performs detect + rewrite + self-verify in one LLM call. Strict path (≥8 000 chars or `--s"
+ },
+ {
+  "name": "academic-humanizer/academic-humanizer",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo not found",
+  "meaning_verification": "none — repo not found",
+  "fact_preservation": "none — repo not found",
+  "mechanism": "Cannot be determined — the repository returns HTTP 404 from both the GitHub REST API and direct web fetch. No source code, README, or any file was accessible."
+ },
+ {
+  "name": "leike0813/paper_humanizer",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no AI-text detector at any stage. Pattern recognition is performed by the LLM agent against the 39-category rule catalogue in SKILL.md and diagnostic-guidance.md. No score is computed and no re-score loop e",
+  "meaning_verification": "Full-mode verification runs a three-part LLM-driven check: bidirectional information mapping (every claim in the source must survive in the output and vice versa), structural integrity, and style consistency against the ",
+  "fact_preservation": "Yes, and more thoroughly than most. document_pipeline.py byte-protects non-prose content — LaTeX environments and commands, inline/display math, code fences, fr",
+  "mechanism": "A Claude Agent Skill (prompt-instruction package, not executable code at its core). The primary deliverable is SKILL.md — a rule document that instructs an LLM agent to identify and rewrite 39 catalogued AI-tell patterns (significance inflation, stock vocabulary, copula avoidance, nominalizations, uniform rhythm, vague attribution, etc.). Three operating modes: Reference (inline during another tas"
+ },
+ {
+  "name": "ubturja/Research-Paper-Humanizer-Claude-Skill",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector, no scoring, and no iteration. The workflow is a single two-pass editorial rewrite driven by prompt instructions; no feedback from any detection system.",
+  "meaning_verification": "none mechanically. The skill instructs Claude to \"Preserve substance: Never alter data, findings, statistics, or citations\" and to \"Justify every change,\" but these are prompt-level directives to the model, not automated",
+  "fact_preservation": "Prompt-instruction only: the skill text explicitly says \"Never alter data, findings, statistics, or citations.\" There is no byte-exact preserve-locking, no rege",
+  "mechanism": "Single-file Claude skill (scholarly-prose.md, 51 KB) that encodes editorial rules as prompt instructions. When loaded as a Claude skill, it directs Claude to perform a two-pass rewrite: Pass 1 tightens claims, calibrates hedging, improves cohesion, and varies sentence structure; Pass 2 audits for clarity. The patterns addressed are numbered (e.g., Pattern 1 \"significance puffery\", Pattern 4 \"promo"
+ },
+ {
+  "name": "JerryWang1234/AIGC-academic-paper-evasion",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo not accessible",
+  "meaning_verification": "none — repo not accessible",
+  "fact_preservation": "none — repo not accessible",
+  "mechanism": "Cannot be determined — both the GitHub user JerryWang1234 and the repository AIGC-academic-paper-evasion return HTTP 404. The repo does not exist or has been deleted/made private."
+ },
+ {
+  "name": "yangsijie666/aigc-detection-bypass-academic",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo not found",
+  "meaning_verification": "none — repo not found",
+  "fact_preservation": "none — repo not found",
+  "mechanism": "Repository does not exist. The GitHub user yangsijie666 has 60 public repositories; none is named aigc-detection-bypass-academic. GitHub search for that name returned zero results."
+ },
+ {
+  "name": "zh-academic/aigc-detector-bypass",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo does not exist",
+  "meaning_verification": "none — repo does not exist",
+  "fact_preservation": "none — repo does not exist",
+  "mechanism": "Cannot determine — repository returns HTTP 404 from both the GitHub REST API and direct WebFetch. No organization named zh-academic exists on GitHub, and no repository with this path was found via GitHub search."
+ },
+ {
+  "name": "AsdethPrime/mastra-humanizer",
+  "stars": 0,
+  "category": "api-wrapper",
+  "detector_in_loop": "unclear — the description says \"iteratively rewrites them to bypass AI detection using Winston AI\", which implies a score→rewrite→re-score loop, but there is no source code to confirm whether Winston AI is polled as a sc",
+  "meaning_verification": "none — no source code exists; no meaning-preservation mechanism is described anywhere in the repo.",
+  "fact_preservation": "none — no source code exists.",
+  "mechanism": "Cannot be determined — the repository was created 2026-05-27 and has never received a single commit. Size is 0, no files, no README, no source tree. The only technical signal is the repo description: \"An AI agent built with Mastra that generates essays and iteratively rewrites them to bypass AI detection using Winston AI.\" From that description alone the implied design is: use the Mastra agent fra"
+ },
+ {
+  "name": "yanaiela/Robust-GPT-Detector",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo does not exist",
+  "meaning_verification": "none — repo does not exist",
+  "fact_preservation": "none — repo does not exist",
+  "mechanism": "Cannot determine — the repository does not exist. The user yanaiela has 34 public repos on GitHub; none is named Robust-GPT-Detector or any close variant. A GitHub repo search for \"Robust-GPT-Detector\" returns no match under that owner."
+ },
+ {
+  "name": "WannabeSmith/drp",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo not found",
+  "meaning_verification": "none — repo not found",
+  "fact_preservation": "none — repo not found",
+  "mechanism": "Cannot be determined — the repository returns HTTP 404 from both the GitHub REST API and direct web access. No source files, README, or metadata are reachable."
+ },
+ {
+  "name": "ieee-acm-paper-writing",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no detector, no scoring step, no re-scoring, and no iteration. The humanize pass is a single LLM call. The skill has no awareness of any AI-text detector.",
+  "meaning_verification": "Rule-based prohibition encoded in the system prompt, not a post-hoc semantic check. SKILL.md and manuscript-structure-style.md state that humanize must never change \"technical claims, numbers, units, citations, notation,",
+  "fact_preservation": "Explicit and enforced by instruction: SKILL.md hard-prohibits changing numbers, units, citations, equations, figure and table labels, scope conditions, comparat",
+  "mechanism": "A structured skill (SKILL.md + five reference markdown files) that installs into Claude Code or Codex as a slash/at-command. It exposes nine modes routed by a dispatch table in SKILL.md. The \"humanize\" mode is the relevant one: it applies a catalog of ~12 AI-prose patterns documented in skills/ieee-acm-paper-writing/references/manuscript-structure-style.md (section \"Machine-idiom removal\") — formu"
+ },
+ {
+  "name": "B00409227/MSc-AI-Detection",
+  "stars": 0,
+  "category": "research-code",
+  "detector_in_loop": "no — attacks are batch-processed once offline; evaluation is a separate notebook step run afterwards. There is no score-rewrite-rescore loop of any kind.",
+  "meaning_verification": "none — no cosine similarity check, no NLI gate, no hedging or numeral retention check. The project measures attack success rate as a research metric after the fact, but imposes no quality gate on individual rewrites.",
+  "fact_preservation": "none — numbers, citations, and named entities receive no special treatment; the 150-word truncation in the ChatGPT attack may drop them entirely.",
+  "mechanism": "Three one-shot paraphrase attacks, each implemented as a standalone script in src/. (1) Pegasus attack (run_pegasus_attack.py): splits text into sentences, paraphrases each with tuner007/pegasus_paraphrase via beam search (num_beams=10, max 6 sentences, 60-token cap per sentence), then recombines. (2) QuillBot-style attack (run_quillbot_style_attack.py): feeds the full text (truncated to 80 words)"
+ },
+ {
+  "name": "lynxthecoder10/RESEARCH-PAPER-HUMANIZER",
+  "stars": 0,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — The Python backend runs a heuristic AI-risk score (sentence variance + type-token ratio) and a plagiarism check, but these are independent features surfaced in a separate \"plagiarism\" UI route. They are never called",
+  "meaning_verification": "none",
+  "fact_preservation": "none — The PDF route prompt says \"preserving all citations and technical accuracy\" as a plain-English LLM instruction, but there is no programmatic locking, ext",
+  "mechanism": "Single-shot LLM prompt via the Groq API (llama3-8b-8192) with a Gemini 1.5 Flash fallback. The prompt is literally \"Rewrite this academic text to be more human, clear, and professional.\" Input is truncated to 4000 characters. The PDF variant (`src/app/api/humanize-pdf/route.js`) is identical but Groq-only and instructs the model to preserve citations as a plain-English instruction, with no program"
+ },
+ {
+  "name": "yuvraj-rag/adversarial-ai-text-attack",
+  "stars": 0,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "yes, partially — GPT-2 perplexity (GPTZero-compatible) is the internal scoring signal. After each vector the pipeline re-scores and stops early if both doc-PPL and per-line PPL clear the human thresholds (pipeline.py::_i",
+  "meaning_verification": "cosine similarity via all-MiniLM-L6-v2 sentence embeddings (verifier.py). Sentence-level threshold 0.88 for V1/V3 token and verb swaps; paragraph-level threshold 0.85 for V2 structural changes. Every proposed modificatio",
+  "fact_preservation": "none — no numeral retention, no citation locking, no quote preservation. Numbers embedded in text can be freely substituted by V1/V3 if they are content words w",
+  "mechanism": "Three independent attack vectors applied sequentially with re-scoring between them. V1 (disrupt_token_probabilities in attacker.py): identifies the highest-probability content-word tokens via GPT-2 per-token log-probs (computed in scorer.py), then replaces them using BERT/RoBERTa fill-mask or GloVe/Word2Vec/FastText embedding neighbors — only accepting substitutions that RAISE GPT-2 perplexity (a "
+ },
+ {
+  "name": "noisyboy/zerow",
+  "stars": 0,
+  "category": "unicode-trickery",
+  "detector_in_loop": "no — no detector is consulted at any stage; the tool is a one-shot encoder/decoder with no scoring or iteration",
+  "meaning_verification": "none — the visible carrier text is never altered, so meaning preservation is not a concern this tool addresses",
+  "fact_preservation": "none — numbers, citations, and quotes in the carrier string pass through unmodified (because nothing in the carrier is touched), but this is incidental, not a d",
+  "mechanism": "Pure zero-width Unicode steganography. The single-file client-side tool (index.html) has two JS functions: encodeData() converts each payload character to its 8-bit binary representation via charCodeAt(), then maps each bit to either U+200B (zero-width space, = 0) or U+200C (zero-width non-joiner, = 1), and splices the resulting invisible character sequence at the midpoint of a visible carrier str"
+ },
+ {
+  "name": "JonathanZha47/PadBen-Paraphrase-Attack-Benchmark",
+  "stars": 0,
+  "category": "research-code",
+  "detector_in_loop": "no — detectors are evaluated after paraphrasing is complete, not consulted during generation. The Type 5 iteration depth (1/3/5 rounds) is a fixed parameter, not driven by detector scores. There is no score-rewrite-resco",
+  "meaning_verification": "Jaccard similarity (n-gram overlap via `data_quality_assurance/metrics.py: JaccardSimilarityCalculator`), self-BLEU, GPT-2 perplexity, difflib `SequenceMatcher` ratio for early-stop in `type5_generation.py: IterativePara",
+  "fact_preservation": "none — no numeral retention logic, no citation locking, no byte-exact preserve mechanism identified in any source file",
+  "mechanism": "PADBen is a benchmark dataset + evaluation harness, not an active evasion tool. It creates five text categories offline and then evaluates detectors against them. Text transformation happens in two generation scripts: `data_generation/type4_generation.py` (single-pass LLM paraphrase of human text) and `data_generation/type5_generation.py` (iterative paraphrase of machine-generated text). The prima"
+ },
+ {
+  "name": "berdnikovartem/undetectableAIText",
+  "stars": 0,
+  "category": "unicode-trickery",
+  "detector_in_loop": "no — single-pass character replacement; no scoring, no feedback, no iteration of any kind",
+  "meaning_verification": "none — text is never read semantically; only individual characters are swapped",
+  "fact_preservation": "none — numbers, citations, and quotes receive no special handling; they pass through unmodified only because they happen not to contain the targeted characters",
+  "mechanism": "Pure homoglyph substitution — no rewriting, no LLM, no paraphrase. The C version (UNDETECTABLE AI.c, function replace_letters) replaces three ASCII characters in-place: 'o' → Cyrillic 'о', 'e' → Cyrillic 'е', 'p' → Cyrillic 'р'. The Java version (UNDETECTABLEAI/src/undetect/MainActivity.java, method replaceLetters) reads a text file, applies a larger mapping (adds а→a, с→c, y→у, і→i, C→С; several "
+ },
+ {
+  "name": "PSS-Watermark-Detection",
+  "stars": 0,
+  "category": "detector-with-evasion",
+  "detector_in_loop": "no — The paraphrasing pipeline in src/paraphrasing/paraphraser.py applies 8 rounds of LLM rewriting with no watermark detection scores consulted between rounds. Each round simply paraphrases the prior result at temperatu",
+  "meaning_verification": "none — The paraphraser has a length check (allows up to 20% deviation from the original length, retries up to 3 times at adjusted temperatures if violated) but no semantic similarity gate, no NLI entailment check, no hed",
+  "fact_preservation": "none — Numbers, citations, and quoted strings receive no special handling in the paraphraser. They pass through or get rewritten along with everything else.",
+  "mechanism": "This is primarily a watermark DETECTOR, not a humanizer. The repo ships two distinct components: (1) a greenlist watermarking scheme (vocabulary partitioned by gamma/delta parameters) applied at generation time; and (2) an iterative paraphrasing attack pipeline (D1-D8 rounds) using instruction-tuned 7B models (Mistral-7B-Instruct, Qwen2-7B-Instruct, Gemma-7B via src/paraphrasing/paraphraser.py) th"
+ },
+ {
+  "name": "rexcoleman/llm-watermark-robustness",
+  "stars": 0,
+  "category": "research-code",
+  "detector_in_loop": "no — the project measures detection signal before and after paraphrasing, but paraphrasing and scoring are entirely separate steps. There is no score-then-rewrite feedback loop. Detection runs as a post-hoc measurement a",
+  "meaning_verification": "none — the paraphrase prompt includes the phrase \"while preserving the meaning\" but no programmatic check (cosine similarity, NLI, BLEU, etc.) is applied to verify meaning survived.",
+  "fact_preservation": "none — no special handling of numbers, citations, or quotes anywhere in the codebase.",
+  "mechanism": "Cross-model paraphrasing as a watermark-scrubbing attack. The repo implements the real Kirchenbauer (2023) green-list watermark in `src/kirchenbauer_watermark.py` using GPT-2 with logit access: for each token position it hashes the previous token to partition the vocabulary into green/red lists (50/50 split, configurable gamma), then adds a delta bias to green-list logits before sampling. Detectio"
+ },
+ {
+  "name": "M1noa/ai-detection-bypass",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "unclear — repo does not exist; cannot verify",
+  "meaning_verification": "none — repo does not exist; cannot verify",
+  "fact_preservation": "none — repo does not exist; cannot verify",
+  "mechanism": "Cannot be determined — the repository returns HTTP 404 from the GitHub API and raw content endpoint. No source code or README was retrievable."
+ },
+ {
+  "name": "o2161405/GPTZero-Bypasser",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo does not exist; cannot verify",
+  "meaning_verification": "none — repo does not exist; cannot verify",
+  "fact_preservation": "none",
+  "mechanism": "Cannot be determined — the repository returns HTTP 404 from both the GitHub REST API and direct URL fetch. No source code or README was retrievable."
+ },
+ {
+  "name": "CoalElderLobby/ai-detection-bypass-gptzero-turnitin",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "no — there is no code at all, let alone a detector loop",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "No transformation mechanism exists. The repo contains only a README.md and a license.txt file — no source code of any kind. The README is a warez/crackware distribution page: it claims to distribute a \"pre-activated full build\" of unnamed AI-detection-bypass software and links out to a Telegra.ph URL (https://telegra.ph/Download-06-01-11) for a binary download. The \"technique\" is purely social-eng"
+ },
+ {
+  "name": "ai-paraphrase-rewrite-to-bypass",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "no — the README describes a one-shot rewrite with adjustable \"intensity\" sliders; there is no mention of scoring output, feeding scores back, or iterating. The tool applies its transformation once and presents the result",
+  "meaning_verification": "none — the README says the tool \"performs best when the original meaning remains clear\" and instructs users to review output manually. No automated semantic gate of any kind is described or evidenced.",
+  "fact_preservation": "none — numbers, citations, and quotes are not mentioned anywhere in the README. No preserve-locking mechanism is described.",
+  "mechanism": "Closed-binary Windows GUI application distributed as a compiled ZIP (paraphrase_to_bypass_ai_rewrite_v1.8.zip, ~465 KB). No source code is present anywhere in the repo. The README describes two techniques: \"Structure Adjustment\" (varying sentence lengths and patterns) and \"Vocabulary Enhancement\" (synonym substitution). These are classic rule-based paraphrase operations. Because no source is avail"
+ },
+ {
+  "name": "nicojan/humanize-text-prompt",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — there is no scoring step, no feedback loop, and no iteration. The user pastes prompt + text once and receives a single edited output.",
+  "meaning_verification": "none — the prompt contains no instruction to check that meaning survived the edit, and no automated gate of any kind.",
+  "fact_preservation": "none — no mention of protecting numbers, citations, or quoted material. The prompt rules operate purely at the stylistic/structural level.",
+  "mechanism": "A single markdown file (PROMPT.md) containing a structured editing prompt the user pastes into any LLM. No code executes. The LLM reads six layers of rules — vocabulary (replace AI-overused terms, unpack nominalizations, vary hedging density), structure (widen sentence-length variance, eliminate em-dashes and antithesis frames), tone (allow negative emotion, cut unsolicited reassurance), discourse"
+ },
+ {
+  "name": "DevIsper/Prompts-ChatGPT",
+  "stars": 0,
+  "category": "prompt-guide",
+  "detector_in_loop": "no — the prompt is single-pass. The user submits text, ChatGPT rewrites it once. There is no scoring step, no feedback from any detector, and no iteration.",
+  "meaning_verification": "none — the system prompt says \"without changing its meaning\" as an instruction to the LLM, but there is no automated gate, similarity check, NLI step, or any other verification that meaning was actually preserved.",
+  "fact_preservation": "none — no number retention, no citation locking, no quote preservation mechanism of any kind. Numbers and citations are rewritten freely along with the rest of ",
+  "mechanism": "The repo is a collection of leaked system prompts for OpenAI custom GPTs (the \"GPTs\" product). The humanizer-relevant entry is \"Humanizer Pro.md\" (by charly-ai.com), which contains the verbatim system prompt extracted from the Humanizer Pro GPT. The system prompt instructs ChatGPT to rewrite submitted text to be \"human-like\" and bypass detectors, drawing on a knowledge base of uploaded PDFs (links"
+ },
+ {
+  "name": "cammycurry/humanize-ai-text-npm",
+  "stars": 0,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — there is no detector, no scoring, no iteration, no re-scoring. Single-shot API call, single response.",
+  "meaning_verification": "none — the SDK passes text to the remote API and returns the response verbatim. No similarity check, no NLI gate, no semantic comparison of any kind.",
+  "fact_preservation": "none — no numeral retention check, no citation locking, no quote preservation. The API response is returned as-is.",
+  "mechanism": "Thin TypeScript/JavaScript class (`HumanizedAI` in `src/index.ts`) that makes a single POST request to `https://api.humanize-ai-text.ai/v1/humanize` with the raw text in the body, bearer-token authenticated. The `run()` method fires and returns whatever the closed-source commercial service sends back. No local processing of any kind — the SDK has zero dependencies beyond Node's built-in `fetch`."
+ },
+ {
+  "name": "nolan-vale/humanizer-ru",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo does not exist; cannot determine",
+  "meaning_verification": "none — repo does not exist",
+  "fact_preservation": "none — repo does not exist",
+  "mechanism": "Repository does not exist. GitHub API returns HTTP 404 for https://github.com/nolan-vale/humanizer-ru. No source code, README, or any other content is available to inspect. A search for \"humanizer-ru\" on GitHub returns roughly a dozen repositories by other authors (smixs, ilyautov, Vladimir-Human, thevseprod, yasikvlad, etc.), none of which are attributed to the user \"nolan-vale\"."
+ },
+ {
+  "name": "humanizador-de-texto/humanizar-texto-ia",
+  "stars": 0,
+  "category": "api-wrapper",
+  "detector_in_loop": "no — there is no evidence of any detector, scoring step, or iterative loop. The site copy makes no mention of detection evasion or re-scoring.",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "No source code exists. The GitHub account (created 2025-06-13) contains a single public repo with one file: a 195-byte README.md that names the service and links to humanizador.org. The website describes itself as using a large language model trained on text data to \"analyze AI writing patterns\" and apply sentence-structure variation, vocabulary simplification, and redundant-phrase removal — but n"
+ },
+ {
+  "name": "menpente/humanizador",
+  "stars": 0,
+  "category": "rule-based-rewriter",
+  "detector_in_loop": "no. The tool computes an \"IA Score\" heuristic (`calcularScoreIA`) that counts occurrences of a short list of formal Spanish transition words and vocabulary (13 patterns total, weighted 0.5-0.9), displayed as a pre-transf",
+  "meaning_verification": "none. No cosine similarity, NLI, semantic-role, or entailment check is run. The mT5 paraphrase output is accepted if `parafraseado.length > 5` and it differs from the input string—a purely surface-level acceptance gate.",
+  "fact_preservation": "Partial, for citations and acronyms only. `protegerContenido` replaces APA-style citations `(Author, YYYY)`, numeric references `[N]`, sequences of 2+ uppercase",
+  "mechanism": "Single self-contained HTML file with all logic in inline JavaScript. The `HumanizadorTexto` class applies a sequential pipeline of regex-based rule passes to Spanish text: (1) placeholder-locking of APA citations, numeric references, acronyms, and URLs; (2) formal-word substitution via a hardcoded ~15-entry dictionary (`reducirFormalidad`); (3) formal-transition replacement with random alternates "
+ },
+ {
+  "name": "humanizar-texto-ia",
+  "stars": 0,
+  "category": "api-wrapper",
+  "detector_in_loop": "unclear — the marketing site claims detection bypass against named detectors but gives zero implementation detail; no loop architecture can be verified because there is no code",
+  "meaning_verification": "none — no code exists to inspect; marketing copy makes no mention of meaning preservation",
+  "fact_preservation": "none — no code exists to inspect",
+  "mechanism": "No source code exists. The GitHub user account (github.com/humanizar-texto-ia, created 2024-10-03) has zero public repositories. A separate account (humanizador-de-texto/humanizar-texto-ia) has exactly one file — a 195-byte stub README with no code whatsoever. The associated commercial site (humanizar-texto.net) describes \"advanced machine learning algorithms and NLP models\" in marketing language,"
+ },
+ {
+  "name": "bazil3814/humanize-ai-text",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — source inaccessible",
+  "meaning_verification": "none — source inaccessible",
+  "fact_preservation": "none — source inaccessible",
+  "mechanism": "Cannot determine. All access attempts returned HTTP 401 Unauthorized (Space page, HF API, raw file endpoints) or HTTP 404 (live Gradio app URL). The Space is either private, deleted, or never publicly deployed."
+ },
+ {
+  "name": "khrisat/text-humanizer",
+  "stars": 0,
+  "category": "api-wrapper",
+  "detector_in_loop": "No. src/services/detector.py returns round(random.uniform(20, 90), 2) — entirely fabricated random numbers. The humanizer.py does record a score_before and score_after, but both come from this fake stub. No real detector",
+  "meaning_verification": "none",
+  "fact_preservation": "none",
+  "mechanism": "Repository returns HTTP 404 and is confirmed deleted. Evidence reconstructed from fork yo-steven/text-humanizer-exploration-20260613 (upstream commit 5c3712147408c5a2826d0eec2f1d56046fe828e3). Mechanism: single-pass LLM rewrite via OpenAI-compatible API (default: DeepSeek). src/services/humanizer.py calls generate() via an AsyncOpenAI client; src/standard/llm_rewriter.py uses a Chinese-language sy"
+ },
+ {
+  "name": "joanPlepi/watermark-spoofing",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo is absent; cannot inspect code",
+  "meaning_verification": "none — repo is absent",
+  "fact_preservation": "none — repo is absent",
+  "mechanism": "Cannot be determined — the repository does not exist. The GitHub user joanPlepi exists (NLP researcher at CAISA Lab / Mirelo AI, University of Bonn) and has 17 public repos, none of which is watermark-spoofing. No redirect, fork, or rename is present."
+ },
+ {
+  "name": "TokenFool/TokenFool",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo not found",
+  "meaning_verification": "none — repo not found",
+  "fact_preservation": "none — repo not found",
+  "mechanism": "Cannot be determined — the repository does not exist. GitHub API returns 404 for TokenFool/TokenFool. A search for \"TrustThink/tokenfool\" surfaces an unrelated image-transformer attack toolkit with no connection to AI-text detection. No arXiv paper titled \"TokenFool\" about token-level perturbations for detector evasion could be found."
+ },
+ {
+  "name": "jkodner05/AuTexTification-system",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo does not exist",
+  "meaning_verification": "none — repo does not exist",
+  "fact_preservation": "none — repo does not exist",
+  "mechanism": "Cannot be determined — the repository does not exist. `gh api repos/jkodner05/AuTexTification-system` returns HTTP 404, and a full enumeration of the account's 30 public repositories (`gh api users/jkodner05/repos`) contains no repo by that name or any name matching AuTexTification, humaniz, or detector-evasion. The account (Julie Kodner, NLP/linguistics) has repos for phonotactics, morphology, an"
+ },
+ {
+  "name": "grad-escape/GradEscape",
+  "stars": 0,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "unclear — repo does not exist; the claimed description implies yes (queries a surrogate detector for directional perturbations), but this cannot be verified",
+  "meaning_verification": "none — unverifiable",
+  "fact_preservation": "none — unverifiable",
+  "mechanism": "Cannot be determined — the repository does not exist. The GitHub user/org \"grad-escape\" returns 404 and no repo named \"GradEscape\" under that account was found. A broad GitHub search for the name returns only two unrelated \"grade escape\" game repos (2020, 2025). No alternative location was discovered."
+ },
+ {
+  "name": "Symanto-Research/autextification",
+  "stars": 0,
+  "category": "other",
+  "detector_in_loop": "unclear — repo does not exist to inspect",
+  "meaning_verification": "none — repo does not exist",
+  "fact_preservation": "none — repo does not exist",
+  "mechanism": "Repository does not exist. GitHub returns HTTP 404 for https://github.com/Symanto-Research/autextification. The symanto-research org has 18 public repos, none named autextification. The AuTexTification 2023 shared task evaluation code is actually hosted at autextification/AuTexTificationEval (a separate GitHub user account), which contains only an evaluation script (evaluate_submissions.py) comput"
+ },
+ {
+  "name": "BunsenFeng/machine-generated-text",
+  "stars": 0,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "unclear — The repo does not exist to inspect. The related YichenZW/Robust-Det runs detectors over attacked outputs for evaluation but the attacks themselves are applied open-loop (no iterative rescore-and-retry cycle).",
+  "meaning_verification": "none — the repo cannot be verified",
+  "fact_preservation": "none",
+  "mechanism": "Repository does not exist. BunsenFeng (Shangbin Feng) is a co-author of the ACL 2024 \"Stumbling Blocks\" paper, but the code for that paper is at YichenZW/Robust-Det, not this URL. That paper's repo implements post-generation attacks (typo insertion, homoglyph substitution, synonym substitution, span perturbation, paraphrasing), pre-generation attacks (in-context learning, prompt paraphrasing, char"
+ },
+ {
+  "name": "yushengzh/TSAPA",
+  "stars": 0,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — the watermark detector is not queried during the evolutionary loop. PLL (Pseudo-Log-Likelihood) computed by a surrogate LM is the only signal used to identify suspicious tokens and drive fitness. The actual watermar",
+  "meaning_verification": "Cosine similarity via sentence-transformers enforces a feasibility floor of 0.75 and a soft target band of [0.80, 0.92]; candidates outside the band are penalised in the multi-objective ranking but not hard-rejected unle",
+  "fact_preservation": "none — no byte-exact locking of numbers, citations, or named entities. The catastrophe rewrite prompt contains a natural-language instruction to preserve factua",
+  "mechanism": "Multi-objective genetic/evolutionary algorithm targeting LLM watermark removal. Two core files implement the attack: ga_brief_v2.py (article continuation) and ga_qa.py (QA). Each generation: (1) batch_find_suspicious_words_v2 identifies the top-8 lowest Pseudo-Log-Likelihood (PLL) tokens — treated as likely watermark-carrying positions — and constructs a guided-mutation prompt instructing the LLM "
+ },
+ {
+  "name": "igotyabingo/wmstealing",
+  "stars": 0,
+  "category": "adversarial-perturbation",
+  "detector_in_loop": "no — the KGW watermark detector (WatermarkDetector / detect_wm_KGW) is called once per sample after generation to record the p-value for evaluation metrics. It does not gate rewriting or trigger additional passes.",
+  "meaning_verification": "none — no cosine similarity, NLI entailment, or semantic-role checks. A GPT-based quality prompt (scoring style, consistency, and accuracy 1-10 for spoofing; 1-100 quality for scrubbing) is run post-hoc for metric report",
+  "fact_preservation": "none — the GPT evaluation prompt includes an \"Accuracy\" criterion that penalizes invented facts, but this is purely a post-hoc measurement; there is no byte-exa",
+  "mechanism": "Implements two published watermark-stealing baseline attacks against KGW-style token-distribution watermarks: JSV (Jovanovic et al., ICML 2024) and DeMark (Chen et al., arXiv 2410.13808). Both attacks have scrubbing and spoofing modes. For JSV scrubbing: uses DIPPER paraphraser (dipper-paraphraser-xxl) as a surrogate, guided by a SpoofedProcessor logits hook set to spoofer_strength=-10, which supp"
+ },
+ {
+  "name": "JunchuanYu/AuthorMist",
+  "stars": 0,
+  "category": "fine-tuned-model",
+  "detector_in_loop": "yes — but only during training, not inference. Commercial detector APIs serve as the RL reward signal during GRPO fine-tuning. At inference time the trained model runs once with no re-scoring loop.",
+  "meaning_verification": "E5-small embedding cosine similarity between original and paraphrased text; paper reports median above 0.94 across all models. No NLI gate, no hedge or numeral checks. KL divergence penalty in GRPO implicitly constrains ",
+  "fact_preservation": "none — the paper does not describe any mechanism for preserving numerals, citations, or specific factual content. Semantic similarity via embedding cosine is th",
+  "mechanism": "The paper (arXiv 2503.08716, Isaac David & Arthur Gervais, March 2025) describes GRPO (Group Relative Policy Optimization) RL fine-tuning of a 3B-parameter language model. Six separate detector-specific models are trained, each using a single commercial detector API (GPTZero, Winston.ai, Sapling, Originality.ai, HelloSimpleAI, or OpenAI RoBERTa) as the reward signal: R(X,Y) = 1 - (1/k)∑P_dj(Y), i."
+ },
+ {
+  "name": "kinit-sk/mdok",
+  "stars": 0,
+  "category": "fine-tuned-model",
+  "detector_in_loop": "no — mdok IS the detector; it contains no rewrite loop, no evasion feedback, and no scoring of its own output. It is purely a classifier that other tools would need to evade.",
+  "meaning_verification": "none — it is a classifier, not a rewriter; meaning preservation is irrelevant to its function.",
+  "fact_preservation": "none",
+  "mechanism": "QLoRA fine-tuning of Qwen3-14B (binary) and Qwen3-4B (multiclass) for sequence classification as an AI-text detector. The core robustness trick lives in get_data() in mdok-binary.py: during training, 10% of machine-generated texts are passed through a homoglyph() function that applies 5% per-character Unicode confusable substitutions plus 5% per-position zero-width-joiner (U+200D) insertions, teac"
+ },
+ {
+  "name": "pan25-generative-ai-authorship-verification",
+  "stars": 0,
+  "category": "research-code",
+  "detector_in_loop": "no — DIPPER paraphrase and prompt obfuscation are one-shot steps used to build the benchmark dataset; the baselines are scored after the fact by the evaluator. No feedback loop exists anywhere in the pipeline.",
+  "meaning_verification": "none — neither the DIPPER paraphrase path nor any prompt-obfuscation template applies a semantic gate. Meaning degradation from Yoda grammar or random-word injection is deliberate and unmonitored.",
+  "fact_preservation": "none — no numeral retention, citation preservation, or factual consistency check anywhere in the codebase.",
+  "mechanism": "This is a competition evaluation framework, not a humanizer. It has two distinct sides. Detection side: three baselines — (1) Binoculars, a perplexity/cross-perplexity ratio detector using LLaMA-3.1-8B as observer and LLaMA-3.1-8B-Instruct as performer (binoculars.py, _get_score_impl computes -(log_ppl / x_ppl)); (2) PPMd compression-based cosine similarity between the two halves of a text (ppmd.p"
+ }
+]
