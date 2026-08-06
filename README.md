@@ -479,6 +479,29 @@ UNTELL_LITE_NO_TORCH=1 untell-score --tier lite -q "instant, stdlib-only, no net
 
 ---
 
+## Config file
+
+`untell humanize` reads its defaults from `untell.yaml` in the working directory, or
+`[tool.untell]` in `pyproject.toml`. A command-line flag always wins over the file, and an
+`UNTELL_*` environment variable sits between the two.
+
+```yaml
+# untell.yaml
+tier: full
+rewriter: composite
+style: academic
+threshold: 0.30
+max_iters: 5
+best_of: 3
+```
+
+Those six keys are what is wired. A value outside the allowed set for its flag is refused with a
+message rather than silently becoming a broken default — `tier: fulll` would otherwise reach the
+scorer as an empty detector list. `untell score`, the REST server and the MCP server keep their
+own defaults and do **not** read this file.
+
+---
+
 ## Passing the real commercial detectors
 
 Local detectors are *proxies*. To optimize for the checkers people actually care about — **GPTZero,
