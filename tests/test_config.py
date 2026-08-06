@@ -183,3 +183,54 @@ def test_a_convertible_env_value_stays_quiet(monkeypatch, caplog):
     with caplog.at_level(logging.WARNING, logger="untell.config"):
         assert config.get("max_iters", 5) == 7
     assert caplog.text == ""
+
+
+class TestTheLoopCliActuallyReadsTheConfig:
+    """This module documented a lookup order and participated in none of it.
+
+    It was imported by no CLI, no server and no library path, so writing an untell.yaml changed
+    nothing. `untell humanize` now takes its defaults from here.
+    """
+
+    def _parse(self, argv):
+        from untell.scripts.run import build_parser
+
+        return build_parser().parse_args(argv)
+
+    def test_shipped_defaults_when_nothing_is_configured(self, monkeypatch):
+        for var in ("UNTELL_TIER", "UNTELL_THRESHOLD", "UNTELL_MAX_ITERS", "UNTELL_REWRITER",
+                    "UNTELL_STYLE", "UNTELL_BEST_OF"):
+            monkeypatch.delenv(var, raising=False)
+        args = self._parse(["x"])
+        assert (args.tier, args.rewriter, args.best_of, args.style) == ("full", "composite", 3, None)
+
+    def test_env_moves_the_default(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_TIER", "lite")
+        monkeypatch.setenv("UNTELL_BEST_OF", "5")
+        args = self._parse(["x"])
+        assert args.tier == "lite"
+        assert args.best_of == 5
+
+    def test_a_command_line_flag_still_wins(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_TIER", "lite")
+        assert self._parse(["x", "--tier", "heavy"]).tier == "heavy"
+
+    def test_a_configured_value_outside_the_choices_is_refused(self, monkeypatch, capsys):
+        """`choices=` validates what the user TYPES, never the `default=`.
+
+        Without this check a `tier: fulll` would sail past argparse and surface much later as an
+        empty detector list — a config typo turning into a mystery at scoring time.
+        """
+        monkeypatch.setenv("UNTELL_TIER", "fulll")
+        args = self._parse(["x"])
+        assert args.tier == "full"
+        assert "fulll" in capsys.readouterr().err
+
+    def test_a_broken_config_does_not_stop_the_cli(self, monkeypatch):
+        from untell import config
+
+        def boom(*a, **k):
+            raise RuntimeError("config on fire")
+
+        monkeypatch.setattr(config, "get", boom)
+        assert self._parse(["x"]).tier == "full"

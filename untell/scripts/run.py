@@ -554,6 +554,61 @@ def _render(result: dict) -> str:
     return "\n".join(lines)
 
 
+_REWRITER_NAMES = [
+    "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
+    "max", "t5_paraphrase", "mt_pivot", "base",
+]
+
+# Shipped defaults, in one place so the config layer has something to fall back TO and the tests
+# have something to compare against.
+_CLI_DEFAULTS: dict[str, object] = {
+    "tier": "full",
+    "threshold": DEFAULT_THRESHOLD,
+    "max_iters": 5,
+    "rewriter": "composite",
+    "style": None,
+    "best_of": 3,
+}
+
+_CHOICES = {
+    "tier": ["lite", "full", "heavy", "commercial"],
+    "rewriter": _REWRITER_NAMES,
+    "style": list(STYLE_NAMES),
+}
+
+
+def _config_defaults() -> dict[str, object]:
+    """Shipped defaults, overridden by untell.yaml / [tool.untell] / UNTELL_* env.
+
+    A value from a config file is NOT trusted into argparse unchecked. `add_argument(choices=...)`
+    validates what the user types on the command line, not the `default=`, so a stray
+    `tier: fulll` would sail past argparse and surface later as an empty detector list — a config
+    typo turning into a mystery at scoring time. Anything outside the allowed set is dropped with a
+    warning naming both the value and the alternatives, exactly as untell.config does for a file it
+    cannot parse.
+    """
+    from untell import config
+
+    out = dict(_CLI_DEFAULTS)
+    for key, shipped in _CLI_DEFAULTS.items():
+        try:
+            value = config.get(key, shipped)
+        except Exception:  # a broken config must never stop the CLI from starting
+            continue
+        if value is None or value == shipped:
+            continue
+        allowed = _CHOICES.get(key)
+        if allowed is not None and value not in allowed:
+            print(
+                f"[untell] ignoring configured {key}={value!r}: not one of {', '.join(allowed)}. "
+                f"Using {shipped!r}.",
+                file=sys.stderr,
+            )
+            continue
+        out[key] = value
+    return out
+
+
 def build_parser() -> argparse.ArgumentParser:
     """The `untell humanize` argument parser.
 
@@ -561,12 +616,19 @@ def build_parser() -> argparse.ArgumentParser:
     and MCP surfaces restate several of them (tier, rewriter, best_of) and had drifted to weaker
     values; the tests now compare against this parser rather than against a hand-copied constant.
     """
+    # Defaults come from untell.config, which layers UNTELL_* env vars over untell.yaml /
+    # pyproject.toml [tool.untell] over the value passed here. Until this call existed the module
+    # documented that lookup order and participated in none of it: it was imported by no CLI, no
+    # server and no library path, so writing an untell.yaml changed nothing at all. A CLI flag
+    # still wins, because argparse only falls back to `default` when the flag is absent.
+    cfg = _config_defaults()
+
     parser = argparse.ArgumentParser(prog="untell-loop", description="Run the headless untell loop.")
     parser.add_argument("text", nargs="?", help="text to untell (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
-    parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
-    parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
-    parser.add_argument("--max-iters", type=int, default=5)
+    parser.add_argument("--tier", default=cfg["tier"], choices=["lite", "full", "heavy", "commercial"])
+    parser.add_argument("--threshold", "-t", type=float, default=cfg["threshold"])
+    parser.add_argument("--max-iters", type=int, default=cfg["max_iters"])
     parser.add_argument(
         "--max-rounds",
         type=int,
@@ -602,11 +664,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--rewriter",
-        choices=[
-            "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
-            "max", "t5_paraphrase", "mt_pivot", "base",
-        ],
-        default="composite",
+        choices=_REWRITER_NAMES,
+        default=cfg["rewriter"],
         help="'composite' = structural + surgical chained ($0, best free path, DEFAULT); "
         "'ensemble'/'max' = run composite + mt_pivot + neural and keep the per-input detector-lowest "
         "(strongest free path; >= any single method; needs .[full] for the neural/mt members); "
@@ -626,6 +685,7 @@ def build_parser() -> argparse.ArgumentParser:
         # Derived from the single source in rewriter/prompts.py rather than restated — this list
         # was one of three hand-maintained copies, and the MCP one had already drifted.
         choices=STYLE_NAMES,
+        default=cfg["style"],
         help=f"bias the rewrite toward a writing style/voice ({len(STYLE_NAMES)} modes)",
     )
     parser.add_argument(
@@ -638,7 +698,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--best-of",
         type=int,
-        default=3,
+        default=cfg["best_of"],
         help="draw N candidate rewrites per iteration and keep the best valid one (sentinels intact + "
         "meaning gate, lowest detector max, fewest AI tells within the noise band). Default 3 — the "
         "free rewriters are randomized, so extra draws are pure upside: measured, best-of-3 selection "

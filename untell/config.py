@@ -23,11 +23,15 @@ Or in ``pyproject.toml``::
     rewriter = "composite"
     style = "academic"
 
-⚠️ **Nothing currently consults this module.** It is imported by no CLI, no server and no library
-path, and appears in no documentation — so writing an ``untell.yaml`` today changes nothing. The
-loader itself works and is tested; what is missing is the wiring at each entry point. Said here
-explicitly because a module that documents a lookup order it does not participate in reads exactly
-like a feature, and the docstring above would otherwise be a promise the package does not keep.
+**Wired into ``untell humanize`` only** (``untell/scripts/run.py``, ``_config_defaults``): tier,
+threshold, max_iters, rewriter, style, best_of. Those keys are read here, validated against the
+same choice lists argparse enforces, and used as the parser's defaults, so a command-line flag
+still wins over a config file.
+
+Everything else in the example above — ``api_key``, ``api_host``, ``api_port`` — is still read by
+nobody. The REST and MCP surfaces have their own defaults and do NOT consult this module, so a
+``tier:`` set here changes the CLI and not those. Said explicitly because a module that documents
+a lookup order it only partly participates in reads exactly like a finished feature.
 """
 
 from __future__ import annotations
