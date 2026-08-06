@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from untell.scripts.run import main, untell_text
 
 AI = (
