@@ -207,3 +207,51 @@ def test_untell_tool_exposes_polish():
     src = inspect.getsource(mcp)
     assert "polish: bool = False" in src
     assert "polish=polish" in src, "declared but not forwarded to untell_text"
+
+
+class TestMcpRejectsOutOfRangeArguments:
+    """The third surface. The CLI rejects these at parse time and REST answers 422.
+
+    `tier="fulll"` matches no tier, falls back to the lite heuristic, and answers with a
+    lite-shaped result and no sign the requested tier was never honoured. `threshold=50` produces
+    a verdict in which nothing can ever be flagged, because detector scores live in [0, 1].
+
+    Tested against `_bad_args` directly: it lives at module level precisely so these do not skip
+    on a machine without the optional `mcp` package, which is most of them.
+    """
+
+    def test_unknown_tier_is_named(self):
+        from untell.mcp_server import _bad_args
+
+        out = _bad_args(tier=("fulll", "tier"))
+        assert "unknown tier" in out["error"]
+        assert "lite, full, heavy, commercial" in out["error"]
+
+    def test_threshold_above_one_is_refused(self):
+        from untell.mcp_server import _bad_args
+
+        assert "outside [0, 1]" in _bad_args(threshold=(50, "probability"))["error"]
+        assert "outside [0, 1]" in _bad_args(margin=(-0.1, "probability"))["error"]
+
+    def test_counts_are_bounded(self):
+        from untell.mcp_server import _bad_args
+
+        assert "outside 1..100" in _bad_args(max_iters=(0, "count"))["error"]
+        assert "outside 1..100" in _bad_args(best_of=(10 ** 6, "count"))["error"]
+
+    def test_valid_arguments_pass_through(self):
+        from untell.mcp_server import _bad_args
+
+        assert _bad_args(
+            tier=("lite", "tier"), threshold=(0.3, "probability"), best_of=(3, "count")
+        ) is None
+
+    def test_the_tools_actually_call_it(self):
+        """A validator nothing invokes is decoration."""
+        pytest.importorskip("mcp")
+        from untell.mcp_server import _server
+
+        tools = {t.name: t.fn for t in _server()._tool_manager.list_tools()}
+        text = "Furthermore, the system leverages robust methodologies to optimize outcomes."
+        assert "unknown tier" in tools["score"](text, tier="fulll").get("error", "")
+        assert "outside 1..100" in tools["untell"](text, tier="lite", max_iters=0).get("error", "")

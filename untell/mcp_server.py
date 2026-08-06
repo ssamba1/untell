@@ -19,6 +19,37 @@ _FREE_REWRITERS = frozenset(
 )
 
 
+_TIERS = ("lite", "full", "heavy", "commercial")
+
+
+# Module level, not nested in `_server`, so the checks are testable without the optional `mcp`
+# package installed — otherwise every test of them skips on exactly the machines that run the
+# suite, which is the same as not having them.
+def _bad_args(**checks) -> dict | None:
+    """Reject an out-of-range argument the way this file already rejects an unknown style.
+
+    These parameters were plain `str`/`float`/`int` annotations, so an MCP client could send
+    anything: `tier="fulll"` matches no tier and falls back to the lite heuristic, answering
+    with a lite-shaped result and no sign the requested tier was never honoured, and
+    `threshold=50` produces a verdict in which nothing can ever be flagged, because the scores
+    it is compared against live in [0, 1]. The CLI rejects both at parse time and the REST
+    surface now answers 422; this was the third surface, still silent.
+
+    Named-and-returned rather than raised, matching the unknown-style and unknown-rewriter
+    errors above — an MCP client reads the dict.
+    """
+    for name, (value, kind) in checks.items():
+        if kind == "tier" and value not in _TIERS:
+            return {"error": f"unknown tier {value!r} — valid: {', '.join(_TIERS)}. "
+                             "It would have silently fallen back to the lite heuristic."}
+        if kind == "probability" and not (0.0 <= float(value) <= 1.0):
+            return {"error": f"{name}={value!r} is outside [0, 1]. Detector scores are "
+                             "probabilities, so a value above 1 can never be reached."}
+        if kind == "count" and not (1 <= int(value) <= 100):
+            return {"error": f"{name}={value!r} is outside 1..100."}
+    return None
+
+
 def _server():
     from mcp.server.fastmcp import FastMCP
 
@@ -42,12 +73,14 @@ def _server():
         `threshold` was missing entirely here, so `flagged` was frozen at the 0.30 default and a
         caller could not ask the question they meant to ask.
         """
-        return score_text(text, tier=tier, threshold=threshold)
+        bad = _bad_args(tier=(tier, "tier"), threshold=(threshold, "probability"))
+        return bad or score_text(text, tier=tier, threshold=threshold)
 
     @server.tool()
     def sentences(text: str, tier: str = "lite", threshold: float = 0.30) -> dict:
         """Per-sentence AI scores and the list of sentences flagged as AI (the worst ~third)."""
-        return score_sentences(text, tier=tier, threshold=threshold)
+        bad = _bad_args(tier=(tier, "tier"), threshold=(threshold, "probability"))
+        return bad or score_sentences(text, tier=tier, threshold=threshold)
 
     @server.tool()
     def tells(text: str, include_matches: bool = False) -> dict:
@@ -119,6 +152,16 @@ def _server():
                 free rewriter measurably moves.
         """
         from untell.rewriter import get_rewriter
+
+        bad = _bad_args(
+            tier=(tier, "tier"),
+            threshold=(threshold, "probability"),
+            margin=(margin, "probability"),
+            max_iters=(max_iters, "count"),
+            best_of=(best_of, "count"),
+        )
+        if bad:
+            return bad
 
         # An unknown style is looked up in the STYLES dict, missed, and silently ignored — so a
         # caller asked for a voice and got a rewrite with no style applied and nothing saying so.
