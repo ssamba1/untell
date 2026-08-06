@@ -599,3 +599,25 @@ class TestOpenersAreNotPrependedOntoOrdinaryCapitals:
         out = self._vary(sentences)
         if out[0] != sentences[0]:
             assert "researchers found" in out[0], out[0]
+
+
+def test_an_opener_is_not_stacked_on_a_sentence_that_already_has_one():
+    """Found by scanning 30 real HC3 rewrites for mechanical breakage:
+
+        "Put simply, also, wine is often shipped and stored at specific temperatures ..."
+
+    `_LEADING_MARKER_RE` exists to catch exactly this and was consulted only by the clause-merge
+    path, so the opener transform stacked a second connective onto the first.
+    """
+    import random
+
+    from untell.rewriter.structural import _vary_openers
+
+    random.seed(1)
+    already = [
+        "Also, wine is shipped at specific temperatures to preserve its quality.",
+        "However, salt is often the most effective option available today.",
+        "Moreover, the system leverages robust methodologies across sectors.",
+        "But the results did not replicate in the second cohort at all.",
+    ]
+    assert _vary_openers(already, rate=1.0) == already

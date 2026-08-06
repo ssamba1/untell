@@ -557,7 +557,11 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     context = " ".join(sentences)
     out: list[str] = []
     for s in sentences:
-        if random.random() < rate:
+        # A sentence that ALREADY opens with a discourse marker gets no second one. Stacking them
+        # produced "Put simply, also, wine is often shipped at specific temperatures" — found by
+        # scanning 30 real HC3 rewrites for mechanical breakage. `_LEADING_MARKER_RE` exists for
+        # exactly this and was consulted only by the clause-merge path.
+        if random.random() < rate and not _LEADING_MARKER_RE.match(s):
             first_word = s.split()[0] if s.split() else ""
             if first_word and first_word[0].isupper() and first_word not in subjects:
                 # Prepend the opener, and lowercase what follows ONLY when that word is safe to
