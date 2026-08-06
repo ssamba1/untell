@@ -188,8 +188,14 @@ def untell_text(
         # string so the sentinel-integrity check has something to check, but the masked string is not
         # the artifact anyone is judged on, and the two do not score the same. MEASURED on 14 real
         # human paragraphs (full tier): masking moved max P(AI) by up to 0.1535, mean 0.0317, and
-        # flipped the verdict across the 0.30 threshold on 2 of them — systematically in the
+        # flipped the verdict across the 0.30 threshold on 2 of them — there, systematically in the
         # OPTIMISTIC direction, because a sentinel is blander than the citation or number it replaced.
+        #
+        # That direction is a property of THAT corpus, not of masking. Re-measured on the loop's own
+        # output — 12 HC3 answers, composite rewriter, full tier, of which 5 lock anything at all —
+        # the gap is smaller and mostly the other way: mean +0.0056, worst +0.0144, and optimistic on
+        # only 1 of 5. So the size of the misreport is not the argument for this fix; that the loop
+        # was RANKING on a quantity nobody is judged on is.
         #
         # Restoring HERE rather than re-scoring the winner at the end also fixes candidate SELECTION,
         # not just the reported number: `min(near, ...)` and the adoption guard both compare masked
