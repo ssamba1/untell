@@ -754,9 +754,15 @@ class TestPostDescribesTheDeliveredText:
         res = self._run(text)
         assert res["post"]["max"] == score_text(res["final"], tier="lite")["max"]
 
-    def test_a_pass_that_does_not_survive_restore_is_downgraded(self, monkeypatch):
+    def test_a_pass_that_only_the_masked_text_earns_is_never_reported(self, monkeypatch):
         """The masked text passes, the restored text does not — the verdict must follow the text
-        the user gets, not the intermediate the loop happened to optimise."""
+        the user gets, not the intermediate the loop happened to optimise.
+
+        The loop scores restored text throughout, so a masked-only pass is not detected late and
+        downgraded: it is never observed in the first place. The stop reason here is therefore
+        whatever the loop's own progress logic decides ("stalled" for the deterministic surgical
+        rewriter) — anything except a claimed pass.
+        """
         import untell.scripts.run as run_mod
 
         real = run_mod.score_text
@@ -778,8 +784,11 @@ class TestPostDescribesTheDeliveredText:
             monkeypatch.setattr(run_mod, "score_text", real)
 
         assert res["post"]["max"] == 0.90
-        assert res["stopped"] == "passed_unconfirmed"
+        assert res["stopped"] != "passed"
         assert res["flagged"] is True
+        # Every score the loop took was of restored text: the stub returns 0.10 for anything
+        # carrying a sentinel, so a single masked score anywhere would have shown up as a pass.
+        assert calls["n"] >= 1
 
     def test_the_invariant_holds_for_text_with_nothing_locked_too(self):
         """No locked spans means the restored text IS the masked text, so the re-score is skipped —
@@ -796,3 +805,35 @@ class TestPostDescribesTheDeliveredText:
 
         res = self._run(plain)
         assert res["post"]["max"] == score_text(res["final"], tier="lite")["max"]
+
+
+def test_browser_mode_does_not_pay_an_extra_web_request_to_re_score(monkeypatch):
+    """The loop must not re-score its own winner.
+
+    `score()` measures RESTORED text, so `best_score` already describes `final` and a re-score at the
+    end would be byte-identical. It would not be free: in browser mode every score is a live web
+    request at ~10s and rate-limited, so a redundant one is the most expensive no-op in the tool.
+    """
+    import untell.browser_check as bc
+    import untell.scripts.run as run_mod
+
+    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: _GoodRW())
+    calls = {"n": 0}
+
+    class _Chk:
+        def available(self):
+            return True
+
+        def check(self, text, **k):
+            calls["n"] += 1
+            return 0.05  # passes immediately, so the loop stops after one check
+
+    monkeypatch.setattr(bc, "get_browser_checker", lambda name: _Chk())
+    res = untell_text(AI, tier="lite", browser="zerogpt", threshold=0.30, max_iters=1,
+                      sim_bar=0.0, veto_contradictions=False)
+    # AI locks "Smith (2020)" and "47%", so `mapping` is non-empty — the guard being tested.
+    from untell.scripts.preserve import SENTINEL_RE, lock
+
+    assert SENTINEL_RE.findall(lock(AI)[0]), "probe text locks nothing — the guard is untested"
+    assert res["stopped"] == "passed"
+    assert calls["n"] == 1, f"expected exactly one web check, got {calls['n']}"
