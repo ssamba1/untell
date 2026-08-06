@@ -316,3 +316,40 @@ class TestTheResultNamesItsRewriter:
             best_of=1, max_iters=1, corpus="probe",
         )
         assert "rewriter=composite" in _render(r).splitlines()[0]
+
+
+def test_an_unknown_name_is_diagnosed_as_a_name_even_without_the_datasets_extra():
+    """The name is checked before the dependency.
+
+    A typo used to be reported as "the `datasets` package is not installed" on any machine without
+    the eval extra — true, but it names the wrong problem. The user installs the extra, runs the
+    same command, and fails again for the reason nobody mentioned. The known set is a constant, so
+    the diagnosis is available either way.
+    """
+    from eval.datasets import DatasetUnavailable, load_samples
+
+    with pytest.raises(DatasetUnavailable, match="no such dataset"):
+        load_samples("not-a-dataset", 2, strict=True)
+
+
+def test_a_known_name_still_reports_the_missing_dependency():
+    """The name check must not swallow the real diagnosis for a name that IS known."""
+    import builtins
+
+    import pytest as _pytest
+
+    from eval.datasets import DatasetUnavailable, load_samples
+
+    real_import = builtins.__import__
+
+    def no_datasets(name, *a, **k):
+        if name == "datasets":
+            raise ImportError("no datasets here")
+        return real_import(name, *a, **k)
+
+    builtins.__import__ = no_datasets
+    try:
+        with _pytest.raises(DatasetUnavailable, match="not installed"):
+            load_samples("hc3", 2, strict=True)
+    finally:
+        builtins.__import__ = real_import

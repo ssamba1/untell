@@ -131,6 +131,10 @@ class DatasetUnavailable(RuntimeError):
     """A named dataset could not be loaded and ``strict=True`` refused to substitute another."""
 
 
+# Every name with a loader below, "builtin"/"sample" aside (they return before any of this).
+_KNOWN_DATASETS = frozenset({"hc3", "raid", "mage"})
+
+
 def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> list[str]:
     """Return up to ``n`` AI-generated text samples for the named dataset.
 
@@ -156,6 +160,13 @@ def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> 
             )
         logger.warning("dataset %r unavailable (%s); using builtin samples.", dataset, reason)
         return _builtin(n)
+
+    # Check the NAME before the dependency. A typo reported as "the `datasets` package is not
+    # installed" sends the user to `pip install .[eval]`, after which the same command fails again
+    # for the reason nobody named. The known set is a constant here, so it costs nothing to say so
+    # first, and the diagnosis stays the same whether or not the extra is installed.
+    if name not in _KNOWN_DATASETS:
+        return _fallback(f"no such dataset — known: {', '.join(sorted(_KNOWN_DATASETS))}, builtin")
 
     try:
         from datasets import load_dataset
