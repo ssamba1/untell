@@ -621,3 +621,39 @@ def test_an_opener_is_not_stacked_on_a_sentence_that_already_has_one():
         "But the results did not replicate in the second cohort at all.",
     ]
     assert _vary_openers(already, rate=1.0) == already
+
+
+class TestASplitNeverStrandsAConjunction:
+    """A midpoint split can land immediately AFTER a conjunction. MEASURED on real HC3 text:
+
+        "... they had no representation in the British government and. Were being dictated to ..."
+
+    The existing guard only asked what the SECOND half starts with, so this shape — the same broken
+    clause, one word to the left — walked straight past it.
+    """
+
+    def test_the_conjunction_moves_to_the_second_half(self):
+        from untell.rewriter.structural import _split_long_sentences
+
+        long = (
+            "They also resented the fact that they had no representation in the British government "
+            "and were being dictated to by officials who had no understanding of their needs or "
+            "their most basic everyday concerns"
+        )
+        for _ in range(20):  # the transform is stochastic; the invariant is not
+            for out in _split_long_sentences([long], rate=1.0):
+                for piece in out.split("."):
+                    tail = piece.strip().split()
+                    if tail:
+                        assert tail[-1].lower() not in {"and", "or", "but", "while", "because"}, out
+
+    def test_mid_phrase_words_are_not_treated_as_split_blockers(self):
+        """"that", "which", "who", "if", "for" and "so" open clauses AND sit mid-phrase constantly.
+
+        Including them made things worse: shifting the split point off "that" in "On top of that,
+        the clause ..." produced "On top of, that." — a comma inserted where the phrase had none.
+        Widened once, measured on 160 rewrites, reverted.
+        """
+        from untell.rewriter.structural import _SPLIT_CONJUNCTIONS
+
+        assert not _SPLIT_CONJUNCTIONS & {"that", "which", "who", "if", "for", "so"}

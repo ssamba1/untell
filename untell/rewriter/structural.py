@@ -321,6 +321,19 @@ def _terminated(s: str) -> str:
     return s if not s or _TERMINATED_RE.search(s) else s + "."
 
 
+# Words that cannot end a sentence and cannot be severed from the clause they introduce. Used on
+# BOTH sides of a split point: the second half starting with one means the split broke a clause,
+# and the first half ending with one means the same break, detected one word too late.
+# Deliberately NOT "that", "which", "who", "if", "for" or "so". Those open clauses too, but they
+# also sit mid-phrase constantly, and treating them as split-blockers made things worse rather than
+# better: shifting the split point off "that" in "On top of that, the clause ..." produced
+# "On top of, that." — a comma inserted where the phrase had none. Widened once, measured, reverted.
+_SPLIT_CONJUNCTIONS = frozenset(
+    {"and", "or", "but", "nor", "yet", "while", "because", "since", "although", "though",
+     "whereas", "unless", "until"}
+)
+
+
 def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float = 0.25) -> list[str]:
     """Split sentences longer than ``max_words`` words at a suitable break point."""
     out: list[str] = []
@@ -338,12 +351,25 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                         break
                 if split_at != mid:
                     break
+            # A midpoint split can land immediately AFTER a conjunction, stranding it at the end of
+            # the first half. MEASURED on real HC3 text (composite rewriter):
+            #   "... they had no representation in the British government and. Were being dictated
+            #    to by officials ..."
+            # The guard below only looked at what the SECOND half starts with, so this shape — the
+            # same broken clause, one word to the left — walked straight past it. Hand the
+            # conjunction to the second half, where that guard then joins the two with a comma
+            # instead of ending a sentence on "and".
+            while split_at > 1 and words[split_at - 1].rstrip(",").lower() in _SPLIT_CONJUNCTIONS:
+                split_at -= 1
             first = " ".join(words[:split_at]).rstrip(",")
             second = " ".join(words[split_at:])
+            if not first.strip():
+                out.append(s)
+                continue
             if second:
                 second = second[0].lower() + second[1:] if second[0].isupper() else second
                 # Check if we broke mid-clause (second starts with a conjunction)
-                if second.split()[0].lower() in ("and", "or", "but", "while", "because", "since", "although", "though"):
+                if second.split()[0].rstrip(",").lower() in _SPLIT_CONJUNCTIONS:
                     out.append(_terminated(f"{first}, {second}"))
                 else:
                     out.append(f"{_terminated(first)} {_terminated(second[0].upper() + second[1:])}")
