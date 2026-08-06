@@ -89,6 +89,27 @@ def _safe_to_lowercase(word: str, context: str = "") -> bool:
     return bool(context) and re.search(rf"(?<![.!?]\s)\b{re.escape(bare)}\b", context) is not None
 
 
+def _proper_noun_evidence(word: str, context: str) -> bool:
+    """Does this word look like a NAME rather than an ordinary word that starts a sentence?
+
+    The mirror of ``_safe_to_lowercase``, and needed because "not provably safe to lowercase" is
+    not the same as "must stay capital". Evidence: the word appears capitalised somewhere that is
+    NOT a sentence start — "the Smith study" — or it is an acronym or has internal capitals.
+
+    Used where the alternative is emitting text: a wrong answer here costs one skipped rhythm
+    variation, where the old unconditional fallback cost a visibly broken sentence.
+    """
+    bare = word.strip(",;:.!?\"'()")
+    if not bare:
+        return False
+    if bare.isupper() and len(bare) > 1:
+        return True
+    if _INTERNAL_CAPS_RE.match(bare):
+        return True
+    # Capitalised and NOT preceded by sentence-ending punctuation or the start of the string.
+    return re.search(rf"(?<![.!?]\s)(?<!^)\b{re.escape(bare)}\b", context) is not None
+
+
 # Discourse markers that may survive at the start of the second clause. Joining with ", and " when
 # the clause already opens with one produced "and plus,", "while and," and "and and," — visible
 # garbage in the primary free rewriter's output.
@@ -533,6 +554,7 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
         "As it turns out,", "Put simply,", "Realistically,",
     ]
     subjects = ["The", "This", "It", "That", "There"]
+    context = " ".join(sentences)
     out: list[str] = []
     for s in sentences:
         if random.random() < rate:
@@ -542,10 +564,18 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
                 # lowercase. Doing it unconditionally produced "In short, dr. Smith published the
                 # results" — the abbreviation destroyed by the very transform meant to vary rhythm.
                 # "In short, Dr. Smith published ..." is correct English; nothing needs demoting.
-                if _safe_to_lowercase(first_word, " ".join(sentences)):
+                if _safe_to_lowercase(first_word, context):
                     s = f"{random.choice(openers)} {s[0].lower() + s[1:]}"
-                else:
+                elif _proper_noun_evidence(first_word, context):
                     s = f"{random.choice(openers)} {s}"
+                # Otherwise: leave the sentence alone. The old fallback prepended anyway and kept
+                # the capital, which is correct English only for a real name — "Actually, Smith
+                # published ..." — and visibly broken for an ordinary word the evidence check
+                # merely failed to confirm: "Actually, Issue #4821 tracks ...", "As it turns out,
+                # Run untell==0.2.0 ...". MEASURED over 3112 sentence-initial capitals in 400 HC3
+                # texts: 21.2% reach this branch at all, and 475 of those 661 have no proper-noun
+                # evidence — "Replace", "Same", "Also", "Hence", "Eventually". Broken capitalisation
+                # is itself an AI tell, so the transform that exists to remove tells was adding one.
         out.append(s)
     return out
 

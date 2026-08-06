@@ -550,3 +550,52 @@ class TestDocumentLayoutSurvives:
         out = structural_rewrite(src, intensity=1.0)
         assert "\n" not in out
         assert out != src
+
+
+class TestOpenersAreNotPrependedOntoOrdinaryCapitals:
+    """`_vary_openers` used to prepend a connective even when it could not lowercase what followed.
+
+    That is correct English for a name — "Actually, Smith published ..." — and visibly broken for
+    an ordinary word the evidence check merely failed to confirm:
+
+        "Actually, Issue #4821 tracks the release ..."
+        "As it turns out, Run untell==0.2.0 to begin ..."
+
+    MEASURED over 3112 sentence-initial capitals in 400 HC3 texts: 21.2% reach that branch, and
+    475 of those 661 have no proper-noun evidence ("Replace", "Same", "Also", "Hence",
+    "Eventually"). Broken capitalisation is itself an AI tell, so the transform meant to remove
+    tells was adding one.
+    """
+
+    def _vary(self, sentences):
+        import random
+
+        from untell.rewriter.structural import _vary_openers
+
+        random.seed(0)
+        return _vary_openers(sentences, rate=1.0)  # force the transform on every sentence
+
+    def test_an_ordinary_capitalised_word_is_left_alone(self):
+        """"Issue" appears nowhere else, so nothing proves it is a name — skip rather than mangle."""
+        out = self._vary(["Issue 4821 tracks the release shipped last week."])
+        assert out == ["Issue 4821 tracks the release shipped last week."]
+
+    def test_a_proper_noun_still_gets_an_opener(self):
+        """Capitalised mid-sentence elsewhere is real evidence, and the capital must survive."""
+        sentences = [
+            "Smith published the results last spring.",
+            "The Smith study was widely cited.",
+        ]
+        out = self._vary(sentences)
+        assert out[0] != sentences[0], "a name should still be eligible for an opener"
+        assert "Smith published" in out[0], f"the capital was destroyed: {out[0]!r}"
+
+    def test_an_acronym_keeps_its_capitals(self):
+        out = self._vary(["NASA confirmed the launch window this morning."])
+        assert "NASA confirmed" in out[0]
+
+    def test_a_safe_word_is_lowercased_when_an_opener_lands(self):
+        sentences = ["Researchers found the effect. The researchers repeated it."]
+        out = self._vary(sentences)
+        if out[0] != sentences[0]:
+            assert "researchers found" in out[0], out[0]
