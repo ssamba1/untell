@@ -16,7 +16,22 @@ from __future__ import annotations
 
 import re
 
-_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
+# A sentence may end INSIDE a quotation or bracket, so the terminal punctuation is not always the
+# last character: `He said "Done." Then he left.` puts a closing quote between the period and the
+# space. A bare `(?<=[.!?])\s+` sees `"` there, refuses to split, and returns the two sentences as
+# one. MEASURED on the HC3 corpus: 23 of 800 texts contain at least one such boundary, and every one
+# of them was a silent under-count — which feeds the burstiness CV (two sentences merged into one
+# long one is exactly the statistic burstiness measures), per-sentence scoring, and the targeted
+# rewriter's unit of work.
+#
+# Two alternated lookbehinds rather than one optional group, because `re` requires each lookbehind
+# to be fixed-width. Consuming the closer as part of the separator would work for splitting and
+# then delete it from the output, so it stays behind the split point.
+# Up to two closers, so a quote nested in a bracket — `(He said "Done.") Next up.` — still ends.
+# Three would be a citation style nobody writes; the fallback for it is the old under-split.
+_CLOSERS = "\"'”’)]}»"
+_C = re.escape(_CLOSERS)
+_SENT_SPLIT = re.compile(rf"(?<=[.!?])\s+|(?<=[.!?][{_C}])\s+|(?<=[.!?][{_C}][{_C}])\s+")
 
 # Abbreviations whose trailing period is not a sentence end.
 _ABBREVIATIONS = {

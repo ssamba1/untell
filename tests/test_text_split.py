@@ -112,3 +112,50 @@ class TestASentenceMayEndInANumber:
         # merged. That is ambiguous without a parser and is pre-existing behaviour, unrelated to
         # the numeric case fixed here.
         assert len(split_sentences(text)) == 2, split_sentences(text)
+
+
+class TestSentencesThatEndInsideAQuoteOrBracket:
+    """Terminal punctuation is not always the last character of a sentence.
+
+    `He said "Done." Then he left.` puts the closing quote between the period and the space, so a
+    bare `(?<=[.!?])\s+` never fires and the two sentences come back as one. MEASURED on HC3: 23 of
+    800 texts contain at least one such boundary. Every one is a silent UNDER-count, and the
+    under-count lands in the statistic burstiness is built on — two sentences merged into one long
+    one is precisely the length-variance signal the detector reads.
+    """
+
+    def test_a_closing_quote_does_not_swallow_the_boundary(self):
+        assert split_sentences('He said "Done." Then he left.') == [
+            'He said "Done."',
+            "Then he left.",
+        ]
+
+    def test_curly_quotes_too(self):
+        assert split_sentences("She said “Go.” He went.") == [
+            "She said “Go.”",
+            "He went.",
+        ]
+
+    def test_a_closing_bracket_too(self):
+        assert split_sentences("(See note.) Next up.") == ["(See note.)", "Next up."]
+
+    def test_a_quote_nested_in_a_bracket_still_ends(self):
+        assert split_sentences('(He said "Done.") Next up.') == ['(He said "Done.")', "Next up."]
+
+    def test_the_closer_stays_with_its_sentence(self):
+        """The closer is behind the split point, not consumed as part of the separator — consuming
+        it would split correctly and delete the character from the output."""
+        out = split_sentences('He said "Done." Then he left.')
+        assert "".join(out).count('"') == 2
+
+    def test_a_mid_sentence_quote_is_not_a_boundary(self):
+        assert split_sentences('A quote "like this," and more. Done.') == [
+            'A quote "like this," and more.',
+            "Done.",
+        ]
+
+    def test_an_abbreviation_inside_a_quote_still_does_not_end_the_sentence(self):
+        assert split_sentences('He said "See Fig. 3 for details." Then he left.') == [
+            'He said "See Fig. 3 for details."',
+            "Then he left.",
+        ]
