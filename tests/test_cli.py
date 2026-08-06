@@ -161,7 +161,20 @@ class TestDemoUsesTheStrongestAvailableTier:
         out = self._run_demo(monkeypatch, capsys, no_torch=True)
         assert "(tier: lite)" in out
 
-    def test_full_tier_is_used_when_torch_is_installed(self, monkeypatch, capsys):
+    def test_full_tier_is_used_when_the_full_stack_actually_loads(self, monkeypatch, capsys):
+        """`import torch` succeeding is not the same as the full tier working.
+
+        A torch/NumPy ABI mismatch imports fine and then fails every model load, so `score_text`
+        resolves to lite and says so in its `warning`. Keying the skip on the import made this test
+        fail on such installs while `untell score` was correctly reporting the degradation — the
+        tool honest, the test wrong. Ask the scorer what tier it actually reached.
+        """
         pytest.importorskip("torch")
+        from untell.scripts.score import score_text
+
+        probe = score_text("Furthermore, the system leverages robust methodologies.", tier="full")
+        if probe.get("tier") != "full":
+            pytest.skip(f"full tier does not load here: {probe.get('warning', 'no detectors')}")
+
         out = self._run_demo(monkeypatch, capsys, no_torch=False)
         assert "(tier: full)" in out, out[-400:]
