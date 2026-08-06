@@ -90,6 +90,40 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # enough that every other pattern let them through untouched.
     ("code", re.compile(r"```.*?```|~~~.*?~~~", re.DOTALL)),
     ("code", re.compile(r"`[^`\n]{1,200}`")),
+    # LaTeX. MEASURED before these entries existed: `lock()` protected **0 spans** of
+    #     r"As \citep{smith2020} shows, see Eq.~\ref{eq:main}. We use $E = mc^2$ and \cite{jones}."
+    # so every citation key, cross-reference and equation in a .tex file was free for the rewriter
+    # to "improve". This is the repo's headline promise — citations survive — failing outright for
+    # the one audience most likely to need it, and it is the single most-named gap in the competitor
+    # census (41 of 111 profiles that beat us at something named the academic/LaTeX domain).
+    #
+    # Ordered BEFORE the citation and number rules below: those would otherwise take the numeric
+    # core of \ref{tab:1} or the year inside \citep{smith2020} and leave the command shell
+    # rewritable, which this file's own ordering comment calls the worst possible outcome.
+    #
+    # Math first — $...$ and \[...\] can contain braces and commands, so a command pattern would
+    # otherwise carve them up.
+    ("latex_math", re.compile(r"\$\$.+?\$\$|\\\[.+?\\\]|\$[^$\n]{1,200}\$", re.DOTALL)),
+    ("latex_env", re.compile(r"\\begin\{(\w+\*?)\}.*?\\end\{\1\}", re.DOTALL)),
+    # Citation/reference/label commands, including the natbib and cleveref families, with their
+    # optional argument: \citep[see][p. 4]{smith2020}
+    (
+        "latex_cite",
+        re.compile(
+            r"\\(?:cite[a-zA-Z]*|[Cc]ref|[Aa]utoref|nameref|ref|eqref|label|bibitem|nocite)"
+            r"(?:\[[^\]]*\])*\{[^}]*\}"
+        ),
+    ),
+    # Any other command that takes a braced argument (\textbf{...}, \includegraphics{...}), and
+    # bare commands (\LaTeX, \newline). The braced form is listed first so the argument is kept
+    # inside the lock rather than left loose.
+    #
+    # The lookbehind keeps these off WINDOWS PATHS, which are full of backslash-letter sequences.
+    # Without it, `C:\Users\me\file.txt` matched three "commands" — \Users, \me, \file — and the
+    # path rule below, which exists precisely to lock such a path as ONE span, would find its
+    # target already carved up. A real LaTeX command never follows a letter, digit or colon.
+    ("latex_cmd", re.compile(r"(?<![A-Za-z0-9:])\\[a-zA-Z@]+(?:\[[^\]]*\])*\{[^{}]{0,300}\}")),
+    ("latex_cmd", re.compile(r"(?<![A-Za-z0-9:])\\[a-zA-Z@]+\*?")),
     # Bracketed numeric citations: [12], [3, 4], [1-5]
     ("citation", re.compile(r"\[\d+(?:\s*[-,]\s*\d+)*\]")),
     # Parenthetical author-year (APA/MLA): (Smith, 2020), (Smith & Lee, 2019, p. 4)

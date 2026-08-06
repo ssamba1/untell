@@ -537,3 +537,77 @@ class TestSoftwareIdentifiersLockWhole:
         ):
             for pat in pats:
                 assert not pat.search(text), f"{pat.pattern} matched {text!r}"
+
+
+class TestLaTeXIsLocked:
+    """MEASURED before these patterns existed: lock() protected ZERO spans of
+
+        r"As \citep{smith2020} shows, see Eq.~\ref{eq:main}. We use $E = mc^2$ and \cite{jones}."
+
+    so every citation key, cross-reference and equation in a .tex file was free for the rewriter.
+    That is this repo's headline promise — citations survive — failing outright for the audience
+    most likely to need it, and the most-named gap in docs/humanizer-census.md (41 of the 111
+    profiles that beat untell at something named the academic/LaTeX domain).
+    """
+
+    @pytest.mark.parametrize(
+        "fragment",
+        [
+            r"\citep{smith2020}",
+            r"\citet[p.~4]{lee1999}",
+            r"\cite{jones}",
+            r"\ref{eq:main}",
+            r"\eqref{eq:2}",
+            r"\Cref{sec:intro}",
+            r"\autoref{fig:1}",
+            r"\label{tab:results}",
+            r"\bibitem{knuth1984}",
+            r"\textbf{bold}",
+            r"\includegraphics{plot.pdf}",
+        ],
+        ids=lambda f: f.strip("\\").split("{")[0][:14],
+    )
+    def test_command_is_locked_whole(self, fragment):
+        text = f"Prose before {fragment} and prose after."
+        masked, mapping = lock(text)
+        assert fragment not in masked, f"{fragment} left rewritable"
+        assert restore(masked, mapping) == text
+        # The WHOLE command must be one sentinel — a partial lock leaves the shell rewritable,
+        # which this module's ordering comment calls the worst possible outcome.
+        assert fragment in mapping.values(), f"{fragment} was split across sentinels"
+
+    @pytest.mark.parametrize(
+        "math",
+        [r"$E = mc^2$", r"$$\int_0^1 x\,dx$$", r"\[a^2 + b^2 = c^2\]"],
+        ids=["inline", "display", "bracket"],
+    )
+    def test_math_is_locked_whole(self, math):
+        text = f"We know {math} holds here."
+        masked, mapping = lock(text)
+        assert math not in masked
+        assert math in mapping.values()
+        assert restore(masked, mapping) == text
+
+    def test_environment_is_locked_whole(self):
+        env = r"\begin{equation}\label{eq:x} y = \alpha x \end{equation}"
+        text = f"It follows: {env} as shown."
+        masked, mapping = lock(text)
+        assert env in mapping.values(), "the environment was not locked as one span"
+        assert restore(masked, mapping) == text
+
+    def test_a_realistic_paragraph_round_trips(self):
+        text = (
+            r"As \citep{smith2020} shows, see Eq.~\ref{eq:main} and Table~\ref{tab:1}. "
+            r"We use $E = mc^2$ with \cite{jones}, and \textbf{47} samples."
+        )
+        masked, mapping = lock(text)
+        assert restore(masked, mapping) == text
+        for leak in (r"\citep", r"\ref{", r"\cite{", "$E"):
+            assert leak not in masked, f"{leak} leaked into the rewritable text"
+
+    def test_prose_without_latex_is_unaffected_by_these_patterns(self):
+        """The LaTeX rules must not fire on ordinary prose containing a backslash-free sentence."""
+        text = "Plain prose, a citation (Smith, 2020), and the number 47."
+        masked, mapping = lock(text)
+        assert restore(masked, mapping) == text
+        assert not any(k.startswith("latex") for k in mapping)
