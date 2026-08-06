@@ -10,13 +10,31 @@ out of scope. We surveyed the open field ourselves (GitHub topics, papers-with-c
 
 ## The decisive finding
 
-Our own deep-research survey of the open-source humanizer field (`humanizer-research-report.md`) concluded, verbatim:
+Our own deep-research survey of the field ([`humanizer-research-report.md`](../humanizer-research-report.md))
+ranks the exploitable gaps. Its **first** one, quoted exactly:
 
-> "There is **no** open-source repo that combines (a) a real evasion approach validated against
-> multiple live detectors, (b) a quality/meaning-preservation verifier, (c) an iterative
-> detector-feedback loop at inference time, and (d) a user-installable package."
+> "**Closed-loop detector-feedback rewriting.** No shipping product does iterative rewrite against
+> live detector scores. Evidence says it's the single strongest lever (−88% TPR, training-free,
+> quality-preserving). **Build this first.**"
 
-**This repo is the one that has all four** — the only one filling that gap:
+The four criteria below are **our own framing** of what it would take to close that gap end to end —
+they are not a quotation, and a previous version of this page presented them as one:
+
+> **Correction, 2026-08-05.** This section used to open with a block quote attributed *"verbatim"*
+> to that report: *"There is no open-source repo that combines (a) a real evasion approach validated
+> against multiple live detectors, (b) a quality/meaning-preservation verifier, (c) an iterative
+> detector-feedback loop at inference time, and (d) a user-installable package."* **That sentence
+> does not appear in the report — in any commit, ever.** It was checked against every version in git
+> history; the distinctive phrases ("open-source repo", "user-installable", "quality/meaning") return
+> zero hits in all of them, and the only two files in this repo containing them are this page and the
+> README, both citing it as a quote. The report's actual claim is the one now quoted above, and it is
+> **narrower and different**: it is about *shipping products*, not open-source repos.
+>
+> The report had also been deleted from the repo on 2026-07-28 (incidentally, in a commit about
+> rewriter work), so all four citations of it — including a live hyperlink in the README — pointed at
+> a missing file. It is restored.
+
+Against our own four criteria, this repo has all four:
 
 > **Re-surveyed 2026-08-05. The four-part conjunction still holds; one of its parts, read alone,
 > does not.** A fresh sweep (624 distinct queries, 1124 candidate repos) turned up a genuine

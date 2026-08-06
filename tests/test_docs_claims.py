@@ -232,3 +232,47 @@ def test_why_best_records_the_detector_loop_counterexample():
     )
     assert "chengez" in doc, "the detector-loop counterexample is not recorded"
     assert "87.88" in doc, "the counterexample's published bypass number is not stated"
+
+
+def test_quotes_attributed_to_the_research_report_actually_appear_in_it():
+    """A quotation marked "verbatim" must be findable in the cited source.
+
+    MEASURED FAILURE this guards: README.md and docs/why-best-open-repo.md both attributed a
+    four-part sentence to humanizer-research-report.md "verbatim" -- "There is no open-source repo
+    that combines (a)... (d) a user-installable package." That sentence appears in NO version of
+    the report in git history. The report's actual first-ranked gap is narrower and about shipping
+    PRODUCTS, not open-source repos. The report had also been deleted from the repo, so all four
+    citations pointed at a missing file.
+    """
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    report = root / "humanizer-research-report.md"
+    assert report.exists(), "humanizer-research-report.md is cited by README and docs but missing"
+    body = report.read_text(encoding="utf-8")
+
+    # The phrases that made the fabricated quote distinctive. If any reappears in a doc, it must
+    # also be in the report.
+    for phrase in ("user-installable", "quality/meaning-preservation verifier"):
+        for doc in ("README.md", "docs/why-best-open-repo.md"):
+            text = (root / doc).read_text(encoding="utf-8")
+            if phrase in text and "not a quotation" not in text and "does not appear" not in text:
+                assert phrase in body, (
+                    f"{doc} uses {phrase!r} without flagging it as our own framing, but the "
+                    f"cited report does not contain it"
+                )
+
+    # The claim we DO quote must be real.
+    assert "No shipping product does iterative rewrite against live detector scores" in body
+
+
+def test_the_research_report_link_resolves():
+    """It is hyperlinked from the README; a 404 on the evidence for the headline claim is worse
+    than having no link."""
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    for target in re.findall(r"\]\((humanizer-research-report\.md)\)", readme):
+        assert (root / target).exists(), f"README links to {target}, which does not exist"

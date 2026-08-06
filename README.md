@@ -413,13 +413,19 @@ need their API in the loop — paid). The tool says so, everywhere.
 ## 🏆 Why this is the best open-source AI humanizer
 
 We surveyed **~110 open-source humanizer repos** (GitHub topics, papers-with-code, the research SOTA) as part
-of building this project. That deep-research survey ([`humanizer-research-report.md`](humanizer-research-report.md)) concluded, verbatim:
+of building this project, and re-swept the field on 2026-08-05 across 624 queries turning up 1124 candidate
+repos. That deep-research survey ([`humanizer-research-report.md`](humanizer-research-report.md)) ranks the
+exploitable gaps; its first one, quoted exactly:
 
-> *"There is **no** open-source repo that combines (a) a real evasion approach validated against multiple
-> live detectors, (b) a quality/meaning-preservation verifier, (c) an iterative detector-feedback loop at
-> inference time, and (d) a user-installable package."*
+> *"**Closed-loop detector-feedback rewriting.** No shipping product does iterative rewrite against live
+> detector scores. Evidence says it's the single strongest lever (−88% TPR, training-free,
+> quality-preserving). **Build this first.**"*
 
-**This is the repo that has all four.** Here it is against the strongest open competitors:
+**This is the repo that closed that loop.** The four criteria in the table below are *our own* framing of
+what closing it end-to-end requires — not a quotation. An earlier version of this section attributed a
+four-part sentence to the report *"verbatim"*; [that sentence is not in it, in any commit](docs/why-best-open-repo.md),
+and the report's real claim is about *shipping products* rather than open-source repos. Here it is against
+the strongest open competitors:
 
 | Capability | **untell (this repo)** | lynote (1.4k★) | patina (196★) | StealthHumanizer (58★) | harshaneel (51★) | Aboudjem (97★) | StealthRL (research) |
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
