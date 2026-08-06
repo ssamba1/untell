@@ -469,3 +469,47 @@ class TestAConnectiveThatCannotOpenASentence:
 
         out = substitute_once("However, salt is cheap.", "However", "on the other hand")
         assert out == "On the other hand, salt is cheap."
+
+
+class TestACoordinatorDoesNotInheritTheCommaItReplaced:
+    """A conjunctive adverb is punctuated on both sides; a coordinator on neither.
+
+    MEASURED: "moreover" -> "and" turned a blockquote reading "Moreover, stakeholders must navigate
+    the landscape" into "And, stakeholders must navigate the landscape". Same class as the
+    "however -> though" refusal above, but the opposite remedy: deleting one character makes this
+    one correct, so the comma is consumed rather than the swap thrown away.
+
+    After the fix, 0 of 240 real HC3 texts carry an introduced coordinator-plus-comma, with the
+    substitution count unchanged at 38 — the swaps are kept, only the punctuation moves.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "word", "expected"),
+        [
+            ("Moreover, the budget is approved.", "Moreover", "And the budget is approved."),
+            ("The plan is set. Moreover, the budget holds.",
+             "Moreover", "The plan is set. And the budget holds."),
+            ("It is cheap; moreover, it is fast.", "moreover", "It is cheap; and it is fast."),
+            ("The costs rose, moreover, the delays grew.",
+             "moreover", "The costs rose, and the delays grew."),
+            ("> Moreover, stakeholders must act.", "Moreover", "> And stakeholders must act."),
+        ],
+    )
+    def test_the_comma_is_consumed_at_every_clause_boundary(self, text, word, expected):
+        from untell.attacks.word_importance import substitute_once
+
+        assert substitute_once(text, word, "and") == expected
+
+    def test_a_replacement_that_wants_the_comma_keeps_it(self):
+        """"Also" is a conjunctive adverb like the word it replaces — it takes the comma."""
+        from untell.attacks.word_importance import substitute_once
+
+        assert substitute_once("Moreover, the budget is approved.", "Moreover", "also") == (
+            "Also, the budget is approved."
+        )
+
+    def test_idiomatic_openers_are_not_in_the_set(self):
+        """"So," and "Yet," open sentences perfectly well and must not be stripped."""
+        from untell.attacks.word_importance import _COMMA_LESS_OPENERS
+
+        assert not _COMMA_LESS_OPENERS & {"so", "yet", "also", "plus", "still"}

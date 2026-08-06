@@ -437,6 +437,13 @@ def agree_article(article: str, following: str) -> str:
 # conjunctive adverbs: "..., though" is idiomatic; "Though, ..." is not.
 _NOT_SENTENCE_INITIAL = frozenset({"though", "although", "whereas", "while"})
 
+# Bare coordinators. These CAN open a sentence — but without the comma the conjunctive adverb they
+# replaced required. MEASURED: "moreover" -> "and" turned "Moreover, stakeholders must navigate the
+# landscape" into "And, stakeholders must navigate the landscape". Unlike the set above these are
+# worth keeping, because deleting one character makes them correct — so the comma is consumed
+# rather than the swap refused. "So," and "Yet," are idiomatic openers and are deliberately absent.
+_COMMA_LESS_OPENERS = frozenset({"and", "but", "or", "nor"})
+
 
 def substitute_once(text: str, word: str, replacement: str) -> str:
     """Replace the first whole-word ``word`` with ``replacement``, keeping the seam grammatical.
@@ -481,6 +488,22 @@ def substitute_once(text: str, word: str, replacement: str) -> str:
         opening = opener.search(text)
         if first is not None and opening is not None and opening.end() > first.start() >= opening.start():
             return text
+
+    if replacement.lower() in _COMMA_LESS_OPENERS:
+        opener = re.compile(
+            # After a semicolon too: "it is cheap; moreover, it is fast" -> "; and, it is fast"
+            # carries the same stray comma, for the same reason — a coordinator does not take one.
+            # ...and after a comma: "the costs rose, moreover, the delays grew" would otherwise
+            # become "rose, and, the delays grew". Every one of these positions is the same shape —
+            # a clause boundary the conjunctive adverb punctuated on BOTH sides, where the
+            # coordinator replacing it takes punctuation on neither.
+            rf"((?:^|(?<=[.!?;:,])\s+|(?<=\n)|(?<=^> )|(?<=\n> ))\b){re.escape(word)}\b\s*,\s*",
+            re.MULTILINE | re.IGNORECASE,
+        )
+        match = opener.search(text)
+        if match:
+            rep_here = _match_case(word, replacement)
+            return text[: match.start()] + match.group(1) + rep_here + " " + text[match.end():]
 
     rep = _match_case(word, replacement)
     tail = replacement.rsplit(" ", 1)[-1].lower() if " " in replacement else ""
