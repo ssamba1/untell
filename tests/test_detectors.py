@@ -585,3 +585,45 @@ class TestLiteTierFalsePositiveRateIsDocumented:
             "human text now scores far below the 0.30 threshold on the stdlib path — the "
             "documented 65% false-positive rate may no longer hold; re-measure it"
         )
+
+
+class TestDegenerateRepetitionIsNotHuman:
+    """`"test " * 100` scored 0.000 on the stdlib path — the single most human number available.
+
+    Nothing in the heuristic noticed repetition: burstiness needs two sentences and the
+    common-word ratio of a repeated rare word is near zero, so the most machine-like text there is
+    came out cleaner than any real writing. It matters twice: a user pasting repetitive text is
+    told it is perfectly human, and the LOOP maximises against this score, so a rewriter that
+    degenerates into repetition would win outright.
+
+    The floor is type-token ratio 0.25, chosen from a gap with nothing in it — MEASURED over 800
+    HC3 texts, the lowest real ratio is 0.440; the degenerate cases sit at 0.010-0.050.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "test " * 100,
+            "yes no " * 50,
+            "This is a test. " * 20,
+            " ".join(["alpha beta gamma delta epsilon"] * 20),
+        ],
+    )
+    def test_repetition_reads_as_machine(self, text):
+        from untell.detectors.perplexity_burstiness import lite_score
+
+        assert lite_score(text) == 1.0
+
+    def test_the_term_is_silent_on_every_real_hc3_text(self):
+        """A new term in a detector with published FPR/TPR has to be provably inert on real text."""
+        from untell.detectors.perplexity_burstiness import _repetition_signal
+        from eval.datasets import _BUILTIN
+
+        for text in _BUILTIN:
+            assert _repetition_signal(text) == 0.0
+
+    def test_short_text_gets_no_repetition_verdict(self):
+        """Under 40 words the ratio is unstable, so the term says nothing rather than guessing."""
+        from untell.detectors.perplexity_burstiness import _repetition_signal
+
+        assert _repetition_signal("test test test test test test test test") == 0.0

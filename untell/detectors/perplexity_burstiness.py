@@ -188,6 +188,41 @@ def _single_sentence_signal(text: str, fallback: float, cap: float = _RATIO_CEIL
     return max(tell_signal, min(fallback, cap))
 
 
+_TTR_WINDOW = 100
+_TTR_FLOOR = 0.25       # below this, no real text was observed; see the measurement below
+_TTR_SATURATION = 0.10  # at or below this, report 1.0
+
+
+def _repetition_signal(text: str) -> float:
+    """Degenerate repetition, as P(AI) in [0, 1]. 0.0 for anything that reads like real text.
+
+    Nothing else in this heuristic notices repetition, so ``"test " * 100`` scored 0.000 — the
+    single most human number the tool can return — for the most machine-like text there is. Two
+    ways that hurts: a user pasting repetitive text is told it is perfectly human, and the LOOP
+    maximises against this score, so a rewriter that collapses into repetition wins outright.
+
+    Type-token ratio over the first 100 words. MEASURED on 800 HC3 texts (400 human, 400 AI):
+
+        human   min 0.450   p1 0.512   median 0.710
+        ai      min 0.440   p1 0.450   median 0.620
+        degenerate cases: 0.010 - 0.050
+
+    The populations do not come near each other, so a floor at 0.25 is not a tuned parameter —
+    it is the empty middle of a gap spanning 0.05 to 0.44. On those 800 texts this term is
+    exactly 0.0 and the detector's measured FPR/TPR are unchanged by construction.
+
+    Applies to the stdlib path only, which is where the gap was measured. The GPT-2 path scores
+    repetition through surprisal, where it is already the easiest thing in the world to spot.
+    """
+    words = [w.lower() for w in _WORD.findall(text)][:_TTR_WINDOW]
+    if len(words) < 40:  # too short for the ratio to be stable; say nothing rather than guess
+        return 0.0
+    ttr = len(set(words)) / len(words)
+    if ttr >= _TTR_FLOOR:
+        return 0.0
+    return clamp01((_TTR_FLOOR - ttr) / (_TTR_FLOOR - _TTR_SATURATION))
+
+
 def lite_score(text: str) -> float | None:
     """Deterministic, stdlib-only P(AI) heuristic in [0, 1], or None when the text is too short.
 
@@ -198,6 +233,7 @@ def lite_score(text: str) -> float | None:
         return None
     if len(_WORD.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
         return None
+    rep = _repetition_signal(text)
     sents = _sentences(text)
     nonempty = [s for s in sents if _WORD.findall(s)]
     common = _common_ratio(text)          # ~0.3 (varied) .. ~0.6 (formulaic)
@@ -215,7 +251,7 @@ def lite_score(text: str) -> float | None:
     # how human it read. Genuinely leaning on the common-word signal — using it alone, at full
     # weight, when burstiness carries no information — is what the comment always intended.
     if len(nonempty) < 2:
-        return clamp01(_single_sentence_signal(text, common_signal))
+        return clamp01(max(rep, _single_sentence_signal(text, common_signal)))
 
     burst = _burstiness(sents)        # ~0.0 (uniform) .. ~0.8+ (varied human prose)
     # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
@@ -223,7 +259,7 @@ def lite_score(text: str) -> float | None:
     burst_signal = clamp01((0.55 - burst) / 0.55)
 
     # Blend (burstiness weighted higher — it's the stronger of the two weak signals).
-    return clamp01(0.6 * burst_signal + 0.4 * common_signal)
+    return clamp01(max(rep, 0.6 * burst_signal + 0.4 * common_signal))
 
 
 class PerplexityBurstinessDetector:
