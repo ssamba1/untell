@@ -488,3 +488,52 @@ def test_restore_is_idempotent_and_a_literal_sentinel_is_neutralised():
     assert once == text  # round-trips despite the lookalike
     assert restore(once, mapping) == once  # idempotent
     assert mapping["⟦HZ0000⟧"] == "⟦HZ0000⟧"  # the lookalike maps to itself
+
+
+class TestSoftwareIdentifiersLockWhole:
+    r"""Version strings, dependency pins and file paths used to lock PARTIALLY.
+
+    This module's own ORDER comment calls a partial lock the worst possible outcome: a sentinel
+    appears, the span looks protected, and the rest stays mutable. MEASURED before the fix:
+
+        "v1.2.3-rc4"            -> "⟦HZ0000⟧-rc4"              pre-release tag rewritable
+        "untell==0.2.0"         -> "untell==⟦HZ0000⟧.0"        locked "0.2", left ".0"
+        "numpy>=1.24"           -> "numpy⟦HZ0000⟧"             package name outside the lock
+        "1.2.3+build.99"        -> "⟦HZ0000⟧.3+build.⟦HZ0001⟧" build metadata severed
+        r"C:\Users\me\file.txt" -> r"C:\Users\me\⟦HZ0000⟧"   directory rewritable
+
+    A version that reads as 1.2.3 and installs as something else is wrong in the way nobody catches
+    by eye, and these are exactly the spans a reader copies verbatim.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "span"),
+        [
+            ("Release v1.2.3-rc4 shipped.", "v1.2.3-rc4"),
+            ("Tag v2.0.0-beta.1 landed.", "v2.0.0-beta.1"),
+            ("Install untell==0.2.0 now.", "untell==0.2.0"),
+            ("Requires numpy>=1.24 today.", "numpy>=1.24"),
+            ("Version 1.2.3+build.99 exists.", "1.2.3+build.99"),
+            (r"Path C:\Users\me\file.txt matters.", r"C:\Users\me\file.txt"),
+            ("See src/main.py for details.", "src/main.py"),
+        ],
+    )
+    def test_the_whole_span_is_one_sentinel(self, text, span):
+        masked, mapping = lock(text)
+        assert list(mapping.values()) == [span], f"partial lock: {masked!r}"
+        assert restore(masked, mapping) == text
+
+    def test_ordinary_prose_is_not_swept_up(self):
+        """Both patterns require structure prose does not have — a separator AND an extension for a
+        path, an operator or a suffix for a version. MEASURED: they fire on 0 spans across the 800
+        HC3 texts (400 human, 400 AI), so no rewritable prose was pinned to buy this."""
+        import untell.scripts.preserve as preserve
+
+        pats = [p for label, p in preserve._PATTERNS if label in ("version", "path")]
+        for text in (
+            "It costs 1.5 million and/or more, either way.",
+            "He said 2020 was hard and 3.5 times worse than 2019.",
+            "The ratio was 3.5 to 1 in favour of the control group.",
+        ):
+            for pat in pats:
+                assert not pat.search(text), f"{pat.pattern} matched {text!r}"

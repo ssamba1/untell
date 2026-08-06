@@ -102,6 +102,36 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     ("quote", re.compile(r"[\"“][^\"”]{1,400}[\"”]")),
     # Email addresses — a fact a rewrite must never "tidy".
     ("email", re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")),
+    # Software identifiers: full version strings, dependency pins, and file paths. These MUST come
+    # before the number rules, which otherwise take the numeric core and leave the rest free — the
+    # partial lock this list's ORDER comment calls the worst possible outcome. MEASURED before this
+    # entry existed:
+    #   "v1.2.3-rc4"      -> "⟦HZ0000⟧-rc4"            (pre-release tag rewritable)
+    #   "untell==0.2.0"   -> "untell==⟦HZ0000⟧.0"      (locked "0.2", left ".0")
+    #   "numpy>=1.24"     -> "numpy⟦HZ0000⟧"           (the package name outside the lock)
+    #   "1.2.3+build.99"  -> "⟦HZ0000⟧.3+build.⟦HZ0001⟧" (two spans, build metadata severed)
+    #   r"C:\Users\me\file.txt" -> r"C:\Users\me\⟦HZ0000⟧" (the directory rewritable)
+    # A version that reads as "1.2.3" and installs as something else is wrong in the way nobody
+    # catches by eye, and these are the spans a reader copies verbatim.
+    (
+        "version",
+        re.compile(
+            # Dependency specifier with its package name: untell==0.2.0, numpy>=1.24, x ~= 2.1
+            r"\b[A-Za-z_][\w.-]*\s*(?:==|>=|<=|~=|!=|<|>)\s*\d[\w.*+-]*"
+            # Full version, with any pre-release or build metadata: v1.2.3-rc4, 1.2.3+build.99
+            r"|\bv?\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)+\b"
+        ),
+    ),
+    (
+        "path",
+        re.compile(
+            # Windows path with a drive letter, or any slash-separated path with a file extension.
+            # Requires a separator AND an extension, so ordinary prose ("and/or", "he said/she
+            # said") cannot match.
+            r"\b[A-Za-z]:\\[^\s\"']+"
+            r"|(?<![\w/])(?:\.{0,2}/)?(?:[\w.-]+/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,7}\b"
+        ),
+    ),
     # Significant numbers. Avoids locking bare single digits (a lone "5" stays rewritable; "5 days"
     # locks via its unit).
     #
