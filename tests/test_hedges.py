@@ -204,12 +204,20 @@ class TestHedgesCLI:
 
 
 def test_meaning_gate_rejects_strengthening_end_to_end():
-    from untell.scripts.entailment import meaning_preserved
+    """As above: the veto is unconditional, the admit needs NLI.
+
+    "The drug might make you drowsy." is a register change, and token-overlap similarity scores it
+    0.364 — far under the strict fallback bar. Admitting exactly that kind of rewrite is what the
+    NLI path exists for, so without the model there is nothing here to assert.
+    """
+    from untell.scripts.entailment import available, meaning_preserved
     from untell.scripts.quality import similarity
 
     src, bad = "The drug may cause drowsiness.", "The drug causes drowsiness."
     good = "The drug might make you drowsy."
     assert not meaning_preserved(src, bad, similarity(src, bad), strict_sim_bar=0.76)
+    if not available():
+        pytest.skip("NLI model not installed; the gate is in similarity-only fallback")
     assert meaning_preserved(src, good, similarity(src, good), strict_sim_bar=0.76)
 
 
@@ -265,12 +273,23 @@ class TestCausalUpgrade:
         )
 
     def test_meaning_gate_rejects_causal_upgrade_end_to_end(self):
-        from untell.scripts.entailment import meaning_preserved
+        """The veto must fire in BOTH gate modes; only the admit half needs NLI.
+
+        Without the NLI model the gate falls back to similarity alone against the strict bar, and
+        the faithful rewrite measures 0.714 against a bar of 0.76 — so it is refused too. That is
+        the documented conservative fallback (see DEFAULT_ENTAILMENT_FLOOR in entailment.py: the
+        faithful and inverted populations overlap, so no bar separates them), not a regression.
+        Asserting the admit unconditionally made this test fail on every default install, which is
+        the majority of them.
+        """
+        from untell.scripts.entailment import available, meaning_preserved
         from untell.scripts.quality import similarity
 
         src = "Screen time is correlated with poor sleep."
         bad, good = "Screen time causes poor sleep.", "Screen time is linked to poor sleep."
         assert not meaning_preserved(src, bad, similarity(src, bad), strict_sim_bar=0.76)
+        if not available():
+            pytest.skip("NLI model not installed; the gate is in similarity-only fallback")
         assert meaning_preserved(src, good, similarity(src, good), strict_sim_bar=0.76)
 
 
