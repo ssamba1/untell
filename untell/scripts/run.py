@@ -172,6 +172,22 @@ def untell_text(
 
         text = scrub_hidden(text)
 
+    # A voice sample below the documented minimum yields a profile built on too few sentences to
+    # mean anything, and the tie-break then runs on noise. `untell humanize --voice-sample` warns
+    # about exactly this on stderr; REST and MCP take the sample as TEXT and said nothing, so the
+    # two network surfaces silently used a sample the CLI would have flagged. Reported in the
+    # result rather than printed, because that is the only channel those callers read.
+    voice_warning = None
+    if voice_sample:
+        from untell.scripts.voice import _WORD, MIN_SAMPLE_WORDS
+
+        n_words = len(_WORD.findall(voice_sample))
+        if n_words < MIN_SAMPLE_WORDS:
+            voice_warning = (
+                f"voice_sample is {n_words} words; below {MIN_SAMPLE_WORDS} its style profile is "
+                "not statistically meaningful, so the voice tie-break is close to arbitrary."
+            )
+
     masked, mapping = lock(text)
 
     sites = [s.strip() for s in browser.split(",")] if isinstance(browser, str) else (browser or [])
@@ -417,6 +433,7 @@ def untell_text(
             pass
 
     return {
+        **({"voice_warning": voice_warning} if voice_warning else {}),
         "final": final,
         "iterations": iters,
         # Draws attempted, INCLUDING candidates the sentinel/meaning/score guards threw away.
