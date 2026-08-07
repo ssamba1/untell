@@ -56,7 +56,12 @@ _SYN: dict[str, list[str]] = {
     "underscores": ["shows", "highlights"],
     "underscoring": ["showing", "highlighting"],
     "pivotal": ["key", "central", "critical"],
-    "crucial": ["key", "vital", "central", "critical"],
+    # No "vital" here, no "remarkable" under exceptional, no "pivotal" under groundbreaking:
+    # each of those is ITSELF in the ai_vocab catalogue (scripts/tells.py `_AI_VOCAB`), so the
+    # swap was a lateral move that left the tell in place and the detector still firing on the
+    # same span. Four entries carried such a substitute; test_every_substitute_is_not_itself_a_tell
+    # now rejects them at import time, because a dead-end substitute looks exactly like a live one.
+    "crucial": ["key", "central", "critical"],
     "vital": ["key", "essential", "needed"],
     "foster": ["build", "grow", "encourage"],
     "fostering": ["building", "growing", "encouraging"],
@@ -83,7 +88,7 @@ _SYN: dict[str, list[str]] = {
     "vibrant": ["lively", "bright", "active"],
     "bustling": ["busy", "lively", "humming"],
     "noteworthy": ["notable", "striking", "worth noting"],
-    "groundbreaking": ["pioneering", "pivotal", "landmark"],
+    "groundbreaking": ["pioneering", "landmark", "first-of-its-kind"],
     "transformative": ["game-changing", "powerful", "far-reaching"],
     "innovative": ["new", "fresh", "original"],
     "boasts": ["has", "offers", "can claim"],
@@ -116,10 +121,10 @@ _SYN: dict[str, list[str]] = {
     "underpin": ["support", "undergird", "back"],
     "compelling": ["powerful", "convincing", "strong"],
     "unprecedented": ["unmatched", "unheard-of", "record"],
-    "exceptional": ["outstanding", "remarkable", "top-notch"],
+    "exceptional": ["outstanding", "top-notch", "first-rate"],
     "remarkable": ["striking", "impressive", "notable"],
     "sophisticated": ["advanced", "refined", "polished"],
-    "invaluable": ["priceless", "indispensable", "vital"],
+    "invaluable": ["priceless", "indispensable", "worth a lot"],
     "unwavering": ["steady", "firm", "constant"],
     "scalable": ["expandable", "growable", "adaptable"],
     "bespoke": ["custom", "tailored", "made-to-order"],

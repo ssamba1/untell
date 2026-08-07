@@ -553,6 +553,32 @@ class TestBoilerplateSynonyms:
                 f"{domain} is domain content, not boilerplate — substituting it changes meaning"
             )
 
+    def test_every_substitute_is_not_itself_a_tell(self):
+        """A substitute drawn from the ai_vocab catalogue is a lateral move, not a fix.
+
+        MEASURED over 60 RAID+HC3 AI texts, two rewriter passes: 21 ai_vocab hits survived, and
+        NONE of them was a coverage hole — every surviving word had a synonym entry. Four entries
+        offered a substitute that is itself catalogued AI vocabulary:
+
+            crucial        -> vital          exceptional    -> remarkable
+            groundbreaking -> pivotal        invaluable     -> vital
+
+        Drawing one of those swapped the span for a different word the same detector fires on, so
+        the rewrite spent its similarity budget and moved nothing. `random.choice` picks uniformly,
+        so a 4-option entry with one bad option was a 25% dead draw.
+        """
+        from untell.attacks.word_importance import _SYN
+        from untell.scripts.tells import _AI_VOCAB_RE
+
+        offenders = {
+            key: [v for v in values if _AI_VOCAB_RE.search(v)] for key, values in _SYN.items()
+        }
+        offenders = {k: v for k, v in offenders.items() if v}
+        assert not offenders, (
+            f"these substitutes are themselves ai_vocab tells, so swapping to them changes "
+            f"nothing a detector can see: {offenders}"
+        )
+
     def test_substitutes_are_single_tokens_or_short_phrases(self):
         """Every key must be lookup-able as _WORD defines a token, and every value must read as
         natural English in place — this is the check that a dead entry looks exactly like a live
