@@ -440,7 +440,11 @@ class TestEvidenceStrength:
         """A typo'd key would silently classify nothing and read as an unmeasured category."""
         from untell.scripts.tells import _CATEGORIES, _EVIDENCE
 
-        computed = {"em_dash", "rule_of_three", "semicolon_crutch"}
+        # Categories computed rather than matched by a regex, so absent from _CATEGORIES.
+        computed = {
+            "em_dash", "rule_of_three", "semicolon_crutch",
+            "repeated_phrasing", "repeated_sentence_openers",
+        }
         known = {n for n, _ in _CATEGORIES} | computed
         assert set(_EVIDENCE) <= known, f"unknown: {set(_EVIDENCE) - known}"
 
@@ -453,3 +457,70 @@ class TestEvidenceStrength:
     def test_cli_shows_the_split(self, capsys):
         assert main(["Great question! I hope this helps. Let me know if you have questions."]) == 0
         assert "by evidence:" in capsys.readouterr().out
+
+
+class TestRepetitionTells:
+    """The two strongest categories in the catalogue, added 2026-08-07 after measuring the
+    techniques used across the 435-repo census against both corpora.
+
+        repeated_phrasing          AUROC 0.965 (RAID) / 0.921 (HC3)
+        repeated_sentence_openers  AUROC 0.901 (RAID) / 0.606 (HC3)
+
+    Adding them took the whole tells/100w metric from AUROC 0.617 -> 0.948 on RAID and
+    0.763 -> 0.888 on HC3. For scale, `ai_vocab` — the cluster this product category is named
+    after — measures ~0.57 on both.
+
+    Two candidates from the same sweep were REJECTED on measurement and must stay rejected:
+    passive voice (0.379 RAID / 0.689 HC3 — points opposite ways, the em_dash failure mode) and
+    contraction rate (0.514 / 0.486 — noise), despite both being widely used in the field.
+    """
+
+    REPETITIVE = (
+        "The system is designed to improve outcomes across teams. The system is designed to handle "
+        "scale without extra work. The system is designed to reduce cost for everyone involved. "
+        "The system is designed to be reliable under load. The system is designed to be simple to "
+        "operate day to day, and the system is designed to keep working when things go wrong."
+    )
+    VARIED = (
+        "I walked to the shop and it was shut. Typical. My neighbour said the owner had gone to a "
+        "funeral in Leeds, which nobody had bothered to mention to anyone else on the street. "
+        "So I went home and made toast instead. Reading the paper took until four, by which "
+        "point the rain had finally stopped and the afternoon looked almost salvageable again."
+    )
+
+    def test_repetitive_text_fires_both(self):
+        cats = score_tells(self.REPETITIVE)["by_category"]
+        assert cats.get("repeated_phrasing", 0) > 0
+        assert cats.get("repeated_sentence_openers", 0) > 0
+
+    def test_varied_human_prose_fires_neither(self):
+        cats = score_tells(self.VARIED)["by_category"]
+        assert "repeated_phrasing" not in cats
+        assert "repeated_sentence_openers" not in cats
+
+    def test_short_text_is_not_scored(self):
+        """A 40-word paragraph has ~38 trigrams, so one incidental repeat is 2.6% and would clear
+        a 5% bar on noise alone. Both tells abstain below 60 words rather than guess."""
+        short = "The cat sat. The cat ran. The cat slept. The cat ate. The cat left again now."
+        cats = score_tells(short)["by_category"]
+        assert "repeated_phrasing" not in cats
+        assert "repeated_sentence_openers" not in cats
+
+    def test_repeated_phrasing_is_the_strongest_evidence_tier(self):
+        """It out-measures every regex category on both corpora, so it must not be filed as weak."""
+        from untell.scripts.tells import _EVIDENCE
+
+        assert _EVIDENCE["repeated_phrasing"] == "strong"
+        assert _EVIDENCE["repeated_sentence_openers"] == "moderate"
+
+    def test_rejected_candidates_did_not_get_added(self):
+        """Guard against someone adding the two techniques the measurement rejected. Passive voice
+        inverts between corpora; contraction rate is noise. Both are common in the field, which is
+        exactly why the rejection needs a standing test rather than a comment."""
+        from untell.scripts.tells import _CATEGORIES, _EVIDENCE
+
+        names = {n for n, _ in _CATEGORIES} | set(_EVIDENCE)
+        for rejected in ("passive_voice", "contractions", "contraction_rate"):
+            assert rejected not in names, (
+                f"{rejected} was measured and rejected — see TestRepetitionTells"
+            )

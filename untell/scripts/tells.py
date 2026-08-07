@@ -29,6 +29,7 @@ import json
 import logging
 import re
 import sys
+from collections import Counter
 
 if __package__ in (None, ""):
     import sys as _sys
@@ -106,6 +107,11 @@ _EVIDENCE: dict[str, str] = {
     "hedge_stacking": "weak", "negated_contrast": "weak", "ai_vocab": "weak",
     "false_range": "weak", "em_dash": "weak", "inflated_copula": "weak",
     "markdown_artifact": "weak", "rule_of_three": "weak", "semicolon_crutch": "weak",
+    # Added 2026-08-07 and immediately the strongest entries here — AUROC 0.965/0.921 (RAID/HC3)
+    # for repeated_phrasing and 0.901/0.606 for repeated_sentence_openers, against 0.638-0.705 for
+    # the whole tells/100w metric. Both replicate across corpora, which is why they are "strong"
+    # where ai_vocab, measured twice at ~0.57, is "weak".
+    "repeated_phrasing": "strong", "repeated_sentence_openers": "moderate",
 }
 
 _WORD = re.compile(r"[A-Za-z0-9']+")
@@ -393,6 +399,59 @@ def _rule_of_three_runs(text: str) -> int:
     return runs
 
 
+# Minimum length for the two repetition tells below. A 40-word paragraph has ~38 trigrams, so a
+# single incidental repeat is 2.6% and would clear a 5% bar on noise alone.
+_MIN_WORDS_FOR_REPETITION = 60
+
+
+def _repeated_trigrams(text: str) -> int:
+    """Word 3-grams the text uses more than once, as a share of its tokens (percent, floored).
+
+    **The strongest single signal measured in this repo**, and it replicates across corpora:
+
+        AUROC 0.965 on 120 RAID pairs · 0.921 on 120 HC3 pairs
+
+    For scale, the whole tells/100w metric runs 0.638-0.705. AI prose reuses its own phrasing far
+    more than human prose does — mean 11.3% against 1.8% on RAID, 7.5% against 1.3% on HC3 — which
+    is a different failure from vocabulary: the model settles into a phrase and returns to it.
+
+    Threshold 5.0 chosen from the false-positive curve rather than by eye:
+
+        threshold   RAID FP / TP    HC3 FP / TP
+            4         9% / 88%        9% / 72%
+            5         3% / 80%        6% / 62%      <- shipped
+            6         2% / 71%        5% / 49%
+
+    Counted once per repeat, not once per gram, so a phrase used three times contributes two.
+    """
+    words = [w.lower() for w in _WORD.findall(text)]
+    if len(words) < _MIN_WORDS_FOR_REPETITION:
+        return 0
+    grams = Counter(tuple(words[i : i + 3]) for i in range(len(words) - 2))
+    repeats = sum(c - 1 for c in grams.values() if c > 1)
+    return repeats if (repeats / len(words) * 100) >= 5.0 else 0
+
+
+def _duplicate_sentence_starts(text: str) -> int:
+    """Sentences opening with a word already used to open another sentence, as a percent.
+
+    MEASURED — AUROC 0.901 on RAID, 0.606 on HC3. Weaker on HC3 because its answers are short and
+    a handful of sentences cannot repeat much; the direction is the same on both. Threshold 40%
+    keeps the false-positive rate at 8% (RAID) and 7% (HC3).
+
+    This is the mechanical form of a documented tell: machine prose cycles through a small set of
+    openers ("Additionally", "The", "This"), where a person varies them without trying.
+    """
+    words = _WORD.findall(text)
+    if len(words) < _MIN_WORDS_FOR_REPETITION:
+        return 0
+    starts = [_WORD.findall(s)[0].lower() for s in _sentences(text) if _WORD.findall(s)]
+    if len(starts) < 4:  # too few openers for a share to mean anything
+        return 0
+    dupes = len(starts) - len(set(starts))
+    return dupes if (dupes / len(starts) * 100) >= 40.0 else 0
+
+
 def _semicolon_crutch(text: str) -> int:
     """Semicolons used as a rhythm crutch (§6). One is ordinary; 2+ in a passage is the tell. Returns
     the count only when it crosses that bar, else 0 (so a single legitimate semicolon never flags)."""
@@ -586,6 +645,14 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
     semi = _semicolon_crutch(text)
     if semi:
         by_category["semicolon_crutch"] = semi
+    # The two repetition tells — the strongest signals in the catalogue, added 2026-08-07 after
+    # measuring candidate techniques used across the 435-repo census. See their docstrings.
+    rep = _repeated_trigrams(text)
+    if rep:
+        by_category["repeated_phrasing"] = rep
+    dup = _duplicate_sentence_starts(text)
+    if dup:
+        by_category["repeated_sentence_openers"] = dup
     by_category.update(_formatting_tells(text))
 
     total = sum(by_category.values())
