@@ -416,7 +416,13 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
             if b and merged_ok:
                 b = b.rstrip(".!?")
                 b = b[0].lower() + b[1:] if b and b[0].isupper() else b
-                connectors = [", and ", ", but ", ", while ", "; ", ", though "]
+                            # No "; " here. This runs AFTER the semicolon strip above, so a semicolon
+                # inserted as a connector survives into the output — and semicolon_crutch is a
+                # tell this repo catalogues at 2+ per passage. MEASURED once repetition-aware
+                # merging made merges more frequent: 40 AI texts through the loop went from 0
+                # semicolons in to 4 out, i.e. the rewriter was manufacturing a tell it also
+                # counts. The remaining connectors carry the same clause relation without it.
+                connectors = [", and ", ", but ", ", while ", ", though ", ", so "]
                 conn = random.choice(connectors)
                 out.append(f"{a}{conn}{b}.")
                 i += 2
@@ -691,6 +697,66 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
         _ARTICLE + r"([A-Za-z]+(?:-[A-Za-z]+)*)" + _DUP_PARTICLE_TAIL, _swap, masked
     )
     return re.sub(r"\x00(\d+)\x00", lambda m: spans[int(m.group(1))], masked)
+
+
+# Clichés the catalogue counts and nothing removed. MEASURED through the composite loop on 40 AI
+# texts, `cliche` went 6 -> 6: detected, never touched — and it is one of only two categories rated
+# STRONG evidence on both corpora (precision 0.90 on HC3, 0.93 on RAID). The 58 hits across 300 AI
+# texts concentrate almost entirely in a few forms:
+#
+#     16  it's important to note        8  it is important to note
+#     14  in summary                   12  in conclusion
+#      5  paves the way                 1  play a crucial role / it's worth noting / when it comes to
+#
+# The first group is pure scaffolding: deleting "It is important to note that" leaves the sentence
+# saying exactly what it said. The rest are substitutions rather than deletions.
+_CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
+    # "It is important to note that X" -> "X". The capital is restored below.
+    (
+        re.compile(
+            r"\b[Ii]t(?:'s| is| was)\s+(?:also\s+)?(?:important|worth|essential|necessary|crucial)"
+            r"\s+(?:to note|noting|to mention|mentioning|to remember|remembering)\s+that\s+",
+            re.IGNORECASE,
+        ),
+        "",
+    ),
+    # Same without "that": "It is worth noting, X"
+    (
+        re.compile(
+            r"\b[Ii]t(?:'s| is| was)\s+(?:also\s+)?(?:important|worth|essential|necessary|crucial)"
+            r"\s+(?:to note|noting|to mention|mentioning)\s*,\s*",
+            re.IGNORECASE,
+        ),
+        "",
+    ),
+    (re.compile(r"\bpaves?\s+the\s+way\s+for\b", re.IGNORECASE), "leads to"),
+    (re.compile(r"\bpaves?\s+the\s+way\b", re.IGNORECASE), "opens the door"),
+    (
+        re.compile(r"\bplays?\s+an?\s+(?:crucial|pivotal|vital|key|central)\s+role\s+in\b", re.I),
+        "is central to",
+    ),
+    (re.compile(r"\bplays?\s+an?\s+(?:crucial|pivotal|vital|key|central)\s+role\b", re.I), "matters"),
+    (re.compile(r"\bwhen\s+it\s+comes\s+to\b", re.IGNORECASE), "for"),
+    (re.compile(r"\bat\s+the\s+end\s+of\s+the\s+day\b", re.IGNORECASE), "ultimately"),
+    (re.compile(r"\bin\s+the\s+realm\s+of\b", re.IGNORECASE), "in"),
+    (re.compile(r"\bstands?\s+as\s+a\s+testament\s+to\b", re.IGNORECASE), "shows"),
+]
+
+_AFTER_SENTENCE_START = re.compile(r"(^|[.!?]\s+)([a-z])")
+
+
+def _flatten_cliches(text: str) -> str:
+    """Delete or plainly replace the catalogued clichés.
+
+    Deletions leave a lower-case word where a sentence now begins, so capitalisation is restored
+    afterwards — otherwise removing "It is important to note that " turns the sentence into one
+    starting mid-word, which is a more obvious tell than the cliché was.
+    """
+    if not text.strip():
+        return text
+    for pattern, replacement in _CLICHE_FLATTEN:
+        text = pattern.sub(replacement, text)
+    return _AFTER_SENTENCE_START.sub(lambda m: m.group(1) + m.group(2).upper(), text)
 
 
 def _flatten_copula(text: str) -> str:
@@ -1002,6 +1068,9 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
 
     # 4. Flatten vague attribution
     text = _flatten_vague_attribution(text)
+
+    # 4b. Flatten clichés — always, these are pure tell
+    text = _flatten_cliches(text)
 
     # 5. Hedge removal — always, these are pure tell
     text = _HEDGE_RE.sub(r"\1", text)

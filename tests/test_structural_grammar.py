@@ -829,3 +829,79 @@ class TestDropRestatements:
             "The hedge still needed cutting back after that. ",
         ]
         assert _drop_restatements(list(sents)) == sents
+
+
+class TestClicheFlattening:
+    """Clichés were DETECTED and never removed — the audit that found this measured `cliche`
+    going 6 -> 6 through the composite loop on 40 AI texts, while formulaic_transition went
+    24 -> 4. It is one of only two categories rated STRONG evidence on both corpora (precision
+    0.90 HC3, 0.93 RAID), so leaving it untouched was the most valuable gap in the rewriter.
+
+    58 hits across 300 AI texts concentrate in a few forms: "it's important to note" (16),
+    "in summary" (14), "in conclusion" (12), "it is important to note" (8), "paves the way" (5).
+    After the flattener the same audit gives cliche 6 -> 2.
+    """
+
+    @pytest.mark.parametrize(
+        ("before", "must_not_contain"),
+        [
+            ("It is important to note that the results were mixed.", "important to note"),
+            ("It's worth noting that costs rose sharply last year.", "worth noting"),
+            ("This paves the way for wider adoption.", "paves the way"),
+            ("Training plays a crucial role in the outcome.", "crucial role"),
+            ("When it comes to safety, the numbers are clear.", "when it comes to"),
+            ("The award stands as a testament to careful work.", "testament to"),
+        ],
+    )
+    def test_cliche_is_removed(self, before, must_not_contain):
+        from untell.rewriter.structural import _flatten_cliches
+        from untell.scripts.tells import score_tells
+
+        after = _flatten_cliches(before)
+        assert must_not_contain.lower() not in after.lower()
+        assert score_tells(after)["by_category"].get("cliche", 0) == 0
+
+    def test_deletion_restores_the_sentence_capital(self):
+        """Removing "It is important to note that " leaves a lower-case word where a sentence now
+        starts — a more obvious tell than the cliche was."""
+        from untell.rewriter.structural import _flatten_cliches
+
+        out = _flatten_cliches("It is important to note that the results were mixed.")
+        assert out[0].isupper(), out
+
+    def test_ordinary_prose_is_untouched(self):
+        from untell.rewriter.structural import _flatten_cliches
+
+        text = "The note on the table said the results were mixed, so we ran it again."
+        assert _flatten_cliches(text) == text
+
+
+class TestMergeDoesNotManufactureSemicolons:
+    """The rewriter was creating a tell it also counts.
+
+    Sentence merging picked a connector at random from a list that included "; ", and merging runs
+    AFTER the semicolon strip, so those survived into the output. semicolon_crutch fires at 2+ per
+    passage. MEASURED once repetition-aware merging made merges more frequent: 40 AI texts went
+    from 0 semicolons in to 4 out.
+    """
+
+    def test_semicolon_is_not_a_connector(self):
+        """Reads the connectors LIST, not the whole source — the comment above it quotes "; "
+        while explaining why it is gone, and a naive substring check trips on that."""
+        import inspect
+        import re
+
+        from untell.rewriter import structural
+
+        src = inspect.getsource(structural._merge_sentences)
+        lists = re.findall(r"connectors\s*=\s*\[(.*?)\]", src, re.DOTALL)
+        assert lists, "could not find the connectors list"
+        for body in lists:
+            assert ";" not in body, "merging can emit a semicolon, which is a catalogued tell"
+
+    def test_merging_many_pairs_emits_no_semicolons(self):
+        from untell.rewriter.structural import _merge_sentences
+
+        sentences = [f"The team shipped feature number {i} on time. " for i in range(20)]
+        merged = "".join(_merge_sentences(sentences, rate=1.0))
+        assert ";" not in merged
