@@ -270,9 +270,10 @@ _CONTENT_STOP = frozenset(
     "under about between across during while if so because".split()
 )
 _RESTATEMENT_COVERAGE = 0.70
-# Imported lazily inside the function that needs it: preserve.py imports from this package's
-# siblings, and a module-level import here would close the cycle.
-_SENTINEL_PATTERN = re.compile(r"⟦HZ\d+⟧")
+# preserve.py OWNS this pattern. A second copy here drifts the moment the sentinel format changes,
+# and tests/test_preserve.py::test_sentinel_pattern_is_defined_once exists to catch exactly that —
+# it caught this. rewriter/targeted.py imports it the same way, so there is no cycle.
+from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_PATTERN  # noqa: E402
 
 
 def _content_words(sentence: str) -> set[str]:
