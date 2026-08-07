@@ -944,3 +944,65 @@ Reproduce:
 UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3 --max-iters 5 \
   --repeats 3 --rewriter ensemble   # and again with --rewriter neural
 ```
+
+---
+
+## Result 16 — the meaning gates were not the throttle; one synonym entry was
+
+Every previous result treats the loop's output as given. This one asks what stops it: of the
+candidates the rewriter draws, which gate rejects them, and how often?
+
+Protocol: 25 RAID + 25 HC3 AI texts, 3 structural draws each, every gate evaluated
+**independently** against the original (the shipped loop short-circuits, so a serial reading
+attributes every rejection to whichever check runs first).
+
+| gate       | veto rate | veto rate |
+|------------|-----------|-----------|
+|            | **before** | **after** |
+| similarity | 0%        | 0%        |
+| numerals   | 0%        | 0%        |
+| roles      | 2%        | 3%        |
+| **hedges** | **20%**   | **0.7%**  |
+
+The hedge gate was doing essentially all of the rejecting, and **every one of those 30 vetoes was
+the same class** — `intention`. The cause was not the gate. Three entries had been added to the
+synonym map (`propose`, `proposes`, `proposed`) as academic boilerplate, and those words are
+intention hedges. A hedge class counts as dropped when the candidate contains no member of it, so
+substituting an intention verb for anything outside the class vetoes *by construction*. The gate
+was correct; the substitution was wrong.
+
+The obvious fix — widen the class to admit the substitutes — was tried and reverted. `suggest` is
+an **evidential** hedge in "the results suggest a link" and an **intention** verb in "we suggest a
+method". Forcing it into one class breaks the other, and it broke two pre-existing tests that were
+right to fail. There is no member list that makes an intention → non-intention swap safe.
+
+### What this changes, and what it doesn't
+
+With the gates no longer throttling, the next question is whether admitted candidates are actually
+*good*. Over 40 texts × 4 draws, lite tier:
+
+- **96%** of admitted candidates lower the detector score
+- mean delta **−0.210**, median **−0.217**
+- **0 of 40** texts had no helpful draw
+
+So admission is not the constraint and neither is candidate quality. Depth is not the constraint
+either — repeated passes are sharply diminishing:
+
+| pass | score | flagged | similarity | step |
+|------|-------|---------|------------|------|
+| 0 | 0.3964 | 85% | 1.0000 | — |
+| 1 | 0.1175 | 0% | 0.9910 | −0.2789 |
+| 2 | 0.0904 | 0% | 0.9885 | −0.0271 |
+| 3 | 0.0859 | 0% | 0.9872 | −0.0045 |
+| 4 | 0.0825 | 0% | 0.9856 | −0.0034 |
+
+Pass 1 is **88%** of the total gain; passes 3 and 4 together are under 2%. Raising `max_iters`
+buys nothing, and the loop already exits early on pass, so the existing default of 5 costs nothing
+either. Both are non-findings worth recording, because both looked like levers.
+
+The gap this does *not* close is the tier gap: the same pipeline reaches 0% flagged at lite and
+leaves 39 of 40 flagged at full. That is a per-detector fact, not a loop fact, and `max` is the
+reported score — one stubborn detector pins the result regardless of the other four.
+
+Reproduce: `scratchpad/veto.py`, `accept.py`, `compound.py` in the session scratchpad; each is a
+standalone script against `eval.datasets.load_pairs`.
