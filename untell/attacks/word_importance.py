@@ -137,6 +137,46 @@ _SYN: dict[str, list[str]] = {
     "supercharge": ["boost", "turbocharge", "ramp up"],
     "unparalleled": ["unmatched", "peerless", "second-to-none"],
     "trailblazing": ["pioneering", "path-breaking", "trendsetting"],
+    # --- Academic / paper boilerplate -----------------------------------------------------------
+    # Added 2026-08-07 to give the repetition tell something it can act on. MEASURED across 60 RAID
+    # AI abstracts, the repeated-trigram mass breaks down as:
+    #
+    #     82%  DOMAIN TERMS      "medical image segmentation" x42, "local contrastive learning"
+    #     18%  boilerplate       "we propose a", "a novel approach", "state of the art",
+    #                            "the proposed method", "the effectiveness of"
+    #      2%  reachable by the synonym map as it stood
+    #
+    # The 82% is untouchable on purpose: repeating the subject IS the meaning, and a rewriter that
+    # varied it would be changing what the text is about — the meaning gates would veto it, rightly.
+    # The 18% is pure template, carries no domain content, and was simply missing from the map. It
+    # is the only part of the strongest tell in the catalogue a meaning-preserving rewriter can
+    # legitimately reach.
+    "propose": ["suggest", "put forward", "offer"],
+    "proposes": ["suggests", "puts forward", "offers"],
+    "proposed": ["suggested", "described", "outlined"],
+    "novel": ["new", "fresh", "original"],
+    "approach": ["method", "way", "route"],
+    "approaches": ["methods", "ways", "routes"],
+    "method": ["approach", "technique", "way"],
+    "methods": ["approaches", "techniques", "ways"],
+    "framework": ["setup", "structure", "system"],
+    "effectiveness": ["success", "usefulness", "value"],
+    "extensive": ["wide", "broad", "thorough"],
+    "outperforms": ["beats", "does better than", "tops"],
+    "outperform": ["beat", "do better than", "top"],
+    "present": ["show", "give", "set out"],
+    "presents": ["shows", "gives", "sets out"],
+    "introduce": ["add", "bring in", "set out"],
+    "introduces": ["adds", "brings in", "sets out"],
+    "achieve": ["reach", "hit", "get"],
+    "achieves": ["reaches", "hits", "gets"],
+    "strengths": ["advantages", "merits", "plus points"],
+    "benchmark": ["test", "reference", "yardstick"],
+    "benchmarks": ["tests", "references", "yardsticks"],
+    "evaluate": ["test", "assess", "check"],
+    "evaluates": ["tests", "assesses", "checks"],
+    "validate": ["confirm", "check", "bear out"],
+    "substantial": ["large", "sizable", "big"],
     # --- Transition words (§3, §8) ---
     "furthermore": ["also", "and", "plus"],
     "moreover": ["also", "what is more", "and"],

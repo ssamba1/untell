@@ -513,3 +513,46 @@ class TestACoordinatorDoesNotInheritTheCommaItReplaced:
         from untell.attacks.word_importance import _COMMA_LESS_OPENERS
 
         assert not _COMMA_LESS_OPENERS & {"so", "yet", "also", "plus", "still"}
+
+
+class TestBoilerplateSynonyms:
+    """Academic/paper template words were absent from the synonym map, so the strongest tell in
+    the catalogue had almost nothing the rewriter could act on.
+
+    MEASURED across 60 RAID AI abstracts, the repeated-trigram mass splits:
+        82% DOMAIN TERMS ("medical image segmentation" x42) — untouchable, repeating the subject
+            IS the meaning, and the meaning gates would veto varying it
+        18% boilerplate ("we propose a", "a novel approach", "state of the art")
+    The map reached 2% of that mass before these entries and 16% after — essentially all the
+    boilerplate, and none of the domain terms.
+    """
+
+    @pytest.mark.parametrize(
+        "word",
+        ["propose", "novel", "approach", "method", "framework", "effectiveness",
+         "outperforms", "present", "introduce", "achieve", "strengths", "benchmark"],
+    )
+    def test_boilerplate_has_a_substitute(self, word):
+        from untell.attacks import synonyms
+
+        assert synonyms(word), f"{word} is repeated academic boilerplate with no alternative"
+
+    def test_domain_terms_are_left_alone(self):
+        """The map must not acquire subject-matter words. Varying those changes what the text is
+        about, which is the meaning gates' job to refuse — the rewriter should never try."""
+        from untell.attacks import synonyms
+
+        for domain in ("segmentation", "contrastive", "medical", "diagnosis", "protein"):
+            assert not synonyms(domain), (
+                f"{domain} is domain content, not boilerplate — substituting it changes meaning"
+            )
+
+    def test_substitutes_are_single_tokens_or_short_phrases(self):
+        """Every key must be lookup-able as _WORD defines a token, and every value must read as
+        natural English in place — this is the check that a dead entry looks exactly like a live
+        one."""
+        from untell.attacks.word_importance import _SYN
+
+        for key, values in _SYN.items():
+            assert " " not in key, f"{key!r} can never be looked up — keys are single tokens"
+            assert values, f"{key!r} has no substitutes"

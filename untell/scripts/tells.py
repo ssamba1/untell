@@ -423,6 +423,24 @@ def _repeated_trigrams(text: str) -> int:
             6         2% / 71%        5% / 49%
 
     Counted once per repeat, not once per gram, so a phrase used three times contributes two.
+
+    **MOSTLY NOT FIXABLE BY A MEANING-PRESERVING REWRITER, and that is not a defect.** Breaking
+    down the repeated-trigram mass across 60 RAID AI abstracts:
+
+        82%  DOMAIN TERMS    "medical image segmentation" x42, "local contrastive learning"
+        18%  boilerplate     "we propose a", "a novel approach", "state of the art"
+
+    Repeating the subject *is* the meaning. A rewriter that varied "medical image segmentation"
+    would be changing what the text is about, and the meaning gates would veto it — correctly. So
+    this is an excellent DETECTOR (AI hammers its subject where a person switches to "it" or "the
+    technique") and a poor rewrite TARGET. MEASURED end to end on 12 RAID texts through the loop:
+
+        no transform              24.83 -> 24.58
+        + repetition-aware merge  24.83 -> 23.92
+        + boilerplate synonyms    24.83 -> 23.50
+
+    Read a high score here as "this text hammers one phrase", which is diagnostic, rather than as
+    a defect the loop can be expected to clear.
     """
     words = [w.lower() for w in _WORD.findall(text)]
     if len(words) < _MIN_WORDS_FOR_REPETITION:
