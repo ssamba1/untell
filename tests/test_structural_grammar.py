@@ -711,3 +711,97 @@ class TestRepetitionAwareMerging:
             "A dog barked somewhere down the street. ",
         ]
         assert _merge_sentences(list(sentences), rate=0.0) == sentences
+
+
+class TestDropRestatements:
+    """The only transform found that attacks repeated phrasing at its source.
+
+    MEASURED across 80 RAID pairs, share of sentences whose content words are >=60% covered by an
+    earlier sentence: human 0.1%, ai 7.7% (AUROC 0.740). AI also writes 11.8 sentences to the
+    human 8.3 for the same source document — that surplus is where the duplicated phrasing lives.
+
+    In ISOLATION on the 21 of 80 texts where it fires:
+        repeated_phrasing %  16.01 -> 13.11      tells/100w  18.45 -> 13.77
+        words                  320 ->   296      similarity      0.9994
+    """
+
+    def test_drops_a_restatement(self):
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = [
+            "Medical image segmentation is a hard problem in vision. ",
+            "We propose a novel approach for medical image segmentation. ",
+            "Our approach for medical image segmentation is novel and we propose it. ",
+            "Experiments on three datasets show a large gain. ",
+            "The method generalises to unseen modalities. ",
+        ]
+        out = _drop_restatements(list(sents))
+        assert len(out) == len(sents) - 1
+        assert "Our approach for medical image segmentation is novel" not in "".join(out)
+
+    def test_never_drops_a_sentence_carrying_a_new_numeral(self):
+        """A restatement that adds a figure is not a restatement — dropping it loses the fact."""
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = [
+            "Opening sentence that frames the work. ",
+            "The system is fast and cheap to operate. ",
+            "The system is fast and cheap across 47 separate trials. ",
+            "Unrelated content follows here entirely. ",
+            "Final sentence stands alone. ",
+        ]
+        assert len(_drop_restatements(list(sents))) == len(sents)
+
+    def test_never_drops_a_sentence_holding_a_locked_span(self):
+        """A sentinel marks a citation, quote or quantity that exists nowhere else."""
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = [
+            "Opening sentence that frames the work. ",
+            "The system is fast and cheap to operate. ",
+            "The system is fast and cheap, per \u27e6HZ0001\u27e7. ",
+            "Unrelated content follows here entirely. ",
+            "Final sentence stands alone. ",
+        ]
+        assert len(_drop_restatements(list(sents))) == len(sents)
+
+    def test_never_drops_the_first_or_last_sentence(self):
+        """Openers frame and closers conclude; both restate on purpose."""
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = [
+            "The system is fast and cheap to operate. ",
+            "Entirely different content in the middle here. ",
+            "More unrelated material to pad the middle out. ",
+            "The system is fast and cheap to operate. ",
+        ]
+        out = _drop_restatements(list(sents))
+        assert out[0] == sents[0] and out[-1] == sents[-1]
+
+    def test_at_most_one_removal_per_call(self):
+        """An unlucky pass must not strip a paragraph."""
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = ["Opening frames the work here. "] + [
+            "The system is fast and cheap to operate. " for _ in range(5)
+        ] + ["Final sentence stands alone. "]
+        assert len(_drop_restatements(list(sents))) == len(sents) - 1
+
+    def test_short_input_is_untouched(self):
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = ["one here. ", "two here. ", "three here. "]
+        assert _drop_restatements(list(sents)) == sents
+
+    def test_does_not_fire_on_varied_human_prose(self):
+        """Measured: 0 of 80 human RAID texts had a sentence dropped at the shipped 0.70 bar."""
+        from untell.rewriter.structural import _drop_restatements
+
+        sents = [
+            "I walked to the shop and it was shut. ",
+            "My neighbour said the owner had gone to a funeral in Leeds. ",
+            "So I went home and made toast instead. ",
+            "Reading the paper took until four in the afternoon. ",
+            "The hedge still needed cutting back after that. ",
+        ]
+        assert _drop_restatements(list(sents)) == sents

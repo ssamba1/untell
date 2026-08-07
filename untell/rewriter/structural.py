@@ -261,6 +261,83 @@ def _strip_transitions(sentences: list[str], rate: float = 1.0) -> list[str]:
     return out
 
 
+# Function words carry no content, so they are excluded when asking whether one sentence restates
+# another — otherwise every pair of English sentences looks similar.
+_CONTENT_STOP = frozenset(
+    "the a an of to in and is are for that this it as on with be by was were which can has have "
+    "we our from at or not but their its these those such also more most than then when where "
+    "how why what who will would could should may might must do does did been being into over "
+    "under about between across during while if so because".split()
+)
+_RESTATEMENT_COVERAGE = 0.70
+# Imported lazily inside the function that needs it: preserve.py imports from this package's
+# siblings, and a module-level import here would close the cycle.
+_SENTINEL_PATTERN = re.compile(r"⟦HZ\d+⟧")
+
+
+def _content_words(sentence: str) -> set[str]:
+    return {w.lower() for w in re.findall(r"[A-Za-z0-9']+", sentence)} - _CONTENT_STOP
+
+
+def _drop_restatements(sentences: list[str], coverage: float = _RESTATEMENT_COVERAGE) -> list[str]:
+    """Remove sentences whose content is already carried by an earlier one.
+
+    This is the only transform found that attacks repeated phrasing at its source rather than at
+    its symptoms. MEASURED across 80 RAID pairs, the share of sentences whose content words are
+    at least 60% covered by an earlier sentence:
+
+        human 0.1%    ai 7.7%    AUROC 0.740
+
+    Seventy-seven times more restatement, and AI writes 11.8 sentences to the human 8.3 for the
+    same source document. That surplus is where the duplicated phrasing lives, which is why the
+    earlier transforms — merging, synonym substitution — could only reach its edges: they rewrote
+    the repetition instead of removing the sentence that carried it.
+
+    Deliberately conservative, because deleting a sentence is the most destructive edit here:
+
+    * coverage bar of 0.70, chosen from the firing curve rather than guessed. MEASURED over 80
+      RAID pairs, the share of texts where a sentence is dropped:
+
+          coverage   AI texts   HUMAN texts (a false drop)
+            0.60       45%          1%
+            0.70       26%          0%      <- shipped
+            0.75       25%          0%
+            0.80       19%          0%
+
+      0.70 fires on 37% more AI text than the 0.80 first tried, with no human sentence dropped
+      anywhere in the sample;
+    * never the first or last sentence — the opener frames and the closer concludes, and both
+      restate on purpose;
+    * never a sentence carrying a NUMERAL the earlier sentence lacks, since a restatement that
+      adds a figure is not a restatement;
+    * never a sentence carrying a preserve-lock sentinel, which by definition holds a citation,
+      quote or quantity that exists nowhere else;
+    * at most one removal per call, so an unlucky pass cannot strip a paragraph.
+
+    The loop's meaning gates (bidirectional NLI, numeral retention, semantic roles) sit downstream
+    and veto anything this gets wrong, so the failure mode is a rejected candidate rather than a
+    damaged output.
+    """
+    if len(sentences) < 4:  # nothing safe to drop once the first and last are excluded
+        return sentences
+    seen: list[set[str]] = [_content_words(sentences[0])]
+    for i in range(1, len(sentences) - 1):
+        s = sentences[i]
+        words = _content_words(s)
+        if not words or _SENTINEL_PATTERN.search(s):
+            seen.append(words)
+            continue
+        best = max((len(words & prev) / len(words) for prev in seen if prev), default=0.0)
+        if best >= coverage:
+            new_numerals = set(re.findall(r"\d+(?:\.\d+)?", s)) - {
+                n for p in sentences[:i] for n in re.findall(r"\d+(?:\.\d+)?", p)
+            }
+            if not new_numerals:
+                return sentences[:i] + sentences[i + 1 :]
+        seen.append(words)
+    return sentences
+
+
 _OPENING_WORDS = 3
 
 
@@ -528,8 +605,14 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
     """
     if not text.strip():
         return text
+    from untell.attacks.word_importance import (
+        _ARTICLE,
+        _QUANT_FRAME_KEYS,
+        _SYN,
+        agree_article,
+        substitute_once,
+    )
     from untell.attacks.word_importance import DUP_PARTICLE_TAIL as _DUP_PARTICLE_TAIL
-    from untell.attacks.word_importance import _ARTICLE, _QUANT_FRAME_KEYS, _SYN, agree_article, substitute_once
 
     # Protect locked spans: mask them out, substitute, then restore.
     spans: list[str] = []
@@ -923,6 +1006,10 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         # split ~50% of long sentences, vary ~60% of openers.
         strip_rate = min(1.0, 0.3 + intensity * 0.7)
         sents = _strip_transitions(sents, rate=strip_rate)
+
+        # Drop restatements BEFORE merging: a merge would fuse a restatement onto its own source
+        # and preserve the duplication inside one longer sentence instead of removing it.
+        sents = _drop_restatements(sents)
 
         merge_rate = min(0.7, intensity * 0.6)
         sents = _merge_sentences(sents, rate=merge_rate)
