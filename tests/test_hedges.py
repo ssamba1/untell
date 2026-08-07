@@ -395,3 +395,61 @@ class TestAdjectiveFormsAreCoveredNotJustAdverbs:
         """Widening the class must not start vetoing hedge-for-hedge swaps."""
         assert certainty_kept("There was a modest increase.", "There was a slight increase.")
         assert certainty_kept("The effect was minimal.", "The effect was small.")
+
+
+class TestIntentionVerbsAreNotSubstituted:
+    """The hedge gate was the ONLY gate rejecting candidates at scale, and the cause was a
+    synonym-map entry, not a gap in the class.
+
+    MEASURED over 150 candidate rewrites of real AI text, per-gate veto rate:
+        similarity 0%   numerals 0%   roles 2%   hedges 20%
+    Every one of those 30 hedge vetoes was the intention class, and every one traced to
+    `propose`/`proposes`/`proposed` having been added to _SYN in untell/attacks/word_importance.py.
+    A class counts as dropped when the candidate contains NO member, so swapping an intention verb
+    for anything outside the class vetoes by construction.
+
+    Widening the class to admit the substitutes is the wrong fix and was tried: "suggest" is an
+    EVIDENTIAL hedge in "the results suggest a link" and an intention verb in "we suggest a
+    method". Forcing it into `intention` broke two pre-existing evidential tests. The class is
+    right; the substitution was the mistake, so the substitution was removed.
+    """
+
+    def test_intention_verbs_are_not_in_the_synonym_map(self):
+        """The regression guard. Re-adding any of these silently returns the 20% veto rate."""
+        from untell.attacks.word_importance import _SYN
+        from untell.scripts.hedges import _CLASSES
+
+        overlap = sorted(set(_CLASSES["intention"]) & set(_SYN))
+        assert not overlap, (
+            f"{overlap} are intention hedges AND synonym-map keys. Any swap drops the class and "
+            "the hedge gate vetoes the candidate."
+        )
+
+    @pytest.mark.parametrize(
+        ("source", "candidate"),
+        [
+            ("The company plans to expand.", "The company is expanding."),
+            ("The team aims to cut costs.", "The team cut costs."),
+            ("We hope to publish next year.", "We will publish next year."),
+            ("The paper proposes a method.", "The paper uses a method."),
+        ],
+    )
+    def test_real_intent_drops_still_veto(self, source, candidate):
+        """Intent becoming achievement is a meaning change and must stay blocked."""
+        from untell.scripts.hedges import certainty_kept
+
+        assert not certainty_kept(source, candidate), "intent -> done must still veto"
+
+    @pytest.mark.parametrize(
+        ("source", "candidate"),
+        [
+            ("The results suggest a link.", "The findings indicate a link."),
+            ("The data suggests a trend.", "The data hints at a trend."),
+        ],
+    )
+    def test_suggest_stays_evidential(self, source, candidate):
+        """"suggest" must keep behaving as an evidential hedge, which is what made putting it in
+        the intention class untenable."""
+        from untell.scripts.hedges import certainty_kept
+
+        assert certainty_kept(source, candidate), "evidential -> evidential must not veto"

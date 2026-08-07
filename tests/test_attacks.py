@@ -529,7 +529,13 @@ class TestBoilerplateSynonyms:
 
     @pytest.mark.parametrize(
         "word",
-        ["propose", "novel", "approach", "method", "framework", "effectiveness",
+        # NOT "propose". It reaches boilerplate mass, but it is also an INTENTION hedge
+        # (untell/scripts/hedges.py), and swapping one for a word outside that class reads as
+        # intent becoming achievement. MEASURED: its presence here drove the hedge gate to veto
+        # 20% of all candidates — every hedge veto in a 150-candidate sample — against 0%, 0% and
+        # 2% for similarity, numerals and roles. See TestIntentionVerbsAreNotSubstituted, which
+        # guards the overlap directly.
+        ["novel", "approach", "method", "framework", "effectiveness",
          "outperforms", "present", "introduce", "achieve", "strengths", "benchmark"],
     )
     def test_boilerplate_has_a_substitute(self, word):

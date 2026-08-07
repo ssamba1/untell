@@ -151,9 +151,13 @@ _SYN: dict[str, list[str]] = {
     # The 18% is pure template, carries no domain content, and was simply missing from the map. It
     # is the only part of the strongest tell in the catalogue a meaning-preserving rewriter can
     # legitimately reach.
-    "propose": ["suggest", "put forward", "offer"],
-    "proposes": ["suggests", "puts forward", "offers"],
-    "proposed": ["suggested", "described", "outlined"],
+    # NOT propose/proposes/proposed. They are INTENTION hedges (scripts/hedges.py), and swapping
+    # one for a word outside that class reads as intent becoming achievement. MEASURED: adding
+    # them drove the hedge gate's veto rate to 20% of all candidates — every hedge veto in a
+    # 150-candidate sample — while similarity, numerals and roles vetoed 0%, 0% and 2%. Widening
+    # the hedge class instead is worse: "suggest" is an EVIDENTIAL hedge in "the results suggest
+    # a link" and an intention verb in "we suggest a method", so forcing it into one class breaks
+    # the other. The gate is right; the substitution was the mistake.
     "novel": ["new", "fresh", "original"],
     "approach": ["method", "way", "route"],
     "approaches": ["methods", "ways", "routes"],
