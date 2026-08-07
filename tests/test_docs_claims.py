@@ -346,5 +346,5 @@ def test_roadmap_numbers_track_the_census():
     data = json.loads((root / "docs" / "humanizer-census.json").read_text(encoding="utf-8"))
     roadmap = (root / "ROADMAP.md").read_text(encoding="utf-8")
     assert f"{len(data)} of 1287" in roadmap or f"census read {len(data)}" in roadmap or (
-        f"{len(data)} profiled repos" in roadmap or f"435 of 1287" in roadmap
+        f"{len(data)} profiled repos" in roadmap or "435 of 1287" in roadmap
     ), "the roadmap does not state how many repos the census actually read"
