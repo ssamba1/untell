@@ -320,3 +320,31 @@ def test_why_best_does_not_claim_the_loop_is_unique():
     )
     assert "not ours alone" in doc or "is not ours" in doc
     assert "humanizer-census.md" in doc, "why-best does not link the census that corrects it"
+
+
+def test_roadmap_exists_and_is_linked():
+    """README, CHANGELOG and why-best all link ROADMAP.md; it was deleted on 2026-07-28 inside an
+    unrelated commit and the links 404'd for a week. Same failure as humanizer-research-report.md,
+    deleted in the same commit."""
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    assert (root / "ROADMAP.md").exists(), "ROADMAP.md is linked from the README but missing"
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    for target in re.findall(r"\]\((ROADMAP\.md)\)", readme):
+        assert (root / target).exists()
+
+
+def test_roadmap_numbers_track_the_census():
+    """The roadmap's priorities are ranked by census counts. If the census moves and the roadmap
+    does not, the ranking is stale and the plan is wrong."""
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    data = json.loads((root / "docs" / "humanizer-census.json").read_text(encoding="utf-8"))
+    roadmap = (root / "ROADMAP.md").read_text(encoding="utf-8")
+    assert f"{len(data)} of 1287" in roadmap or f"census read {len(data)}" in roadmap or (
+        f"{len(data)} profiled repos" in roadmap or f"435 of 1287" in roadmap
+    ), "the roadmap does not state how many repos the census actually read"

@@ -1,0 +1,200 @@
+# Roadmap — how untell becomes the best, and what "best" can honestly mean
+
+Restored and rewritten 2026-08-05 against the [435-repo census](docs/humanizer-census.md). The
+previous version was deleted on 2026-07-28 inside an unrelated commit, together with
+`humanizer-research-report.md`, while the README, `CHANGELOG.md` and `why-best-open-repo.md` kept
+linking to both.
+
+**Honest framing.** "Best ever" is not "passes everything forever" — detectors update, disagree, and
+re-score the same text differently. The goal is the best point on three axes at once:
+**evasion strength × meaning integrity × trust (honest, reproducible numbers)**. No shipping tool
+holds all three. That is the opening.
+
+Legend: ✅ shipped · 🔜 buildable now · ⛔ needs a GPU · ❌ ruled out, with the measurement that ruled it out.
+
+---
+
+## 0. What the competition actually is
+
+The census read 435 of 1287 repos. The single most useful finding is what the field is *made of*:
+
+| segment | n | what it means for us |
+|---|---|---|
+| prompt guides | 184 | a Markdown file instructing an LLM. No detector, no measurement, no tests |
+| API wrappers | 75 | bills for someone else's humanizer |
+| adversarial-perturbation | 39 | the real technical competition |
+| rule-based rewriters | 38 | our weight class, mostly weaker |
+| research code | 19 | stronger evasion, not products |
+| fine-tuned models | 11 | the actual ceiling, GPU-bound |
+
+**60% of the field either instructs a humanizer or resells one.** Star counts are therefore almost
+uncorrelated with capability — the largest repo in the space is a 298k-star Chinese rewrite prompt.
+Competing on "features" against that segment is meaningless; competing on *correctness* is where the
+field is empty.
+
+---
+
+## 1. What we cannot win — say it once, then stop spending on it
+
+### ❌ Raw evasion strength
+
+| system | result | scale |
+|---|---|---|
+| `chengez/Adversarial-Paraphrasing` | −87.88% avg TPR@1%FPR, **per-token** detector-guided decoding | MAGE dataset, 6 detectors |
+| `StealthRL` | AUROC 0.79 → 0.43, mean TPR@1%FPR 0.024 | **15,310 human / 14,656 AI** |
+| **untell**, best real-text figure | 0.999 → 0.502, flagged 1.00 → 0.50 | **n = 6** |
+
+Not close, and the gap is architectural: token-level guidance needs logit access, which our
+black-box rewriter design does not have. Closing it needs the GPU path in §4.
+
+### ❌ Adoption
+
+blader/humanizer is **one Markdown file** with 33.7k stars. We are at ~0. That is distribution, and
+no amount of engineering moves it.
+
+### ❌ Beating GPTZero / Originality / Turnitin for free
+
+Nobody does, us included. Independent 2026 testing has StealthGPT — a paid product — still failing
+Turnitin (86% AI), Originality (100%) and GPTZero (48%). SICO's paper claims otherwise for a
+prompt-optimisation method we have not reproduced; recorded, not adopted.
+
+---
+
+## 2. Priority 1 — be the only one that is provably correct
+
+This is the axis where the field is *empty*, and where one session of probing found this much:
+
+| defect found 2026-08-05 | severity |
+|---|---|
+| `tells/100w`, the headline naturalness metric, pointed **backwards** on real text | metric inverted |
+| `targeted` rewriter did **literally nothing** on the zero-dep path (0/15 texts changed) | feature dead |
+| `surgical` near-inert there too (16/30 texts, 0 substitutions) | feature dead |
+| Chinese/Korean/Japanese AI text reported as **perfectly clean** | false verdict |
+| LaTeX **entirely unprotected** — `lock()` held 0 spans of a paper paragraph | headline promise broken |
+| the central competitive claim quoted a sentence **that exists in no commit** | fabricated citation |
+| lite tier flags **65% of human text** at the shipped threshold | calibration |
+| `max` and `ensemble` are the same object, benchmarked as two | phantom data point |
+
+No competitor publishes anything comparable, because no competitor looks. Turning that into a
+durable advantage means making it **mechanical rather than heroic**.
+
+- 🔜 **`untell-audit` — every documented claim re-measured on demand, and in CI.**
+  `tests/test_docs_claims.py` already does this for ~16 claims (test count, census counts, the
+  research-report quote, the lite false-positive rate). Generalise it: each claim in README /
+  `why-best` / `free-ceiling-measured.md` carries a machine-checkable assertion, and CI fails when a
+  number drifts. **This is the moat.** Effort: days.
+- 🔜 **Every category must prove it fires.** Already shipped for `tells` after six patterns turned
+  out to be dead (`\b` written into a non-raw string became U+0008). Extend the same
+  reachability guard to detectors, rewriters and meaning gates: anything registered must
+  demonstrate it can fire, or it is dead code pretending to be coverage.
+- 🔜 **Publish the negative results as a first-class artifact.** `free-ceiling-measured.md` has 15
+  results including refutations of our own claims. That document is more persuasive than any
+  benchmark table. Give it a landing page.
+
+---
+
+## 3. Priority 2 — free wins already measured, not yet taken
+
+### 🔜 Make the default configuration the good one
+
+Measured on the same six real HC3 texts, full tier, best-of-3, `pre` identical at 0.9994:
+
+| rewriter | post | flagged | meaning |
+|---|---|---|---|
+| **composite** (current default) | 0.805 | **100%** | 0.986 |
+| `neural` | 0.502 | **50%** | 0.941 |
+
+**The shipped default clears nothing on real text at the full tier.** A run that ends flagged now
+prints the trade-off, but the real fix is auto-selecting `neural` when `.[full]` is installed and
+the tier is `full`. One default change plus a replication at `--repeats ≥ 3`.
+
+### 🔜 Retire or rehabilitate the dead weight
+
+`ai_vocab` — the "delve / leverage / tapestry" cluster this entire product category is famous for —
+measures **0.55 precision on 400 real HC3 pairs**. A coin flip. Five categories fire *more* on human
+writing than AI; removing them raises separation +0.307 → +0.332 and AUROC 0.705 → 0.718.
+
+They are currently reported via evidence tiers rather than dropped, because the ten categories that
+never fire on HC3 are exactly the *modern* tells and HC3 is 2022-era. **The fix is a modern labelled
+corpus**, not reweighting against a dated one. Until then the tiering is the honest interim.
+
+### 🔜 Finish the surgical objective
+
+`surgical_substitute` cannot move a detector score at *either* tier (stdlib 0.003, full 0.0002), so
+its deletion-importance ranking buys nothing. `prefer_tells=True` ships for our rewriter
+(tells/100w 0.571 → 0.233 vs 0.458, and 2.3× faster). Remaining: decide whether the competitor
+baseline row in `eval/compare_humanizers.py` should stay faithful to PWWS (currently yes, correctly).
+
+---
+
+## 4. Priority 3 — the academic niche, where our strengths are the buying criteria
+
+**41 of the 111 profiles that beat untell at something named the academic/LaTeX/citation domain** —
+the most-cited gap in the census, and the one place where meaning integrity *is* the product rather
+than a nicety.
+
+- ✅ LaTeX preserve-locking (`\cite*`, `\ref`, `\label`, math, environments) — shipped 2026-08-05.
+- 🔜 **BibTeX-aware verification** — confirm every `\cite` key in the output exists in the `.bib`.
+- 🔜 **`.tex` round-trip CLI** — read a `.tex`, humanize prose only, write it back compiling.
+- 🔜 **Structure-aware skipping** — never rewrite abstracts, captions, or theorem statements unless
+  asked.
+
+Nobody in the census targets thesis and paper writers with fact-integrity guarantees. We have the
+five meaning gates and byte-exact citation locking that **no profiled repo combines**. This is a
+defensible position that does not require beating chengez at evasion.
+
+---
+
+## 5. Priority 4 — the language platform (needs your decision)
+
+**139 of 435 profiled repos (32%) target a language other than English**, and that is *understated*
+— 49 reads died on an API spend limit, almost all Spanish, Portuguese, French, Russian and Ukrainian
+humanizer skills. Four of the eight largest tools in the field are Chinese or Korean.
+
+Everything here is English-only: the 29-pattern catalogue, the voice matcher's scale constants,
+every measurement.
+
+- ✅ **Refuse to fake it** — non-Latin input now returns `language_supported: false` with a warning
+  instead of "no catalogued tells found".
+- 🔜 **Pluggable per-language catalogues** — `tells/en.py`, `tells/zh.py`, `tells/ko.py`, a registry,
+  and the existing script detector routing to the right one.
+
+I will not write the catalogues themselves: Korean 번역체 calques and Chinese academic-register tells
+need people who speak those languages. But **the architecture is the contribution** — it turns our
+largest blind spot into the reason others contribute, which is the only realistic adoption path that
+does not depend on marketing.
+
+**This changes a core module. It is a decision, not a task.**
+
+---
+
+## 6. The moat — needs a GPU
+
+- ⛔ **Surrogate distillation** (HMGC, COLING 2024 — prior art for what `training/surrogate.py`
+  scaffolds). Distil the victim detector, attack the surrogate. Highest ROI of the GPU paths.
+- ⛔ **RL-against-ensemble** (StealthRL-style GRPO + LoRA). Reward = evasion vs our ensemble +
+  semantic similarity. The literature shows it **transfers to detectors it never trained on**.
+- ⛔ **Alignment rewriter** (MASH-style): style SFT → DPO → inference refinement, shipped as a local
+  no-key rewriter.
+
+**Known blocker:** free-GPU training stalls on model-load; do not re-attempt blind. Budget a real
+GPU or skip. The product works without a trained adapter.
+
+---
+
+## 7. Sequencing
+
+1. **Default rewriter change** — measured, small, currently costs every full-tier user a result.
+2. **`untell-audit` + CI claim checking** — converts tonight's one-off discipline into a standing property.
+3. **Academic niche** (BibTeX verify, `.tex` round-trip) — where our strengths are the buying criteria.
+4. **Language plugin architecture** — pending your decision; biggest ceiling, biggest refactor.
+5. **GPU moat** — only with real hardware.
+
+## 8. How we would know it worked
+
+Not stars. These:
+
+- **zero drifted claims** — CI proves every published number still reproduces
+- **`neural` default clears ≥ 50% of real HC3 text** at full tier, replicated at `--repeats ≥ 3`
+- **a `.tex` file round-trips** and still compiles, with every citation key intact
+- **one non-English catalogue contributed by a native speaker** — the platform test
