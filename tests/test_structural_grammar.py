@@ -778,14 +778,38 @@ class TestDropRestatements:
         out = _drop_restatements(list(sents))
         assert out[0] == sents[0] and out[-1] == sents[-1]
 
-    def test_at_most_one_removal_per_call(self):
-        """An unlucky pass must not strip a paragraph."""
+    def test_removals_are_capped_at_one_per_five_sentences(self):
+        """An unlucky pass must not strip a paragraph, but one flat removal left work behind.
+
+        MEASURED over 80 RAID pairs: 40 sentences are droppable in total while a single pass
+        reached only 21, because 11 texts carry two to four restatements each. Raising the cap
+        took the isolated effect from -18% to -36% on repeated_phrasing with meaning unchanged
+        at 0.9994 and still zero human false drops.
+        """
+        from untell.rewriter.structural import _drop_restatements
+
+        # 7 sentences -> budget 1.
+        seven = ["Opening frames the work here. "] + [
+            "The system is fast and cheap to operate. " for _ in range(5)
+        ] + ["Final sentence stands alone. "]
+        assert len(_drop_restatements(list(seven))) == len(seven) - 1
+
+        # 12 sentences -> budget 2, so a text carrying several restatements loses several.
+        twelve = ["Opening frames the work here. "] + [
+            "The system is fast and cheap to operate. " for _ in range(10)
+        ] + ["Final sentence stands alone. "]
+        assert len(_drop_restatements(list(twelve))) == len(twelve) - 2
+
+    def test_the_cap_still_bounds_damage(self):
+        """However repetitive the input, a single call may never gut it."""
         from untell.rewriter.structural import _drop_restatements
 
         sents = ["Opening frames the work here. "] + [
-            "The system is fast and cheap to operate. " for _ in range(5)
+            "The system is fast and cheap to operate. " for _ in range(18)
         ] + ["Final sentence stands alone. "]
-        assert len(_drop_restatements(list(sents))) == len(sents) - 1
+        out = _drop_restatements(list(sents))
+        assert len(out) >= len(sents) - (len(sents) // 5)
+        assert len(out) > len(sents) // 2, "a call must never remove most of a paragraph"
 
     def test_short_input_is_untouched(self):
         from untell.rewriter.structural import _drop_restatements

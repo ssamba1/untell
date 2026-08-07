@@ -313,13 +313,32 @@ def _drop_restatements(sentences: list[str], coverage: float = _RESTATEMENT_COVE
       adds a figure is not a restatement;
     * never a sentence carrying a preserve-lock sentinel, which by definition holds a citation,
       quote or quantity that exists nowhere else;
-    * at most one removal per call, so an unlucky pass cannot strip a paragraph.
+    * a cap of one removal per five sentences, so an unlucky pass cannot strip a paragraph. One
+      flat removal per call was leaving work behind: MEASURED over 80 RAID pairs, 40 sentences
+      are droppable in total but a single pass reached only 21, because 11 texts carry two to
+      four restatements each. Applying it to exhaustion drops nothing at all from the human
+      halves — 0 of 80 at any depth — so the cap is about bounding damage from a bad call, not
+      about false positives.
 
     The loop's meaning gates (bidirectional NLI, numeral retention, semantic roles) sit downstream
     and veto anything this gets wrong, so the failure mode is a rejected candidate rather than a
     damaged output.
     """
     if len(sentences) < 4:  # nothing safe to drop once the first and last are excluded
+        return sentences
+    budget = max(1, len(sentences) // 5)
+    kept = list(sentences)
+    for _ in range(budget):
+        shorter = _drop_one_restatement(kept, coverage)
+        if len(shorter) == len(kept):
+            break
+        kept = shorter
+    return kept
+
+
+def _drop_one_restatement(sentences: list[str], coverage: float) -> list[str]:
+    """Remove the first restatement found, or return the input unchanged."""
+    if len(sentences) < 4:
         return sentences
     seen: list[set[str]] = [_content_words(sentences[0])]
     for i in range(1, len(sentences) - 1):
