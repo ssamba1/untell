@@ -657,3 +657,57 @@ class TestASplitNeverStrandsAConjunction:
         from untell.rewriter.structural import _SPLIT_CONJUNCTIONS
 
         assert not _SPLIT_CONJUNCTIONS & {"that", "which", "who", "if", "for", "so"}
+
+
+class TestRepetitionAwareMerging:
+    """Sentences that open identically are merged every time, not at the random rate.
+
+    MEASURED on 12 RAID AI texts through the full loop: repeated_phrasing is the strongest tell
+    in the catalogue (AUROC 0.965 RAID / 0.921 HC3) and NO rewriter moved it — 24.83 -> 24.58.
+    Repeated sentence openers, by contrast, fell 3.92 -> 0.67 over the same run, because
+    structural transforms already vary openings.
+
+    Surgical substitution cannot help: the repeated words are ordinary ("the system is designed
+    to"), so they are absent from an AI-vocabulary synonym map. Merging is the transform that
+    reaches them, and it is already trusted here for burstiness, so it inherits the existing
+    mergeability and meaning checks.
+
+    Effect after the change, same 12 texts: repeated_phrasing 24.83 -> 23.92 and tells/100w
+    10.05 -> 8.09 (from 8.70), meaning 0.9941. A real gain, and a small one — recorded honestly
+    because the strongest tell remains largely unaddressed by the free rewriters.
+    """
+
+    def test_shares_opening_needs_three_words(self):
+        """A shared "The" is ordinary English; a shared "The system is" is the pattern."""
+        from untell.rewriter.structural import _shares_opening
+
+        assert _shares_opening("The system is fast.", "The system is cheap.")
+        assert not _shares_opening("The cat sat.", "The dog ran.")
+        assert not _shares_opening("Short one.", "Short two.")  # fewer than 3 words
+
+    def test_shares_opening_is_case_insensitive(self):
+        from untell.rewriter.structural import _shares_opening
+
+        assert _shares_opening("The system is fast.", "the system is cheap.")
+
+    def test_identical_openings_merge_even_at_zero_random_rate(self):
+        """rate=0 would merge nothing before; a repeated opening must override it."""
+        from untell.rewriter.structural import _merge_sentences
+
+        sentences = [
+            "The system is designed to improve outcomes. ",
+            "The system is designed to reduce cost. ",
+        ]
+        merged = _merge_sentences(list(sentences), rate=0.0)
+        assert len(merged) < len(sentences), "a repeated opening should force the merge"
+
+    def test_distinct_openings_still_respect_the_rate(self):
+        """The override must not turn merging on for everything — burstiness depends on it
+        staying probabilistic for ordinary pairs."""
+        from untell.rewriter.structural import _merge_sentences
+
+        sentences = [
+            "The cat sat quietly on the mat. ",
+            "A dog barked somewhere down the street. ",
+        ]
+        assert _merge_sentences(list(sentences), rate=0.0) == sentences
