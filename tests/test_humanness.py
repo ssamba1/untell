@@ -27,9 +27,9 @@ class TestHumanness:
 
     def test_classification_thresholds(self):
         assert classification(85) == "human"
-        assert classification(70) == "mostly human"
-        assert classification(45) == "mixed"
-        assert classification(25) == "likely AI"
+        assert classification(65) == "mostly human"
+        assert classification(50) == "mixed"
+        assert classification(35) == "likely AI"
         assert classification(10) == "AI"
 
     def test_regression_formulaic_is_lower(self):
@@ -106,18 +106,39 @@ def test_dead_detectors_do_not_inflate_the_humanness_score(monkeypatch):
 
 
 def test_documented_bands_match_the_implementation():
-    """The docstring advertised 80 / 50-80 / 30-50 / 30; classification() implements
-    80 / 55 / 35 / 15. A score of 40 was "likely AI" by the docs and "mixed" by the code."""
+    """The docstring and the code must agree. They once did not: the docstring advertised
+    80 / 50-80 / 30-50 / 30 while classification() implemented 80 / 55 / 35 / 15, so a score of 40
+    was "likely AI" by the docs and "mixed" by the code.
+
+    Boundaries recalibrated 2026-08-07 to 75 / 60 / 45 / 30 — measured, the classes are fully
+    separable at the full tier (lowest human 75.6, highest AI 72.0 over 80 HC3+RAID pairs)."""
     from untell.humanness import classification
 
-    assert classification(80) == "human"
-    assert classification(79.9) == "mostly human"
-    assert classification(55) == "mostly human"
-    assert classification(54.9) == "mixed"
-    assert classification(35) == "mixed"
-    assert classification(34.9) == "likely AI"
-    assert classification(15) == "likely AI"
-    assert classification(14.9) == "AI"
+    assert classification(75) == "human"
+    assert classification(74.9) == "mostly human"
+    assert classification(60) == "mostly human"
+    assert classification(59.9) == "mixed"
+    assert classification(45) == "mixed"
+    assert classification(44.9) == "likely AI"
+    assert classification(30) == "likely AI"
+    assert classification(29.9) == "AI"
+
+
+def test_the_bands_actually_separate_the_classes():
+    """The failure that forced the recalibration: on the full tier the old bands never produced
+    an AI verdict about AI text — 0/60 on HC3 and 0/40 on RAID reached "likely AI", while the
+    ranking was perfect (AUROC 1.0000 on RAID). The score was right; the labels were wrong.
+
+    Pinned as boundaries rather than as a live corpus run so it stays fast and offline."""
+    from untell.humanness import classification
+
+    # Observed ranges over 80 HC3+RAID pairs at tier=full.
+    assert classification(75.6) == "human", "the lowest observed human score must read as human"
+    assert classification(72.0) != "human", "the highest observed AI score must not read as human"
+    for ai_score in (41.6, 43.5, 47.8, 50.0):
+        assert classification(ai_score) in ("mixed", "likely AI", "AI"), (
+            f"typical AI score {ai_score} must not be labelled human-ish"
+        )
 
 
 class TestTooShortToScore:

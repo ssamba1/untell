@@ -17,10 +17,14 @@ def _verdict(p_ai: float) -> str:
     return classification((1.0 - p_ai) * 100.0)
 
 
+# P(AI) -> expected verdict, via humanness = 100 * (1 - p_ai).
+# The 0.60 row moved from "mixed" to "likely AI" when the bands were recalibrated on 2026-08-07
+# (75 / 60 / 45 / 30, fitted to 80 HC3+RAID pairs): humanness 40 now falls in the likely-AI band.
+# That is the intended effect — the old bands never produced an AI verdict about AI text.
 VERDICTS = [
     (0.98, "AI"),
     (0.86, "AI"),
-    (0.60, "mixed"),
+    (0.60, "likely AI"),
     (0.50, "mixed"),
     (0.29, "mostly human"),
     (0.10, "human"),
