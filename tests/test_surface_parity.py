@@ -221,8 +221,8 @@ def test_the_free_rewriter_list_matches_the_cli_minus_its_two_special_names():
 
 def test_the_ceiling_cli_offers_the_same_backends():
     """eval/ceiling.py restates the list too; it omits only "base", which is not an evasion path."""
-    from eval.ceiling import main as ceiling_main  # noqa: F401
     from eval.ceiling import build_parser as ceiling_parser
+    from eval.ceiling import main as ceiling_main  # noqa: F401
 
     action = next(a for a in ceiling_parser()._actions if a.dest == "rewriter")
     assert set(action.choices) - {"auto"} == set(api._FREE_REWRITERS)

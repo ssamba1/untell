@@ -262,9 +262,7 @@ class TestBlocksExposesTheUnits:
 
     def test_blocks_and_apply_per_block_agree_on_where_units_start(self):
         """Both are built on one partitioner, so they cannot drift apart."""
-        from untell.layout import apply_per_block, blocks
-
-        from untell.layout import _LINE_MARKER_RE
+        from untell.layout import _LINE_MARKER_RE, apply_per_block, blocks
 
         src = DOC
         seen: list[str] = []

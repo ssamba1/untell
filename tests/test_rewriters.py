@@ -576,12 +576,10 @@ class TestStyleProfiles:
         assert "n't" not in academic, f"style did not reach the rewriter: {academic}"
 
     def test_unknown_and_missing_style_keep_previous_behaviour(self):
-        from untell.rewriter.structural import style_profile
-
         # The neutral profile is the single source for "no style", so the test reads it rather than
         # restating it — the previous hard-coded copy broke the moment two knobs were added, while
         # the behaviour it exists to protect (unknown style == no style) was intact.
-        from untell.rewriter.structural import _NEUTRAL
+        from untell.rewriter.structural import _NEUTRAL, style_profile
 
         assert style_profile(None) == _NEUTRAL
         assert style_profile("not-a-real-style") == _NEUTRAL

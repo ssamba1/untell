@@ -13,7 +13,6 @@ from .base import Rewriter
 from .structural import StructuralRewriter
 from .surgical import SurgicalRewriter
 
-
 _INTENSITY_SPAN = 0.3
 
 

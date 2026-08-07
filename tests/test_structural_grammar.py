@@ -425,9 +425,9 @@ class TestNoDoubledTerminator:
             assert not _DOUBLE_STOP.search(out), out
 
     def test_conjunction_branch_does_not_double_either(self):
-        from untell.rewriter.structural import _split_long_sentences
-
         import random
+
+        from untell.rewriter.structural import _split_long_sentences
 
         sentence = (
             "The system collects data from many different sources every single day, and it then "

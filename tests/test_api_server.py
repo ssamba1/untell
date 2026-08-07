@@ -10,7 +10,9 @@ import pytest
 # module when FastAPI is absent rather than crashing collection.
 pytest.importorskip("fastapi")
 
-import untell.api_server as _  # noqa: E402,F401  — side-effect import for patch resolution
+# Bound to a real name, not `_`: every throwaway loop variable in this file is also `_`, so the
+# module-level binding was shadowed and the import read as dead to both linters and readers.
+import untell.api_server as _api_server_preimport  # noqa: E402,F401  — side effect: patch resolution
 
 
 def test_health_endpoint():
@@ -632,8 +634,9 @@ class TestAnUnmodelledFieldIsAnError(_Unlimited):
         """
         import inspect
 
-        import untell.api_server as api
         from pydantic import BaseModel
+
+        import untell.api_server as api
 
         models = [
             obj

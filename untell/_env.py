@@ -11,7 +11,6 @@ import os
 import re
 from pathlib import Path
 
-
 _COMMENT = re.compile(r"\s+#.*$")
 
 

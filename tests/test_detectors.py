@@ -616,8 +616,8 @@ class TestDegenerateRepetitionIsNotHuman:
 
     def test_the_term_is_silent_on_every_real_hc3_text(self):
         """A new term in a detector with published FPR/TPR has to be provably inert on real text."""
-        from untell.detectors.perplexity_burstiness import _repetition_signal
         from eval.datasets import _BUILTIN
+        from untell.detectors.perplexity_burstiness import _repetition_signal
 
         for text in _BUILTIN:
             assert _repetition_signal(text) == 0.0

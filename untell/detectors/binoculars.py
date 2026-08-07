@@ -66,7 +66,6 @@ class BinocularsDetector:
         # rather than folded in as a fake neutral 0.5.
         if not self.available() or not text.strip():
             return None
-        import torch
 
         tok, observer, performer = self._load()
         device = next(observer.parameters()).device

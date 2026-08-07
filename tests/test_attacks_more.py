@@ -425,8 +425,8 @@ class TestScrubDoesWhatItsDocstringSays:
     @pytest.mark.parametrize(
         ("label", "text"),
         [
-            ("RLM next to RTL", f"مرحبا‏ 123"),
-            ("LRM before RTL", f"abc ‎مرحبا"),
+            ("RLM next to RTL", "مرحبا‏ 123"),
+            ("LRM before RTL", "abc ‎مرحبا"),
             ("RLE...PDF embedding", "‫مرحبا‬ end"),
             ("FSI...PDI isolate", "⁨مرحبا⁩ end"),
         ],
