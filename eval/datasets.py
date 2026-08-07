@@ -100,6 +100,124 @@ def _hc3_rows() -> list[dict]:
     return rows
 
 
+def _raid_pairs(n: int, min_words: int, scan_cap: int = 60000) -> list[tuple[str, str]]:
+    """True (human, machine) pairs from RAID, matched on ``source_id``.
+
+    RAID is the corpus this repo most needed and did not have. HC3 is 2022-era ChatGPT answering
+    forum questions; RAID spans several domains (abstracts, books, news, reviews, recipes, poetry,
+    wiki) and several generators (llama-chat, mpt, mpt-chat, gpt2, and more), which is what makes
+    it possible to tell "this pattern marks AI text" apart from "this pattern marks 2022 ChatGPT
+    answering an ELI5 question".
+
+    Pairing is exact rather than topical: every machine row carries the ``source_id`` of the human
+    document it was generated from, so the two really are about the same thing. MEASURED on the
+    first 4000 rows — 493 source_ids, and all 493 had both sides.
+
+    ``attack='none'`` rows only. RAID also ships adversarially perturbed copies (homoglyphs,
+    whitespace, synonym swaps); those are a different measurement — how a detector survives an
+    attack — and mixing them in would quietly answer that question instead of this one.
+    """
+    try:
+        from datasets import load_dataset
+    except Exception:
+        logger.warning("RAID pairs need the '.[eval]' extra (`datasets`)")
+        return []
+    try:
+        ds = load_dataset("liamdugan/raid", split="train", streaming=True)
+    except Exception as exc:
+        logger.warning("could not stream RAID: %s: %s", type(exc).__name__, exc)
+        return []
+
+    humans: dict[str, str] = {}
+    machines: dict[str, str] = {}
+    pairs: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for i, row in enumerate(ds):
+        if i >= scan_cap or len(pairs) >= n:
+            break
+        if (row.get("attack") or "none") != "none":
+            continue
+        text = (row.get("generation") or "").strip()
+        key = row.get("source_id")
+        if not text or not key or len(text.split()) < min_words:
+            continue
+        bucket = humans if row.get("model") == "human" else machines
+        bucket.setdefault(key, text)
+        # Emit as soon as both halves of a pair exist, so a short scan still yields data.
+        if key not in seen and key in humans and key in machines:
+            seen.add(key)
+            pairs.append((humans[key], machines[key]))
+    if len(pairs) < n:
+        logger.warning(
+            "RAID yielded %d of %d requested pairs within a %d-row scan (min_words=%d)",
+            len(pairs), n, scan_cap, min_words,
+        )
+    return pairs[:n]
+
+
+def _mage_pairs(n: int, min_words: int, scan_cap: int = 260000) -> list[tuple[str, str]]:
+    """DOMAIN-MATCHED (human, machine) pairs from MAGE — **not** prompt-paired.
+
+    Read that distinction before using these numbers. MAGE carries no key linking a machine
+    sample to the human document it came from; the only shared field is ``src``, e.g.
+    ``cmv_human`` against ``cmv_machine_continuation_gpt-3.5-turbo``. Pairing on the domain prefix
+    controls for genre and topic area, which is most of what matters for a detector comparison, but
+    the two texts are not about the same specific thing the way HC3's and RAID's are. Anything
+    sensitive to per-item matching should use RAID.
+
+    What MAGE brings instead is generator breadth: gpt-3.5-turbo, text-davinci-002, flan-t5 (large
+    and xxl), opt (2.7b through 30b) and others, which is far wider than HC3's single model.
+
+    The scan cap is large because the corpus is ORDERED — MEASURED, the first 150k rows are all
+    label=1 (human) and machine rows only start after that — so a small scan finds one class only
+    and silently returns nothing.
+    """
+    try:
+        from datasets import load_dataset
+    except Exception:
+        logger.warning("MAGE pairs need the '.[eval]' extra (`datasets`)")
+        return []
+    try:
+        ds = load_dataset("yaful/MAGE", split="train", streaming=True)
+    except Exception as exc:
+        logger.warning("could not stream MAGE: %s: %s", type(exc).__name__, exc)
+        return []
+
+    def _domain(src: str) -> str:
+        # "cmv_human" -> "cmv";  "hswag_machine_continuation_flan_t5_xxl" -> "hswag"
+        for marker in ("_human", "_machine"):
+            if marker in src:
+                return src.split(marker, 1)[0]
+        return src
+
+    humans: dict[str, list[str]] = {}
+    machines: dict[str, list[str]] = {}
+    for i, row in enumerate(ds):
+        if i >= scan_cap:
+            break
+        text = (row.get("text") or "").strip()
+        if not text or len(text.split()) < min_words:
+            continue
+        dom = _domain(str(row.get("src") or ""))
+        # label 1 = human, 0 = machine (verified against the published srcs: label 1 rows are
+        # *_human, label 0 rows are *_machine_*).
+        bucket = humans if row.get("label") == 1 else machines
+        bucket.setdefault(dom, []).append(text)
+
+    pairs: list[tuple[str, str]] = []
+    for dom, hs in humans.items():
+        for h, m in zip(hs, machines.get(dom, [])):
+            pairs.append((h, m))
+            if len(pairs) >= n:
+                return pairs
+    if len(pairs) < n:
+        logger.warning(
+            "MAGE yielded %d of %d requested domain-matched pairs within a %d-row scan",
+            len(pairs), n, scan_cap,
+        )
+    return pairs[:n]
+
+
 def load_pairs(dataset: str = "hc3", n: int = 50, min_words: int = 60) -> list[tuple[str, str]]:
     """Return ``(human_text, ai_text)`` pairs answering the same prompt.
 
@@ -108,8 +226,15 @@ def load_pairs(dataset: str = "hc3", n: int = 50, min_words: int = 60) -> list[t
     noise also passes. Returns ``[]`` when the data is unavailable — callers should say so rather
     than substitute unlabelled text.
     """
-    if dataset.lower() != "hc3":
-        logger.warning("paired human/AI data is only wired up for 'hc3'; got %r", dataset)
+    name = dataset.lower()
+    if name == "raid":
+        return _raid_pairs(n, min_words)
+    if name == "mage":
+        return _mage_pairs(n, min_words)
+    if name != "hc3":
+        logger.warning(
+            "paired human/AI data is wired up for 'hc3', 'raid' and 'mage'; got %r", dataset
+        )
         return []
     try:
         rows = _hc3_rows()

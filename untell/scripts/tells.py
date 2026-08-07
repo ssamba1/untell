@@ -69,7 +69,29 @@ logger = logging.getLogger(__name__)
 # fire MORE on human writing than on AI: dropping them raises separation from +0.307 to +0.332 and
 # AUROC from 0.7047 to 0.7177.
 #
-# They are NOT dropped or reweighted. Ten categories never fire on this corpus at all —
+# REPLICATED on a SECOND corpus, 2026-08-07 — 150 RAID pairs (liamdugan/raid: multi-domain,
+# multi-generator, exact human-vs-machine pairing on source_id, and far more recent than HC3):
+#
+#     participial_trailer   human   1  ai  24   0.96   <- never fired on HC3 AT ALL
+#     cliche                human   2  ai  27   0.93   (HC3 0.90 — holds)
+#     formulaic_transition  human  43  ai  65   0.60   (HC3 0.87 — much weaker here)
+#     ai_vocab              human  92  ai 131   0.59   (HC3 0.55 — weak on BOTH)
+#     em_dash               human   2  ai   0   0.00   (HC3 0.33 — wrong way on both)
+#
+# Three things this settles that one corpus could not:
+#
+#  1. **ai_vocab really is a coin flip.** 0.55 on HC3 and 0.59 on RAID. Two corpora, two eras, two
+#     generator families, same answer. It is not an artefact of 2022 ChatGPT.
+#  2. **Never-firing is not useless.** `participial_trailer` scored nothing on HC3 and is the
+#     STRONGEST category on RAID at 0.96. Dropping the silent categories, which the HC3 numbers
+#     alone would have justified, would have deleted the best pattern in the catalogue.
+#  3. **Some of this measures REGISTER, not authorship.** `formulaic_transition` fires on 43 of 150
+#     human RAID texts — those are academic abstracts, where "Furthermore" is native. Overall
+#     separation is worse on RAID than HC3 (AUROC 0.638 vs 0.705, tells/100w gap +0.227 vs +0.307)
+#     precisely because RAID's human half is formal writing. A catalogue tuned on forum answers
+#     partly learns "formal" rather than "machine".
+#
+# They are NOT dropped or reweighted. Ten categories never fire on HC3 at all —
 # chatbot_artifact, cutoff_disclaimer, aphorism, notability_padding and the formatting ones — and
 # those are precisely the MODERN tells: HC3 is 2022-era ChatGPT and predates them. Refitting to it
 # would delete the patterns aimed at current models to score better on a dated benchmark, which is
