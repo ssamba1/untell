@@ -301,8 +301,8 @@ def test_census_numbers_match_the_census_data():
         )
 
     loop = sum(1 for x in data if str(x.get("detector_in_loop", "")).lower().startswith("yes"))
-    assert len(data) == 183, f"census json has {len(data)} profiles"
-    assert f"{len(data)} read" in prose or f"{len(data)} profiled" in prose
+    assert len(data) >= 400, f"census json has only {len(data)} profiles"
+    assert f"{len(data)} read" in prose, f"prose does not state {len(data)} read"
     assert re.search(rf"\b{loop} of {len(data)}\b", prose), (
         f"{loop} repos close a detector loop; the prose does not say so"
     )

@@ -4,7 +4,7 @@
 on GitHub. Commercial tools (Undetectable.ai, StealthGPT, WriteHuman…) are closed SaaS, not repos —
 out of scope. We surveyed the open field ourselves (GitHub topics, papers-with-code, ~110 repos; see
 `humanizer-research-report.md`), and re-swept it on 2026-08-05 across 624 distinct queries turning up
-**1287 candidate repos, 183 read individually** ([`humanizer-census.md`](humanizer-census.md)) — see the box
+**1287 candidate repos, 435 read individually** ([`humanizer-census.md`](humanizer-census.md)) — see the box
 below for what that census changed. Verdict below is evidenced, not asserted, and states honestly where we are *not* #1.
 
 ---
@@ -22,15 +22,15 @@ The four criteria below are **our own framing** of what it would take to close t
 they are not a quotation, and a previous version of this page presented them as one:
 
 > **Superseded in part by the 2026-08-05 census** ([`humanizer-census.md`](humanizer-census.md) —
-> 1287 repos found, 183 read individually). Three things on this page are now known to be wrong or
+> 1287 repos found, 435 read individually). Three things on this page are now known to be wrong or
 > too strong, and they are corrected there rather than quietly here:
 >
-> - **The detector loop is not ours alone.** 31 of 183 profiled repos put a detector in the loop,
->   29 of them at inference time. `chengez/Adversarial-Paraphrasing` couples it *per token*.
-> - **Automated meaning verification is not ours alone.** 40 of 183 verify meaning, 36 with a real
->   semantic check. `Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI
->   entailment gate this repo does. 40 also do some fact preservation.
-> - **"Most complete open humanizer" holds only in English.** 42 of the 183 target another
+> - **The detector loop is not ours alone.** 49 of 435 profiled repos put a detector in the loop,
+>   43 of them at inference time. `chengez/Adversarial-Paraphrasing` couples it *per token*.
+> - **Automated meaning verification is not ours alone.** 85 of 435 verify meaning, and 131 do some
+>   form of fact preservation. `Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI
+>   entailment gate this repo does. 
+> - **"Most complete open humanizer" holds only in English.** 139 of the 435 (32%) target another
 >   language, including four of the eight largest repos in the field — `Humanizer-zh-TW` (68.5k★),
 >   `Humanizer-zh` (14.7k★), Korean `k-skill` (7.0k★) and `im-not-ai` (4.2k★). Our catalogue, the
 >   voice matcher's constants and every measurement here are English-only.
@@ -60,7 +60,7 @@ Against our own four criteria, this repo has all four:
 > TPR@1%FPR** across neural, watermark and zero-shot detectors, and its loop runs **per token**
 > (`Paraphraser.paraphrase()` scores every top-k candidate's partial decode). It has (a) and (c)
 > without (b) or (d) — research code, no meaning gate in the pipeline, no package, no tests.
-> Thirty other repos also close a loop; see the census for all of them.
+> Forty-eight other repos also close a loop; see the census for all of them.
 
 | Gap criterion | This repo |
 |---|---|
@@ -82,7 +82,7 @@ Against our own four criteria, this repo has all four:
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
-| Automated tests | ✅ **1694** tests, 61 modules | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
+| Automated tests | ✅ **1868** tests, 61 modules | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
 | CI (lite + full-tier, real models) | ✅ 4 jobs | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs without a GPU | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | License | MIT | MIT | MIT | MIT | Apache | MIT | MIT |
@@ -95,7 +95,9 @@ close the loop against real detectors with a verifier and an install.
 
 ## What each competitor is, and why we're more complete
 
-- **StealthRL** (16★, the SOTA research repo) — the only other repo that truly closes a detector loop,
+- **StealthRL** (18★, the SOTA research repo) — once described here as "the only other repo that
+  truly closes a detector loop"; the census counted **49**, so read this as one of the strongest, not
+  the only. It closes it
   via **GRPO RL training** of a Qwen3-4B policy against an ensemble (97.6% ASR, transfers to held-out
   detectors). **Genuinely a stronger raw evasion *model* than ours** — and we say so. But it is a
   **GPU training framework, not a usable tool**: no inference package, no commercial-detector

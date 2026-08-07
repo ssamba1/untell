@@ -1,10 +1,10 @@
-# The humanizer census — 1287 repos found, 183 read
+# The humanizer census — 1287 repos found, 435 read
 
 **Method.** A multi-modal sweep run 2026-08-05: 12 discovery angles (GitHub topics, keyword
 variants, technique names, research code, detector repos, unicode/watermark tools, prompt guides,
 awesome-lists, API wrappers, non-English, package registries, academic integrity), looped until two
 consecutive rounds returned nothing new — **3 rounds, 624 distinct queries, 1287 candidate repos**.
-The top 183 by relevance were then read individually: README plus source where reachable. Raw data:
+The top 435 by relevance were then read individually: README plus source where reachable. Raw data:
 [`humanizer-census.json`](humanizer-census.json).
 
 **Read the coverage limits before the numbers** — they are at the bottom, and they are real.
@@ -15,12 +15,12 @@ The top 183 by relevance were then read individually: README plus source where r
 
 | claim as previously written | census finding |
 |---|---|
-| an inference-time detector-feedback loop is what nobody else has | **31 of 183 put a detector in the loop; 29 at inference time** |
-| automated meaning verification is ours alone | **40 of 183 verify meaning; 36 with a real semantic check** (NLI, BERTScore, USE or embedding cosine) |
-| we are the most complete open humanizer | **true only for English.** The four largest tools in this field are non-English and we do not cover their languages at all |
+| an inference-time detector-feedback loop is what nobody else has | **49 of 435 put a detector in the loop; 43 at inference time** |
+| automated meaning verification is ours alone | **85 of 435 verify meaning; 202 mention a semantic check** (NLI, BERTScore, USE or embedding cosine) |
+| we are the most complete open humanizer | **true only for English.** **139 of 435 (32%) target another language**, including four of the eight largest tools in the field |
 
-Counts across the 183 read: **31** detector-in-loop · **40** meaning verification · **40** some fact
-preservation · **65** any tests.
+Counts across the 435 read: **49** detector-in-loop (43 at inference time) · **85** meaning
+verification · **131** some fact preservation · **136** any tests · **139** non-English.
 
 ---
 
@@ -28,15 +28,20 @@ preservation · **65** any tests.
 
 | category | n | what it is | ceiling |
 |---|---|---|---|
-| prompt-guide | 49 | a Markdown pattern list an LLM applies | no measurement, no loop; depends entirely on the model |
-| adversarial-perturbation | 34 | search over substitutions against a detector score | strongest measured evasion; usually destroys nothing but also verifies nothing |
-| api-wrapper | 24 | client for a commercial humanizer | inherits that vendor's ceiling and price |
-| research-code | 17 | paper artifacts | strong numbers, not installable |
-| rule-based-rewriter | 13 | deterministic transforms | cheap, weak alone |
-| fine-tuned-model | 7 | trained to evade (GRPO/DPO/SFT) | strongest transfer, needs a GPU |
-| unicode-trickery | 5 | homoglyphs, zero-width | trivially defeated by normalisation |
+| prompt-guide | 184 | a Markdown pattern list an LLM applies | no measurement, no loop; depends entirely on the model. **42% of the whole field** |
+| api-wrapper | 75 | client for a commercial humanizer | inherits that vendor's ceiling and price |
+| adversarial-perturbation | 39 | search over substitutions against a detector score | strongest measured evasion; verifies nothing |
+| rule-based-rewriter | 38 | deterministic transforms | cheap, weak alone |
+| research-code | 19 | paper artifacts | strong numbers, not installable |
+| fine-tuned-model | 11 | trained to evade (GRPO/DPO/SFT) | strongest transfer, needs a GPU |
+| unicode-trickery | 7 | homoglyphs, zero-width | trivially defeated by normalisation |
+| paraphrase-model | 7 | a paraphraser applied wholesale | one-shot, no feedback |
 | detector-with-evasion | 5 | detectors shipping attack code | |
-| paraphrase-model / back-translation / dataset / other | 29 | | |
+| back-translation / dataset / other | 50 | | |
+
+**The field is overwhelmingly prompt guides.** 184 of 435 are a Markdown file telling an LLM what
+not to write — no detector, no measurement, no test. Add the 75 API wrappers and **60% of the field
+does not implement a humanizer at all**; it either instructs one or bills for one.
 
 ## The biggest repos are not the ones we were comparing against
 
@@ -53,14 +58,14 @@ preservation · **65** any tests.
 | 2,029 | `chi111i/BypassAIGC` | api-wrapper, Chinese |
 | 1,551 | `lynote-ai/humanize-text` | back-translation |
 
-**The single largest blind spot this census found is language.** 42 of the 183 target a language
-other than English, including four of the eight largest repos in the field. Our 29-pattern
+**The single largest blind spot this census found is language.** **139 of the 435 — 32% —** target
+a language other than English, including four of the eight largest repos in the field. Our 29-pattern
 catalogue, the voice matcher's scale constants, and every measurement in this repo are English-only.
 Korean repos catalogue 번역체 calque patterns; Chinese ones catalogue Chinese punctuation and
 academic-register tells. None of that is portable from our catalogue, and none of ours is portable
 to them.
 
-## Who closes a detector loop (31), and how deeply
+## Who closes a detector loop (49), and how deeply
 
 Sorted by how tightly the detector is coupled, not by stars.
 
@@ -76,7 +81,7 @@ Sorted by how tightly the detector is coupled, not by stars.
 | `rudra496/StealthHumanizer` | local heuristic between passes; re-humanizes "ai"/"maybe" sentences | computed, **not blocking** |
 | `ksanyok/TextHumanize` | `humanize_until_human()` against a 3-layer internal ensemble | structural checks only |
 | `samrand96/Undetectable-AI` | polls writer.com until it returns "Human-Generated" | none |
-| …21 more | see the JSON | |
+| …39 more | see the JSON | |
 
 **Correction to an earlier correction in this repo's history.** On first pass I read chengez's
 README and the arXiv abstract, found neither established token-level decoding, and recorded that the
@@ -84,9 +89,9 @@ README and the arXiv abstract, found neither established token-level decoding, a
 loop is per token, in `utils.py`. That is *more* tightly coupled than our per-candidate loop, and
 the earlier note was wrong. README and abstract are not the source.
 
-## Who verifies meaning (40), and how well
+## Who verifies meaning (85), and how well
 
-Only 36 use a real semantic check. The methods, in rough order of strength:
+85 verify meaning at all; 202 mention a semantic check somewhere. The methods, in rough order of strength:
 
 - **Bidirectional NLI entailment** — `Advancing-Machine-Human-Reasoning-Lab/apt` requires both
   s1→s2 and s2→s1 to be predicted *entailment*. Methodologically the same gate as ours. It is a
@@ -100,19 +105,19 @@ Only 36 use a real semantic check. The methods, in rough order of strength:
 What remains distinctive here is not *having* a meaning gate but the **stack**: five gates
 (similarity, numerals, hedges, NLI both directions, semantic roles) that all run per candidate and
 any of which can veto, plus byte-exact sentinel locking of citations and numbers with a tested
-round-trip. **40 repos do some fact preservation**, so that is not unique either — but no profiled
-repo combines all of it.
+round-trip. **131 repos do some fact preservation**, so that is emphatically not unique either — but
+no profiled repo combines all of it.
 
 ## What this leaves untell able to claim
 
 Narrower than before, and checkable:
 
-1. **The combination**, not any component. The loop is not ours (31 others), the meaning gate is not
-   ours (40 others), fact preservation is not ours (40 others), tests are not ours (65 others). No
+1. **The combination**, not any component. The loop is not ours (49 others), the meaning gate is not
+   ours (85 others), fact preservation is not ours (131 others), tests are not ours (136 others). No
    profiled repo has all four *and* an installable package.
 2. **Measurement discipline.** No profiled repo publishes negative results, refuted claims, or
    corrections to its own headline numbers. That remains genuinely unusual.
-3. **Test depth** — 1694 tests against 65 repos having "any tests" at all.
+3. **Test depth** — 1868 tests against 136 repos having "any tests" at all.
 
 And what it should stop claiming: that nobody else closes the loop, that its evasion numbers are
 competitive with the research systems (chengez −87.88% TPR@1%FPR; StealthRL AUROC 0.79→0.43 on
@@ -123,8 +128,10 @@ without the qualifier **"in English"**.
 
 - **GitHub only.** GitLab, Codeberg, SourceForge and Gitea are not covered. Their explore pages are
   JS-rendered and could not be enumerated.
-- **183 of 1287 read.** The remaining 1104 were ranked below the cut by a keyword heuristic, which
-  can misrank. Any of them could be a missed threat.
+- **435 of 1287 read.** The remaining 852 were ranked below the cut by a keyword heuristic, which
+  can misrank. The unread tail is dominated by small Spanish, Portuguese, French, Russian and
+  Ukrainian `humanizador`/`humanizer-xx` skill repos — 49 of them died on an API spend limit
+  mid-read, so that segment is under-counted even in the 139 non-English figure.
 - **The completeness critics did not finish.** Both agents whose job was to find what keyword search
   structurally cannot reach — forks larger than their parents, monorepo subdirectories, renamed or
   DMCA'd repos, Gists, HuggingFace Spaces — died on an API spend limit, along with the synthesis
