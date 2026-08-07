@@ -40,6 +40,8 @@ if __package__ in (None, ""):
 from untell.scripts.run import untell_text
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 
+logger = logging.getLogger(__name__)
+
 # A few formulaic AI paragraphs (no locked facts needed; this measures detector movement).
 #
 # HAND-WRITTEN, and measurably EASIER than real AI output. They were composed to read as AI, and
@@ -89,6 +91,83 @@ def _stdev(xs: list[float]) -> float | None:
     return round((sum((x - m) ** 2 for x in xs) / len(xs)) ** 0.5, 4)
 
 
+def _score_one(args: tuple) -> tuple:
+    """Score + loop ONE text. Module-level so it is picklable by ProcessPoolExecutor.
+
+    The rewriter is passed by NAME, not as an object: rewriter instances hold loaded models and are
+    not picklable, and each worker has to build its own anyway.
+    """
+    text, tier, threshold, max_iters, rewriter_name, best_of = args
+    import os
+
+    # Each worker gets its own torch. Without capping threads, N workers each spawn a full thread
+    # pool and oversubscribe the box, which is slower than running serially.
+    os.environ.setdefault("OMP_NUM_THREADS", "2")
+    os.environ.setdefault("MKL_NUM_THREADS", "2")
+    try:
+        import torch
+
+        torch.set_num_threads(2)
+    except Exception:
+        pass
+
+    from untell.rewriter import get_rewriter
+
+    rw = get_rewriter(prefer=rewriter_name) if rewriter_name else None
+    pre = score_text(text, tier=tier, threshold=threshold)
+    res = untell_text(
+        text, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rw, best_of=best_of
+    )
+    return text, pre, res
+
+
+def _each_text(texts, tier, threshold, max_iters, rewriter, best_of, workers):
+    """Yield (text, pre_score, loop_result) per text, in parallel when asked and possible.
+
+    MEASURED, and the answer depends entirely on how expensive one text is. Each worker re-imports
+    the stack and loads its own detector copies, which costs ~15-20s before it does any work:
+
+        stdlib lite, n=8, max_iters=2   workers 1 -> 16.6s   4 -> 20.0s   8 -> 24.7s   (SLOWER)
+        full tier,   n=4, max_iters=1   workers 1 -> 85.7s   4 -> 47.7s               (1.8x)
+
+    So the default is 1. Parallelism is for the case this was written for — full-tier runs on real
+    text, where a single text costs 250s with `composite` and 950s with `neural` at max_iters=5 and
+    startup is noise. At those sizes the speedup approaches the worker count; at lite-tier sizes it
+    is pure overhead.
+
+    Falls back to the serial path whenever parallelism cannot be used, so behaviour is identical
+    and only the wall-clock changes:
+      - workers <= 1, or a single text (nothing to gain);
+      - the rewriter was passed as an OBJECT rather than a name (it holds models and cannot be
+        pickled — the CLI passes a name, library callers may not);
+      - the pool fails to start at all (frozen interpreters, restricted sandboxes).
+    """
+    name = rewriter if isinstance(rewriter, str) else getattr(rewriter, "name", None)
+    parallel_ok = workers and workers > 1 and len(texts) > 1 and (rewriter is None or name)
+    if parallel_ok:
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+
+            payload = [(t, tier, threshold, max_iters, name, best_of) for t in texts]
+            with ProcessPoolExecutor(max_workers=min(workers, len(texts))) as pool:
+                # `map` preserves input order, so aggregation stays deterministic.
+                yield from pool.map(_score_one, payload)
+            return
+        except Exception as exc:  # noqa: BLE001 — any pool failure must degrade, never abort a run
+            logger.warning(
+                "parallel ceiling run failed (%s: %s); falling back to serial",
+                type(exc).__name__, str(exc)[:80],
+            )
+
+    for t in texts:
+        pre = score_text(t, tier=tier, threshold=threshold)
+        res = untell_text(
+            t, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rewriter,
+            best_of=best_of,
+        )
+        yield t, pre, res
+
+
 def measure_ceiling(
     texts: list[str] | None = None,
     tier: str = "full",
@@ -98,6 +177,7 @@ def measure_ceiling(
     best_of: int = 1,
     repeats: int = 1,
     corpus: str = "builtin",
+    workers: int = 1,
 ) -> dict:
     """Score each text, run the loop, and aggregate the before/after detector movement.
 
@@ -118,10 +198,20 @@ def measure_ceiling(
     rewrote = 0
     unscored = 0
 
+    # Texts are INDEPENDENT — each one is scored, looped and re-scored with no shared state — so
+    # this loop was leaving a whole machine idle. It ran strictly serially, which is the real reason
+    # every real-text ceiling figure in this repo is n=6: not that samples are scarce (HC3 yields
+    # 2000+ pairs on request) but that one text costs ~250s with `composite` and ~950s with
+    # `neural` at max_iters=5, so n=6 was already an hour and a half.
+    #
+    # `workers` fans the per-text work out across processes. Each worker re-imports torch and loads
+    # its own detector copies, so memory is the binding constraint rather than cores; the default is
+    # deliberately conservative and the env var exists to tune it per machine.
     for _run in range(max(1, repeats)):
         run_posts: list[float] = []
-        for t in texts:
-            pre = score_text(t, tier=tier, threshold=threshold)
+        for _text, pre, res in _each_text(
+            texts, tier, threshold, max_iters, rewriter, best_of, workers
+        ):
             # An unscored result carries max: 0.0 as a placeholder, and flagged_rate below counts
             # `s >= threshold` — so a dead detector stack would report a 0% post-flagged rate, i.e.
             # "we beat every detector", as the headline ceiling number. Exclude, don't count.
@@ -132,10 +222,6 @@ def measure_ceiling(
                 for k, v in _numeric(pre).items():
                     per_pre.setdefault(k, []).append(v)
 
-            res = untell_text(
-                t, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rewriter,
-                best_of=best_of,
-            )
             if "error" not in res and "post" in res:
                 post = res["post"]
                 if post.get("scored") is not False:
@@ -302,6 +388,14 @@ def build_parser() -> argparse.ArgumentParser:
         "choice is a FREE no-key backend so the loop runs at $0 — 'composite' (structural+surgical), "
         "'ensemble'/'max' (best of all free methods), 'neural' (T5 best-of-N; needs .[full]).",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="run N texts in parallel (each worker loads its own detector copies, so memory is "
+        "the limit, not cores). Texts are independent; the default 1 is the old serial path. "
+        "This is what made n=6 the practical ceiling for full-tier real-text runs.",
+    )
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -355,6 +449,7 @@ def main(argv: list[str] | None = None) -> int:
         repeats=args.repeats,
         rewriter=rewriter,
         corpus=corpus,
+        workers=args.workers,
     )
     print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
     return 0

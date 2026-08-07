@@ -353,3 +353,62 @@ def test_a_known_name_still_reports_the_missing_dependency():
             load_samples("hc3", 2, strict=True)
     finally:
         builtins.__import__ = real_import
+
+
+class TestParallelWorkers:
+    """`measure_ceiling` looped over texts serially, which is the real reason every full-tier
+    real-text figure in this repo is n=6 — not sample scarcity (HC3 yields 2000+ pairs on request)
+    but that one text costs ~250s with composite at max_iters=5.
+
+    MEASURED speedup depends on per-text cost, because each worker reloads the stack:
+        stdlib lite, n=8, iters=2:  1 -> 16.6s, 4 -> 20.0s, 8 -> 24.7s   (slower — startup wins)
+        full tier,   n=4, iters=1:  1 -> 85.7s, 4 -> 47.7s               (1.8x)
+    Hence the default of 1.
+    """
+
+    TEXTS = [
+        "Moreover, we leverage robust solutions to delve into the multifaceted tapestry here.",
+        "Furthermore, this groundbreaking paradigm underscores the pivotal role of innovation.",
+    ]
+
+    def test_default_is_serial(self):
+        """Parallelism must be opt-in: it is a loss on cheap workloads."""
+        import inspect
+
+        from eval.ceiling import measure_ceiling
+
+        assert inspect.signature(measure_ceiling).parameters["workers"].default == 1
+
+    def test_parallel_and_serial_agree_on_the_deterministic_parts(self, monkeypatch):
+        """The rewriter is stochastic, so post-scores may differ — but the corpus, the count and
+        the PRE scores are deterministic and must match exactly."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from eval.ceiling import measure_ceiling
+
+        kw = dict(tier="lite", rewriter="composite", best_of=1, max_iters=1, corpus="probe")
+        a = measure_ceiling(self.TEXTS, workers=1, **kw)
+        b = measure_ceiling(self.TEXTS, workers=2, **kw)
+        assert a["n"] == b["n"] == len(self.TEXTS)
+        assert a["pre_mean_max"] == b["pre_mean_max"]
+        assert a["rewriter"] == b["rewriter"] == "composite"
+
+    def test_falls_back_to_serial_for_an_unpicklable_rewriter(self, monkeypatch):
+        """A rewriter passed as an OBJECT holds loaded models and cannot cross a process boundary.
+        Library callers do this; it must degrade rather than raise."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from eval.ceiling import measure_ceiling
+        from untell.rewriter import get_rewriter
+
+        r = measure_ceiling(
+            self.TEXTS, tier="lite", rewriter=get_rewriter(prefer="surgical"),
+            best_of=1, max_iters=1, corpus="probe", workers=4,
+        )
+        assert r["n"] == len(self.TEXTS) and r["rewriter"] == "surgical"
+
+    def test_cli_exposes_workers(self):
+        from pathlib import Path
+
+        import eval.ceiling as mod
+
+        assert '"--workers"' in Path(mod.__file__).read_text(encoding="utf-8")
+        assert "workers=args.workers" in Path(mod.__file__).read_text(encoding="utf-8")
