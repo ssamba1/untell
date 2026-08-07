@@ -115,7 +115,7 @@ class TestASentenceMayEndInANumber:
 
 
 class TestSentencesThatEndInsideAQuoteOrBracket:
-    """Terminal punctuation is not always the last character of a sentence.
+    r"""Terminal punctuation is not always the last character of a sentence.
 
     `He said "Done." Then he left.` puts the closing quote between the period and the space, so a
     bare `(?<=[.!?])\s+` never fires and the two sentences come back as one. MEASURED on HC3: 23 of

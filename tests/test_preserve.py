@@ -405,7 +405,7 @@ class TestFactsLockedWholeNotInPieces:
         assert set(m2.values()) == {"8:00 a.m.", "5:00 p.m."}
 
     def test_locking_pm_does_not_eat_the_sentence_terminator(self):
-        """`[Mm]\.?` swallowed the full stop after "PM", leaving the masked text unterminated and
+        r"""`[Mm]\.?` swallowed the full stop after "PM", leaving the masked text unterminated and
         breaking sentence splitting for everything downstream."""
         from untell.scripts.preserve import lock
 

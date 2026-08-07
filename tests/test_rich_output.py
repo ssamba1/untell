@@ -132,7 +132,12 @@ class TestBurstinessReachesThePlainTerminalToo:
             monkeypatch.setattr(rich_output, "_RICH", True)
             monkeypatch.setattr(
                 rich_output, "_CONSOLE",
-                type("C", (), {"print": lambda self, *a, **k: printed.append(a)})(),
+                # `printed` bound as a default, not captured: monkeypatch.setattr is undone at
+                # TEST teardown, not at the end of an iteration, so the fake console installed
+                # here outlives the loop body that made it. A late-closing capture would then
+                # append into whichever list the LAST iteration created, and every assertion but
+                # the final one would be reading a list some other iteration filled.
+                type("C", (), {"print": lambda self, *a, _out=printed, **k: _out.append(a)})(),
             )
             rich_output.print_tells_result(dict(tells))
             rich_shown = any("Burstiness" in str(a) for args in printed for a in args)

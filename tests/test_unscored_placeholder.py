@@ -90,8 +90,12 @@ def test_free_ensemble_score_raises_rather_than_returning_the_placeholder():
     """A 0.0 placeholder here became reward 1.0 — the maximum — for text nothing scored."""
     import training.reward as reward
 
+    # RuntimeError specifically, not bare Exception. `pytest.raises(Exception)` also passes when
+    # the call dies of an AttributeError or a TypeError — a rename or a signature change would keep
+    # this test green while the guard it exists to protect had stopped running. The message is
+    # asserted for the same reason: it is what tells an operator why their training run stopped.
     with patch.object(reward, "score_text", return_value=dict(_UNSCORED)):
-        with pytest.raises(Exception):
+        with pytest.raises(RuntimeError, match="no training signal"):
             reward.free_ensemble_score("some text", tier="lite")
 
 
