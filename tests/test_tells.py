@@ -463,8 +463,13 @@ class TestRepetitionTells:
     """The two strongest categories in the catalogue, added 2026-08-07 after measuring the
     techniques used across the 435-repo census against both corpora.
 
-        repeated_phrasing          AUROC 0.965 (RAID) / 0.921 (HC3)
+        repeated_phrasing          AUROC 0.817 length-controlled (0.965 raw, 0.921 HC3 raw)
         repeated_sentence_openers  AUROC 0.901 (RAID) / 0.606 (HC3)
+
+    The raw figure over-claims and is corrected here: RAID's AI texts run 293 words against 203
+    for the human halves, and a longer text has more chances for any trigram to recur, so ~40% of
+    the raw separation was length. At matched length AI still repeats 3.3x more per token
+    (4.24% vs 1.29%), which is what makes it worth having.
 
     Adding them took the whole tells/100w metric from AUROC 0.617 -> 0.948 on RAID and
     0.763 -> 0.888 on HC3. For scale, `ai_vocab` — the cluster this product category is named
@@ -512,6 +517,28 @@ class TestRepetitionTells:
 
         assert _EVIDENCE["repeated_phrasing"] == "strong"
         assert _EVIDENCE["repeated_sentence_openers"] == "moderate"
+
+    def test_the_threshold_is_not_length_biased(self):
+        """The 5% bar must not fire more on long HUMAN documents just because they are long.
+
+        MEASURED on 384 human documents: the share crossing 5% is flat with length — 6% at
+        60-150 words, 5% at 150-250, 5% at 250-400, 7% above 400 — even though mean human
+        repetition climbs 1.19% -> 2.56%. The margin narrows, so a corpus much longer than
+        anything measured here should re-check it.
+        """
+        from untell.scripts.tells import _repeated_trigrams
+
+        # A long, non-repetitive human-style passage must stay silent.
+        varied = (
+            "I walked to the shop and it was shut. My neighbour said the owner had gone to a "
+            "funeral in Leeds, which nobody had bothered to mention. So I went home and made "
+            "toast instead. Reading the paper took until four, by which point the rain had "
+            "finally stopped. The afternoon looked almost salvageable after that, so I dug out "
+            "the secateurs and cut back the hedge that had been annoying me since June. "
+            "Halfway through, next door's cat appeared on the wall and watched with what I can "
+            "only describe as professional disapproval, then left without a sound."
+        )
+        assert _repeated_trigrams(varied) == 0
 
     def test_rejected_candidates_did_not_get_added(self):
         """Guard against someone adding the two techniques the measurement rejected. Passive voice

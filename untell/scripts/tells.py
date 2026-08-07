@@ -107,10 +107,11 @@ _EVIDENCE: dict[str, str] = {
     "hedge_stacking": "weak", "negated_contrast": "weak", "ai_vocab": "weak",
     "false_range": "weak", "em_dash": "weak", "inflated_copula": "weak",
     "markdown_artifact": "weak", "rule_of_three": "weak", "semicolon_crutch": "weak",
-    # Added 2026-08-07 and immediately the strongest entries here — AUROC 0.965/0.921 (RAID/HC3)
-    # for repeated_phrasing and 0.901/0.606 for repeated_sentence_openers, against 0.638-0.705 for
-    # the whole tells/100w metric. Both replicate across corpora, which is why they are "strong"
-    # where ai_vocab, measured twice at ~0.57, is "weak".
+    # Added 2026-08-07 and immediately the strongest entries here — repeated_phrasing at AUROC
+    # 0.817 once controlled for length (0.965 raw, and the raw figure over-claims: RAID's AI texts
+    # are 45% longer, which inflates any repetition measure), repeated_sentence_openers at
+    # 0.901/0.606. Against 0.638-0.705 for the whole tells/100w metric, and ~0.57 for ai_vocab
+    # measured twice. Both replicate across corpora, which is what earns "strong" here.
     "repeated_phrasing": "strong", "repeated_sentence_openers": "moderate",
 }
 
@@ -407,13 +408,23 @@ _MIN_WORDS_FOR_REPETITION = 60
 def _repeated_trigrams(text: str) -> int:
     """Word 3-grams the text uses more than once, as a share of its tokens (percent, floored).
 
-    **The strongest single signal measured in this repo**, and it replicates across corpora:
+    The strongest single signal measured in this repo, and it replicates across corpora — but the
+    headline number is inflated by LENGTH and the honest figure is the controlled one:
 
-        AUROC 0.965 on 120 RAID pairs · 0.921 on 120 HC3 pairs
+        AUROC 0.965 raw · **0.817 length-matched** · 0.815 on a fixed 150-word window
+                                                      (120 RAID pairs; 0.921 raw on HC3)
 
-    For scale, the whole tells/100w metric runs 0.638-0.705. AI prose reuses its own phrasing far
-    more than human prose does — mean 11.3% against 1.8% on RAID, 7.5% against 1.3% on HC3 — which
-    is a different failure from vocabulary: the model settles into a phrase and returns to it.
+    RAID's AI texts run 293 words against 203 for the human halves, and a longer text has more
+    chances for any trigram to recur, so roughly 40% of the raw separation was length rather than
+    style. What survives the control is still the best signal here — AI repeats 3.3x more per
+    token at matched length (4.24% against 1.29%) — and still beats the whole tells/100w metric,
+    which runs 0.638-0.705. But 0.965 was over-claiming and is corrected here rather than quoted on.
+
+    The THRESHOLD is unaffected, which is the practical question. Measured on human text alone
+    across 384 documents, the share crossing 5% is flat with length — 6% at 60-150 words, 5% at
+    150-250, 5% at 250-400, 7% above 400 — because human prose stays far below the bar at every
+    length. Mean human repetition does climb (1.19% -> 2.56%), so the margin narrows; a much longer
+    corpus than anything measured here should re-check it.
 
     Threshold 5.0 chosen from the false-positive curve rather than by eye:
 
