@@ -993,3 +993,51 @@ class TestEveryStyleActuallyChangesTheFreePath:
 
         assert _NEUTRAL["sentences"] == 1.0
         assert _NEUTRAL["openers"] == 1.0
+
+
+class TestMaxIsAnAliasOfEnsembleAndNotASecondMethod:
+    """`max` and `ensemble` resolve to the same class, and `max` reports `name == "ensemble"`.
+
+    That was recorded in the defect table as a *phantom data point*: a benchmark listing both as
+    separate rewriters is reporting one method twice and calling the difference a result. The
+    documents now write them together as `ensemble`/`max` everywhere, which is the right fix — but
+    a convention nobody checks is a convention that drifts, and the failure mode is silent.
+    """
+
+    def test_they_are_the_same_implementation(self):
+        from untell.rewriter import get_rewriter
+
+        assert type(get_rewriter("max")) is type(get_rewriter("ensemble"))
+
+    def test_max_does_not_advertise_itself_as_a_distinct_method(self):
+        """Whatever a caller asked for, the result must be labelled with the method that ran."""
+        from untell.rewriter import get_rewriter
+
+        assert get_rewriter("max").name == get_rewriter("ensemble").name
+
+    def test_no_table_lists_them_as_two_separate_rows(self):
+        """The phantom shape is one TABLE carrying both a `max` row and an `ensemble` row.
+
+        A row labelled `ensemble` on its own is fine and common — Result 15 compares `ensemble`
+        against `neural`, which really are different methods. The first version of this test failed
+        on exactly that, which is the difference between checking the defect and checking a word.
+        """
+        from pathlib import Path
+
+        repo = Path(__file__).resolve().parent.parent
+        for doc in (repo / "docs" / "free-ceiling-measured.md", repo / "README.md"):
+            if not doc.exists():
+                continue
+            labels: set = set()
+            for line in doc.read_text(encoding="utf-8").splitlines():
+                if not line.startswith("|"):
+                    labels = set()  # a non-table line ends the current table
+                    continue
+                cell = line.split("|")[1].strip().strip("*` ").lower()
+                if cell in {"max", "ensemble"}:
+                    labels.add(cell)
+                assert labels != {"max", "ensemble"}, (
+                    f"{doc.name}: one table has separate `max` and `ensemble` rows — they are the "
+                    f"same implementation, so the difference between them is noise reported as a "
+                    f"result: {line}"
+                )

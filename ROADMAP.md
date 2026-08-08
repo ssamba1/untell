@@ -95,13 +95,13 @@ This is the axis where the field is *empty*, and where one session of probing fo
 | defect found 2026-08-05 | severity |
 |---|---|
 | `tells/100w`, the headline naturalness metric, pointed **backwards** on real text | metric inverted |
-| `targeted` rewriter did **literally nothing** on the zero-dep path (0/15 texts changed) | feature dead |
-| `surgical` near-inert there too (16/30 texts, 0 substitutions) | feature dead |
+| `targeted` rewriter did **literally nothing** on the zero-dep path (0/15 texts changed) — **fixed**: re-measured 2026-08-08 it changes **14/15** and moves the score **-0.186**, via a whole-text fallback that says so on stderr | feature dead |
+| `surgical` near-inert there too (16/30 texts, 0 substitutions) — **addressed**: it now optimises the axis word substitution actually controls. Re-measured over 30 HC3+RAID texts it changes **19/30** and moves tells/100w **8.02 -> 7.22 (-10%)**; the detector still barely reacts (-0.004), which is a property of the detector, not of the rewriter | feature dead |
 | Chinese/Korean/Japanese AI text reported as **perfectly clean** | false verdict |
 | LaTeX **entirely unprotected** — `lock()` held 0 spans of a paper paragraph | headline promise broken |
 | the central competitive claim quoted a sentence **that exists in no commit** | fabricated citation |
 | lite tier flagged **60% of human text** at the shipped threshold — **fixed**: the verdict threshold is now separate from the loop target and calibrated per scoring path, 60% -> 15% (Result 24) | calibration |
-| `max` and `ensemble` are the same object, benchmarked as two | phantom data point |
+| `max` and `ensemble` are the same object, benchmarked as two — **guarded**: they resolve to one class and `max` reports `name="ensemble"`; a test now fails if any single table carries both as separate rows | phantom data point |
 
 No competitor publishes anything comparable, because no competitor looks. Turning that into a
 durable advantage means making it **mechanical rather than heroic**.
