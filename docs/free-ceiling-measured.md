@@ -1513,7 +1513,22 @@ told it reads as AI three times in five.**
 The optimum is a plateau at **0.40–0.45**, where balanced accuracy is 75.8% against the shipped
 66.7%. A 5% false-positive rate would need 0.60, and AI recall there collapses to 23%.
 
-### Why this is not a one-line fix
+### Fixed — by separating the two jobs the constant was doing
+
+`score_text` now reports **`verdict_threshold`** alongside `threshold` and computes `flagged` from
+it. The raise applies only when the stdlib heuristic is the *whole* verdict; with any model-backed
+detector in the set the max is driven by a well-calibrated member. Measured on the same corpus
+after the change: **false positives on human text 60% → 15%**, AI recall 93% → 70%, balanced
+accuracy 66.5% → **77.5%**.
+
+The loop is untouched. `flagged` is a report field; `_passed` reads `max < threshold - margin`, and
+`threshold` still holds the low value the loop needs.
+
+And the swept optimum for the **gpt2** path is **0.30 exactly** (J 0.970, FP 3%, TP 100%) — so the
+shipped default was never wrong for the tier, only for the sub-path. Raising it globally would have
+broken the well-calibrated path to fix the other one.
+
+### Why it was not a one-line fix
 
 `threshold` does two different jobs and they want opposite values:
 
@@ -1522,10 +1537,10 @@ The optimum is a plateau at **0.40–0.45**, where balanced accuracy is 75.8% ag
   because stopping early is under-rewriting. Raising it to 0.45 would make the loop quit sooner and
   weaken every humanisation run on the lite tier.
 
-The two are the same number today, and the full tier — whose score distribution is different —
-shares it as well. Fixing this properly means separating the reporting threshold from the loop
-target, and calibrating the reporting one per tier. That is a design change, not a constant edit,
-and it is recorded here with the measurement it needs rather than guessed at.
+They were the same number, and the full tier — whose score distribution is different again —
+shared it. The fix separates the reporting threshold from the loop target and calibrates the
+reporting one per *scoring path* rather than per tier, which is the level the measurement actually
+points at.
 
 ### Which "lite" this is
 
