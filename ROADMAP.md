@@ -42,18 +42,27 @@ field is empty.
 |---|---|---|
 | `chengez/Adversarial-Paraphrasing` | −87.88% avg TPR@1%FPR, **per-token** detector-guided decoding | MAGE dataset, 6 detectors |
 | `StealthRL` | AUROC 0.79 → 0.43, mean TPR@1%FPR 0.024 | **15,310 human / 14,656 AI** |
-| **untell**, best real-text figure | 0.915 → 0.415, flagged 0.93 → 0.50 | **n = 14** |
+| **untell**, best real-text figure | 0.774 → **0.321 ± 0.012**, flagged 0.95 → **0.342** | **n = 40, ×3 repeats** |
 
 Not close, and the gap is architectural: token-level guidance needs logit access, which our
 black-box rewriter design does not have. Closing it needs the GPU path in §4.
 
-The untell row moved on 2026-08-07 and is worth reading carefully, because it is better than it
-looks and still does not change the conclusion. The old figure was the **`neural`** rewriter at
-n = 6; the new one is **`structural` alone** at n = 14 — a weaker rewriter and a larger sample,
-reaching a lower post score at the same flagged rate. It came from removing an intensity gate on
-the vocabulary pass that measured as pure loss (docs/free-ceiling-measured.md, Result 18). Real
-movement, on the axis we said we could not win. It is still an order of magnitude short of
-StealthRL's 15k-sample evidence, and n = 14 is not n = 15,310.
+The untell row moved a long way on 2026-08-07 and is worth reading carefully, because it does not
+change the conclusion. The old figure was the **`neural`** rewriter on **n = 6**, single run. The
+new one is the free CPU-only **`composite`** on **n = 40 with 3 repeats** (120 rewrites), which is
+both a stronger result and far better evidence: post 0.321 ± 0.012 against a pre of 0.774, with
+34% of texts still flagged where 95% were before, at 0.9825 mean similarity.
+
+The same corpus and settings measured **0.951 post with 39 of 40 still flagged** before that day's
+work. The gain came from fixing defects rather than adding capability — a hedge gate vetoing 20% of
+candidates over one bad synonym entry, 14 replacements whose output was itself a catalogued tell, a
+diversity gate that provided no diversity, and four rewriter constants that no human writer matches
+(Results 16-20 in docs/free-ceiling-measured.md).
+
+Real movement, on the axis we said we could not win. It does not win it. StealthRL's AUROC 0.79 →
+0.43 stands on **15,310 human and 14,656 AI** samples; n = 40 is not n = 15,310, and a
+detector-feedback loop against four open detectors is not the same claim as transfer to unseen
+commercial ones. The gap is smaller than this section used to imply, and it is still a gap.
 
 ### ❌ Adoption
 
