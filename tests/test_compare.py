@@ -104,3 +104,53 @@ def test_silent_noop_technique_is_not_published_as_a_measurement(monkeypatch):
     assert "ai_max_mean" in rows["none (raw AI)"]
     # A technique that genuinely rewrites still reports numbers.
     assert "ai_max_mean" in rows["real_technique"]
+
+
+class TestTheHeadToHeadCanRunOnAPublicCorpus:
+    """The central competitive artifact ran on three built-in paragraphs.
+
+    This document's own free-ceiling report calls that corpus "a demo, and measurably easier than
+    real AI output", and the difference is not cosmetic. MEASURED on the built-in samples,
+    back_translation ties us on evasion (0.267 vs our 0.271); on real HC3 text at n=6 it does not
+    come close (0.581 vs 0.287, flagged 83% vs 17%), and it costs meaning we keep (0.911 vs 0.987).
+
+    A head-to-head anyone can reproduce has to run on a corpus anyone can fetch, so `--dataset`
+    exists. Nine results in this repository once generalised from a demo corpus, which is why the
+    result now also records WHICH corpus produced it.
+    """
+
+    def test_the_dataset_and_n_flags_exist(self):
+        """Parsed, not run: the run itself needs a corpus download."""
+        import contextlib
+        import io
+
+        from eval.compare_humanizers import main
+
+        help_text = io.StringIO()
+        with contextlib.redirect_stdout(help_text), contextlib.suppress(SystemExit):
+            main(["--help"])
+        out = help_text.getvalue()
+        assert "--dataset" in out, "the head-to-head cannot run on a public corpus"
+        assert "--n" in out
+        for name in ("hc3", "raid", "mage"):
+            assert name in out, f"{name} is not offered as a corpus"
+
+    def test_the_result_records_its_corpus(self):
+        from eval.compare_humanizers import compare
+
+        result = compare(["Moreover, the system leverages robust methodologies."], tier="lite")
+        # `compare` itself does not set it; `main` does, because only main knows the source.
+        assert "corpus" not in result or isinstance(result["corpus"], str)
+
+    def test_the_renderer_shows_the_corpus(self):
+        from eval.compare_humanizers import _render
+
+        line = _render({"corpus": "hc3 n=6", "tier": "full", "n": 6, "threshold": 0.3,
+                        "techniques": {}}).splitlines()[0]
+        assert "hc3 n=6" in line, f"the corpus is not in the header: {line}"
+
+    def test_an_unnamed_corpus_does_not_crash_the_renderer(self):
+        from eval.compare_humanizers import _render
+
+        line = _render({"tier": "full", "n": 3, "threshold": 0.3, "techniques": {}}).splitlines()[0]
+        assert "unknown" in line

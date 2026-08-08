@@ -181,7 +181,8 @@ def compare(texts: list[str], tier: str = "full", threshold: float = DEFAULT_THR
 
 def _render(r: dict) -> str:
     lines = [
-        f"humanizer technique comparison — tier={r['tier']} n={r['n']} threshold={r['threshold']}",
+        f"humanizer technique comparison — corpus={r.get('corpus', 'unknown')} "
+        f"tier={r['tier']} n={r['n']} threshold={r['threshold']}",
         "",
         f"  {'technique':24} {'AI P(AI)':>9} {'flagged':>8} {'tells/100w':>11} {'meaning':>8}",
         f"  {'-' * 24} {'-' * 9:>9} {'-' * 8:>8} {'-' * 11:>11} {'-' * 8:>8}",
@@ -221,16 +222,42 @@ def main(argv: list[str] | None = None) -> int:
     configure_utf8_io()
     parser = argparse.ArgumentParser(prog="untell-compare", description=__doc__)
     parser.add_argument("--file", "-f", help="corpus file (paragraphs separated by blank lines)")
+    # The head-to-head is this repository's central competitive artifact, and it ran on three
+    # built-in paragraphs — which the report itself calls "a demo, and measurably easier than real
+    # AI output". A comparison anyone can reproduce has to run on a corpus anyone can fetch.
+    parser.add_argument(
+        "--dataset",
+        choices=["hc3", "raid", "mage"],
+        help="run on real AI text from a public corpus instead of the built-in samples (needs .[eval])",
+    )
+    parser.add_argument("--n", type=int, default=8, help="samples to draw from --dataset")
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
-    texts = _read_corpus(args.file) if args.file else _SAMPLE
+    if args.file:
+        texts = _read_corpus(args.file)
+        corpus = args.file
+    elif args.dataset:
+        from eval.datasets import load_pairs
+
+        pairs = load_pairs(args.dataset, args.n)
+        if not pairs:
+            print(json.dumps({"error": f"no pairs available from {args.dataset}; pip install .[eval]"}))
+            return 2
+        texts = [ai for _human, ai in pairs][: args.n]
+        corpus = f"{args.dataset} n={len(texts)}"
+    else:
+        texts = _SAMPLE
+        corpus = "built-in sample"
     if not texts:
         print(json.dumps({"error": "empty corpus"}))
         return 2
     result = compare(texts, tier=args.tier, threshold=args.threshold)
+    # Which corpus produced these numbers. Nine results in this repository once generalised
+    # from a demo corpus, so a comparison that does not name its own is unquotable.
+    result["corpus"] = corpus
     print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
     return 0
 

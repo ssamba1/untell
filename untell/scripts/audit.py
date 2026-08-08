@@ -148,6 +148,29 @@ def check_derivable(report: Report) -> None:
         f"promised but undeclared: {absent}" if absent else f"{len(declared)} declared",
     )
 
+    # --- every declared entry point must actually import and expose its callable -----------------
+    # A broken one is "command not found" or an ImportError on a user's very first command, which
+    # is the worst possible first impression and is invisible to a test suite that imports modules
+    # directly. This resolves them the way pip does. `untell-humanize` already shipped once as a
+    # promise the entry-point table did not keep.
+    import importlib
+
+    broken_entries: list[str] = []
+    for name, module, func in re.findall(
+        r"^([\w-]+)\s*=\s*\"([\w.]+):(\w+)\"", scripts_table, re.MULTILINE
+    ):
+        try:
+            mod = importlib.import_module(module)
+            if not callable(getattr(mod, func, None)):
+                broken_entries.append(f"{name} -> {module}:{func} is not callable")
+        except Exception as exc:  # noqa: BLE001 - any import failure is a broken command
+            broken_entries.append(f"{name} -> {type(exc).__name__}: {str(exc)[:60]}")
+    report.check(
+        "every declared console script resolves",
+        not broken_entries,
+        f"broken: {broken_entries}" if broken_entries else f"{len(declared)} resolve",
+    )
+
     # --- calibration constants the docs quote ----------------------------------------------------
     from untell.scripts.score import _STDLIB_PERPLEXITY_VERDICT_THRESHOLD, DEFAULT_THRESHOLD
 
