@@ -657,16 +657,65 @@ def _flatten_negated_contrast(text: str) -> str:
     return _NEGATED_CONTRAST_RE.sub(_replace, text)
 
 
+# Contractions per 100 words in the HUMAN half of the paired corpora, which is the level this pass
+# aims at rather than exceeds. MEASURED over 200 pairs each:
+#
+#                  human mean   human median   AI mean   after unbounded injection
+#     HC3            0.666         0.357        0.757            2.263
+#     RAID           0.045         0.000        0.079            0.215
+#
+# Two things follow, and both contradict the rationale this function was written on. AI text
+# already contracts *at or above* the human rate in both corpora — the premise that "AI contracts
+# far less than human writing" is simply false here — and unbounded injection took HC3 text to 3.4x
+# the human rate, which is its own signature. 46% of human HC3 texts and 94% of human RAID texts
+# contain no contraction at all.
+#
+# The detectors do not arbitrate this: injection measured at delta +0.0000 (HC3) and -0.0003 (RAID)
+# on the full tier over 14 texts each, helping 1 of 14 both times. So this is not a scoring fix. It
+# is a frequency fix, made because overshooting a human distribution by 3.4x costs nothing to avoid
+# and nothing downstream would have caught it — score_tells has no contraction check.
+_HUMAN_CONTRACTIONS_PER_100W = 0.67
+_WORD_RE = re.compile(r"[A-Za-z']+")
+# Both the ASCII apostrophe and U+2019, which is what most real prose actually carries.
+_CONTRACTED_RE = re.compile(r"\b\w+['’](?:s|t|re|ve|ll|d|m)\b", re.IGNORECASE)
+
+
+def _contraction_rate(text: str) -> float:
+    words = len(_WORD_RE.findall(text))
+    return len(_CONTRACTED_RE.findall(text)) / words * 100 if words else 0.0
+
+
 def _inject_contractions(text: str, rate: float = 1.0) -> str:
     """Contract formal verb phrases ("do not" -> "don't", "it is" -> "it's"). Case-preserving.
 
-    AI text contracts far less than human writing; injecting contractions shifts the function-word /
-    formality distribution toward human. ``rate`` in [0, 1] applies to each candidate match.
+    Injects only up to the measured human rate — text already at or above it is left alone. ``rate``
+    in [0, 1] additionally thins each candidate match.
     """
+    words = len(_WORD_RE.findall(text))
+    if not words:
+        return text
+    # Budget in contractions, not in matches: the text may already carry some, and those count.
+    have = len(_CONTRACTED_RE.findall(text))
+    budget = _HUMAN_CONTRACTIONS_PER_100W * words / 100 - have
+    remaining = int(budget)
+    # A rate is a document-level statistic, and the pipeline hands this function one block at a
+    # time. On a short block the budget rounds to zero and the transform would silently never fire —
+    # "It is not clear." is four words, for a budget of 0.027. So a text carrying NO contraction at
+    # all is always allowed one; that is the difference between formal and conversational register,
+    # which is what this pass is for. Text that already contracts is never pushed higher.
+    if remaining < 1:
+        if have or budget <= 0:
+            return text
+        remaining = 1
+
     for pat, repl in _CONTRACTIONS:
         def _sub(m: re.Match, _repl: str = repl) -> str:
+            nonlocal remaining
+            if remaining <= 0:
+                return m.group(0)
             if rate < 1.0 and random.random() > rate:
                 return m.group(0)
+            remaining -= 1
             out = m.expand(_repl)
             if m.group(0)[:1].isupper():
                 out = out[0].upper() + out[1:]

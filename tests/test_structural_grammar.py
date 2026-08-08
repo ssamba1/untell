@@ -1291,3 +1291,59 @@ class TestOpenersAreOnesHumansActuallyUse:
             assert not _TRANSITIONS_RE.match(f"{opener} x"), (
                 f"{opener!r} would be deleted by _strip_transitions — inserting it is wasted work"
             )
+
+
+class TestContractionInjectionAimsAtTheHumanRateRatherThanMaximising:
+    """The function was written on a premise the corpora contradict.
+
+    Its docstring said "AI text contracts far less than human writing". MEASURED per 100 words
+    over 200 pairs each:
+
+                     human mean   human median   AI mean   unbounded injection
+        HC3            0.666         0.357        0.757          2.263
+        RAID           0.045         0.000        0.079          0.215
+
+    AI text contracts at or ABOVE the human rate in both corpora, and unbounded injection took HC3
+    text to 3.4x human — its own signature. 46% of human HC3 texts and 94% of human RAID texts
+    contain no contraction at all.
+
+    The detectors do not arbitrate this: injection measured +0.0000 (HC3) and -0.0003 (RAID) on the
+    full tier over 14 texts each, helping 1 of 14 both times. Recorded because it means this is a
+    frequency fix and not a scoring one — and because nothing downstream would have caught it,
+    score_tells having no contraction check at all.
+    """
+
+    def test_a_long_text_is_not_pushed_far_past_the_human_rate(self):
+        from untell.rewriter.structural import _contraction_rate, _inject_contractions
+
+        # 60 contractable clauses: unbounded injection would take this far above any human rate.
+        text = " ".join(["The system does not fail and it is ready."] * 60)
+        out = _inject_contractions(text)
+        rate = _contraction_rate(out)
+        assert rate <= 1.5, f"{rate:.2f} per 100 words, against a measured human 0.67"
+
+    def test_text_already_at_the_human_rate_is_left_alone(self):
+        from untell.rewriter.structural import _inject_contractions
+
+        # Already contracting well above target — injection must not push it higher.
+        text = " ".join(["It's fine and they're ready and we've shipped it."] * 20)
+        assert _inject_contractions(text) == text
+
+    def test_a_short_block_still_contracts(self):
+        """A rate is a document-level statistic and the pipeline passes one block at a time. On a
+        four-word block the budget rounds to 0.027, so a naive cap disables the transform entirely —
+        which is how the first version of this cap broke two existing tests."""
+        from untell.rewriter.structural import _inject_contractions
+
+        assert _inject_contractions("It is not clear.") == "It isn't clear."
+        assert _inject_contractions("Do not stop.") == "Don't stop."
+
+    def test_the_floor_applies_only_to_text_with_no_contraction_at_all(self):
+        """The floor exists to mark formal-vs-conversational register, not to top up prose that has
+        already made that choice."""
+        from untell.rewriter.structural import _CONTRACTED_RE, _inject_contractions
+
+        text = "It's late. The team does not agree."
+        before = len(_CONTRACTED_RE.findall(text))
+        after = len(_CONTRACTED_RE.findall(_inject_contractions(text)))
+        assert after == before, "short text that already contracts was pushed higher"
