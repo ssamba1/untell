@@ -44,17 +44,34 @@ One command to humanize:
 untell humanize "Your AI-sounding paragraph here." --rewriter surgical
 ```
 
+## The measurement log — start here
+
+Most tools in this space publish a benchmark table. This one publishes **[the full measurement
+log](free-ceiling-measured.md)**: 24 numbered results, including every experiment that *failed* and
+every claim of ours that a later measurement refuted.
+
+A sample of what is in there, because the refutations are the point:
+
+| | |
+|---|---|
+| **Result 17** | The hypothesis that one stubborn detector sets the ceiling — **refuted**. The reported `max` is an envelope; different texts are caught by different detectors. |
+| **Result 18** | A diversity gate that provided *no* diversity. Draw-to-draw similarity was identical to four decimals with it on and off. |
+| **Result 21** | Two structural moves measured and then **declined**: passive→active reaches too little to justify the grammar risk, and first-person injection would make the tool assert a stance its input never had. |
+| **Result 22** | The rewriter was emitting **sentence fragments**, invisible to every metric here, and fixing it **cost** 0.026 of evasion score. Both stated. |
+| **Result 24** | The free tier called **60% of human writing AI**. Fixed by separating the reported verdict from the loop's target. |
+
+Run `untell-audit` to re-check the claims in these documents against the code as it stands.
+
 ## Documentation
 
 - **[Quick Start](quickstart.md)** — install and run in 60 seconds
-- **[How It Works](how-it-works.md)** — the closed loop explained
-- **[CLI Reference](cli/untell.md)** — every command and option
 - **[API Server](api-server.md)** — deploy the REST API
-- **[Training](training.md)** — the GPU moat (RL against the ensemble)
-- **[Detector Tiers](detectors.md)** — all 7+ detectors in the ensemble
-- **[Research: Free Evasion Ceiling](research/free-ceiling.md)** — how far does $0 get you?
-- **[Research: Humanizer Comparison](research/comparison.md)** — untell vs every free technique
-- **[AI Tells Catalog](research/ai-tells.md)** — the 20+ signals the loop eliminates
+- **[Measured: the free evasion ceiling](free-ceiling-measured.md)** — the full log, 24 results
+- **[Summary: the free-ceiling report](free-ceiling-report.md)** — the short version
+- **[Humanizer comparison](humanizer-comparison.md)** — untell vs every free technique
+- **[The 435-repo census](humanizer-census.md)** — what this field is actually made of
+- **[Why this is the most complete open humanizer](why-best-open-repo.md)** — the argument, with its corrections
+- **[Training runbook](free-training-runbook.md)** — the GPU path (RL against the ensemble)
 
 ## License
 

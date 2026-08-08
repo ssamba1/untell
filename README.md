@@ -412,9 +412,10 @@ need their API in the loop — paid). The tool says so, everywhere.
 
 ## 🏆 Why this is the best open-source AI humanizer
 
-We surveyed **~110 open-source humanizer repos** (GitHub topics, papers-with-code, the research SOTA) as part
-of building this project, and re-swept the field on 2026-08-05 across 624 queries turning up 1124 candidate
-repos. That deep-research survey ([`humanizer-research-report.md`](humanizer-research-report.md)) ranks the
+We surveyed ~110 open-source humanizer repos (GitHub topics, papers-with-code, the research SOTA) as part
+of building this project, and re-swept the field on 2026-08-05 across **624 queries turning up 1287 candidate
+repos, of which the top 435 were read individually** — the full method and raw data are in the
+[census](docs/humanizer-census.md). That deep-research survey ([`humanizer-research-report.md`](humanizer-research-report.md)) ranks the
 exploitable gaps; its first one, quoted exactly:
 
 > *"**Closed-loop detector-feedback rewriting.** No shipping product does iterative rewrite against live

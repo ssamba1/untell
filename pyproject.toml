@@ -130,6 +130,8 @@ untell-tells = "untell.scripts.tells:main"
 untell-voice = "untell.scripts.voice:main"
 untell-compare = "eval.compare_humanizers:main"
 untell-mcp = "untell.mcp_server:main"
+# The moat: re-check every documented claim that CAN be re-checked, and report how many cannot.
+untell-audit = "untell.scripts.audit:main"
 untell-ceiling = "eval.ceiling:main"
 untell-detector-audit = "eval.detector_audit:main"
 untell-distill = "training.distill:main"
