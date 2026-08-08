@@ -160,3 +160,56 @@ def test_every_check_can_actually_fire():
     assert set(probes) == set(_CHECKS), "a check has no probe, or a probe has no check"
     for name, probe in probes.items():
         assert _CHECKS[name].search(probe), f"{name} cannot match its own example"
+
+
+# ---------------------------------------------------------------------------
+# The same battery, over every CPU-only rewriter rather than the structural one alone.
+# ---------------------------------------------------------------------------
+
+# structural was the only offender when this was written — surgical came back clean on all four
+# fixtures and lock/restore round-tripped exactly — but "clean today" is not a guarantee, and the
+# six defects above all lived in code that had been passing its own tests for months.
+_CPU_REWRITERS = ["structural", "surgical", "composite", "targeted"]
+
+
+@pytest.mark.parametrize("name", _CPU_REWRITERS)
+def test_no_cpu_rewriter_damages_the_text(name):
+    """Registry-driven, so a rewriter added later is covered without anyone remembering to add it.
+
+    Only the CPU-only backends: `neural`, `t5_paraphrase` and `mt_pivot` need model downloads and
+    `ensemble`/`max` fan out to all of them, which does not belong in a unit run.
+    """
+    from untell.rewriter import get_rewriter
+
+    rw = get_rewriter(name)
+    if rw is None or not rw.available():
+        pytest.skip(f"{name} unavailable in this environment")
+
+    for source in _FIXTURES:
+        baseline = _damage(source)
+        for seed in range(8):
+            random.seed(seed)
+            out = rw.rewrite(source, {"max": 0.9})
+            worse = {k: (baseline[k], v) for k, v in _damage(out).items() if v > baseline[k]}
+            assert not worse, (
+                f"{name}, seed {seed}: {worse}\n"
+                f"--- source ---\n{source}\n--- output ---\n{out}"
+            )
+
+
+def test_the_cpu_rewriter_list_is_not_stale():
+    """A name that no longer resolves would skip forever and look like coverage."""
+    from untell.rewriter import get_rewriter
+
+    for name in _CPU_REWRITERS:
+        assert get_rewriter(name) is not None, f"{name} is no longer a registered rewriter"
+
+
+@pytest.mark.parametrize("source", _FIXTURES)
+def test_locking_round_trips_exactly(source):
+    """The preserve layer is what protects citations and numbers, and a lossy restore would be
+    invisible to every check above — the text would be well-formed and simply wrong."""
+    from untell.scripts.preserve import lock, restore
+
+    masked, spans = lock(source)
+    assert restore(masked, spans) == source
