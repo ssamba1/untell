@@ -106,16 +106,30 @@ This is the axis where the field is *empty*, and where one session of probing fo
 No competitor publishes anything comparable, because no competitor looks. Turning that into a
 durable advantage means making it **mechanical rather than heroic**.
 
-- 🔜 **`untell-audit` — every documented claim re-measured on demand, and in CI.**
+- ✅ **`untell-audit` — every documented claim re-measured on demand, and in CI.** Shipped
+  2026-08-08 and wired into the build. Splits claims into DERIVABLE (registry sizes, which
+  rewriters resolve, calibration constants, console scripts, cross-document links, census
+  figures quoted outside the census — a drift fails CI) and MEASURED (cannot run in CI, so what
+  is enforced is that each states its source). Its first run found **seven dead links in this
+  site's own documentation index** and a README whose survey total disagreed with the census's
+  own figure; it later caught the README's headline HC3 table overstating the product with
+  figures no commit reproduces. Currently: 80 claims attributed, 0 unattributed.
+  *(superseded description below kept for the reasoning)*
   `tests/test_docs_claims.py` already does this for ~16 claims (test count, census counts, the
   research-report quote, the lite false-positive rate). Generalise it: each claim in README /
   `why-best` / `free-ceiling-measured.md` carries a machine-checkable assertion, and CI fails when a
   number drifts. **This is the moat.** Effort: days.
-- 🔜 **Every category must prove it fires.** Already shipped for `tells` after six patterns turned
+- ✅ **Every category must prove it fires.** Extended 2026-08-08 from `tells` to detectors,
+  rewriters and the meaning gates — see `tests/test_everything_registered_can_fire.py`. Every
+  live detector must return DIFFERENT scores for blatant AI and blatant human prose and stay in
+  [0,1]; every CPU rewriter must be able to change text; every hedge class has a positive
+  control that drops it. Verified by breaking each on purpose.
+  *(original note)* Already shipped for `tells` after six patterns turned
   out to be dead (`\b` written into a non-raw string became U+0008). Extend the same
   reachability guard to detectors, rewriters and meaning gates: anything registered must
   demonstrate it can fire, or it is dead code pretending to be coverage.
-- 🔜 **Publish the negative results as a first-class artifact.** `free-ceiling-measured.md` has 15
+- ✅ **Publish the negative results as a first-class artifact.** `docs/index.md` now leads with
+  the measurement log and features the refutations by name. *(original note)* `free-ceiling-measured.md` has 15
   results including refutations of our own claims. That document is more persuasive than any
   benchmark table. Give it a landing page.
 
@@ -171,10 +185,18 @@ the most-cited gap in the census, and the one place where meaning integrity *is*
 than a nicety.
 
 - ✅ LaTeX preserve-locking (`\cite*`, `\ref`, `\label`, math, environments) — shipped 2026-08-05.
-- 🔜 **BibTeX-aware verification** — confirm every `\cite` key in the output exists in the `.bib`.
-- 🔜 **`.tex` round-trip CLI** — read a `.tex`, humanize prose only, write it back compiling.
-- 🔜 **Structure-aware skipping** — never rewrite abstracts, captions, or theorem statements unless
-  asked.
+- ✅ **BibTeX-aware verification** — `untell-latex --bib` confirms every `\cite` key resolves, and
+  `--against` reports any citation a rewrite LOST. Preserve-locking stops a key being edited; it
+  cannot stop a whole sentence being merged away with its citation, and the document still
+  compiles.
+- ✅ **`.tex` round-trip** — and it was worse than unfinished. `latex_env` matched ANY environment,
+  and `document` is one, so a real paper masked to two sentinels and the tool returned the input
+  UNCHANGED. Scoring the source also under-read it (raw 0.0949 vs prose 0.6261), so the loop
+  declared an AI-written paper already passed. Both fixed: 0.6261 → 0.0815 end to end, valid
+  LaTeX out, zero citations lost.
+- ✅ **Structure-aware skipping** — abstract, theorem, proof, figure, table, caption, all maths and
+  verbatim are locked. This was already shipped by the environment lock while the roadmap listed
+  it as pending; verified rather than assumed.
 
 Nobody in the census targets thesis and paper writers with fact-integrity guarantees. We have the
 five meaning gates and byte-exact citation locking that **no profiled repo combines**. This is a
