@@ -1213,16 +1213,23 @@ A four-sentence passage all beginning "The ..." came back unvaried at rate 1.0.
 | category | before | after |
 |---|---|---|
 | `ai_vocab` | 55 | **0** |
-| `formulaic_transition` | 33 | **1** |
+| `formulaic_transition` | 33 | **0** |
 | `cliche` | 11 | **0** |
 | `hedge_stacking` | 4 | **0** |
 | `participial_trailer` | 2 | **0** |
 | `repeated_sentence_openers` | 146 | **27** |
-| `repeated_phrasing` | 1148 | **969** |
+| `repeated_phrasing` | 1148 | **1014** |
 
 `repeated_phrasing` is the one that stays large, and Result 18's split explains why: **93%** of it
 is inherited from the source — domain terms the meaning gates would veto varying. The reachable
 share was 7%, and most of that is now gone.
+
+**This row moved the wrong way after Result 19 was first written, and the figure here is the
+current one.** It reached 969 mid-session and then rose to 1014 when the fragment guards landed
+(Result 22): refusing a split leaves a longer sentence, and a longer sentence repeats more
+trigrams. `formulaic_transition` went the other way, 1 to 0, over the same changes. Both are
+re-measured with `catmove.py` rather than carried forward, because a table of numbers nobody
+re-runs is how this document would start lying.
 
 Reproduce: `conn.py`, `openers.py`, `strip.py`, `rates.py`, `repsplit.py`, `catmove.py`.
 
@@ -1364,3 +1371,54 @@ Declined on meaning grounds, not measurement. "The system works" → "I think th
 speaker stance the source does not have. It would very likely lower the score; it would also make
 the tool assert something its input never said, which is the one thing the meaning gates exist to
 prevent. Recorded here so the gap is known rather than rediscovered.
+
+---
+
+## Result 22 — the rewriter was emitting broken English, and every metric was blind to it
+
+Reading roughly eight rewritten paragraphs by hand found six defects that 1900+ passing tests, the
+tell catalogue, the detector ensemble and the meaning gates had all missed. A sentence fragment is
+**perfect English to a tell catalogue** — `score_tells` counts AI tells and has no grammaticality
+check, no quote-balance check, no contraction check.
+
+| defect | example |
+|---|---|
+| exemplifier comma split | `"...options for melting ice on roads. Such as using chemicals..."` |
+| appositive comma split | `"we show EdgeFlow. A new way to interactive segmentation..."` |
+| stranded coordinator | `"...in combination with other techniques, but. Salt is often..."` |
+| split inside a quotation | `He said "the result is robust.` / `It replicates", which...` |
+| serial list split | `"The authors, Smith, Jones, and Patel."` / `"Reported that..."` |
+| fronting stranded a coordinator | `"...it runs fast, the model works well and."` |
+
+Counted end to end: **12 fragments in output against 0 in the sources**, over 60 texts. Now **3**,
+and the full mechanical battery — 13 checks, scored on output *and* source so corpus artefacts are
+not blamed on the rewriter — shows one residual (`stub_sentence` +1) against zero on everything
+else.
+
+Four of the six lived in `_split_one`, the copy of the split that the burstiness pass uses. It has
+now diverged from `_split_long_sentences` four separate times: the comma clause-check, the minimum
+side length, the stranded coordinator, and the list/quotation guards. They are still not unified —
+they genuinely differ on a stranded coordinator, where one rehomes it and the other deletes it, so
+merging is a measurement and not a refactor — but both are pinned to a shared invariant set.
+
+### The cost, stated plainly
+
+Refusing bad split points costs evasion. Like-for-like, `best_of=1`, n = 40, 3 repeats:
+
+| | post | flagged | spread |
+|---|---|---|---|
+| before the fragment guards | 0.3206 | 34.2% | ±0.0121 |
+| after | **0.3382** | **38.3%** | ±0.0072 |
+
++0.018 and +4.1pp, both larger than either run's spread. `repeated_phrasing` moved with it,
+969 → 1014: a sentence that is not split stays long, and a long sentence repeats more trigrams.
+
+**The trade was tried and refused first.** Making both splitters keep scanning past an unusable
+comma instead of abandoning the split would recover the score — and measured, it recovered it by
+finding a *different* bad split: stub sentences went 4 → 5 and a dangling coordinator reappeared,
+because the next candidate is usually inside a list. Separating a list continuation from a clause
+needs verb detection, which is not available on a parser-free tier. Reverted.
+
+Broken English is a worse failure than four percentage points of flagged rate. A reader notices a
+fragment instantly; the detector score is a number in a report. The regression is accepted, and it
+is recorded here rather than left to be discovered in the next measurement.
