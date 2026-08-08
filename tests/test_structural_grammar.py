@@ -1817,3 +1817,176 @@ class TestFrontingDoesNotStrandACoordinator:
         for seed in range(20):
             random.seed(seed)
             assert _front_subordinate_clauses([text], rate=1.0) == [text]
+
+
+class TestBothSplittersObeyTheSameInvariants:
+    """Two implementations of "split a long sentence" that have diverged three times.
+
+        _split_long_sentences   list in, list out, gated on max_words and a rate
+        _split_one              one sentence in, [a, b] or None, gated on length, used by
+                                the burstiness pass
+
+    The divergences were: the comma clause-check (only one had it), the minimum side length (only
+    one had it), and the stranded trailing coordinator (only one had it). Each was found in real
+    output, separately, after the other copy had already been fixed.
+
+    They are NOT unified here, because they genuinely differ where it matters: on a stranded
+    coordinator _split_long_sentences hands it to the second half while _split_one drops it, and
+    both are valid English. Merging them would change one of those behaviours, which is a
+    measurement, not a refactor. What is pinned instead is the set of invariants both must satisfy,
+    so a fix to one that skips the other fails here rather than in a corpus read six commits later.
+    """
+
+    CASES = [
+        # exemplifier comma
+        "There are other options for melting the ice on a road surface, such as using chemicals"
+        " like calcium chloride or magnesium chloride, or mechanical methods like plows and sand.",
+        # appositive after a proper noun
+        "In this paper we present EdgeFlow, a novel approach to interactive image segmentation"
+        " that leverages edge-guided flow to reach practical accuracy on a tight annotation budget.",
+        # relative pronoun
+        "Existing methods for interactive segmentation are limited by their heavy reliance on"
+        " repeated iterative user input, which can be very time-consuming for a working analyst.",
+        # trailing coordinator before the comma
+        "There are other options for melting ice on the road, such as calcium chloride or"
+        " magnesium chloride, and when it is used with other techniques, but salt is most common.",
+        # a fronted subordinate clause, which must not be split back off
+        "Because salt lowers the freezing point of water considerably, the ice melts on the road"
+        " surface during the coldest winter nights across most of the northern region.",
+        # a genuine two-clause sentence: this one SHOULD still split
+        "The team shipped the new release on Tuesday morning after a long week of testing, it went"
+        " out to every paying customer in the region without a single reported failure anywhere.",
+    ]
+
+    BAD_LEAD = {"such", "which", "who", "whom", "including", "of", "as", "than", "can"}
+    DANGLING = _re.compile(r"\b(and|but|or|so|because|while|which)\s*[.!?]")
+
+    def _violations(self, pieces: list[str]) -> list[str]:
+        from untell.rewriter.structural import _FRONTABLE_LEADS, _MIN_SPLIT_SIDE
+
+        bad = []
+        for piece in pieces:
+            words = piece.split()
+            if not words:
+                continue
+            if len(words) < _MIN_SPLIT_SIDE:
+                bad.append(f"stub: {piece!r}")
+            if words[0].rstrip(",.;:").lower() in self.BAD_LEAD:
+                bad.append(f"fragment lead: {piece!r}")
+            if len(words) > 1 and words[0].lower() in _FRONTABLE_LEADS and "," not in piece:
+                bad.append(f"stranded subordinator: {piece!r}")
+            if self.DANGLING.search(piece):
+                bad.append(f"dangling coordinator: {piece!r}")
+        return bad
+
+    @pytest.mark.parametrize("text", CASES)
+    def test_split_one_obeys_them(self, text):
+        from untell.rewriter.structural import _split_one
+
+        out = _split_one(text)
+        if out is not None:
+            assert not self._violations(out), self._violations(out)
+
+    @pytest.mark.parametrize("text", CASES)
+    def test_split_long_sentences_obeys_them(self, text):
+        import random
+
+        from untell.rewriter.structural import _split_long_sentences
+
+        for seed in range(25):
+            random.seed(seed)
+            joined = " ".join(_split_long_sentences([text], rate=1.0))
+            pieces = _re.split(r"(?<=[.!?])\s+", joined.strip())
+            assert not self._violations(pieces), f"seed {seed}: {self._violations(pieces)}"
+
+    def test_the_shared_case_list_is_not_vacuous(self):
+        """At least one case must actually split in each splitter, or these tests pass by refusing
+        to do anything — which is how a too-conservative guard hides."""
+        import random
+
+        from untell.rewriter.structural import _split_long_sentences, _split_one
+
+        assert any(_split_one(t) is not None for t in self.CASES), "_split_one split nothing"
+        split_any = False
+        for t in self.CASES:
+            random.seed(0)
+            joined = " ".join(_split_long_sentences([t], rate=1.0))
+            if len(_re.split(r"(?<=[.!?])\s+", joined.strip())) > 1:
+                split_any = True
+                break
+        assert split_any, "_split_long_sentences split nothing"
+
+
+class TestSplitOneHandlesListsAndQuotations:
+    """Three shapes where a comma or a coordinator looks like a clause boundary and is not.
+
+    Found by probing _split_one directly with constructed corpus shapes after the mechanical sweep
+    came back clean — the sweep runs on 60 real texts, and these are common enough in prose to
+    matter but not guaranteed to appear in any particular sample. `_split_long_sentences` declined
+    all three already; this copy did not, which is the fourth divergence between them.
+
+        "The authors, Smith, Jones, and Patel, reported that ..."
+            -> "The authors, Smith, Jones, and Patel." + subjectless "Reported that ..."
+        'He said "the result is robust, and it replicates", which ...'
+            -> 'He said "the result is robust.' + 'It replicates", which ...'   (quote broken)
+        "Revenue rose in Q1, Q2, and Q3, but the fourth quarter fell short."
+            -> "Revenue rose in Q1." + "Q2, and Q3, but ..."
+    """
+
+    def test_a_serial_list_is_not_split_at_its_commas(self):
+        from untell.rewriter.structural import _split_one
+
+        out = _split_one(
+            "The authors, Smith, Jones, and Patel, reported that the effect held across every"
+            " one of the twelve study sites."
+        )
+        assert out is None, out
+
+    def test_a_split_never_lands_inside_a_quotation(self):
+        from untell.rewriter.structural import _inside_quotes, _split_one
+
+        text = (
+            'He said "the result is robust, and it replicates", which the reviewers accepted'
+            " without further argument at all."
+        )
+        out = _split_one(text)
+        if out is not None:
+            assert out[0].count('"') % 2 == 0, f"unbalanced quote: {out}"
+        words = text.split()
+        assert _inside_quotes(words, 4) is True
+        assert _inside_quotes(words, 1) is False
+
+    def test_a_list_does_not_block_a_real_boundary_elsewhere(self):
+        """The complement, and the reason `list_like` alone was not enough: this sentence contains
+        a serial list AND a genuine clause boundary at "but". Rejecting the whole sentence because
+        it has a list cost that split — a guard declining the job it exists to do, again."""
+        from untell.rewriter.structural import _split_one
+
+        out = _split_one(
+            "Revenue rose in Q1, Q2, and Q3, but the fourth quarter fell short of the target by"
+            " a considerable margin overall."
+        )
+        assert out is not None, "a real clause boundary was lost to the list guard"
+        assert out[0].rstrip(".").endswith("Q3"), out
+        assert out[1].startswith("The fourth quarter"), out
+
+    def test_the_list_and_clause_coordinators_are_told_apart_by_what_follows(self):
+        from untell.rewriter.structural import _MIN_SPLIT_SIDE, _words_until_next_comma
+
+        words = "Revenue rose in Q1, Q2, and Q3, but the fourth quarter fell short.".split()
+        and_at = words.index("and")
+        but_at = words.index("but")
+        assert _words_until_next_comma(words, and_at + 1) < _MIN_SPLIT_SIDE
+        assert _words_until_next_comma(words, but_at + 1) >= _MIN_SPLIT_SIDE
+
+    def test_ordinary_two_clause_sentences_are_unaffected(self):
+        from untell.rewriter.structural import _split_one
+
+        for text in (
+            "The study enrolled 3,000 participants across twelve sites, and the follow-up ran"
+            " for two full years afterwards.",
+            "The team shipped the release on Tuesday after a long week of testing, it went out"
+            " to every paying customer today.",
+        ):
+            out = _split_one(text)
+            assert out is not None and len(out) == 2, f"lost a valid split: {text!r}"

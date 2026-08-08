@@ -1306,12 +1306,44 @@ def _cv(lengths: list[int]) -> float:
     return (var**0.5) / mean
 
 
+def _words_until_next_comma(words: list[str], index: int) -> int:
+    """How many words follow ``index`` before the next comma (or the end)?
+
+    Distinguishes a list coordinator from a clause coordinator without a parser: "and Q3, but ..."
+    gives 1, "but the fourth quarter fell short of the target" gives 8.
+    """
+    n = 0
+    for w in words[index:]:
+        n += 1
+        if w.endswith(","):
+            break
+    return n
+
+
+def _inside_quotes(words: list[str], index: int) -> bool:
+    """Is a break before ``words[index]`` inside a quotation?
+
+    An odd number of double quotes to the left puts the split point between an opening quote and
+    its close, so promoting the right half to a sentence leaves BOTH halves unbalanced:
+        He said "the result is robust.   /   It replicates", which the reviewers accepted.
+    """
+    return " ".join(words[:index]).count('"') % 2 == 1
+
+
 def _split_one(s: str) -> list[str] | None:
     """Split one long sentence into two at a comma or coordinating conjunction near the midpoint.
     Redistributes words only — no content added. Returns [first, second] or None if no clean split."""
     words = s.split()
     if len(words) < 12:
         return None
+    # A SERIAL LIST is not a clause boundary, and its commas outnumber any real one:
+    #   "The authors, Smith, Jones, and Patel, reported that ..."
+    #     -> "The authors, Smith, Jones, and Patel." + the subjectless "Reported that ..."
+    #   "Revenue rose in Q1, Q2, and Q3, but ..."
+    #     -> "Revenue rose in Q1." + "Q2, and Q3, but ..."
+    # Three or more comma-terminated tokens means the commas separate list items. The conjunction
+    # branch below is unaffected and can still find a real boundary in such a sentence.
+    list_like = sum(1 for w in words if w.endswith(",")) >= 3
     mid = len(words) // 2
     best: int | None = None
     for off in range(mid):  # nearest comma to the midpoint
@@ -1325,6 +1357,8 @@ def _split_one(s: str) -> list[str] | None:
             if (
                 0 < pos < len(words) - 1
                 and words[pos].endswith(",")
+                and not list_like
+                and not _inside_quotes(words, pos + 1)
                 and not _cannot_start_a_sentence(
                     " ".join(words[pos + 1:]), " ".join(words[:pos + 1])
                 )
@@ -1339,6 +1373,15 @@ def _split_one(s: str) -> list[str] | None:
                 if (
                     0 < pos < len(words) - 1
                     and words[pos].lower() in _CONJ
+                    # A LIST's own coordinator is not a clause boundary: "The authors, Smith,
+                    # Jones, and Patel, reported ..." split on that "and". But `list_like` alone
+                    # is too blunt here — "Revenue rose in Q1, Q2, and Q3, but the fourth quarter
+                    # fell short." contains a list AND a real boundary at "but", and blanket-
+                    # rejecting cost that split. What separates them is what FOLLOWS: a list
+                    # coordinator is followed by one short item before the next comma, a clause
+                    # coordinator by a clause.
+                    and _words_until_next_comma(words, pos + 1) >= _MIN_SPLIT_SIDE
+                    and not _inside_quotes(words, pos + 1)
                     and _starts_a_clause(words[pos + 1])
                 ):
                     best = pos
