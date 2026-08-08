@@ -82,6 +82,17 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    `⟦HZ0003⟧` — **never modify, translate, split, or drop a sentinel**; carry each one through
    every rewrite exactly as-is.
 
+   **If the input is LaTeX**, check it first and again at the end:
+   ```bash
+   python scripts/latex.py <file>.tex --bib refs.bib          # every \cite key must resolve
+   python scripts/latex.py <file>.tex --against rewritten.tex # no citation may be lost
+   ```
+   Preserve-lock already masks the environments whose content must not change — abstract, theorem,
+   proof, figure, table, all maths, verbatim — so you will not see them in `masked`. That is
+   deliberate: never rewrite an abstract, a caption or a theorem. What preserve CANNOT catch is a
+   citation lost when you merge or drop a whole sentence; the document still compiles, and the
+   claim that needed the source is simply no longer attributed. `--against` is the check for that.
+
 3. **Score the current text — score the RESTORED text, never the masked one.** The `⟦HZ⟧`
    sentinels are out-of-distribution tokens that *artificially lower* detector scores, so the loop
    would under-read the AI signal and can stop too early on text that is still flagged. Restore the

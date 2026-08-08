@@ -23,6 +23,11 @@ from __future__ import annotations
 import logging
 import re
 
+# The environments whose content must not be rewritten, defined once in `latex` and imported here
+# so the mask and the prose extractor cannot drift apart. `latex` imports nothing from this module,
+# so there is no cycle.
+from untell.scripts.latex import ENV_ALTERNATION as _LATEX_ENV_ALTERNATION
+
 logger = logging.getLogger(__name__)
 
 # 4-OR-MORE digits: lock() numbers sentinels with f"⟦HZ{i:04d}⟧" (minimum width 4), which overflows
@@ -104,7 +109,26 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # Math first — $...$ and \[...\] can contain braces and commands, so a command pattern would
     # otherwise carve them up.
     ("latex_math", re.compile(r"\$\$.+?\$\$|\\\[.+?\\\]|\$[^$\n]{1,200}\$", re.DOTALL)),
-    ("latex_env", re.compile(r"\\begin\{(\w+\*?)\}.*?\\end\{\1\}", re.DOTALL)),
+    # Environments whose CONTENT must survive byte-for-byte — not every environment.
+    #
+    # This used to be `\\begin\{(\w+\*?)\}.*?\\end\{\1\}`, matching ANY environment, and
+    # `document` is an environment. MEASURED on a four-paragraph paper: the whole file masked to
+    # `⟦HZ0000⟧\n⟦HZ0001⟧` and the rewriter received nothing at all, so `untell humanize --file
+    # paper.tex` returned the input unchanged. LaTeX support is a headline promise of the academic
+    # niche, and on a real document it was a no-op — the mirror image of the "LaTeX entirely
+    # unprotected" defect it was written to fix.
+    #
+    # Locked (content is data, or the roadmap says never rewrite it): maths, floats and their
+    # captions, theorem-like blocks, verbatim, tabular, the abstract.
+    # NOT locked (containers whose content is the prose the user came here to humanize):
+    # document, itemize, enumerate, description, quote, quotation, center.
+    (
+        "latex_env",
+        re.compile(
+            r"\\begin\{(" + _LATEX_ENV_ALTERNATION + r")\}.*?\\end\{\1\}",
+            re.DOTALL,
+        ),
+    ),
     # Citation/reference/label commands, including the natbib and cleveref families, with their
     # optional argument: \citep[see][p. 4]{smith2020}
     (

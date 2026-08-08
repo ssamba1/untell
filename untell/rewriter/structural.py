@@ -308,9 +308,34 @@ _ACADEMIC_HUMAN_TRANSITIONS = frozenset({"moreover", "furthermore", "therefore"}
 
 
 def _at_sentence_start(text: str, pos: int) -> bool:
-    """Is ``pos`` the first word of a sentence? Start of text, or after a terminator."""
+    """Is ``pos`` the first word of a sentence? Start of text, after a terminator, or after a lock.
+
+    A preserve sentinel ends a sentence for this purpose. It stands for a heading, an environment,
+    a display equation — spans that terminate whatever preceded them — and the character before the
+    word is then `⟧`, not a full stop. FOUND on a real `.tex` file: `\\section{Introduction}` masks
+    to a sentinel, so the `Moreover,` after it did not look sentence-initial, `_plain_register`
+    substituted it instead of leaving it for `_strip_transitions` to delete, and the output carried
+    the fragment "What is more." where the transition should simply have been removed.
+
+    This is not LaTeX-specific — it applies wherever a locked span precedes a sentence, which is
+    every document with citations or numbers at a paragraph boundary.
+    """
     before = text[:pos].rstrip()
-    return not before or before[-1] in ".!?"
+    if not before:
+        return True
+    if before[-1] in ".!?":
+        return True
+    # Two marker forms reach this function. `_plain_register` re-stashes preserve sentinels as
+    # `\x00N\x00` before substituting, so checking only for `⟦HZ…⟧` matched nothing on the path that
+    # actually needed it — the first version of this fix looked right and changed nothing.
+    tail = before[-12:]
+    return bool(_SENTINEL_PATTERN.search(tail)) or tail.endswith("\x00")
+
+
+# One or more preserve sentinels (plus surrounding whitespace) at the very start of a sentence.
+# Both marker forms: `⟦HZ0003⟧` as `lock` writes it, and the `\x00N\x00` re-stash `_plain_register`
+# uses internally.
+_LEADING_SENTINEL_RE = re.compile(r"^(?:\s*(?:⟦HZ[0-9a-fA-F]+⟧|\x00\d+\x00))+\s*")
 
 
 def _strip_transitions(
@@ -324,11 +349,23 @@ def _strip_transitions(
     out: list[str] = []
     for _i, s in enumerate(sentences):
         if random.random() < rate:
-            m = _TRANSITIONS_RE.match(s)
+            # A sentence may OPEN with a locked span — a `\section{...}`, a display equation, a
+            # leading citation — and `_TRANSITIONS_RE` is `^`-anchored, so on a real `.tex` file
+            # "⟦HZ0003⟧\nMoreover, it is crucial ..." matched nothing and the transition survived
+            # every pass. The prefix is set aside for the match and put back verbatim, so the lock
+            # is untouched and only the marker after it is considered.
+            prefix = ""
+            body = s
+            lead = _LEADING_SENTINEL_RE.match(s)
+            if lead:
+                prefix, body = lead.group(0), s[lead.end():]
+            m = _TRANSITIONS_RE.match(body)
             if not (m and m.group(1).lower() in keep):
-                s = _TRANSITIONS_RE.sub("", s)
-                if s and s[0].islower():
-                    s = s[0].upper() + s[1:]
+                body = _TRANSITIONS_RE.sub("", body)
+                # Capitalise the clause the strip exposes, not the sentinel prefix.
+                if body and body[0].islower():
+                    body = body[0].upper() + body[1:]
+            s = prefix + body
         out.append(s)
     return out
 

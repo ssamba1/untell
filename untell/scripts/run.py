@@ -33,6 +33,8 @@ if __package__ in (None, ""):
 from untell.rewriter import get_rewriter
 from untell.rewriter.prompts import STYLE_NAMES
 from untell.scripts.entailment import meaning_preserved
+from untell.scripts.latex import is_latex
+from untell.scripts.latex import prose_only as latex_prose
 from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
@@ -232,7 +234,20 @@ def untell_text(
         # Browser mode already worked this way — that path being right is what showed this one wrong.
         if browser_score is not None:
             return browser_score(masked_text)
-        return score_text(restore(masked_text, mapping), tier=tier, threshold=threshold)
+        judged = restore(masked_text, mapping)
+        # For MARKUP, the restored text is the SOURCE, and nobody is judged on source. MEASURED on
+        # a four-paragraph paper: the raw .tex scores 0.0949 while the prose inside it scores
+        # 0.6261, so the loop read 0.09, concluded the document already passed, and returned it
+        # untouched — an AI-written paper got a no-op and a green verdict. Detectors judge the
+        # prose a reader reads, so that is what is scored. Output is unaffected: the loop still
+        # emits valid LaTeX, and this only changes what the score is computed ON.
+        #
+        # Ordinary prose is untouched by this. MEASURED over 40 HC3+RAID texts (2.8 and 7.0 locked
+        # spans on average), stripping markup moves the score by +0.006 and -0.003 — no effect
+        # where there is no markup, which is the shape a fix like this has to have.
+        if is_latex(judged):
+            judged = latex_prose(judged) or judged
+        return score_text(judged, tier=tier, threshold=threshold)
 
     def _passed(s: dict) -> bool:
         # Per-detector gate (optional): every named detector must be below its own threshold.
