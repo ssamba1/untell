@@ -131,7 +131,13 @@ _TRANSITIONS_RE = re.compile(
 # Participial-phrase trailers: sentence ending with ", [verb]ing ...".
 # Map of participial verb → simple present tense for the flatten transform.
 _PARTICIPIAL_VERBS: dict[str, str] = {
-    "underscoring": "underscores", "underlining": "underlines",
+    # "underscoring" -> "shows", not "underscores": the -s form is itself catalogued ai_vocab, so
+    # flattening the participial trailer traded a `participial_trailer` hit for an `ai_vocab` hit.
+    # _plain_register would often clean it up afterwards, but only with probability
+    # `intensity * profile["register"]` — emitting a known tell and relying on a later stochastic
+    # pass to remove it is not the same as not emitting it. Same class of bug as the four
+    # self-referential synonyms in attacks/word_importance.py.
+    "underscoring": "shows", "underlining": "underlines",
     "marking": "marks", "reflecting": "reflects",
     "highlighting": "highlights", "showcasing": "showcases",
     "emphasizing": "emphasizes", "signaling": "signals",
@@ -737,7 +743,11 @@ _CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
     ),
     (re.compile(r"\bplays?\s+an?\s+(?:crucial|pivotal|vital|key|central)\s+role\b", re.I), "matters"),
     (re.compile(r"\bwhen\s+it\s+comes\s+to\b", re.IGNORECASE), "for"),
-    (re.compile(r"\bat\s+the\s+end\s+of\s+the\s+day\b", re.IGNORECASE), "ultimately"),
+    # "in the end", not "ultimately": "ultimately" is a catalogued formulaic_transition, so the
+    # flatten swapped a `cliche` hit for a transition hit and the tell count did not move. Unlike
+    # the participial case there is no later pass that would clean it — _strip_transitions runs on
+    # sentence openers, and this substitution lands mid-sentence as often as not.
+    (re.compile(r"\bat\s+the\s+end\s+of\s+the\s+day\b", re.IGNORECASE), "in the end"),
     (re.compile(r"\bin\s+the\s+realm\s+of\b", re.IGNORECASE), "in"),
     (re.compile(r"\bstands?\s+as\s+a\s+testament\s+to\b", re.IGNORECASE), "shows"),
 ]

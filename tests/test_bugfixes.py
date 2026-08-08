@@ -72,17 +72,21 @@ def test_participial_offset_survives_extra_whitespace():
     from untell.rewriter.structural import _flatten_participial_trailers
 
     # Two spaces after the comma: the old len(", verb") slice ate a char ("underscoresg its ...").
+    # "underscoring" now flattens to "shows" rather than "underscores" — the -s form is itself
+    # catalogued ai_vocab. That makes this a STRICTER offset test than before, not a weaker one:
+    # the replacement is 5 characters against a 12-character match, so any slice arithmetic keyed
+    # to the original length now misaligns by 7 instead of by 1.
     out = _flatten_participial_trailers("The system evolved,  underscoring its importance.")
-    assert "underscores its importance" in out
-    assert "underscoresg" not in out          # no eaten/duplicated boundary char
-    assert ", underscoring" not in out
+    assert "shows its importance" in out
+    assert "showsg" not in out                # no eaten/duplicated boundary char
+    assert "underscor" not in out             # no remnant of the participial form
 
 
 def test_participial_single_space_still_works():
     from untell.rewriter.structural import _flatten_participial_trailers
 
     out = _flatten_participial_trailers("The system evolved rapidly, underscoring its importance.")
-    assert "underscores its importance" in out
+    assert "shows its importance" in out
     assert ", underscoring" not in out
 
 

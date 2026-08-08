@@ -15,13 +15,17 @@ from untell.rewriter.structural import _flatten_participial_trailers, structural
 class TestParticipialTrailerGrammar:
     """Verify that participial trailers are converted with correct verb tense."""
 
-    def test_underscoring_becomes_underscores(self):
-        """Verb tense is asserted at the UNIT level, because a later pipeline stage legitimately
-        changes the verb: "underscores" is itself AI vocabulary, so the plain-register pass swaps it
-        for "shows". Asserting the exact verb survives the whole pipeline would pin an intermediate
-        artifact and block that intended plainening."""
+    def test_underscoring_flattens_straight_to_a_finite_non_tell_verb(self):
+        """"underscores" is itself AI vocabulary, so this stage used to emit a tell and rely on the
+        later plain-register pass to swap it for "shows".
+
+        That pass is probabilistic — it fires with probability `intensity * profile["register"]` —
+        so the cleanup was never guaranteed, and this test previously documented the workaround
+        instead of the fix. _PARTICIPIAL_VERBS now maps straight to "shows" and the intermediate
+        tell is never created at all.
+        """
         text = "The system evolved rapidly, underscoring its importance in modern computing."
-        assert "underscores its" in _flatten_participial_trailers(text)
+        assert "shows its" in _flatten_participial_trailers(text)
 
     def test_underscoring_trailer_is_gone_after_full_pipeline(self):
         """The invariant that must survive EVERY stage: no dangling "-ing" trailer remains."""
@@ -905,3 +909,61 @@ class TestMergeDoesNotManufactureSemicolons:
         sentences = [f"The team shipped feature number {i} on time. " for i in range(20)]
         merged = "".join(_merge_sentences(sentences, rate=1.0))
         assert ";" not in merged
+
+
+class TestTheRewriterNeverEmitsACataloguedTell:
+    """A replacement whose output is itself in the tell catalogue is a lateral move.
+
+    The rewrite spends its similarity budget, the detector fires on the same span, and the tell
+    count does not move — but nothing reports a failure, so it reads as an unexplained residual.
+    Three instances were found this way, in three different tables:
+
+        attacks/word_importance._SYN   crucial -> vital, invaluable -> vital,
+                                       exceptional -> remarkable, groundbreaking -> pivotal
+        _PARTICIPIAL_VERBS             underscoring -> underscores   (ai_vocab)
+        _CLICHE_FLATTEN                at the end of the day -> ultimately  (formulaic_transition)
+
+    Two of the three tables run BEFORE _plain_register, so a later pass could sometimes clean up
+    after them — but only with probability `intensity * profile["register"]`, and _CLICHE_FLATTEN's
+    output lands mid-sentence where _strip_transitions never looks. Emitting a known tell and
+    relying on a stochastic later pass is not the same as not emitting it.
+
+    This sweeps every table rather than the ones that happened to be probed, because the failure is
+    silent by construction and the next table added will not announce itself.
+    """
+
+    @staticmethod
+    def _tells_in(fragment: str) -> dict:
+        from untell.scripts.tells import score_tells
+
+        # Carried in a two-sentence frame: several catalogue patterns are anchored to a sentence
+        # opener or need a preceding sentence, and a bare fragment would miss them.
+        probe = f"The team shipped it on time. {fragment[:1].upper()}{fragment[1:]} the plan works."
+        return {k: v for k, v in (score_tells(probe, include_matches=True).get("matches") or {}).items()}
+
+    def test_participial_flattening_outputs_are_clean(self):
+        from untell.rewriter.structural import _PARTICIPIAL_VERBS
+
+        bad = {k: (v, t) for k, v in _PARTICIPIAL_VERBS.items() if (t := self._tells_in(v))}
+        assert not bad, f"flattening a participial trailer into a catalogued tell: {bad}"
+
+    def test_cliche_flattening_outputs_are_clean(self):
+        from untell.rewriter.structural import _CLICHE_FLATTEN
+
+        bad = {rep: t for _pat, rep in _CLICHE_FLATTEN if rep.strip() and (t := self._tells_in(rep))}
+        assert not bad, f"flattening a cliche into a catalogued tell: {bad}"
+
+    def test_synonym_substitutes_are_clean(self):
+        """The same sweep over the vocabulary map, via the rewriter's own view of it.
+
+        test_attacks.py checks this against `ai_vocab` alone; here it is the WHOLE catalogue, so a
+        substitute that trips `formulaic_transition` or `hedge_stacking` is caught too.
+        """
+        from untell.attacks.word_importance import _SYN
+
+        bad = {}
+        for key, values in _SYN.items():
+            for v in values:
+                if t := self._tells_in(v):
+                    bad.setdefault(key, []).append((v, t))
+        assert not bad, f"substituting one catalogued tell for another: {bad}"
