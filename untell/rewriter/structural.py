@@ -283,14 +283,52 @@ def _split_sentences(text: str) -> list[str]:
     return split_sentences(text)
 
 
-def _strip_transitions(sentences: list[str], rate: float = 1.0) -> list[str]:
-    """Strip formulaic openers from a fraction of sentences (``rate`` in [0, 1])."""
+# Transitions that point the HUMAN way in academic prose, so stripping them there makes the text
+# read LESS human, not more. MEASURED per corpus over 200 pairs each, sentence-opening frequency:
+#
+#                     HC3 (forum Q&A)          RAID (paper abstracts)
+#                     human      ai            human      ai
+#     moreover        (<5 occurrences)         0.888%   0.041%   <- human, 22x
+#     furthermore     (<5 occurrences)         0.947%   0.332%   <- human, 2.9x
+#     therefore       (<5 occurrences)         0.592%   0.000%   <- human, all human
+#     additionally    0.000%   1.544%          0.178%   0.913%      AI in both
+#     overall         0.000%   2.613%          0.000%   2.407%      AI in both
+#     in conclusion   (<5)                     0.000%   0.539%      AI
+#     in summary      (<5)                     0.000%   0.539%      AI
+#
+# Real abstracts use "Moreover" and "Furthermore"; the generators largely do not. The counts behind
+# the RAID column are modest (15, 16 and 10 human occurrences against 1, 8 and 0) — but all three
+# agree in direction, and the AI-pointing markers are unambiguous in BOTH corpora, so the split is
+# between the two groups rather than a per-marker judgement call.
+#
+# This is corpus scope, not a universal fact: the same marker points opposite ways in conversational
+# and academic text, which is why the exemption is tied to the style profile rather than applied
+# globally. Stripping stays the default for everything else.
+_ACADEMIC_HUMAN_TRANSITIONS = frozenset({"moreover", "furthermore", "therefore"})
+
+
+def _at_sentence_start(text: str, pos: int) -> bool:
+    """Is ``pos`` the first word of a sentence? Start of text, or after a terminator."""
+    before = text[:pos].rstrip()
+    return not before or before[-1] in ".!?"
+
+
+def _strip_transitions(
+    sentences: list[str], rate: float = 1.0, keep: frozenset[str] = frozenset()
+) -> list[str]:
+    """Strip formulaic openers from a fraction of sentences (``rate`` in [0, 1]).
+
+    ``keep`` names markers to leave alone, lowercased. Used by the formal style profiles, where the
+    measured direction of some of these is the opposite of the conversational case.
+    """
     out: list[str] = []
     for _i, s in enumerate(sentences):
         if random.random() < rate:
-            s = _TRANSITIONS_RE.sub("", s)
-            if s and s[0].islower():
-                s = s[0].upper() + s[1:]
+            m = _TRANSITIONS_RE.match(s)
+            if not (m and m.group(1).lower() in keep):
+                s = _TRANSITIONS_RE.sub("", s)
+                if s and s[0].islower():
+                    s = s[0].upper() + s[1:]
         out.append(s)
     return out
 
@@ -734,6 +772,17 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
         options = _SYN.get(word.lower())
         if not options or random.random() > intensity:
             return m.group(0)  # group(0), not `word` — the article and tail are not ours to drop
+        # A formulaic transition at a sentence start belongs to _strip_transitions, which DELETES
+        # it. This pass runs first, and substituting pre-empts that: "Therefore, we adopt it."
+        # became "That is why, we adopt it." — no longer matched by _TRANSITIONS_RE, so it survived
+        # the stripper and then collided with a merge connector to produce "results are strong, so
+        # that is why, we adopt it." Deletion is the right treatment for these and a wordier
+        # connective is a worse outcome than the word we started with; mid-sentence occurrences are
+        # unaffected, where substitution IS the right move.
+        # Probe with ", " appended: _TRANSITIONS_RE requires whitespace after the optional comma,
+        # so matching the bare word alone silently never fires.
+        if _at_sentence_start(masked, m.start()) and _TRANSITIONS_RE.match(word + ", x"):
+            return m.group(0)
         # Prefer an option this text has not used yet; fall back to the full list when every option
         # is spent, because leaving the AI word in place is worse than repeating a plain one.
         fresh = [o for o in options if o not in spent]
@@ -1068,7 +1117,12 @@ def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves:
 # The knobs are the ones the pipeline already had at fixed rates, so this sets existing dials
 # rather than adding transforms: shorter sentences for minimalist and blunt, more connective
 # variation for conversational, longer flowing sentences for storytelling.
-_NEUTRAL = {"contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0}
+_NEUTRAL = {
+    "contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0,
+    # Markers _strip_transitions must leave alone. Empty for every style but "academic" —
+    # see _ACADEMIC_HUMAN_TRANSITIONS for the per-corpus measurement that separates them.
+    "keep_transitions": frozenset(),
+}
 
 _STYLE_PROFILES: dict[str, dict] = {
     "casual":        {"contractions": True,  "register": 1.0,  "sentences": 1.0, "openers": 1.2},
@@ -1083,7 +1137,11 @@ _STYLE_PROFILES: dict[str, dict] = {
     "minimalist":    {"contractions": True,  "register": 1.0,  "sentences": 1.8, "openers": 0.0},
     # Formal registers: contractions OFF and the plain-word swap held back, because "utilize" ->
     # "use" is the right move for casual prose and the wrong one for a paper.
-    "academic":      {"contractions": False, "register": 0.15, "sentences": 0.7, "openers": 0.4},
+    # "academic" alone carries the transition exemption. The evidence is RAID paper abstracts,
+    # so it is claimed for academic prose and NOT extended to professional/technical, where the
+    # same direction is plausible but unmeasured.
+    "academic":      {"contractions": False, "register": 0.15, "sentences": 0.7, "openers": 0.4,
+                      "keep_transitions": _ACADEMIC_HUMAN_TRANSITIONS},
     "professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "openers": 0.6},
     "technical":     {"contractions": False, "register": 0.3,  "sentences": 1.2, "openers": 0.3},
     "poetic":        {"contractions": True,  "register": 0.5,  "sentences": 0.6, "openers": 0.8},
@@ -1195,7 +1253,7 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         # At intensity 1.0: strip ALL transitions, merge ~60% of pairs,
         # split ~50% of long sentences, vary ~60% of openers.
         strip_rate = min(1.0, 0.3 + intensity * 0.7)
-        sents = _strip_transitions(sents, rate=strip_rate)
+        sents = _strip_transitions(sents, rate=strip_rate, keep=profile["keep_transitions"])
 
         # Drop restatements BEFORE merging: a merge would fuse a restatement onto its own source
         # and preserve the duplication inside one longer sentence instead of removing it.

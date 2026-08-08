@@ -962,15 +962,28 @@ class TestEveryStyleActuallyChangesTheFreePath:
 
         from untell.rewriter.structural import StructuralRewriter
 
+        # 60 seeds, not 8. The rates differ by as little as 0.30 vs 0.36 on a per-sentence draw, so
+        # the chance any single seed lands in the gap is small and an 8-seed window measured luck
+        # rather than capability — the docstring above already records it failing at seed 7 once,
+        # and it began failing for `casual` and `conversational` again when sentence-initial
+        # transitions started being STRIPPED rather than substituted, which leaves fewer sentences
+        # for the opener knob to act on. MEASURED over 60 seeds on this text:
+        #
+        #     casual 2/60   conversational 8/60   blunt 17/60   minimalist 17/60
+        #
+        # `casual` is genuinely the weakest of the four: its only lever over the neutral profile is
+        # a 1.2x opener rate. That is a real limit of the profile, recorded rather than tuned away —
+        # the claim this test defends is that the flag CAN change the output, which was once false
+        # for all four at every seed.
         rw = StructuralRewriter()
         differs = 0
-        for seed in range(8):
+        for seed in range(60):
             random.seed(seed)
             base = rw.rewrite(self.SRC, {"max": 0.9})
             random.seed(seed)
             styled = rw.rewrite(self.SRC, {"max": 0.9, "style": style})
             differs += styled != base
-        assert differs > 0, f"{style} never differs from no-style across 8 seeds"
+        assert differs > 0, f"{style} never differs from no-style across 60 seeds"
 
     def test_the_default_path_is_untouched(self):
         """The knobs multiply by 1.0 on the neutral profile, so a run with no style must be

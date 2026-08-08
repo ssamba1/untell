@@ -1105,3 +1105,124 @@ class TestOpenerVariationDoesNotRepeatItself:
         out = _vary_openers(sentences, rate=1.0)
         varied = [s for s in out if "," in s]
         assert len(varied) >= 16, f"variation stopped after the pool emptied: {len(varied)}/20"
+
+
+class TestTransitionsAreStrippedNotSubstituted:
+    """A sentence-initial formulaic transition belongs to _strip_transitions, which DELETES it.
+
+    _plain_register runs first and was substituting them instead, which pre-empts the deletion:
+    "Therefore, we adopt it." became "That is why, we adopt it." — a phrase _TRANSITIONS_RE no
+    longer matches, so it survived the stripper and then collided with a merge connector to produce
+
+        "results are strong, so that is why, we adopt it."
+
+    A wordier connective is a worse outcome than the word we started with. Mid-sentence occurrences
+    are untouched: substitution IS the right move there, and only the sentence-initial position has
+    a deletion pass waiting for it.
+    """
+
+    @pytest.mark.parametrize(
+        "opener", ["Therefore", "Moreover", "Furthermore", "Overall", "Consequently"]
+    )
+    def test_sentence_initial_transitions_survive_the_register_pass(self, opener):
+        import random
+
+        from untell.rewriter.structural import _plain_register
+
+        text = f"{opener}, costs fell sharply."
+        for seed in range(20):
+            random.seed(seed)
+            assert _plain_register(text, 1.0).startswith(opener), (
+                f"seed {seed}: the register pass consumed {opener!r}, which _strip_transitions "
+                "would have deleted outright"
+            )
+
+    def test_mid_sentence_occurrences_are_still_substituted(self):
+        """The complement — the guard must be positional, not a blanket exemption."""
+        import random
+
+        from untell.rewriter.structural import _plain_register
+
+        text = "The result holds and therefore we adopt it."
+        outs = set()
+        for seed in range(30):
+            random.seed(seed)
+            outs.add(_plain_register(text, 1.0))
+        assert any("therefore" not in o for o in outs), f"never substituted mid-sentence: {outs}"
+
+    def test_the_whole_pipeline_drops_them_for_a_casual_style(self):
+        import random
+
+        from untell.rewriter.structural import structural_rewrite
+
+        text = (
+            "Moreover, the model improves accuracy. Furthermore, it reduces cost. "
+            "Overall, results are strong. Therefore, we adopt it."
+        )
+        random.seed(0)
+        out = structural_rewrite(text, intensity=1.0, style="casual")
+        for marker in ("Moreover", "Furthermore", "Overall", "Therefore"):
+            assert marker not in out, f"{marker} survived a casual rewrite: {out}"
+        # And the substituted forms must not appear in their place either.
+        for wordy in ("What is more", "All told", "that is why", "Plus,"):
+            assert wordy not in out, f"transition was substituted rather than stripped: {out}"
+
+
+class TestAcademicKeepsTheTransitionsHumansUseThere:
+    """The same markers point OPPOSITE ways in conversational and academic prose.
+
+    MEASURED per corpus, sentence-opening frequency over 200 pairs each:
+
+                        HC3 (forum Q&A)         RAID (paper abstracts)
+                        human      ai           human      ai
+        moreover        (<5 occ)                0.888%   0.041%   <- human
+        furthermore     (<5 occ)                0.947%   0.332%   <- human
+        therefore       (<5 occ)                0.592%   0.000%   <- human
+        additionally    0.000%   1.544%         0.178%   0.913%      AI
+        overall         0.000%   2.613%         0.000%   2.407%      AI
+
+    Real abstracts use "Moreover"; the generators largely do not. Stripping it from academic prose
+    therefore makes the text read LESS human. The exemption is tied to the style profile because
+    the fact is corpus-scoped, not universal.
+    """
+
+    def test_academic_keeps_the_human_pointing_markers(self):
+        import random
+
+        from untell.rewriter.structural import structural_rewrite
+
+        text = (
+            "Moreover, the model improves accuracy. Furthermore, it reduces cost. "
+            "Therefore, we adopt it."
+        )
+        kept = 0
+        for seed in range(20):
+            random.seed(seed)
+            out = structural_rewrite(text, intensity=1.0, style="academic")
+            kept += sum(m in out for m in ("Moreover", "Furthermore", "Therefore"))
+        assert kept > 0, "academic stripped every marker the measurement says humans use there"
+
+    def test_academic_still_strips_the_ai_pointing_markers(self):
+        """The exemption is a named set, not a blanket pass — "Overall" points AI in BOTH corpora."""
+        import random
+
+        from untell.rewriter.structural import structural_rewrite
+
+        for seed in range(20):
+            random.seed(seed)
+            out = structural_rewrite(
+                "Overall, the programme succeeded. The team was pleased.",
+                intensity=1.0,
+                style="academic",
+            )
+            assert "Overall" not in out, f"seed {seed}: kept an AI-pointing marker: {out}"
+
+    def test_no_other_style_carries_the_exemption(self):
+        from untell.rewriter.structural import _STYLE_PROFILES, style_profile
+
+        for name in list(_STYLE_PROFILES) + [None, "casual"]:
+            keep = style_profile(name)["keep_transitions"]
+            if name == "academic":
+                assert keep, "academic lost its exemption"
+            else:
+                assert not keep, f"{name} acquired an unmeasured transition exemption"
