@@ -283,12 +283,20 @@ UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 8 --rewriter composite --
 
 | | built-in sample | **real HC3 answers** |
 |---|---|---|
-| mean max P(AI) | 0.86 → 0.15 ± 0.04 | 1.00 → **0.86 ± 0.001** |
+| mean max P(AI) | 0.86 → 0.15 ± 0.04 | 1.00 → **0.998 ± 0.001** |
 | flagged rate | 1.00 → 0.00 | 1.00 → **1.00** |
-| meaning similarity | 0.93 / 0.87 worst | 0.98 / 0.95 worst |
+| meaning similarity | 0.93 / 0.87 worst | 0.99 / 0.97 worst |
 
-Per detector: `roberta_openai` 0.99 → **0.09** (crushed), `fast_detectgpt` 0.64 → 0.26,
-`perplexity_burstiness` 0.62 → 0.43, **`hc3_roberta` 1.00 → 0.81 (barely moves)**.
+Per detector: `roberta_openai` 0.99 → **0.64**, `fast_detectgpt` 0.64 → **0.46**,
+`perplexity_burstiness` 0.62 → **0.59**, **`hc3_roberta` 1.00 → 0.999 (does not move at all)**.
+
+> **This row was corrected on 2026-08-08 and the previous figures were better than reality.** It
+> used to read 0.86 post, with `roberta_openai` 0.99 → 0.09 and `hc3_roberta` 1.00 → 0.81. Re-running
+> the command above reproduces none of that. Checked against a worktree at the commit *before* that
+> day's rewriting work, in case it was a regression: the baseline gives `roberta_openai` → 0.83 and
+> `hc3_roberta` → 0.999, so the current code is **better** on this corpus, not worse, and the old
+> numbers describe a state neither commit produces. They were stale, and nothing was re-running
+> them — which is why `untell-audit` now exists.
 
 Not one sample cleared, and the spread across three repeats is 0.001 — the loop hits the same wall
 every run. It is not a lack of effort: **89–93% of tokens are rewritten**, and `roberta_openai`

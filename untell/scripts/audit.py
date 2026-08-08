@@ -42,8 +42,13 @@ LIVE_DOCS = ("README.md", "ROADMAP.md", "docs/why-best-open-repo.md", "docs/inde
 # the documents actually use.
 _ATTRIBUTION = re.compile(
     # Our own measurements.
-    r"MEASURED|Measured|measured|Reproduce:|reproduce with|`untell-ceiling|`untell-prove"
-    r"|free-ceiling-measured|Result \d+|n\s*=\s*\d+"
+    # No backtick before the command names: the first version required one, and the README quotes
+    # its reproduction command BARE inside a fenced block, so a number with the command sitting
+    # three lines above it was reported unattributed. A checker that cannot recognise the most
+    # common form of the thing it looks for produces false alarms, and false alarms are how a
+    # checker gets ignored.
+    r"MEASURED|Measured|measured|Reproduce:|reproduce with|untell-ceiling|untell-prove"
+    r"|untell-audit|free-ceiling-measured|Result \d+|n\s*=\s*\d+"
     # The census, which is itself a documented method with raw data attached.
     r"|census|humanizer-census"
     # A citation is provenance: an external claim is attributed when it names its source.
