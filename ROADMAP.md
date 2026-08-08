@@ -112,18 +112,24 @@ durable advantage means making it **mechanical rather than heroic**.
 
 ## 3. Priority 2 — free wins already measured, not yet taken
 
-### 🔜 Make the default configuration the good one
+### ✅ Make the default configuration the good one — done, and the answer was the opposite
 
-Measured on the same six real HC3 texts, full tier, best-of-3, `pre` identical at 0.9994:
+This section used to read: *the shipped default clears nothing on real text at the full tier, so
+auto-select `neural` when `.[full]` is installed.* That was based on six HC3 texts and a single run
+per arm. Replicated properly on 2026-08-07 — n = 40 RAID, full tier, same `best_of`:
 
-| rewriter | post | flagged | meaning |
-|---|---|---|---|
-| **composite** (current default) | 0.805 | **100%** | 0.986 |
-| `neural` | 0.502 | **50%** | 0.941 |
+| rewriter | post | flagged | mean sim | **worst sim** | cost |
+|---|---|---|---|---|---|
+| **`composite`** (default, 3 repeats / 120 rewrites) | **0.321 ± 0.012** | **34.2%** | 0.9825 | **0.9406** | CPU only |
+| `neural` (1 run) | 0.369 | 37.5% | 0.9621 | 0.8716 | T5, hours |
 
-**The shipped default clears nothing on real text at the full tier.** A run that ends flagged now
-prints the trade-off, but the real fix is auto-selecting `neural` when `.[full]` is installed and
-the tier is `full`. One default change plus a replication at `--repeats ≥ 3`.
+The default was not the problem. It had **fixable defects**, and Results 16–20 removed them: the
+same corpus that measured 0.951 post with 39 of 40 flagged now measures 0.321 with 34% flagged.
+
+Be precise about what this does and does not establish. The 0.048 score gap is **smaller than
+`neural`'s own ±0.079 run-to-run spread**, so the two are not separable on evasion at this sample
+size. `composite` stays the default because it *matches* `neural` there while holding 0.9406
+worst-case similarity against 0.8716, varying six times less run to run, and needing no GPU.
 
 ### 🔜 Retire or rehabilitate the dead weight
 
