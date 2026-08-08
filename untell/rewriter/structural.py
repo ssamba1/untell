@@ -1032,6 +1032,103 @@ def _flatten_vague_attribution(text: str) -> str:
     return text
 
 
+# Subordinators whose clause can move to the FRONT of its sentence without changing what the
+# sentence says. "The ice melts because salt lowers the freezing point." and "Because salt lowers
+# the freezing point, the ice melts." are the same claim in either order — English marks the
+# relation on the subordinator, not on the position.
+#
+# "as" and "so" are deliberately absent: "as" is three different words (causal, temporal,
+# comparative) and fronting the comparative one changes the reading, while "so" trailing is usually
+# a result coordinator ("... , so we adopted it"), which cannot front at all.
+_FRONTABLE = (
+    "because", "when", "while", "since", "if", "although", "though", "unless",
+    "after", "before", "whereas", "whenever", "wherever", "even though", "even if",
+)
+_FRONTABLE_RE = re.compile(
+    r"^(?P<main>.{20,}?)[,]?\s+(?P<sub>" + "|".join(_FRONTABLE) + r")\s+(?P<dep>.{12,})$",
+    re.IGNORECASE,
+)
+
+
+# Share of sentences containing a frontable subordinator that HUMANS actually front. MEASURED over
+# 200 pairs per corpus:
+#
+#                   human    ai
+#     HC3 (forum)   22.0%   25.2%     AI already fronts slightly MORE than humans
+#     RAID (paper)  17.6%    2.8%     humans front 6.3x as often as the generators
+#
+# So this is a target, not a maximum — the same lesson as contraction injection. Fronting every
+# eligible sentence would take HC3-like text to 100% against a human 22%, trading one distribution
+# error for a larger one. Academic prose is where the gap is real and where this pays.
+_HUMAN_FRONTING_RATE = 0.20
+_FRONTED_RE = re.compile(r"^(?:" + "|".join(_FRONTABLE) + r")[^,]{5,},", re.IGNORECASE)
+
+
+def _front_subordinate_clauses(sentences: list[str], rate: float = 0.0) -> list[str]:
+    """Move a trailing subordinate clause to the front: "X because Y." -> "Because Y, X."
+
+    Every other transform in this file is LOCAL — a word swap, a split, a merge, a deletion. None
+    of them changes the order in which information arrives, which is what a curvature detector
+    reads over a long span. This is the one reordering move that is safe without a parser: the
+    subordinator travels with its clause, so the relation it marks is preserved exactly.
+
+    Deliberately conservative. It fires only on a sentence with exactly one frontable subordinator,
+    never when the dependent clause already carries a comma (which usually means it is not a simple
+    two-clause sentence), and never on a question.
+    """
+    # Budget: how many more sentences must be fronted to reach the human share of the ELIGIBLE
+    # ones. Text already at or above that share gets nothing, exactly like _inject_contractions.
+    eligible = [s for s in sentences if _FRONTABLE_RE.match(s.strip().rstrip())]
+    if not eligible:
+        return list(sentences)
+    already = sum(1 for s in sentences if _FRONTED_RE.match(s.strip()))
+    want = _HUMAN_FRONTING_RATE * len(eligible) - already
+    if want <= 0:
+        return list(sentences)
+    # Fractional budgeting rather than rounding. A block with ONE eligible sentence wants 0.2 of a
+    # fronting, and rounding that to zero means short blocks — which is most paragraphs — never
+    # front at all, so the aggregate rate lands well under the human 20% however the constant is
+    # set. Taking the integer part and adding one more with probability equal to the remainder
+    # gives the right rate in expectation at every block length.
+    budget = int(want)
+    if random.random() < want - budget:
+        budget += 1
+    if budget < 1:
+        return list(sentences)
+
+    out: list[str] = []
+    for s in sentences:
+        stripped = s.strip()
+        m = _FRONTABLE_RE.match(stripped.rstrip()) if budget > 0 else None
+        if (
+            not m
+            or random.random() >= rate
+            or stripped.endswith(("?", "!"))
+            or "," in m.group("dep")            # multi-clause tail: not a clean two-part sentence
+            or sum(stripped.lower().count(f" {w} ") for w in _FRONTABLE) != 1
+        ):
+            out.append(s)
+            continue
+        main = m.group("main").rstrip(" ,")
+        dep = m.group("dep").rstrip(" .")
+        if not main or not dep:
+            out.append(s)
+            continue
+        # The main clause loses its sentence-initial position, so its capital goes only if the word
+        # is safe to lowercase — the same rule the merge and opener paths use, for the same reason:
+        # lowercasing whatever happens to be there turns "NASA confirmed" into "nASA confirmed".
+        head = main.split()[0]
+        if head[:1].isupper():
+            if not _safe_to_lowercase(head, " ".join(sentences)):
+                out.append(s)
+                continue
+            main = main[0].lower() + main[1:]
+        sub = m.group("sub")
+        budget -= 1
+        out.append(f"{sub[0].upper()}{sub[1:].lower()} {dep}, {main}.")
+    return out
+
+
 def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     """Vary sentence openings by prepending transitional phrases or restructuring."""
     # Openers humans are MEASURED to use, not ones that merely sound casual. Sentence-opening
@@ -1487,6 +1584,14 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
     if len(sents) >= 2:
         # At intensity 1.0: merge ~60% of pairs, split ~50% of long sentences,
         # vary ~60% of openers.
+
+        # Reorder BEFORE merging and splitting, so a fronted clause is then eligible for both.
+        # This is the only transform in the file that changes the ORDER information arrives in;
+        # every other one is a local edit, and order is what a curvature detector reads over a
+        # long span. MEASURED in isolation over 14 RAID texts, fronting every eligible sentence:
+        # fast_detectgpt -0.0298, perplexity_burstiness -0.0263, roberta_openai -0.0221, no
+        # detector worse, at 0.9993 similarity — it adds no words, it moves them.
+        sents = _front_subordinate_clauses(sents, rate=1.0)
 
         # Drop restatements BEFORE merging: a merge would fuse a restatement onto its own source
         # and preserve the duplication inside one longer sentence instead of removing it.

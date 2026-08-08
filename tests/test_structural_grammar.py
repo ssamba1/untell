@@ -1559,3 +1559,122 @@ class TestTheOtherSplitterAndTheSemicolonPassAlsoCheckForFragments:
         assert _semicolons_to_periods("The team shipped it; the customers were happy.") == (
             "The team shipped it. The customers were happy."
         )
+
+
+class TestSubordinateClauseFronting:
+    """The only transform here that changes the ORDER information arrives in.
+
+    Every other pass is a local edit — a word swap, a split, a merge, a deletion — and none of them
+    touches sequence, which is what a curvature detector reads over a long span. Fronting moves a
+    trailing subordinate clause to the front: "X because Y." -> "Because Y, X."
+
+    Safe without a parser because the subordinator travels with its clause, so the relation it
+    marks is preserved exactly. MEASURED in isolation over 14 RAID texts, fronting everything
+    eligible: fast_detectgpt -0.0298, perplexity_burstiness -0.0263, roberta_openai -0.0221, no
+    detector worse, at 0.9993 similarity — it adds no words, it moves them.
+
+    Rate is a TARGET, not a maximum. Share of sentences containing a frontable subordinator that
+    are actually fronted, 200 pairs per corpus:
+
+                      human    ai
+        HC3 (forum)   22.0%   25.2%    AI already fronts slightly MORE than humans
+        RAID (paper)  17.6%    2.8%    humans front 6.3x as often as the generators
+
+    Fronting everything would take forum-like text to 100% against a human 22%, trading one
+    distribution error for a bigger one. Same lesson as contraction injection.
+    """
+
+    def test_it_fronts_a_trailing_subordinate_clause(self):
+        """Across seeds, because the budget is fractional.
+
+        A one-sentence block wants 0.2 of a fronting, so it fires about one time in five. Rounding
+        that to zero instead was the first implementation, and it meant short blocks — which is
+        most paragraphs — never fronted at all, putting the aggregate rate far below the human 20%
+        whatever the constant said.
+        """
+        import random
+
+        from untell.rewriter.structural import _front_subordinate_clauses
+
+        text = "The ice melts on the road surface because salt lowers the freezing point of water."
+        outs = set()
+        for seed in range(60):
+            random.seed(seed)
+            outs.add(_front_subordinate_clauses([text], rate=1.0)[0])
+        fronted = [o for o in outs if o.startswith("Because salt lowers")]
+        assert fronted, f"never fronted across 60 seeds: {outs}"
+        assert fronted[0].rstrip(".").endswith("the ice melts on the road surface"), fronted[0]
+
+    def test_short_blocks_still_reach_the_target_rate(self):
+        """The regression guard for the rounding bug: measured over many single-sentence blocks,
+        the fronting rate must land near the human share rather than at zero."""
+        import random
+
+        from untell.rewriter.structural import _HUMAN_FRONTING_RATE, _front_subordinate_clauses
+
+        text = "The ice melts on the road surface because salt lowers the freezing point of water."
+        hits = 0
+        for seed in range(400):
+            random.seed(seed)
+            hits += _front_subordinate_clauses([text], rate=1.0)[0].startswith("Because")
+        assert abs(hits / 400 - _HUMAN_FRONTING_RATE) < 0.08, f"{hits}/400"
+
+    def test_the_rate_targets_the_human_share(self):
+        import random
+
+        from untell.rewriter.structural import _HUMAN_FRONTING_RATE, _front_subordinate_clauses
+
+        sents = ["The ice melts on the road because salt lowers the freezing point of water."] * 20
+        random.seed(0)
+        out = _front_subordinate_clauses(list(sents), rate=1.0)
+        fronted = sum(1 for s in out if s.startswith("Because"))
+        assert abs(fronted / len(sents) - _HUMAN_FRONTING_RATE) < 0.10, f"{fronted}/20"
+
+    def test_text_already_at_the_human_rate_is_left_alone(self):
+        import random
+
+        from untell.rewriter.structural import _front_subordinate_clauses
+
+        sents = ["Because salt lowers the freezing point, the ice melts on the road surface."] * 5
+        random.seed(0)
+        assert _front_subordinate_clauses(list(sents), rate=1.0) == sents
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            # A question cannot be reordered this way.
+            "Was the effect real because the replication says yes?",
+            # "NASA" must not be lowercased to sit mid-sentence.
+            "NASA confirmed the result because the second probe returned matching data.",
+        ],
+    )
+    def test_unsafe_shapes_are_declined(self, text):
+        import random
+
+        from untell.rewriter.structural import _front_subordinate_clauses
+
+        for seed in range(10):
+            random.seed(seed)
+            assert _front_subordinate_clauses([text], rate=1.0) == [text]
+
+    def test_the_ambiguous_subordinators_are_excluded(self):
+        """"as" is three different words and fronting the comparative one changes the reading;
+        trailing "so" is a result coordinator, which cannot front at all."""
+        from untell.rewriter.structural import _FRONTABLE
+
+        assert "as" not in _FRONTABLE
+        assert "so" not in _FRONTABLE
+
+    def test_fronting_preserves_every_content_word(self):
+        """It reorders and must never add or drop content — that is why it is meaning-safe."""
+        import random
+        import re as _re2
+
+        from untell.rewriter.structural import _front_subordinate_clauses
+
+        text = "The model generalises poorly although the training set was very large indeed."
+        random.seed(0)
+        out = _front_subordinate_clauses([text], rate=1.0)[0]
+        before = sorted(w.lower() for w in _re2.findall(r"[A-Za-z]+", text))
+        after = sorted(w.lower() for w in _re2.findall(r"[A-Za-z]+", out))
+        assert before == after, f"content changed: {out}"
