@@ -1006,3 +1006,51 @@ reported score — one stubborn detector pins the result regardless of the other
 
 Reproduce: `scratchpad/veto.py`, `accept.py`, `compound.py` in the session scratchpad; each is a
 standalone script against `eval.datasets.load_pairs`.
+
+---
+
+## Result 17 — no single detector is the wall, and plainening does not feed the curvature detector
+
+Result 16 ended on the one gap it could not close: the same pipeline clears lite entirely and
+leaves most texts flagged at full tier. `max` is the reported score, so the natural hypothesis was
+that **one** stubborn detector pins the result while the other four move. Measured, 12 RAID AI
+texts, full tier, `composite`:
+
+| detector | before | after | delta | still flagged |
+|----------|--------|-------|-------|---------------|
+| `fast_detectgpt` | 0.792 | 0.249 | −0.544 | **33%** |
+| `perplexity_burstiness` | 0.529 | 0.254 | −0.275 | 17% |
+| `hc3_roberta` | 0.766 | 0.206 | −0.559 | 8% |
+| `roberta_openai` | 0.588 | 0.068 | −0.520 | 8% |
+| **MAX (reported)** | 0.904 | **0.340** | −0.564 | — |
+
+The hypothesis is wrong. Every detector moves, and moves a lot — the two RoBERTa detectors end at
+8% flagged. But **the reported max (0.340) is higher than the worst individual mean (0.254)**,
+which means different texts are caught by different detectors. The max is an *envelope*, not a
+single adversary, and there is no one thing to fix.
+
+`fast_detectgpt` is nonetheless the weakest link: 33% still flagged, two to four times the others,
+and the highest post-rewrite mean.
+
+### The tension that isn't there
+
+`fast_detectgpt` scores probability *curvature* — text sitting at high-probability positions reads
+as generated. `_plain_register` swaps formal, rare words for plain common ones ("utilize" → "use"),
+and common words are **higher** probability. So the move that kills `ai_vocab` tells looked like it
+might be feeding the curvature detector, with nothing in the loop able to reveal it because only
+`max` is reported.
+
+Isolating the register pass (same texts, that pass only, full tier):
+
+| detector | before | after | delta |
+|----------|--------|-------|-------|
+| `fast_detectgpt` | 0.792 | 0.598 | −0.195 |
+| `roberta_openai` | 0.588 | 0.333 | −0.254 |
+| `perplexity_burstiness` | 0.529 | 0.393 | −0.136 |
+| `hc3_roberta` | 0.766 | 0.718 | −0.048 |
+
+**Refuted.** Every detector goes down, `fast_detectgpt` among them. Plainening is not a trade
+against curvature — presumably because the formal AI vocabulary it removes is itself
+high-probability *in the generator's distribution*, which is what the curvature score reads.
+
+Reproduce: `perdet.py` and `tension.py` in the session scratchpad.
