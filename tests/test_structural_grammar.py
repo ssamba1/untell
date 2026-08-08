@@ -1018,3 +1018,51 @@ class TestParticipialFlatteningDoesNotRepeatItsOpener:
             random.seed(seed)
             seen.update(re.findall(r"\. (This|That|It) ", _flatten_participial_trailers(text)))
         assert len(seen) >= 3, f"only {seen} ever appears — the choice is not varying"
+
+
+class TestOpenerVariationDoesNotRepeatItself:
+    """_vary_openers exists to VARY openers, and was the largest source of repeated phrasing.
+
+    MEASURED over 60 RAID+HC3 AI texts, splitting the surviving repeated trigrams by origin:
+    93% were inherited from the source (domain terms — "medical image segmentation" — which the
+    meaning gates would veto varying anyway), and 7% were CREATED by the rewriter. The single
+    largest created repeat was "looking at this" at 7 excess occurrences, ahead of every other.
+
+    Cause: `random.choice` over an 8-item pool, drawn independently per sentence. A long passage
+    reuses one. Identical collision to the many-to-one synonym map, and the same fix.
+    """
+
+    def test_no_opener_dominates_a_long_passage(self):
+        import random
+        from collections import Counter
+
+        from untell.rewriter.structural import _vary_openers
+
+        sentences = [
+            f"Machine learning models improved metric number {i} substantially this year."
+            for i in range(14)
+        ]
+        worst = 0
+        for seed in range(200):
+            random.seed(seed)
+            out = _vary_openers(list(sentences), rate=1.0)
+            counts = Counter(s.split(",")[0] for s in out if "," in s)
+            worst = max(worst, max(counts.values()) if counts else 0)
+        # 14 sentences over an 8-item pool: 2 is the floor once the pool is exhausted and cycles.
+        assert worst <= 2, f"one opener was reused {worst} times in a single passage"
+
+    def test_the_pool_cycles_rather_than_stopping(self):
+        """Once every opener is spent the set clears, so a 20-sentence passage keeps varying
+        instead of falling back to no variation at all."""
+        import random
+
+        from untell.rewriter.structural import _vary_openers
+
+        sentences = [
+            f"Machine learning models improved metric number {i} substantially this year."
+            for i in range(20)
+        ]
+        random.seed(0)
+        out = _vary_openers(sentences, rate=1.0)
+        varied = [s for s in out if "," in s]
+        assert len(varied) >= 16, f"variation stopped after the pool emptied: {len(varied)}/20"

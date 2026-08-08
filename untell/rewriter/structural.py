@@ -821,6 +821,23 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     ]
     subjects = ["The", "This", "It", "That", "There"]
     context = " ".join(sentences)
+    # Openers already spent in this text. Picking independently from an 8-item pool at ~0.3 rate
+    # means a long passage reuses one: MEASURED over 60 RAID+HC3 texts, "Looking at this," was the
+    # single largest source of rewriter-CREATED repeated phrasing, 7 excess occurrences — more than
+    # any other, and this transform exists to VARY openers. Same collision as the synonym map's
+    # many-to-one entries (see `spent` in _plain_register). Cleared when the pool is exhausted, so
+    # a text with more than 8 varied openers cycles rather than stops varying.
+    spent: set[str] = set()
+
+    def _opener() -> str:
+        fresh = [o for o in openers if o not in spent]
+        if not fresh:
+            spent.clear()
+            fresh = list(openers)
+        pick = random.choice(fresh)
+        spent.add(pick)
+        return pick
+
     out: list[str] = []
     for s in sentences:
         # A sentence that ALREADY opens with a discourse marker gets no second one. Stacking them
@@ -835,9 +852,9 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
                 # results" — the abbreviation destroyed by the very transform meant to vary rhythm.
                 # "In short, Dr. Smith published ..." is correct English; nothing needs demoting.
                 if _safe_to_lowercase(first_word, context):
-                    s = f"{random.choice(openers)} {s[0].lower() + s[1:]}"
+                    s = f"{_opener()} {s[0].lower() + s[1:]}"
                 elif _proper_noun_evidence(first_word, context):
-                    s = f"{random.choice(openers)} {s}"
+                    s = f"{_opener()} {s}"
                 # Otherwise: leave the sentence alone. The old fallback prepended anyway and kept
                 # the capital, which is correct English only for a real name — "Actually, Smith
                 # published ..." — and visibly broken for an ordinary word the evidence check
