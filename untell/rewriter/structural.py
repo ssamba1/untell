@@ -481,10 +481,39 @@ def _shares_opening(a: str, b: str) -> bool:
     return len(wa) == _OPENING_WORDS and wa == wb
 
 
+# How far the output's MEAN sentence length may drift above the input's. Merging raises burstiness,
+# which is the point, but it also lengthens sentences, and nothing was watching the second effect.
+#
+# MEASURED over 40 HC3 pairs, words per sentence:
+#
+#     human 21.62    ai 23.08    ours 27.95
+#
+# So the rewriter was making its output 21% longer-sentenced than the AI it started from and 29%
+# longer than a human writing the same answer — moving Flesch-Kincaid grade level from the AI's
+# 11.84 to 13.56 against a human 10.53, i.e. AWAY from human on a measure detectors and readers
+# both use. The syllable half was fine (1.562 -> 1.546, toward the human 1.499): the plain-register
+# pass does its job. Length was the whole regression, and it got worse when the fragment guards
+# started refusing splits while merges carried on.
+_MEAN_LENGTH_BUDGET = 1.10
+
+# A merged sentence is never "too long" in absolute terms below this, whatever the input mean.
+# Merging two AVERAGE sentences always yields 2x the mean, so a relative cap alone refuses it by
+# construction — correct for long prose, and wrong for short. Uniform four-word sentences have a
+# mean of 4, so every possible merge exceeded the cap and the transform stopped entirely on exactly
+# the text burstiness targeting most wants to merge. 25 words is just above the measured human mean
+# (21.62 on HC3), so this floor never licenses a sentence a human would not write.
+_ALWAYS_MERGEABLE_WORDS = 25
+
+
 def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
     """Merge adjacent sentence pairs into compound sentences (raises burstiness)."""
     if len(sentences) < 2:
         return sentences
+    # Length budget, relative to the input rather than to a constant: a paper's sentences are
+    # legitimately longer than a forum answer's, so a fixed cap would flatten register instead of
+    # preserving it.
+    _lengths = [len(s.split()) for s in sentences if s.strip()]
+    _budget = (sum(_lengths) / len(_lengths)) * _MEAN_LENGTH_BUDGET if _lengths else 0.0
     out: list[str] = []
     i = 0
     while i < len(sentences):
@@ -504,7 +533,17 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
             i + 1 < len(sentences) and _shares_opening(sentences[i], sentences[i + 1])
         )
         take = 1.0 if pair_repeats_opening else rate
-        if i + 1 < len(sentences) and random.random() < take and _mergeable(
+        # A merge that would leave a sentence well past the input's average is declined even when
+        # the pair repeats an opening. Removing a duplicated span is worth a lot, but not at the
+        # cost of a 40-word sentence in prose that averages 21 — that trades a catalogued tell for
+        # an uncatalogued one a reader feels immediately.
+        _fits = (
+            i + 1 >= len(sentences)
+            or not _budget
+            or len(sentences[i].split()) + len(sentences[i + 1].split())
+            <= max(_budget * 1.5, _ALWAYS_MERGEABLE_WORDS)
+        )
+        if i + 1 < len(sentences) and _fits and random.random() < take and _mergeable(
             sentences[i], sentences[i + 1]
         ):
             # rstrip(".!?"), not rstrip("."). Stripping only the period left the other terminators
@@ -1463,6 +1502,15 @@ def _merge_pair(sents: list[str], j: int) -> list[str]:
     """Merge sentences j and j+1 into one compound sentence, or leave them if that is unsafe."""
     if not _mergeable(sents[j], sents[j + 1]):
         return sents
+    # Same length budget as _merge_sentences. This copy runs AFTER it, inside the burstiness climb,
+    # and was unconstrained — so a pair the main merge had just declined as too long could be
+    # merged here anyway, one pass later, for a CV gain.
+    lengths = [len(s.split()) for s in sents if s.strip()]
+    if lengths:
+        mean = sum(lengths) / len(lengths)
+        cap = max(mean * _MEAN_LENGTH_BUDGET * 1.5, _ALWAYS_MERGEABLE_WORDS)
+        if len(sents[j].split()) + len(sents[j + 1].split()) > cap:
+            return sents
     a = sents[j].rstrip(".!?")
     b = _LEADING_MARKER_RE.sub("", sents[j + 1].strip(), count=1)
     # Same rule as _merge_sentences: only demote a sentence to a clause when its opening word can

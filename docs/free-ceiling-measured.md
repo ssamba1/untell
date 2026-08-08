@@ -1557,3 +1557,108 @@ are HC3-only.
 
 Reproduce: sweep `score_text(t, tier="lite")["max"]` over `load_pairs("hc3", 60)` and
 `load_pairs("raid", 60)` with `UNTELL_LITE_NO_TORCH=1` set.
+
+---
+
+## Result 25 — what the field actually has that we do not, and what that is worth
+
+The census's own fields are prose, not booleans — `detector_in_loop` reads
+`"no — there is no AI-text detector anywhere in the codebase"` — so a naive truthiness read gives
+435/435 and a keyword heuristic gives 78 where the document, written by reading them, says 49.
+Neither is usable. What follows is a technique sweep over the mechanism prose, checked against what
+this repository implements.
+
+| technique | mentions across 435 repos | here |
+|---|---|---|
+| watermark removal | 70 | `scripts/scrub.py` |
+| synonym / token substitution | 30 | `attacks/word_importance.py` |
+| **per-token logit steering** | **20** | **absent — architectural** |
+| homoglyph / zero-width | 19 | `scripts/scrub.py` (we *remove* these) |
+| style transfer / persona | 7 | `rewriter/prompts.py` |
+| surrogate distillation | 6 | `training/surrogate.py` (GPU) |
+| sentence reordering | 6 | `rewriter/structural.py` |
+| **typo / noise injection** | **6** | **absent — declined** |
+| **readability targeting** | **6** | **absent — now measured, see below** |
+| RL / GRPO / DPO | 4 | `training/` (GPU) |
+| back-translation | 3 | `attacks/back_translation.py` |
+| **genetic / evolutionary search** | **2** | **absent — rare** |
+
+Three of the four gaps are closed by a decision rather than by work. **Logit steering** needs
+token-level access the black-box design does not have; the roadmap already names it as the reason
+we lose on raw evasion. **Typo injection** is declined: it lowers the detector score by damaging
+the text for the reader, which is the opposite of what this tool is for. **Genetic search** is two
+mentions in 435.
+
+**Readability targeting was the real one**, and measuring it found a defect rather than a missing
+feature — see Result 26.
+
+### Star count measures distribution, not capability
+
+The eight highest-starred repos in the census are a 298k-star Chinese rewrite prompt,
+`gpt_academic`, three more prompt files, an archive of leaked GPT system prompts, HuggingFace's
+inference server, and a red-teaming scanner. **Not one is a competing humanizer.** 60% of the field
+either instructs a humanizer or resells one. Engineering cannot buy adoption against that, which is
+why the argument this repository makes is correctness — the axis where the field is empty.
+
+---
+
+## Result 26 — the rewriter was making text *harder* to read, and fixing it improved evasion
+
+Readability was the one technique class in Result 25's sweep that was both absent and achievable.
+Measuring it found a defect rather than a missing feature.
+
+AI text is consistently harder to read than human text answering the same prompt, in both corpora
+(150 pairs each):
+
+| | Flesch reading ease | FK grade level |
+|---|---|---|
+| HC3 human | 61.81 | 9.69 |
+| HC3 ai | 54.14 | **11.49** |
+| RAID human | 19.85 | 16.53 |
+| RAID ai | 16.54 | **17.13** |
+
+The rewriter was moving it **the wrong way**. Over 40 HC3 pairs, FK grade: human 10.53, AI 11.84,
+**ours 13.56** — harder to read than the AI it started from, and further from human than the input.
+RAID the same: 16.55 / 17.39 / **18.23**.
+
+### Which half was wrong
+
+| | words/sentence | syllables/word |
+|---|---|---|
+| human | 21.62 | 1.499 |
+| ai | 23.08 | 1.562 |
+| ours | **27.95** | 1.546 |
+
+The syllable half was already right — the plain-register pass moves it toward human. **Length was
+the entire regression**: sentences 21% longer than the AI input and 29% longer than a human, and it
+had worsened when Result 22's fragment guards began refusing splits while merges carried on.
+
+### The fix, and the trade that was not a trade
+
+A merge is declined when it would leave a sentence past `1.5 ×` the **input's** mean — relative, not
+a constant, because a paper's sentences are legitimately longer than a forum answer's and a fixed
+cap would flatten register. Plus an absolute floor of 25 words, just above the measured human mean:
+merging two *average* sentences always yields 2× the mean, so a purely relative cap refuses it by
+construction, which is right for long prose and stops the transform dead on short prose. The
+burstiness pass has the same budget — it runs later and was unconstrained, so a pair the main merge
+had just declined could be fused there anyway.
+
+Readability lands in the human band:
+
+| | FK grade | words/sentence |
+|---|---|---|
+| HC3 ours, before | 13.56 | 27.95 |
+| HC3 ours, after | **11.65** | **22.9** |
+| RAID ours, after | **15.91** | 22.2 |
+
+Burstiness CV fell from 0.423 to 0.294, so this looked like trading one distribution match for
+another. It is not. n = 40 RAID, 3 repeats, shipped configuration:
+
+| | post | flagged | spread | mean sim |
+|---|---|---|---|---|
+| before | 0.3271 | 37.5% | ±0.0132 | 0.9824 |
+| **after** | **0.3003** | **35.8%** | **±0.0073** | 0.9808 |
+
+Better on score by more than either run's spread, better on flagged rate, and **half the
+run-to-run variance**. Sentence-length inflation was costing more than the CV was buying, which is
+not what the burstiness literature would predict and is the reason to measure rather than reason.

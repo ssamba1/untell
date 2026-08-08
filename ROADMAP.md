@@ -42,7 +42,7 @@ field is empty.
 |---|---|---|
 | `chengez/Adversarial-Paraphrasing` | −87.88% avg TPR@1%FPR, **per-token** detector-guided decoding | MAGE dataset, 6 detectors |
 | `StealthRL` | AUROC 0.79 → 0.43, mean TPR@1%FPR 0.024 | **15,310 human / 14,656 AI** |
-| **untell**, best real-text figure | 0.774 → **0.327 ± 0.013**, flagged 0.95 → **0.375** | **n = 40, ×3 repeats** |
+| **untell**, best real-text figure | 0.774 → **0.300 ± 0.007**, flagged 0.95 → **0.358** | **n = 40, ×3 repeats** |
 
 Not close, and the gap is architectural: token-level guidance needs logit access, which our
 black-box rewriter design does not have. Closing it needs the GPU path in §4.
@@ -50,8 +50,8 @@ black-box rewriter design does not have. Closing it needs the GPU path in §4.
 The untell row moved a long way on 2026-08-07 and is worth reading carefully, because it does not
 change the conclusion. The old figure was the **`neural`** rewriter on **n = 6**, single run. The
 new one is the free CPU-only **`composite`** on **n = 40 with 3 repeats** (120 rewrites), which is
-both a stronger result and far better evidence: post 0.327 ± 0.013 against a pre of 0.774, with
-37.5% of texts still flagged where 95% were before, at 0.9824 mean similarity. That is the SHIPPED
+both a stronger result and far better evidence: post 0.300 ± 0.007 against a pre of 0.774, with
+35.8% of texts still flagged where 95% were before, at 0.9808 mean similarity. That is the SHIPPED
 configuration (`best_of=3`), replicated over 3 runs and 120 rewrites.
 
 The same corpus and settings measured **0.951 post with 39 of 40 still flagged** before that day's
@@ -68,7 +68,9 @@ attempts to recover the score without reintroducing it either failed or made the
 The shipped figure was also first measured as a single run at **0.302 / 32.5%** and held back from
 this row under the ≥3-repeats rule. Replication put it at 0.327 / 37.5% — the single run was two
 standard deviations low, and quoting it would have overstated the product by 5 points of flagged
-rate.
+rate. It then improved to the **0.300 ± 0.007** above when a length budget stopped the rewriter
+inflating sentence length (Result 26); the single run happened to land near the right answer for
+the wrong reason, which is what a spread is for.
 
 Real movement, on the axis we said we could not win. It does not win it. StealthRL's AUROC 0.79 →
 0.43 stands on **15,310 human and 14,656 AI** samples; n = 40 is not n = 15,310, and a
@@ -145,12 +147,12 @@ per arm. Replicated properly on 2026-08-07 — n = 40 RAID, full tier, same `bes
 
 | rewriter | post | flagged | mean sim | **worst sim** | cost |
 |---|---|---|---|---|---|
-| **`composite`** (default, 3 repeats / 120 rewrites) | **0.327 ± 0.013** | **37.5%** | 0.9824 | **0.9394** | CPU only |
+| **`composite`** (default, 3 repeats / 120 rewrites) | **0.300 ± 0.007** | **35.8%** | 0.9808 | **0.9410** | CPU only |
 | `neural` (1 run) | 0.369 | 37.5% | 0.9621 | 0.8716 | T5, hours |
 
 The default was not the problem. It had **fixable defects**, and Results 16–20 removed them: the
-same corpus that measured 0.951 post with 39 of 40 flagged now measures **0.327 ± 0.013 with 37.5%
-flagged in the shipped `best_of=3` configuration**, replicated over 3 runs (Result 23). At
+same corpus that measured 0.951 post with 39 of 40 flagged now measures **0.300 ± 0.007 with 35.8%
+flagged in the shipped `best_of=3` configuration**, replicated over 3 runs (Results 23 and 26). At
 `best_of=1` it is 0.347, up from 0.321 earlier in the day — Result 22's fragment guards cost that,
 knowingly.
 

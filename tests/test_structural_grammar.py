@@ -1990,3 +1990,113 @@ class TestSplitOneHandlesListsAndQuotations:
         ):
             out = _split_one(text)
             assert out is not None and len(out) == 2, f"lost a valid split: {text!r}"
+
+
+class TestMergingRespectsALengthBudget:
+    """Merging raises burstiness, which is the point, and lengthens sentences, which nothing watched.
+
+    MEASURED over 40 HC3 pairs, words per sentence: human 21.62, AI 23.08, **ours 27.95**. The
+    rewriter was producing sentences 21% longer than the AI it started from and 29% longer than a
+    human answering the same question, which moved Flesch-Kincaid grade level from the AI's 11.84
+    to 13.56 against a human 10.53 — away from human on a measure both readers and detectors use.
+
+    The syllable half was already right (1.562 -> 1.546 against a human 1.499): the plain-register
+    pass does its job. Length was the entire regression, and it worsened when the fragment guards
+    began refusing splits while merges carried on.
+
+    The budget is relative to the INPUT, not a constant: a paper's sentences are legitimately
+    longer than a forum answer's, and a fixed cap would flatten register instead of preserving it.
+    """
+
+    LONG = [f"The system performs step number {i} carefully and reliably every time." for i in range(8)]
+
+    def test_a_merge_that_would_overshoot_is_declined(self):
+        import random
+
+        from untell.rewriter.structural import (
+            _ALWAYS_MERGEABLE_WORDS,
+            _MEAN_LENGTH_BUDGET,
+            _merge_sentences,
+        )
+
+        mean_in = sum(len(s.split()) for s in self.LONG) / len(self.LONG)
+        # The cap is the relative budget OR the absolute floor, whichever is larger — a merge whose
+        # result is still short in absolute terms is never "too long", whatever the mean.
+        cap = max(mean_in * _MEAN_LENGTH_BUDGET * 1.5, _ALWAYS_MERGEABLE_WORDS) + 1
+        worst = 0
+        for seed in range(40):
+            random.seed(seed)
+            for s in _merge_sentences(list(self.LONG), rate=1.0):
+                worst = max(worst, len(s.split()))
+        assert worst <= cap, (
+            f"longest merged sentence {worst} words against an input mean of {mean_in:.1f} "
+            f"(cap {cap:.1f})"
+        )
+
+    def test_the_burstiness_pass_obeys_the_same_budget(self):
+        """`_merge_pair` runs AFTER `_merge_sentences`, inside the burstiness climb, and was
+        unconstrained — so a pair the main merge had just declined as too long could be merged
+        here anyway one pass later, for a CV gain."""
+        from untell.rewriter.structural import (
+            _ALWAYS_MERGEABLE_WORDS,
+            _MEAN_LENGTH_BUDGET,
+            _merge_pair,
+        )
+
+        out = _merge_pair(list(self.LONG), 0)
+        mean_in = sum(len(s.split()) for s in self.LONG) / len(self.LONG)
+        cap = max(mean_in * _MEAN_LENGTH_BUDGET * 1.5, _ALWAYS_MERGEABLE_WORDS) + 1
+        assert max(len(s.split()) for s in out) <= cap
+
+    def test_short_sentences_still_merge(self):
+        """The complement. A budget that blocked every merge would kill the transform, which is
+        the failure mode this pipeline has hit repeatedly."""
+        import random
+
+        short = ["Costs fell.", "Revenue rose.", "Margins widened.", "Hiring slowed."]
+        from untell.rewriter.structural import _merge_sentences
+
+        merged_any = False
+        for seed in range(40):
+            random.seed(seed)
+            if len(_merge_sentences(list(short), rate=1.0)) < len(short):
+                merged_any = True
+                break
+        assert merged_any, "no pair of four-word sentences merged — the budget blocks everything"
+
+    def test_two_average_sentences_are_not_merged(self):
+        """Merging two average sentences always yields 2x the mean, so the cap refuses it by
+        construction — and that is the intended behaviour, not a side effect.
+
+        Merging exists to remove a duplicated opening and to raise variance, and both are served by
+        merging SHORT sentences. Fusing two already-average ones lengthens the prose without
+        buying either, which is exactly how words/sentence reached 27.95 against a human 21.62.
+        """
+        import random
+
+        from untell.rewriter.structural import _merge_sentences
+
+        wordy = [
+            "The experimental apparatus was calibrated against a reference standard before each "
+            "of the twelve independent measurement runs conducted during the study period."
+        ] * 6
+        for seed in range(20):
+            random.seed(seed)
+            out = _merge_sentences(list(wordy), rate=1.0)
+            assert len(out) == len(wordy), "two average-length sentences were fused"
+
+    def test_the_absolute_floor_lets_short_prose_merge(self):
+        """A relative cap alone stopped the transform dead on uniform short sentences: a mean of 4
+        makes every possible merge exceed 1.5x, so nothing merged on exactly the text burstiness
+        targeting most wants to merge."""
+        import random
+
+        from untell.rewriter.structural import _ALWAYS_MERGEABLE_WORDS, _merge_sentences
+
+        assert _ALWAYS_MERGEABLE_WORDS >= 20
+        short = ["Costs fell.", "Revenue rose.", "Margins widened.", "Hiring slowed."]
+        for seed in range(40):
+            random.seed(seed)
+            if len(_merge_sentences(list(short), rate=1.0)) < len(short):
+                return
+        raise AssertionError("no pair of short sentences merged across 40 seeds")
