@@ -348,3 +348,90 @@ def test_roadmap_numbers_track_the_census():
     assert f"{len(data)} of 1287" in roadmap or f"census read {len(data)}" in roadmap or (
         f"{len(data)} profiled repos" in roadmap or "435 of 1287" in roadmap
     ), "the roadmap does not state how many repos the census actually read"
+
+
+class TestResult19ConstantsMatchTheProse:
+    """Result 19 quotes the rewriter's constants back to the reader. If the constant moves and the
+    prose does not, the document becomes a confident lie about the current build.
+
+    These are the checkable half of that result. The corpus frequencies it reports (human 65.9% for
+    "and", 0.7% for "though") are NOT re-derived here — that needs a 400-pair download and minutes
+    of work, which does not belong in a unit suite. What IS checked is that every number the prose
+    attributes to the CODE still describes the code.
+    """
+
+    DOC = REPO / "docs" / "free-ceiling-measured.md"
+
+    @pytest.fixture(scope="class")
+    def prose(self) -> str:
+        return self.DOC.read_text(encoding="utf-8")
+
+    def test_the_connector_weights_in_the_doc_are_the_ones_shipped(self, prose):
+        from untell.rewriter.structural import _MERGE_CONNECTORS, _MERGE_WEIGHTS
+
+        shipped = dict(zip((c.strip(", ") for c in _MERGE_CONNECTORS), _MERGE_WEIGHTS))
+        # The doc renders them as percentages in a table row: "| though | 0.7% | ..."
+        for word, weight in shipped.items():
+            # Table cells may be bolded, so the emphasis markers are part of the cell.
+            row = re.search(rf"^\|\s*{word}\s*\|\s*\**([\d.]+)%", prose, re.MULTILINE)
+            assert row, f"Result 19 does not document the {word!r} connector"
+            assert abs(float(row.group(1)) / 100 - weight) < 0.005, (
+                f"{word}: doc says {row.group(1)}%, code ships {weight:.1%}"
+            )
+
+    def test_the_dropped_openers_are_really_gone(self, prose):
+        """The doc names four openers as removed. If one came back, the claim is false."""
+        import inspect
+
+        from untell.rewriter.structural import _vary_openers
+
+        pool = inspect.getsource(_vary_openers).split("openers = [", 1)[1].split("]", 1)[0].lower()
+        for dead in ("broadly", "looking at this", "as it turns out", "realistically"):
+            assert f'"{dead}' not in pool, f"Result 19 says {dead!r} was dropped; it is still shipped"
+            assert dead in prose.lower(), f"{dead!r} was dropped without the doc recording it"
+
+    def test_the_contraction_target_matches(self, prose):
+        from untell.rewriter.structural import _HUMAN_CONTRACTIONS_PER_100W
+
+        assert f"{_HUMAN_CONTRACTIONS_PER_100W}" in prose or "0.67" in prose
+        assert 0.5 < _HUMAN_CONTRACTIONS_PER_100W < 0.9, (
+            "the target drifted away from the measured human 0.666/0.045 band"
+        )
+
+    def test_the_academic_transition_exemption_is_the_documented_set(self, prose):
+        from untell.rewriter.structural import _ACADEMIC_HUMAN_TRANSITIONS
+
+        assert _ACADEMIC_HUMAN_TRANSITIONS == {"moreover", "furthermore", "therefore"}
+        for marker in _ACADEMIC_HUMAN_TRANSITIONS:
+            assert marker in prose.lower(), f"{marker} is exempted in code but not documented"
+
+    def test_the_burstiness_targets_match(self, prose):
+        from untell.rewriter.structural import _NEUTRAL, style_profile
+
+        assert _NEUTRAL["burstiness"] == 0.45, "the default moved; every prior result used 0.45"
+        assert style_profile("academic")["burstiness"] == 0.35
+        assert "0.352" in prose, "the measured academic CV is no longer documented"
+
+
+class TestResult20IsNotQuotedFromASingleRun:
+    """The headline evasion figure must carry its spread.
+
+    This repo has twice published a number from one run of a randomised rewriter and had to correct
+    it (Results 13/14). The rule that came out of that is: >=3 repeats before quoting. This checks
+    the rule was followed for the figure the ROADMAP now leads with, and that the two documents
+    agree with each other.
+    """
+
+    def test_the_roadmap_and_the_measurement_agree(self):
+        roadmap = (REPO / "ROADMAP.md").read_text(encoding="utf-8")
+        measured = (REPO / "docs" / "free-ceiling-measured.md").read_text(encoding="utf-8")
+        for doc, name in ((roadmap, "ROADMAP.md"), (measured, "free-ceiling-measured.md")):
+            assert "0.321" in doc or "0.3206" in doc, f"{name} lost the headline post score"
+        assert "± 0.012" in roadmap, "the ROADMAP quotes the figure without its spread"
+
+    def test_the_headline_figure_states_its_sample_and_repeats(self):
+        roadmap = (REPO / "ROADMAP.md").read_text(encoding="utf-8")
+        row = re.search(r"\*\*untell\*\*, best real-text figure.*", roadmap)
+        assert row, "the raw-evasion row is gone"
+        assert "n = 40" in row.group(0), f"sample size not stated: {row.group(0)}"
+        assert "repeats" in row.group(0), f"repeat count not stated: {row.group(0)}"

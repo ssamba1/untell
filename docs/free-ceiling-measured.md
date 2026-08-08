@@ -1268,3 +1268,24 @@ is roughly six times more reproducible; and it needs no model download and no GP
 established — but because it matches it there while being more faithful, far more stable, and free.
 The earlier reading that "the wall is the default rewriter, not the tier" is now obsolete: the wall
 was a set of fixable defects in the default rewriter, and Results 16–19 removed them.
+
+### Burstiness — the right target depends on the register too
+
+`_target_burstiness` drove sentence-length variance at a fixed CV of 0.45. Coefficient of variation
+of sentence length, 200 pairs per corpus:
+
+| corpus | human mean | human median | ai mean | our target |
+|---|---|---|---|---|
+| HC3 (forum Q&A) | 0.480 | 0.465 | 0.301 | 0.45 |
+| RAID (paper abstracts) | **0.352** | 0.330 | 0.263 | 0.45 |
+
+0.45 tracks conversational human prose closely and overshoots academic human prose by 0.10. Real
+abstracts are more uniform in sentence length than forum answers, and driving them past that is a
+deviation in its own right — the same failure as emitting "though" at 29× the human rate, one level
+up. Note the AI column sits below human in **both** registers, so the transform's direction was
+never wrong; only its destination was register-blind.
+
+Only `academic` moves, to 0.35. The evidence is RAID abstracts, so it is not extended to
+`professional`/`technical` (formal but unmeasured) and explicitly not to `journalistic`, whose
+register is short punchy sentences against long ones — the opposite direction. The neutral default
+stays 0.45, which every earlier result in this document was measured against.
