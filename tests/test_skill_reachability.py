@@ -32,10 +32,13 @@ _NOT_STEPS = {"__init__.py", "cli.py", "io_utils.py"}
 #                run.py would be running a second, competing loop inside the first.
 #   verify.py  — a standalone honest pass/fail report a user runs against a finished draft; the
 #                loop already gets per-detector numbers from score.py.
+#   audit.py   — `untell-audit` re-checks the DOCUMENTATION against the code. It is a maintainer
+#                and CI command about this repository's claims, not a step in anyone's rewrite, and
+#                it does not read or produce the user's text at all.
 # Keep this list short and justified. Every entry is a place the guard is deliberately blind, and
 # the three gaps that motivated this file all looked exactly like "obviously not a step" until
 # someone checked.
-_NOT_SKILL_STEPS = {"run.py", "verify.py"}
+_NOT_SKILL_STEPS = {"run.py", "verify.py", "audit.py"}
 
 
 def _step_modules() -> list[Path]:
