@@ -927,7 +927,6 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
         "Actually,", "In practice,", "In short,", "Put simply,",
         "Also,", "Now,", "Basically,", "Well,", "Of course,",
     ]
-    subjects = ["The", "This", "It", "That", "There"]
     context = " ".join(sentences)
     # Openers already spent in this text. Picking independently from an 8-item pool at ~0.3 rate
     # means a long passage reuses one: MEASURED over 60 RAID+HC3 texts, "Looking at this," was the
@@ -954,7 +953,18 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
         # exactly this and was consulted only by the clause-merge path.
         if random.random() < rate and not _LEADING_MARKER_RE.match(s):
             first_word = s.split()[0] if s.split() else ""
-            if first_word and first_word[0].isupper() and first_word not in subjects:
+            # No `first_word not in subjects` test here. It skipped every sentence opening with
+            # The/This/It/That/There — which are precisely the sentences that duplicate an opener
+            # and the reason `repeated_sentence_openers` fires at all. MEASURED: a four-sentence
+            # passage where every sentence began "The ..." came back completely unvaried at
+            # rate=1.0, and after transition-stripping started leaving "Overall, The paper ..." as
+            # "The paper ...", duplicate openers rose from 18 to 58 over 60 texts with this skip in
+            # place. The transform declined the one job it exists to do.
+            #
+            # The two guards that remain are the ones with a reason: _LEADING_MARKER_RE above stops
+            # marker stacking ("Put simply, also, wine is ..."), and the capitalisation checks below
+            # stop names being mangled.
+            if first_word and first_word[0].isupper():
                 # Prepend the opener, and lowercase what follows ONLY when that word is safe to
                 # lowercase. Doing it unconditionally produced "In short, dr. Smith published the
                 # results" — the abbreviation destroyed by the very transform meant to vary rhythm.
@@ -1281,11 +1291,18 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
 
     # 7. Sentence-level transforms — scaled by intensity.
     sents = _split_sentences(text)
+
+    # Per-SENTENCE transforms run whatever the block length. They used to sit behind the
+    # `len(sents) >= 2` guard below, which is only correct for the transforms that need a PAIR
+    # (merge, restatement-drop, burstiness). A one-sentence block therefore kept its formulaic
+    # opener outright, and blocks are per-paragraph — MEASURED over 60 RAID+HC3 texts, 9 of the 10
+    # surviving `formulaic_transition` hits were a lone "Overall, ..." paragraph that no pass ever
+    # looked at, while the rewriter's own strip rate was 100%.
+    sents = _strip_transitions(sents, rate=1.0, keep=profile["keep_transitions"])
+
     if len(sents) >= 2:
-        # At intensity 1.0: strip ALL transitions, merge ~60% of pairs,
-        # split ~50% of long sentences, vary ~60% of openers.
-        strip_rate = min(1.0, 0.3 + intensity * 0.7)
-        sents = _strip_transitions(sents, rate=strip_rate, keep=profile["keep_transitions"])
+        # At intensity 1.0: merge ~60% of pairs, split ~50% of long sentences,
+        # vary ~60% of openers.
 
         # Drop restatements BEFORE merging: a merge would fuse a restatement onto its own source
         # and preserve the duplication inside one longer sentence instead of removing it.
