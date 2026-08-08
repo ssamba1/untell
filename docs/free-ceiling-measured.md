@@ -1115,3 +1115,113 @@ catalogue is a proxy for what detectors read, not a definition of it — "our ch
 not evidence the output is good.
 
 Reproduce: `gate.py`, `netgate.py`, `catmove.py` in the session scratchpad.
+
+---
+
+## Result 19 — the rewriter's own choices, measured against what humans actually write
+
+Results 16–18 fixed things that were wrong on their own terms: a gate that vetoed too much, a
+substitution that changed nothing, a gate that bought no diversity. This one asks a different
+question — every hard-coded choice in the rewriter is a number or a word list somebody picked, and
+the human halves of the paired corpora say what they should have been.
+
+All figures below: 400 paired texts from HC3 and RAID, 3347 human sentences against 4094 AI.
+
+### Merge connectors — uniform was a fingerprint
+
+`_merge_sentences` chose from five clause connectors with `random.choice`, i.e. 20% each.
+
+| connector | human | ai | **uniform (emitted)** |
+|---|---|---|---|
+| and | 65.9% | 79.5% | 20.0% |
+| but | 21.6% | 6.7% | 20.0% |
+| so | 7.9% | 3.1% | 20.0% |
+| while | 3.9% | 10.6% | 20.0% |
+| though | **0.7%** | 0.0% | **20.0%** |
+
+"though" was emitted **29× more often than a human writes it**, "while" 5×. An unnatural
+connective distribution is exactly what a perplexity detector reads, so the transform whose job is
+humanising rhythm was signing its work. Now weighted to the human column; emitted over 4000 seeds:
+66.7 / 21.1 / 8.0 / 3.4 / 0.8.
+
+Worth noting the AI column: humans use "but" **3.2×** as often as AI does. Under-using contrast is
+itself an AI trait, so the weights lean the right way on that axis too.
+
+### Openers — half of them are written by nobody
+
+`_vary_openers` fires at ~30% per sentence. Humans open a sentence with one of its eight phrases
+**0.2%** of the time. Per phrase:
+
+| | human | ai | |
+|---|---|---|---|
+| broadly | 0.000% | 0.000% | **dropped** |
+| looking at this | 0.000% | 0.000% | **dropped** — also the top source of created repetition |
+| as it turns out | 0.000% | 0.000% | **dropped** |
+| realistically | 0.000% | 0.000% | **dropped** |
+| in short | 0.090% | 0.073% | kept |
+| in practice | 0.060% | 0.000% | kept |
+| also | 0.568% | 0.000% | **added** |
+| now | 0.329% | 0.073% | **added** |
+| basically | 0.209% | 0.000% | **added** |
+
+Four of the eight are written by nobody — not humans, not the generators. Inserting one is not
+humanising, it is a fingerprint.
+
+Selection needs **two** criteria, not one. Several human-leaning markers were declined because they
+*assert* something about the sentence they precede, and the meaning gates check entailment and
+semantic roles, not discourse relations — nothing downstream would catch the error. "so" is the
+single most common human opener in the corpus (1.285%) and is declined on exactly that ground;
+likewise "then" (sequence), "recently" (recency), "meanwhile" (simultaneity), "here" (deictic).
+
+### The same marker points opposite ways in different registers
+
+`_TRANSITIONS_RE` strips sentence-opening Moreover / Furthermore / Therefore as AI tells. Per
+corpus:
+
+| marker | HC3 human | HC3 ai | RAID human | RAID ai |
+|---|---|---|---|---|
+| moreover | (<5 occ) | | **0.888%** | 0.041% |
+| furthermore | (<5 occ) | | **0.947%** | 0.332% |
+| therefore | (<5 occ) | | **0.592%** | 0.000% |
+| additionally | 0.000% | 1.544% | 0.178% | 0.913% |
+| overall | 0.000% | 2.613% | 0.000% | 2.407% |
+
+Real paper abstracts use "Moreover"; the generators largely do not. Stripping it from academic
+prose makes the text read **less** human. Tied to the `academic` style profile rather than applied
+globally, because this is corpus scope — the same word is an AI tell in forum prose. Not extended
+to `professional`/`technical`, where the direction is plausible but unmeasured.
+
+### Two passes that each deferred to the other
+
+Fixing the above exposed a structural bug worth recording separately. `_plain_register` began
+declining to substitute sentence-initial transitions, on the correct reasoning that
+`_strip_transitions` deletes them outright. But the strip was rate-gated at 0.65, so a third of
+them were neither stripped nor substituted, and `formulaic_transition` went 0 → 12.
+
+And every sentence-level transform sat behind `if len(sents) >= 2`, correct only for the ones
+needing a *pair*. Blocks are per-paragraph, so a lone "Overall, the paper provides ..." paragraph
+was never looked at: **9 of the 10** surviving hits were that, while the strip rate was 100%.
+
+Finally, `_vary_openers` skipped any sentence opening with The/This/It/That/There — precisely the
+sentences that duplicate an opener, which is the entire reason `repeated_sentence_openers` exists.
+A four-sentence passage all beginning "The ..." came back unvaried at rate 1.0.
+
+### Where the categories ended up
+
+60 RAID+HC3 AI texts, two structural passes, across Results 16–19:
+
+| category | before | after |
+|---|---|---|
+| `ai_vocab` | 55 | **0** |
+| `formulaic_transition` | 33 | **1** |
+| `cliche` | 11 | **0** |
+| `hedge_stacking` | 4 | **0** |
+| `participial_trailer` | 2 | **0** |
+| `repeated_sentence_openers` | 146 | **27** |
+| `repeated_phrasing` | 1148 | **969** |
+
+`repeated_phrasing` is the one that stays large, and Result 18's split explains why: **93%** of it
+is inherited from the source — domain terms the meaning gates would veto varying. The reachable
+share was 7%, and most of that is now gone.
+
+Reproduce: `conn.py`, `openers.py`, `strip.py`, `rates.py`, `repsplit.py`, `catmove.py`.
