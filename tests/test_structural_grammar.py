@@ -890,18 +890,57 @@ class TestMergeDoesNotManufactureSemicolons:
     """
 
     def test_semicolon_is_not_a_connector(self):
-        """Reads the connectors LIST, not the whole source — the comment above it quotes "; "
-        while explaining why it is gone, and a naive substring check trips on that."""
-        import inspect
-        import re
+        """Asserts the CONSTANT, not its source text.
 
-        from untell.rewriter import structural
+        This used to `inspect.getsource(_merge_sentences)` and regex out a `connectors = [...]`
+        literal, which broke the moment the list moved to module scope to carry frequency weights —
+        a refactor that changed nothing about semicolons. Reading the object cannot go stale that
+        way, and it also cannot trip on the explanatory comment that quotes "; " while saying why
+        it is gone, which is what the source-scraping version was working around.
+        """
+        from untell.rewriter.structural import _MERGE_CONNECTORS
 
-        src = inspect.getsource(structural._merge_sentences)
-        lists = re.findall(r"connectors\s*=\s*\[(.*?)\]", src, re.DOTALL)
-        assert lists, "could not find the connectors list"
-        for body in lists:
-            assert ";" not in body, "merging can emit a semicolon, which is a catalogued tell"
+        offenders = [c for c in _MERGE_CONNECTORS if ";" in c]
+        assert not offenders, f"merging can emit a semicolon, a catalogued tell: {offenders}"
+
+    def test_connector_weights_line_up_with_the_connectors(self):
+        """The weights are positional, so a connector added without a weight silently shifts every
+        later one onto the wrong frequency — and `random.choices` would raise only if the lengths
+        differ, not if they are merely misordered."""
+        from untell.rewriter.structural import _MERGE_CONNECTORS, _MERGE_WEIGHTS
+
+        assert len(_MERGE_CONNECTORS) == len(_MERGE_WEIGHTS)
+        assert abs(sum(_MERGE_WEIGHTS) - 1.0) < 0.01, sum(_MERGE_WEIGHTS)
+        # Measured human frequencies: "and" dominates, "though" is nearly absent.
+        assert _MERGE_CONNECTORS[0].strip(", ") == "and"
+        assert _MERGE_WEIGHTS[0] == max(_MERGE_WEIGHTS)
+        assert _MERGE_CONNECTORS[-1].strip(", ") == "though"
+        assert _MERGE_WEIGHTS[-1] == min(_MERGE_WEIGHTS)
+
+    def test_emitted_connectors_match_the_human_distribution(self):
+        """Uniform choice emitted "though" 29x more often than a human writes it (20% against a
+        measured 0.7% over 400 HC3+RAID pairs). An unnatural connective distribution is precisely
+        what a perplexity detector reads, so the transform meant to humanise rhythm was leaving its
+        own signature."""
+        import random
+        from collections import Counter
+
+        from untell.rewriter.structural import _MERGE_CONNECTORS, _MERGE_WEIGHTS, _merge_sentences
+
+        sentences = ["The team shipped feature number 1 on time.", "The team shipped it again."]
+        seen: Counter = Counter()
+        for seed in range(3000):
+            random.seed(seed)
+            merged = " ".join(_merge_sentences(list(sentences), rate=1.0))
+            for c in _MERGE_CONNECTORS:
+                if c in merged:
+                    seen[c] += 1
+                    break
+        total = sum(seen.values())
+        assert total > 2000, f"merges did not happen often enough to measure: {total}"
+        for conn, want in zip(_MERGE_CONNECTORS, _MERGE_WEIGHTS):
+            got = seen[conn] / total
+            assert abs(got - want) < 0.03, f"{conn!r}: emitted {got:.1%}, want {want:.1%}"
 
     def test_merging_many_pairs_emits_no_semicolons(self):
         from untell.rewriter.structural import _merge_sentences

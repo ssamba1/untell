@@ -119,6 +119,34 @@ _LEADING_MARKER_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Clause connectors for the sentence merge, weighted to the frequencies HUMANS actually use.
+#
+# No "; " in this list. The merge runs after the semicolon strip, so a semicolon inserted as a
+# connector survives into the output, and semicolon_crutch is a tell this repo catalogues at 2+ per
+# passage. MEASURED once repetition-aware merging made merges more frequent: 40 AI texts through
+# the loop went from 0 semicolons in to 4 out — the rewriter manufacturing a tell it also counts.
+#
+# The weights are the second half of the same problem. Choosing uniformly emits each connector 20%
+# of the time, and natural English is nothing like uniform. MEASURED over 400 paired texts from HC3
+# and RAID (596 human occurrences of a comma-joined clause connective, the construction this merge
+# produces):
+#
+#     connector    human     ai    uniform (what we emitted)
+#     and          65.9%   79.5%     20.0%
+#     but          21.6%    6.7%     20.0%
+#     so            7.9%    3.1%     20.0%
+#     while         3.9%   10.6%     20.0%
+#     though        0.7%    0.0%     20.0%
+#
+# "though" was emitted 29x more often than a human writes it and "while" 5x. An unnatural
+# connective distribution is exactly what a perplexity detector reads, so the transform meant to
+# humanise rhythm was leaving its own signature. Weighted to the human column instead.
+#
+# Note the AI column: humans use "but" 3.2x as often as AI does. Under-using contrast is itself an
+# AI trait, so the weights lean the right way on that axis too rather than merely away from ours.
+_MERGE_CONNECTORS = (", and ", ", but ", ", so ", ", while ", ", though ")
+_MERGE_WEIGHTS = (0.659, 0.216, 0.079, 0.039, 0.007)
+
 # Formulaic transitions that OPEN a sentence (§3, §8 from ai-tells.md).
 _TRANSITIONS_RE = re.compile(
     r"^(Moreover|Furthermore|Additionally|Overall|In conclusion|In summary|"
@@ -428,8 +456,7 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
                 # merging made merges more frequent: 40 AI texts through the loop went from 0
                 # semicolons in to 4 out, i.e. the rewriter was manufacturing a tell it also
                 # counts. The remaining connectors carry the same clause relation without it.
-                connectors = [", and ", ", but ", ", while ", ", though ", ", so "]
-                conn = random.choice(connectors)
+                conn = random.choices(_MERGE_CONNECTORS, weights=_MERGE_WEIGHTS, k=1)[0]
                 out.append(f"{a}{conn}{b}.")
                 i += 2
                 continue
