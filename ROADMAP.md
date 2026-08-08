@@ -42,10 +42,18 @@ field is empty.
 |---|---|---|
 | `chengez/Adversarial-Paraphrasing` | −87.88% avg TPR@1%FPR, **per-token** detector-guided decoding | MAGE dataset, 6 detectors |
 | `StealthRL` | AUROC 0.79 → 0.43, mean TPR@1%FPR 0.024 | **15,310 human / 14,656 AI** |
-| **untell**, best real-text figure | 0.999 → 0.502, flagged 1.00 → 0.50 | **n = 6** |
+| **untell**, best real-text figure | 0.915 → 0.415, flagged 0.93 → 0.50 | **n = 14** |
 
 Not close, and the gap is architectural: token-level guidance needs logit access, which our
 black-box rewriter design does not have. Closing it needs the GPU path in §4.
+
+The untell row moved on 2026-08-07 and is worth reading carefully, because it is better than it
+looks and still does not change the conclusion. The old figure was the **`neural`** rewriter at
+n = 6; the new one is **`structural` alone** at n = 14 — a weaker rewriter and a larger sample,
+reaching a lower post score at the same flagged rate. It came from removing an intensity gate on
+the vocabulary pass that measured as pure loss (docs/free-ceiling-measured.md, Result 18). Real
+movement, on the axis we said we could not win. It is still an order of magnitude short of
+StealthRL's 15k-sample evidence, and n = 14 is not n = 15,310.
 
 ### ❌ Adoption
 

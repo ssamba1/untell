@@ -1054,3 +1054,64 @@ against curvature — presumably because the formal AI vocabulary it removes is 
 high-probability *in the generator's distribution*, which is what the curvature score reads.
 
 Reproduce: `perdet.py` and `tension.py` in the session scratchpad.
+
+---
+
+## Result 18 — a diversity gate that provided no diversity, and the collision it was hiding
+
+The plain-register pass scaled its per-word swap probability by `intensity * profile["register"]`.
+The `profile` factor is deliberate — "utilize" → "use" is right for casual prose and wrong for a
+paper, so `academic` holds the map back at 0.15. The `intensity` factor was there for best-of-N
+diversity. It provided none.
+
+12 RAID AI texts, 4 draws each, full tier, register pass isolated:
+
+| | best-of-4 score | ai_vocab left | sim to source | **draw-to-draw sim** |
+|---|---|---|---|---|
+| gated (×0.5) | 0.8130 | 6 | 0.9941 | **0.9949** |
+| ungated (×1.0) | 0.7613 | **0** | 0.9903 | **0.9948** |
+
+Draw-to-draw similarity is identical to four decimals. `random.choice` already picks among 2–4
+synonyms per word, so two draws differ even when both swap everything — the gate contributed
+nothing to diversity and 6 surviving `ai_vocab` hits plus 0.05 of detector score to the cost. Draw
+*level* diversity was never at stake: `CompositeRewriter._intensity_sweep` varies intensity ACROSS
+draws, which still scales every structural transform.
+
+End-to-end through the real pipeline, 14 RAID texts, best-of-4, full tier:
+
+| | score | flagged | similarity |
+|---|---|---|---|
+| coupled to intensity (old) | 0.5324 | 71% | 0.9901 |
+| profile only (new) | **0.4151** | **50%** | 0.9879 |
+
+### What ungating exposed
+
+Applying the map wholesale surfaced a second bug that the gate had been masking. The map is
+many-to-one: six source words offer `key` (`pivotal`, `crucial`, `vital`, `paramount`,
+`essential`, `salient`), six offer `boost`, five offer `so`. AI prose reaches for several of a
+cluster in one passage, so independent choices collapse them onto the same word — three of six land
+on `key` about 4% of the time, at least two about 26%. On the 60-text corpus:
+
+| category | before | after (gate removed) | after (collision fix) |
+|---|---|---|---|
+| `ai_vocab` | 55 | **0** | **0** |
+| `formulaic_transition` | 33 | **0** | **0** |
+| `repeated_sentence_openers` | 146 | 52 | **19** |
+| `repeated_phrasing` | 1148 | 985 | 984 |
+
+`_swap` now prefers an option the text has not spent yet, falling back to the full list when all
+are used — repeating a plain word beats leaving the AI one in place.
+
+`repeated_phrasing` does **not** fully recover (984 against 960 before ungating). That residue is
+real and is the honest cost: applying the map wholesale draws on a smaller, plainer vocabulary, and
+plainer vocabularies repeat. It is 2.5% against `ai_vocab` −21, `formulaic_transition` −5 and
+openers −25, and the detector score — the only arbiter that matters — moved decisively the right
+way.
+
+The openers column is a separate fix in the same commit: the participial flattener always emitted
+"This <verb>", so five trailers became five identically-opening sentences. `score_tells` never
+flagged it, because `_duplicate_sentence_starts` needs 40% of sentences plus a word floor. The
+catalogue is a proxy for what detectors read, not a definition of it — "our checker is quiet" is
+not evidence the output is good.
+
+Reproduce: `gate.py`, `netgate.py`, `catmove.py` in the session scratchpad.
