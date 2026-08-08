@@ -1517,5 +1517,18 @@ shares it as well. Fixing this properly means separating the reporting threshold
 target, and calibrating the reporting one per tier. That is a design change, not a constant edit,
 and it is recorded here with the measurement it needs rather than guessed at.
 
+### Which "lite" this is
+
+Measured with `UNTELL_LITE_NO_TORCH=1`, i.e. the **stdlib** path. That matters more than the
+threshold does: the README records the same tier flagging **6% of human text when `torch` is
+present** (GPT-2 perplexity, AUROC 0.997) against **69% on the stdlib path** (AUROC 0.754) — an
+11.5× difference in false positives under one tier name. So the table above describes the
+zero-dependency path specifically, and the threshold question is a stdlib-path question.
+
+The README's 65% and the 60% here are the same finding on different samples (100 HC3 pairs there,
+60 HC3 + 60 RAID pooled here); the ROADMAP row said 65% and now says 60% with this pooled
+measurement behind it. The sweep points differ for the same reason — the README's 0.55/0.60 rows
+are HC3-only.
+
 Reproduce: sweep `score_text(t, tier="lite")["max"]` over `load_pairs("hc3", 60)` and
-`load_pairs("raid", 60)`.
+`load_pairs("raid", 60)` with `UNTELL_LITE_NO_TORCH=1` set.
