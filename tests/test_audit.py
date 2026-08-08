@@ -127,3 +127,19 @@ def test_every_live_document_exists(doc):
     """LIVE_DOCS is skipped silently when a path is missing, so a rename would quietly reduce
     coverage to nothing."""
     assert (REPO / doc).exists(), f"{doc} is audited but does not exist"
+
+
+def test_the_audit_runs_in_ci():
+    """A checker nobody runs is a checker that does not exist.
+
+    Its first execution found seven dead links in the published documentation index and a README
+    claiming 1124 candidate repos where the census said 1287 — both of which had been shipping.
+    Neither would have surfaced from a test suite that nobody thought to extend.
+    """
+    from pathlib import Path
+
+    ci = Path(__file__).resolve().parent.parent / ".github" / "workflows" / "ci.yml"
+    assert ci.exists(), "no CI workflow to wire the audit into"
+    assert "untell-audit" in ci.read_text(encoding="utf-8"), (
+        "untell-audit is not run in CI, so a documentation drift fails nothing"
+    )

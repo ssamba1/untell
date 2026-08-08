@@ -31,6 +31,18 @@ jobs:
       - name: Test (lite tier, zero ML)
         run: pytest -q
 
+      # Every documented claim that CAN be re-checked, re-checked. The derivable ones — registry
+      # sizes, which rewriters resolve, calibration constants, console scripts, cross-document
+      # links, census figures quoted outside the census — fail the build when they drift. The
+      # measured ones cannot run here, so what is enforced is that each states its source.
+      #
+      # This is not hypothetical maintenance. Its first run found seven dead links in the published
+      # documentation index and a README claiming 1124 candidate repos where the census said 1287,
+      # and it later caught the README's headline HC3 results table overstating the product with
+      # figures no commit reproduces.
+      - name: Audit documented claims
+        run: untell-audit
+
       - name: Console scripts wired (entry points resolve)
         run: |
           untell-score "Moreover, the system leverages synergies to facilitate outcomes." --threshold 0.30
