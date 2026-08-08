@@ -216,3 +216,55 @@ class TestNoChangeIsReportedAsSuchNotAsSuccess:
         blob = "\n".join(printed)
         assert "No change was made" in blob
         assert "Humanized" not in blob  # no panel claiming a humanized version exists
+
+
+class TestProgressIsWiredIntoTheLoop:
+    """`progress_iteration` was defined, unit-tested, and called from nowhere.
+
+    Dead production code carrying test coverage — the exact shape a reachability audit exists to
+    find, and indistinguishable from a working feature if you only read the tests. A full-tier
+    iteration is several model passes and up to `max_iters` of them ran with the user seeing
+    nothing at all until the end.
+    """
+
+    def test_the_loop_accepts_a_progress_flag(self):
+        import inspect
+
+        from untell.scripts.run import untell_text
+
+        assert "progress" in inspect.signature(untell_text).parameters
+
+    def test_it_is_off_by_default(self):
+        """Library, MCP and REST callers must be byte-identical to before."""
+        import inspect
+
+        from untell.scripts.run import untell_text
+
+        assert inspect.signature(untell_text).parameters["progress"].default is False
+
+    def test_the_loop_calls_it_when_asked(self, monkeypatch):
+        import untell.rich_output as rich_output
+        from untell.scripts.run import untell_text
+
+        seen: list = []
+        monkeypatch.setattr(
+            rich_output, "progress_iteration", lambda *a, **k: seen.append(a) or None
+        )
+        untell_text(
+            "Moreover, it is crucial to underscore the pivotal role of comprehensive frameworks"
+            " in this domain. Furthermore, the system leverages robust methodologies to optimize.",
+            tier="lite",
+            rewriter="composite",
+            progress=True,
+        )
+        assert seen, "progress=True produced no progress line"
+
+    def test_the_cli_keeps_json_parseable(self):
+        """A progress line on stdout ahead of the payload would corrupt every scripted caller, so
+        the CLI enables progress only on the human-facing path."""
+        import inspect
+
+        from untell.scripts import run
+
+        src = inspect.getsource(run.main)
+        assert "progress=not args.json" in src, "progress must be off whenever --json is set"

@@ -135,6 +135,9 @@ def untell_text(
     detector_thresholds: dict[str, float] | None = None,
     veto_contradictions: bool = True,
     voice_sample: str | None = None,
+    # Print a line per iteration. Default False so every programmatic caller — library, MCP, REST —
+    # behaves exactly as before; the CLI opts in for its human-facing (non-JSON) path.
+    progress: bool = False,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -293,6 +296,20 @@ def untell_text(
         # than 1. It used to be set first, so text that needed no work at all came back claiming a
         # round of rewriting had happened — with rewrites=0 beside it, contradicting itself.
         iters = i
+        # Per-iteration progress. `rich_output.progress_iteration` existed, was unit-tested, and was
+        # called from nowhere — dead production code carrying test coverage, which is the shape a
+        # reachability audit exists to find. A full-tier iteration is several model passes, and up
+        # to `max_iters` of them ran with the user seeing nothing until the end.
+        #
+        # Off by default so library, MCP and REST callers are byte-identical to before; the CLI
+        # turns it on for its human-facing path only.
+        if progress:
+            try:
+                from untell.rich_output import progress_iteration
+
+                progress_iteration(i, max_iters, tier, best_score.get("max"))
+            except Exception:  # a progress line must never break a run
+                pass
         # Targeted feedback: name the specific sentences that read as AI (cheap lite scoring), so the
         # rewriter fixes only those instead of re-rolling the whole text (fewer iters, less drift).
         try:
@@ -846,6 +863,9 @@ def main(argv: list[str] | None = None) -> int:
         best_of=args.best_of,
         detector_thresholds=detector_thresholds,
         voice_sample=voice_sample,
+        # Only on the human-facing path: --json must stay parseable, so a progress line printed to
+        # stdout ahead of the payload would corrupt it for every scripted caller.
+        progress=not args.json,
     )
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))
