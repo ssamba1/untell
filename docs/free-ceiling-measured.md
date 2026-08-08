@@ -1312,3 +1312,55 @@ simply starts higher and stays higher.
 **Do not compare the MAX row here against Result 17's.** That table was 12 texts and this one is
 20 different ones; the per-detector *ranking* is what replicates, not the absolute level. The
 like-for-like end-to-end figure is Result 20's, on a fixed n = 40 with repeats.
+
+---
+
+## Result 21 — reordering, and two structural moves measured then declined
+
+Every transform in `rewriter/structural.py` was a **local** edit: a word swap, a split, a merge, a
+deletion. None changed the order in which information arrives, which is what a curvature detector
+reads over a long span — and `fast_detectgpt` is the wall.
+
+### Fronting a trailing subordinate clause
+
+`"X because Y."` → `"Because Y, X."` Safe without a parser: the subordinator travels with its
+clause, so the relation it marks survives exactly. Isolated over 14 RAID texts, fronting everything
+eligible:
+
+| detector | before | after | delta |
+|---|---|---|---|
+| `fast_detectgpt` | 0.7858 | 0.7560 | −0.0298 |
+| `perplexity_burstiness` | 0.5247 | 0.4983 | −0.0263 |
+| `roberta_openai` | 0.5501 | 0.5280 | −0.0221 |
+
+No detector worse, at **0.9993** similarity — it adds no words, it moves them.
+
+The rate is a target rather than a maximum, for the same reason as contractions. Share of sentences
+carrying a frontable subordinator that are actually fronted:
+
+| corpus | human | ai |
+|---|---|---|
+| HC3 (forum) | 22.0% | **25.2%** — AI already fronts *more* |
+| RAID (paper) | **17.6%** | 2.8% — humans front 6.3× as often |
+
+### Declined: passive → active
+
+Passive voice is register-inverted, like everything else measured this way — per 100 words, HC3
+human 0.671 vs AI **1.194** (1.78×), but RAID human **1.113** vs AI 0.795 (the other way). The
+forum gap is real.
+
+It is still not worth building. Only the **agentive** passive is convertible without inventing an
+agent, and that is **14.0%** of HC3 passives and **5.6%** of RAID's — the rest are "the results were
+analysed" with no agent present. Converting the remainder would reach ~0.17 occurrences per 100
+words, against a transform that must get subject/object order, number agreement and tense right
+with no parser. Cost and risk both exceed the reachable signal.
+
+### Declined: first-person injection
+
+The largest single distributional gap found all session: HC3 human **1.200** first-person tokens per
+100 words against AI **0.309** — humans use them **3.9×** as often.
+
+Declined on meaning grounds, not measurement. "The system works" → "I think the system works" adds a
+speaker stance the source does not have. It would very likely lower the score; it would also make
+the tool assert something its input never said, which is the one thing the meaning gates exist to
+prevent. Recorded here so the gap is known rather than rediscovered.
