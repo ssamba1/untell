@@ -538,6 +538,85 @@ _SPLIT_CONJUNCTIONS = frozenset(
 )
 
 
+# Words that cannot begin an independent clause, so a split leaving one at the front produced a
+# fragment. Three groups: relative pronouns ("which can be time-consuming"), exemplifiers and
+# appositive leads ("such as using chemicals"), and bare prepositions ("with the results in hand").
+# Articles are deliberately ABSENT — "A new method solves this." is a perfectly good sentence — so
+# the appositive case is handled positionally below instead.
+_CANNOT_OPEN_A_CLAUSE = frozenset(
+    {
+        "which", "who", "whom", "whose", "that", "where", "when",
+        "such", "including", "like", "especially", "particularly", "namely", "e.g.", "i.e.",
+        "with", "without", "from", "by", "of", "as", "than", "via", "per", "among", "between",
+        "rather", "instead", "along", "across", "toward", "towards", "upon", "regarding",
+    }
+)
+_ARTICLES = frozenset({"a", "an", "the"})
+
+# Fewest words either half of a split may have. A discourse marker is one or two words, so
+# anything below this is a stranded opener rather than a sentence.
+_MIN_SPLIT_SIDE = 4
+
+
+def _cannot_start_a_sentence(second: str, first: str) -> bool:
+    """Would promoting ``second`` to its own sentence leave a fragment?
+
+    Two signals, both cheap — this path is on the zero-dependency tier, so no parser is available.
+
+    1. The opening word is one that cannot begin an independent clause (see the set above).
+    2. An APPOSITIVE: the first half ends on a proper noun and the second opens with an article,
+       as in "we present EdgeFlow, a novel approach to ...". The article groups cannot go in the
+       set — most sentences beginning "The" are fine — so this needs the left context to decide.
+
+    Returns True when the two halves should be rejoined with a comma rather than split.
+    """
+    head = second.split()
+    if not head:
+        return True
+    lead = head[0].rstrip(",.;:").lower()
+    if lead in _SPLIT_CONJUNCTIONS or lead in _CANNOT_OPEN_A_CLAUSE:
+        return True
+    if lead in _ARTICLES:
+        tail = first.split()
+        # A capitalised final word that is not the sentence's own first word is a name, and
+        # "<Name>, a <noun phrase>" is an appositive rather than two clauses.
+        if len(tail) > 1 and tail[-1][:1].isupper():
+            return True
+    return False
+
+
+def _semicolons_to_periods(text: str) -> str:
+    """Promote each "; " to a sentence break, but only where the right side can stand alone.
+
+    The previous form was ``_SEMICOLON_RE.sub(". ", text)``, which had two defects that only show
+    up by reading output. It produced fragments whenever the semicolon introduced a list or a
+    gloss — "many tasks; including autonomous driving" became "many tasks. including autonomous
+    driving" — and it never capitalised what followed, so "shipped it; the customers were happy"
+    became "shipped it. the customers were happy", which is both broken English and a formatting
+    tell in its own right.
+
+    MEASURED over 60 RAID+HC3 texts through the full pipeline: "Including ..." was the single most
+    common fragment in rewritten output, and every instance traced here. The sentence-level stages
+    were innocent — attributing the fragments stage by stage found none until the text-level passes
+    were included.
+    """
+    out: list[str] = []
+    pos = 0
+    for m in _SEMICOLON_RE.finditer(text):
+        left = text[pos:m.start()]
+        right = text[m.end():]
+        if _cannot_start_a_sentence(right, left):
+            out.append(text[pos:m.end()])   # leave the semicolon exactly as it was
+        else:
+            out.append(left + ". ")
+            # Capitalise the clause the break exposes; nothing else in the pipeline does it here.
+            if right[:1].islower():
+                text = text[:m.end()] + right[0].upper() + right[1:]
+        pos = m.end()
+    out.append(text[pos:])
+    return "".join(out)
+
+
 def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float = 0.25) -> list[str]:
     """Split sentences longer than ``max_words`` words at a suitable break point."""
     out: list[str] = []
@@ -565,6 +644,11 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
             # instead of ending a sentence on "and".
             while split_at > 1 and words[split_at - 1].rstrip(",").lower() in _SPLIT_CONJUNCTIONS:
                 split_at -= 1
+            # Same minimum-side rule as _split_one: a one- or two-word left half is a stranded
+            # discourse marker, not a sentence.
+            if split_at < _MIN_SPLIT_SIDE or len(words) - split_at < _MIN_SPLIT_SIDE:
+                out.append(s)
+                continue
             first = " ".join(words[:split_at]).rstrip(",")
             second = " ".join(words[split_at:])
             if not first.strip():
@@ -572,8 +656,18 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                 continue
             if second:
                 second = second[0].lower() + second[1:] if second[0].isupper() else second
-                # Check if we broke mid-clause (second starts with a conjunction)
-                if second.split()[0].rstrip(",").lower() in _SPLIT_CONJUNCTIONS:
+                # Check if we broke mid-clause (second starts with a conjunction), or mid-PHRASE.
+                # The conjunction test alone was not nearly enough: the split point is "any comma
+                # near the midpoint", and most commas in real prose do not mark a clause boundary.
+                # FOUND by reading actual rewriter output on RAID and HC3 rather than by any metric,
+                # because a fragment is perfect English to a tell catalogue:
+                #   "There are other options for melting ice and snow on roads. Such as using
+                #    chemicals like calcium chloride ..."          (exemplifier comma)
+                #   "In this paper, we show EdgeFlow. A new way to interactive segmentation that
+                #    leverages the concept of edge-guided flow."   (appositive comma)
+                # Broken English is worse for a reader than any detector score, and nothing in the
+                # suite was looking: score_tells has no grammaticality check.
+                if _cannot_start_a_sentence(second, first):
                     out.append(_terminated(f"{first}, {second}"))
                 else:
                     out.append(f"{_terminated(first)} {_terminated(second[0].upper() + second[1:])}")
@@ -1034,7 +1128,12 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     return out
 
 
-_CONJ = ("and", "but", "which", "because", "so", "while", "although", "though", "since")
+# NOT "which". _split_one drops the conjunction it splits on, which is right for a coordinator
+# ("... and traced the fault" -> "Traced the fault") and fatal for a relative pronoun: removing it
+# leaves the clause without its subject, so "..., which can capture local information" became the
+# fragment "Can capture local information ...". Measured over 60 RAID+HC3 texts, that was the
+# second-most-common fragment shape in rewritten output after the comma-split one.
+_CONJ = ("and", "but", "because", "so", "while", "although", "though", "since")
 
 
 def _mergeable(a: str, b: str) -> bool:
@@ -1094,7 +1193,19 @@ def _split_one(s: str) -> list[str] | None:
     best: int | None = None
     for off in range(mid):  # nearest comma to the midpoint
         for pos in (mid + off, mid - off):
-            if 0 < pos < len(words) - 1 and words[pos].endswith(","):
+            # The conjunction branch below has always checked that the right side can open a
+            # clause; this one never did, and "any comma near the midpoint" is mostly not a clause
+            # boundary. It is the source of every "Including autonomous driving, medical imaging,
+            # and robotics." in rewritten output — the most common fragment measured over 60
+            # RAID+HC3 texts. `_split_long_sentences` had the identical hole and was fixed first;
+            # this copy kept producing them, which is why the fragment count did not move.
+            if (
+                0 < pos < len(words) - 1
+                and words[pos].endswith(",")
+                and not _cannot_start_a_sentence(
+                    " ".join(words[pos + 1:]), " ".join(words[:pos + 1])
+                )
+            ):
                 best = pos + 1
                 break
         if best is not None:
@@ -1112,6 +1223,12 @@ def _split_one(s: str) -> list[str] | None:
             if best is not None:
                 break
     if best is None:
+        return None
+    # Both sides must be substantial enough to be a sentence. The comma scan walks outward from
+    # the midpoint, so with a single early comma it happily picks position 1 — and _vary_openers
+    # puts one there. "Of course, the model works well ..." split into "Of course." plus the rest,
+    # i.e. this pass fragmenting the output of the pass before it.
+    if best < _MIN_SPLIT_SIDE or len(words) - best < _MIN_SPLIT_SIDE:
         return None
     first = " ".join(words[:best]).rstrip(",")
     tail = words[best:]
@@ -1354,7 +1471,7 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
     text = _plain_register(text, intensity=profile["register"])
 
     # 6. Semicolon → period (semiconductors are a tell)
-    text = _SEMICOLON_RE.sub(". ", text)
+    text = _semicolons_to_periods(text)
 
     # 7. Sentence-level transforms — scaled by intensity.
     sents = _split_sentences(text)

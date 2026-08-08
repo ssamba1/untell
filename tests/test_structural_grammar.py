@@ -1398,3 +1398,164 @@ class TestBurstinessTargetIsRegisterAware:
         cv_low = _cv([len(s.split()) for s in low])
         cv_high = _cv([len(s.split()) for s in high])
         assert cv_low <= cv_high, f"lower target produced more variance: {cv_low} vs {cv_high}"
+
+
+class TestSplittingNeverLeavesAFragment:
+    """The splitter broke at "any comma near the midpoint", and most commas do not mark a clause.
+
+    FOUND by reading real rewriter output on RAID and HC3 — not by any metric, because a sentence
+    fragment is perfect English to a tell catalogue and `score_tells` has no grammaticality check:
+
+        "There are other options for melting ice and snow on roads. Such as using chemicals
+         like calcium chloride ..."                                    (exemplifier comma)
+        "In this paper, we show EdgeFlow. A new way to interactive segmentation that
+         leverages the concept of edge-guided flow."                   (appositive comma)
+
+    Broken English is worse for a reader than any detector score. The pre-existing guard only
+    rejoined when the second half began with a coordinating conjunction, which catches
+    "... and. Were being dictated to ..." and nothing else.
+    """
+
+    LONG_WITH_A_NON_CLAUSE_COMMA = [
+        # exemplifier
+        "There are other options for melting ice and snow on roads, such as using chemicals like"
+        " calcium chloride or magnesium chloride, or using mechanical methods like plows or sand.",
+        # appositive after a proper noun
+        "In this paper, we present EdgeFlow, a novel approach to interactive image segmentation"
+        " that leverages the concept of edge-guided flow to achieve efficient and practical"
+        " segmentation of natural images under a tight annotation budget.",
+        # relative pronoun
+        "Existing methods for interactive segmentation are often limited by their heavy reliance"
+        " on repeated iterative user input, which can be extremely time-consuming and may not"
+        " accurately capture the intent the user actually had in mind.",
+    ]
+
+    @pytest.mark.parametrize("text", LONG_WITH_A_NON_CLAUSE_COMMA)
+    def test_no_fragment_is_produced(self, text):
+        import random
+
+        from untell.rewriter.structural import _split_long_sentences
+
+        assert len(text.split()) > 28, "fixture must exceed max_words or nothing is exercised"
+        for seed in range(30):
+            random.seed(seed)
+            out = " ".join(_split_long_sentences([text], rate=1.0))
+            for piece in _re.split(r"(?<=[.!?])\s+", out):
+                lead = piece.split()[0].rstrip(",.;:").lower() if piece.split() else ""
+                assert lead not in {"such", "which", "who", "including", "with", "of", "as"}, (
+                    f"seed {seed}: promoted a phrase to a sentence: {piece!r}"
+                )
+
+    def test_a_genuine_clause_boundary_still_splits(self):
+        """The complement. Two guards were removed elsewhere today for declining the job they exist
+        to do, and a splitter that never splits is the same failure."""
+        import random
+
+        from untell.rewriter.structural import _split_long_sentences
+
+        text = (
+            "The team shipped the new release on Tuesday morning after a long week of testing,"
+            " it went out to every paying customer in the region without a single reported failure."
+        )
+        assert len(text.split()) > 28
+        split_happened = False
+        for seed in range(30):
+            random.seed(seed)
+            out = " ".join(_split_long_sentences([text], rate=1.0))
+            if len(_re.split(r"(?<=[.!?])\s+", out.strip())) > 1:
+                split_happened = True
+                break
+        assert split_happened, "the splitter no longer splits anything"
+
+    def test_the_appositive_rule_needs_the_left_context(self):
+        """Articles cannot go in the blocklist — "A new method solves this." is a fine sentence — so
+        the appositive case is decided by what precedes the comma, not by the article alone."""
+        from untell.rewriter.structural import _cannot_start_a_sentence
+
+        assert _cannot_start_a_sentence("a novel approach to segmentation", "we present EdgeFlow")
+        assert not _cannot_start_a_sentence("a new method solves this", "the team worked hard")
+
+
+class TestTheOtherSplitterAndTheSemicolonPassAlsoCheckForFragments:
+    """Three more fragment sources, each a copy of a hole already fixed somewhere else.
+
+    Fragments were counted end to end over 60 RAID+HC3 texts: 12 in rewritten output against 0 in
+    the sources. Fixing `_split_long_sentences` alone moved the number not at all, because the
+    burstiness pass uses a SECOND splitter with the same defect, and two text-level passes had
+    their own variants.
+
+    1. `_split_one`'s comma branch had no clause check — its conjunction branch always had one.
+       Source of every "Including autonomous driving, medical imaging, and robotics."
+    2. `_CONJ` contained "which", and the splitter DROPS the conjunction it splits on. Right for a
+       coordinator, fatal for a relative pronoun: "..., which can capture local information" became
+       "Can capture local information ...", with no subject.
+    3. Neither splitter had a minimum side length, and the comma scan walks outward from the
+       midpoint, so a single early comma wins. `_vary_openers` puts one there — "Of course, the
+       model works well ..." split into "Of course." plus the rest, one pass fragmenting the output
+       of the pass before it.
+
+    Also `_SEMICOLON_RE.sub(". ", text)` promoted every semicolon unconditionally, producing "many
+    tasks. including autonomous driving" AND leaving the next word lowercase.
+    """
+
+    def test_split_one_declines_a_non_clause_comma(self):
+        from untell.rewriter.structural import _split_one
+
+        out = _split_one(
+            "The model has been applied to a wide range of practical vision problems, including"
+            " autonomous driving, medical imaging, and robotics in warehouse settings."
+        )
+        if out is not None:
+            assert not out[1].lower().startswith("including"), out
+
+    def test_a_relative_pronoun_is_not_a_split_point(self):
+        from untell.rewriter.structural import _CONJ, _split_one
+
+        assert "which" not in _CONJ, "dropping 'which' strands the clause without a subject"
+        out = _split_one(
+            "Existing methods depend heavily on repeated iterative user input, which can capture"
+            " local information but may not generalize well to genuinely new examples."
+        )
+        if out is not None:
+            assert not out[1].lower().startswith("can "), out
+
+    def test_neither_splitter_strands_a_discourse_marker(self):
+        import random
+
+        from untell.rewriter.structural import _MIN_SPLIT_SIDE, _split_long_sentences, _split_one
+
+        assert _MIN_SPLIT_SIDE >= 3
+        text = (
+            "Of course, the model works well across the benchmark suite and continues to improve"
+            " steadily as more annotated training data becomes available to the team."
+        )
+        out = _split_one(text)
+        if out is not None:
+            assert len(out[0].split()) >= _MIN_SPLIT_SIDE, out
+        for seed in range(20):
+            random.seed(seed)
+            joined = " ".join(_split_long_sentences([text], rate=1.0))
+            assert "Of course." not in joined, f"seed {seed}: {joined}"
+
+    @pytest.mark.parametrize(
+        ("text", "expect_split"),
+        [
+            ("The model works on many tasks; including autonomous driving and robotics.", False),
+            ("We use several losses; including Dice loss.", False),
+            ("The team shipped it; the customers were happy.", True),
+        ],
+    )
+    def test_semicolons_only_become_periods_before_a_real_clause(self, text, expect_split):
+        from untell.rewriter.structural import _semicolons_to_periods
+
+        out = _semicolons_to_periods(text)
+        assert (";" not in out) is expect_split, out
+
+    def test_a_promoted_semicolon_capitalises_what_follows(self):
+        """The old sub() produced "shipped it. the customers were happy" — broken English, and
+        lowercase-after-period is a formatting tell in its own right."""
+        from untell.rewriter.structural import _semicolons_to_periods
+
+        assert _semicolons_to_periods("The team shipped it; the customers were happy.") == (
+            "The team shipped it. The customers were happy."
+        )
