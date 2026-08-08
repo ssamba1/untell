@@ -1478,3 +1478,44 @@ The **`best_of=1 ×3`** figure leads in the ROADMAP, because the earlier entries
 actually gets, and it is better — but it is a single run, and this document's own rule since
 Results 13/14 is **≥3 repeats before a number is quoted**. It is recorded as a single run and
 labelled as one rather than promoted to the headline.
+
+---
+
+## Result 24 — the lite tier's threshold is calibrated for the wrong job
+
+The defect table in ROADMAP §2 has carried "lite tier flags 65% of human text at the shipped
+threshold" as *found, not fixed*. Re-measured across both corpora, 120 human and 120 AI texts,
+`tier=lite`, sweeping the threshold:
+
+| threshold | false positive on HUMAN | true positive on AI | Youden J | balanced acc |
+|---|---|---|---|---|
+| 0.30 (**shipped**) | **60%** | 93% | 0.333 | 66.7% |
+| 0.35 | 41% | 91% | 0.500 | 75.0% |
+| **0.40** | 27% | 78% | **0.517** | **75.8%** |
+| **0.45** | 17% | 68% | **0.517** | **75.8%** |
+| 0.50 | 10% | 42% | 0.325 | 66.2% |
+| 0.60 | 2% | 23% | 0.208 | 60.4% |
+
+60%, not 65%, and identical in HC3 and RAID separately — so it is a property of the lite detector,
+not of one corpus. **At the shipped threshold, a user checking their own writing on the free tier is
+told it reads as AI three times in five.**
+
+The optimum is a plateau at **0.40–0.45**, where balanced accuracy is 75.8% against the shipped
+66.7%. A 5% false-positive rate would need 0.60, and AI recall there collapses to 23%.
+
+### Why this is not a one-line fix
+
+`threshold` does two different jobs and they want opposite values:
+
+- **The verdict.** "Is this text flagged?" — wants ~0.45, or it slanders human writing.
+- **The loop's stopping condition.** "Rewrite until the score is below this" — wants a LOW value,
+  because stopping early is under-rewriting. Raising it to 0.45 would make the loop quit sooner and
+  weaken every humanisation run on the lite tier.
+
+The two are the same number today, and the full tier — whose score distribution is different —
+shares it as well. Fixing this properly means separating the reporting threshold from the loop
+target, and calibrating the reporting one per tier. That is a design change, not a constant edit,
+and it is recorded here with the measurement it needs rather than guessed at.
+
+Reproduce: sweep `score_text(t, tier="lite")["max"]` over `load_pairs("hc3", 60)` and
+`load_pairs("raid", 60)`.
