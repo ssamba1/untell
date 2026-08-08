@@ -1422,3 +1422,20 @@ needs verb detection, which is not available on a parser-free tier. Reverted.
 Broken English is a worse failure than four percentage points of flagged rate. A reader notices a
 fragment instantly; the detector score is a number in a report. The regression is accepted, and it
 is recorded here rather than left to be discovered in the next measurement.
+
+### Three ways to recover the lost evasion, all tried
+
+1. **Rescan past an unusable comma** instead of abandoning the split. Recovered score by finding a
+   *different* bad split — stubs 4 → 5, a dangling coordinator reappeared. Reverted.
+2. **Raise the burstiness move cap.** `_target_burstiness` is a hill-climb with `max_moves=12`, and
+   output CV sits at 0.423 against a 0.45 target with only 23 of 60 texts reaching it. Measured at
+   12 / 24 / 48 moves: mean CV **0.3044 in all three**, identical to four decimals. The cap is not
+   the constraint — the climb runs out of moves that raise CV, because its split candidates are the
+   ones now being refused. A second full burstiness pass over already-rewritten text gains
+   **+0.0000**.
+3. **Add a reordering transform** (Result 21's clause fronting). This one worked, and is shipped:
+   every detector down, none worse, 0.9993 similarity.
+
+So the burstiness ceiling is set by how many *valid* split points the text contains, not by how
+hard the pass tries. That is a property of the corpus, and the honest conclusion is that the
+fragment guards cost what they cost.
