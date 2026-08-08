@@ -1450,8 +1450,9 @@ with nothing else competing:
 
 | configuration | pre | post | flagged pre → post | mean sim | worst sim |
 |---|---|---|---|---|---|
-| `best_of=1`, **×3 repeats** | 0.7737 | **0.3469 ± 0.0193** | 0.95 → **0.408** | 0.9816 | 0.9212 |
-| `best_of=3` (**shipped**), ×1 | 0.7737 | **0.3017** | 0.95 → **0.325** | 0.9823 | 0.9595 |
+| `best_of=1`, ×3 repeats | 0.7737 | **0.3469 ± 0.0193** | 0.95 → **0.408** | 0.9816 | 0.9212 |
+| `best_of=3` (**shipped**), **×3 repeats** | 0.7737 | **0.3271 ± 0.0132** | 0.95 → **0.375** | 0.9824 | 0.9394 |
+| *(the same, single run — see below)* | 0.7737 | *0.3017* | 0.95 → *0.325* | 0.9823 | 0.9595 |
 
 Against the same corpus and settings at the start of the day — **0.951 post, 39 of 40 flagged** —
 that is the whole session's movement: **0.951 → 0.302** and **97.5% → 32.5%** in the configuration
@@ -1471,13 +1472,22 @@ flagged rate**, spent deliberately, after three separate attempts to recover it 
 output worse. The final spread (±0.0193) is wide enough that the last two rows are not cleanly
 separable from each other; the movement from 0.3206 is.
 
+### The ≥3-repeats rule earning its keep, again
+
+The shipped configuration was first measured as a **single run: 0.3017 post, 32.5% flagged**. That
+was written down and explicitly *not* promoted to the headline, on this document's rule since
+Results 13/14. Replicated, the same configuration on the same code is **0.3271 ± 0.0132 and 37.5%
+flagged** — the single run sat about **two standard deviations low**. Quoting it would have
+overstated the product by 0.025 of score and 5 points of flagged rate.
+
+That is the third time in this file a single run of a randomised rewriter has produced a number the
+replication did not support. The rule is cheap and it keeps paying.
+
 ### Which number to quote
 
-The **`best_of=1 ×3`** figure leads in the ROADMAP, because the earlier entries in that series used
-`best_of=1` and a comparison has to be like for like. The **`best_of=3`** figure is what a user
-actually gets, and it is better — but it is a single run, and this document's own rule since
-Results 13/14 is **≥3 repeats before a number is quoted**. It is recorded as a single run and
-labelled as one rather than promoted to the headline.
+The **`best_of=3 ×3`** row is the headline: it is the configuration users actually run, and it now
+has its spread. The `best_of=1 ×3` row is kept because every earlier entry in this series used
+`best_of=1`, and the session-long comparison has to be like for like.
 
 ---
 
