@@ -228,6 +228,45 @@ def check_derivable(report: Report) -> None:
                         f"census says {truth['read']}",
                     )
 
+    # --- the census document against its own raw data ---------------------------------------------
+    # The census is cited as provenance all over these documents, which makes IT a claim. Its
+    # judgement calls ("49 of 435 put a detector in the loop") come from reading prose fields and
+    # cannot be re-derived here — attempting it with a keyword heuristic gives 78, and a checker
+    # that is confidently wrong is worse than no checker. What IS derivable is checked.
+    census_json = REPO / "docs" / "humanizer-census.json"
+    census_md = REPO / "docs" / "humanizer-census.md"
+    if census_json.exists() and census_md.exists():
+        import json as _json
+
+        try:
+            records = _json.loads(census_json.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            records = None
+            report.check("the census raw data parses", False, f"{type(exc).__name__}: {exc}")
+        if isinstance(records, list):
+            body = census_md.read_text(encoding="utf-8")
+            claimed = re.search(r"(\d{3,4})\s+read", body)
+            report.check(
+                "the census says how many repos it read",
+                bool(claimed),
+                "no 'N read' figure found" if not claimed else f"claims {claimed.group(1)}",
+            )
+            if claimed:
+                report.check(
+                    "the census record count matches its own prose",
+                    len(records) == int(claimed.group(1)),
+                    f"{len(records)} records vs {claimed.group(1)} claimed",
+                )
+            # Every repo the prose names in a table must exist in the data behind it.
+            known = {r.get("name", "") for r in records if isinstance(r, dict)}
+            named = set(re.findall(r"`([\w.-]+/[\w.-]+)`", body))
+            absent = sorted(n for n in named if not any(n in k for k in known))
+            report.check(
+                "every repo the census names is in its raw data",
+                not absent,
+                f"named but absent: {absent[:5]}" if absent else f"{len(named)} named",
+            )
+
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
     for rel in LIVE_DOCS:
