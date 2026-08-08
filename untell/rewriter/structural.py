@@ -519,8 +519,20 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
     return out
 
 
+# Subjects for the flattened clause, cycled rather than fixed. A single fixed "This" turned every
+# participial trailer in a document into an identically-opening sentence: five trailers became
+# "This shows ... This reflects ... This confirms ... This indicates ... This suggests ...".
+# `score_tells` did not flag it — `_duplicate_sentence_starts` needs 40% of sentences and enough
+# words to qualify — but the catalogue is not the detector, and repeating one opener five times is
+# the exact shape `repeated_sentence_openers` exists to name. Fixing one tell must not manufacture
+# another; same failure as the replacements swept by TestTheRewriterNeverEmitsACataloguedTell.
+_PARTICIPIAL_SUBJECTS = ("This", "That", "It")
+
+
 def _flatten_participial_trailers(text: str) -> str:
     """Convert ', underscoring its importance' → '. This underscores its importance'."""
+    used: list[str] = []
+
     def _replace(m: re.Match) -> str:
         verb_ing = m.group(1).lower()  # e.g. "underscoring"
         present = _PARTICIPIAL_VERBS.get(verb_ing, verb_ing.rstrip("ing") + "s")
@@ -528,7 +540,13 @@ def _flatten_participial_trailers(text: str) -> str:
         # of whitespace (", underscoring", ",  underscoring", ",\nunderscoring") is handled correctly.
         after = m.group(0)[m.end(1) - m.start(0):]  # " its importance." — keeps the leading space
         after = after.rstrip(".!?")                 # drop the trailing terminator, keep leading space
-        return f". This {present}{after}."
+        # Avoid the subject used last time, so consecutive flattenings never share an opener. Chosen
+        # at random among the rest rather than round-robin: a fixed rotation is its own pattern, and
+        # best-of-N draws would otherwise all agree.
+        options = [s for s in _PARTICIPIAL_SUBJECTS if not used or s != used[-1]]
+        subject = random.choice(options)
+        used.append(subject)
+        return f". {subject} {present}{after}."
 
     return _PARTICIPIAL_RE.sub(_replace, text)
 
@@ -675,12 +693,25 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
             else:
                 break
 
+    # Replacements already spent in this text. The map is many-to-one in places — six different
+    # source words offer "key" ('pivotal', 'crucial', 'vital', 'paramount', 'essential', 'salient'),
+    # six offer "boost", five offer "so" — and AI prose reaches for several of a cluster in the same
+    # passage. Choosing independently each time, three of those words land on "key" about 4% of the
+    # time and at least two of them about 26%, manufacturing `repeated_phrasing` out of text that
+    # had none. MEASURED after the register pass stopped being intensity-gated: ai_vocab fell 21->0
+    # but repeated_phrasing rose 960->985 and repeated openers 44->52 on the same 60 texts.
+    spent: set[str] = set()
+
     def _swap(m: re.Match) -> str:
         article, word, tail = m.group(1) or "", m.group(2), m.group(3) or ""
         options = _SYN.get(word.lower())
         if not options or random.random() > intensity:
             return m.group(0)  # group(0), not `word` — the article and tail are not ours to drop
-        choice = random.choice(options)
+        # Prefer an option this text has not used yet; fall back to the full list when every option
+        # is spent, because leaving the AI word in place is worse than repeating a plain one.
+        fresh = [o for o in options if o not in spent]
+        choice = random.choice(fresh or options)
+        spent.add(choice)
         # Preserve the original capitalisation so sentence starts survive the swap.
         if word[:1].isupper():
             choice = choice[:1].upper() + choice[1:]
@@ -1091,9 +1122,25 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         text = _inject_contractions(text)
 
     # 5c. Plain-register vocabulary — formal/AI-inflected words to the words people actually use.
-    # Scaled by the profile: "utilize" -> "use" is right for casual prose and wrong for a paper, so
-    # the formal registers hold most of the map back rather than applying it wholesale.
-    text = _plain_register(text, intensity=intensity * profile["register"])
+    # Scaled by the PROFILE only, not by `intensity`: "utilize" -> "use" is right for casual prose
+    # and wrong for a paper, so the formal registers hold most of the map back — but there is no
+    # useful "gentle" version of leaving a catalogued tell in place.
+    #
+    # The `intensity *` factor was there for best-of-N diversity, and MEASURED it provided none.
+    # 12 RAID AI texts, 4 draws each, full tier, register pass isolated:
+    #
+    #                        best-of-4 score   ai_vocab left   sim-to-source   draw-to-draw sim
+    #     gated (x0.5)           0.8130              6            0.9941           0.9949
+    #     ungated (x1.0)         0.7613              0            0.9903           0.9948
+    #
+    # Draw-to-draw similarity is identical to four decimal places: the gate contributed nothing to
+    # diversity, because `random.choice` already picks among 2-4 synonyms per word, so two draws
+    # differ even when both swap everything. What the gate did contribute was 6 surviving ai_vocab
+    # hits and +0.05 of detector score, for 0.004 of similarity.
+    #
+    # Draw-level diversity is unaffected: CompositeRewriter sweeps `intensity` ACROSS draws
+    # (rewriter/composite.py `_intensity_sweep`), which still varies every structural transform.
+    text = _plain_register(text, intensity=profile["register"])
 
     # 6. Semicolon → period (semiconductors are a tell)
     text = _SEMICOLON_RE.sub(". ", text)

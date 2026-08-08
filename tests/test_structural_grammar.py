@@ -967,3 +967,54 @@ class TestTheRewriterNeverEmitsACataloguedTell:
                 if t := self._tells_in(v):
                     bad.setdefault(key, []).append((v, t))
         assert not bad, f"substituting one catalogued tell for another: {bad}"
+
+
+class TestParticipialFlatteningDoesNotRepeatItsOpener:
+    """Flattening every trailer to "This <verb>" made one tell into another.
+
+    Five participial trailers in a document became five sentences opening with the same word:
+
+        "This shows ... This reflects ... This confirms ... This indicates ... This suggests ..."
+
+    `score_tells` did NOT flag it — `_duplicate_sentence_starts` needs 40% of sentences and a word
+    floor that a short passage misses — which is the point. The catalogue is a proxy for what
+    detectors read, not a definition of it, so "our checker is quiet" is not evidence the output is
+    good. Repeating one opener five running times is exactly the shape `repeated_sentence_openers`
+    exists to name.
+    """
+
+    def test_consecutive_trailers_never_share_a_subject(self):
+        import random
+        import re
+
+        from untell.rewriter.structural import _flatten_participial_trailers
+
+        text = (
+            "Sales rose 12 percent, underscoring the strength of demand. "
+            "Costs fell sharply, reflecting better logistics. "
+            "Margins widened, confirming the turnaround. "
+            "Hiring slowed, indicating caution. "
+            "Retention improved, suggesting better morale."
+        )
+        offenders = []
+        for seed in range(200):
+            random.seed(seed)
+            subjects = re.findall(r"\. (This|That|It) ", _flatten_participial_trailers(text))
+            assert len(subjects) >= 4, f"seed {seed}: trailers were not flattened: {subjects}"
+            if any(a == b for a, b in zip(subjects, subjects[1:])):
+                offenders.append((seed, subjects))
+        assert not offenders, f"consecutive trailers reused a subject: {offenders[:3]}"
+
+    def test_the_subject_actually_varies(self):
+        """The complement: a rotation that always picks the same alternative is still a pattern."""
+        import random
+        import re
+
+        from untell.rewriter.structural import _flatten_participial_trailers
+
+        text = "Sales rose, underscoring demand. Costs fell, reflecting logistics."
+        seen = set()
+        for seed in range(60):
+            random.seed(seed)
+            seen.update(re.findall(r"\. (This|That|It) ", _flatten_participial_trailers(text)))
+        assert len(seen) >= 3, f"only {seen} ever appears — the choice is not varying"
