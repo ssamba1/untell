@@ -1439,3 +1439,42 @@ is recorded here rather than left to be discovered in the next measurement.
 So the burstiness ceiling is set by how many *valid* split points the text contains, not by how
 hard the pass tries. That is a property of the corpus, and the honest conclusion is that the
 fragment guards cost what they cost.
+
+---
+
+## Result 23 — the closing figure, on frozen code
+
+Every number above was measured against whatever the code was at the time, and several runs were
+invalidated mid-flight by the next fix. These two were taken on frozen final code, sequentially,
+with nothing else competing:
+
+| configuration | pre | post | flagged pre → post | mean sim | worst sim |
+|---|---|---|---|---|---|
+| `best_of=1`, **×3 repeats** | 0.7737 | **0.3469 ± 0.0193** | 0.95 → **0.408** | 0.9816 | 0.9212 |
+| `best_of=3` (**shipped**), ×1 | 0.7737 | **0.3017** | 0.95 → **0.325** | 0.9823 | 0.9595 |
+
+Against the same corpus and settings at the start of the day — **0.951 post, 39 of 40 flagged** —
+that is the whole session's movement: **0.951 → 0.302** and **97.5% → 32.5%** in the configuration
+users actually run.
+
+### The `best_of=1` series, including where it went backwards
+
+| stage | post | flagged | spread |
+|---|---|---|---|
+| before Results 16–19 | 0.951 | 97.5% | — |
+| after Results 16–19 | 0.3206 | 34.2% | ±0.0121 |
+| after the fragment guards (Result 22) | 0.3382 | 38.3% | ±0.0072 |
+| after the list/quotation guards | **0.3469** | **40.8%** | ±0.0193 |
+
+The last two rows are the grammar work being paid for: about **0.026 of score and 6.6 points of
+flagged rate**, spent deliberately, after three separate attempts to recover it failed or made the
+output worse. The final spread (±0.0193) is wide enough that the last two rows are not cleanly
+separable from each other; the movement from 0.3206 is.
+
+### Which number to quote
+
+The **`best_of=1 ×3`** figure leads in the ROADMAP, because the earlier entries in that series used
+`best_of=1` and a comparison has to be like for like. The **`best_of=3`** figure is what a user
+actually gets, and it is better — but it is a single run, and this document's own rule since
+Results 13/14 is **≥3 repeats before a number is quoted**. It is recorded as a single run and
+labelled as one rather than promoted to the headline.
