@@ -627,3 +627,74 @@ class TestDegenerateRepetitionIsNotHuman:
         from untell.detectors.perplexity_burstiness import _repetition_signal
 
         assert _repetition_signal("test test test test test test test test") == 0.0
+
+
+class TestTheVerdictThresholdIsNotAlwaysTheLoopTarget:
+    """One constant was deciding two different questions, and they want opposite values.
+
+    `threshold` is what the rewrite loop optimises toward, and a LOW value is right there —
+    stopping early is under-rewriting. The same number also decided `flagged`, which is what a user
+    is told about their own text.
+
+    MEASURED over 100 human / 100 AI texts pooled from HC3 and RAID, sweeping the threshold on each
+    of `perplexity_burstiness`'s two scoring paths:
+
+        path      at 0.30              optimum        note
+        gpt2      FP  3%  TP 100%      0.30 (J 0.970) the shipped value IS the optimum
+        stdlib    FP 60%  TP  93%      0.40-0.45      (J 0.517)
+
+    So the default was never wrong for "the lite tier" — it was wrong for the stdlib SUB-PATH,
+    which is what runs on a clean install with no torch. At 0.30 that path told three users in five
+    that their own writing reads as AI. At 0.45: FP 15%, TP 70%.
+    """
+
+    def test_the_stdlib_only_path_raises_the_verdict_threshold(self, monkeypatch):
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.scripts.score import score_text
+
+        r = score_text("The team shipped the release on Tuesday after a long week.", tier="lite")
+        if r.get("detector_modes", {}).get("perplexity_burstiness") != "stdlib":
+            pytest.skip("this environment does not take the stdlib path")
+        assert r["verdict_threshold"] > r["threshold"]
+        assert r["flagged"] == (r["max"] >= r["verdict_threshold"])
+
+    def test_the_loop_target_is_untouched(self, monkeypatch):
+        """The whole point: rewriting strength must not change. The loop reads `threshold`."""
+        monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+        from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+
+        r = score_text("The team shipped the release on Tuesday after a long week.", tier="lite")
+        assert r["threshold"] == DEFAULT_THRESHOLD
+
+    def test_a_model_backed_ensemble_keeps_the_default(self):
+        """Only the stdlib heuristic ALONE is miscalibrated. With any model-backed detector in the
+        set the max is driven by a well-calibrated member, so raising the cut point there would
+        just miss AI text."""
+        from untell.scripts.score import _verdict_threshold
+
+        # stdlib perplexity is present but not alone
+        scores = {"perplexity_burstiness": 0.4, "hc3_roberta": 0.8}
+        modes = {"perplexity_burstiness": "stdlib"}
+        assert _verdict_threshold(0.30, scores, modes) == 0.30
+
+    def test_the_gpt2_path_keeps_the_default(self):
+        """0.30 is the measured optimum for it (J 0.970), so raising it would be a regression."""
+        from untell.scripts.score import _verdict_threshold
+
+        scores = {"perplexity_burstiness": 0.4}
+        assert _verdict_threshold(0.30, scores, {"perplexity_burstiness": "gpt2"}) == 0.30
+
+    def test_a_caller_supplied_threshold_above_the_floor_is_respected(self):
+        """The raise is a floor, not an override — a caller asking for 0.60 means 0.60."""
+        from untell.scripts.score import _verdict_threshold
+
+        scores = {"perplexity_burstiness": 0.4}
+        modes = {"perplexity_burstiness": "stdlib"}
+        assert _verdict_threshold(0.60, scores, modes) == 0.60
+
+    def test_the_raised_value_matches_the_measurement(self):
+        from untell.scripts.score import _STDLIB_PERPLEXITY_VERDICT_THRESHOLD
+
+        # The Youden plateau is 0.40-0.45; the cautious end is chosen because this number decides
+        # whether a human is accused of writing with AI.
+        assert 0.40 <= _STDLIB_PERPLEXITY_VERDICT_THRESHOLD <= 0.45

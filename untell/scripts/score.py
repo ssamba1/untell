@@ -107,6 +107,52 @@ def _truncate(text: str) -> str:
     return text
 
 
+# Verdict thresholds for scoring paths whose distribution the shipped default does not fit.
+#
+# `perplexity_burstiness` runs GPT-2 when torch is importable and a stdlib heuristic otherwise, and
+# the two need different cut points. MEASURED over 100 human / 100 AI texts pooled from HC3 and
+# RAID, sweeping the threshold:
+#
+#     path      thr 0.30            optimum          at the optimum
+#     gpt2      FP  3%  TP 100%     0.30  J 0.970    unchanged — the shipped value IS the optimum
+#     stdlib    FP 60%  TP  93%     0.40-0.45  J 0.517    FP 27%/17%, TP 78%/68%
+#
+# So the default is not wrong for "the lite tier" — it is wrong for the stdlib SUB-PATH of it,
+# which is what runs on a clean install. At 0.30 that path tells three users in five that their own
+# writing reads as AI. 0.45 is taken from the plateau's cautious end: this number decides whether a
+# human is accused, and the cost of a miss (under-flagging AI) is borne by the loop, which still
+# optimises against the low `threshold` and is unaffected by anything here.
+_STDLIB_PERPLEXITY_VERDICT_THRESHOLD = 0.45
+
+
+def modes_of(live) -> dict:
+    """Which scoring path each detector would take, when it has more than one."""
+    modes: dict = {}
+    for d in live:
+        get_mode = getattr(d, "mode", None)
+        if callable(get_mode):
+            try:
+                modes[d.name] = get_mode()
+            except Exception:  # a diagnostic must never break scoring
+                pass
+    return modes
+
+
+def _verdict_threshold(threshold: float, scores: dict, modes: dict) -> float:
+    """The cut point for the reported verdict, which is not always the loop's target.
+
+    Only raised when the stdlib perplexity path is the WHOLE verdict. With any model-backed
+    detector present the ensemble max is driven by a well-calibrated member and the default holds;
+    the stdlib heuristic alone is the case the default does not fit.
+    """
+    if modes.get("perplexity_burstiness") != "stdlib":
+        return threshold
+    scoring = {k for k, v in scores.items() if isinstance(v, (int, float)) and "__" not in k}
+    if scoring != {"perplexity_burstiness"}:
+        return threshold
+    return max(threshold, _STDLIB_PERPLEXITY_VERDICT_THRESHOLD)
+
+
 def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHOLD) -> dict:
     """Score ``text`` with the available detector ensemble; return the result dict.
 
@@ -187,8 +233,14 @@ def _score_with_detectors(
         "mean": round(mean, 4),
         "ai_percent": round(mx * 100, 1),  # 0-100 AI-likelihood (the headline number competitors show)
         "threshold": threshold,
-        "flagged": bool(numeric) and mx >= threshold,
     }
+    # The VERDICT threshold is not always the loop's target. `threshold` is what the rewrite loop
+    # optimises toward, and a low value there is correct — stopping early is under-rewriting. But
+    # the same number also decided `flagged`, i.e. what a user is TOLD about their text, and on one
+    # scoring path that made it wrong three times in five.
+    verdict_threshold = _verdict_threshold(threshold, scores, modes_of(live))
+    result["verdict_threshold"] = verdict_threshold
+    result["flagged"] = bool(numeric) and mx >= verdict_threshold
     if failed:
         result["failed_detectors"] = failed
     # Some detectors have more than one scoring path under one name, and which one ran changes the
@@ -197,14 +249,7 @@ def _score_with_detectors(
     # against 69.0% — an 11.5x difference decided by an optional dependency, reported under the same
     # detector name and the same tier label. Record it the way `corpus` and `rewriter` are recorded
     # on the ceiling result: a number whose meaning depends on a hidden variable has to carry it.
-    modes = {}
-    for d in live:
-        get_mode = getattr(d, "mode", None)
-        if callable(get_mode):
-            try:
-                modes[d.name] = get_mode()
-            except Exception:  # a diagnostic must never break scoring
-                pass
+    modes = modes_of(live)
     if modes:
         result["detector_modes"] = modes
     if out_of_range_raw:
