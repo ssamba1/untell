@@ -120,7 +120,16 @@ def untell_text(
     scrub: bool = True,
     polish: bool = False,
     style: str | None = None,
-    best_of: int = 1,
+    # 3, matching every surface that reaches this function: the CLI (`cfg["best_of"]`), the MCP
+    # `humanize` tool and the REST `/humanize` endpoint. Those three were each moved to 3 after
+    # best-of-1 was identified as a root cause of understated evasion — MEASURED over 6 real HC3
+    # paragraphs, best_of=1 left 33% of texts flagged and best_of=3 left 0% — but the signature
+    # default stayed at 1, so a direct library call still got the weak path with nothing to say so.
+    # That is the same defect the MCP and REST fixes were for, one layer down.
+    #
+    # eval/ceiling.py is unaffected and stays at 1: measuring the single-draw baseline is its job,
+    # and it passes the value explicitly.
+    best_of: int = 3,
     detector_thresholds: dict[str, float] | None = None,
     veto_contradictions: bool = True,
     voice_sample: str | None = None,

@@ -226,3 +226,78 @@ def test_the_ceiling_cli_offers_the_same_backends():
 
     action = next(a for a in ceiling_parser()._actions if a.dest == "rewriter")
     assert set(action.choices) - {"auto"} == set(api._FREE_REWRITERS)
+
+
+class TestBestOfIsThreeOnEverySurfaceThatHumanizes:
+    """best-of-1 was identified as a root cause of understated evasion and fixed three times.
+
+    MEASURED over 6 real HC3 paragraphs:
+
+        best_of=1   mean 0.601 -> 0.293, 33% still flagged
+        best_of=3   mean 0.601 -> 0.256,  0% still flagged
+
+    The CLI moved to 3 first. MCP and REST were found still on 1 and moved. The `untell_text`
+    signature itself stayed on 1, so a direct library import — the fourth surface — kept getting the
+    weak path with nothing to indicate a knob was missing. Same defect, one layer down each time,
+    which is why this is a test rather than a comment.
+
+    eval/ceiling.py is the deliberate exception and is asserted separately: measuring the
+    single-draw baseline is its purpose, and it passes the value explicitly.
+    """
+
+    def test_the_library_default_is_three(self):
+        import inspect
+
+        from untell.scripts.run import untell_text
+
+        assert inspect.signature(untell_text).parameters["best_of"].default == 3
+
+    def test_the_cli_default_is_three(self):
+        from untell.scripts.run import _CLI_DEFAULTS
+
+        assert _CLI_DEFAULTS["best_of"] == 3
+
+    def test_the_mcp_tool_default_is_three(self):
+        """Via _mcp_tools(), not getattr on the module.
+
+        The tools are registered through a @server.tool() decorator inside a factory, so they are
+        not module attributes and a getattr lookup finds nothing. The first version of this test
+        skipped on that — and a skipping parity test guards nothing while looking like coverage,
+        which is the exact failure this file exists to catch.
+        """
+        import inspect
+
+        tools = _mcp_tools()
+        humanize = next(
+            (fn for name, fn in tools.items()
+             if "best_of" in inspect.signature(fn).parameters and "ceiling" not in name),
+            None,
+        )
+        assert humanize is not None, f"no humanizing MCP tool takes best_of: {sorted(tools)}"
+        assert inspect.signature(humanize).parameters["best_of"].default == 3
+
+    def test_the_rest_humanize_default_is_three(self):
+        pytest.importorskip("fastapi")
+        import untell.api_server as api
+
+        model = next(
+            m
+            for name, m in vars(api).items()
+            if name.endswith("Request") and "best_of" in getattr(m, "model_fields", {})
+            and "ceiling" not in name.lower()
+        )
+        assert model.model_fields["best_of"].default == 3
+
+    def test_the_ceiling_surfaces_stay_at_one_on_purpose(self):
+        """The exception must be explicit, or the parity check above would quietly force it to 3."""
+        pytest.importorskip("fastapi")
+        import untell.api_server as api
+
+        ceiling = next(
+            (m for name, m in vars(api).items()
+             if name.endswith("Request") and "ceiling" in name.lower()),
+            None,
+        )
+        if ceiling is None:
+            pytest.skip("no ceiling request model")
+        assert ceiling.model_fields["best_of"].default == 1
