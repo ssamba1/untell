@@ -1226,3 +1226,68 @@ class TestAcademicKeepsTheTransitionsHumansUseThere:
                 assert keep, "academic lost its exemption"
             else:
                 assert not keep, f"{name} acquired an unmeasured transition exemption"
+
+
+class TestOpenersAreOnesHumansActuallyUse:
+    """Four of the eight openers appeared 0.000% in BOTH halves of 400 HC3+RAID pairs.
+
+    "Broadly,", "Looking at this,", "As it turns out," and "Realistically," are written by nobody —
+    not humans, not the generators. Prepending one is not humanising, it is a fingerprint, and
+    _vary_openers fired at ~30% per sentence against a measured 0.2% for the whole set.
+
+    The replacements are chosen on two criteria, not one. Frequency: each is human-leaning by a
+    wide margin ("also" 0.568% human / 0.000% AI). Safety: each is content-neutral, because the
+    meaning gates check entailment and roles, not discourse relations — so an opener that ASSERTS
+    something is a fidelity risk no gate would catch. "so" is the most common human opener in the
+    corpus (1.285%) and is declined on exactly that ground: it claims a consequence.
+    """
+
+    BANNED = ("Broadly,", "Looking at this,", "As it turns out,", "Realistically,")
+
+    def test_the_unattested_openers_are_gone(self):
+        import inspect
+
+        from untell.rewriter.structural import _vary_openers
+
+        src = inspect.getsource(_vary_openers)
+        pool = src.split("openers = [", 1)[1].split("]", 1)[0]
+        for dead in self.BANNED:
+            assert dead not in pool, f"{dead} is written by nobody in either half of the corpus"
+
+    def test_no_opener_asserts_a_relation_the_gates_cannot_check(self):
+        """Temporal, causal and deictic markers claim something about the sentence they precede."""
+        import inspect
+
+        from untell.rewriter.structural import _vary_openers
+
+        src = inspect.getsource(_vary_openers)
+        pool = src.split("openers = [", 1)[1].split("]", 1)[0].lower()
+        for unsafe in ("recently,", "meanwhile,", "then,", '"so,"', "here,"):
+            assert unsafe not in pool, f"{unsafe} asserts a relation no meaning gate verifies"
+
+    def test_every_opener_is_screened_against_the_catalogue(self):
+        """An opener that is itself a tell, or that the later stripper would delete, is wasted."""
+        import random
+
+        from untell.rewriter.structural import _TRANSITIONS_RE, _vary_openers
+        from untell.scripts.tells import score_tells
+
+        # The fixture has to clear two guards, and the assertion below exists because both are easy
+        # to trip silently. "The team shipped ..." fails the first: _vary_openers skips any sentence
+        # whose first word is in its `subjects` list (The/This/It/That/There). "Engineering teams
+        # ..." fails the second: the opening word must be safe to lowercase, and "Engineering" is
+        # neither in _SAFE_TO_LOWERCASE nor attested lowercase elsewhere in the text, so the
+        # transform conservatively declines. "Machine" is on the list.
+        sentences = [
+            f"Machine learning models improved metric number {i} this year." for i in range(40)
+        ]
+        random.seed(0)
+        emitted = {s.split(",")[0] + "," for s in _vary_openers(sentences, rate=1.0) if "," in s}
+        assert len(emitted) >= 5, f"pool did not exercise: {emitted}"
+        for opener in emitted:
+            probe = f"The team shipped it on time. {opener} the plan works."
+            tells = score_tells(probe, include_matches=True).get("matches") or {}
+            assert not tells, f"{opener!r} is itself a catalogued tell: {tells}"
+            assert not _TRANSITIONS_RE.match(f"{opener} x"), (
+                f"{opener!r} would be deleted by _strip_transitions — inserting it is wasted work"
+            )

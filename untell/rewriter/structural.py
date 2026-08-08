@@ -891,9 +891,41 @@ def _flatten_vague_attribution(text: str) -> str:
 
 def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     """Vary sentence openings by prepending transitional phrases or restructuring."""
+    # Openers humans are MEASURED to use, not ones that merely sound casual. Sentence-opening
+    # frequency over 400 HC3+RAID pairs (3347 human sentences, 4094 AI):
+    #
+    #     dropped — 0.000% in BOTH halves: nobody writes these, so inserting one is a fingerprint
+    #         broadly            0.000%  /  0.000%
+    #         looking at this    0.000%  /  0.000%      (also the top source of repeated phrasing)
+    #         as it turns out    0.000%  /  0.000%
+    #         realistically      0.000%  /  0.000%
+    #     kept — attested, human-leaning
+    #         in short           0.090%  /  0.073%
+    #         in practice        0.060%  /  0.000%
+    #         actually           0.030%  /  0.000%
+    #         put simply         0.030%  /  0.000%
+    #     added — human-leaning by a wide margin, and content-neutral
+    #         also               0.568%  /  0.000%
+    #         now                0.329%  /  0.073%
+    #         basically          0.209%  /  0.000%
+    #         well               0.179%  /  0.000%
+    #         of course          0.090%  /  0.000%
+    #
+    # NOT added despite being human-leaning, because each asserts something about the sentence it
+    # is prepended to and the meaning gates do not check discourse relations:
+    #     "recently" (0.269%) claims recency, "meanwhile" (0.179%) claims simultaneity, "then"
+    #     (0.717%) claims sequence, "so" (1.285%) claims consequence, "here" (0.359%) is deictic.
+    # "so" is the single most common human opener in the corpus and is still declined on that
+    # ground — frequency is not the only criterion.
+    #
+    # NOT added because they point the AI way: "for example" (0.329% human / 1.392% AI), "in fact"
+    # (0.090% / 0.147%), "instead" (0.030% / 0.269%).
+    #
+    # Every entry is screened against score_tells and _TRANSITIONS_RE, so none is a catalogued tell
+    # and none would be deleted by the stripper that runs later.
     openers = [
-        "Actually,", "In practice,", "Broadly,", "In short,", "Looking at this,",
-        "As it turns out,", "Put simply,", "Realistically,",
+        "Actually,", "In practice,", "In short,", "Put simply,",
+        "Also,", "Now,", "Basically,", "Well,", "Of course,",
     ]
     subjects = ["The", "This", "It", "That", "There"]
     context = " ".join(sentences)
