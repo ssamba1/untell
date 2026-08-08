@@ -213,3 +213,54 @@ def test_locking_round_trips_exactly(source):
 
     masked, spans = lock(source)
     assert restore(masked, spans) == source
+
+
+# ---------------------------------------------------------------------------
+# Content preservation — the check that tells a defect from a corpus artefact
+# ---------------------------------------------------------------------------
+
+# Words the rewriter is SUPPOSED to remove: formulaic transitions it strips, filler openers, and
+# the AI vocabulary it substitutes. Everything else is the user's content.
+_MAY_REMOVE = {
+    "moreover", "furthermore", "additionally", "overall", "notably", "importantly",
+    "consequently", "therefore", "thus", "hence", "ultimately", "nevertheless", "nonetheless",
+    "accordingly", "subsequently", "arguably", "indeed", "essentially", "conclusion", "summary",
+    "in", "it", "is", "worth", "noting", "that", "should", "be", "noted", "the", "a", "an",
+}
+
+
+@pytest.mark.parametrize("source", _FIXTURES)
+def test_no_content_word_is_silently_dropped(source):
+    """A rewrite redistributes and substitutes; it must not DELETE the user's content.
+
+    This is the check that separates a real defect from a corpus artefact. Chasing the last
+    `stub_sentence` residual led to output ending "TAN is" — which looked like truncation until the
+    source turned out to end mid-sentence at "In conclusion, TAN represents". The RAID sample is
+    cut off; the rewriter stripped the transition from an already-broken tail. Word count went
+    329 -> 343, so nothing had been lost, and a stub count could not tell the two cases apart.
+    """
+    import re as _re2
+
+    for seed in range(15):
+        random.seed(seed)
+        out = structural_rewrite(source, intensity=1.0)
+        before = {w.lower() for w in _re2.findall(r"[A-Za-z]{4,}", source)}
+        after = {w.lower() for w in _re2.findall(r"[A-Za-z]{4,}", out)}
+        lost = before - after - _MAY_REMOVE
+        # Substitution legitimately replaces a word with a synonym, so a handful of losses is
+        # expected. Wholesale deletion is not: losing a third of the distinct content vocabulary
+        # means a sentence went missing.
+        assert len(lost) <= max(3, len(before) // 5), (
+            f"seed {seed}: {len(lost)} of {len(before)} content words vanished: {sorted(lost)[:12]}"
+        )
+
+
+@pytest.mark.parametrize("source", _FIXTURES)
+def test_the_output_is_not_shorter_than_the_input_by_much(source):
+    """Length collapse is the loudest form of content loss and the cheapest to check."""
+    for seed in range(15):
+        random.seed(seed)
+        out = structural_rewrite(source, intensity=1.0)
+        assert len(out.split()) >= 0.75 * len(source.split()), (
+            f"seed {seed}: {len(source.split())} words in, {len(out.split())} out"
+        )
