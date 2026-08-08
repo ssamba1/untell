@@ -1678,3 +1678,61 @@ class TestSubordinateClauseFronting:
         before = sorted(w.lower() for w in _re2.findall(r"[A-Za-z]+", text))
         after = sorted(w.lower() for w in _re2.findall(r"[A-Za-z]+", out))
         assert before == after, f"content changed: {out}"
+
+
+class TestSplittingNeverStrandsASubordinator:
+    """A sentence opening with a subordinator is DEPENDENT until its main clause arrives.
+
+    `_cannot_start_a_sentence` checked only the right half of a proposed split, so a break after a
+    fronted clause left "Because salt lowers the freezing point of water." as its own sentence.
+
+    This became reachable the moment `_front_subordinate_clauses` started putting those clauses at
+    the front — a transform feeding a fragment to the pass after it. That is the third time this
+    exact shape has appeared today (the participial flattener repeating "This", the opener pass
+    stranding "Of course."), which is why it is a test and not a comment.
+    """
+
+    def test_a_fronted_clause_is_not_split_off(self):
+        from untell.rewriter.structural import _split_one
+
+        text = (
+            "Because salt lowers the freezing point of water considerably, the ice melts on the"
+            " road surface during cold winter nights."
+        )
+        assert _split_one(text) is None, _split_one(text)
+
+    def test_an_ordinary_two_clause_sentence_still_splits(self):
+        from untell.rewriter.structural import _split_one
+
+        out = _split_one(
+            "The team shipped the new release on Tuesday morning after testing, it went out to"
+            " every paying customer in the region."
+        )
+        assert out is not None and len(out) == 2, out
+
+    def test_the_two_subordinator_lists_stay_in_sync(self):
+        """_FRONTABLE_LEADS is a separate copy because the split guards are defined earlier in the
+        file than the fronting transform. A copy that drifts is a fragment nobody notices."""
+        from untell.rewriter.structural import _FRONTABLE, _FRONTABLE_LEADS
+
+        # Every single-word frontable subordinator must be recognised by the split guard.
+        missing = {w for w in _FRONTABLE if " " not in w} - set(_FRONTABLE_LEADS)
+        assert not missing, f"the split guard does not know about {missing}"
+
+    def test_the_full_pipeline_emits_no_stranded_subordinator(self):
+        import random
+
+        from untell.rewriter.structural import _FRONTABLE_LEADS, structural_rewrite
+        from untell.text_split import split_sentences
+
+        text = (
+            "The ice melts on the road surface because salt lowers the freezing point of water."
+            " Water can freeze on the roads when the temperature drops below zero at night."
+            " Drivers lose traction although the surface still looks completely dry to them."
+        )
+        for seed in range(40):
+            random.seed(seed)
+            for s in split_sentences(structural_rewrite(text, intensity=1.0)):
+                words = s.split()
+                if len(words) > 1 and words[0].lower() in _FRONTABLE_LEADS:
+                    assert "," in s, f"seed {seed}: stranded subordinate clause: {s!r}"

@@ -553,6 +553,15 @@ _CANNOT_OPEN_A_CLAUSE = frozenset(
 )
 _ARTICLES = frozenset({"a", "an", "the"})
 
+# Words that open a DEPENDENT clause, so a sentence starting with one is not complete until
+# its main clause arrives. Defined here rather than reusing _FRONTABLE (declared much later,
+# next to the fronting transform) because the split guards run before it in the file; the
+# test below asserts the two stay in sync.
+_FRONTABLE_LEADS = frozenset(
+    {"because", "when", "while", "since", "if", "although", "though", "unless",
+     "after", "before", "whereas", "whenever", "wherever", "as", "until"}
+)
+
 # Fewest words either half of a split may have. A discourse marker is one or two words, so
 # anything below this is a stranded opener rather than a sentence.
 _MIN_SPLIT_SIDE = 4
@@ -570,6 +579,15 @@ def _cannot_start_a_sentence(second: str, first: str) -> bool:
 
     Returns True when the two halves should be rejoined with a comma rather than split.
     """
+    # The LEFT half must also stand alone. A sentence opening with a subordinator is a dependent
+    # clause until its main clause arrives, so splitting after it strands the subordinator:
+    # "Because salt lowers the freezing point of water. The ice melts." This became reachable the
+    # moment _front_subordinate_clauses started putting those clauses at the front — a transform
+    # feeding a fragment to the pass after it, which is the third time that shape has appeared.
+    left = first.split()
+    if left and left[0].rstrip(",.;:").lower() in _FRONTABLE_LEADS:
+        return True
+
     head = second.split()
     if not head:
         return True
