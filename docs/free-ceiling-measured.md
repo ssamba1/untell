@@ -1289,3 +1289,26 @@ Only `academic` moves, to 0.35. The evidence is RAID abstracts, so it is not ext
 `professional`/`technical` (formal but unmeasured) and explicitly not to `journalistic`, whose
 register is short punchy sentences against long ones — the opposite direction. The neutral default
 stays 0.45, which every earlier result in this document was measured against.
+
+### What is left, per detector
+
+Where the remaining 34% comes from. 20 RAID AI texts, full tier, `composite`, single draw:
+
+| detector | before | after | delta | still flagged |
+|---|---|---|---|---|
+| `fast_detectgpt` | 0.771 | 0.328 | −0.444 | **45%** |
+| `perplexity_burstiness` | 0.514 | 0.282 | −0.232 | 35% |
+| `hc3_roberta` | 0.764 | 0.269 | −0.496 | 20% |
+| `roberta_openai` | 0.535 | 0.070 | −0.464 | **5%** |
+
+`roberta_openai` is close to solved. `fast_detectgpt` is the wall — nine times the flagged rate,
+and the highest post score — which is the same ranking Result 17 found before any of this session's
+work, so it is a stable property of the pipeline rather than a sampling artefact.
+
+It is worth being clear about what it is *not*: `fast_detectgpt` also takes the second-largest
+absolute drop of the four (−0.444), so it is responding to the rewriter, not immune to it. It
+simply starts higher and stays higher.
+
+**Do not compare the MAX row here against Result 17's.** That table was 12 texts and this one is
+20 different ones; the per-detector *ranking* is what replicates, not the absolute level. The
+like-for-like end-to-end figure is Result 20's, on a fixed n = 40 with repeats.
