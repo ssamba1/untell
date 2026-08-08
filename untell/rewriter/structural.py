@@ -1145,6 +1145,18 @@ def _merge_pair(sents: list[str], j: int) -> list[str]:
 def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves: int = 12) -> list[str]:
     """Raise sentence-length variance toward the human range (CV ~0.45-0.55; AI sits ~0.3).
 
+    ``target_cv`` is register-dependent and comes from the style profile. MEASURED coefficient of
+    variation of sentence length over 200 pairs per corpus:
+
+        HC3  (forum Q&A)        human 0.480 (median 0.465)   ai 0.301
+        RAID (paper abstracts)  human 0.352 (median 0.330)   ai 0.263
+
+    The default 0.45 tracks conversational human prose closely and overshoots academic human prose
+    by 0.10 — real abstracts are more uniform in sentence length than forum answers, and driving
+    them past that is a deviation in its own right. The formal profiles therefore aim lower. Note
+    the AI column is below human in BOTH registers, so the direction of the transform is right
+    everywhere; only the destination was register-blind.
+
     The single most reliable human/AI stylometric differentiator (research: human academic std ~8
     words vs AI ~4-5). Greedy hill-climb: each round it tries splitting the longest sentence and
     merging the lowest-combined-length adjacent pair, and keeps whichever move raises CV the most.
@@ -1210,6 +1222,12 @@ def _target_burstiness(sentences: list[str], target_cv: float = 0.45, max_moves:
 # variation for conversational, longer flowing sentences for storytelling.
 _NEUTRAL = {
     "contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0,
+    # Sentence-length CV to aim at. 0.45 is the previous fixed value and tracks the measured
+    # conversational human 0.480. Only "academic" lowers it, to the measured academic 0.352 —
+    # the evidence is RAID paper abstracts, so it is not extended to professional/technical
+    # (formal but unmeasured) and certainly not to journalistic, whose whole register is short
+    # punchy sentences against long ones, i.e. the opposite direction.
+    "burstiness": 0.45,
     # Markers _strip_transitions must leave alone. Empty for every style but "academic" —
     # see _ACADEMIC_HUMAN_TRANSITIONS for the per-corpus measurement that separates them.
     "keep_transitions": frozenset(),
@@ -1232,7 +1250,7 @@ _STYLE_PROFILES: dict[str, dict] = {
     # so it is claimed for academic prose and NOT extended to professional/technical, where the
     # same direction is plausible but unmeasured.
     "academic":      {"contractions": False, "register": 0.15, "sentences": 0.7, "openers": 0.4,
-                      "keep_transitions": _ACADEMIC_HUMAN_TRANSITIONS},
+                      "keep_transitions": _ACADEMIC_HUMAN_TRANSITIONS, "burstiness": 0.35},
     "professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "openers": 0.6},
     "technical":     {"contractions": False, "register": 0.3,  "sentences": 1.2, "openers": 0.3},
     "poetic":        {"contractions": True,  "register": 0.5,  "sentences": 0.6, "openers": 0.8},
@@ -1368,7 +1386,7 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
 
         # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
         # most reliable stylometric differentiator; only redistributes existing words (meaning-safe).
-        sents = _target_burstiness(sents)
+        sents = _target_burstiness(sents, target_cv=profile["burstiness"])
 
     result = " ".join(sents)
 

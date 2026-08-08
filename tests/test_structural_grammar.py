@@ -1347,3 +1347,54 @@ class TestContractionInjectionAimsAtTheHumanRateRatherThanMaximising:
         before = len(_CONTRACTED_RE.findall(text))
         after = len(_CONTRACTED_RE.findall(_inject_contractions(text)))
         assert after == before, "short text that already contracts was pushed higher"
+
+
+class TestBurstinessTargetIsRegisterAware:
+    """A fixed CV target overshoots one of the two registers measured.
+
+    Coefficient of variation of sentence length, 200 pairs per corpus:
+
+        HC3  (forum Q&A)        human 0.480 (median 0.465)   ai 0.301
+        RAID (paper abstracts)  human 0.352 (median 0.330)   ai 0.263
+
+    0.45 tracks conversational human prose and overshoots academic human prose by 0.10. Real
+    abstracts are more uniform than forum answers, and driving them past that is a deviation in its
+    own right — the same failure as emitting "though" at 29x the human rate, one level up.
+
+    The AI column sits below human in BOTH registers, so the direction of the transform was never
+    wrong; only its destination was register-blind.
+    """
+
+    def test_academic_aims_at_the_measured_academic_value(self):
+        from untell.rewriter.structural import style_profile
+
+        assert style_profile("academic")["burstiness"] == 0.35
+
+    def test_the_default_is_unchanged(self):
+        """0.45 is the value every previous measurement in docs/free-ceiling-measured.md was taken
+        against, so moving it would silently invalidate them."""
+        from untell.rewriter.structural import _NEUTRAL, style_profile
+
+        assert _NEUTRAL["burstiness"] == 0.45
+        for style in (None, "casual", "conversational", "blunt", "minimalist"):
+            assert style_profile(style)["burstiness"] == 0.45
+
+    def test_unmeasured_registers_do_not_inherit_the_academic_value(self):
+        """professional/technical are formal but unmeasured. journalistic would be actively wrong:
+        its register is short punchy sentences against long ones, i.e. HIGH variance."""
+        from untell.rewriter.structural import style_profile
+
+        for style in ("professional", "technical", "journalistic"):
+            assert style_profile(style)["burstiness"] == 0.45, (
+                f"{style} took an academic value on no evidence"
+            )
+
+    def test_the_target_is_actually_honoured(self):
+        from untell.rewriter.structural import _cv, _target_burstiness
+
+        sents = ["The team shipped the feature on time this quarter."] * 8
+        low = _target_burstiness(list(sents), target_cv=0.35)
+        high = _target_burstiness(list(sents), target_cv=0.45)
+        cv_low = _cv([len(s.split()) for s in low])
+        cv_high = _cv([len(s.split()) for s in high])
+        assert cv_low <= cv_high, f"lower target produced more variance: {cv_low} vs {cv_high}"
