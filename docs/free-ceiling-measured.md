@@ -1225,3 +1225,46 @@ is inherited from the source — domain terms the meaning gates would veto varyi
 share was 7%, and most of that is now gone.
 
 Reproduce: `conn.py`, `openers.py`, `strip.py`, `rates.py`, `repsplit.py`, `catmove.py`.
+
+---
+
+## Result 20 — the free composite, replicated at n=40, and the `neural` question closed
+
+Results 16–19 were each verified in isolation. This is the end-to-end number, on the largest real-
+text sample this repo has run, replicated.
+
+```bash
+UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset raid --n 40 --tier full \
+  --rewriter composite --workers 3 --repeats 3
+```
+
+| | pre | post | flagged pre → post | mean sim | worst sim |
+|---|---|---|---|---|---|
+| `composite`, 3 repeats, 120 rewrites | 0.7737 | **0.3206 ± 0.0121** | 0.95 → **0.342** | 0.9825 | 0.9406 |
+
+For comparison, the same corpus and settings before this session's work: **0.951 post, 39 of 40
+still flagged**. The spread across the three runs is 0.0121, so this is not a lucky draw.
+
+### `neural` vs `composite`, like for like
+
+The pending question was whether the full tier's default rewriter should become `neural`. Both at
+n=40, same corpus, same `best_of=1`:
+
+| rewriter | post | flagged | mean sim | **worst sim** | cost |
+|---|---|---|---|---|---|
+| `composite` | **0.3234** | **35.0%** | **0.9831** | **0.9603** | CPU only |
+| `neural` | 0.3691 | 37.5% | 0.9621 | 0.8716 | T5, hours |
+
+`composite` is ahead on every column. But the honest reading of the score gap is narrower than it
+looks: 0.0485 is **smaller than `neural`'s own run-to-run standard deviation**, measured elsewhere
+in this document at ±0.079, and the `neural` figure here is a single run. The two cannot be
+separated on score at this sample size.
+
+What *is* clean is everything else. `composite` holds 0.9406 worst-case similarity across 120
+rewrites against `neural`'s 0.8716 on 40; its own spread is 0.0121 against `neural`'s ±0.079, so it
+is roughly six times more reproducible; and it needs no model download and no GPU.
+
+**Decision: the default stays `composite`.** Not because it beats `neural` on evasion — that is not
+established — but because it matches it there while being more faithful, far more stable, and free.
+The earlier reading that "the wall is the default rewriter, not the tier" is now obsolete: the wall
+was a set of fixable defects in the default rewriter, and Results 16–19 removed them.
