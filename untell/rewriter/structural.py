@@ -1132,6 +1132,14 @@ def _front_subordinate_clauses(sentences: list[str], rate: float = 0.0) -> list[
         if not main or not dep:
             out.append(s)
             continue
+        # The main clause becomes the TAIL of the sentence, so a coordinator at its right edge is
+        # left dangling against the full stop: "The model works well and because the encoder is
+        # small it runs fast." fronted to "Because the encoder is small it runs fast, the model
+        # works well and." The subordinator matched inside a coordinate structure, which this
+        # transform is not equipped to reorder — decline rather than repair.
+        if main.split()[-1].rstrip(",").lower() in _SPLIT_CONJUNCTIONS:
+            out.append(s)
+            continue
         # The main clause loses its sentence-initial position, so its capital goes only if the word
         # is safe to lowercase — the same rule the merge and opener paths use, for the same reason:
         # lowercasing whatever happens to be there turns "NASA confirmed" into "nASA confirmed".
@@ -1345,7 +1353,18 @@ def _split_one(s: str) -> list[str] | None:
     # i.e. this pass fragmenting the output of the pass before it.
     if best < _MIN_SPLIT_SIDE or len(words) - best < _MIN_SPLIT_SIDE:
         return None
-    first = " ".join(words[:best]).rstrip(",")
+    first_words = words[:best]
+    # A coordinator at the RIGHT edge of the first half is left dangling against the full stop:
+    # "... in combination with other techniques, but. Salt is often the most effective option."
+    # _split_long_sentences has carried a guard for this shape since it was found in real HC3
+    # output; this copy of the split never got one, which is the third time the two have diverged
+    # (the comma clause-check and the minimum side length were the other two). The coordinator
+    # joined two clauses that are now separate sentences, so it has nothing left to coordinate.
+    while first_words and first_words[-1].rstrip(",").lower() in _SPLIT_CONJUNCTIONS:
+        first_words = first_words[:-1]
+    if len(first_words) < _MIN_SPLIT_SIDE:
+        return None
+    first = " ".join(first_words).rstrip(",")
     tail = words[best:]
     if tail and tail[0].lower() in _CONJ:  # drop a leading conjunction for a clean second sentence
         tail = tail[1:]

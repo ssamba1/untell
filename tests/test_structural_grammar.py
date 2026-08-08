@@ -1736,3 +1736,84 @@ class TestSplittingNeverStrandsASubordinator:
                 words = s.split()
                 if len(words) > 1 and words[0].lower() in _FRONTABLE_LEADS:
                     assert "," in s, f"seed {seed}: stranded subordinate clause: {s!r}"
+
+
+class TestNeitherSplitterStrandsACoordinator:
+    """"... in combination with other techniques, but. Salt is often the most effective option."
+
+    _split_long_sentences has carried a guard for this shape since it was found in real HC3 output:
+    a coordinator at the RIGHT edge of the first half is left dangling against the full stop,
+    because it joined two clauses that the split has just made into separate sentences.
+
+    _split_one — the copy the burstiness pass uses — never got one. That is the THIRD divergence
+    between the two: the comma clause-check and the minimum side length were the other two. Both
+    are now asserted together so the next fix to one is forced onto the other.
+    """
+
+    LONG = (
+        "There are other options for melting ice on the road, such as calcium chloride or"
+        " magnesium chloride, or using mechanical approaches like plows or sand, and when it is"
+        " used in combination with other techniques, but salt is often the most effective option."
+    )
+
+    def test_split_one_does_not_end_a_sentence_on_a_coordinator(self):
+        from untell.rewriter.structural import _split_one
+
+        out = _split_one(self.LONG)
+        if out is not None:
+            assert out[0].rstrip(".").split()[-1].lower() not in {
+                "and", "but", "or", "so", "because", "while", "which",
+            }, out
+
+    def test_neither_splitter_produces_one_over_the_corpus_shapes(self):
+        import random
+        import re as _re2
+
+        from untell.rewriter.structural import _split_long_sentences, _split_one
+
+        dangling = _re2.compile(r"\b(and|but|or|so|because|while|which)\s*[.!?]")
+        for seed in range(40):
+            random.seed(seed)
+            joined = " ".join(_split_long_sentences([self.LONG], rate=1.0))
+            assert not dangling.search(joined), f"seed {seed}: {joined}"
+        out = _split_one(self.LONG)
+        if out is not None:
+            assert not dangling.search(" ".join(out)), out
+
+    def test_dropping_the_coordinator_cannot_shrink_the_half_below_the_minimum(self):
+        """Stripping the coordinator makes the left half shorter, so the minimum-side rule has to
+        be re-checked afterwards rather than only before."""
+        from untell.rewriter.structural import _MIN_SPLIT_SIDE, _split_one
+
+        out = _split_one(
+            "The team tried and, the second approach worked far better than anyone had expected"
+            " it to work in practice."
+        )
+        if out is not None:
+            assert len(out[0].split()) >= _MIN_SPLIT_SIDE, out
+
+
+class TestFrontingDoesNotStrandACoordinator:
+    """Fronting moves the main clause to the TAIL, so a coordinator at its right edge ends up
+    against the full stop: "The model works well and because the encoder is small it runs fast."
+    became "Because the encoder is small it runs fast, the model works well and."
+
+    The subordinator matched inside a coordinate structure, which this transform is not equipped to
+    reorder, so it declines rather than repairing.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "The model works well and because the encoder is very small it runs fast.",
+            "The results improved but because the sample was small we stayed cautious.",
+        ],
+    )
+    def test_it_declines_a_coordinate_main_clause(self, text):
+        import random
+
+        from untell.rewriter.structural import _front_subordinate_clauses
+
+        for seed in range(20):
+            random.seed(seed)
+            assert _front_subordinate_clauses([text], rate=1.0) == [text]
