@@ -334,6 +334,7 @@ def check_derivable(report: Report) -> None:
     check_corpus_bound_claims(report)
     check_dynamic_env_vars(report)
     check_skill_commands(report)
+    check_version_consistency(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -381,6 +382,51 @@ _CORPUS_BOUND_CLAIMS: tuple[tuple[str, str, str], ...] = (
         "same claim, other phrasing",
     ),
 )
+
+
+def check_version_consistency(report: Report) -> None:
+    """Every file that states the version must state the same one.
+
+    ``CITATION.cff`` said 0.1.0 while ``pyproject.toml`` and ``untell.__version__`` said 0.3.0 —
+    two minor releases stale. That file is not decoration in a repository aimed at the academic
+    niche: it is what a citation manager reads, so anyone citing this work would have cited a
+    version that stopped being current in June.
+
+    Derivable from the tree, so it belongs in the audit rather than on a release checklist that
+    someone has to remember to follow.
+    """
+    pyproject = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+    declared = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.M)
+    if not declared:
+        report.check("pyproject declares a version", False, "no version field found")
+        return
+    version = declared.group(1)
+
+    stated: dict[str, str | None] = {}
+    try:
+        import untell
+
+        stated["untell.__version__"] = getattr(untell, "__version__", None)
+    except Exception:  # noqa: BLE001
+        stated["untell.__version__"] = None
+
+    citation = REPO / "CITATION.cff"
+    if citation.exists():
+        found = re.search(
+            r'^version:\s*"?([^"\n]+)"?', citation.read_text(encoding="utf-8"), re.M
+        )
+        stated["CITATION.cff"] = found.group(1).strip().strip('"') if found else None
+
+    disagreeing = {k: v for k, v in stated.items() if v is not None and v != version}
+    unreadable = [k for k, v in stated.items() if v is None]
+    report.check(
+        "every file that states the version agrees with pyproject",
+        not disagreeing and not unreadable,
+        f"pyproject={version}"
+        + (f"; disagreeing: {disagreeing}" if disagreeing else "")
+        + (f"; unreadable: {unreadable}" if unreadable else "")
+        + (f"; {len(stated)} sources checked" if not disagreeing and not unreadable else ""),
+    )
 
 
 def check_skill_commands(report: Report) -> None:

@@ -11,8 +11,60 @@ on:
         default: main
 
 jobs:
+  # A PyPI upload cannot be replaced — a version number is spent the moment it lands, and a broken
+  # 0.3.0 stays broken forever under that name. This workflow published straight from a tag with no
+  # tests, no audit, no lint and no check that the tag matched the packaged version, so the release
+  # path was the *least* verified path in the repository while being the only irreversible one.
+  verify:
+    name: Verify before anything is uploaded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install (lite tier + dev tools)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,mcp]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Test
+        run: pytest -q
+
+      - name: Audit documented claims
+        run: untell-audit
+
+      # The tag says one thing and pyproject.toml says another often enough that it deserves a
+      # gate: publishing v0.3.1 from a tree still declaring 0.3.0 uploads 0.3.0, and the release
+      # notes then describe a version nobody can install. CITATION.cff drifted two minor releases
+      # behind before anything noticed, which is the same failure without the permanence.
+      - name: Tag matches the packaged version
+        run: |
+          set -e
+          ref="${{ github.event.inputs.ref || github.ref_name }}"
+          packaged="$(python -c 'import re,pathlib; print(re.search(r"^version\s*=\s*\"([^\"]+)\"", pathlib.Path("pyproject.toml").read_text(), re.M).group(1))')"
+          echo "ref=$ref packaged=$packaged"
+          case "$ref" in
+            v*)
+              if [ "${ref#v}" != "$packaged" ]; then
+                echo "::error::tag $ref does not match pyproject version $packaged"
+                exit 1
+              fi
+              ;;
+            *) echo "not a version tag — skipping the comparison" ;;
+          esac
+
   pypi:
     name: Build & publish to PyPI
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       id-token: write  # for PyPI trusted publishing
@@ -26,15 +78,41 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install build
-        run: pip install build
+      - name: Install build tooling
+        run: pip install build twine
 
       - name: Build wheel + sdist
         run: python -m build
 
+      # `twine check` reads the metadata PyPI will read: a malformed long_description renders as
+      # raw markup on the project page and cannot be corrected without burning another version.
+      - name: Validate the artifacts
+        run: twine check dist/*
+
+      # The wheel must contain the data files the package reads at runtime. tests/test_packaging.py
+      # checks the declaration; this checks the artifact, which is the thing users install.
+      - name: The wheel ships its data files
+        run: |
+          python - <<'PY'
+          import glob, zipfile, sys
+          wheel = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          required = [
+              "untell/SKILL.md",
+              "untell/references/ai-tells.md",
+              "untell/references/prompt-rubric.md",
+              "untell/references/thresholds.md",
+          ]
+          missing = [r for r in required if r not in names]
+          if missing:
+              sys.exit(f"wheel is missing data files: {missing}")
+          print(f"{wheel}: {len(names)} entries, all required data files present")
+          PY
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # Uses trusted publishing — configure at pypi.org first.
-        # Falls back to a token if PYPI_API_TOKEN is set as a secret.
+        # Trusted publishing via the `id-token: write` permission above. `password` is passed only
+        # so a token still works where trusted publishing is not configured; the action prefers
+        # OIDC when the secret is absent.
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}

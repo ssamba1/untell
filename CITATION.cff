@@ -2,8 +2,8 @@ cff-version: 1.2.0
 title: "untell — closed-loop, detector-feedback AI-text humanizer"
 message: "If you use this software in research, please cite it."
 type: software
-version: "0.1.0"
-date-released: "2026-06-25"
+version: "0.3.0"
+date-released: "2026-08-09"
 authors:
   - name: "untell contributors"
 repository-code: "https://github.com/ssamba1/untell"
