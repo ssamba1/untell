@@ -882,3 +882,24 @@ class TestVoiceSampleWarning:
 
     def test_no_sample_adds_no_key(self, monkeypatch):
         assert "voice_warning" not in self._run(monkeypatch)
+
+
+def test_untell_text_returns_its_output_under_the_documented_key():
+    """`untell_text` returns the rewrite under `final`. There is no `text` key.
+
+    Worth pinning because a caller writing the obvious `result.get("text") or original` gets a
+    silent, plausible fallback: the original text, scored as though it were the output. That
+    happened here — an hour of measurement produced numbers that were really the *unrewritten*
+    input, and nothing about the result looked wrong.
+    """
+    from untell.scripts.run import untell_text
+
+    source = "Moreover, the framework leverages a robust approach to deliver outcomes at scale."
+    result = untell_text(source, tier="lite", rewriter="structural", best_of=1, max_iters=1)
+
+    assert "final" in result, f"no 'final' key; got {sorted(result)}"
+    assert isinstance(result["final"], str) and result["final"].strip()
+    assert "text" not in result, (
+        "a 'text' key now exists — either it is the output, in which case the docs and every "
+        "caller need updating, or it is something else and the name is a trap"
+    )
