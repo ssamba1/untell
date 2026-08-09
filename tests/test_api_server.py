@@ -1067,6 +1067,7 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         ("/tells", "post", {"text": TEXT}),
         ("/sentences", "post", {"text": TEXT + " It works well enough.", "tier": "lite"}),
         ("/verify", "post", {"text": TEXT}),
+        ("/ceiling", "post", {"n": 2, "tier": "lite", "rewriter": "structural"}),
     ]
 
     @pytest.mark.parametrize("path,method,body", CALLS)
@@ -1085,7 +1086,10 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         Conditional fields are excluded by name: they are documented precisely because they appear
         only sometimes, and their absence in a healthy call is correct.
         """
-        conditional = {"warning", "failed_detectors", "detector_errors", "note", "results"}
+        # Only fields PROVEN to be conditional belong here. `results` was in this set and it
+        # was not conditional — it did not exist. The exclusion was written from the same
+        # guess as the schema, so the test confirmed the guess instead of checking it.
+        conditional = {"warning", "failed_detectors", "detector_errors"}
         client = self._client()
         response = client.get(path) if method == "get" else client.post(path, json=body)
         payload = response.json()

@@ -544,9 +544,47 @@ _HUMANIZE_RESPONSES = _obj(
     required=["final", "changed", "pre", "post", "flagged"],
 )
 
+# Written from an actual call, unlike the first version of this one — which documented a `results`
+# object the endpoint has never returned and omitted twenty fields it does. It passed its own
+# staleness test because `results` was in that test's conditional-exclusion list, which I had
+# written from the same guess. A schema and its test drawn from the same assumption check nothing.
 _CEILING_RESPONSES = _obj(
-    "Measured evasion ceiling over a sample.",
-    {"n": _INT, "tier": _STR, "results": {"type": "object", "additionalProperties": True}},
+    "Measured evasion ceiling over a sample: before/after scores and what produced them.",
+    {
+        "n": {**_INT, "description": "documents actually measured"},
+        "corpus": _STR,
+        "corpus_mean_words": _NUM,
+        "rewriter": _STR,
+        "rewriter_available": {
+            **_BOOL,
+            "description": "false means the requested backend could not load and nothing was "
+                           "rewritten — check this before reading the numbers",
+        },
+        "tier": _STR,
+        "threshold": _NUM,
+        "max_iters": _INT,
+        "best_of": _INT,
+        "repeats": {**_INT, "description": "how many times the whole run was repeated"},
+        "run_post_means": {
+            "type": "array", "items": _NUM,
+            "description": "one post mean per repeat; the spread across these is the noise floor",
+        },
+        "post_mean_max_stdev": {
+            "type": ["number", "null"],
+            "description": "null when repeats < 2, i.e. when there is no spread to report",
+        },
+        "pre_mean_max": _NUM,
+        "post_mean_max": {**_NUM, "description": "the headline: mean max P(AI) after rewriting"},
+        "pre_flagged_rate": _NUM,
+        "post_flagged_rate": _NUM,
+        "rewrote": {**_INT, "description": "documents the rewriter actually changed"},
+        "unscored": {**_INT, "description": "documents no detector could score"},
+        "mean_similarity": _NUM,
+        "min_similarity": {**_NUM, "description": "the worst single document, not the average"},
+        "per_detector_pre": _SCORE_MAP,
+        "per_detector_post": _SCORE_MAP,
+    },
+    required=["n", "tier", "rewriter", "pre_mean_max", "post_mean_max", "rewriter_available"],
 )
 
 
