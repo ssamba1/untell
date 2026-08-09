@@ -92,6 +92,14 @@ def _techniques(tier: str, threshold: float):
                 t, tier=tier, threshold=threshold, max_iters=5,
                 rewriter=get_rewriter(prefer=prefer), best_of=best_of,
             )
+            # `untell_text` reports a configuration failure — an unavailable rewriter, a missing
+            # key — as {"error": ..., "final": <the input, unchanged>}. Reading `final` without
+            # checking `error` turns that into a silent no-op row, and this is the script that
+            # compares us against competitors: our own tool would be reported as changing nothing
+            # and losing, with the cause nowhere in the output. Raise instead, because a comparison
+            # run that cannot run one of its arms has no result to report for it.
+            if "error" in res:
+                raise RuntimeError(f"untell_text({prefer!r}) failed: {res['error']}")
             return res.get("final", t)
 
         return run
