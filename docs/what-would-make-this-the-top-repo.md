@@ -80,15 +80,27 @@ independent draws collapsed to one survivor each round, which throws away every 
 has been extended.
 
 A beam of width *k* keeps *k* partial rewrites across iterations instead of one. It needs no GPU
-and no new dependency — it is more scoring calls against the same lite-tier scorer, and the cost is
-linear in beam width. It is the only strategy on this list with a zero next to it, and it is
-squarely autonomous.
+and no new dependency, so it was the one item on this page that was both differentiating and
+squarely autonomous. The page originally said the next step was a measurement rather than an
+implementation.
 
-Worth being clear about the risk before anyone builds it: scoring is already the bottleneck, a
-prior measurement found ~46% of scoring is recomputation, and both attempted caches were measured
-and reverted. A beam of width 4 is roughly 4× the scoring cost for an unknown gain. **The next step
-is a measurement, not an implementation** — beam vs `best_of` at matched scoring budget, on both
-corpora, at `--repeats 3` because the neural path is 4× as variable as the composite one.
+**That measurement has now been run, and the answer is no.** Greedy and beam, implemented against
+the same primitives at an exactly matched draw budget, paired on the seed, 45 outcomes per arm per
+corpus ([Result 48](free-ceiling-measured.md)):
+
+| corpus | arm | wins | losses | ties |
+|---|---|---|---|---|
+| HC3 | beam 2 | 18 | 18 | 9 |
+| HC3 | beam 4 | 17 | 21 | 7 |
+| RAID | beam 2 | 13 | 18 | 14 |
+| RAID | beam 4 | 15 | 22 | 8 |
+
+Beam loses more often than it wins on three of four arm/corpus combinations, and the fourth is a
+dead heat. Every arm improved the *mean* slightly — a handful of large wins against more small
+losses — which is exactly how a coin flip with a skewed payoff reads if you only look at means.
+
+So the zero in the table above is not a gap in the field's knowledge. It is the field having
+nothing to gain here, and this repo now has the measurement to say so.
 
 ## What not to do
 

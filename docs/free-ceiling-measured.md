@@ -2782,3 +2782,54 @@ Three things worth keeping:
   rather than to build it.
 
 Written up as [what-would-make-this-the-top-repo.md](what-would-make-this-the-top-repo.md).
+
+## Result 48
+
+**Beam search is a coin flip. The zero in the census technique table is not a missed opportunity.**
+
+[Result 47](free-ceiling-measured.md) found that none of the 435 profiled repos searches — every
+detector-coupled one, this repo included, is greedy. That looked like an opening. It is not.
+
+Greedy and beam were implemented against the same primitives in one harness, so the comparison is
+between search strategies rather than between a harness and the product. Budget is matched exactly:
+greedy draws B candidates from the single incumbent each iteration, a beam of width *k* draws B/k
+from each of *k* incumbents. Both spend B rewriter draws and B detector passes per iteration —
+12 draws per text, confirmed identical in the output.
+
+Paired on the seed, so every arm sees the same text under the same RNG state. 15 AI texts per
+corpus, 3 repeats, 45 paired outcomes per arm.
+
+| corpus | arm | mean | wins | losses | ties | mean Δ |
+|---|---|---|---|---|---|---|
+| HC3 | greedy | 0.4596 | — | — | — | — |
+| HC3 | beam 2 | 0.4537 | 18 | 18 | 9 | −0.0060 |
+| HC3 | beam 4 | 0.4586 | 17 | **21** | 7 | −0.0010 |
+| RAID | greedy | 0.2290 | — | — | — | — |
+| RAID | beam 2 | 0.2245 | 13 | **18** | 14 | −0.0045 |
+| RAID | beam 4 | 0.2251 | 15 | **22** | 8 | −0.0039 |
+
+The mean deltas are all slightly negative, which read alone would look like a small win. The paired
+record says otherwise: beam **loses more often than it wins on three of the four arm/corpus
+combinations**, and the fourth is exactly 18–18. The negative means come from a handful of large
+wins against a larger number of small losses, which is what a coin flip looks like when the payoff
+is skewed.
+
+**The harness is faithful.** Its greedy arm was checked against the shipped loop on 6 HC3 texts at
+matched settings: **5 of 6 byte-identical**, and the shipped loop better overall by 0.0097 — its
+tells and voice tie-breaks find something greedy-on-score alone does not. So this is not a
+comparison between two toys.
+
+Three things worth keeping:
+
+- **A zero in a technique table can mean the technique does not pay.** Result 47 flagged beam
+  search as the one strategy nobody uses and the honest next step as a measurement rather than an
+  implementation. It was: shipping a beam would have cost k× the scoring for nothing.
+- **A mean delta and a paired record can disagree, and the paired record is the one to believe.**
+  Every arm here improved the mean and lost the head-to-head. Reporting only the means would have
+  produced "beam search improves detector score on both corpora" — technically true of those
+  numbers, and wrong.
+- **Check the `error` key before you score the result.** Validating the harness, a call to
+  `untell_text` without a rewriter returned `{"error": ..., "final": <the input>}`; scoring that
+  showed the shipped loop losing to a scratch reimplementation by 0.138. It was the unrewritten
+  input. `eval/compare_humanizers.py` had the same unguarded read and would have reported our own
+  tool as changing nothing in the competitor comparison; it now raises.
