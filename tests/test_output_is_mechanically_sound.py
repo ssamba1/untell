@@ -103,6 +103,9 @@ def _damage(text: str) -> dict[str, int]:
             fragments += 1
     found["fragment_lead"] = fragments
     found["unbalanced_quotes"] = 1 if text.count('"') % 2 else 0
+    # Brackets, checked because `_parenthesise_asides` creates them. A transform that can OPEN a
+    # bracket can leave one open, and an unbalanced bracket is the loudest possible artefact.
+    found["unbalanced_parens"] = abs(text.count("(") - text.count(")"))
     # A sentence under four words is a stranded opener or a list item, not a sentence. Counted
     # here rather than only in the corpus sweep, where it is the one check still showing a
     # positive delta (+1 across 60 texts, down from +4). The fixtures below must not add any.

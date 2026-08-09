@@ -1231,6 +1231,60 @@ def _front_subordinate_clauses(sentences: list[str], rate: float = 0.0) -> list[
     return out
 
 
+# Share of words that are an opening parenthesis, MEASURED over 120 pairs per corpus:
+#
+#                    human    ai      ai/human
+#     HC3            0.679   0.177     0.26x
+#     RAID           0.924   0.421     0.46x
+#
+# Humans use parentheses two to four times as often, consistently in both corpora. Unlike the other
+# punctuation gaps in the same sweep this one is safe to close: question marks (human 15x) would
+# invent rhetoric, exclamation marks a tone, and quotation marks would fabricate a quotation.
+# Parenthesising an aside that is ALREADY set off by commas changes punctuation and nothing else —
+# no word is added, removed or reordered, so the meaning gates see an identical claim.
+#
+# Only non-restrictive asides qualify. "the method, which is fast, works" carries the same meaning
+# with brackets; "the method that is fast works" does not, because a restrictive clause is part of
+# what is being identified. The pattern therefore requires an explicit non-restrictive marker and a
+# closing comma followed by lower-case continuation — a trailing clause at the end of a sentence is
+# not an aside and bracketing it would strand the sentence.
+_ASIDE_RE = re.compile(
+    r",\s+(which\s+[^,.;:()]{8,60}"
+    r"|such as\s+[^,.;:()]{5,50}"
+    r"|for example[^,.;:()]{0,50}"
+    r"|including\s+[^,.;:()]{5,50}),(?=\s+[a-z])"
+)
+_HUMAN_PARENTHESES_PER_100W = 0.80
+
+
+def _parenthesise_asides(text: str) -> str:
+    """Turn a comma-bounded non-restrictive aside into a parenthetical, up to the human rate."""
+    words = len(_WORD_RE.findall(text))
+    if not words:
+        return text
+    have = text.count("(")
+    budget = _HUMAN_PARENTHESES_PER_100W * words / 100 - have
+    if budget <= 0:
+        return text
+    # Fractional, like the fronting budget: a short block wants a fraction of one conversion, and
+    # rounding that to zero means most paragraphs never convert and the aggregate lands at zero
+    # however the constant is set.
+    remaining = int(budget)
+    if random.random() < budget - remaining:
+        remaining += 1
+    if remaining < 1:
+        return text
+
+    def _swap(m: re.Match) -> str:
+        nonlocal remaining
+        if remaining <= 0:
+            return m.group(0)
+        remaining -= 1
+        return f" ({m.group(1)})"
+
+    return _ASIDE_RE.sub(_swap, text)
+
+
 def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     """Vary sentence openings by prepending transitional phrases or restructuring."""
     # Openers humans are MEASURED to use, not ones that merely sound casual. Sentence-opening
@@ -1731,6 +1785,10 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
     # Draw-level diversity is unaffected: CompositeRewriter sweeps `intensity` ACROSS draws
     # (rewriter/composite.py `_intensity_sweep`), which still varies every structural transform.
     text = _plain_register(text, intensity=profile["register"])
+
+    # 5d. Parenthesise an aside that is already comma-bounded. Punctuation only — no word is added,
+    # removed or reordered — and humans use parentheses 2-4x as often as AI in both corpora.
+    text = _parenthesise_asides(text)
 
     # 6. Semicolon → period (semiconductors are a tell)
     text = _semicolons_to_periods(text)

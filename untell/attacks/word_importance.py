@@ -169,7 +169,24 @@ _SYN: dict[str, list[str]] = {
     "method": ["approach", "technique", "way"],
     "methods": ["approaches", "techniques", "ways"],
     "framework": ["setup", "structure", "system"],
-    "effectiveness": ["success", "usefulness", "value"],
+    # NOT "usefulness": it is itself a nominalisation, so the swap leaves the signal it was meant
+    # to move exactly where it was. Same shape as the four synonyms that were themselves ai_vocab,
+    # in a dimension the tell catalogue does not cover — MEASURED, AI text carries 36% more
+    # nominalisations per 100 words than human text answering the same prompt (2.575 vs 1.896).
+    "effectiveness": ["success", "value", "how well it works"],
+    # Register nominalisations, substituted for plain non-nominal words. Deliberately NOT
+    # "robustness", "contribution", "development", "importance" or "complexity": in a paper each of
+    # those carries meaning — a contribution IS the novel claim, robustness IS a measured property —
+    # and swapping them changes what the text says rather than how it reads.
+    #
+    # Only 18.5% of the nominalisation excess is register at all; the other 81.5% is domain content
+    # (segmentation, attention, detection, ablation), which is the same 82/18 split the repeated-
+    # phrasing ceiling has. The reachable share is small by nature, not by neglect.
+    "utilization": ["use"],
+    "utilisation": ["use"],
+    "implementation": ["rollout", "build"],
+    "improvement": ["gain", "boost", "step up"],
+    "combination": ["mix", "blend", "pairing"],
     "extensive": ["wide", "broad", "thorough"],
     "outperforms": ["beats", "does better than", "tops"],
     "outperform": ["beat", "do better than", "top"],

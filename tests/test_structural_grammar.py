@@ -2100,3 +2100,94 @@ class TestMergingRespectsALengthBudget:
             if len(_merge_sentences(list(short), rate=1.0)) < len(short):
                 return
         raise AssertionError("no pair of short sentences merged across 40 seeds")
+
+
+class TestParenthesisingAnAside:
+    """Humans use parentheses two to four times as often as AI, in both corpora.
+
+    Share of words that are an opening bracket, MEASURED over 120 pairs per corpus:
+
+        HC3    human 0.679   ai 0.177   (0.26x)
+        RAID   human 0.924   ai 0.421   (0.46x)
+
+    Unlike the other punctuation gaps in the same sweep this one is safe to close. Question marks
+    (human 15x AI on HC3) would invent rhetoric, exclamation marks a tone, and quotation marks would
+    fabricate a quotation. Parenthesising an aside that is ALREADY comma-bounded changes punctuation
+    and nothing else — no word added, removed or reordered — so the meaning gates see an identical
+    claim.
+    """
+
+    NON_RESTRICTIVE = (
+        "The iris, which is the colored part of your eye, controls how much light enters the pupil."
+    )
+    RESTRICTIVE = "The method that is fast works well on every benchmark we tried in the study."
+
+    def _converted(self, text: str, seeds: int = 80) -> list[str]:
+        import random
+
+        from untell.rewriter.structural import _parenthesise_asides
+
+        out = []
+        for seed in range(seeds):
+            random.seed(seed)
+            got = _parenthesise_asides(text)
+            if "(" in got:
+                out.append(got)
+        return out
+
+    def test_a_non_restrictive_aside_becomes_a_parenthetical(self):
+        got = self._converted(self.NON_RESTRICTIVE)
+        assert got, "no conversion across 80 seeds"
+        assert "(which is the colored part of your eye)" in got[0], got[0]
+
+    def test_a_restrictive_clause_is_never_bracketed(self):
+        """"the method that is fast" identifies WHICH method. Bracketing it changes the claim, and
+        no meaning gate would catch that — they check entailment and roles, not restrictiveness."""
+        assert not self._converted(self.RESTRICTIVE), "a restrictive clause was bracketed"
+
+    def test_no_word_is_added_or_removed(self):
+        """The whole safety argument. This is a punctuation edit."""
+        import re
+
+        got = self._converted(self.NON_RESTRICTIVE)
+        assert got
+        before = re.findall(r"[A-Za-z]+", self.NON_RESTRICTIVE)
+        after = re.findall(r"[A-Za-z]+", got[0])
+        assert before == after, "the aside transform changed the words"
+
+    def test_brackets_are_always_balanced(self):
+        import random
+
+        from untell.rewriter.structural import structural_rewrite
+
+        for source in (self.NON_RESTRICTIVE, self.RESTRICTIVE):
+            for seed in range(30):
+                random.seed(seed)
+                out = structural_rewrite(source, intensity=1.0)
+                assert out.count("(") == out.count(")"), f"unbalanced: {out}"
+
+    def test_text_already_at_the_human_rate_is_left_alone(self):
+        import random
+
+        from untell.rewriter.structural import _parenthesise_asides
+
+        rich = (
+            "The iris (the colored part) controls light, and the pupil (the opening) lets it in,"
+            " which is why, in bright rooms, it narrows."
+        )
+        before = rich.count("(")
+        for seed in range(30):
+            random.seed(seed)
+            assert _parenthesise_asides(rich).count("(") == before
+
+    def test_a_trailing_clause_is_not_an_aside(self):
+        """An aside has text after it. A clause at the END of a sentence bracketed the same way
+        would strand the sentence, so the pattern requires a lower-case continuation."""
+        import random
+
+        from untell.rewriter.structural import _parenthesise_asides
+
+        trailing = "The pupil narrows in bright light, which is the colored part of your eye."
+        for seed in range(30):
+            random.seed(seed)
+            assert "(" not in _parenthesise_asides(trailing)
