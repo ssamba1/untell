@@ -217,6 +217,23 @@ Three design choices make it work where blind paraphrasers fail:
    (`"nli"` / `"similarity-only (NLI unavailable)"` / `"similarity-only (veto disabled)"`) and the
    CLI warns when the veto did not run, so a passing verdict says which gate produced it.
 
+   ⚠️ **Scope: every figure in this bullet is measured on sentence-length examples**, and that used
+   to be the only length at which they held. Both model-backed gates truncate their input, so until
+   2026-08-09 each was scoring the front of a long document and reporting a verdict about all of it
+   — a negation 143 words in scored 0.0179, the contradiction value for two *identical* strings, and
+   a whole sentence replaced 280 words in scored a similarity of 1.0000. Not a mis-set threshold:
+   the changed text was never fed to the model. Both gates now score aligned chunks and take the
+   worst, and `tests/test_gates_read_the_whole_document.py` fails if any gate's verdict depends on
+   where in the document the change sits. `roles`, `hedges` and `numerals` never had the problem.
+
+   One limit survives the fix, on the free path only. `token_overlap` is the sole meaning gate on a
+   zero-dependency install, and it cannot detect a single destroyed sentence inside a paragraph at
+   *any* chunk size — the granularity that catches it (20 words, score 0.10) also rejects 3 of 25
+   genuine rewrites, because Dice cannot tell "reworded heavily" from "replaced entirely". So the
+   free tier detects meaning **drift across a document** and not **destruction of one sentence**;
+   the same case scores 0.98 contradiction under `.[full]`. Measured in
+   [Result 36](docs/free-ceiling-measured.md).
+
    Both numbers moved because the claim-strength check was over-strict in ways that had nothing to
    do with claim strength: "due to", "will", "set to" and "going to" were classed as *intention*
    hedges, so every rewrite of "the delay was due to X" or "this function will return X" was vetoed;
