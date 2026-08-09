@@ -166,6 +166,19 @@ All notable changes to this project are documented here. The format is based on
   console scripts are `untell-*`, and the skill is `/untell`. The `humanize` skill verb stays as plain English.
 
 ### Fixed
+- **A score on text too short to judge now says so.** `/score`, `untell score` and the MCP `score`
+  tool answered `"a"` with P(AI) 0.9987 and `flagged: true`. Below 40 words the ensemble does not
+  discriminate — measured on 40 HC3 pairs, 98% of HUMAN text flags at 5 words, 28% at 40 — and the
+  result now carries that rate as a caveat. The number itself is unchanged.
+- **`tells_per_100w` on a handful of words is caveated.** `Moreover.` is one word and one tell and
+  reports 100.0 per 100 words, against corpus means of 0.551 human and 7.335 AI. Below 14 words —
+  the point where a single tell stops exceeding the AI mean — the result says to read the count
+  instead.
+- **A non-breaking space no longer changes the verdict.** Replacing every space with U+00A0, which
+  is what a paste out of Word or a web page contains, took human text from 5/10 to 9/10 flagged
+  (mean P(AI) 0.4322 → 0.7801) and hid 2 of 5 AI tells, because tokenisers and literal-space
+  patterns do not treat it as a space. Unicode space separators are now folded before scoring and
+  before the tell catalogue runs, by one shared rule in `untell/text_split.py`.
 - **Sentence fronting now actually respects its budget.** The rate above was the intent; the counter
   that enforces it held a literal `0x08` byte where `\b` was meant, inside an `r"..."` string where a
   word boundary and a backspace look identical. No text contains a backspace, so the count of
