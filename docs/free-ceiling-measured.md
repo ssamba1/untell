@@ -1316,6 +1316,13 @@ It is worth being clear about what it is *not*: `fast_detectgpt` also takes the 
 absolute drop of the four (−0.444), so it is responding to the rewriter, not immune to it. It
 simply starts higher and stays higher.
 
+> **Superseded — see [Result 33](#result-33--the-wall-moved-and-it-is-now-our-own-zero-dependency-detector).**
+> This ranking held for as long as it was measured, and then stopped. `fast_detectgpt` fell from
+> 45% flagged to 19% without ever being targeted, and now ties with `perplexity_burstiness`. The
+> "stable property of the pipeline" wording above was true of every measurement taken up to that
+> point and was still wrong — stability across four runs of one pipeline says nothing about a
+> pipeline that then changes.
+
 **Do not compare the MAX row here against Result 17's.** That table was 12 texts and this one is
 20 different ones; the per-detector *ranking* is what replicates, not the absolute level. The
 like-for-like end-to-end figure is Result 20's, on a fixed n = 40 with repeats.
@@ -1326,7 +1333,8 @@ like-for-like end-to-end figure is Result 20's, on a fixed n = 40 with repeats.
 
 Every transform in `rewriter/structural.py` was a **local** edit: a word swap, a split, a merge, a
 deletion. None changed the order in which information arrives, which is what a curvature detector
-reads over a long span — and `fast_detectgpt` is the wall.
+reads over a long span — and `fast_detectgpt` was the wall at the time this was written
+(Result 33 later found it no longer is).
 
 ### Fronting a trailing subordinate clause
 
@@ -1913,3 +1921,55 @@ alternative instead. Reordering the object was rejected: it requires knowing whe
 which needs a parser this tier does not have. A test asserts `spell out the details` still happens,
 because a rule banning every particle substitute would delete a third of the map's alternatives to
 fix a case that only arises before a pronoun.
+
+---
+
+## Result 33 — the wall moved, and it is now our own zero-dependency detector
+
+Result 17 measured each detector separately and found one obstacle: `fast_detectgpt` still flagged
+**45%** of outputs where `roberta_openai` flagged almost none. Everything since — the corpus-matched
+rates, the vocabulary work, the grammar repairs — was aimed at general naturalness, not at that
+detector. Re-running the same breakdown asks whether any of it moved the thing that was actually
+holding the score up.
+
+Shipped configuration, `--tier full --rewriter composite`, n = 16, verdict threshold 0.30:
+
+| detector | before | after | delta | still flagged |
+|---|---|---|---|---|
+| `perplexity_burstiness` | 0.521 | 0.263 | −0.258 | **19%** |
+| `fast_detectgpt` | 0.783 | 0.260 | −0.523 | **19%** |
+| `hc3_roberta` | 0.769 | 0.122 | −0.646 | 6% |
+| `roberta_openai` | 0.544 | 0.042 | −0.502 | 0% |
+| MAX (reported) | 0.925 | 0.319 | −0.606 | — |
+
+`fast_detectgpt` went from 45% to 19% without being targeted once. The single wall is gone; what
+is left is two detectors tied at the top, and 19% of 16 texts is **three documents** — small enough
+that the tie should not be read as a ranking.
+
+### The part worth noticing
+
+`perplexity_burstiness` is *ours*: the pure-Python lite detector that ships with no model download,
+no `torch`, no network. It is now as hard to beat as Fast-DetectGPT, which needs a GPT-Neo forward
+pass. That is not because it got better — it is the same calibrated scorer from the earlier fix —
+but because the neural detectors were reachable by the work that has been done and it was not.
+
+Two readings, and they have opposite consequences:
+
+1. **The lite detector is a good proxy for what remains.** If so, the cheap loop can keep making
+   progress with no heavy stack, which is the whole free-tier premise.
+2. **It is measuring something the rewriter structurally cannot change** — sentence-length variance
+   and token-level surprise are properties of the generator's phrasing, and the rewriter edits
+   words and clause joins, not the underlying rhythm.
+
+The before column argues for the second: `perplexity_burstiness` started at 0.521, the *lowest* of
+the four, and fell the least in absolute terms (−0.258 against −0.502 to −0.646). It was never the
+detector with the most to give, and it still gave the least. A detector that starts near the
+threshold and moves slowly will end up looking like the wall regardless of how good the rewriter is.
+
+So the honest statement is not "burstiness is the next target." It is that **the ensemble max is no
+longer set by one beatable detector**, and the remaining 0.319 is spread across two mechanisms with
+different causes. Anything claiming to move it should report the per-detector table, not the max —
+the max hid this for the whole of Result 17.
+
+n = 16 on one corpus. The flagged rates are three-document resolution and the deltas are the
+reliable part of this table.
