@@ -66,6 +66,7 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 
 - **[Quick Start](quickstart.md)** — install and run in 60 seconds
 - **[API Server](api-server.md)** — deploy the REST API
+- **[What each function returns](result-shapes.md)** — the key that carries the answer, per entry point. They differ, and guessing wrong returns a plausible value rather than raising.
 - **[Measured: the free evasion ceiling](free-ceiling-measured.md)** — the full log, 24 results
 - **[Summary: the free-ceiling report](free-ceiling-report.md)** — the short version
 - **[Humanizer comparison](humanizer-comparison.md)** — untell vs every free technique
