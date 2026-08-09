@@ -71,6 +71,46 @@ Against our own four criteria, this repo has all four:
 
 ---
 
+## What the measurement discipline actually buys — a worked example
+
+The claim above reduces to "we look, and we publish what we find." Here is the most useful thing it
+found, in 2026-08-09.
+
+Both model-backed meaning gates were **not reading the whole document**. The entailment gate
+tokenises `(original, rewrite)` as one sequence truncated at 256 tokens; the similarity gate's
+embedding backends truncate too. Neither says so. Measured by moving the *same* edit to a different
+position in the *same* document:
+
+| edit: "improved outcomes" → "did NOT improve outcomes" | at the start | at the end |
+|---|---|---|
+| 7 words | 0.9976 | 0.9971 |
+| 143 words | 0.9833 | **0.0179** |
+| 279 words | 0.9833 | **0.0179** |
+
+`0.0179` is the contradiction score for two **identical** strings. And the similarity gate scored a
+whole sentence replaced with unrelated text at **1.0000** past 280 words.
+
+Neither is a mis-set threshold. The changed text was never fed to the model, so no value of the
+0.76 similarity bar or the 0.5 contradiction bar could have caught either — the gates were most
+confident exactly where they were blindest. A rewriter could invert any claim after roughly the
+first 130 words of a document and nothing in this project would have noticed.
+
+**Why this is the example worth giving.** It was found by probing a property no test suite naturally
+checks — *does the answer depend on where in the input the change is?* — not by a failing test, a
+bug report, or reading the code. The fix is in, the invariant is now pinned for all five gates
+(`tests/test_gates_read_the_whole_document.py`), and the write-up includes the version of the fix
+that was **wrong**: aligning chunks proportionally drifts once the rewriter merges sentences, which
+produced false vetoes on faithful rewrites until the cut points came from `difflib` instead.
+
+**What it does not let us claim.** This page notes that
+`Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI entailment gate. The
+truncation follows from the *standard* way that model is called, so the same failure plausibly
+exists wherever the pattern is copied — but we have not run their code and are not asserting it.
+It is a hypothesis about the field, offered as something worth checking, and the way to check it is
+in this repo: move one edit to the end of a long document and see whether the verdict changes.
+
+---
+
 ## Feature matrix — this repo vs the strongest open competitors
 
 | Capability | **ours** | StealthRL | patina | StealthHumanizer | DIPPER | lynote humanize-text | harshaneel/humanize |
