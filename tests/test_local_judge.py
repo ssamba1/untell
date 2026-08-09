@@ -74,3 +74,45 @@ def test_local_judge_can_still_be_opted_into(monkeypatch):
 
         pytest.skip("torch/transformers unavailable")
     assert "local_judge" in {x.name for x in load_detectors("heavy")}
+
+
+def test_the_suggested_models_are_reachable_not_just_declared():
+    """`HEAVY_MODEL` sat in the module unreferenced by anything.
+
+    An unreferenced constant is indistinguishable from an abandoned one: a reader cannot tell
+    whether it is an option they may use or a leftover from something removed. It is a real option
+    — the value to put in `$UNTELL_JUDGE_MODEL` for the larger judge — so it is now reachable
+    through `suggested_models()` and named in the README's env-var table rather than implied.
+    """
+    from untell.detectors.local_judge import HEAVY_MODEL, LIGHT_MODEL, suggested_models
+
+    models = suggested_models()
+    assert models == {"light": LIGHT_MODEL, "heavy": HEAVY_MODEL}
+    assert all(m.startswith("Qwen/") for m in models.values())
+
+
+def test_the_default_is_the_light_model_not_the_heavy_one():
+    """The judge is already the slowest detector in the stack at the light model — 3.7s per call
+    against 0.03-0.06s for the rest. Defaulting to the 7B would make an opt-in detector an
+    opt-in-and-then-wait detector."""
+    import os
+
+    import pytest
+
+    from untell.detectors.local_judge import _DEFAULT_MODEL, HEAVY_MODEL, LIGHT_MODEL
+
+    if os.environ.get("UNTELL_JUDGE_MODEL"):
+        pytest.skip("UNTELL_JUDGE_MODEL is set in this environment")
+    assert _DEFAULT_MODEL == LIGHT_MODEL
+    assert _DEFAULT_MODEL != HEAVY_MODEL
+
+
+def test_the_readme_documents_both_sizes():
+    """The suggestion is only useful if a user can find it without reading the source."""
+    from pathlib import Path
+
+    from untell.detectors.local_judge import HEAVY_MODEL, LIGHT_MODEL
+
+    readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
+    assert LIGHT_MODEL in readme, "the default judge model is not documented"
+    assert HEAVY_MODEL in readme, "the larger option is not documented"

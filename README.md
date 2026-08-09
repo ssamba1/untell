@@ -717,7 +717,7 @@ without a row here.
 | `UNTELL_LITE_NO_TORCH` | force the pure-stdlib lite path even when torch is installed. The two paths differ by 11.5x in false positives, so this is how you pin which one you are measuring |
 | `UNTELL_DISABLE_MAGE` | skip the MAGE detector (large download) |
 | `UNTELL_ENABLE_RADAR` | opt into the RADAR detector in the benchmark |
-| `UNTELL_ENABLE_LOCAL_JUDGE` / `UNTELL_JUDGE_MODEL` | enable and select the local LLM judge |
+| `UNTELL_ENABLE_LOCAL_JUDGE` / `UNTELL_JUDGE_MODEL` | enable and select the local LLM judge. Defaults to `Qwen/Qwen2.5-1.5B-Instruct`; `Qwen/Qwen2.5-7B-Instruct` is the larger option (`untell.detectors.local_judge.suggested_models()`). The judge is **heavy tier at either size** — 3.7s per call against 0.03–0.06s for every other detector, for AUROC 0.514. The 7B is unmeasured here; measure it before believing it. |
 | `UNTELL_DISABLE_NLI` | **turns off the NLI entailment gate.** Meaning is then unverified — the loop can adopt a rewrite that contradicts the source |
 | `UNTELL_DISABLE_ROLES` | **turns off the predicate-argument veto.** "The company sued the regulator" may come back reversed |
 | `UNTELL_MAX_ITERS` | default loop iterations, overriding the shipped 5 |

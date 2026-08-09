@@ -41,9 +41,25 @@ _JUDGE_PROMPT = (
     "Respond with ONLY the number, e.g. 0.73"
 )
 
+# Two model sizes this prompt has been used with. `HEAVY_MODEL` is not a default and never has
+# been — it is the value to put in `$UNTELL_JUDGE_MODEL` if you have the VRAM and want the larger
+# judge. It sat here unreferenced by anything, which makes a constant indistinguishable from an
+# abandoned one; `suggested_models()` below exists so the suggestion is reachable rather than
+# implied, and `untell-score --help` and the README both point at it.
 LIGHT_MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 HEAVY_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 _DEFAULT_MODEL = os.environ.get("UNTELL_JUDGE_MODEL") or LIGHT_MODEL
+
+
+def suggested_models() -> dict[str, str]:
+    """Model IDs known to work with this judge prompt, smallest first.
+
+    The judge already sits in the **heavy** tier at the light model: measured at 3.7s per call
+    against 0.03-0.06s for every other detector, for AUROC 0.514 on labelled pairs. The 7B is
+    slower again and has not been measured here, so it is offered as an option rather than a
+    recommendation — if you run it, measure it before believing it.
+    """
+    return {"light": LIGHT_MODEL, "heavy": HEAVY_MODEL}
 
 
 class LocalJudgeDetector:
