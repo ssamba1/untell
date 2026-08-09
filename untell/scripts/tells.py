@@ -99,6 +99,33 @@ logger = logging.getLogger(__name__)
 # the same trap `humanness.py` documents declining. What ships instead is the split below, so a
 # caller can see whether a score rests on strong evidence or on style preferences.
 #
+# CONFIRMED at a larger n, 2026-08-09 — the same measurement re-run at 200 pairs on BOTH corpora,
+# which reproduces every figure above and adds the categories the 150-pair run left unlisted:
+#
+#                             HC3 (200)      RAID (200)
+#     participial_trailer     never fires    0.971  (150-pair run: 0.96)
+#     repeated_phrasing       0.925          0.942
+#     cliche                  0.902          0.941  (0.93)
+#     repeated_sentence_openers 0.667        0.890
+#     hedge_stacking          0.526          0.875   <- 0.53 to 0.88 across corpora
+#     challenges_section      never fires    0.833
+#     formulaic_transition    0.884          0.603  (0.60)
+#     ai_vocab                0.615          0.585  (0.59)
+#     em_dash                 0.000          0.000  (0.00)
+#     semicolon_crutch        0.000          0.333
+#
+# Nothing here changes the decision, which is the point of running it. Two additions:
+#
+#  4. **`em_dash` has now fired on 0 AI documents out of 400, across two corpora and two eras.**
+#     The single most-cited "AI tell" in public discourse. It is not weak evidence pointing the
+#     right way; it has no observations pointing the right way at all. It stays in the catalogue
+#     as `weak` because a caller scanning for the famous tells should see it reported and see the
+#     number next to it — deleting it silently would leave them assuming it was never checked.
+#  5. **`hedge_stacking` is register, not authorship.** 0.53 on forum answers and 0.88 on
+#     abstracts. Same pattern, same code, opposite usefulness — which is the third category after
+#     `formulaic_transition` and `moreover` to behave this way, and the reason no single number
+#     for "how good is this catalogue" is meaningful without naming the corpus.
+#
 # "unmeasured" means exactly that: no evidence either way from this corpus, not "weak".
 _EVIDENCE: dict[str, str] = {
     "sycophancy": "strong", "meta_closer": "strong", "filler_phrase": "strong",

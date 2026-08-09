@@ -167,15 +167,36 @@ Be precise about what this does and does not establish. The 0.048 score gap is *
 size. `composite` stays the default because it *matches* `neural` there while holding 0.9406
 worst-case similarity against 0.8716, varying six times less run to run, and needing no GPU.
 
-### 🔜 Retire or rehabilitate the dead weight
+### ✅ Retire or rehabilitate the dead weight — done, and nothing gets retired
 
 `ai_vocab` — the "delve / leverage / tapestry" cluster this entire product category is famous for —
-measures **0.55 precision on 400 real HC3 pairs**. A coin flip. Five categories fire *more* on human
-writing than AI; removing them raises separation +0.307 → +0.332 and AUROC 0.705 → 0.718.
+measured **0.55 precision on 400 real HC3 pairs**. A coin flip. Five categories fired *more* on
+human writing than AI. This item held open on a stated blocker: HC3 is 2022-era, the ten categories
+silent on it are exactly the *modern* tells, so the fix is a modern labelled corpus rather than
+reweighting against a dated one.
 
-They are currently reported via evidence tiers rather than dropped, because the ten categories that
-never fire on HC3 are exactly the *modern* tells and HC3 is 2022-era. **The fix is a modern labelled
-corpus**, not reweighting against a dated one. Until then the tiering is the honest interim.
+RAID is that corpus — multi-generator, exact human/machine pairing, far more recent — and it has now
+been run twice, at 150 pairs and again at 200 pairs on both corpora. It settles the question against
+the optimistic reading:
+
+- **`ai_vocab` is not rehabilitated.** 0.615 on HC3, 0.585 on RAID. Two corpora, two eras, two
+  generator families, one answer. The flagship cluster of the entire category is a coin flip and a
+  modern corpus does not rescue it.
+- **The silent categories were right to keep.** `participial_trailer` fires on nothing in HC3 and is
+  the *strongest* category on RAID at 0.971; `challenges_section` likewise, at 0.833. Dropping the
+  silent ones — which the HC3 numbers alone justified — would have deleted the best pattern in the
+  catalogue. The blocker was correct, and acting on the old data would have been a mistake.
+- **`em_dash` fired on 0 AI documents** across 200 HC3 pairs and 200 RAID pairs (measured
+  2026-08-09; 7 human documents, 0 AI). The most-cited AI tell in public discourse has no
+  observations pointing the right way in either corpus. Kept and reported as `weak` with the number
+  attached, because a reader looking for the famous tells should see it was checked.
+- **Some of the catalogue measures register, not authorship.** `hedge_stacking` runs 0.53 on forum
+  answers and 0.88 on abstracts; `formulaic_transition` 0.88 and 0.60 the other way. No single
+  quality number for the catalogue means anything without naming the corpus.
+
+So: nothing retired, nothing reweighted, and the evidence tiering is no longer an interim — it is
+the answer. The measurement is in the header of `untell/scripts/tells.py`, beside the code it
+describes.
 
 ### 🔜 Finish the surgical objective
 
