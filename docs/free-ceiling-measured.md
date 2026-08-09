@@ -1755,3 +1755,31 @@ rewriter, which this document has had to correct three times.
 
 **An ablation without a firing rate is a list of numbers with no denominators.** Measured this way,
 seven of the eleven rows support a conclusion and four do not.
+
+---
+
+## Result 29 — the nominalisation substitutions, reported in both directions
+
+Result 25 found AI text carrying 36% more nominalisations than human text on the same prompt, and
+the rewriter moving that by zero. Four register substitutions were added (`utilization`,
+`implementation`, `improvement`, `combination`), deliberately excluding the words that carry meaning
+in a paper — a *contribution* is the novel claim, *robustness* is a measured property.
+
+The distribution moved: HC3 2.584 → **2.487** per 100 words against a human 1.896, RAID → **7.346**.
+That closes 13% and 34% of the gap, consistent with only 18.5% of the excess being register at all.
+
+The detector result is **mixed, and both halves are reported**:
+
+| | post | flagged | spread | mean sim |
+|---|---|---|---|---|
+| before | 0.3003 | 35.8% | ±0.0073 | 0.9808 |
+| after | 0.3118 | **31.7%** | ±0.0162 | 0.9808 |
+
+The flagged rate — the number a user actually sees — improved by 4.1 points. The mean score went
+*up* by 0.0115, and the spread more than doubled to ±0.0162, which makes that difference **smaller
+than one standard deviation**: it is noise, not a regression, and it is also not a win.
+
+Kept, on the flagged rate and the distribution match, with the score movement recorded rather than
+omitted. The headline row in the ROADMAP now carries these numbers, because quoting 0.300 would
+mean quoting a figure the current code does not produce — which is the defect `untell-audit` was
+built to catch, and it would be a poor look to commit it in the same session.
