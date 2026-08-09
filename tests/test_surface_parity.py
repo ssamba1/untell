@@ -397,3 +397,78 @@ class TestTheSurfacesAgreeOnRANGES_NotJustDefaults:
         pytest.importorskip("fastapi")
         assert _bounds("_Probability", (99.0, 99.0)) == (0.0, 1.0)
         assert _bounds("_BestOf", (99.0, 99.0)) == (1.0, 32.0)
+
+
+class TestConfigAndEnvGetTheSameRangeChecks:
+    """A range guard on the command line only guards the command line.
+
+    `add_argument(type=...)` runs on what the user TYPES. It never runs on a `default=`, and a
+    config file or a `UNTELL_*` variable arrives as a default. So the bounds added for argparse did
+    nothing for the other two input channels, and the same nonsense had two different answers:
+
+        --threshold 50              rejected
+        UNTELL_THRESHOLD=50         accepted
+        untell.yaml  threshold: 50  accepted
+
+    `_config_defaults` already validated categorical CHOICES for exactly this reason, with a
+    docstring explaining it. Ranges were missed by the same argument.
+    """
+
+    OUT_OF_RANGE = [
+        ("threshold", 50, 0.30),
+        ("threshold", -1, 0.30),
+        ("max_iters", -5, 5),
+        ("max_iters", 0, 5),
+        ("best_of", 0, 3),
+        ("best_of", 99999, 3),
+    ]
+
+    @pytest.mark.parametrize("key,bad,shipped", OUT_OF_RANGE)
+    def test_an_out_of_range_env_value_is_refused(self, key, bad, shipped, monkeypatch, capsys):
+        from untell.scripts.run import _config_defaults
+
+        monkeypatch.setenv(f"UNTELL_{key.upper()}", str(bad))
+        resolved = _config_defaults()
+        assert resolved[key] == shipped, f"{key}={bad} was accepted from the environment"
+        assert key in capsys.readouterr().err, "the rejection was silent"
+
+    @pytest.mark.parametrize("key,bad,shipped", OUT_OF_RANGE)
+    def test_an_out_of_range_config_file_value_is_refused(
+        self, key, bad, shipped, tmp_path, monkeypatch, capsys
+    ):
+        (tmp_path / "untell.yaml").write_text(f"{key}: {bad}\n", encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv(f"UNTELL_{key.upper()}", raising=False)
+
+        from untell import config
+        from untell.scripts.run import _config_defaults
+
+        if hasattr(config.load, "cache_clear"):
+            config.load.cache_clear()
+        resolved = _config_defaults()
+        assert resolved[key] == shipped, f"{key}={bad} was accepted from untell.yaml"
+        assert key in capsys.readouterr().err, "the rejection was silent"
+
+    @pytest.mark.parametrize(
+        "key,good", [("threshold", 0.55), ("max_iters", 9), ("best_of", 7)]
+    )
+    def test_an_in_range_value_still_gets_through(self, key, good, monkeypatch):
+        """The guard must reject the impossible, not the merely unusual. A rule that dropped valid
+        configuration would be a worse bug than the one it fixes, and silent besides."""
+        from untell.scripts.run import _config_defaults
+
+        monkeypatch.setenv(f"UNTELL_{key.upper()}", str(good))
+        assert _config_defaults()[key] == pytest.approx(good)
+
+    def test_the_ranges_come_from_the_same_place_as_the_cli_ones(self):
+        """Two tables of bounds is how the CLI and the API drifted apart in the first place."""
+        from untell.scripts.run import _BEST_OF, _CONFIG_RANGES, _ITERS, _PROBABILITY
+
+        for key, parser in (
+            ("threshold", _PROBABILITY), ("max_iters", _ITERS), ("best_of", _BEST_OF)
+        ):
+            low, high = _CONFIG_RANGES[key]
+            cast = int if key != "threshold" else float
+            with pytest.raises(argparse.ArgumentTypeError):
+                parser(str(cast(high + 1)))
+            assert parser(str(cast(high))) == pytest.approx(high)

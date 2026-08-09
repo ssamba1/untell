@@ -663,6 +663,35 @@ def _config_defaults() -> dict[str, object]:
                 file=sys.stderr,
             )
             continue
+        # Numeric RANGES need the same treatment as categorical choices, for the same reason the
+        # docstring above gives — and they were missed. `add_argument(type=...)` runs on what the
+        # user TYPES, never on a `default=`, so the range parsers added for the command line did
+        # nothing for the other two input channels. Measured, with the bounds already enforced on
+        # the CLI:
+        #
+        #     --threshold 50            rejected
+        #     UNTELL_THRESHOLD=50       accepted
+        #     untell.yaml threshold: 50 accepted
+        #
+        # A threshold of 50 means nothing can ever be flagged, and max_iters of -5 means the loop
+        # does no work and still reports a pass. Same nonsense, three channels, one of them
+        # guarded.
+        bounds = _CONFIG_RANGES.get(key)
+        if bounds is not None:
+            low, high = bounds
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                numeric = None
+            if numeric is None or not (low <= numeric <= high):
+                shown_low = int(low) if isinstance(shipped, int) else low
+                shown_high = int(high) if isinstance(shipped, int) else high
+                print(
+                    f"[untell] ignoring configured {key}={value!r}: outside "
+                    f"{shown_low}..{shown_high}. Using {shipped!r}.",
+                    file=sys.stderr,
+                )
+                continue
         out[key] = value
     return out
 
@@ -727,6 +756,15 @@ _PROBABILITY = _ranged("threshold", float, "_Probability", (0.0, 1.0))
 _ITERS = _ranged("max-iters", int, "_Iters", (1, 100))
 _BEST_OF = _ranged("best-of", int, "_BestOf", (1, 32))
 _MARGIN = _ranged("margin", float, "_Probability", (0.0, 1.0))
+
+# The same bounds, keyed by config name, for values that arrive as argparse DEFAULTS rather
+# than as typed arguments — a config file or a UNTELL_* variable. Derived from the API types
+# through the same helper, so there is still one definition.
+_CONFIG_RANGES: dict[str, tuple[float, float]] = {
+    "threshold": _bounds("_Probability", (0.0, 1.0)),
+    "max_iters": _bounds("_Iters", (1, 100)),
+    "best_of": _bounds("_BestOf", (1, 32)),
+}
 
 def build_parser() -> argparse.ArgumentParser:
     """The `untell humanize` argument parser.
