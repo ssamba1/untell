@@ -198,12 +198,19 @@ So: nothing retired, nothing reweighted, and the evidence tiering is no longer a
 the answer. The measurement is in the header of `untell/scripts/tells.py`, beside the code it
 describes.
 
-### 🔜 Finish the surgical objective
+### ✅ Finish the surgical objective — done; the competitor row stays faithful
 
 `surgical_substitute` cannot move a detector score at *either* tier (stdlib 0.003, full 0.0002), so
 its deletion-importance ranking buys nothing. `prefer_tells=True` ships for our rewriter
-(tells/100w 0.571 → 0.233 vs 0.458, and 2.3× faster). Remaining: decide whether the competitor
-baseline row in `eval/compare_humanizers.py` should stay faithful to PWWS (currently yes, correctly).
+(tells/100w 0.571 → 0.233 vs 0.458, and 2.3× faster).
+
+The one open question was whether the competitor baseline row in `eval/compare_humanizers.py`
+should also switch to the tells objective. It should not, and the reason is not a close call: that
+row exists to report what **PWWS actually does**. Giving it our objective would make the comparison
+measure our idea implemented twice and label one of them as the competition — the row would improve
+and mean nothing. A baseline that is allowed to be worse than us is the only kind worth publishing.
+
+Closed as decided, not as deferred.
 
 ---
 
