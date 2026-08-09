@@ -55,6 +55,38 @@ Each adapter returns a single `P(AI) ∈ [0,1]`. The ensemble in `score.py` repo
   degrade gracefully (the score JSON's `tier` field reports what actually ran).
 - **Honest** — if a model is non-commercial licensed (e.g. RADAR), mark it clearly and keep it opt-in.
 
+## Adding a language
+
+32% of the humanizer repos we profiled target a language other than English, and everything here
+is English-only. `untell/languages.py` is the registry for fixing that; the catalogues are not
+written, and will not be written by us, because Korean 번역체 calques and Chinese academic-register
+tells need people who read those languages daily.
+
+Adding one touches no existing file:
+
+```python
+# untell/tells_zh.py
+from untell.languages import register
+
+def score_zh(text: str, *, include_matches: bool = False) -> dict:
+    ...  # same shape as score_tells: words, tells, tells_per_100w, by_category
+
+register("zh", score_zh, script="Han", label="Chinese")
+```
+
+`catalogue_for(text)` then routes Han-script text to it. Until a language is registered, text in
+that script returns **None** rather than falling back to English — running an English catalogue
+over Korean finds no English tells and reports a clean score for text nothing examined, which is
+worse than saying "not supported".
+
+**What a catalogue needs before it ships is a measurement, not a word list.** Every figure in
+`untell/scripts/tells.py` is precision against a paired human/AI corpus, and several patterns that
+sounded obviously right turned out to point the wrong way — `em_dash`, the single most-cited AI tell
+in public discourse, has fired on **0 AI documents out of 400** across two corpora. A Chinese
+catalogue needs the equivalent: paired Chinese text, per-category precision, and the categories that
+fail reported next to the ones that work. `tests/test_languages.py` deliberately asserts that only
+English ships, so adding one is a conscious act with that expectation attached.
+
 ## Commit / PR style
 
 - Small, focused PRs. One concern per PR.

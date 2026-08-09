@@ -251,8 +251,19 @@ every measurement.
 
 - ✅ **Refuse to fake it** — non-Latin input now returns `language_supported: false` with a warning
   instead of "no catalogued tells found".
-- 🔜 **Pluggable per-language catalogues** — `tells/en.py`, `tells/zh.py`, `tells/ko.py`, a registry,
-  and the existing script detector routing to the right one.
+- ✅ **The registry, additively** — `untell/languages.py` ships the architecture with exactly one
+  entry: English, pointing at the catalogue that already exists. `register(code, scorer,
+  script=...)` adds a language, `catalogue_for(text)` routes by dominant script, and a text in a
+  script nobody has written for returns **None** rather than falling back to English — because
+  running the English catalogue over Korean finds no English tells and reports a clean score for
+  text nothing examined.
+
+  Done this way precisely *because* the restructuring version is a decision. `untell/scripts/tells.py`
+  is not moved, not renamed and not imported differently by anything; a test asserts it contains no
+  reference to the registry at all, so "add a file, touch nothing" stays true rather than being an
+  aspiration. If you later want the full `tells/en.py` split, nothing here blocks it.
+
+- 🔜 **The catalogues themselves** — still not ours to write, and unchanged from the position below.
 
 I will not write the catalogues themselves: Korean 번역체 calques and Chinese academic-register tells
 need people who speak those languages. But **the architecture is the contribution** — it turns our
