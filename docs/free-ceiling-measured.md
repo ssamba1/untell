@@ -2506,3 +2506,32 @@ its provenance, and this one states a date and nothing else. A date is not prove
 should carry its corpus, tier and n like every figure in this document does, and the fix is to
 re-measure it deliberately rather than to quietly swap in my numbers — mine are n=15, single-run,
 and would be exactly the thin replacement Result 38 argued against.
+
+### Result 42b — the `surgical` claim, re-derived: understated, and identifiably so
+
+The same table's `surgical` row states its conditions properly — "over 30 HC3+RAID texts", with a
+before and an after — so unlike Result 42 it can be checked. Reproduced with 15 HC3 + 15 RAID:
+
+| | claimed | re-measured |
+|---|---|---|
+| texts changed | 19/30 | **23/30** |
+| tells/100w before | 8.02 | **8.02** |
+| tells/100w after | 7.22 | **6.88** |
+| detector delta | −0.004 | **−0.0212** |
+
+**The before value reproduces to the digit**, which is what makes the rest trustworthy: it confirms
+the corpus construction is the same one, so the differences are about the code and not about a
+different sample.
+
+Every outcome is *better* than documented, and the cause is plausibly in this document. Results 31
+and 32 added inflections and twelve vocabulary entries to the substitution map — `leverages` and
+`leveraging` where only `leverage` was covered — so a pass that depends on map coverage doing more
+work is the expected consequence.
+
+Worth flagging the direction. A discrepancy that flatters the project is where bias gets in, and
+"the numbers improved" is the easiest thing in the world to accept without checking. It survives
+here for one specific reason: the *baseline* matches exactly. A run that had drifted to an easier
+sample would have moved 8.02 too.
+
+Single run, n = 30. The row now cites this re-derivation rather than silently carrying either set
+of numbers as fact.
