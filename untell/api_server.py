@@ -519,7 +519,20 @@ _VERIFY_RESPONSES = _obj(
         "configured": {"type": "array", "items": _STR},
         "threshold": _NUM,
         "results": {"type": "object", "additionalProperties": True},
-        "passes_all": _BOOL, "n_configured": _INT, "n_passing": _INT,
+        # `passes_all` is False when NOTHING ran, not only when something failed: it is
+        # `bool(names) and all(...)`, which is False for an empty checker set. That is the
+        # conservative choice — refusing to report a pass nobody verified — but it means a
+        # consumer reading the boolean alone cannot tell "the text failed" from "no checker was
+        # configured". The CLI says so in words; a machine client only has this schema.
+        "passes_all": {
+            **_BOOL,
+            "description": (
+                "true only if every configured checker passed. FALSE when n_configured is 0 — "
+                "nothing ran, which is not a verdict on the text. Check n_configured first."
+            ),
+        },
+        "n_configured": {**_INT, "description": "how many checkers actually ran; 0 means none"},
+        "n_passing": _INT,
     },
     required=["configured", "passes_all", "n_configured"],
 )
