@@ -2679,3 +2679,57 @@ Two things worth keeping:
 The direction is now a test (`tests/test_tells_point_the_right_way.py`) with offline fixtures that
 reproduce the corpus separation closely — 11.66 AI vs 0.52 human, against 7.3/0.6 on HC3 — so CI
 catches an inversion without a corpus download.
+
+## Result 46
+
+**The central competitive claim holds; one number under it did not.**
+
+Re-derivation of the last defect row, "the central competitive claim quoted a sentence **that exists
+in no commit**". The fabricated quote is long gone and a check already prevents its wording
+returning. What the row does not cover is whether the claim that *replaced* it is true, so this
+checks that instead, against all 435 census records.
+
+The claim: five meaning gates and byte-exact citation locking that **no profiled repo combines**.
+
+| | count |
+|---|---|
+| repos profiled | 435 |
+| any fact-preservation mechanism | 131 |
+| any meaning-verification mechanism | 85 |
+| both fields non-empty | 56 |
+| both, after reading the prose | **0** |
+
+Every repo with a real mechanical meaning gate says `none` for fact preservation, in those words —
+`apt` (bidirectional RoBERTa-NLI), `StealthRL`, `Waterfall`, `CLARE`, `DeepfakeTextDetection`,
+`conversantech/humanizer-ai`, `TSAPA`, `AuthorMist`, `ii5/Humanizer_transformers`. The claim holds.
+
+Worth stating plainly, because the page could be read as claiming more: **citation locking on its
+own is not unique.** `marmbiz/humanizer-de` (80★) extracts anchor spans — numbers, dates, URLs,
+DOIs, legal references, quoted strings — into a versioned JSON ledger and lints against it. It has
+no meaning-gate stack, so the *combination* claim survives, but "nobody locks citations" would be
+false and is not what the page says.
+
+**Keyword matching cannot tell presence from absence.** A first pass looked for meaning-gate and
+citation vocabulary in the same record and returned one repo with both. Reading it, the sentence
+was *"No automated cosine similarity, NLI e[ntailment]..."* — the words were there because the
+entry denies them. A grep over 435 free-text verdicts had produced exactly one hit and it was
+backwards. Related to Result 45's lesson, one level up: there, a rate hid a count of two; here, a
+match hid a negation.
+
+**The number that was wrong.** The pages say 49 of 435 put a detector in the loop, 43 at inference
+time. Re-derived: 49 is exact. 44 is the inference-time count — 49 answer "yes", and five of them
+state the loop is training-time or offline only (`StealthRL`, `AuthorMist`, `CAU-ISS-Lab`,
+`iljung1106`, `OUTFOX`). Corrected in all three places it appeared.
+
+One repo out of 435 is not much on its own. What makes it worth a result is that no written rule
+reproduced it, so there was no way to tell a typo from a judgement call about a borderline repo.
+`check_census_counts` now re-derives every published census count from the JSON, with the reading
+rules stated in code:
+
+- `detector_in_loop` is answered with a verdict word, so it reads by prefix. Applying the other
+  fields' rule to it counts the 28 `unclear` entries as yes and returns 112.
+- `meaning_verification` and `fact_preservation` are descriptive prose, so they read by whether
+  they open with a denial.
+- "139 of 435 target another language" is deliberately **not** checked. The census JSON has no
+  language field; confirming that count would mean inventing a rule and calling the result a
+  verification.
