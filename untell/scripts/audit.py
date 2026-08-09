@@ -333,6 +333,7 @@ def check_derivable(report: Report) -> None:
     check_demo_privacy_claims(report)
     check_corpus_bound_claims(report)
     check_dynamic_env_vars(report)
+    check_skill_commands(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -380,6 +381,78 @@ _CORPUS_BOUND_CLAIMS: tuple[tuple[str, str, str], ...] = (
         "same claim, other phrasing",
     ),
 )
+
+
+def check_skill_commands(report: Report) -> None:
+    """Every command SKILL.md tells Claude to run must exist and accept the flags it is given.
+
+    ``untell/SKILL.md`` is the primary interface for Claude Code users — it is the procedure the
+    model follows — and it was not in ``LIVE_DOCS``, so nothing checked it. A renamed script or a
+    dropped flag there does not produce a failing test; it produces a skill that errors on a user's
+    first invocation, with the model improvising around a command that no longer works.
+
+    Commands are split on the pipe before flags are attributed. A naive scan blamed
+    ``preserve.py`` for ``--threshold``, because the line reads::
+
+        python scripts/preserve.py --restore --mapping '...' | python scripts/score.py --threshold 0.30
+
+    and reported a defect that does not exist. A flag belongs to the segment it appears in.
+    """
+    import subprocess
+
+    skill = REPO / "untell" / "SKILL.md"
+    if not skill.exists():
+        report.check("SKILL.md exists", False, "missing")
+        return
+    text = skill.read_text(encoding="utf-8", errors="replace")
+
+    # Script paths first: a renamed module is the likelier breakage and needs no subprocess.
+    referenced = sorted(set(re.findall(r"scripts[/\\](\w+)\.py", text)))
+    absent = [s for s in referenced if not (REPO / "untell" / "scripts" / f"{s}.py").exists()]
+    report.check(
+        "every script SKILL.md invokes exists",
+        not absent,
+        f"missing: {absent}" if absent else f"{len(referenced)} scripts",
+    )
+
+    pyproject = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+    segment_re = re.compile(r"(\w+\.py|untell-[\w-]+)((?:\s+[^|\n`]*)?)")
+    flag_re = re.compile(r"(--[a-z][\w-]+)")
+    wanted: dict[str, set[str]] = {}
+    for line in text.splitlines():
+        for segment in line.split("|"):
+            for match in segment_re.finditer(segment):
+                flags = set(flag_re.findall(match.group(2) or ""))
+                if flags:
+                    wanted.setdefault(match.group(1), set()).update(flags)
+
+    unaccepted: list[str] = []
+    for target, flags in sorted(wanted.items()):
+        if target.endswith(".py"):
+            module = f"untell.scripts.{target[:-3]}"
+        else:
+            found = re.search(rf"^{re.escape(target)}\s*=\s*\"([\w.]+):", pyproject, re.M)
+            module = found.group(1) if found else None
+        if not module:
+            unaccepted.append(f"{target}: not a declared console script")
+            continue
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", module, "--help"],
+                capture_output=True, text=True, timeout=120,
+            )
+        except Exception as exc:  # noqa: BLE001
+            unaccepted.append(f"{target}: --help failed ({type(exc).__name__})")
+            continue
+        help_text = result.stdout + result.stderr
+        unaccepted += [f"{target} {f}" for f in sorted(flags) if f not in help_text]
+
+    report.check(
+        "every flag SKILL.md passes is accepted by the script it passes it to",
+        not unaccepted,
+        f"rejected: {unaccepted}" if unaccepted
+        else f"{sum(len(v) for v in wanted.values())} flags across {len(wanted)} commands",
+    )
 
 
 def check_dynamic_env_vars(report: Report) -> None:
