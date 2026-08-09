@@ -338,6 +338,7 @@ def check_derivable(report: Report) -> None:
     check_version_consistency(report)
     check_optional_extras(report)
     check_no_control_characters(report)
+    check_census_counts(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -443,6 +444,102 @@ def _tracked_text_files() -> list[str]:
         for line in result.stdout.splitlines()
         if line and Path(line).suffix in suffixes
     ]
+
+
+# Rules for reading the census's free-text verdict fields. They are prose, not booleans, so every
+# count published from them depends on a rule — and a count whose rule is not written down cannot
+# be reproduced or corrected. These are the rules the published numbers now mean.
+_CENSUS_NO = ("none", "no ", "not ", "nothing")
+
+# A loop that only runs while a model is being trained is not an inference-time loop, whatever the
+# field's first word says. Each of these entries states so in its own prose; they are matched by
+# phrase rather than named, so a corrected entry changes the count instead of silently disagreeing
+# with a hard-coded list.
+_TRAINING_ONLY = re.compile(
+    r"not (at )?inference|only during training|during training only|offline not real|"
+    r"training[- ]time only|only in training|no re-?scoring at inference|"
+    r"only during the training",
+    re.I,
+)
+
+
+def _census_records() -> list[dict]:
+    path = REPO / "docs" / "humanizer-census.json"
+    if not path.exists():
+        return []
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _census_says_yes(value: str | None) -> bool:
+    text = re.sub(r"\s+", " ", value or "").strip().lower()
+    return bool(text) and not text.startswith(_CENSUS_NO) and text not in ("-", "n/a")
+
+
+def check_census_counts(report: Report) -> None:
+    """Every count the census pages publish must fall out of the census data.
+
+    These are the numbers the competitive claims rest on, and they were written by reading 435
+    free-text entries. Re-deriving them found one that no rule reproduces: the pages said 43 repos
+    run a detector at inference time, and the data says 44 — 49 answer "yes" to a detector in the
+    loop, five of which state that the loop is training-time or offline only. One repo out by one
+    is not much; a number nobody can re-derive is, because there is no way to tell a typo from a
+    judgement call.
+
+    "139 target another language" is deliberately not checked: the census JSON carries no language
+    field, so that count lives only in the prose that made it and this check would have to invent
+    a rule to confirm it.
+    """
+    records = _census_records()
+    if not records:
+        report.check("census data is readable", False, "docs/humanizer-census.json missing")
+        return
+
+    # `detector_in_loop` is answered with a verdict word — yes / no / partial / unclear — so it
+    # reads by prefix. The other two fields are descriptive prose with no verdict word, so they
+    # read by "does it start by denying one". Using the descriptive rule on this field counts the
+    # 28 `unclear` entries as yes and reports 112.
+    in_loop = [
+        r for r in records
+        if re.sub(r"\s+", " ", r.get("detector_in_loop") or "").strip().lower().startswith("yes")
+    ]
+    at_inference = [r for r in in_loop if not _TRAINING_ONLY.search(r.get("detector_in_loop") or "")]
+    counts = {
+        "detector-in-loop": len(in_loop),
+        "at inference time": len(at_inference),
+        "meaning verification": sum(1 for r in records if _census_says_yes(r.get("meaning_verification"))),
+        "fact preservation": sum(1 for r in records if _census_says_yes(r.get("fact_preservation"))),
+    }
+    # Each published sentence, and the count it must agree with.
+    claims = [
+        ("docs/humanizer-census.md", r"\*\*(\d+)\*\* detector-in-loop", "detector-in-loop"),
+        ("docs/humanizer-census.md", r"detector-in-loop \((\d+) at inference time\)", "at inference time"),
+        ("docs/humanizer-census.md", r"(\d+) of 435 put a detector in the loop", "detector-in-loop"),
+        ("docs/humanizer-census.md", r"put a detector in the loop; (\d+) at inference", "at inference time"),
+        ("docs/why-best-open-repo.md", r"(\d+) of 435 profiled repos put a detector", "detector-in-loop"),
+        ("docs/why-best-open-repo.md", r"(\d+) of them at inference time", "at inference time"),
+        ("docs/why-best-open-repo.md", r"(\d+) of 435 verify meaning", "meaning verification"),
+        ("docs/why-best-open-repo.md", r"(\d+) do some[\s>]+form of fact preservation", "fact preservation"),
+        ("docs/humanizer-census.md", r"\*\*(\d+) repos do some fact preservation\*\*", "fact preservation"),
+    ]
+    wrong: list[str] = []
+    checked = 0
+    for rel, pattern, key in claims:
+        path = REPO / rel
+        if not path.exists():
+            continue
+        match = re.search(pattern, path.read_text(encoding="utf-8"))
+        if not match:
+            wrong.append(f"{rel}: no sentence matches /{pattern}/")
+            continue
+        checked += 1
+        if int(match.group(1)) != counts[key]:
+            wrong.append(f"{rel}: says {match.group(1)} {key}, data says {counts[key]}")
+
+    report.check(
+        "every census count the docs publish is re-derivable from the census data",
+        not wrong,
+        "; ".join(wrong) if wrong else f"{checked} published counts agree ({counts})",
+    )
 
 
 def check_optional_extras(report: Report) -> None:

@@ -15,11 +15,11 @@ The top 435 by relevance were then read individually: README plus source where r
 
 | claim as previously written | census finding |
 |---|---|
-| an inference-time detector-feedback loop is what nobody else has | **49 of 435 put a detector in the loop; 43 at inference time** |
+| an inference-time detector-feedback loop is what nobody else has | **49 of 435 put a detector in the loop; 44 at inference time** |
 | automated meaning verification is ours alone | **85 of 435 verify meaning; 202 mention a semantic check** (NLI, BERTScore, USE or embedding cosine) |
 | we are the most complete open humanizer | **true only for English.** **139 of 435 (32%) target another language**, including four of the eight largest tools in the field |
 
-Counts across the 435 read: **49** detector-in-loop (43 at inference time) · **85** meaning
+Counts across the 435 read: **49** detector-in-loop (44 at inference time) · **85** meaning
 verification · **131** some fact preservation · **136** any tests · **139** non-English.
 
 ---

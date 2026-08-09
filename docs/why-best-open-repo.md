@@ -26,7 +26,7 @@ they are not a quotation, and a previous version of this page presented them as 
 > too strong, and they are corrected there rather than quietly here:
 >
 > - **The detector loop is not ours alone.** 49 of 435 profiled repos put a detector in the loop,
->   43 of them at inference time. `chengez/Adversarial-Paraphrasing` couples it *per token*.
+>   44 of them at inference time. `chengez/Adversarial-Paraphrasing` couples it *per token*.
 > - **Automated meaning verification is not ours alone.** 85 of 435 verify meaning, and 131 do some
 >   form of fact preservation. `Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI
 >   entailment gate this repo does. 
