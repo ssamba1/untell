@@ -55,7 +55,8 @@ _SYN: dict[str, list[str]] = {
     "leverages": ["uses", "leans on", "taps into"],
     "leveraging": ["using", "leaning on", "tapping into"],
     "utilizes": ["uses"],
-    "demonstrating": ["showing", "proving"],
+    # "proving" dropped: it upgrades the claim. See the note above "demonstrate" below.
+    "demonstrating": ["showing", "indicating"],
     "achieving": ["reaching", "hitting"],
     "required": ["needed"],
     "requiring": ["needing"],
@@ -142,13 +143,17 @@ _SYN: dict[str, list[str]] = {
     "interplay": ["interaction", "exchange", "give-and-take"],
     "underpin": ["support", "undergird", "back"],
     "compelling": ["powerful", "convincing", "strong"],
-    "unprecedented": ["unmatched", "unheard-of", "record"],
+    # "record" dropped: "record accuracy" and "unprecedented accuracy" are different claims —
+    # the first is a ranking against past results, the second says there is no precedent.
+    "unprecedented": ["unmatched", "unheard-of"],
     "exceptional": ["outstanding", "top-notch", "first-rate"],
     "remarkable": ["striking", "impressive", "notable"],
     "sophisticated": ["advanced", "refined", "polished"],
     "invaluable": ["priceless", "indispensable", "worth a lot"],
     "unwavering": ["steady", "firm", "constant"],
-    "scalable": ["expandable", "growable", "adaptable"],
+    # "growable" dropped: found by reading output ("to aid growable outcomes"). A word you can
+    # parse and would never choose is a fingerprint, not a neutral swap.
+    "scalable": ["expandable", "adaptable"],
     "bespoke": ["custom", "tailored", "made-to-order"],
     "showcasing": ["showing", "highlighting", "presenting"],
     "showcase": ["show", "highlight", "present"],
@@ -257,7 +262,12 @@ _SYN: dict[str, list[str]] = {
     "ultimately": ["in the end", "finally", "eventually"],
     "overall": ["in the end", "all told", "on the whole"],
     "essentially": ["basically", "at bottom", "put simply"],
-    "arguably": ["possibly", "debatably", "one could say"],
+    # "possibly" dropped: it downgrades. "arguably the best" ASSERTS and invites dispute;
+    # "possibly the best" concedes uncertainty. "one could say" dropped for grammar — this is
+    # an in-place adverb substitution, so it produced "This is one could say the strongest
+    # result." One survivor is correct here: "arguably" has no close single-word synonym, and
+    # inventing one to pad the list is how the other three got in.
+    "arguably": ["debatably"],
     # --- High-signal verbs to flatten ---
     "numerous": ["many", "plenty of", "lots of"],
     "significant": ["real", "major", "big"],
@@ -267,8 +277,15 @@ _SYN: dict[str, list[str]] = {
     "essential": ["needed", "key", "necessary"],
     "facilitate": ["help", "ease", "aid"],
     "facilitates": ["helps", "eases", "aids"],
-    "demonstrate": ["show", "prove", "display"],
-    "demonstrates": ["shows", "proves", "displays"],
+    # The whole "demonstrate" family had two defects at once, and the meaning gates catch
+    # neither. "prove" upgrades the epistemic strength of a claim — in a paper, "our
+    # experiments demonstrate X" and "our experiments prove X" are different assertions, and
+    # entailment scores that swap at 0.993 with 0.0009 contradiction, so it passes every gate
+    # this project has. "display" is simply ungrammatical in the construction the key appears
+    # in: "the experiments display that the method works" — display takes an object, not a
+    # that-clause. "indicate" preserves both the strength and the syntax.
+    "demonstrate": ["show", "indicate"],
+    "demonstrates": ["shows", "indicates"],
     "enhance": ["improve", "boost", "strengthen"],
     "enhances": ["improves", "boosts", "strengthens"],
     "optimize": ["tune", "sharpen", "improve"],

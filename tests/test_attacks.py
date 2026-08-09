@@ -679,3 +679,69 @@ class TestInflectedKeysAgreeWithTheirSubstitutes:
         }
         offenders = {k: v for k, v in offenders.items() if v}
         assert not offenders, f"substitutes that are themselves tells: {offenders}"
+
+
+class TestNoSubstituteChangesHowStronglySomethingIsClaimed:
+    """The meaning gates do not check epistemic strength, and nothing else did either.
+
+    `demonstrates -> proves` scored **0.993 entailment / 0.0009 contradiction** against the
+    entailment gate: it passes cleanly, because "our experiments prove X" really does entail "our
+    experiments demonstrate X". Entailment is the wrong instrument for this — a strictly stronger
+    claim entails the weaker one by construction, which is exactly why swapping in the stronger one
+    is undetectable that way and has to be excluded at the source.
+
+    This matters more here than it would elsewhere: meaning preservation is the differentiator this
+    project claims over every tool in the census, and "the experiments prove it" is a different
+    scientific statement from "the experiments demonstrate it".
+    """
+
+    # Words that assert more (or less) than a hedged or neutral original.
+    UPGRADES = {
+        "prove", "proves", "proving", "proven", "guarantee", "guarantees",
+        "always", "never", "definitely", "certainly", "must",
+    }
+    DOWNGRADES = {"possibly", "maybe", "perhaps", "sometimes", "might"}
+
+    def test_no_substitute_strengthens_a_claim(self):
+        from untell.attacks.word_importance import _SYN
+
+        offenders = [
+            (key, alt)
+            for key, alts in _SYN.items()
+            for alt in alts
+            if alt.lower() in self.UPGRADES
+        ]
+        assert not offenders, (
+            f"these substitutions assert more than the word they replace, and entailment cannot "
+            f"catch them because the stronger claim entails the weaker one: {offenders}"
+        )
+
+    def test_no_substitute_weakens_a_claim(self):
+        from untell.attacks.word_importance import _SYN
+
+        offenders = [
+            (key, alt)
+            for key, alts in _SYN.items()
+            for alt in alts
+            if alt.lower() in self.DOWNGRADES
+        ]
+        assert not offenders, f"these substitutions concede more than the original: {offenders}"
+
+    def test_a_single_word_key_is_not_replaced_by_a_clause(self):
+        """Substitution is in-place and syntax-blind. `arguably -> "one could say"` produced
+        "This is one could say the strongest result." A multi-word substitute is fine when it is a
+        phrase of the same category ("spell out the details"); a substitute containing a finite
+        verb and its own subject is a clause and cannot sit where a single adverb sat.
+        """
+        from untell.attacks.word_importance import _SYN
+
+        clause_like = {"one could say", "it could be said", "some would say", "one might say"}
+        offenders = [
+            (key, alt) for key, alts in _SYN.items() for alt in alts if alt.lower() in clause_like
+        ]
+        assert not offenders, f"clause substituted for a single word: {offenders}"
+
+    def test_the_guard_lists_are_not_empty(self):
+        """Guards the guard: an empty UPGRADES set would make the assertions above vacuous."""
+        assert len(self.UPGRADES) >= 8
+        assert len(self.DOWNGRADES) >= 4
