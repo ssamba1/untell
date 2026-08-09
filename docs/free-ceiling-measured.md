@@ -3038,3 +3038,45 @@ was cheap and worth doing: it turned "where else might this bite?" from a guess 
 table, and it showed that `\s` had quietly protected a third of the candidates all along. The
 measurement then said the single genuine survivor was not worth touching. Finding a real bug and
 declining to fix it is a result, not an omission.
+
+## Result 54
+
+**Running untell twice: worth 27% of the first pass, and one text in ten crosses a cliff.**
+
+Nobody had measured what happens when a user feeds untell its own output, which is ordinary
+behaviour. 10 HC3 texts, composite, 3 iterations, scored on the tier the loop optimises against.
+
+| | original | 1 pass | 2 passes |
+|---|---|---|---|
+| lite P(AI) — the loop's target | 0.5747 | 0.4741 | **0.4466** |
+| similarity to source | 1.0000 | 0.9847 | 0.9812 |
+| tells | 8.70 | 7.10 | 8.20 |
+
+The second pass adds **+0.0275**, about 27% of the first pass's +0.1006, and it is not noise: better
+on 6 of 10 texts, **worse on none**. Extra meaning drift is 0.0036. So a second pass is mildly
+worth it, with diminishing returns exactly as expected.
+
+**The tells row is one text.** 7.10 -> 8.20 looks like the second pass degrading naturalness by 15%.
+Per text: unchanged on 9, and **+11 on one**. Quoting the mean here would have produced "a second
+pass makes text read measurably worse", which is false for 90% of inputs — the same means-versus-
+per-item error already recorded in [Result 45](free-ceiling-measured.md) (a rate hiding a count of
+two) and [Result 48](free-ceiling-measured.md) (arms that improved the mean and lost the head-to-
+head). Third time this session that the aggregate and the per-item record disagreed, and the third
+time the per-item record was the true one.
+
+**What happened to that one text.** Pass 1 scored 0 tells; pass 2 scored 11, all
+`repeated_phrasing`. That category reports nothing below a 5%-of-tokens repetition share and the
+full count above it — a threshold chosen from a false-positive curve, documented in its docstring.
+Pass 1 sat under the bar with 6 repeated trigrams; pass 2 added three more and crossed it. So the
+jump is a cliff in the metric, not an 11-fold collapse in quality — but the underlying fact is
+real: **the rewriter added repetition to text it had already rewritten.**
+
+The loop cannot currently prevent this. Its tells tie-break only applies among candidates within
+`_TELLS_EPS` of the best detector score, so a candidate that scores clearly better on the detector
+wins even if it repeats more — which is precisely the trade the second pass is making. Whether to
+subordinate detector score to the repetition threshold is a real design question with a real cost,
+and it needs its own measurement rather than a guess; recorded here as the open question it is.
+
+Worth keeping: **"diminishing returns" and "safe to repeat" are different claims.** The aggregate
+supports the first. Only the per-text record shows that one input in ten hits a discontinuity, and
+a user re-running on a whole corpus would meet it about that often.
