@@ -2333,3 +2333,63 @@ measured at ±0.0003 when it was written, so the whole question is distributiona
 claim with a thin one; doing it here would be the same error. What would settle it: both corpora at
 n ≥ 30 with repeats, the detector delta confirmed at zero for the capped version, and a decision
 recorded about whether undershoot on HC3 is an acceptable price for matching RAID.
+
+---
+
+## Result 40 — where the loop's time actually goes
+
+Nothing in this repository has ever profiled the loop, so every performance statement in it —
+including mine, earlier in this document — has been a guess about a part rather than a measurement
+of the whole. `cProfile` over 3 RAID texts at `--tier full --rewriter composite --best-of 3`,
+409.6 s total:
+
+| | cumulative | share |
+|---|---|---|
+| `_score_with_detectors` | 385.8 s | **94%** |
+| — of which `windowed_max` | 270.8 s | 66% |
+| — of which `roberta_openai` | 151.1 s | 37% |
+| — of which `fast_detectgpt` | 130.0 s | 32% |
+| — of which `perplexity_burstiness` | 113.1 s | 28% |
+| `surgical_substitute` → detector batches | 144.7 s | **35%** |
+| everything else (rewriting, gates, I/O) | ~24 s | 6% |
+
+**94% of the loop is detector scoring.** Not rewriting, not the meaning gates, not preserve-lock.
+
+### This corrects something I wrote earlier in this document
+
+Result 35 reported the chunked meaning gates costing 0.17 s → 0.57 s per pair and described it as
+"3.4× dearer". That number is right and the framing was misleading: the gates do not appear in the
+top thirty entries of this profile at all. Against 385 s of detector passes, tripling a component
+that costs single-digit seconds is not a performance decision worth the sentence I gave it. The
+honest version is that the gate fix was free in practice, and I said "3.4×" without knowing what it
+was 3.4× *of*.
+
+### The surgical stage
+
+`surgical_substitute` accounts for 144.7 s — 35% of the run — in detector batches, one per ranked
+word. So: does the stage earn a third of the wall clock? Measured directly, 10 RAID texts, same
+seeds:
+
+| | post mean max | tells/100w | time |
+|---|---|---|---|
+| `structural` alone | 0.4924 | 7.07 | ~0 s |
+| `composite` (structural + surgical) | **0.4018** | 6.97 | 88.2 s |
+
+**Yes.** −0.091 on the score, about seven times the ±0.013 noise floor from Result 34, for 8.8 s
+per text. The tells barely move (7.07 → 6.97), so essentially all of the gain is the detector-guided
+substitution doing the thing it is named for.
+
+I wrote the opposite here first and the measurement corrected it. Having read that `prefer_tells=True`
+makes the *ranking* detector-independent, I concluded the batches must be a mere guard against
+tell-swaps raising the score, and wrote that a third of the runtime buys "the tell swaps did not
+make things worse". That is wrong: the acceptance test takes a strict score win first and only falls
+back to the tells objective within a noise band, so the batches optimise and guard. The 0.0002
+figure quoted for this pass elsewhere is from the *standalone* surgical rewriter on the stdlib path,
+not from the composite chain at full tier — a different configuration answering a different
+question, which I had folded into one number.
+
+### For anyone choosing a tier
+
+`windowed_max` is 66% of the run on its own: long documents are scored in overlapping windows, and
+that is what makes the full tier expensive. It is also what fixed the detectors reading only the
+first ~380 words. The cost is the fix, not an accident of it.
