@@ -2910,3 +2910,52 @@ Two things worth keeping:
   REST consumer gets the boolean with no sentence attached, and a machine client reading it acts
   on "failed". The fix was not to change the value, which a test pins for good reason, but to say
   in the schema what it means — the only place a machine client can read.
+
+## Result 51
+
+**A non-breaking space nearly doubled the false-accusation rate on human writing.**
+
+The concurrent session had just found `hc3_roberta` reading punctuation spacing as authorship, so
+the obvious question was whether that was one bug or one instance of a class. Six semantically
+neutral rewrites, four full-tier detectors, mean absolute change in P(AI):
+
+| neutral rewrite | perplexity | roberta_openai | hc3_roberta | fast_detectgpt |
+|---|---|---|---|---|
+| trailing spaces | 0.0039 | 0.0024 | 0.0001 | 0.0388 |
+| double spaces | 0.0562 | 0.0000 | 0.0000 | 0.1059 |
+| CRLF line ends | 0.0952 | 0.0063 | 0.0015 | 0.0586 |
+| curly quotes | 0.0139 | 0.0000 | 0.0000 | 0.0770 |
+| **space -> U+00A0** | 0.1122 | 0.3068 | **0.9990** | 0.3919 |
+
+A sixth transform, hard-wrapping at 40 characters, moved everything by 0.38–0.99 and was discarded:
+it splits words mid-token, so it is not a neutral rewrite and proves nothing.
+
+The non-breaking space is neutral. It is visually identical to a space and it is what a paste out
+of Word, a web page or a PDF contains. Measured on 10 HC3 pairs, full tier:
+
+| | mean P(AI) plain | with U+00A0 | flagged plain | flagged nbsp |
+|---|---|---|---|---|
+| human | 0.4322 | **0.7801** | 5/10 | **9/10** |
+| AI | 0.9996 | 0.8935 | 10/10 | 10/10 |
+
+**The entire effect lands on human writers.** AI text is flagged either way; human text goes from
+half flagged to nearly all flagged, for a change no reader can see.
+
+`scrub_hidden` already normalises these characters, so the rewrite loop was never affected — the
+damage was confined to the scoring path, which is what `untell score`, `/score` and the MCP `score`
+tool call directly. `_normalise_ws` existed for exactly this class of problem, and its own docstring
+records spacing swings of up to 0.13 as the reason it was written. Its pattern was `[ \t]{2,}`:
+ASCII only, and runs of two or more, so a single U+00A0 between words passed straight through.
+Folding Unicode category-Zs separators before collapsing runs takes the delta to 0.0000 on every
+detector, with ordinary prose byte-identical.
+
+Two things worth keeping:
+
+- **A fix for a class is not a fix for the class unless you enumerate the class.** `_normalise_ws`
+  was written to make scoring invariant to spacing and left the most common non-ASCII spacing in
+  existence untouched. The docstring, the measurement and the intent were all right; the character
+  set was too small.
+- **Ask which side of the ledger an asymmetric error lands on.** A detector that mis-scores AI text
+  costs the tool an evasion. A detector that mis-scores human text costs a person an accusation.
+  This one only did the second, and nothing in the aggregate would have shown that — the mean over
+  both halves moves by +0.12, which looks like noise.
