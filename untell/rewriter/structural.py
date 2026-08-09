@@ -35,7 +35,12 @@ from untell.text_split import split_sentences
 _SAFE_TO_LOWERCASE = {
     # function words and determiners
     "the", "this", "that", "these", "those", "a", "an", "it", "its", "they", "their", "them",
-    "he", "his", "him", "she", "her", "we", "our", "us", "you", "your", "i", "my", "there",
+    # "i" was here, in among the other pronouns, and it is the one word in English that is never
+    # lowercase. It produced "The system was slow, and i believe the cache was cold." Sitting
+    # between "you" and "my" it reads as an oversight rather than a decision — every other pronoun
+    # in this row genuinely is safe. `_safe_to_lowercase` now refuses it outright as well, so
+    # re-adding it here cannot resurrect the bug.
+    "he", "his", "him", "she", "her", "we", "our", "us", "you", "your", "my", "there",
     "here", "some", "many", "most", "much", "all", "each", "every", "both", "few", "several",
     "one", "two", "three", "no", "not", "if", "when", "while", "after", "before", "since",
     "because", "although", "though", "unless", "until", "as", "but", "and", "or", "so", "yet",
@@ -79,6 +84,13 @@ def _safe_to_lowercase(word: str, context: str = "") -> bool:
     """
     bare = word.strip(",;:.!?\"'()").lower()
     if not bare:
+        return False
+    # The pronoun "I" is capitalised everywhere in English, so no evidence below can license
+    # lowercasing it. Checked before the curated list rather than only removing it from that list,
+    # because the last two guards would each let it back in: `word.isupper()` exempts single
+    # characters, and "i" appears lower case inside plenty of ordinary text, which the
+    # context-evidence rule at the bottom reads as proof it is an ordinary word.
+    if bare == "i":
         return False
     if word.isupper() and len(word) > 1:
         return False
@@ -561,6 +573,18 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
             merged_ok = bool(b) and (
                 b[0].islower() or _safe_to_lowercase(b.split()[0], " ".join(sentences))
             )
+            # A sentence that is itself a quotation cannot be joined onto the one before it.
+            # Measured on dialogue:
+            #     '"I told you it would not scale," she said. "Moreover, the cost is prohibitive."'
+            #   -> '"... ," she said, and "And, the cost is prohibitive.".'
+            # Two separate breakages in one join. The connector lands in front of an opening quote,
+            # so the marker substitution inside the quotation ("Moreover," -> "And,") ends up
+            # reading "and \"And,"; and the quoted sentence's own full stop sits inside the quote,
+            # so rstrip(".!?") cannot reach it and the merge appends a second one after the closing
+            # quote. Neither is worth special-casing: a quotation is somebody else's sentence and
+            # joining it to the narration changes who is speaking.
+            if b.lstrip().startswith(('"', "“", "'", "‘")):
+                merged_ok = False
             if b and merged_ok:
                 b = b.rstrip(".!?")
                 b = b[0].lower() + b[1:] if b and b[0].isupper() else b

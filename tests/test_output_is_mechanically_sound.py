@@ -267,3 +267,99 @@ def test_the_output_is_not_shorter_than_the_input_by_much(source):
         assert len(out.split()) >= 0.75 * len(source.split()), (
             f"seed {seed}: {len(source.split())} words in, {len(out.split())} out"
         )
+
+
+class TestInputShapesTheCorporaDoNotContain:
+    """Every measurement in this repo runs on HC3 forum answers or RAID paper abstracts:
+    continuous prose, third person, declarative. Users paste other things. Reading the output on
+    other shapes found two defects that no metric here could see — a tell catalogue scores
+    "and i believe" as perfectly clean, and a mangled quotation as clean too.
+    """
+
+    @staticmethod
+    def _many(text: str, n: int = 60):
+        import random
+
+        from untell.rewriter.composite import CompositeRewriter
+
+        rewriter = CompositeRewriter()
+        out = []
+        for seed in range(n):
+            random.seed(seed)
+            out.append(rewriter.rewrite(text, {"tier": "lite", "max": 0.9}))
+        return out
+
+    def test_the_pronoun_i_is_never_lowercased(self):
+        """`"i"` sat in the 220-word `_SAFE_TO_LOWERCASE` list among the other pronouns, and it is
+        the one word in English that is never lower case. Output: "The system was slow, and i
+        believe the cache was cold."
+        """
+        for text in (
+            "The system was slow. I believe the cache was cold at that moment in time.",
+            "I have been working on this for months. Moreover, I believe the approach is sound.",
+            "It failed again, and I could not tell why the retry logic never fired at all.",
+        ):
+            for got in self._many(text):
+                assert " i " not in got and not got.startswith("i "), got
+                assert " i'" not in got and " i," not in got, got
+
+    def test_a_quoted_sentence_is_not_merged_into_the_one_before_it(self):
+        """Dialogue produced: '"...," she said, and "And, the cost is prohibitive.".' — the
+        connector landed before an opening quote, and the quoted sentence's own full stop is inside
+        the quotation where rstrip cannot reach it, so the merge appended a second one.
+        """
+        text = (
+            '"I told you it would not scale," she said. "Moreover, the cost is prohibitive." '
+            "He shrugged."
+        )
+        for got in self._many(text, n=40):
+            assert ', and "' not in got, f"merged into a quotation: {got}"
+            assert '".' not in got.replace('."', ""), f"stranded stop after a quote: {got}"
+
+    def test_a_citation_sentence_survives_a_following_transition(self):
+        text = (
+            'As Smith (2019) argues, "the effect is robust across settings." '
+            "Moreover, Jones et al. (2021) replicate it in three further domains."
+        )
+        for got in self._many(text, n=40):
+            assert "(2019)" in got and "(2021)" in got, f"citation lost: {got}"
+            assert got.count('"') % 2 == 0, f"unbalanced quotes: {got}"
+
+    def test_urls_and_emails_survive_intact(self):
+        text = (
+            "See https://example.com/docs?a=1&b=2 for details, or write to a.b@example.com. "
+            "Moreover, the mirror at http://alt.example.org leverages the same index."
+        )
+        for got in self._many(text, n=30):
+            assert "https://example.com/docs?a=1&b=2" in got, got
+            assert "a.b@example.com" in got, got
+            assert "http://alt.example.org" in got, got
+
+    def test_a_numeric_paragraph_keeps_every_figure(self):
+        text = (
+            "Revenue grew 23% to $4.2M in Q3 2024, up from $3.4M. Moreover, margins improved "
+            "180 basis points to 34.5% across all twelve regions."
+        )
+        for got in self._many(text, n=30):
+            for token in ("23%", "$4.2M", "Q3 2024", "$3.4M", "180", "34.5%"):
+                assert token in got, f"lost {token!r}: {got}"
+
+    def test_a_numbered_list_keeps_its_structure(self):
+        text = (
+            "The system has three components:\n\n1. A parser that reads the input.\n"
+            "2. A scorer that leverages a robust model.\n3. A writer that emits the result.\n\n"
+            "Furthermore, each component is independently testable."
+        )
+        for got in self._many(text, n=30):
+            for marker in ("1.", "2.", "3."):
+                assert marker in got, f"list marker {marker} lost: {got!r}"
+            assert got.count("\n") >= 4, f"line structure collapsed: {got!r}"
+
+    def test_inline_code_spans_stay_balanced(self):
+        text = (
+            "Call `score_text(text, tier='full')` to get a result. Moreover, the `threshold` "
+            "argument leverages a calibrated cutoff for the verdict."
+        )
+        for got in self._many(text, n=30):
+            assert got.count("`") == 4, f"backticks unbalanced: {got}"
+            assert "score_text(text, tier='full')" in got, got
