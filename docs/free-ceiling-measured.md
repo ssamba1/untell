@@ -2833,3 +2833,48 @@ Three things worth keeping:
   showed the shipped loop losing to a scratch reimplementation by 0.138. It was the unrewritten
   input. `eval/compare_humanizers.py` had the same unguarded read and would have reported our own
   tool as changing nothing in the competitor comparison; it now raises.
+
+## Result 49
+
+**The API answered "a" with 99.87% AI, flagged. Below 40 words the flag is not evidence.**
+
+Found by probing the REST surface with pathological input. `/score` returns a maximally confident
+AI verdict on a single letter — and `humanness()` already refuses to answer below five words, so
+the repo had agreed the quantity is unmeasurable there and simply had not applied it to the path
+behind `/score`, `/tells` and the CLI.
+
+MEASURED on 40 HC3 pairs at the 0.30 default, full tier, truncating both halves of each pair to
+the first N words:
+
+| first N words | human flagged | AI flagged | separation |
+|---|---|---|---|
+| 5 | **98%** | 100% | none |
+| 10 | 62% | 95% | poor |
+| 20 | 40% | 100% | weak |
+| 40 | 28% | 100% | usable |
+| 80 | 17% | 100% | good |
+
+At five words a human paragraph and an AI paragraph are indistinguishable: 98% against 100%. The
+detector is not detecting anything, it is flagging everything, and the score being 0.9987 rather
+than 0.5 makes it read as certainty rather than as noise.
+
+The fix is the one the lite-tier stdlib path already uses: keep the number and say, with the
+measured rate, that this configuration is not one to trust. `score_text` now appends a warning
+below 40 words carrying the rate for that band — "19 words: too short for a reliable verdict.
+MEASURED on 40 HC3 pairs at this threshold, 40% of HUMAN text this length also flags."
+
+Three decisions worth recording:
+
+- **`max` is unchanged.** Zeroing or withholding it would break callers that store and compare it,
+  for a reason invisible at the call site. The number is real; what was missing was its context.
+- **Appended, not folded into the tier chain.** Tier warnings are chosen by if/elif, so a short
+  text on a downgraded tier would have reported whichever was checked first and hidden the other.
+  Length and tier are independent problems and a caller can have both.
+- **The bar is 40 words because 40 is where separation starts**, not because it is a round number.
+  20 leaves a 40% human false-positive rate; the repo's own `humanness` bar of 5 words is far too
+  low for the ensemble, which at 5 words is at 98%.
+
+This is the third defect this session in the same family — a confident answer where the honest
+answer is "not measurable". The other two were CJK text reported as perfectly clean, and a Chinese
+paragraph reported as "shorter than 5 words". In each case the code knew the limit somewhere and
+did not apply it at the surface the user actually touches.
