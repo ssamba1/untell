@@ -125,6 +125,56 @@ def _strip_orphan_variation_selectors(text: str) -> str:
     return "".join(out)
 
 
+# Deprecated by Unicode itself (see UAX #9 and the Core Spec's deprecation table). They have no
+# legitimate modern use in any script, render as nothing, and survive copy-paste — which is the
+# whole specification of a steganographic carrier. Always stripped; there is no context in which
+# keeping one is correct.
+_DEPRECATED_FORMAT = re.compile("[⁪-⁯]")
+
+# Script-specific format marks: load-bearing inside their own script and pure carriers outside it.
+# Exactly the situation the bidi rule below already handles, applied to the classes it does not
+# cover. Each entry is (the marks, a pattern matching the script that makes them meaningful).
+_SCRIPTED_FORMAT_MARKS: tuple[tuple[re.Pattern, re.Pattern], ...] = (
+    # Arabic and Syriac number/ayah/abbreviation signs
+    (re.compile("[؀-؅۝܏࢐࢑࣢]"),
+     re.compile("[؀-ۿ܀-ݏݐ-ݿࢠ-ࣿ"
+                "ﭐ-﷿ﹰ-﻿]")),
+    # Kaithi number signs
+    (re.compile("[𑂽𑃍]"), re.compile("[𑂀-𑃏]")),
+    # Egyptian hieroglyph joiners and segment controls
+    (re.compile("[𓐰-𓐿]"), re.compile("[𓀀-𓐯]")),
+    # Duployan shorthand overlap/step controls
+    (re.compile("[𛲠-𛲣]"), re.compile("[𛰀-𛲟]")),
+    # Musical notation beam/tie/slur/phrase controls
+    (re.compile("[𝅳-𝅺]"), re.compile("[𝄀-𝅲]")),
+)
+
+
+def _strip_orphan_scripted_marks(text: str) -> str:
+    """Drop a script's format marks when that script is absent from the text.
+
+    MEASURED by sweeping every invisible codepoint in Unicode through ``scrub_hidden`` and
+    ``count_hidden``: 49 survived the scrub AND were reported clean. Six were the deprecated
+    U+206A-206F block; the rest were these — Arabic ayah and number signs, the Syriac abbreviation
+    mark, Kaithi number signs, Egyptian hieroglyph joiners, Duployan shorthand controls, musical
+    beam and slur controls. All render as nothing in Latin prose, all survive a copy-paste, and
+    none can be doing layout work in a document containing none of their script.
+
+    Same shape as ``_strip_orphan_bidi`` and for the same reason: the character is not the problem,
+    the absence of anything for it to act on is.
+
+    The marks are removed from the text BEFORE testing for their script, and that detail is the
+    whole rule. Several of these blocks contain their own marks — U+0600 sits inside the Arabic
+    range U+0600-06FF — so testing the raw text finds the carrier itself, concludes the script is
+    present, and keeps it. Measured: that left all nine Arabic and Syriac marks passing through a
+    pure-ASCII sentence.
+    """
+    for marks, script in _SCRIPTED_FORMAT_MARKS:
+        if marks.search(text) and not script.search(marks.sub("", text)):
+            text = marks.sub("", text)
+    return text
+
+
 def _strip_orphan_bidi(text: str) -> str:
     """Drop bidi format controls unless the text actually contains a right-to-left script."""
     if _RTL_CHARS.search(text):
@@ -178,6 +228,8 @@ def scrub_hidden(text: str) -> str:
     text = _strip_orphan_zwj(text)
     text = _strip_orphan_variation_selectors(text)
     text = _strip_orphan_bidi(text)
+    text = _DEPRECATED_FORMAT.sub("", text)
+    text = _strip_orphan_scripted_marks(text)
     # Drop C0/C1 control characters (category Cc) except common whitespace; KEEP format characters
     # (category Cf) such as bidi marks, which carry layout meaning.
     text = "".join(ch for ch in text if ch in "\t\n\r" or unicodedata.category(ch) != "Cc")

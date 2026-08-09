@@ -226,3 +226,93 @@ class TestScrubDoesNotDestroyNonLatinProse:
         """An all-confusable word with no Latin context around it is indistinguishable from the
         real Cyrillic word, and is left alone. Asserted so the limit is a decision, not a surprise."""
         assert scrub_hidden("сосоа") == "сосоа"
+
+
+class TestEveryInvisibleCodepointInUnicode:
+    """Swept all 0x110000 codepoints rather than testing a list somebody wrote down.
+
+    The module already handled the famous carriers — zero-width space, tag characters, orphan ZWJ,
+    orphan bidi. The sweep asked a different question: of every character in Unicode that renders
+    as nothing, how many survive ``scrub_hidden`` AND are reported clean by ``count_hidden``?
+
+    **49.** Six were the U+206A-206F block, which Unicode itself deprecates and which has no
+    legitimate use in any script. The rest were script-specific format marks — Arabic ayah and
+    number signs, the Syriac abbreviation mark, Kaithi number signs, Egyptian hieroglyph joiners,
+    Duployan shorthand controls, musical beam and slur controls. Every one renders as nothing in
+    Latin prose and survives a copy-paste, which is the entire specification of a carrier.
+
+    None of that is a new policy: the module already strips bidi marks when no RTL script is
+    present, on exactly this reasoning. The classes above simply were not covered.
+    """
+
+    KEEP = {0x09, 0x0A, 0x0D, 0x20}
+
+    @staticmethod
+    def _silent_survivors():
+        import unicodedata
+
+        from untell.attacks import count_hidden, scrub_hidden
+
+        out = []
+        for cp in range(0x110000):
+            if cp in TestEveryInvisibleCodepointInUnicode.KEEP:
+                continue
+            ch = chr(cp)
+            if unicodedata.category(ch) not in ("Cf", "Cc", "Zs", "Zl", "Zp"):
+                continue
+            probe = f"The system works{ch} well enough for now."
+            if ch in scrub_hidden(probe) and count_hidden(probe) == 0:
+                out.append(cp)
+        return out
+
+    def test_only_the_real_separators_survive_a_latin_sentence(self):
+        """U+2028 and U+2029 are line and paragraph separators — genuine document structure, not
+        carriers. Removing them would silently reflow a document, which is a worse failure than
+        leaving two well-known codepoints in place."""
+        survivors = self._silent_survivors()
+        assert set(survivors) <= {0x2028, 0x2029}, (
+            "invisible codepoints pass the scrub and are reported clean: "
+            + ", ".join(f"U+{cp:04X}" for cp in survivors if cp not in (0x2028, 0x2029))
+        )
+
+    def test_the_deprecated_block_is_always_stripped(self):
+        """U+206A-206F is deprecated by Unicode. There is no context in which keeping one is
+        right, so unlike the script marks it is not conditional on anything."""
+        from untell.attacks import scrub_hidden
+
+        for cp in range(0x206A, 0x2070):
+            ch = chr(cp)
+            assert ch not in scrub_hidden(f"before{ch}after"), f"U+{cp:04X} survived"
+            assert ch not in scrub_hidden(f"عربي{ch}عربي"), f"U+{cp:04X} survived beside Arabic"
+
+    @pytest.mark.parametrize(
+        "name,text",
+        [
+            ("Arabic ayah mark", "هذا نص عربي\u06ddمع علامة"),
+            ("Syriac abbreviation", "ܐܒܓ\u070fܕܗܘ"),
+            ("Kaithi number sign", "\U00011080\U000110BD\U00011081"),
+            ("Egyptian joiner", "\U00013000\U00013430\U00013001"),
+            ("Musical beam", "\U0001D100\U0001D173\U0001D101"),
+            ("emoji ZWJ sequence", "\U0001F468\u200d\U0001F469"),
+            ("RTL bidi mark", "\u200fمرحبا world"),
+            ("tab and newline", "one\tcol\ntwo"),
+        ],
+    )
+    def test_a_mark_doing_real_work_is_untouched(self, name, text):
+        """The rule is about ORPHANS. A mark surrounded by the script it belongs to is load-bearing
+        and must survive — stripping it would corrupt the document to close a channel that is not
+        open."""
+        from untell.attacks import scrub_hidden
+
+        assert scrub_hidden(text) == text, name
+
+    def test_the_script_test_ignores_the_marks_themselves(self):
+        """The bug this caught, and the reason the rule removes marks before testing for their
+        script: several blocks CONTAIN their own marks — U+0600 sits inside the Arabic range
+        U+0600-06FF — so testing the raw text finds the carrier, concludes the script is present,
+        and keeps it. That left all nine Arabic and Syriac marks passing through pure ASCII."""
+        from untell.attacks import scrub_hidden
+
+        for cp in (0x0600, 0x0601, 0x0602, 0x0603, 0x0604, 0x0605, 0x06DD, 0x070F, 0x08E2):
+            ch = chr(cp)
+            assert ch not in scrub_hidden(f"plain english{ch} sentence"), f"U+{cp:04X} survived"
