@@ -2046,3 +2046,98 @@ gap is real and documented; the obvious ways to close it are measured and reject
 
 Single run per cell, one corpus, one rewriter. The noise estimate above is the reason the budget
 row is stated as a result and the floor rows are not.
+
+---
+
+## Result 35 — both model-backed meaning gates stopped reading part-way through the document
+
+The gates are what this project claims over the rest of the field, so "does the entailment gate
+catch X" deserved a systematic answer rather than the accident that produced Result 32's epistemic
+finding. Nine classes of minimal meaning change, each scored against the full stack.
+
+| class | caught by |
+|---|---|
+| negation | similarity, entailment |
+| quantifier (`all` → `some`) | entailment |
+| number | entailment, numerals |
+| temporal (`before` → `after`) | entailment, roles |
+| causal direction | roles |
+| role swap | roles |
+| evaluation flip (`improved` → `worsened`) | entailment |
+| scope (`only X` → `X`) | similarity |
+| **epistemic strength** (`demonstrates` → `proves`) | **nothing** |
+
+Eight of nine, which reads well. Then the same table at realistic document length, and it collapses.
+
+### The finding
+
+Both model-backed gates truncate their input, and neither said so. The same edit, in the same
+document, with only its **position** changed:
+
+| | 7 w | 75 w | 143 w | 279 w |
+|---|---|---|---|---|
+| entailment, edit at the start | 0.9976 | 0.9769 | 0.9833 | 0.9833 |
+| entailment, edit at the end | 0.9971 | 0.9748 | **0.0179** | **0.0179** |
+
+0.0179 is the contradiction score for two *identical* strings. Past the tokeniser's cut the model
+was comparing the same truncated prefix with itself.
+
+Similarity was worse. Replacing a whole sentence with unrelated text — "The intervention halved
+mortality among the treated cohort." for "Cats are pleasant animals and many people enjoy their
+company." — at 280 words and beyond scored **1.0000**. Not "similar enough": the model reporting
+the two documents as the same string.
+
+Neither is a badly-set threshold. The changed text was **never fed to the model**, so no value of
+the 0.76 bar or the 0.5 contradiction bar could have caught either. A rewriter could invert any
+claim after roughly the first 130 words and nothing in this project would have noticed.
+
+The detectors had this exact bug and it was fixed for them with windowed scoring. The meaning
+gates never got the fix — and they are the more important half, because a missed detection costs a
+point of score while a missed inversion ships a false statement.
+
+### The fix, and the version of it that was wrong
+
+Both gates now cut the pair into aligned chunks and take the worst: `max` contradiction, `min`
+similarity. Averaging was never an option — meaning destroyed in one paragraph is destroyed, and
+averaging against four untouched paragraphs is precisely what hid this.
+
+**How the chunks are aligned decides whether the fix works.** Cutting each side into k equal pieces
+drifts: the rewriter merges and splits sentences, so by the third chunk the two sides are a
+sentence apart and the gate compares text that never corresponded —
+
+```
+SRC chunk: "Our results demonstrate that the attention mechanism improves ..."
+OUT chunk: "We also perform a series of ablation studies ... Our results show that ..."
+```
+
+That produced 3 false vetoes in 30 real rewrites. Cut points now come from `difflib` matching
+blocks, which drops it to 1 — and that last one turned out to be a **true** catch: `applied to
+various tasks` → `applied to all sorts of tasks`, 0.29 whole-text against 0.61 aligned. An
+overclaim I had personally read in the Result 32 scan and waved through as a register shift.
+
+`entailment_score` is deliberately **not** chunked. Chunking it took vetoes from 0 to 2 and
+printing the chunks showed misalignment rather than damage. Contradiction survives drift because it
+is a `max` and unrelated text reads as neutral; entailment is a `min` over eight directional scores
+and every imperfect pair drags it down.
+
+### Cost and false-rejection rate
+
+| | before | after |
+|---|---|---|
+| entailment, 298-word input | 0.17 s | 0.57 s |
+| similarity, 30 real rewrites rejected | 0/30 | **0/30** (min 0.9005 vs the 0.76 bar) |
+| entailment, 30 real rewrites vetoed | 1/30 | 2/30 (the extra one is real) |
+
+At 60-word chunks similarity starts rejecting real rewrites (1/30), so 90 is the setting. Short
+input takes a single chunk and reproduces the old call exactly, so nothing previously measured on
+short text moved.
+
+### What was not broken
+
+`roles`, `hedges` and `numerals` were probed identically and are position-independent to 552 words.
+The defect was confined to the two transformer-backed gates, which is the expected shape — the
+other three do not have a context window to run out of.
+
+`tests/test_gates_read_the_whole_document.py` pins the invariant for all five rather than
+regression-testing the two: a gate added later that reads a fixed-size prefix fails on its first
+run. Verified non-vacuous by disabling chunking, which fails 6 of its 31 assertions.
