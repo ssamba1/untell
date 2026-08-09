@@ -57,6 +57,13 @@ _ATTRIBUTION = re.compile(
 )
 
 
+# Pages that make comparative claims about this repo against others. `LIVE_DOCS` is the set that
+# describes the current build; this is that set plus the census, which is not a build description
+# but does publish counts about us — "1868 tests against 136 repos" sat there stale precisely
+# because every check scanned LIVE_DOCS and the census page was in neither list.
+COMPARATIVE_DOCS = LIVE_DOCS + ("docs/humanizer-census.md",)
+
+
 @dataclass
 class Finding:
     name: str
@@ -341,6 +348,8 @@ def check_derivable(report: Report) -> None:
     check_census_counts(report)
     check_named_repo_stars(report)
     check_largest_repo_claims(report)
+    check_test_inventory(report)
+    check_test_count_claims(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -667,6 +676,97 @@ def check_largest_repo_claims(report: Report) -> None:
     )
 
 
+def check_test_inventory(report: Report) -> None:
+    """A "N tests, M modules" claim must match what is on disk.
+
+    The module count is exact and free to compute, so it is enforced. The collected-test count is
+    not: collection depends on which optional dependencies are installed, so a hard equality would
+    fail on a machine with a different extras set — it is treated as a measured claim instead, and
+    the attribution rule makes the page state how to reproduce it.
+
+    Both numbers in this table were stale — 2473 tests and 75 modules against 2543 and 80 — and
+    both had slipped past the attribution check, because a bolded bare number like `**2473**` was
+    exempted as "not a claim". It is the most common way this repo writes a claim.
+    """
+    modules = sorted((REPO / "tests").glob("test_*.py"))
+    wrong: list[str] = []
+    checked = 0
+    for rel in COMPARATIVE_DOCS:
+        path = REPO / rel
+        if not path.exists():
+            continue
+        for found in re.findall(r"(\d+)\s+(?:test\s+)?modules\b", path.read_text(encoding="utf-8")):
+            checked += 1
+            if int(found) != len(modules):
+                wrong.append(f"{rel}: says {found} test modules, tests/ has {len(modules)}")
+
+    report.check(
+        "every 'N test modules' claim matches tests/",
+        not wrong,
+        "; ".join(wrong) if wrong else f"{checked} claim(s) agree, tests/ has {len(modules)} modules",
+    )
+
+
+def _collected_test_count() -> int | None:
+    """How many tests pytest actually collects, or None if it cannot be asked.
+
+    Collection is not free (about ten seconds) and not constant: it depends on which optional
+    extras are installed, because some modules skip at import. So this is used for a drift band,
+    never for equality.
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:randomly"],
+            cwd=REPO, capture_output=True, text=True, timeout=600,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    match = re.search(r"(\d+)\s+tests? collected", result.stdout)
+    return int(match.group(1)) if match else None
+
+
+def check_test_count_claims(report: Report) -> None:
+    """A "N tests" claim about our own suite must be in the same neighbourhood as reality.
+
+    Deliberately a band, not an equality. Collection varies with the installed extras, so an exact
+    check would fail on a correct machine — and a check that fails on correct machines gets
+    disabled, which is worse than not having it.
+
+    Ten percent is wide enough to absorb that and narrow enough to catch what actually happens
+    here, which is not drift but abandonment: the docs said 1868 and 2473 while the suite was at
+    2543. Both had sat through many additions without anyone revisiting them.
+    """
+    actual = _collected_test_count()
+    if actual is None:
+        report.check(
+            "every 'N tests' claim is close to what pytest collects",
+            True,
+            "skipped: pytest could not be run to collect",
+        )
+        return
+
+    wrong: list[str] = []
+    checked = 0
+    for rel in COMPARATIVE_DOCS:
+        path = REPO / rel
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        # Only claims about OUR suite. "1868 tests against 136 repos" is ours; a sentence about
+        # another project's tests is not, and none of the live docs currently phrase one that way.
+        for found in re.findall(r"\*{0,2}(\d{3,5})\*{0,2}\s+tests\b", text):
+            claimed = int(found)
+            checked += 1
+            if abs(claimed - actual) > 0.10 * actual:
+                wrong.append(f"{rel}: claims {claimed} tests, pytest collects {actual}")
+
+    report.check(
+        "every 'N tests' claim is close to what pytest collects",
+        not wrong,
+        "; ".join(wrong) if wrong else f"{checked} claim(s) within 10% of {actual} collected",
+    )
+
+
 def check_optional_extras(report: Report) -> None:
     """Every ``untell[extra]`` a document tells a user to install must exist.
 
@@ -955,8 +1055,14 @@ def check_attribution(report: Report) -> None:
                 # Percentages, scores and counts are claims; version strings and dates are not.
                 # Not every bolded string containing a digit is a measurement. A link, a date and
                 # a version are claims about nothing that could drift under us.
-                if re.fullmatch(r"[\d.]+", claim) or "](" in claim or "http" in claim:
+                if "](" in claim or "http" in claim:
                     continue
+                # A bolded BARE number used to be exempted here as "not a claim", on the reasoning
+                # that a version string is not a measurement. But `**2473**` tests and `**139**`
+                # non-English are bare numbers, and they are exactly the claims most worth
+                # attributing — the exemption covered 26 numbers in the live docs, one of which had
+                # drifted (2473 tests against 2543) with nothing to catch it. Versions and dates
+                # are still skipped below, by patterns that describe versions and dates.
                 if re.fullmatch(r"[A-Za-z, ]*\d{4}-\d{2}-\d{2}[.A-Za-z, ]*", claim):
                     continue
                 # Attribution may sit in the surrounding paragraph, not the same line.
