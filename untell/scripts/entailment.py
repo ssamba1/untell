@@ -146,7 +146,14 @@ def contradiction_score(a: str, b: str) -> float | None:
         return None
     try:
         idx = None
-        _pair_probs(a, b)  # forces the load so label_idx is resolved
+        if _NLI.label_idx is None:
+            # One forward pass to resolve the label positions from the model config. Guarded,
+            # because this used to run on EVERY call: it scores the whole (a, b) pair and then
+            # throws the result away, since the chunk loop below is what actually decides. That was
+            # free only when `entailment_score` ran afterwards and hit the cache with the same pair
+            # — a caller that wants the contradiction score alone paid for a pass it never used,
+            # about 11% of this gate's cost on a four-chunk document.
+            _pair_probs(a, b)
         idx = (_NLI.label_idx or {}).get("contradiction")
         if idx is None:
             return None
