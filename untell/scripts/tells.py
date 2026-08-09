@@ -214,6 +214,81 @@ _NEGATED_CONTRAST_RE = re.compile(
 )
 
 # Participial-phrase trailers (§6): a clause ending ", ...ing ..." near sentence end.
+#
+# This is the strongest category in the catalogue — 0.971 precision on RAID — and for a long time
+# its coverage was thirteen hand-picked verbs that happened to omit the commonest ones. ",
+# including ..." alone appears 205 times in the AI half of 200 RAID pairs against 12 in the human
+# half, and was invisible.
+#
+# Every addition below was measured on BOTH halves of both corpora (200 pairs each, 2026-08-09) and
+# is listed with its own numbers, because a trailer that human academics write as often as models
+# is register rather than authorship:
+#
+#     including      HC3 38/2  (0.950)   RAID 205/12  (0.945)   <- both corpora
+#     making                             RAID  32/1   (0.970)
+#     allowing                           RAID  31/1   (0.969)
+#     providing                          RAID  23/0   (1.000)
+#     achieving                          RAID  19/0   (1.000)
+#     enabling                           RAID  17/1   (0.944)
+#     leading                            RAID  26/6   (0.812)
+#     outperforming                      RAID  13/2   (0.867)
+#     reducing                           RAID   7/0   (1.000)
+#     improving                          RAID   4/0   (1.000)
+#
+# Declined, and why — a list like this grows by accretion unless the rejections are written down:
+#
+#     tracking      5/0 but RAID is paper abstracts and half of them are about object tracking.
+#                   Subject matter, not register. Same call as "united" in Result 32.
+#     resulting     9/4  (0.692) — under the bar.
+#     showing       8/4  (0.667), obtaining 4/2 — under the bar.
+#     using         6/10 on RAID and 2/3 on HC3: points HUMAN in both.
+#     causing       5/1 on HC3 only, total n=6. Too rare to say anything.
+#
+# NOT ADDED — the widened list was built, measured, and reverted. Keeping the numbers because the
+# reason is more useful than the list.
+#
+# With all ten in, the category's recall rose fivefold (33 -> 176 of 200 AI RAID documents) and it
+# started firing on HC3 at all (0 -> 37, precision 0.822). Precision on RAID fell 0.971 -> 0.876,
+# which would have been an acceptable trade. What killed it was the output:
+#
+#     old (13 verbs)  post=0.4560 flagged=0.600  trailers left in output 52
+#     new (23 verbs)  post=0.4807 flagged=0.650  trailers left in output 53
+#     replicate:      old 0.4413/0.625 (47)      new 0.4689/0.675 (51)
+#
+# Two readings, and the second is the one that matters:
+#
+#  1. The output trailer count does not move. 92 in the AI input, ~50 left either way. The rewriter
+#     has NO transform for a participial trailer — it removes some incidentally when it merges or
+#     splits around one, and that is all. Seeing more of them cannot help it fix more of them.
+#  2. The score is consistently WORSE, +0.025 and +0.028 across two runs against a +/-0.013
+#     single-run noise floor. `prefer_tells` ranks candidate rewrites by total tell count, so
+#     widening a category the rewriter cannot act on re-weights the objective toward something
+#     unfixable and it picks worse candidates.
+#
+# So the real gap looked like the missing rewrite rather than the word list. That was then built —
+# ", showcasing Y." -> ". This showcases Y.", no parser needed since the participle carries its own
+# object and thirteen verbs conjugate from a fixed map — budgeted to the human rate for "This ..."
+# openers (4.59 per 100 sentences; AI already sits at 4.19, so the headroom allows about a third of
+# them). It fires, it is grammatical, it guards against promoting a fragment. It was also reverted:
+#
+#     narrow pattern, transform off   post=0.4700 flagged=0.625
+#     narrow pattern, transform on    post=0.4769 flagged=0.625
+#     wide pattern,   transform off   post=0.4904 flagged=0.700
+#     wide pattern,   transform on    post=0.4913 flagged=0.675
+#
+# No effect in either configuration, and the two OFF baselines differ by 0.020 — larger than any
+# treatment effect in the table, so the noise floor swallows all of it.
+#
+# The reason is in a column that had been there the whole time: **trailers left in the output = 0**,
+# with the transform off. Every one of the thirteen catalogued verbs is already gone by the end of
+# the pipeline, removed incidentally by merges and splits landing on them. The ~50 residual trailers
+# counted earlier were entirely the UNLISTED verbs, and promoting those did not help either.
+#
+# What this actually establishes: **diagnostic strength is not rewrite leverage.** participial
+# trailer is the best discriminator in the catalogue and there is nothing to gain by acting on it,
+# because the pipeline already clears it as a side effect. A category being predictive of AI
+# authorship says the detector can see it; it does not say a rewriter that removes it will score
+# better. Nothing shipped — no word-list change, no transform, no constant.
 _PARTICIPIAL_TRAILER_RE = re.compile(
     r",\s+(?:under(?:scoring|lining)|marking|reflecting|highlighting|showcasing|emphasizing|"
     r"signaling|cementing|solidifying|paving|ensuring|demonstrating)\b[^.!?]*[.!?]",
