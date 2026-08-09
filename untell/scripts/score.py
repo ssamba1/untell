@@ -30,6 +30,7 @@ import re
 import sys
 
 from untell.detectors.base import _TIER_RANK, load_detectors, resolved_tier
+from untell.text_split import fold_unicode_spaces
 
 logger = logging.getLogger(__name__)
 # (`python scripts/score.py`) rather than imported as part of the `untell` package,
@@ -76,10 +77,6 @@ def batch_score_texts(
 
 
 _WS_RUN_RE = re.compile(r"[ \t]{2,}")
-# Unicode space separators (category Zs) other than the plain space, folded before runs are
-# collapsed. A non-breaking space is what copying out of Word, a web page or a PDF produces,
-# and it is visually identical to a space — but no tokeniser treats it as one.
-_UNICODE_SPACE_RE = re.compile("[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]")
 _BLANK_RUN_RE = re.compile(r"\n{3,}")
 
 
@@ -108,7 +105,7 @@ def _normalise_ws(text: str) -> str:
     # on human writers — and a non-breaking space is not exotic input, it is what a paste out
     # of Word or a web page contains. `scrub_hidden` already normalises these, so the rewrite
     # loop was safe; the scoring path a user hits directly with `untell score` was not.
-    return _BLANK_RUN_RE.sub("\n\n", _WS_RUN_RE.sub(" ", _UNICODE_SPACE_RE.sub(" ", text)))
+    return _BLANK_RUN_RE.sub("\n\n", _WS_RUN_RE.sub(" ", fold_unicode_spaces(text)))
 
 
 def _truncate(text: str) -> str:

@@ -31,6 +31,8 @@ import re
 import sys
 from collections import Counter
 
+from untell.text_split import fold_unicode_spaces
+
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
@@ -778,6 +780,15 @@ def _language_supported(text: str) -> bool:
 
 def score_tells(text: str, *, include_matches: bool = False) -> dict:
     """Count AI tells in ``text`` per the catalogue. Lower is more human-reading."""
+    # Every multi-word pattern in the catalogue is written with a literal space, so a non-breaking
+    # space silently defeats it: "in conclusion" does not match "in conclusion". MEASURED on a
+    # 37-word AI paragraph, replacing every space with U+00A0, 5 tells became 3 and humanness moved
+    # 37.4 -> 43.9. That is an under-report for anyone pasting out of Word, and a one-keystroke
+    # evasion of our own catalogue for anyone who notices.
+    #
+    # Folded here rather than per-pattern for the reason the scoring path learned the hard way: a
+    # rule applied in some places is a rule that will be missed in the rest.
+    text = fold_unicode_spaces(text)
     words = len(_WORD.findall(text))
     by_category: dict[str, int] = {}
     matches: dict[str, list[str]] = {}

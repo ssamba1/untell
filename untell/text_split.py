@@ -147,3 +147,31 @@ def aligned_chunks(a: str, b: str) -> list[tuple[str, str]]:
         if ca.strip() and cb.strip():
             out.append((ca, cb))
     return out or [(a, b)]
+
+
+# Unicode space separators (category Zs) other than the plain space. A non-breaking space is
+# visually identical to a space and is what a paste out of Word, a web page or a PDF contains —
+# but nothing treats it as one: no tokeniser, and no regex written with a literal " ".
+#
+# Lives here rather than in either caller because it went wrong twice independently, in the two
+# places that both needed it:
+#
+#   scoring   MEASURED on 10 HC3 pairs, full tier, every space replaced with U+00A0: human text
+#             went 5/10 -> 9/10 flagged, mean P(AI) 0.4322 -> 0.7801, hc3_roberta moving 0.9990.
+#   tells     the catalogue's multi-word patterns are written with literal spaces, so
+#             "in conclusion" stops matching "in\u00a0conclusion". MEASURED on a 37-word AI
+#             paragraph: 5 tells -> 3, and humanness 37.4 -> 43.9.
+#
+# One rule, one place. `untell/scripts/score.py` had a normaliser written for exactly this class
+# and scoped to `[ \t]{2,}`; scoping is how a fix for a class misses most of the class.
+_UNICODE_SPACE_RE = re.compile("[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]")
+
+
+def fold_unicode_spaces(text: str) -> str:
+    """Replace every non-ASCII Unicode space separator with a plain space.
+
+    Deliberately does NOT collapse runs or strip anything else: callers that want run-collapsing
+    do it themselves, and a caller that only wants the characters comparable should not have its
+    layout changed underneath it.
+    """
+    return _UNICODE_SPACE_RE.sub(" ", text)
