@@ -25,6 +25,8 @@ import pytest
 
 pytest.importorskip("fastapi")
 
+import argparse
+
 import untell.api_server as api  # noqa: E402
 
 # CLI-only spellings: input plumbing and output formatting, not parameters of the operation.
@@ -301,3 +303,97 @@ class TestBestOfIsThreeOnEverySurfaceThatHumanizes:
         if ceiling is None:
             pytest.skip("no ceiling request model")
         assert ceiling.model_fields["best_of"].default == 1
+
+
+class TestTheSurfacesAgreeOnRANGES_NotJustDefaults:
+    """The tests above compare defaults and vocabularies. They did not compare *ranges*, and that
+    is the gap the CLI fell through.
+
+    Measured before the fix — identical arguments, two answers:
+
+        --threshold 50    CLI exit 0            REST 422   (scores are in [0,1]; nothing can flag)
+        --threshold -1    CLI exit 0            REST 422   (everything flags, always)
+        --best-of 0       CLI exit 0            REST 422
+        --max-iters -5    CLI exit 0            REST 422   (no iterations; reports a pass)
+        --best-of 10000   CLI ran until killed  REST 422   (genuinely generating candidates)
+
+    The CLI now reads its bounds off the API's own annotated types rather than repeating them,
+    so there is one definition to drift from. These tests check that the indirection actually
+    holds — an import that silently falls back would restore the divergence invisibly.
+    """
+
+    @staticmethod
+    def _api_bounds(name: str):
+        """Read the bounds independently of `run._bounds`, so this checks the CLI against the API
+        rather than against itself.
+
+        Pydantic keeps `ge`/`le` inside `FieldInfo.metadata` as annotated_types constraint objects.
+        Reaching for `FieldInfo.ge` raises AttributeError — which is the mistake the production
+        helper originally made, and then swallowed into a fallback, so the sharing it advertised
+        was doing nothing.
+        """
+        from untell import api_server
+
+        low = high = None
+        for constraint in getattr(api_server, name).__metadata__[0].metadata:
+            if hasattr(constraint, "ge"):
+                low = float(constraint.ge)
+            if hasattr(constraint, "le"):
+                high = float(constraint.le)
+        assert low is not None and high is not None, f"{name} has no ge/le constraint"
+        return low, high
+
+    def test_the_cli_reads_its_bounds_from_the_api(self):
+        from untell.scripts import run
+
+        for cli_name, api_name, cast in (
+            ("_PROBABILITY", "_Probability", float),
+            ("_ITERS", "_Iters", int),
+            ("_BEST_OF", "_BestOf", int),
+        ):
+            low, high = self._api_bounds(api_name)
+            parse = getattr(run, cli_name)
+            # An int-typed flag has to be handed an int spelling; "100.0" is rejected as
+            # non-numeric by design, which is correct behaviour and not the bound under test.
+            with pytest.raises(argparse.ArgumentTypeError):
+                parse(str(cast(high + 1)))
+            with pytest.raises(argparse.ArgumentTypeError):
+                parse(str(cast(low - 1)))
+            assert parse(str(cast(high))) == pytest.approx(high)
+            assert parse(str(cast(low))) == pytest.approx(low)
+
+    @pytest.mark.parametrize(
+        "flag,value",
+        [
+            ("--threshold", "50"), ("--threshold", "-1"),
+            ("--best-of", "0"), ("--best-of", "10000"),
+            ("--max-iters", "-5"), ("--max-iters", "0"),
+            ("--margin", "5"),
+        ],
+    )
+    def test_the_cli_rejects_what_the_api_rejects(self, flag, value):
+        from untell.scripts.run import build_parser
+
+        with pytest.raises(SystemExit) as exc:
+            build_parser().parse_args(["some text", flag, value])
+        assert exc.value.code == 2, f"{flag} {value} was accepted"
+
+    def test_an_error_message_names_the_flag_it_is_about(self):
+        """`--margin 5` first reported "threshold must be between 0.0 and 1.0" because it reused
+        the probability parser. A range message naming the wrong flag sends the reader to the
+        wrong argument."""
+        from untell.scripts.run import _MARGIN
+
+        with pytest.raises(argparse.ArgumentTypeError, match="margin"):
+            _MARGIN("5")
+
+    def test_the_bounds_are_real_and_not_a_silent_fallback(self):
+        """`_bounds` falls back to a literal pair when `api_server` cannot be imported, which is
+        correct — the server extra is optional and the CLI must still run. But if that fallback
+        fires on a machine that HAS the server installed, the two surfaces are silently
+        independent again."""
+        from untell.scripts.run import _bounds
+
+        pytest.importorskip("fastapi")
+        assert _bounds("_Probability", (99.0, 99.0)) == (0.0, 1.0)
+        assert _bounds("_BestOf", (99.0, 99.0)) == (1.0, 32.0)

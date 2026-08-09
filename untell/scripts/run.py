@@ -667,6 +667,67 @@ def _config_defaults() -> dict[str, object]:
     return out
 
 
+
+# --- argument ranges, shared with the REST surface -----------------------------------------------
+# The API validates these and the CLI did not, so the same nonsense was a 422 over HTTP and a clean
+# exit 0 on the command line. Measured:
+#
+#     --threshold 50      exit 0 — scores live in [0,1], so nothing can ever be flagged
+#     --threshold -1      exit 0 — everything is flagged, always
+#     --best-of 0         exit 0
+#     --max-iters -5      exit 0 — the loop runs no iterations and reports a pass
+#     --best-of 10000     ran until it was killed at 200s, genuinely generating candidates
+#
+# None of those are things a person means. The bounds are read off `untell.api_server` rather than
+# repeated here, because two copies of a range is how the surfaces drifted in the first place —
+# `tests/test_surface_parity.py` compares defaults and vocabularies and did not think to compare
+# ranges, which is exactly why this survived.
+def _bounds(name: str, fallback: tuple[float, float]) -> tuple[float, float]:
+    try:
+        from untell import api_server
+
+        # Annotated[float, Field(ge=..., le=...)] stores the bounds inside the FieldInfo's own
+        # `metadata` list, as annotated_types.Ge / Le objects — NOT as `.ge` / `.le` on the
+        # FieldInfo. Reading them the obvious way raises AttributeError, which this function then
+        # swallowed into `fallback`, so the "shared with the API" indirection quietly did nothing
+        # and the CLI validated against its own hardcoded copy. Caught by the test that exists to
+        # check the indirection is real rather than decorative.
+        low = high = None
+        for constraint in getattr(api_server, name).__metadata__[0].metadata:
+            low = float(getattr(constraint, "ge", low)) if hasattr(constraint, "ge") else low
+            high = float(getattr(constraint, "le", high)) if hasattr(constraint, "le") else high
+        if low is None or high is None:
+            return fallback
+        return low, high
+    except Exception:  # noqa: BLE001 — the server extra is optional; the CLI must still run
+        return fallback
+
+
+def _ranged(name: str, cast, api_name: str, fallback: tuple[float, float]):
+    low, high = _bounds(api_name, fallback)
+
+    def parse(raw: str):
+        try:
+            value = cast(raw)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"{name} must be a number, got {raw!r}") from None
+        if not (low <= value <= high):
+            shown_low = int(low) if cast is int else low
+            shown_high = int(high) if cast is int else high
+            raise argparse.ArgumentTypeError(
+                f"{name} must be between {shown_low} and {shown_high}, got {value}"
+            )
+        return value
+
+    parse.__name__ = name
+    return parse
+
+
+_PROBABILITY = _ranged("threshold", float, "_Probability", (0.0, 1.0))
+_ITERS = _ranged("max-iters", int, "_Iters", (1, 100))
+_BEST_OF = _ranged("best-of", int, "_BestOf", (1, 32))
+_MARGIN = _ranged("margin", float, "_Probability", (0.0, 1.0))
+
 def build_parser() -> argparse.ArgumentParser:
     """The `untell humanize` argument parser.
 
@@ -685,11 +746,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("text", nargs="?", help="text to untell (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
     parser.add_argument("--tier", default=cfg["tier"], choices=["lite", "full", "heavy", "commercial"])
-    parser.add_argument("--threshold", "-t", type=float, default=cfg["threshold"])
-    parser.add_argument("--max-iters", type=int, default=cfg["max_iters"])
+    parser.add_argument("--threshold", "-t", type=_PROBABILITY, default=cfg["threshold"])
+    parser.add_argument("--max-iters", type=_ITERS, default=cfg["max_iters"])
     parser.add_argument(
         "--max-rounds",
-        type=int,
+        type=_ITERS,
         default=None,
         help="alias for --max-iters (rounds of rewrite). Overrides --max-iters when set.",
     )
@@ -708,7 +769,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--margin",
-        type=float,
+        type=_MARGIN,
         default=0.0,
         help="safety headroom: only stop when max score < threshold - margin (e.g. 0.10), so a "
         "borderline pass a noisy detector might re-flag keeps iterating. Default 0.",
@@ -755,7 +816,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--best-of",
-        type=int,
+        type=_BEST_OF,
         default=cfg["best_of"],
         help="draw N candidate rewrites per iteration and keep the best valid one (sentinels intact + "
         "meaning gate, lowest detector max, fewest AI tells within the noise band). Default 3 — the "
