@@ -46,6 +46,28 @@ from untell.scripts.tells import score_tells
 _TELLS_EPS = 0.02
 
 
+# A style profile needs enough words to mean anything. Matches the floor the rest of the codebase
+# uses for "too short to measure" (humanness._MIN_WORDS_FOR_SIGNAL, the detectors' own abstention),
+# raised here because a profile has six features to estimate rather than one score.
+_MIN_VOICE_SAMPLE_WORDS = 20
+_WARNED_VOICE_SAMPLE = False
+
+
+def _warn_voice_sample_too_short(words: int) -> None:
+    """Say once that the sample was ignored. Silence here is the actual bug: the user supplied a
+    file, believes it is shaping the output, and it is doing nothing."""
+    global _WARNED_VOICE_SAMPLE
+    if _WARNED_VOICE_SAMPLE:
+        return
+    _WARNED_VOICE_SAMPLE = True
+    logging.getLogger(__name__).warning(
+        "voice sample has %d words, under the %d needed to build a style profile — voice matching "
+        "is disabled for this run rather than matched against a near-empty profile, which would "
+        "bias the result toward short, comma-free, contraction-free text.",
+        words, _MIN_VOICE_SAMPLE_WORDS,
+    )
+
+
 def _voice_key(masked_candidate: str, voice_sample: str | None) -> float:
     """Distance from ``voice_sample``'s writing style, or 0.0 when no sample was given.
 
@@ -55,10 +77,28 @@ def _voice_key(masked_candidate: str, voice_sample: str | None) -> float:
 
     Returning a constant with no sample keeps the surrounding ``min`` key byte-identical to its
     previous behaviour, so the default path is untouched rather than merely unlikely to differ.
+
+    "No sample" has to mean *nothing to profile*, not *empty string*. ``not voice_sample`` is False
+    for "   ", which is truthy, so a whitespace-only or near-empty sample file reached
+    ``voice_distance`` and produced an all-zero style profile — and the tie-break then ranks
+    candidates by how close they are to zero commas, zero contractions and the shortest possible
+    sentences. MEASURED on three candidates with a whitespace-only sample:
+
+        rich prose  2.5225
+        medium      0.8329
+        terse       0.1282   <- "It works." wins
+
+    So pointing ``--voice-sample`` at a blank file did not disable voice matching, it silently
+    inverted it, biasing the loop toward degenerate output with nothing on screen to say so. Too
+    short is the same failure in weaker form: a three-word sample profiles almost as flat.
     """
-    if not voice_sample:
+    if not voice_sample or not voice_sample.strip():
         return 0.0
-    from untell.scripts.voice import voice_distance
+    from untell.scripts.voice import _WORD, voice_distance
+
+    if len(_WORD.findall(voice_sample)) < _MIN_VOICE_SAMPLE_WORDS:
+        _warn_voice_sample_too_short(len(_WORD.findall(voice_sample)))
+        return 0.0
 
     return voice_distance(voice_sample, _SENTINEL_RE.sub(" ", masked_candidate))
 

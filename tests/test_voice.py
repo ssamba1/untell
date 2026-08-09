@@ -191,3 +191,73 @@ class TestLoopIntegration:
         out = capsys.readouterr().out
         assert "WARNING" in out and str(MIN_SAMPLE_WORDS) in out
         assert captured.get("voice_sample") == "Three words only."
+
+
+class TestADegenerateVoiceSampleIsInertNotInverted:
+    """A blank `--voice-sample` did not disable voice matching, it reversed it.
+
+    `_voice_key` guarded `not voice_sample`, which is False for "   " — whitespace is truthy. So a
+    blank or near-empty sample file reached `voice_distance`, produced an all-zero style profile,
+    and the tie-break then ranked candidates by how close they were to zero commas, zero
+    contractions and the shortest possible sentences. MEASURED on three candidates:
+
+        rich prose  2.5225
+        medium      0.8329
+        terse       0.1282   <- "It works." wins
+
+    The user supplied a file, believed it was shaping the output, and it was shaping it backwards
+    with nothing on screen to say so.
+    """
+
+    CANDIDATES = {
+        "rich": "I've been running these experiments for months, and honestly, the results "
+                "keep surprising me.",
+        "terse": "It works.",
+        "medium": "The system processed the input and returned a result within the expected time.",
+    }
+    REAL_SAMPLE = (
+        "I think it's fine, mostly. I've seen worse, honestly, and I've seen a lot better too, "
+        "over the years of doing this."
+    )
+
+    def _scores(self, sample):
+        from untell.scripts.run import _voice_key
+
+        return {k: _voice_key(v, sample) for k, v in self.CANDIDATES.items()}
+
+    @pytest.mark.parametrize(
+        "sample", [None, "", "   ", "\n\t ", "It works fine.", "Three word sample"],
+        ids=["none", "empty", "spaces", "newline-tab", "three-words", "three-words-2"],
+    )
+    def test_a_sample_too_thin_to_profile_ranks_nothing(self, sample):
+        """Inert means every candidate scores identically, so the tie-break falls through to the
+        criteria that do have signal. Anything else is the tie-break voting on noise."""
+        scores = self._scores(sample)
+        assert set(scores.values()) == {0.0}, f"{sample!r} produced a preference: {scores}"
+
+    def test_a_real_sample_still_ranks(self):
+        """The guard must switch voice matching off for unusable input, not off in general."""
+        scores = self._scores(self.REAL_SAMPLE)
+        assert len(set(scores.values())) > 1, "voice matching became inert for a real sample"
+        assert min(scores, key=scores.get) == "rich", (
+            f"a casual, contraction-heavy sample should prefer the casual candidate: {scores}"
+        )
+
+    def test_the_user_is_told_the_sample_was_ignored(self, caplog):
+        """Silence is the actual defect. Dropping the sample quietly leaves the user believing it
+        worked."""
+        import logging
+
+        import untell.scripts.run as run
+
+        run._WARNED_VOICE_SAMPLE = False
+        with caplog.at_level(logging.WARNING):
+            run._voice_key(self.CANDIDATES["rich"], "far too short")
+        assert any("voice sample" in r.message for r in caplog.records), caplog.text
+
+    def test_the_floor_is_stated_not_magic(self):
+        from untell.scripts.run import _MIN_VOICE_SAMPLE_WORDS
+
+        assert _MIN_VOICE_SAMPLE_WORDS >= 10, (
+            "a style profile estimates six features; a floor below ~10 words profiles noise"
+        )
