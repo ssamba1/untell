@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Described OpenAPI responses for all seven endpoints.** Every handler returns a bare `dict`, so
+  FastAPI had generated `{"type": "object", "additionalProperties": true}` for each — the docs page
+  the README advertises told a client nothing about what comes back. Now documented with field
+  names, types, which are always present, and what the non-obvious ones mean: that `max` is the
+  headline number, that `tier` can differ from `tier_requested` when detectors fail, that
+  `verdict_threshold` rather than `threshold` decides `flagged`, that `rewriter_available: false`
+  means nothing was rewritten. Attached with `responses=` rather than `response_model=`, because a
+  response model *filters* — it would silently drop `failed_detectors`, `detector_errors` and
+  `warning`, which appear only when something has gone wrong and are exactly what a caller then
+  needs. Tests assert the descriptions stay true, since nothing else enforces it.
+- **`detector_errors`** in the `/score` response — the message from each detector that raised,
+  beside the existing `failed_detectors` list. Present only when something failed.
+- **Language registry** (`untell.languages`) — `register(code, scorer, script=...)` and
+  `catalogue_for(text)`, shipping with one entry: English, pointing at the existing catalogue.
+  Text in a script nobody has written for returns **None** rather than falling back to English,
+  because running an English catalogue over Korean finds no English tells and reports a clean score
+  for text nothing examined. Additive by construction — a test asserts `scripts/tells.py` contains
+  no reference to the registry, so adding a language means writing a file and touching nothing.
 - **`untell-audit`** (`untell.scripts.audit`) — machine-checks every claim the documentation makes about
   the code: detector and rewriter counts, console-script declarations *and* whether their entry points
   actually resolve, CLI flags (by source inspection, not `--help` scraping), census cross-checks,
@@ -146,6 +164,22 @@ All notable changes to this project are documented here. The format is based on
   console scripts are `untell-*`, and the skill is `/untell`. The `humanize` skill verb stays as plain English.
 
 ### Fixed
+- **`/score` returned a string inside the map of detector scores.** A failed detector leaves its
+  message beside the score internally (`{"hc3_roberta": null, "hc3_roberta__error": "..."}`) and
+  every in-repo consumer filters keys ending in `__error`. REST clients do not have that
+  convention, so the first thing anyone writes — `max(body["detectors"].values())` — raised
+  `TypeError: '>' not supported between instances of 'str' and 'float'`. Fixed at the boundary
+  only; the library contract is unchanged and a test asserts it, since three in-repo consumers
+  depend on it.
+- **The CLI accepted argument values the REST API rejects with 422** — `--threshold 50` (nothing
+  can ever be flagged), `--threshold -1` (everything always is), `--best-of 0`, `--max-iters -5`
+  (the loop does no work and reports a pass), and `--best-of 10000`, which ran until it was killed
+  genuinely generating candidates. The CLI now reads its bounds off the API's own annotated types
+  rather than repeating them. `test_surface_parity.py` existed to prevent exactly this and compared
+  defaults and vocabularies but not *ranges*.
+- **`untell_text` output key** — the rewrite is under `final`; there is no `text` key. Pinned,
+  because `result.get("text") or original` returns a plausible string rather than raising, so the
+  mistake survives every casual check.
 - **Both model-backed meaning gates stopped reading part-way through the document.** The entailment
   gate tokenises (original, rewrite) as one sequence truncated at 256 tokens, and the similarity
   gate's embedding backends truncate too, so each was scoring only the front of a long input while
