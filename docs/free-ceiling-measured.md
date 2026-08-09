@@ -2878,3 +2878,35 @@ This is the third defect this session in the same family — a confident answer 
 answer is "not measurable". The other two were CJK text reported as perfectly clean, and a Chinese
 paragraph reported as "shorter than 5 words". In each case the code knew the limit somewhere and
 did not apply it at the surface the user actually touches.
+
+## Result 50
+
+**Sweeping one defect family across every surface: two real, three already correct.**
+
+Results 44, 49 and the CJK fix were the same defect three times — a confident number where the
+honest answer is "not measurable", with the limit known somewhere in the code and not applied at
+the surface the user touches. Rather than wait to trip over a fourth, every public surface was
+checked deliberately.
+
+| surface | verdict on unmeasurable input | outcome |
+|---|---|---|
+| `humanness` | already refuses below 5 words | correct; its *reason* was wrong and was fixed earlier |
+| `score_text` | `"a"` -> P(AI) 0.9987, flagged | **fixed** — caveat below 40 words with the measured rate ([Result 49](free-ceiling-measured.md)) |
+| `score_tells` | `Moreover.` -> 100.0 per 100w | **fixed** — caveat below 14 words, derived from 100/N vs the AI mean |
+| `score_sentences` | already warns: per-sentence AUROC 0.493 on the stdlib path | correct |
+| `verify` | prints guidance and returns early when nothing ran | correct |
+| MCP `score` / `tells` | returns the scorer dicts unwrapped | inherits both new caveats |
+| REST `/verify` | `passes_all: false` with `n_configured: 0` | **schema fixed** — the boolean now documents that false also means "nothing ran" |
+
+Two things worth keeping:
+
+- **Three of the six were already right, and finding that out cost as much as the fixes.** The
+  `verify` case looked like the strongest candidate — `passes_all: false` on an empty checker set
+  is a false verdict by any reading — and `_render` turned out to return early with a better
+  message than the one being written to replace it. The replacement was unreachable code and was
+  reverted. A sweep that only reports what it changed overstates what was wrong.
+- **The same behaviour can be correct in one channel and wrong in another.** `passes_all: false`
+  with nothing configured is conservative and right, and the CLI explains it in a sentence. The
+  REST consumer gets the boolean with no sentence attached, and a machine client reading it acts
+  on "failed". The fix was not to change the value, which a test pins for good reason, but to say
+  in the schema what it means — the only place a machine client can read.
