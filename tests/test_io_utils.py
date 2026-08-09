@@ -252,3 +252,66 @@ class TestEveryFileEntryPointDecodesProperly:
         assert not offenders, (
             f"these read --file without going through read_file/read_file_or_exit: {offenders}"
         )
+
+
+class TestAMissingOptionalReaderNamesTheExtra:
+    """`--file report.docx` without python-docx raised `ModuleNotFoundError: No module named
+    'docx'`.
+
+    That is the first thing a user with a Word document tries, and the message does not name
+    anything they can install: the import is `docx` and the package is `python-docx`. Nothing in
+    the error connects either to the `untell[docs]` extra that provides it.
+
+    Found by auditing which optional extras CI installs — the same audit that found the BERTScore
+    gate rejecting 95% of good rewrites. An extra no environment exercises is a code path a user
+    can reach with one pip flag and nobody has run.
+    """
+
+    @staticmethod
+    def _without(*blocked):
+        """Context manager making the named modules unimportable, as a fresh install has them."""
+        import builtins
+        import contextlib
+
+        @contextlib.contextmanager
+        def ctx():
+            real = builtins.__import__
+
+            def guard(name, *a, **k):
+                if name in blocked:
+                    raise ModuleNotFoundError(f"No module named '{name}'")
+                return real(name, *a, **k)
+
+            builtins.__import__ = guard
+            try:
+                yield
+            finally:
+                builtins.__import__ = real
+
+        return ctx()
+
+    @pytest.mark.parametrize(
+        "suffix,module,package",
+        [("docx", "docx", "python-docx"), ("pdf", "pypdf", "pypdf")],
+    )
+    def test_the_message_names_the_package_and_the_extra(self, suffix, module, package, tmp_path):
+        from untell.scripts.io_utils import read_file
+
+        probe = tmp_path / f"probe.{suffix}"
+        probe.write_bytes(b"stub")
+        with self._without(module):
+            with pytest.raises(ValueError) as exc:
+                read_file(str(probe))
+        message = str(exc.value)
+        assert package in message, f"does not name the package to install: {message}"
+        assert "untell[docs]" in message, f"does not name the extra: {message}"
+        assert "No module named" not in message, "raw ImportError text leaked through"
+
+    def test_a_plain_text_file_is_unaffected_by_the_guards(self, tmp_path):
+        """The guards must fire only for the formats that need the extra."""
+        from untell.scripts.io_utils import read_file
+
+        probe = tmp_path / "plain.txt"
+        probe.write_text("Ordinary text.", encoding="utf-8")
+        with self._without("docx", "pypdf"):
+            assert read_file(str(probe)) == "Ordinary text."

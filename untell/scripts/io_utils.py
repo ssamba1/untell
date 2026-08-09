@@ -38,7 +38,16 @@ _BOMS: tuple[tuple[bytes, str], ...] = (
 
 
 def _read_docx(path: str) -> str:
-    from docx import Document  # python-docx
+    # Name the extra rather than letting ModuleNotFoundError out. `--file report.docx` is the very
+    # first thing a user with a Word document tries, and "No module named 'docx'" does not tell
+    # them the fix, or even that there is one — the package is `python-docx` and the import is
+    # `docx`, so the error message does not name anything they can install.
+    try:
+        from docx import Document  # python-docx
+    except ModuleNotFoundError:
+        raise ValueError(
+            f"{path} is a .docx and reading it needs python-docx: pip install 'untell[docs]'"
+        ) from None
 
     doc = Document(path)
     parts = [p.text for p in doc.paragraphs]
@@ -55,7 +64,12 @@ def _read_docx(path: str) -> str:
 
 
 def _read_pdf(path: str) -> str:
-    from pypdf import PdfReader
+    try:
+        from pypdf import PdfReader
+    except ModuleNotFoundError:
+        raise ValueError(
+            f"{path} is a .pdf and reading it needs pypdf: pip install 'untell[docs]'"
+        ) from None
 
     pages = PdfReader(path).pages
     texts = [(page.extract_text() or "") for page in pages]

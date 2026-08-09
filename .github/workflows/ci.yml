@@ -100,7 +100,7 @@ jobs:
           # environment because nothing installed it, and the code path they cover had a
           # gate that rejected 19 of 20 real rewrites. An optional extra nobody exercises
           # is an untested code path a user can turn on with one pip flag.
-          pip install -e ".[full,eval,quality,dev]"
+          pip install -e ".[full,eval,quality,docs,rich,dev]"
           python -m spacy download en_core_web_sm || true
 
       - name: Sanity — torch + detectors import and score
