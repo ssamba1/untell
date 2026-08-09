@@ -90,7 +90,7 @@ _CPU_REWRITERS = ["structural", "surgical", "composite", "targeted"]
 
 
 @pytest.mark.parametrize("name", _CPU_REWRITERS)
-def test_every_cpu_rewriter_can_change_text(name):
+def test_every_cpu_rewriter_can_change_text(stdlib_lite, name):
     """`targeted` was once measured changing 0 of 15 texts on the zero-dependency path, and
     `surgical` 16 of 30 with zero substitutions. Both looked healthy from the outside."""
     import random

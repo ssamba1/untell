@@ -100,7 +100,7 @@ class TestProseExtraction:
         assert is_latex(PAPER)
         assert not is_latex("A plain paragraph with a stray \\alpha in it and nothing else.")
 
-    def test_markup_no_longer_dilutes_the_score(self):
+    def test_markup_no_longer_dilutes_the_score(self, stdlib_lite):
         """MEASURED: the raw .tex scores 0.0949 where its prose scores 0.6261, so the loop read
         0.09, concluded the document passed, and returned it untouched."""
         from untell.scripts.score import score_text

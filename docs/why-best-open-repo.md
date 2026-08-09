@@ -82,7 +82,7 @@ Against our own four criteria, this repo has all four:
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
-| Automated tests | ✅ **2076** tests, 61 modules | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
+| Automated tests | ✅ **2261** tests, 61 modules | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
 | CI (lite + full-tier, real models) | ✅ 4 jobs | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs without a GPU | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | License | MIT | MIT | MIT | MIT | Apache | MIT | MIT |

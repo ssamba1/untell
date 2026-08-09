@@ -212,6 +212,12 @@ def test_why_best_test_count_is_not_stale():
     ).stdout
     actual = int(re.search(r"(\d+) tests collected", out).group(1))
     # Only fails when the doc OVERSTATES, or understates by more than a session's growth.
+    #
+    # "actual" is not one number: the lite tier collects 2261 and the full tier 2277, because
+    # some tests are parametrised over detectors that only exist when torch is installed. The
+    # documented figure therefore has to be the SMALLER of the two, or this assertion fails on
+    # whichever tier collects fewer — which is how it first failed, passing under an exported
+    # UNTELL_LITE_NO_TORCH and failing under the plain `pytest -q` that CI's full job runs.
     assert claimed <= actual, f"doc claims {claimed} tests, suite collects {actual}"
     assert actual - claimed < 200, (
         f"doc claims {claimed} tests, suite collects {actual} — the completeness claim is stale"

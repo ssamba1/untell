@@ -273,7 +273,11 @@ _SYN: dict[str, list[str]] = {
     "significant": ["real", "major", "big"],
     "significantly": ["sharply", "a lot", "greatly"],
     "fundamentally": ["deeply", "at root", "basically"],
-    "various": ["different", "all sorts of", "assorted"],
+    # "all sorts of" dropped: it overclaims. "applied to various tasks" says a range,
+    # "applied to all sorts of tasks" says every kind. Found by the chunked contradiction
+    # gate scoring a real rewrite at 0.606 — I had seen this entry in the epistemic scan
+    # and waved it through as a register shift, and the gate was right where I was not.
+    "various": ["different", "assorted"],
     "essential": ["needed", "key", "necessary"],
     "facilitate": ["help", "ease", "aid"],
     "facilitates": ["helps", "eases", "aids"],

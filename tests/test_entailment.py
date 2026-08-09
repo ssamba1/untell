@@ -291,3 +291,83 @@ class TestModelFreeChecksRunWithoutNLI:
         src = inspect.getsource(entailment.meaning_preserved)
         assert src.index("numbers_kept") < src.index("if not available()")
         assert src.index("certainty_kept") < src.index("if not available()")
+
+
+class TestLongInputIsActuallyScored:
+    """`_pair_probs` truncates the (premise, hypothesis) pair at 256 tokens, so each side gets
+    roughly 128. Past that the model was comparing a truncated prefix against itself and returning
+    the score for two identical strings.
+
+    Measured, the same negation with only its POSITION changed:
+
+        length   edit at start   edit at end
+          7 w    0.9976          0.9971
+        143 w    0.9833          0.0179   <- not vetoed
+        279 w    0.9833          0.0179   <- not vetoed
+
+    A rewriter could invert any claim after the first ~130 words and nothing in this project would
+    see it. That is a direct hit on the guarantee the repo is built around, so it gets a test that
+    fails loudly rather than a comment.
+    """
+
+    FILLER = (
+        "The study was conducted at three sites over eighteen months. Recruitment followed the "
+        "published protocol. Data collection used the standard instrument. Analysts were blinded "
+        "to allocation throughout. The statistical plan was registered in advance. "
+    )
+
+    @pytest.mark.parametrize(
+        "before,after",
+        [
+            ("The treatment improved outcomes in the trial.",
+             "The treatment did not improve outcomes in the trial."),
+            ("The revision improved the clarity of the argument.",
+             "The revision worsened the clarity of the argument."),
+        ],
+    )
+    def test_an_inversion_late_in_a_long_document_is_still_vetoed(self, before, after):
+        if not entailment.available():
+            pytest.skip("NLI stack unavailable")
+        padding = self.FILLER * 4  # ~140 words in front of the edit
+        score = entailment.contradiction_score(padding + before, padding + after)
+        assert score is not None
+        assert score >= entailment.DEFAULT_CONTRADICTION_BAR, (
+            f"inversion {len(padding.split())} words into the document scored {score:.4f} — "
+            f"below the {entailment.DEFAULT_CONTRADICTION_BAR} bar, i.e. invisible"
+        )
+
+    def test_position_does_not_decide_the_verdict(self):
+        """The sharpest form of the bug: identical edit, identical length, only the position
+        differs, and the two answers disagreed by 0.96."""
+        if not entailment.available():
+            pytest.skip("NLI stack unavailable")
+        padding = self.FILLER * 4
+        before, after = (
+            "The treatment improved outcomes in the trial.",
+            "The treatment did not improve outcomes in the trial.",
+        )
+        at_start = entailment.contradiction_score(before + " " + padding, after + " " + padding)
+        at_end = entailment.contradiction_score(padding + before, padding + after)
+        assert abs(at_start - at_end) < 0.35, (
+            f"same edit scored {at_start:.4f} at the start and {at_end:.4f} at the end"
+        )
+
+    def test_short_input_takes_exactly_one_chunk(self):
+        """Chunking must be a no-op below the threshold, so short-input behaviour is unchanged."""
+        a, b = "The cat sat on the mat.", "A cat was sitting on the mat."
+        assert entailment._aligned_chunks(a, b) == [(a, b)]
+
+    def test_chunks_are_aligned_by_content_not_by_proportion(self):
+        """Proportional cutting drifts once the rewriter changes sentence lengths, and the gate
+        then compares text that never corresponded. Inserting a sentence at the front must not
+        shift every later chunk out of step."""
+        source = " ".join(f"Sentence number {n} states a fact about the system." for n in range(30))
+        shifted = "An extra opening sentence appears here first. " + source
+        chunks = entailment._aligned_chunks(source, shifted)
+        assert len(chunks) > 1, "expected the input to be long enough to chunk"
+        for src_chunk, out_chunk in chunks[1:]:
+            first_src = src_chunk.split()[:6]
+            assert " ".join(first_src) in out_chunk, (
+                f"chunk drifted: source chunk starts {' '.join(first_src)!r}, "
+                f"rewrite chunk is {out_chunk[:80]!r}"
+            )

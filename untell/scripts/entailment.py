@@ -23,6 +23,7 @@ missing veto must never turn into a *silent* veto that rejects every candidate.
 
 from __future__ import annotations
 
+import difflib
 import logging
 from functools import lru_cache
 
@@ -101,6 +102,91 @@ def _pair_probs(premise: str, hypothesis: str):
         return torch.softmax(model(**enc).logits, dim=-1)[0]
 
 
+# --- long inputs -------------------------------------------------------------------------------
+# `_pair_probs` tokenises (premise, hypothesis) as ONE sequence truncated at 256 tokens, so each
+# side gets roughly 128. Everything past that is not scored — it is not scored *badly*, it is
+# absent from the model's input entirely.
+#
+# MEASURED, same edit, same document, only its position changed:
+#
+#     "The treatment improved outcomes." -> "The treatment did NOT improve outcomes."
+#
+#     length   edit at the START   edit at the END
+#       7 w    contra 0.9976       contra 0.9971    both vetoed
+#      75 w    contra 0.9769       contra 0.9748    both vetoed
+#     143 w    contra 0.9833       contra 0.0179    END NOT VETOED
+#     279 w    contra 0.9833       contra 0.0179    END NOT VETOED
+#
+# 0.0179 is the score for two identical strings: past the cut the model is comparing the same
+# truncated prefix against itself. A rewriter could invert any claim after roughly the first 130
+# words of a document and no gate in this project would see it. The same class of bug was found
+# and fixed for the DETECTORS (windowed scoring); the meaning gate never got the fix.
+#
+# Chunked and aligned rather than a sliding window, because this is a PAIRED comparison: piece i
+# of the original has to be scored against the piece of the rewrite that corresponds to it. How
+# that alignment is done matters more than it sounds — see `_aligned_chunks`.
+#
+# Applied to CONTRADICTION only. `entailment_score` stays whole-text, with the measurement for why
+# recorded there.
+#
+# Cost, over 30 real rewrites of median 298 words: 0.17s -> 0.57s per pair, so the gate is roughly
+# 3.4x dearer on long input and unchanged on short (one chunk reproduces the old call exactly).
+# Veto rate on those same 30 went 1 -> 2, and the one added veto was inspected and is a TRUE
+# catch: "applied to various tasks" -> "applied to all sorts of tasks", an overclaim the whole-text
+# score diluted to 0.29 and the aligned chunk scores at 0.61.
+_CHUNK_WORDS = 90
+
+
+def _aligned_chunks(a: str, b: str) -> list[tuple[str, str]]:
+    """Pair up ``a`` and ``b`` piecewise so neither side reaches the tokeniser's cut.
+
+    Cut points come from ``difflib``, not from proportion. Cutting each side into k equal pieces
+    was tried first and drifts: the rewriter merges and splits sentences, so by the third chunk the
+    two sides are a sentence apart and the gate compares text that was never meant to correspond.
+    Measured, that produced false vetoes on faithful rewrites —
+
+        SRC chunk: "Our results demonstrate that the attention mechanism improves ..."
+        OUT chunk: "We also perform a series of ablation studies ... Our results show that ..."
+
+    A rewrite keeps most of its words, so the longest matching word blocks between the two are a
+    direct anchor. Each source cut point is mapped through those blocks to the corresponding place
+    in the rewrite, and both sides are then cut at genuinely corresponding positions.
+    """
+    aw, bw = a.split(), b.split()
+    longest = max(len(aw), len(bw))
+    k = max(1, -(-longest // _CHUNK_WORDS))
+    if k == 1 or len(aw) < 2 or len(bw) < 2:
+        return [(a, b)]
+
+    matcher = difflib.SequenceMatcher(a=aw, b=bw, autojunk=False)
+    blocks = matcher.get_matching_blocks()  # ends with a zero-length sentinel
+
+    def map_index(i: int) -> int:
+        """Where in ``b`` does word ``i`` of ``a`` correspond to?"""
+        for blk in blocks:
+            if blk.a <= i < blk.a + blk.size:
+                return blk.b + (i - blk.a)
+            if blk.a > i:  # fell in a gap — anchor to the start of the next matching block
+                return blk.b
+        return len(bw)
+
+    cuts_a = [round(len(aw) * n / k) for n in range(1, k)]
+    bounds_a = [0, *cuts_a, len(aw)]
+    bounds_b = [0, *[map_index(c) for c in cuts_a], len(bw)]
+    # Monotonicity is not guaranteed if a block anchor jumps backwards; enforce it rather than
+    # emitting a reversed slice, which would silently produce an empty chunk.
+    for n in range(1, len(bounds_b)):
+        bounds_b[n] = max(bounds_b[n], bounds_b[n - 1])
+
+    out: list[tuple[str, str]] = []
+    for n in range(k):
+        ca = " ".join(aw[bounds_a[n] : bounds_a[n + 1]])
+        cb = " ".join(bw[bounds_b[n] : bounds_b[n + 1]])
+        if ca.strip() and cb.strip():
+            out.append((ca, cb))
+    return out or [(a, b)]
+
+
 def contradiction_score(a: str, b: str) -> float | None:
     """Max contradiction probability across both directions, or None if unavailable.
 
@@ -110,12 +196,17 @@ def contradiction_score(a: str, b: str) -> float | None:
         return None
     try:
         idx = None
-        forward = _pair_probs(a, b)
+        _pair_probs(a, b)  # forces the load so label_idx is resolved
         idx = (_NLI.label_idx or {}).get("contradiction")
         if idx is None:
             return None
-        backward = _pair_probs(b, a)
-        return max(float(forward[idx]), float(backward[idx]))
+        # One contradicted chunk disqualifies the whole rewrite, so: max over chunks, and over
+        # both directions within each chunk. Short inputs yield a single chunk of (a, b), which is
+        # exactly the previous behaviour.
+        return max(
+            max(float(_pair_probs(ca, cb)[idx]), float(_pair_probs(cb, ca)[idx]))
+            for ca, cb in _aligned_chunks(a, b)
+        )
     except Exception as exc:
         # One failure disables the veto for the process rather than raising per candidate — but say
         # so once, because a silently absent safety check is worse than a noisy one.
@@ -150,6 +241,20 @@ def entailment_score(a: str, b: str) -> float | None:
         if idx is None:
             return None
         backward = _pair_probs(b, a)
+        # NOT chunked, unlike `contradiction_score`. Chunking this was implemented and reverted:
+        # over 30 real rewrites it took the veto count from 0 to 2, and printing the responsible
+        # chunk pair showed the cause was misalignment, not damage —
+        #
+        #     SRC chunk: "Our results demonstrate that the attention mechanism improves ..."
+        #     OUT chunk: "We also perform a series of ablation studies ... Our results show that
+        #                 the attention mechanism improves ..."
+        #
+        # The rewrite chunk begins a sentence earlier, because proportional splitting drifts once
+        # the rewriter has changed sentence lengths. Contradiction survives that drift (it is a MAX
+        # over chunks, and unrelated text is "neutral" rather than contradictory — measured
+        # unchanged at 1 veto in 30 either way), but entailment is a MIN over eight directional
+        # scores and every misaligned pair drags it down. A safety check that rejects faithful
+        # output is not a safer check.
         return min(float(forward[idx]), float(backward[idx]))
     except Exception as exc:
         _NLI.dead = True
