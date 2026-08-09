@@ -165,6 +165,42 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
     return _score_with_detectors(load_detectors(tier), _truncate(text), tier, threshold)
 
 
+# How badly the ensemble misreads SHORT text. MEASURED on 40 HC3 pairs at the 0.30 default, full
+# tier, truncating both halves of each pair to the first N words and asking what fraction of the
+# HUMAN half flags:
+#
+#     words   human flagged   AI flagged
+#         5             98%         100%     <- no discrimination at all
+#        10             62%          95%
+#        20             40%         100%
+#        40             28%         100%
+#        80             17%         100%
+#
+# At five words a human paragraph and an AI paragraph are indistinguishable, and the API answers
+# "a" with P(AI) = 0.9987 and flagged=True. `humanness()` already refuses to answer below five
+# words; the primary scoring path did not, and it is the one behind /score, /tells and the CLI.
+#
+# The verdict itself is left alone deliberately. `max` is the raw ensemble output and callers store
+# and compare it; silently zeroing or withholding it would break them for a reason they cannot see.
+# What was missing is the thing the lite-tier stdlib path already does — say, with the measured
+# number, that this configuration is not one to trust.
+_SHORT_TEXT_BANDS = ((5, "98%"), (10, "62%"), (20, "40%"), (40, "28%"))
+_MIN_WORDS_FOR_A_VERDICT = 40
+
+
+def _short_text_warning(text: str) -> str | None:
+    """Warn when the text is too short for the flag to mean anything, with the measured rate."""
+    words = len(text.split())
+    if words >= _MIN_WORDS_FOR_A_VERDICT:
+        return None
+    rate = next(pct for bound, pct in _SHORT_TEXT_BANDS if words <= bound)
+    return (
+        f"{words} word{'' if words == 1 else 's'}: too short for a reliable verdict. MEASURED on 40 HC3 pairs at this "
+        f"threshold, {rate} of HUMAN text this length also flags. Score longer text, or treat this "
+        f"as no evidence either way."
+    )
+
+
 def _score_with_detectors(
     detectors: list,
     text: str,
@@ -292,6 +328,12 @@ def _score_with_detectors(
             + f". The reported numbers reflect the '{effective}' tier only "
             "(commonly a NumPy 2.x / torch mismatch — see the README troubleshooting section)."
         )
+    # Appended rather than folded into the chain above: length and tier are independent problems,
+    # and a short text scored on a downgraded tier has both. An elif would have reported whichever
+    # one happened to be checked first and hidden the other.
+    short = _short_text_warning(text)
+    if short:
+        result["warning"] = f'{result["warning"]} Also: {short}' if result.get("warning") else short
     return result
 
 
