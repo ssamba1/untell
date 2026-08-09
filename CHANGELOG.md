@@ -166,6 +166,16 @@ All notable changes to this project are documented here. The format is based on
   console scripts are `untell-*`, and the skill is `/untell`. The `humanize` skill verb stays as plain English.
 
 ### Fixed
+- **Sentence fronting now actually respects its budget.** The rate above was the intent; the counter
+  that enforces it held a literal `0x08` byte where `\b` was meant, inside an `r"..."` string where a
+  word boundary and a backspace look identical. No text contains a backspace, so the count of
+  already-fronted sentences was permanently zero and the budget permanently full — text already at
+  or above the human rate kept receiving more. Measured on a block already fronting all three of its
+  eligible sentences: 0.67 sentences newly fronted per run, now 0.00.
+- **`humanness()` on non-Latin script says why it cannot answer.** It returned 50 (undetermined),
+  which was right, with the reason "text is shorter than 5 words" — true of a word regex that counts
+  `[A-Za-z']+` and absurd for a 40-character Chinese paragraph. It now names the real limit, that the
+  catalogue is English-only.
 - **`/score` returned a string inside the map of detector scores.** A failed detector leaves its
   message beside the score internally (`{"hc3_roberta": null, "hc3_roberta__error": "..."}`) and
   every in-repo consumer filters keys ending in `__error`. REST clients do not have that
