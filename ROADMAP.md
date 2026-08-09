@@ -142,7 +142,7 @@ This is the axis where the field is *empty*, and where one session of probing fo
 | Chinese/Korean/Japanese AI text reported as **perfectly clean** | false verdict |
 | LaTeX **entirely unprotected** — `lock()` held 0 spans of a paper paragraph | headline promise broken |
 | the central competitive claim quoted a sentence **that exists in no commit** | fabricated citation |
-| lite tier flagged **60% of human text** at the shipped threshold — **fixed**: the verdict threshold is now separate from the loop target and calibrated per scoring path, 60% -> 15% (Result 24) | calibration |
+| lite tier flagged **60% of human text** at the shipped threshold — **fixed**: the verdict threshold is now separate from the loop target and calibrated per scoring path, 60% -> 15% pooled (Result 24). Re-derived 2026-08-09 at n=100 per corpus: **30% on HC3, 10% on RAID** — the fix holds but the rate is no longer corpus-independent as the defect was, and the pooled figure describes neither ([Result 43](docs/free-ceiling-measured.md)) | calibration |
 | `max` and `ensemble` are the same object, benchmarked as two — **guarded**: they resolve to one class and `max` reports `name="ensemble"`; a test now fails if any single table carries both as separate rows | phantom data point |
 
 No competitor publishes anything comparable, because no competitor looks. Turning that into a

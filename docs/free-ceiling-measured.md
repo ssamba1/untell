@@ -2535,3 +2535,43 @@ sample would have moved 8.02 too.
 
 Single run, n = 30. The row now cites this re-derivation rather than silently carrying either set
 of numbers as fact.
+
+---
+
+## Result 43 — the lite tier's fixed false-positive rate is corpus-dependent, and the single number hides it
+
+Result 24 fixed the lite tier flagging 60% of human text, reporting **60% → 15%** over 120 human
+texts across both corpora. It also established something about the *pre*-fix number that matters
+here: 60% was "identical in HC3 and RAID separately — so it is a property of the lite detector, not
+of one corpus."
+
+Re-measured post-fix at n = 100 per corpus, `tier=lite`, pure-stdlib path, reading the `flagged`
+field the fix introduced:
+
+| corpus | human texts flagged |
+|---|---|
+| HC3 (forum answers) | **30/100 = 30%** |
+| RAID (paper abstracts) | **10/100 = 10%** |
+| pooled | 20% |
+| Result 24's figure | 15% |
+
+The fix is real — 60% to 20% pooled is most of the problem gone. But the property that made the
+original defect easy to reason about **did not survive it**. The pre-fix rate was corpus-independent;
+the post-fix rate differs by 3× between corpora, and the single headline number sits between them
+describing neither.
+
+What that means for a user is concrete: someone pasting conversational prose into the free tier is
+told it reads as AI **three times in ten**, not fifteen in a hundred. Someone pasting an academic
+abstract is told so one time in ten. The documented figure understates the first case by 2× — and
+the first case is the likelier one for a tool whose landing page invites you to paste your own
+writing.
+
+This is the fifth constant in this document to behave differently by register, after
+`formulaic_transition`, `hedge_stacking`, contractions and the tell catalogue as a whole. The
+pattern is consistent enough now to be the default expectation rather than a recurring surprise:
+**a threshold calibrated on pooled corpora is calibrated for neither.**
+
+Not re-tuning it here. The threshold trades false positives against AI recall along a curve Result
+24 already swept, and picking a new point needs that whole sweep re-run per corpus — plus a decision
+about whether the free tier should be tuned for conversational or formal input, which is a product
+question. What is fixed is the claim: the row now gives both numbers instead of their average.
