@@ -1,10 +1,29 @@
 """Ensemble rewriter — run every free method and keep the per-input detector-lowest.
 
-Measured, different free rewriters win on different inputs: the rule-based composite crushes some
-paragraphs while a neural T5 paraphrase crushes others (and backfires on the first). No single free
-method dominates. So the strongest free path is not *a* method but a **selection over all of them**:
-run each member on the text, score every output against the same detector tier the loop uses, and
-return the lowest-scoring one.
+The idea is that different free rewriters win on different inputs, so the strongest free path is
+not *a* method but a **selection over all of them**: run each member on the text, score every
+output against the same detector tier the loop uses, and return the lowest-scoring one.
+
+**On RAID that premise does not hold, and the corpus it was originally measured on is not named.**
+Re-measured 2026-08-09 over 8 RAID texts, each member run standalone on the same input and scored
+at the full tier (Result 38 in docs/free-ceiling-measured.md):
+
+    member       wins   worse than input   mean post   total time
+    composite       0                  0      0.5600       111.6s
+    mt_pivot        0                  1      0.8884       257.8s
+    neural          8                  0      0.1434       990.7s
+
+Neural won all eight, not most. `mt_pivot` won nothing, had the worst mean, and made one text more
+detectable than the input it was handed (0.9992 from 0.9604) — 258 seconds for no contribution.
+
+None of that breaks the ensemble, which takes the per-input minimum: a member that never wins costs
+time and cannot cost quality. What it undermines is the *reason* for having three members, which on
+this corpus is one member plus two paying rent. `mt_pivot` is deliberately NOT removed on n=8 from
+one corpus — replacing an unnamed-corpus claim with a thin one is the same mistake with fresher
+numbers. The measurement that would settle it is written down in Result 38.
+
+Also worth knowing before choosing a backend: neural costs **8.9x** the wall clock of composite for
+that 0.56 -> 0.14.
 
 By construction the ensemble is >= its best member **on a single call**: every member sees the same
 input, the original text is in the pool too, and the lowest scorer wins, so one `rewrite()` cannot

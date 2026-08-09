@@ -2224,3 +2224,52 @@ preposition-collocation fix.
 
 n = 16, one run per arm. The two arms share texts and seeds, so the comparison is paired even though
 neither absolute figure is a replacement for the n = 40 × 3 headline.
+
+---
+
+## Result 38 — on RAID, one ensemble member wins everything and one never wins at all
+
+`rewriter/ensemble.py` opens with a claim about why the ensemble exists:
+
+> Measured, different free rewriters win on different inputs: the rule-based composite crushes some
+> paragraphs while a neural T5 paraphrase crushes others (and backfires on the first). No single
+> free method dominates.
+
+That is the whole argument for running three rewriters instead of one. It has not been re-measured
+since it was written, so here it is on 8 RAID texts, each member run standalone on the same input,
+scored at the full tier:
+
+| member | wins | worse than its input | mean post | total time |
+|---|---|---|---|---|
+| composite | 0 | 0 | 0.5600 | 111.6 s |
+| mt_pivot | **0** | **1** | 0.8884 | 257.8 s |
+| neural | **8** | 0 | **0.1434** | 990.7 s |
+
+**Neural won every text.** Not most — all eight. On this corpus the premise above does not hold:
+one method dominates, and it is not close (0.1434 against 0.5600 and 0.8884).
+
+**`mt_pivot` never won, had the worst mean, and made one text more detectable than the input it was
+given** — 0.9992 from a 0.9604 source, consistent with `untell-compare` putting back-translation at
+0.995. It cost 258 seconds to contribute nothing.
+
+### What follows, and what does not
+
+The ensemble is unharmed by this: it takes the per-input minimum, so a member that never wins costs
+time and cannot cost quality. The guarantee was checked separately and holds — on two texts the
+ensemble beat every member individually, because the members are stochastic and it runs its own
+internal contest.
+
+What is affected is the *reason* stated for having three members. On RAID it is one member plus two
+that are paying rent, and 258 of those seconds buy nothing measurable.
+
+**`mt_pivot` is not being removed on this evidence.** n = 8, one corpus, one run per member. The
+claim it would contradict was itself made on a corpus that is not named, and replacing an unnamed-
+corpus claim with an n=8 claim is not an improvement in rigour — it is the same mistake with fresher
+numbers. What would justify removal is the same measurement on HC3 and on the demo corpus, at n ≥ 30,
+with repeats; if mt_pivot wins nothing anywhere, it is dead weight in the strongest free path.
+
+The docstring has been corrected to say what is measured rather than what was assumed.
+
+Also worth recording for anyone choosing a backend: neural is **8.9x** the wall-clock of composite
+(991 s against 112 s for the same eight texts) for that 0.56 → 0.14. That is the actual trade, and
+neither number appears anywhere a user picking `--rewriter` would see it.
