@@ -1874,3 +1874,42 @@ companion test asserting that scoping is not vacuous.
     Result 26 (length)   0.300   35.8%
     Result 29 (nominal)  0.312   31.7%
     Result 31 (this)     0.289   24.2%
+
+---
+
+## Result 32 — twelve more over-used words, and the grammar bug they exposed
+
+The same sweep that produced Result 31's inflection fix also listed words AI over-uses with **no**
+map entry at all. Twelve were added; several were deliberately not:
+
+| excluded | why |
+|---|---|
+| `united` (99×) | it is "United States" — a proper noun, not register |
+| `treatment`, `efficiency` | subject matter in these corpora |
+| `contributions` | in a paper it names the novel claim |
+| `helps`, `follows` | ordinary words with no formal register to remove |
+
+Shipped configuration, n = 40, 3 repeats:
+
+| | post | flagged | spread | mean sim |
+|---|---|---|---|---|
+| before | 0.2889 | 24.2% | ±0.0081 | 0.9808 |
+| **after** | **0.2850** | **21.7%** | **±0.0051** | 0.9799 |
+
+The score movement is *inside* the spread and is not claimed as a result. The flagged rate is
+−2.5 points and the variance tightened again, which is.
+
+### The bug the additions exposed
+
+`applying → putting to work` produced **"putting to work it accurately"**. A separable phrasal verb
+takes its object inside: *putting it to work*.
+
+The particle is not the fault — `spell out the details` is correct English — it is a particle
+followed by a **pronoun**. 35 keys in the map carry a particle-tailed substitute, and
+`harnessing → putting to work` had the same latent bug before any of this session's work.
+
+The swap now declines a particle substitute when a pronoun object follows, taking a single-word
+alternative instead. Reordering the object was rejected: it requires knowing where the object ends,
+which needs a parser this tier does not have. A test asserts `spell out the details` still happens,
+because a rule banning every particle substitute would delete a third of the map's alternatives to
+fix a case that only arises before a pronoun.
