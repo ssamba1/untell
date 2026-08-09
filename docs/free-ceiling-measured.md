@@ -1973,3 +1973,76 @@ the max hid this for the whole of Result 17.
 
 n = 16 on one corpus. The flagged rates are three-document resolution and the deltas are the
 reliable part of this table.
+
+---
+
+## Result 34 — matching the human sentence-length distribution makes the score worse
+
+Result 33 left `perplexity_burstiness` tied for the wall. It reads sentence-length variance, the
+rewriter has a budget on *mean* length and nothing on spread, and both of its structural moves —
+split and merge — pull toward the mean by construction. That is a mechanism, so it was worth
+measuring. RAID, n = 40, `composite`:
+
+| | mean | cv | 10th pct | 90th pct |
+|---|---|---|---|---|
+| AI original | 23.78 | 0.2625 | 15 | 32 |
+| our output | 21.13 | 0.3818 | 10 | 30 |
+| **HUMAN** | **23.49** | **0.3513** | **12** | **35** |
+
+**The hypothesis was wrong.** Variance is already human — `cv` 0.382 against 0.351, if anything an
+overshoot. The AI original sits at 0.2625 and the rewriter fixes that outright.
+
+What the table does show is a different mismatch: our mean is 2.4 words *below* human, the short
+tail runs below the human one (10 against 12), and the long tail is missing entirely (30 against
+35). Splitting overshoots downward.
+
+### Two levers, swept
+
+`_MIN_SPLIT_SIDE` is a grammar floor — below it a half is a stranded discourse marker — so a
+separate distribution floor was swept rather than moving it:
+
+| floor | mean | cv | p10 | p90 | post | flagged |
+|---|---|---|---|---|---|---|
+| 4 (shipped) | 21.61 | 0.3454 | 11 | 31 | 0.4934 | 0.675 |
+| 8 | 22.61 | 0.3013 | 13 | 32 | 0.5002 | 0.675 |
+| 12 | 23.45 | 0.2772 | 15 | 32 | 0.4720 | 0.700 |
+
+Raising the floor buys mean and *sells* variance — 12 lands the mean on the human value and drags
+`cv` from 0.345 down to 0.277, away from it. No setting matches both moments. And no floor lifts
+the long tail: splitting cannot create a long sentence. Merging can, so `_MEAN_LENGTH_BUDGET`:
+
+| budget | mean | cv | p10 | p90 | post | flagged |
+|---|---|---|---|---|---|---|
+| **1.10 (shipped)** | 20.99 | 0.3553 | 10 | 30 | **0.4802** | **0.600** |
+| 1.35 | 25.16 | 0.4458 | 12 | 40 | 0.5724 | 0.725 |
+| 1.60 | 27.70 | 0.4630 | 12 | 47 | 0.5158 | 0.750 |
+
+At 1.35 the output distribution is **closer to human on every moment measured** — mean 25.16 near
+23.49, p10 exactly the human 12, a long tail that finally exists. The score gets **worse**:
++0.092 and +12.5 points flagged.
+
+### Why this is trustworthy, and it usually would not be
+
+The two sweeps re-ran one identical configuration by accident — shipped settings, same corpus, same
+n. It came out **0.4934 / 0.675** in the first and **0.4802 / 0.600** in the second. That is a free
+noise estimate on this harness: about ±0.013 on the score and ±0.075 on the flagged rate, from a
+single unrepeated run.
+
+Which retroactively decides the first table. Its whole range, 0.472 to 0.500, fits inside that
+noise band — the split-floor sweep measured nothing, and reading a winner out of it would have been
+reading noise. The budget result is +0.092, seven times the noise, and survives.
+
+### What it means
+
+The working method for most of this document has been: measure a rate against the human half of a
+paired corpus and move ours toward it. Here that method points the **wrong way**. A rewrite can be
+more human on the statistic a detector is named after and score worse, because the detector is not
+actually reading that statistic in isolation — merging two sentences with a connector produces a
+long sentence with a *predictable* join, and predictability is what the perplexity term measures.
+The length histogram improved and the thing generating it got more machine-like.
+
+Nothing shipped. `_MEAN_LENGTH_BUDGET` stays at 1.10 and `_MIN_SPLIT_SIDE` at 4. The distribution
+gap is real and documented; the obvious ways to close it are measured and rejected.
+
+Single run per cell, one corpus, one rewriter. The noise estimate above is the reason the budget
+row is stated as a result and the floor rows are not.
