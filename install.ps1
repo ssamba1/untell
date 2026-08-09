@@ -24,10 +24,16 @@ $cloneExit = $LASTEXITCODE
 $ErrorActionPreference = $prevEAP
 if ($cloneExit -ne 0) { Write-Error "git clone failed (exit $cloneExit)." }
 
-New-Item -ItemType Directory -Force (Split-Path $dest) | Out-Null
-if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
-Copy-Item -Recurse (Join-Path $tmp "untell") $dest
-Remove-Item -Recurse -Force $tmp
+# try/finally so the temp clone is removed even when the copy fails. install.sh has had this
+# since it was written (`trap cleanup EXIT`); this side removed $tmp only on the success path, so
+# a failed Copy-Item left a full repository clone in %TEMP% with nothing to indicate why.
+try {
+  New-Item -ItemType Directory -Force (Split-Path $dest) | Out-Null
+  if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+  Copy-Item -Recurse (Join-Path $tmp "untell") $dest
+} finally {
+  if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
+}
 
 Write-Host ""
 Write-Host "  Installed the untell skill -> $dest"
