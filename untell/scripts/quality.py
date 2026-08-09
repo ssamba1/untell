@@ -17,6 +17,8 @@ from __future__ import annotations
 import logging
 import re
 
+from untell.text_split import aligned_chunks
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_BAR = 0.76  # semantic-cosine bar (P-SP threshold); only meaningful for the embedding metric
@@ -139,6 +141,26 @@ def similarity(a: str, b: str) -> float:
     a_empty, b_empty = not a.strip(), not b.strip()
     if a_empty or b_empty:
         return 1.0 if (a_empty and b_empty) else 0.0
+    # Long input is scored piecewise, at the WORST piece. Both embedding backends truncate, so a
+    # single call reads only the front of a long document. Measured, replacing an entire sentence
+    # with unrelated text ("The intervention halved mortality" -> "Cats are pleasant animals"):
+    #
+    #     words   edit at the START   edit at the END
+    #        76   0.5775              0.7824
+    #       144   0.8189              0.9061
+    #       280   0.8577              1.0000   <- identical, to a gate whose bar is 0.76
+    #       552   0.8577              1.0000
+    #
+    # 1.0000 is not "similar enough", it is the model reporting the two texts as the same string:
+    # the changed sentence is past the tokeniser's cut and was never embedded. The bar could be set
+    # anywhere and this would still pass. Same defect as the entailment gate, same fix, and the
+    # chunking helper is shared with it so the two cannot drift.
+    #
+    # min, not mean: meaning destroyed in one paragraph is destroyed, and averaging it against four
+    # untouched paragraphs is what hid it in the first place.
+    chunks = aligned_chunks(a, b)
+    if len(chunks) > 1:
+        return min(similarity(ca, cb) for ca, cb in chunks)
     bs = _bert_score_similarity(a, b)
     if bs is not None:
         # BERTScore F1 (rescaled) — the highest-fidelity backend when bert-score is installed.

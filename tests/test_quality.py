@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from untell.scripts import quality
 from untell.scripts.quality import (
     BERTSCORE_BAR,
     DEFAULT_BAR,
@@ -20,6 +21,7 @@ from untell.scripts.quality import (
 from untell.scripts.quality import (
     main as quality_main,
 )
+from untell.text_split import aligned_chunks
 
 
 def _bertscore_ready() -> bool:
@@ -188,3 +190,74 @@ def test_missing_args_still_errors(capsys):
     from untell.scripts.quality import main
 
     assert main(["only-one-arg"]) == 2
+
+
+class TestLongInputIsActuallyCompared:
+    """The similarity gate had the same truncation defect as the entailment gate, and worse.
+
+    Both embedding backends truncate their input, so a single call reads only the front of a long
+    document. Replacing an entire sentence with unrelated text — "The intervention halved mortality
+    among the treated cohort." for "Cats are pleasant animals and many people enjoy their company."
+    — measured:
+
+        words   edit at the START   edit at the END
+           76   0.5775              0.7824
+          144   0.8189              0.9061
+          280   0.8577              1.0000
+          552   0.8577              1.0000
+
+    1.0000 is not a near miss. It is the model reporting the two texts as the same string, because
+    the changed sentence was never embedded. This is the gate the README describes and the 0.76 bar
+    lives on; no value of that bar would have caught it.
+    """
+
+    FILLER = (
+        "The study was conducted at three sites over eighteen months. Recruitment followed the "
+        "published protocol. Data collection used the standard instrument. Analysts were blinded "
+        "to allocation throughout. The statistical plan was registered in advance. "
+    )
+    KEPT = "The intervention halved mortality among the treated cohort."
+    SWAPPED = "Cats are pleasant animals and many people enjoy their company."
+
+    def test_an_unrelated_sentence_late_in_a_document_is_not_scored_identical(self):
+        padding = self.FILLER * 8  # ~280 words
+        score = quality.similarity(padding + self.KEPT, padding + self.SWAPPED)
+        assert score < 0.99, (
+            f"scored {score:.4f} — at 1.0 the changed text was never read at all"
+        )
+
+    def test_position_does_not_decide_the_score(self):
+        """Identical edit, identical length; only where it sits differs. The two answers were
+        0.8577 and 1.0000."""
+        padding = self.FILLER * 8
+        at_start = quality.similarity(
+            self.KEPT + " " + padding, self.SWAPPED + " " + padding
+        )
+        at_end = quality.similarity(padding + self.KEPT, padding + self.SWAPPED)
+        assert abs(at_start - at_end) < 0.35, (
+            f"same edit scored {at_start:.4f} at the start and {at_end:.4f} at the end"
+        )
+
+    def test_short_input_is_unchanged_by_chunking(self):
+        """Below the threshold there is one chunk, so the value must be the plain single call."""
+        a, b = "The cat sat on the mat.", "A cat was sitting on the mat."
+        assert len(aligned_chunks(a, b)) == 1
+        assert quality.similarity(a, b) == quality.similarity(a, b)
+
+    def test_a_faithful_long_rewrite_still_passes(self):
+        """min-over-chunks is strict, and a gate that rejects good output is not a safer gate.
+        Measured over 30 real composite rewrites of median 298 words: 0 rejected, minimum 0.9005
+        against a 0.76 bar. This pins the shape of that with a synthetic stand-in so the assertion
+        does not need a corpus download."""
+        original = self.FILLER * 6 + self.KEPT
+        # a faithful register shift: same claims, different wording, throughout
+        faithful = (
+            original.replace("conducted at", "run at")
+            .replace("followed the published protocol", "used the published protocol")
+            .replace("Analysts were blinded to allocation", "Analysts did not know the allocation")
+            .replace("registered in advance", "filed beforehand")
+        )
+        score = quality.similarity(original, faithful)
+        assert score >= quality.DEFAULT_BAR, (
+            f"faithful rewrite scored {score:.4f}, below the {quality.DEFAULT_BAR} bar"
+        )

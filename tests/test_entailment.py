@@ -10,6 +10,7 @@ import json
 import pytest
 
 from untell.scripts import entailment
+from untell.text_split import aligned_chunks
 
 
 def test_unavailable_degrades_to_no_veto(monkeypatch):
@@ -355,7 +356,7 @@ class TestLongInputIsActuallyScored:
     def test_short_input_takes_exactly_one_chunk(self):
         """Chunking must be a no-op below the threshold, so short-input behaviour is unchanged."""
         a, b = "The cat sat on the mat.", "A cat was sitting on the mat."
-        assert entailment._aligned_chunks(a, b) == [(a, b)]
+        assert aligned_chunks(a, b) == [(a, b)]
 
     def test_chunks_are_aligned_by_content_not_by_proportion(self):
         """Proportional cutting drifts once the rewriter changes sentence lengths, and the gate
@@ -363,7 +364,7 @@ class TestLongInputIsActuallyScored:
         shift every later chunk out of step."""
         source = " ".join(f"Sentence number {n} states a fact about the system." for n in range(30))
         shifted = "An extra opening sentence appears here first. " + source
-        chunks = entailment._aligned_chunks(source, shifted)
+        chunks = aligned_chunks(source, shifted)
         assert len(chunks) > 1, "expected the input to be long enough to chunk"
         for src_chunk, out_chunk in chunks[1:]:
             first_src = src_chunk.split()[:6]
