@@ -191,8 +191,11 @@ _SYN: dict[str, list[str]] = {
     # a link" and an intention verb in "we suggest a method", so forcing it into one class breaks
     # the other. The gate is right; the substitution was the mistake.
     "novel": ["new", "fresh", "original"],
-    "approach": ["method", "way", "route"],
-    "approaches": ["methods", "ways", "routes"],
+    # "way" and "route" dropped: they cannot head a noun compound. "An unsupervised
+    # segmentation approach" became "An unsupervised segmentation way", which the repaired
+    # contradiction gate flagged before any human read it.
+    "approach": ["method", "technique"],
+    "approaches": ["methods", "techniques"],
     "method": ["approach", "technique", "way"],
     "methods": ["approaches", "techniques", "ways"],
     "framework": ["setup", "structure", "system"],

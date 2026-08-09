@@ -363,3 +363,75 @@ class TestInputShapesTheCorporaDoNotContain:
         for got in self._many(text, n=30):
             assert got.count("`") == 4, f"backticks unbalanced: {got}"
             assert "score_text(text, tier='full')" in got, got
+
+
+class TestWordsThatCarryTheirPreposition:
+    """"An approach TO segmentation" is idiomatic; "a method to segmentation" is not.
+
+    Substituting the noun alone strands the preposition on a synonym that does not take it. Found
+    indirectly: the repaired contradiction gate began vetoing real candidates, and three of the four
+    it caught were not meaning changes at all — they were this, plus "An unsupervised segmentation
+    approach" turning into "An unsupervised segmentation way". The NLI model reads badly-formed
+    English as not-entailing, which is fair, and it noticed before any human did.
+    """
+
+    @staticmethod
+    def _many(text: str, n: int = 60):
+        import random
+
+        from untell.rewriter.composite import CompositeRewriter
+
+        rewriter = CompositeRewriter()
+        out = []
+        for seed in range(n):
+            random.seed(seed)
+            out.append(rewriter.rewrite(text, {"tier": "lite", "max": 0.9}))
+        return out
+
+    def test_approach_to_keeps_its_preposition(self):
+        text = (
+            "We propose a novel approach to medical image segmentation. An unsupervised "
+            "segmentation approach was used throughout the study."
+        )
+        for got in self._many(text):
+            low = got.lower()
+            for broken in ("method to medical", "technique to medical", "way to medical",
+                           "route to medical", "segmentation way", "segmentation route"):
+                assert broken not in low, f"{broken!r} in: {got}"
+
+    def test_other_preposition_bound_nouns_survive(self):
+        text = (
+            "This offers a practical solution to the scaling problem. The team had access to the "
+            "full dataset. The paper provides insight into the failure mode."
+        )
+        for got in self._many(text, n=40):
+            low = got.lower()
+            for broken in ("answer to the scaling", "entry to the full", "look into the failure"):
+                assert broken not in low, f"{broken!r} in: {got}"
+
+    def test_the_noun_still_varies_where_no_preposition_follows(self):
+        """The guard must decline one substitution, not disable the word. A rule that froze
+        "approach" everywhere would cost a common substitution to fix a narrow case.
+
+        Asserted against `_plain_register`, which owns the substitution, rather than through the
+        composite rewriter. Composite is deterministic on a sentence this short — 40 seeds give one
+        output — so a test at that level would pass or fail for reasons unrelated to the guard.
+        """
+        import random
+
+        from untell.rewriter.structural import _plain_register
+
+        text = "An unsupervised segmentation approach was used throughout the study."
+        outputs = set()
+        for seed in range(30):
+            random.seed(seed)
+            outputs.add(_plain_register(text, intensity=1.0))
+        changed = [o for o in outputs if "segmentation approach" not in o.lower()]
+        assert changed, f"the noun never varied — the guard is too broad: {outputs}"
+
+    def test_the_collocation_table_is_populated(self):
+        """Guards the guard: an empty table makes every assertion above vacuous."""
+        from untell.rewriter.structural import _PREPOSITION_BOUND
+
+        assert len(_PREPOSITION_BOUND) >= 10
+        assert _PREPOSITION_BOUND["approach"] == frozenset({"to"})

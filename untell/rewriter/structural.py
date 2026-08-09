@@ -1061,6 +1061,23 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
                 if not plain:
                     return m.group(0)
                 choice = random.choice(plain)
+        # Some words carry their preposition. "an approach TO segmentation" is idiomatic and
+        # "a method to segmentation" is not, so swapping the noun silently breaks the phrase.
+        # FOUND when the repaired contradiction gate started vetoing real candidates: three of the
+        # four it caught were not meaning changes at all, they were this —
+        #     "a novel approach to medical image segmentation"
+        #       -> "an original way to medical image segmentation"
+        # — and the NLI model reads badly-formed English as not-entailing, which is fair.
+        # Checked against the following word rather than a curated collocation list, because the
+        # rule is about the preposition and nothing else.
+        if word.lower() in _PREPOSITION_BOUND:
+            # The preposition is usually already inside `tail` — the match pattern captures a
+            # following particle as group(3) precisely so this pass can see it — but it is only
+            # captured for the particles in that list, so fall back to the next word otherwise.
+            after = (tail or masked[m.end():]).lstrip()
+            next_word = after.split()[0].strip(",.;:").lower() if after.split() else ""
+            if next_word in _PREPOSITION_BOUND[word.lower()]:
+                return m.group(0)
         spent.add(choice)
         # Preserve the original capitalisation so sentence starts survive the swap.
         if word[:1].isupper():
@@ -1292,6 +1309,30 @@ _ASIDE_RE = re.compile(
     r"|including\s+[^,.;:()]{5,50}),(?=\s+[a-z])"
 )
 _HUMAN_PARENTHESES_PER_100W = 0.80
+
+# Words whose meaning is carried partly by the preposition that follows them. Substituting the
+# word alone leaves the preposition stranded on a synonym that does not take it: "an approach to
+# segmentation" is idiomatic English and "a method to segmentation" is not.
+_PREPOSITION_BOUND: dict[str, frozenset[str]] = {
+    "approach": frozenset({"to"}),
+    "approaches": frozenset({"to"}),
+    "solution": frozenset({"to"}),
+    "solutions": frozenset({"to"}),
+    "response": frozenset({"to"}),
+    "alternative": frozenset({"to"}),
+    "resistance": frozenset({"to"}),
+    "access": frozenset({"to"}),
+    "insight": frozenset({"into"}),
+    "insights": frozenset({"into"}),
+    "reliance": frozenset({"on"}),
+    "emphasis": frozenset({"on"}),
+    "impact": frozenset({"on"}),
+    "effect": frozenset({"on"}),
+    "focus": frozenset({"on"}),
+    "demand": frozenset({"for"}),
+    "need": frozenset({"for"}),
+    "capacity": frozenset({"for"}),
+}
 
 # Particles that end a separable phrasal verb. A substitute ending in one cannot be followed
 # directly by a pronoun object: "put it to work", not "put to work it".
