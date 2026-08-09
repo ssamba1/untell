@@ -528,7 +528,24 @@ def _rule_of_three_runs(text: str) -> int:
     """Count runs of 3+ consecutive very-short sentences — the staccato 'Fast. Simple. Effective.'
     tricolon cadence that is a distinctive AI/marketing tell (and rare in ordinary prose). Each run of
     >=3 short (<=3-word) sentences counts once. Conservative on purpose: the comma tricolon
-    ('fast, simple, and effective') is skipped because it collides with ordinary noun lists."""
+    ('fast, simple, and effective') is skipped because it collides with ordinary noun lists.
+
+    MEASURED, so this is not re-attempted. A bare `A, B, and C` count looks promising — 2.7x
+    AI-ward on RAID — but inverts on MAGE (0.98), and the obvious repair makes it worse rather
+    than better. Tagging the coordinated items with spaCy and keeping only all-ADJ or all-ADV runs
+    (the literal 'fast, simple, and effective' shape) gives, at 400 pairs per corpus:
+
+        ADJ-only    RAID 1.04   HC3 2.10   MAGE 0.36     <- no signal, and inverted on MAGE
+        NOUN-only   RAID 2.51   HC3 1.38   MAGE 1.95
+        MIXED       RAID 0.77   HC3 0.83   MAGE 0.79     <- reliably HUMAN-ward
+
+    So the AI lean in the naive count is carried by *noun* lists, not by the adjective tricolon the
+    catalogue describes: the POS guard keeps the one slice with no signal and discards the one that
+    has it. (RAID ADJ was 1.84 at 200 pairs and 1.04 at 400 — that slice is too sparse to quote
+    from a single sample.) Flagging noun lists instead is not the fix either. At ~2x, one human
+    document is flagged for every two AI documents, against a catalogue where the neighbouring
+    patterns manage zero human hits in 1,200 — and there is no rewrite for 'apples, oranges, and
+    bananas' anyway, so the tell would add noise to the loop without giving it an action."""
     sents = _sentences(text)
     runs, streak = 0, 0
     for s in sents:
