@@ -100,7 +100,26 @@ def _char_bigrams(text: str):
 
 
 def token_overlap(a: str, b: str) -> float:
-    """Dice coefficient over token multisets — the lite fallback. In [0, 1]."""
+    """Dice coefficient over token multisets — the lite fallback. In [0, 1].
+
+    Known limit, measured, and not fixable by tuning: on the zero-dependency path this is the ONLY
+    meaning gate, and it cannot detect one destroyed sentence inside a paragraph. Replacing a whole
+    sentence with unrelated text in a 280-word document —
+
+        chunk size   score   caught (bar 0.50)?   faithful rewrites rejected
+        whole        0.9680  no                   0/25
+        90 words     0.8732  no                   0/25
+        40 words     0.7500  no                   0/25
+        20 words     0.1000  YES                  3/25
+
+    — is only caught at a granularity that also rejects 12% of genuine rewrites, because a faithful
+    paraphrase rewords most of a 20-word window too. There is no setting that separates them: Dice
+    measures word overlap, and "reworded heavily" and "replaced entirely" both have low overlap.
+
+    So the free path detects meaning *drift across a document* and does not detect meaning
+    *destruction in one sentence*. That is a real gap in the zero-install configuration and the
+    reason `.[full]` installs the entailment and role gates, which do separate the two.
+    """
     from collections import Counter
 
     ca, cb = Counter(_tokens(a)), Counter(_tokens(b))

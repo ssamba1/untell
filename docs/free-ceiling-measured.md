@@ -2141,3 +2141,40 @@ other three do not have a context window to run out of.
 `tests/test_gates_read_the_whole_document.py` pins the invariant for all five rather than
 regression-testing the two: a gate added later that reads a fixed-size prefix fails on its first
 run. Verified non-vacuous by disabling chunking, which fails 6 of its 31 assertions.
+
+---
+
+## Result 36 — the zero-dependency meaning gate cannot see a destroyed sentence, at any setting
+
+Result 35's chunking fix applies to `similarity()` before it chooses a backend, so the
+zero-dependency Dice path inherits it. Worth checking whether that is enough, because on a
+`pip install untell` with no extras, `token_overlap` is the **only** meaning gate there is.
+
+It is not enough. Replacing an entire sentence with unrelated text in a 280-word document, against
+the 0.50 token bar:
+
+| chunk size | score | caught? | faithful rewrites rejected (n=25) |
+|---|---|---|---|
+| whole text | 0.9680 | no | 0/25 |
+| 90 words (shipped) | 0.8732 | no | 0/25 |
+| 40 words | 0.7500 | no | 0/25 |
+| 20 words | **0.1000** | **yes** | **3/25** |
+
+Chunking did help — 0.9680 → 0.8732 — and it removed the truncation artefact. It did not make the
+gate able to catch this, and going finer does not either: the only granularity that catches the
+destroyed sentence also rejects 12% of genuine rewrites.
+
+**There is no setting that separates them, and the reason is structural.** Dice measures word
+overlap. A faithful paraphrase of a 20-word window rewords most of it; a destroyed one replaces all
+of it. Both have low overlap. The metric does not contain the information needed to tell them
+apart, so no threshold can.
+
+The honest statement of what the free tier guarantees is therefore narrower than "meaning
+preserved": it detects **drift across a document** and does not detect **destruction of a single
+sentence**. `.[full]` adds the entailment and role gates, which do separate the two — the same
+280-word case scores 0.98 contradiction there.
+
+This is recorded rather than fixed because the alternative is choosing 20-word chunks and quietly
+accepting a 12% false-rejection rate on the tier that exists to work everywhere. Stating the limit
+costs nothing; a gate that rejects one rewrite in eight would cost the free path its usefulness,
+and users would not know why.
