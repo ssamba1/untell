@@ -20,7 +20,8 @@ The top 435 by relevance were then read individually: README plus source where r
 | we are the most complete open humanizer | **true only for English.** **139 of 435 (32%) target another language**, including four of the eight largest tools in the field |
 
 Counts across the 435 read: **49** detector-in-loop (44 at inference time) · **85** meaning
-verification · **131** some fact preservation · **136** any tests · **139** non-English.
+verification · **131** some fact preservation · **136** any tests · **139** non-English (the
+only one of these that is a reading rather than a count derivable from the JSON).
 
 ---
 
@@ -59,7 +60,11 @@ does not implement a humanizer at all**; it either instructs one or bills for on
 | 1,551 | `lynote-ai/humanize-text` | back-translation |
 
 **The single largest blind spot this census found is language.** **139 of the 435 — 32% —** target
-a language other than English, including four of the eight largest repos in the field. Our 29-pattern
+a language other than English, including three of the eight largest repos in the field. That 139 is
+a per-record reading rather than a derived count — the JSON below carries no language field, and
+three defensible keyword rules give 130, 135 and 138 — so read it as "roughly a third". The three
+largest are `gzh-rewrite-skill` (298.8k★), `kevintsai1202/Humanizer-zh-TW` (68.5k★) and
+`op7418/Humanizer-zh` (14.7k★); Korean `k-skill` and `im-not-ai` are 9th and 12th. Our 29-pattern
 catalogue, the voice matcher's scale constants, and every measurement in this repo are English-only.
 Korean repos catalogue 번역체 calque patterns; Chinese ones catalogue Chinese punctuation and
 academic-register tells. None of that is portable from our catalogue, and none of ours is portable

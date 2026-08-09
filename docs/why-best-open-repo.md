@@ -31,9 +31,15 @@ they are not a quotation, and a previous version of this page presented them as 
 >   form of fact preservation. `Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI
 >   entailment gate this repo does. 
 > - **"Most complete open humanizer" holds only in English.** 139 of the 435 (32%) target another
->   language, including four of the eight largest repos in the field — `Humanizer-zh-TW` (68.5k★),
->   `Humanizer-zh` (14.7k★), Korean `k-skill` (7.0k★) and `im-not-ai` (4.2k★). Our catalogue, the
->   voice matcher's constants and every measurement here are English-only.
+>   language — a per-record *reading*, not a derived count: the census JSON has no language field,
+>   and three defensible keyword rules give 130, 135 and 138. Treat it as "roughly a third".
+>   What is checkable is the top of the table. Three of the eight largest repos are non-English on
+>   the evidence of their own census records — `gongzhonghao-rewrite` (298.8k★, its validator
+>   checklist is quoted in Chinese), `kevintsai1202/Humanizer-zh-TW` (68.5k★) and `op7418/Humanizer-zh` (14.7k★, "a
+>   Chinese-language text editor"). Korean `NomaDamas/k-skill` (7.0k★) and `epoko77-ai/im-not-ai` (4.2k★) are large and
+>   non-English but rank 9th and 12th, so they are not among the eight largest; an earlier version
+>   of this line named them as if they were. Our catalogue, the voice matcher's constants and every
+>   measurement here are English-only.
 >
 > What survives is the **conjunction plus an installable package**, and the measurement discipline.
 > No profiled repo has all four criteria and ships as a package.
