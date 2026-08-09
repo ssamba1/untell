@@ -43,6 +43,25 @@ _SYN: dict[str, list[str]] = {
     # --- Tells-catalog AI vocab (ai-tells.md §1-2) ---
     "delve": ["dig", "look", "go deep"],
     "leverage": ["use", "lean on", "tap into"],
+    # INFLECTIONS. The map is keyed on exact tokens — both consumers look up `_WORD` matches
+    # verbatim — so "leverage" being present does nothing for "leverages", which appears 107 times
+    # across 300 real AI texts at 15x the human rate. MEASURED, ten inflected forms of existing
+    # keys were missing while their stems were covered, in the transform the ablation shows is
+    # worth 3-5x every other one. A stem without its inflections is a half-connected entry that
+    # looks complete in the table.
+    #
+    # Every substitute carries the SAME inflection as its key, or the swap produces "the system use
+    # robust methods". test_inflected_forms_agree_with_their_key enforces that.
+    "leverages": ["uses", "leans on", "taps into"],
+    "leveraging": ["using", "leaning on", "tapping into"],
+    "utilizes": ["uses"],
+    "demonstrating": ["showing", "proving"],
+    "achieving": ["reaching", "hitting"],
+    "required": ["needed"],
+    "requiring": ["needing"],
+    "evaluated": ["tested", "checked"],
+    "introducing": ["adding", "bringing in"],
+    "outperforming": ["beating", "besting"],
     "utilize": ["use"],
     "utilizing": ["using"],
     "robust": ["solid", "sturdy", "strong"],
@@ -99,7 +118,10 @@ _SYN: dict[str, list[str]] = {
     "impactful": ["powerful", "striking", "meaningful"],
     "streamline": ["simplify", "smooth", "speed up"],
     "empower": ["enable", "help", "equip"],
-    "empowering": ["enabling", "helpful", "freeing"],
+    # "helpful" was here and is not a participle: "the tool is empowering users" became "the
+    # tool is helpful users". Caught by the inflection-agreement invariant, which is the
+    # value of scoping that check to verb forms rather than to every word ending in -ing.
+    "empowering": ["enabling", "freeing", "helping"],
     "revolutionize": ["transform", "overhaul", "shake up"],
     "resonate": ["connect", "ring true", "strike a chord"],
     "encompass": ["cover", "span", "include"],

@@ -588,3 +588,94 @@ class TestBoilerplateSynonyms:
         for key, values in _SYN.items():
             assert " " not in key, f"{key!r} can never be looked up — keys are single tokens"
             assert values, f"{key!r} has no substitutes"
+
+
+class TestInflectedKeysAgreeWithTheirSubstitutes:
+    """The map is keyed on exact tokens, so a stem does nothing for its inflections.
+
+    Both consumers — `synonyms()` and `_plain_register` — look up `_WORD` matches verbatim. Having
+    "leverage" therefore did nothing for "leverages", which appears **107 times across 300 real AI
+    texts at 15x the human rate**, in the transform the ablation shows is worth 3-5x every other
+    one. Ten inflected forms of existing keys were missing while their stems were covered.
+
+    A stem without its inflections is a half-connected entry that looks complete in the table.
+    """
+
+    # key suffix -> the suffix its substitutes must carry, so the swap stays grammatical.
+    _AGREEMENT = (("ing", "ing"), ("ed", "ed"))
+
+    @staticmethod
+    def _is_inflection_of_another_key(key: str, syn: dict) -> bool:
+        """Is this key a VERB form of another entry, rather than a word that merely ends that way?
+
+        `compelling`, `unwavering`, `groundbreaking` and `overarching` are adjectives; substituting
+        `compelling -> powerful` is correct and a blanket "-ing keys need -ing substitutes" rule
+        flags all of them. The first version of this test did exactly that and reported seven false
+        positives. A key that is an inflection of ANOTHER key is a verb by construction, and that is
+        the only case where the inflection has to agree.
+        """
+        for stem in (key[:-3], key[:-3] + "e", key[:-1], key[:-2]):
+            if stem and stem != key and stem in syn:
+                return True
+        return False
+
+    def test_an_ing_key_that_inflects_another_key_has_ing_substitutes(self):
+        from untell.attacks.word_importance import _SYN
+
+        bad = {}
+        for key, values in _SYN.items():
+            if not key.endswith("ing") or " " in key:
+                continue
+            if not self._is_inflection_of_another_key(key, _SYN):
+                continue
+            # The head word of a multi-word substitute carries the inflection: "tapping into".
+            offenders = [v for v in values if not v.split()[0].endswith("ing")]
+            if offenders:
+                bad[key] = offenders
+        assert not bad, f"an -ing verb key with non--ing substitutes produces 'is use robust': {bad}"
+
+    def test_the_scoping_is_not_vacuous(self):
+        """If nothing is classed as a verb inflection the test above proves nothing."""
+        from untell.attacks.word_importance import _SYN
+
+        verbs = [
+            k for k in _SYN
+            if k.endswith("ing") and " " not in k and self._is_inflection_of_another_key(k, _SYN)
+        ]
+        assert len(verbs) >= 4, f"only {verbs} classed as verb inflections"
+
+    def test_an_s_key_has_s_substitutes(self):
+        """"the system leverages X" -> "the system use X" is the failure this prevents."""
+        from untell.attacks.word_importance import _SYN
+
+        bad = {}
+        for key, values in _SYN.items():
+            if " " in key or not key.endswith("s") or key.endswith(("ss", "us", "is")):
+                continue
+            if key[:-1] not in _SYN and key[:-2] not in _SYN:
+                continue  # not an inflection of another key; nothing to agree with
+            offenders = [v for v in values if not v.split()[0].endswith("s")]
+            if offenders:
+                bad[key] = offenders
+        assert not bad, f"a plural/3rd-person key with singular substitutes: {bad}"
+
+    def test_the_known_inflections_are_present(self):
+        """Regression guard for the ten that were missing. Each was measured in real AI text."""
+        from untell.attacks.word_importance import _SYN
+
+        for word in (
+            "leverages", "leveraging", "utilizes", "demonstrating", "achieving",
+            "required", "requiring", "evaluated", "introducing", "outperforming",
+        ):
+            assert word in _SYN, f"{word} lost its entry; it occurs in real AI text"
+
+    def test_substitutes_are_still_not_catalogued_tells(self):
+        """The new entries must obey the invariant the rest of the map already does."""
+        from untell.attacks.word_importance import _SYN
+        from untell.scripts.tells import _AI_VOCAB_RE
+
+        offenders = {
+            k: [v for v in vs if _AI_VOCAB_RE.search(v)] for k, vs in _SYN.items()
+        }
+        offenders = {k: v for k, v in offenders.items() if v}
+        assert not offenders, f"substitutes that are themselves tells: {offenders}"
