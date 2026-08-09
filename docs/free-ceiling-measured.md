@@ -2466,3 +2466,43 @@ reference is a useful number; it is just not a meaning gate.
 The `quality` extra is now installed in the full-tier CI job. An optional extra that no environment
 exercises is an untested code path a user can enable with one pip flag — which is exactly how a
 gate that rejects 95% of good rewrites shipped and stayed.
+
+---
+
+## Result 42 — re-deriving the `targeted` rewriter's fix: direction holds, magnitude does not
+
+Result 39 established re-deriving documented constants. This does the same for a documented
+*behavioural* claim. The roadmap's Priority-1 defect table says:
+
+> `targeted` rewriter did **literally nothing** on the zero-dep path (0/15 texts changed) —
+> **fixed**: re-measured 2026-08-08 it changes **14/15** and moves the score **−0.186**, via a
+> whole-text fallback that says so on stderr
+
+Re-measured, n = 15 per cell:
+
+| corpus | tier | changed | mean score delta |
+|---|---|---|---|
+| HC3 | full | 10/15 | −0.0007 |
+| HC3 | zero-dep (stdlib) | 11/15 | −0.0591 |
+| RAID | zero-dep (stdlib) | 12/15 | −0.0639 |
+| **claimed** | *unstated* | **14/15** | **−0.186** |
+
+**The fix is real.** The rewriter was doing nothing (0/15) and now changes 10–12 of 15 on every
+configuration tried, with the fallback warning firing on all fifteen — so per-sentence targeting
+still never engages on the stdlib path and the whole-text fallback is what does the work, exactly
+as the note says.
+
+**The numbers do not reproduce.** 14/15 against 10–12/15, and −0.186 against −0.06 at best — three
+times the movement I can measure anywhere. The claim names no corpus, no tier and no n, so there is
+no configuration to check it against; three plausible readings all come out lower.
+
+I am not calling it wrong. It may have been measured on a corpus I have not tried, or before a
+later change moved it. What is certain is that it **cannot be verified as written**, which for a
+number sitting in a defect table as evidence that a defect was fixed is the same problem as being
+wrong — a reader cannot act on it either way.
+
+This is precisely the gap `untell-audit` is honest about: it enforces that a measured claim states
+its provenance, and this one states a date and nothing else. A date is not provenance. The entry
+should carry its corpus, tier and n like every figure in this document does, and the fix is to
+re-measure it deliberately rather than to quietly swap in my numbers — mine are n=15, single-run,
+and would be exactly the thin replacement Result 38 argued against.

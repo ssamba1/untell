@@ -137,7 +137,7 @@ This is the axis where the field is *empty*, and where one session of probing fo
 | defect found 2026-08-05 | severity |
 |---|---|
 | `tells/100w`, the headline naturalness metric, pointed **backwards** on real text | metric inverted |
-| `targeted` rewriter did **literally nothing** on the zero-dep path (0/15 texts changed) — **fixed**: re-measured 2026-08-08 it changes **14/15** and moves the score **-0.186**, via a whole-text fallback that says so on stderr | feature dead |
+| `targeted` rewriter did **literally nothing** on the zero-dep path (0/15 texts changed) — **fixed**, via a whole-text fallback that says so on stderr. The fix is confirmed: it now changes 10–12 of 15 on every configuration tried. The originally-quoted 14/15 / −0.186 named no corpus, tier or n and could not be reproduced — see [Result 42](docs/free-ceiling-measured.md), which re-derives it at −0.06 at best. | feature dead |
 | `surgical` near-inert there too (16/30 texts, 0 substitutions) — **addressed**: it now optimises the axis word substitution actually controls. Re-measured over 30 HC3+RAID texts it changes **19/30** and moves tells/100w **8.02 -> 7.22 (-10%)**; the detector still barely reacts (-0.004), which is a property of the detector, not of the rewriter | feature dead |
 | Chinese/Korean/Japanese AI text reported as **perfectly clean** | false verdict |
 | LaTeX **entirely unprotected** — `lock()` held 0 spans of a paper paragraph | headline promise broken |
