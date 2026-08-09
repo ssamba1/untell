@@ -218,7 +218,13 @@ def test_why_best_test_count_is_not_stale():
     # documented figure therefore has to be the SMALLER of the two, or this assertion fails on
     # whichever tier collects fewer — which is how it first failed, passing under an exported
     # UNTELL_LITE_NO_TORCH and failing under the plain `pytest -q` that CI's full job runs.
-    assert claimed <= actual, f"doc claims {claimed} tests, suite collects {actual}"
+    assert claimed <= actual, (
+        f"doc claims {claimed} tests, suite collects {actual}. "
+        f"Use the LITE-tier count — `UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q` — "
+        f"which is the smaller of the two. A number taken from a full-tier run is correct "
+        f"there and fails here, which is how this last broke: 2491 was written down when "
+        f"lite collects 2473 and full 2489, so it was wrong on every tier."
+    )
     assert actual - claimed < 200, (
         f"doc claims {claimed} tests, suite collects {actual} — the completeness claim is stale"
     )
