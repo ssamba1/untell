@@ -1783,3 +1783,38 @@ Kept, on the flagged rate and the distribution match, with the score movement re
 omitted. The headline row in the ROADMAP now carries these numbers, because quoting 0.300 would
 mean quoting a figure the current code does not produce — which is the defect `untell-audit` was
 built to catch, and it would be a poor look to commit it in the same session.
+
+---
+
+## Result 30 — paragraph structure is a real difference that nothing measures
+
+AI text is broken into paragraphs where humans write flowing prose. Over 80 pairs per corpus:
+
+| | paragraphs / text | newlines / text |
+|---|---|---|
+| HC3 human | 1.00 | **0.00** |
+| HC3 ai | 1.00 | **2.70** |
+| RAID human | 1.00 | 17.25 *(hard-wrapped)* |
+| RAID ai | **5.25** | 9.31 |
+
+A clean signal in HC3 — the AI answer carries line breaks the human answer never does — and the
+rewriter changes it by nothing (3.14 paragraphs in, 3.14 out).
+
+It is still not a lever. Flattening every newline in the 25 HC3 texts that have them:
+
+    detector max   0.5669 -> 0.5669
+    tells/100w     6.0052 -> 6.0052
+
+Identical to four decimal places on both. Neither the detector ensemble nor the tell catalogue
+sees whitespace, so a flattener would destroy document structure — the pipeline deliberately
+processes per block to preserve it — in exchange for nothing measurable.
+
+Recorded because it looks like an obvious win and is not, and because the *reason* is worth
+knowing: this is a tell a human reader would notice that no automated detector here does.
+
+### Two things that came back clean in the same sweep
+
+`formulaic_transition` now survives in **zero** of 80 rewritten texts, down from 33 at the start of
+this work. And the distinct-sentence-opener ratio — how varied the first words of sentences are —
+reads human 0.839, AI 0.688, **ours 0.790**: most of the gap already closed by the opener and
+merge work, with no further transform needed.

@@ -684,6 +684,33 @@ runs the torch-gated tests. See **[CONTRIBUTING.md](CONTRIBUTING.md)** to get in
 
 ---
 
+## Environment variables
+
+Every `UNTELL_*` variable the code reads. Sixteen of these were undocumented until 2026-08-08 —
+including the server's auth key and two switches that disable a meaning gate — so the
+configuration existed but could not be discovered. `untell-audit` now fails if a new one is added
+without a row here.
+
+| variable | what it does |
+|---|---|
+| `UNTELL_API_KEY` | bearer token the REST server requires; unset means no auth |
+| `UNTELL_HOST` / `UNTELL_PORT` | bind address for `untell-server` (default `127.0.0.1:8000`) |
+| `UNTELL_RATE_LIMIT` | requests per minute per client for the REST server |
+| `UNTELL_BROWSER_SITES` | comma-separated free web detectors for `--browser` |
+| `UNTELL_LITE_NO_TORCH` | force the pure-stdlib lite path even when torch is installed. The two paths differ by 11.5x in false positives, so this is how you pin which one you are measuring |
+| `UNTELL_DISABLE_MAGE` | skip the MAGE detector (large download) |
+| `UNTELL_ENABLE_RADAR` | opt into the RADAR detector in the benchmark |
+| `UNTELL_ENABLE_LOCAL_JUDGE` / `UNTELL_JUDGE_MODEL` | enable and select the local LLM judge |
+| `UNTELL_DISABLE_NLI` | **turns off the NLI entailment gate.** Meaning is then unverified — the loop can adopt a rewrite that contradicts the source |
+| `UNTELL_DISABLE_ROLES` | **turns off the predicate-argument veto.** "The company sued the regulator" may come back reversed |
+| `UNTELL_MAX_ITERS` | default loop iterations, overriding the shipped 5 |
+| `UNTELL_POLICY_DIR` / `UNTELL_POLICY_BASE` / `UNTELL_POLICY_4BIT` / `UNTELL_POLICY_MAXTOK` / `UNTELL_POLICY_NO_SYSTEM` | local trained-policy rewriter: adapter directory, base model, 4-bit loading, token cap, and whether to send a system prompt |
+| `UNTELL_REWARD_FAST` | model-free stdlib reward for training runs |
+| `UNTELL_SURROGATE_DIR` | distilled surrogate detector used as the training reward |
+
+The two `DISABLE` switches are called out because they remove a guarantee the README makes
+elsewhere. Nothing warns at runtime when they are set.
+
 ## Troubleshooting
 
 **Full-tier detectors come back as `null`, you see `failed_detectors`, or a "NumPy 2.x" warning.**

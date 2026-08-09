@@ -216,6 +216,24 @@ def check_derivable(report: Report) -> None:
         f"unknown: {unknown_flags[:5]}" if unknown_flags else f"{len(documented)} pairs checked",
     )
 
+    # --- every environment variable the code reads must be documented ----------------------------
+    # Sixteen of the twenty were undocumented, including the REST server's auth key and two
+    # switches that DISABLE a meaning gate. Configuration that exists but cannot be discovered is
+    # a feature nobody can use and a guarantee nobody knows they have turned off.
+    read_vars: set[str] = set()
+    for folder in ("untell", "eval", "training"):
+        base = REPO / folder
+        if not base.exists():
+            continue
+        for path in base.rglob("*.py"):
+            read_vars |= set(re.findall(r"\b(UNTELL_[A-Z0-9_]+)\b", path.read_text(encoding="utf-8")))
+    undocumented = sorted(v for v in read_vars if v not in readme)
+    report.check(
+        "every UNTELL_* variable the code reads is documented",
+        not undocumented,
+        f"undocumented: {undocumented[:6]}" if undocumented else f"{len(read_vars)} documented",
+    )
+
     # --- calibration constants the docs quote ----------------------------------------------------
     from untell.scripts.score import _STDLIB_PERPLEXITY_VERDICT_THRESHOLD, DEFAULT_THRESHOLD
 

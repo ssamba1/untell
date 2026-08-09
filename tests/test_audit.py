@@ -143,3 +143,36 @@ def test_the_audit_runs_in_ci():
     assert "untell-audit" in ci.read_text(encoding="utf-8"), (
         "untell-audit is not run in CI, so a documentation drift fails nothing"
     )
+
+
+def test_an_undocumented_env_var_is_caught(tmp_path, monkeypatch):
+    """Sixteen of twenty UNTELL_* variables were undocumented, including the REST server's auth key
+    and two switches that DISABLE a meaning gate.
+
+    Configuration that exists but cannot be discovered is a feature nobody can use, and in the case
+    of `UNTELL_DISABLE_NLI` / `UNTELL_DISABLE_ROLES` it is a guarantee a user can switch off without
+    knowing the guarantee was there.
+    """
+    pkg = tmp_path / "untell"
+    pkg.mkdir()
+    (pkg / "thing.py").write_text("import os\nos.getenv('UNTELL_SECRET_KNOB')\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("# nothing documented here\n", encoding="utf-8")
+    monkeypatch.setattr(audit, "REPO", tmp_path)
+
+    read = set()
+    for path in (tmp_path / "untell").rglob("*.py"):
+        read |= set(re.findall(r"\b(UNTELL_[A-Z0-9_]+)\b", path.read_text(encoding="utf-8")))
+    undocumented = [v for v in read if v not in (tmp_path / "README.md").read_text(encoding="utf-8")]
+    assert undocumented == ["UNTELL_SECRET_KNOB"]
+
+
+def test_the_meaning_gate_kill_switches_are_documented_as_such():
+    """These two remove a guarantee the README makes elsewhere, and nothing warns at runtime when
+    they are set — so the documentation is the only place a user can learn it."""
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    for var in ("UNTELL_DISABLE_NLI", "UNTELL_DISABLE_ROLES"):
+        assert var in readme, f"{var} disables a meaning gate and is undocumented"
+    section = readme.split("## Environment variables", 1)[-1].split("## Troubleshooting", 1)[0]
+    assert "unverified" in section or "reversed" in section, (
+        "the DISABLE switches are listed without saying what they remove"
+    )
