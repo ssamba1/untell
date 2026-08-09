@@ -36,6 +36,12 @@ _private/
 audit_report*.md
 delegation-*
 
+# Captured command output. Fourteen of these were committed by accident: a redirect to
+# an absolute Windows scratchpad path was taken literally, so `C:\...\foo_err.log` became
+# a single file in the repo root, and `git add -A` swept it in across five commits. No
+# log belongs in version control, so ignore the extension rather than the one spelling.
+*.log
+
 # Agent scratch. Nothing under `.claude/` is tracked — the shipped plugin manifest is
 # in `.claude-plugin/`. Named rather than ignoring the whole directory so that adding
 # something shareable there later is a deliberate act, not a silent one.
