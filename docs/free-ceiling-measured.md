@@ -2959,3 +2959,37 @@ Two things worth keeping:
   costs the tool an evasion. A detector that mis-scores human text costs a person an accusation.
   This one only did the second, and nothing in the aggregate would have shown that — the mean over
   both halves moves by +0.12, which looks like noise.
+
+## Result 52
+
+**The same character defeated the tell catalogue, and the fix now lives in one place.**
+
+[Result 51](free-ceiling-measured.md) fixed the scoring path against Unicode spaces. The obvious
+next question — since the lesson recorded there was that a fix for a class is not a fix for the
+class unless the class is enumerated — was whether anything else in the repo compares against a
+literal space. It does: every multi-word pattern in the tell catalogue.
+
+MEASURED on a 37-word AI paragraph, replacing every space:
+
+| | words | tells | tells/100w | humanness |
+|---|---|---|---|---|
+| plain | 37 | 5 | 13.5 | 37.4 |
+| U+00A0 | 37 | **3** | 8.1 | 43.9 |
+| U+202F | 37 | 3 | 8.1 | 43.9 |
+| U+3000 | 37 | 3 | 8.1 | 43.9 |
+
+Two of five tells vanish, because `"in conclusion"` does not match `"in\u00a0conclusion"`. The word
+count is unaffected, so nothing in the output hints that patterns stopped matching. This is an
+under-report for anyone pasting out of Word, and a one-keystroke evasion of our own catalogue for
+anyone who notices.
+
+The fix is not a second copy of the character class. `fold_unicode_spaces` now lives in
+`untell/text_split.py` — the module that already exists because sentence splitting was written out
+three times and the three copies drifted — and both `score.py` and `tells.py` call it. A test
+asserts they are literally the same function object, because two modules agreeing today is not the
+same as two modules that cannot disagree.
+
+Worth keeping: **the second instance of a bug is evidence about where to look, not just something
+to fix.** Result 51 could have ended at `_normalise_ws` and looked complete; the tell catalogue was
+broken by the identical input, in a different file, with a different symptom — fewer tells rather
+than a higher score — and nothing connected them except asking the question a second time.
