@@ -97,3 +97,56 @@ def test_locking_round_trips_on_every_pathological_input() -> None:
     for name, text in CASES:
         masked, spans = lock(text)
         assert restore(masked, spans) == text, f"{name}: lock/restore is not a round trip"
+
+
+# --- scoring must not depend on which space character was typed ---------------------------------
+# A non-breaking space is visually identical to a space and is what copying out of Word, a web page
+# or a PDF produces. MEASURED on 10 HC3 pairs at full tier, replacing every space with U+00A0:
+# human text went 5/10 -> 9/10 flagged, mean P(AI) 0.4322 -> 0.7801, hc3_roberta alone moving by
+# 0.9990. AI text was unaffected, so the entire effect was false accusations of human writers.
+#
+# `scrub_hidden` already normalised these, so the rewrite loop was safe. `score_text` — behind
+# `untell score`, `/score` and the MCP `score` tool — was not.
+
+UNICODE_SPACES = {
+    "nbsp": "\u00a0",
+    "narrow_nbsp": "\u202f",
+    "en_space": "\u2002",
+    "em_space": "\u2003",
+    "ideographic": "\u3000",
+    "medium_math": "\u205f",
+}
+
+_PROSE = (
+    "The committee met on Tuesday and nobody could agree about the budget. "
+    "I left early because the room was too warm and the coffee had run out. "
+    "We are supposed to reconvene next month, assuming anyone remembers."
+)
+
+
+@pytest.mark.parametrize("name", sorted(UNICODE_SPACES), ids=sorted(UNICODE_SPACES))
+def test_score_is_unchanged_by_a_unicode_space(name: str) -> None:
+    from untell.scripts.score import score_text
+
+    plain = score_text(_PROSE, tier="lite")
+    swapped = score_text(_PROSE.replace(" ", UNICODE_SPACES[name]), tier="lite")
+    assert swapped["max"] == pytest.approx(plain["max"], abs=1e-9), (
+        f"{name} changed P(AI) from {plain['max']:.4f} to {swapped['max']:.4f} on identical words"
+    )
+    assert swapped["flagged"] == plain["flagged"]
+
+
+def test_normalisation_leaves_ordinary_prose_alone() -> None:
+    """Guards the guard. Folding everything to one space would pass the tests above and would also
+    destroy the spacing signal the detectors are calibrated on."""
+    from untell.scripts.score import _normalise_ws
+
+    assert _normalise_ws(_PROSE) == _PROSE
+
+
+def test_a_single_space_run_is_still_collapsed() -> None:
+    """The behaviour that was already there, kept: runs of two or more collapse to one."""
+    from untell.scripts.score import _normalise_ws
+
+    assert _normalise_ws("a  b") == "a b"
+    assert _normalise_ws("a\t\tb") == "a b"
