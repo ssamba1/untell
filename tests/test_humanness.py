@@ -218,3 +218,105 @@ class TestTheScoreNamesItsTier:
         for tier in ("lite", "heavy"):
             main(["--tier", tier, "--json", "The cat sat on the mat. It was warm."])
             assert json.loads(capsys.readouterr().out)["tier"] == tier
+
+
+class TestTheCliSaysWhy:
+    """`Humanness: 46.6/100 (mixed)` and nothing else is a verdict without a reason.
+
+    The three signals are already computed; withholding them turns a diagnosable result into an
+    opaque one. The worked case that prompted this — the same three sentences, only the sentence
+    lengths varied:
+
+        "The kettle boiled while I read the last few pages. Rain had started again and the window
+         fogged at the corners. I put the book down and went to find a coat."
+            burstiness 0.04  ->  46.6  "mixed"
+
+        same content, uneven rhythm
+            burstiness 1.00  ->  90.3  "human"
+
+    Nothing about the first passage is machine-written and the number is not wrong either — three
+    sentences of near-identical length is exactly what the burstiness term exists to catch. But
+    "46.6, mixed" invites a reader to conclude their own writing looks synthetic.
+    """
+
+    UNIFORM = (
+        "The kettle boiled while I read the last few pages. Rain had started again and the "
+        "window fogged at the corners. I put the book down and went to find a coat."
+    )
+    TELL_HEAVY = (
+        "Moreover, it is important to note that this framework leverages a robust approach. "
+        "Furthermore, it delves into the rich tapestry of modern methods entirely."
+    )
+    VARIED_HUMAN = (
+        "The committee met on Tuesday, and after a long argument about the budget that nobody "
+        "enjoyed, they adjourned without deciding anything at all. Nothing was resolved. They "
+        "will meet again next week, probably to argue about the same line items."
+    )
+
+    def test_uniform_rhythm_is_named_as_the_driver(self):
+        from untell.humanness import _dominant_signal
+
+        driver = _dominant_signal(self.UNIFORM, "lite")
+        assert driver and "rhythm" in driver, driver
+        assert "burstiness" in driver
+
+    def test_tell_heavy_text_names_the_tells_not_the_rhythm(self):
+        """The first version of this ranked by first match and reported rhythm for text stuffed
+        with delve/tapestry/Moreover; the second ranked by raw contribution and reported the
+        detector for everything, because it carries half the weight."""
+        from untell.humanness import _dominant_signal
+
+        driver = _dominant_signal(self.TELL_HEAVY, "lite")
+        assert driver and "tells per 100 words" in driver, driver
+
+    def test_clean_varied_prose_gets_no_invented_explanation(self):
+        """Returning None is correct when nothing stands out. A driver line on every input would
+        train the reader to ignore it."""
+        from untell.humanness import _dominant_signal
+
+        assert _dominant_signal(self.VARIED_HUMAN, "lite") is None
+
+    def test_the_detector_is_only_named_when_nothing_actionable_is(self):
+        """"The detector says 0.78" is not something a reader can act on, so it is the fallback —
+        and in that position it carries real information: the text reads clean and still scores as
+        machine-written."""
+        from untell.humanness import _dominant_signal
+
+        for text in (self.UNIFORM, self.TELL_HEAVY):
+            driver = _dominant_signal(text, "lite")
+            assert driver and "detector ensemble" not in driver, driver
+
+    def test_an_explanation_never_breaks_the_command(self, monkeypatch):
+        """A diagnostic is not worth a crash. If scoring raises, the score still prints."""
+        import untell.humanness as h
+
+        def boom(*a, **k):
+            raise RuntimeError("scoring exploded")
+
+        monkeypatch.setattr(h, "score_tells", boom)
+        assert h._dominant_signal(self.UNIFORM, "lite") is None
+
+    def test_non_english_says_the_catalogue_did_not_look(self):
+        from untell.humanness import _dominant_signal
+
+        russian = "Кроме того, эта система использует надёжный подход для достижения результатов."
+        driver = _dominant_signal(russian, "lite")
+        assert driver and "English-only" in driver, driver
+
+    def test_json_output_carries_the_driver(self, capsys):
+        import json
+
+        from untell.humanness import main
+
+        assert main([self.UNIFORM, "--tier", "lite", "--json"]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert "driver" in payload and "rhythm" in payload["driver"]
+
+    def test_json_omits_the_driver_when_there_is_none(self, capsys):
+        import json
+
+        from untell.humanness import main
+
+        assert main([self.VARIED_HUMAN, "--tier", "lite", "--json"]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert "driver" not in payload

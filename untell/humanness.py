@@ -221,6 +221,99 @@ def classification(score: float) -> str:
     return "AI"
 
 
+def _dominant_signal(text: str, tier: str) -> str | None:
+    """Name the signal that moved the score most, in words a reader can act on.
+
+    The score is a blend of three things and the CLI printed only the total, so a passage of
+    genuinely human writing could come back "46.6/100 (mixed)" with nothing to indicate why or
+    whether to believe it. The components are already computed; withholding them turns a
+    diagnosable result into an opaque verdict.
+
+    A worked case, and the reason this exists — the same three sentences, rewritten with varied
+    sentence lengths and nothing else changed:
+
+        "The kettle boiled while I read the last few pages. Rain had started again and the
+         window fogged at the corners. I put the book down and went to find a coat."
+            burstiness cv 0.044  ->  46.6  "mixed"
+
+        same content, uneven rhythm
+            burstiness cv 1.003  ->  90.3  "human"
+
+    Nothing about the first passage is machine-written, and the number is not wrong either: three
+    sentences of near-identical length is the uniform rhythm the burstiness term exists to catch.
+    But "46.6, mixed" invites the reader to conclude their writing looks synthetic, where
+    "uniform sentence rhythm" tells them what the measurement actually saw.
+
+    Returns None when nothing stands out, rather than inventing an explanation.
+    """
+    # Uses the module-level imports rather than re-importing locally: the local copies shadowed the
+    # names, so a caller could not substitute them and the "never breaks the command" guarantee
+    # below was untestable.
+    try:
+        tells = score_tells(text)
+        cv = tells.get("burstiness_cv")
+        per_100w = tells.get("tells_per_100w") or 0.0
+        detector_max = (score_text(text, tier=tier) or {}).get("max")
+    except Exception:  # noqa: BLE001 — an explanation must never break the command
+        return None
+
+    if not tells.get("language_supported", True):
+        return ("the tell catalogue is English-only and this text is mostly another script, "
+                "so the mechanical half of this score saw nothing")
+
+    # Rank by what the reader can DO about it, not by raw contribution.
+    #
+    # Two wrong versions preceded this one. A first-match ladder reported "uniform sentence rhythm"
+    # for a passage stuffed with delve / tapestry / Moreover, because that test happened to sit at
+    # the top. Ranking by contribution instead put the detector term first on every input — it
+    # carries half the weight, so it usually wins — and "the detector says 0.78" tells a reader
+    # nothing they can act on.
+    #
+    # The tells and rhythm terms are actionable: remove the phrases, vary the sentence lengths. The
+    # detector term is not, so it is reported only when neither of the others is doing real work —
+    # and in that case it IS the useful message, because "reads clean and still scores as machine-
+    # written" is exactly the situation a tell catalogue cannot explain.
+    actionable: list[tuple[float, str]] = []
+
+    if cv is not None:
+        if cv < 0.35:
+            penalty = _MAX_BURSTY_PENALTY
+        elif cv < 0.50:
+            penalty = _MAX_BURSTY_PENALTY * (0.50 - cv) / 0.15
+        elif cv > 1.0:
+            penalty = _MAX_BURSTY_PENALTY * 0.5
+        else:
+            penalty = 0.0
+        if penalty > 0:
+            shape = "uniform" if cv < _BURSTY_IDEAL else "erratic"
+            actionable.append((
+                penalty * _W_BURSTY,
+                f"driven by {shape} sentence rhythm (burstiness {cv:.2f}; human prose sits near "
+                f"{_BURSTY_IDEAL:.2f}) — varying sentence length changes this more than word "
+                f"choice does",
+            ))
+
+    if per_100w > 0:
+        worst = max(tells.get("by_category", {}).items(), key=lambda kv: kv[1], default=None)
+        named = f", mostly {worst[0]}" if worst else ""
+        actionable.append((
+            min(per_100w / _MAX_TELLS_PER_100W, 1.0) * _W_TELLS,
+            f"driven by {per_100w:.1f} AI tells per 100 words{named}",
+        ))
+
+    # 0.02 of the blended score. Below that the term is not moving the number enough to be worth
+    # naming, and naming it anyway puts a confident-sounding cause on a result that is just middling.
+    strong = [c for c in actionable if c[0] >= 0.02]
+    if strong:
+        return max(strong, key=lambda c: c[0])[1]
+
+    if detector_max is not None and detector_max >= 0.5:
+        return (f"driven by the detector ensemble ({detector_max:.2f} max) rather than by any "
+                f"catalogued tell — nothing mechanical to fix here, which is the honest answer "
+                f"rather than a to-do list")
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI: ``untell humanness \"text\"`` → JSON with humanness score and classification."""
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
@@ -272,10 +365,15 @@ def main(argv: list[str] | None = None) -> int:
     # (mostly human)" is not a fact about the text; it is a fact about the text AND the tier, and
     # only one of those was on screen.
     result = {"score": score, "classification": cls, "tier": args.tier}
+    driver = _dominant_signal(text, args.tier)
+    if driver:
+        result["driver"] = driver
     if args.json:
         print(json.dumps(result, ensure_ascii=True))
     else:
         print(f"Humanness: {score}/100  ({cls})  [tier={args.tier}]")
+        if driver:
+            print(f"  {driver}")
     return 0
 
 
