@@ -417,10 +417,40 @@ async def health() -> dict:
     }
 
 
+def _numeric_detectors(result: dict) -> dict:
+    """Move the ``name__error`` sidecars out of ``detectors`` before answering an HTTP client.
+
+    Internally the score result carries a failure message inside the same mapping as the scores —
+    ``{"hc3_roberta": None, "hc3_roberta__error": "..."}`` — and every in-repo consumer knows to
+    filter keys ending in ``__error``. That is a deliberate internal convention with a comment
+    explaining it in `scripts/score.py`.
+
+    It is not a reasonable thing to hand a REST client. The obvious ``max(detectors.values())``
+    raises ``TypeError: '>' not supported between instances of 'str' and 'float'``, and nothing in
+    the response or the schema warns them: the field looks like a map of numbers because every
+    other response it is a map of numbers. The failing detectors are already named in
+    ``failed_detectors``; the messages now travel beside them in ``detector_errors`` instead of
+    inside the scores.
+    """
+    detectors = result.get("detectors")
+    if not isinstance(detectors, dict):
+        return result
+    suffix = "__error"
+    errors = {k[: -len(suffix)]: v for k, v in detectors.items() if k.endswith(suffix)}
+    if not errors:
+        return result
+    cleaned = dict(result)
+    cleaned["detectors"] = {k: v for k, v in detectors.items() if not k.endswith(suffix)}
+    cleaned["detector_errors"] = errors
+    return cleaned
+
+
 @app.post("/score")
 async def score(body: ScoreRequest) -> dict:
     """Score text for AI-likelihood. Returns max, ai_percent, and per-detector breakdown."""
-    return score_text(body.text, tier=body.tier, threshold=body.threshold)
+    return _numeric_detectors(
+        score_text(body.text, tier=body.tier, threshold=body.threshold)
+    )
 
 
 @app.post("/humanize")

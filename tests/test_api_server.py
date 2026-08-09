@@ -932,3 +932,99 @@ class TestRateBucketsCannotGrowWithoutBound:
         api._evict_stale_buckets(now)
         assert "attacker" in api._rate_buckets, "a live over-limit bucket was evicted"
         assert api._rate_buckets["attacker"][1] == 10_000, "its count was reset"
+
+
+class TestTheScoreResponseIsSafeToConsume:
+    """`detectors` must be a map of numbers, because that is what it looks like.
+
+    Internally a failed detector leaves a message beside its score —
+    ``{"hc3_roberta": None, "hc3_roberta__error": "..."}`` — and every in-repo consumer knows to
+    filter keys ending in ``__error``. That convention is deliberate and documented where it lives.
+
+    A REST client does not have it. The obvious `max(detectors.values())` raised
+    ``TypeError: '>' not supported between instances of 'str' and 'float'``, and nothing warned
+    them: in every response where nothing has failed, the field really is a map of numbers.
+    """
+
+    @staticmethod
+    def _with_a_broken_detector(victim="hc3_roberta"):
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+        from untell.detectors import base
+
+        client = TestClient(app)
+        detector = next((d for d in base.all_detectors() if d.name == victim), None)
+        if detector is None:
+            pytest.skip(f"{victim} unavailable in this environment")
+        cls = type(detector)
+        original = cls.score
+
+        def boom(self, text):
+            raise RuntimeError("broken on purpose")
+
+        cls.score = boom
+        try:
+            return client.post(
+                "/score",
+                json={"text": "Moreover, the framework leverages a robust approach here.",
+                      "tier": "full"},
+            ).json()
+        finally:
+            cls.score = original
+
+    def test_no_string_appears_among_the_scores(self):
+        body = self._with_a_broken_detector()
+        offenders = {k: v for k, v in body["detectors"].items() if isinstance(v, str)}
+        assert not offenders, f"string values in the detectors map: {offenders}"
+
+    def test_the_values_can_be_compared(self):
+        """The exact call a client writes first."""
+        body = self._with_a_broken_detector()
+        values = [v for v in body["detectors"].values() if v is not None]
+        assert max(values) == pytest.approx(body["max"], abs=0.05)
+
+    def test_the_failure_is_still_reported_somewhere(self):
+        """Moving the message must not lose it — a silently-dropped detector is worse than an
+        awkwardly-typed one."""
+        body = self._with_a_broken_detector()
+        assert body.get("failed_detectors") == ["hc3_roberta"]
+        assert "hc3_roberta" in (body.get("detector_errors") or {})
+        assert "broken on purpose" in body["detector_errors"]["hc3_roberta"]
+
+    def test_a_healthy_response_gains_no_new_field(self):
+        """The key appears only when something failed, so existing clients see no change."""
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        body = TestClient(app).post(
+            "/score", json={"text": "The kettle boiled while I read the last few pages.",
+                            "tier": "lite"},
+        ).json()
+        assert "detector_errors" not in body
+
+    def test_the_internal_convention_is_untouched(self):
+        """The sidecar stays inside `detectors` for library callers — this is a boundary fix, not a
+        change to the internal contract that run.py, verify.py and reward.py all depend on."""
+        from untell.detectors import base
+        from untell.scripts.score import score_text
+
+        detector = next((d for d in base.all_detectors() if d.name == "hc3_roberta"), None)
+        if detector is None:
+            pytest.skip("hc3_roberta unavailable")
+        cls = type(detector)
+        original = cls.score
+
+        def boom(self, text):
+            raise RuntimeError("broken on purpose")
+
+        cls.score = boom
+        try:
+            result = score_text("Moreover, the framework leverages a robust approach here.",
+                                tier="full")
+        finally:
+            cls.score = original
+        assert "hc3_roberta__error" in result["detectors"], (
+            "the library-level sidecar was removed; in-repo consumers filter on it"
+        )
