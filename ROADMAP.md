@@ -42,7 +42,7 @@ field is empty.
 |---|---|---|
 | `chengez/Adversarial-Paraphrasing` | −87.88% avg TPR@1%FPR, **per-token** detector-guided decoding | MAGE dataset, 6 detectors |
 | `StealthRL` | AUROC 0.79 → 0.43, mean TPR@1%FPR 0.024 | **15,310 human / 14,656 AI** |
-| **untell**, best real-text figure | 0.774 → **0.312 ± 0.016**, flagged 0.95 → **0.317** | **n = 40, ×3 repeats** |
+| **untell**, best real-text figure | 0.774 → **0.289 ± 0.008**, flagged 0.95 → **0.242** | **n = 40, ×3 repeats** |
 
 Not close, and the gap is architectural: token-level guidance needs logit access, which our
 black-box rewriter design does not have. Closing it needs the GPU path in §4.
@@ -50,8 +50,8 @@ black-box rewriter design does not have. Closing it needs the GPU path in §4.
 The untell row moved a long way on 2026-08-07 and is worth reading carefully, because it does not
 change the conclusion. The old figure was the **`neural`** rewriter on **n = 6**, single run. The
 new one is the free CPU-only **`composite`** on **n = 40 with 3 repeats** (120 rewrites), which is
-both a stronger result and far better evidence: post 0.312 ± 0.016 against a pre of 0.774, with
-31.7% of texts still flagged where 95% were before, at 0.9808 mean similarity. That is the SHIPPED
+both a stronger result and far better evidence: post 0.289 ± 0.008 against a pre of 0.774, with
+24.2% of texts still flagged where 95% were before, at 0.9808 mean similarity. That is the SHIPPED
 configuration (`best_of=3`), replicated over 3 runs and 120 rewrites.
 
 The two halves of that row moved in opposite directions on the last change and both are reported.
@@ -153,12 +153,12 @@ per arm. Replicated properly on 2026-08-07 — n = 40 RAID, full tier, same `bes
 
 | rewriter | post | flagged | mean sim | **worst sim** | cost |
 |---|---|---|---|---|---|
-| **`composite`** (default, 3 repeats / 120 rewrites) | **0.312 ± 0.016** | **31.7%** | 0.9808 | **0.9355** | CPU only |
+| **`composite`** (default, 3 repeats / 120 rewrites) | **0.289 ± 0.008** | **24.2%** | 0.9808 | **0.9294** | CPU only |
 | `neural` (1 run) | 0.369 | 37.5% | 0.9621 | 0.8716 | T5, hours |
 
 The default was not the problem. It had **fixable defects**, and Results 16–20 removed them: the
-same corpus that measured 0.951 post with 39 of 40 flagged now measures **0.312 ± 0.016 with 31.7%
-flagged in the shipped `best_of=3` configuration**, replicated over 3 runs (Results 23, 26 and 29). At
+same corpus that measured 0.951 post with 39 of 40 flagged now measures **0.289 ± 0.008 with 24.2%
+flagged in the shipped `best_of=3` configuration**, replicated over 3 runs (Results 23, 26, 29, 31). At
 `best_of=1` it is 0.347, up from 0.321 earlier in the day — Result 22's fragment guards cost that,
 knowingly.
 

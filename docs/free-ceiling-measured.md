@@ -1818,3 +1818,59 @@ knowing: this is a tell a human reader would notice that no automated detector h
 this work. And the distinct-sentence-opener ratio — how varied the first words of sentences are —
 reads human 0.839, AI 0.688, **ours 0.790**: most of the gap already closed by the opener and
 merge work, with no further transform needed.
+
+---
+
+## Result 31 — ten missing inflections, and the best figure of the session
+
+The Result 28 ablation showed `_plain_register` worth three to five times any other transform. That
+made its coverage worth auditing, and the map turned out to be keyed on exact tokens with ten
+inflected forms of existing keys missing:
+
+| missing form | occurrences in 300 real AI texts | stem already in the map |
+|---|---|---|
+| **leverages** | **107** (15.2× the human rate) | `leverage` |
+| demonstrating | 28 | `demonstrate` |
+| achieving | 27 | `achieve` |
+| required | 19 | `require` |
+| requiring | 18 | `require` |
+| evaluated | 17 | `evaluate` |
+| introducing | 15 | `introduce` |
+| utilizes | 14 | `utilize` |
+| leveraging | 12 | `leverage` |
+| outperforming | 11 | `outperform` |
+
+Both consumers look up `_WORD` matches verbatim, so a stem does nothing for its inflections. A
+half-connected entry looks complete in the table.
+
+Shipped configuration, n = 40 RAID, 3 repeats:
+
+| | post | flagged | spread | mean sim |
+|---|---|---|---|---|
+| before | 0.3118 | 31.7% | ±0.0162 | 0.9808 |
+| **after** | **0.2889** | **24.2%** | **±0.0081** | 0.9808 |
+
+−0.023 on score, **−7.5 points on flagged rate**, the spread halved, similarity unchanged. Ten
+dictionary entries, and the largest single improvement measured in this session — because they were
+missing from the one transform that does most of the work.
+
+### The invariant found a bug the additions did not introduce
+
+Every substitute must carry its key's inflection, or the swap yields "the system use robust
+methods". Enforcing that surfaced `empowering → helpful`, which turns *the tool is empowering
+users* into *the tool is helpful users*.
+
+Scoping the rule took two attempts and the failure is worth recording. A blanket "-ing keys need
+-ing substitutes" check reported **seven false positives**: `compelling`, `unwavering`,
+`groundbreaking` and `overarching` are adjectives, and `compelling → powerful` is correct. It now
+applies only to keys that are an inflection of *another* key — verbs by construction — with a
+companion test asserting that scoping is not vacuous.
+
+### Session trajectory, same corpus and settings throughout
+
+    start of this work   0.951   97.5% flagged
+    Results 16-19        0.321   34.2%
+    Result 22 (grammar)  0.347   40.8%   <- paid deliberately for correct English
+    Result 26 (length)   0.300   35.8%
+    Result 29 (nominal)  0.312   31.7%
+    Result 31 (this)     0.289   24.2%

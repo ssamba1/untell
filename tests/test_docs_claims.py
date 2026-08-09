@@ -426,7 +426,7 @@ class TestResult20IsNotQuotedFromASingleRun:
         roadmap = (REPO / "ROADMAP.md").read_text(encoding="utf-8")
         measured = (REPO / "docs" / "free-ceiling-measured.md").read_text(encoding="utf-8")
         for doc, name in ((roadmap, "ROADMAP.md"), (measured, "free-ceiling-measured.md")):
-            assert "0.312" in doc or "0.3118" in doc, f"{name} lost the headline post score"
+            assert "0.289" in doc or "0.2889" in doc, f"{name} lost the headline post score"
         # The spread must be present, whatever it currently is — this asserts the SHAPE, not a
         # frozen value. Pinning the digits meant the test had to be edited every time the number
         # legitimately moved, which trains people to edit the assertion instead of reading it.
