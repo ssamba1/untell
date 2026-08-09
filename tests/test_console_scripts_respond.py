@@ -59,3 +59,51 @@ def test_script_responds_to_help(name: str, target: str) -> None:
         f"{name} exited 0 but printed no usage line. Silence from --help is "
         f"indistinguishable from a broken install. Output: {combined[:200]!r}"
     )
+
+
+# Every command that takes --file. A mistyped path is the most common way any of them is used
+# wrongly, and it used to produce a Python stack trace from seven of the eight.
+FILE_COMMANDS = [
+    "untell.scripts.run",
+    "untell.scripts.score",
+    "untell.scripts.tells",
+    "untell.scripts.sentences",
+    "untell.scripts.verify",
+    "untell.scripts.scrub",
+    "untell.humanness",
+]
+
+
+@pytest.mark.parametrize("module", FILE_COMMANDS)
+def test_a_missing_file_is_one_line_not_a_traceback(module):
+    result = subprocess.run(
+        [sys.executable, "-m", module, "--file", "definitely-not-a-real-file.txt"],
+        capture_output=True, text=True, timeout=300, cwd=REPO,
+    )
+    combined = result.stdout + result.stderr
+    assert "Traceback" not in combined, f"{module} raised instead of reporting:\n{combined[-400:]}"
+    assert "no such file" in combined.lower(), combined[-300:]
+    assert result.returncode == 2, f"expected exit 2 (usage error), got {result.returncode}"
+
+
+@pytest.mark.parametrize("module", FILE_COMMANDS)
+def test_a_directory_says_directory_not_permission_denied(module):
+    """The message that made this worth fixing. Opening a directory raises PermissionError on
+    Windows, so every one of these told the user to check file permissions for a problem that has
+    nothing to do with permissions."""
+    result = subprocess.run(
+        [sys.executable, "-m", module, "--file", "docs"],
+        capture_output=True, text=True, timeout=300, cwd=REPO,
+    )
+    combined = (result.stdout + result.stderr).lower()
+    assert "Traceback" not in (result.stdout + result.stderr), combined[-400:]
+    assert "directory" in combined, combined[-300:]
+    assert "permission" not in combined, (
+        "still blaming permissions for a directory: " + combined[-200:]
+    )
+    assert result.returncode == 2
+
+
+def test_the_file_command_list_is_not_empty():
+    """Guards the guard: an empty list would make both parametrised tests vacuous."""
+    assert len(FILE_COMMANDS) >= 6

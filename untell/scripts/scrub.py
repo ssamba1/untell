@@ -47,7 +47,12 @@ def _read_input(args: argparse.Namespace) -> str | None:
             from untell.scripts.io_utils import read_file
 
             return read_file(args.file)
-        except OSError as exc:
+        # ValueError as well as OSError: read_file now raises it for the three ordinary path
+        # mistakes (missing, a directory, unreadable) with a message written for a person, and
+        # catching only OSError would let those escape as tracebacks — the exact failure this
+        # handler exists to prevent. `main()` returns an exit code here rather than raising
+        # SystemExit, which is the contract the tests in this repo assert.
+        except (OSError, ValueError) as exc:
             logger.error("cannot read %s: %s", args.file, exc)
             return None
     if args.text is not None:

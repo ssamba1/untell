@@ -913,9 +913,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     if args.file:
-        from untell.scripts.io_utils import read_file
+        from untell.scripts.io_utils import read_file_or_exit
 
-        text = read_file(args.file)  # .txt / .docx / .pdf
+        text = read_file_or_exit(args.file)  # .txt / .docx / .pdf
     elif args.text:
         text = args.text
     else:
@@ -962,14 +962,14 @@ def main(argv: list[str] | None = None) -> int:
 
     voice_sample = None
     if args.voice_sample:
-        from untell.scripts.io_utils import read_file
+        from untell.scripts.io_utils import read_file_or_exit
         from untell.scripts.voice import _WORD, MIN_SAMPLE_WORDS
 
-        try:
-            voice_sample = read_file(args.voice_sample)
-        except OSError as exc:
-            print(f"ERROR: could not read --voice-sample file: {exc}")
-            return 2
+        # `read_file_or_exit` already prints one line and exits 2 for a missing path, a directory,
+        # an unreadable file or a binary one — the same treatment `--file` gets, rather than a
+        # second bespoke handler here that catches only OSError and would miss the ValueError the
+        # explicit guards now raise.
+        voice_sample = read_file_or_exit(args.voice_sample)
         # Warn rather than refuse: a short sample still ranks candidates, it just ranks them on
         # noisier statistics, and silently ignoring the flag the user passed would be worse.
         n_words = len(_WORD.findall(voice_sample))

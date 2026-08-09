@@ -918,9 +918,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.file:
-        from untell.scripts.io_utils import read_file
+        from untell.scripts.io_utils import read_file_or_exit
 
-        text = read_file(args.file)
+        text = read_file_or_exit(args.file)
     elif args.text:
         text = args.text
     else:

@@ -126,13 +126,59 @@ def _read_text(path: str) -> str:
 
 
 def read_file(path: str) -> str:
-    """Read text from a file. Handles .docx (python-docx) and .pdf (pypdf) if installed, else text."""
+    """Read text from a file. Handles .docx (python-docx) and .pdf (pypdf) if installed, else text.
+
+    Raises ``ValueError`` with a message meant for a person on the three ways `--file` is usually
+    wrong. Before this, each surfaced as a raw traceback from deep in the reader:
+
+        --file no-such-file.txt   FileNotFoundError: [Errno 2] No such file or directory
+        --file docs               PermissionError: [Errno 13] Permission denied: 'docs'
+
+    The second one is the reason this exists rather than being left to the OS. Opening a directory
+    raises *PermissionError* on Windows, so the message sent the reader to check file permissions
+    for a problem that has nothing to do with permissions. `_reject_if_binary` already does this
+    job for binary input and says exactly what is wrong and what to do; these three did not.
+    """
+    import os
+
+    if not os.path.exists(path):
+        raise ValueError(f"no such file: {path}")
+    if os.path.isdir(path):
+        raise ValueError(
+            f"{path} is a directory, not a file — pass one document, or use a shell loop"
+        )
+    if not os.access(path, os.R_OK):
+        raise ValueError(f"cannot read {path}: permission denied")
+
     low = path.lower()
     if low.endswith(".docx"):
         return _read_docx(path)
     if low.endswith(".pdf"):
         return _read_pdf(path)
     return _read_text(path)
+
+
+def read_file_or_exit(path: str) -> str:
+    """``read_file`` for CLIs: a bad path exits 2 with one line, not a traceback.
+
+    Eight commands accept ``--file`` and seven of them let the exception escape, so a typo produced
+    a Python stack trace ending in FileNotFoundError, and pointing at a directory produced
+    ``PermissionError: [Errno 13] Permission denied`` — a message that sends the reader to check
+    permissions for a problem that is not about permissions.
+
+    A stack trace is the right output for a bug in this code and the wrong output for a mistyped
+    path. Exit 2 matches argparse's own convention for a usage error, which is what this is.
+    """
+    import sys
+
+    try:
+        return read_file(path)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(2) from None
+    except OSError as exc:  # anything the explicit guards above did not anticipate
+        print(f"error: cannot read {path}: {exc.strerror or exc}", file=sys.stderr)
+        raise SystemExit(2) from None
 
 
 def configure_utf8_io() -> None:

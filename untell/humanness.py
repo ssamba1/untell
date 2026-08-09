@@ -343,9 +343,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.file:
         # read_file(): BOM-aware, sniffs UTF-16/cp1252, handles docx/pdf, rejects binaries.
         # A naive utf-8 open turned a UTF-16 document into mojibake and scored THAT.
-        from untell.scripts.io_utils import read_file
+        from untell.scripts.io_utils import read_file_or_exit
 
-        text = read_file(args.file)
+        text = read_file_or_exit(args.file)
     elif args.text:
         text = args.text
     else:

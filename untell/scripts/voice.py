@@ -187,9 +187,9 @@ def main(argv: list[str] | None = None) -> int:
 
     # read_file, not open(): a writing sample is most likely to arrive as the .docx or .pdf the
     # author actually writes in, and it already rejects binaries with a clear message.
-    from untell.scripts.io_utils import read_file
+    from untell.scripts.io_utils import read_file_or_exit
 
-    sample, draft = read_file(args.sample), read_file(args.draft)
+    sample, draft = read_file_or_exit(args.sample), read_file_or_exit(args.draft)
     report = voice_report(sample, draft)
     if args.json:
         print(json.dumps(report, ensure_ascii=True, indent=2))

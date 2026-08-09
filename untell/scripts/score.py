@@ -301,9 +301,9 @@ def _read_input(args: argparse.Namespace) -> str:
         # A naive open(encoding="utf-8", errors="replace") turns a UTF-16 document into mojibake
         # peppered with NUL bytes and scores THAT, silently. Same bug already fixed in run.py and
         # tells.py; it was still open at every other --file entry point.
-        from untell.scripts.io_utils import read_file
+        from untell.scripts.io_utils import read_file_or_exit
 
-        return read_file(args.file)
+        return read_file_or_exit(args.file)
     if args.text:
         return args.text
     return sys.stdin.read()

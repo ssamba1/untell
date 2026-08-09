@@ -243,6 +243,12 @@ class TestEveryFileEntryPointDecodesProperly:
             src = (repo / rel).read_text(encoding="utf-8", errors="replace")
             if not re.search(r'args\.file', src):
                 continue
-            if "read_file(" not in src:
+            # `read_file_or_exit` is `read_file` plus a one-line message and exit 2 for the three
+            # ordinary path mistakes. Both count: the guarantee this test protects is that the
+            # BOM-aware, encoding-sniffing, binary-rejecting reader is the one being used, not
+            # which of its two entry points a given CLI prefers.
+            if "read_file(" not in src and "read_file_or_exit(" not in src:
                 offenders.append(rel)
-        assert not offenders, f"these read --file without read_file(): {offenders}"
+        assert not offenders, (
+            f"these read --file without going through read_file/read_file_or_exit: {offenders}"
+        )
