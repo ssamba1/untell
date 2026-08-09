@@ -409,7 +409,12 @@ class TestNonEnglishIsNotReportedAsClean:
     def test_english_text_stays_supported(self, text):
         r = score_tells(text)
         assert r["language_supported"] is True
-        assert "warning" not in r
+        # Narrowed from `"warning" not in r` on purpose. This test is about language support, and
+        # the blanket assertion only worked while a language caveat was the only caveat that
+        # existed. `score_tells` now also warns when a per-100-word rate is computed from too few
+        # words, which fires legitimately on two of these fixtures — both are short and both carry
+        # tells. Asserting no ENGLISH-ONLY warning keeps everything this test was protecting.
+        assert "English-only" not in (r.get("warning") or "")
 
 
 class TestEvidenceStrength:

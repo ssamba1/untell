@@ -26,6 +26,7 @@ from __future__ import annotations
 import pytest
 
 from untell.scripts.score import _MIN_WORDS_FOR_A_VERDICT, _short_text_warning, score_text
+from untell.scripts.tells import _MIN_WORDS_FOR_A_RATE, score_tells
 
 
 def _words(n: int) -> str:
@@ -73,3 +74,46 @@ def test_a_tier_warning_is_not_displaced_by_the_length_one() -> None:
 def test_the_threshold_is_the_documented_one() -> None:
     """If someone moves the bar, the docstring table above stops describing the behaviour."""
     assert _MIN_WORDS_FOR_A_VERDICT == 40
+
+
+# --- the same defect in the tells metric -------------------------------------------------------
+# `tells_per_100w` from a handful of words is quantised, not estimated: the smallest non-zero value
+# a text of N words can report is 100/N. `Moreover.` is one word and one tell and reports 100.0,
+# against measured corpus means of 0.551 human and 7.335 AI (Result 45).
+
+def _quantisation_warned(text: str) -> bool:
+    return "quantised" in (score_tells(text).get("warning") or "")
+
+
+@pytest.mark.parametrize("text", ["Moreover.", "Furthermore, indeed.", "In conclusion, moreover."])
+def test_a_rate_from_too_few_words_is_caveated(text: str) -> None:
+    assert _quantisation_warned(text), f"{text!r} reported a rate with no caveat"
+
+
+def test_no_caveat_when_the_rate_is_zero() -> None:
+    """Short text usually produces no tells at all — measured over 60 HC3 pairs truncated to five
+    words, the mean rate is 0.00 human and 0.67 AI. A caveat on a harmless 0.0 is noise, and noise
+    is how readers learn to skip warnings."""
+    assert not _quantisation_warned("word " * 13)
+
+
+def test_no_caveat_once_there_are_enough_words() -> None:
+    """Guards the guard: warning on everything would pass the parametrised test above."""
+    long_enough = "Moreover the delve into a rich tapestry is worth noting here now and also again"
+    assert len(long_enough.split()) >= _MIN_WORDS_FOR_A_RATE
+    assert score_tells(long_enough)["tells"] > 0, "fixture no longer produces a tell"
+    assert not _quantisation_warned(long_enough)
+
+
+def test_the_caveat_points_at_the_count_not_the_rate() -> None:
+    """The actionable part. A caveat that only says "unreliable" leaves the reader with nothing."""
+    warning = score_tells("Moreover.").get("warning") or ""
+    assert "COUNT" in warning, warning
+    assert "0.551" in warning and "7.335" in warning, warning
+
+
+def test_the_rate_bar_is_derived_not_chosen() -> None:
+    """14 is where 100/N drops below the AI corpus mean. If either number moves, so must the other."""
+    assert _MIN_WORDS_FOR_A_RATE == 14
+    assert 100 / _MIN_WORDS_FOR_A_RATE < 7.335
+    assert 100 / (_MIN_WORDS_FOR_A_RATE - 1) > 7.335
