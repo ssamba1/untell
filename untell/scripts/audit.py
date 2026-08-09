@@ -332,6 +332,7 @@ def check_derivable(report: Report) -> None:
 
     check_demo_privacy_claims(report)
     check_corpus_bound_claims(report)
+    check_dynamic_env_vars(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -379,6 +380,38 @@ _CORPUS_BOUND_CLAIMS: tuple[tuple[str, str, str], ...] = (
         "same claim, other phrasing",
     ),
 )
+
+
+def check_dynamic_env_vars(report: Report) -> None:
+    """Env vars whose names the code BUILDS rather than writes out.
+
+    The scanner above greps for the literal ``UNTELL_...``. `untell/config.py` reads its settings
+    as ``f"UNTELL_{key.upper()}"``, so five real, user-settable variables were invisible to it —
+    UNTELL_TIER, UNTELL_THRESHOLD, UNTELL_REWRITER, UNTELL_STYLE and UNTELL_BEST_OF were all
+    undocumented and the check reported PASS. Only UNTELL_THRESHOLD ever surfaced, and only because
+    an unrelated comment happened to spell it out.
+
+    A checker with a blind spot in the shape of its own implementation is the failure this file
+    exists to prevent, so the constructed family is enumerated from the source of truth — the
+    config-key table the CLI actually reads — rather than from another list of literals.
+    """
+    try:
+        from untell.scripts.run import _CLI_DEFAULTS
+    except Exception as exc:  # noqa: BLE001
+        report.check("the config key table is importable", False, f"{type(exc).__name__}: {exc}")
+        return
+
+    readme = (REPO / "README.md").read_text(encoding="utf-8", errors="replace")
+    undocumented = [
+        f"UNTELL_{key.upper()}" for key in _CLI_DEFAULTS
+        if f"UNTELL_{key.upper()}" not in readme
+    ]
+    report.check(
+        "every config key's UNTELL_* form is documented",
+        not undocumented,
+        f"undocumented: {undocumented}" if undocumented
+        else f"{len(_CLI_DEFAULTS)} config keys, all documented",
+    )
 
 
 def check_corpus_bound_claims(report: Report) -> None:

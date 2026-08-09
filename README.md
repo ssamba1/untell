@@ -724,7 +724,7 @@ without a row here.
 | `UNTELL_ENABLE_LOCAL_JUDGE` / `UNTELL_JUDGE_MODEL` | enable and select the local LLM judge. Defaults to `Qwen/Qwen2.5-1.5B-Instruct`; `Qwen/Qwen2.5-7B-Instruct` is the larger option (`untell.detectors.local_judge.suggested_models()`). The judge is **heavy tier at either size** — 3.7s per call against 0.03–0.06s for every other detector, for AUROC 0.514. The 7B is unmeasured here; measure it before believing it. |
 | `UNTELL_DISABLE_NLI` | **turns off the NLI entailment gate.** Meaning is then unverified — the loop can adopt a rewrite that contradicts the source |
 | `UNTELL_DISABLE_ROLES` | **turns off the predicate-argument veto.** "The company sued the regulator" may come back reversed |
-| `UNTELL_MAX_ITERS` | default loop iterations, overriding the shipped 5 |
+| `UNTELL_TIER` · `UNTELL_THRESHOLD` · `UNTELL_MAX_ITERS` · `UNTELL_REWRITER` · `UNTELL_STYLE` · `UNTELL_BEST_OF` | defaults for `untell humanize`, overriding the shipped ones. Same six keys `untell.yaml` and `[tool.untell]` accept, and the precedence is CLI flag → env → config file → shipped default. Out-of-range and unknown values are refused with a message naming the value and what was used instead — a silently clamped setting would be its own bug. |
 | `UNTELL_POLICY_DIR` / `UNTELL_POLICY_BASE` / `UNTELL_POLICY_4BIT` / `UNTELL_POLICY_MAXTOK` / `UNTELL_POLICY_NO_SYSTEM` | local trained-policy rewriter: adapter directory, base model, 4-bit loading, token cap, and whether to send a system prompt |
 | `UNTELL_REWARD_FAST` | model-free stdlib reward for training runs |
 | `UNTELL_SURROGATE_DIR` | distilled surrogate detector used as the training reward |
