@@ -2178,3 +2178,49 @@ This is recorded rather than fixed because the alternative is choosing 20-word c
 accepting a 12% false-rejection rate on the tier that exists to work everywhere. Stating the limit
 costs nothing; a gate that rejects one rewrite in eight would cost the free path its usefulness,
 and users would not know why.
+
+---
+
+## Result 37 — repairing the meaning gates cost nothing on the headline
+
+Result 35 found both model-backed gates truncating at roughly 130 words. The documented headline —
+post 0.285, flagged 21.7% — was measured under those gates, on a corpus whose median document is
+284 words. Any candidate that damaged meaning in the back two thirds was accepted unopposed, so the
+number could have been resting on damage nobody could see. Repaired gates are strictly stricter:
+the loop can only lose candidates, never gain them.
+
+Rather than reproduce the n=40 × 3 protocol — hours, now that each gate call costs 3.4× more — this
+measures the **delta**, which is the actual question. Same 16 RAID documents, same seeds, run twice:
+once with chunking disabled (exactly the old truncating behaviour) and once as shipped.
+
+| | post mean max | flagged |
+|---|---|---|
+| pre-rewrite | 0.9250 | 100% |
+| gates truncating (as the headline was measured) | 0.3118 | 31.2% |
+| **gates repaired (as shipped)** | **0.3078** | **31.2%** |
+
+**−0.0040 and an identical flagged rate.** Result 34 measured this harness's single-run noise at
+±0.013 score and ±0.075 flagged; the difference is a third of the score noise and exactly zero on
+the flagged rate. Nothing moved.
+
+### What that does and does not mean
+
+It means the documented headline was **not** built on unnoticed late-document meaning damage. That
+was the worry, it was a reasonable worry, and it is answered: the rewriter was not exploiting the
+hole, so closing it took nothing away.
+
+It does not mean the repair was unnecessary, and the distinction matters because the cheap reading
+here is "the fix changed nothing, so the bug did not matter". The bug was that a rewriter *could*
+invert any claim after the first ~130 words with no gate objecting. That this particular rewriter
+happened not to is a fact about the rewriter, not a property of the system — and it is exactly the
+kind of fact that stops being true the moment someone adds a transform, or plugs in a hosted LLM
+backend, or raises the intensity. A safety check is worth having when it costs nothing, which is
+what this table shows it costs.
+
+It also earned its keep immediately in a way the table does not capture: the repaired gate caught
+`"an original way to medical image segmentation"` and `"An unsupervised segmentation way"` in real
+output, which is broken English no metric in this repo scores as broken, and which led to the
+preposition-collocation fix.
+
+n = 16, one run per arm. The two arms share texts and seeds, so the comparison is paired even though
+neither absolute figure is a replacement for the n = 40 × 3 headline.
