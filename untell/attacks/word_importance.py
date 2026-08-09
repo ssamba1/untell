@@ -204,6 +204,22 @@ _SYN: dict[str, list[str]] = {
     # Only 18.5% of the nominalisation excess is register at all; the other 81.5% is domain content
     # (segmentation, attention, detection, ablation), which is the same 82/18 split the repeated-
     # phrasing ceiling has. The reachable share is small by nature, not by neglect.
+    # Words the corpus shows AI over-using with no entry at all, found by the same sweep that
+    # produced the inflection fix. Each is REGISTER, not content: "united" (99x) is excluded because
+    # it is "United States", "treatment" and "efficiency" because they are subject matter, and
+    # "contributions" because in a paper it names the novel claim.
+    "analyze": ["study", "examine", "look at"],
+    "analyzed": ["studied", "examined", "looked at"],
+    "analyzing": ["studying", "examining", "looking at"],
+    "summarized": ["summed up", "boiled down"],
+    "combines": ["mixes", "brings together", "joins"],
+    "incorporates": ["includes", "builds in", "takes in"],
+    "applying": ["using", "putting to work"],
+    "involves": ["means", "needs", "takes"],
+    "components": ["parts", "pieces"],
+    "accurately": ["correctly", "closely"],
+    "traditional": ["older", "standard", "long-standing"],
+    "variety": ["range", "mix", "spread"],
     "utilization": ["use"],
     "utilisation": ["use"],
     "implementation": ["rollout", "build"],

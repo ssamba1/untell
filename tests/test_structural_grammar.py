@@ -2191,3 +2191,58 @@ class TestParenthesisingAnAside:
         for seed in range(30):
             random.seed(seed)
             assert "(" not in _parenthesise_asides(trailing)
+
+
+class TestPhrasalSubstitutesDoNotStrandAPronoun:
+    """A separable phrasal verb takes its object INSIDE: "putting it to work", never "putting to
+    work it".
+
+    The particle alone is not the fault — "spell out the details" is correct English. It is a
+    particle followed by a PRONOUN. FOUND when `applying -> putting to work` turned "applying it
+    accurately" into "putting to work it accurately"; `harnessing -> putting to work` carried the
+    same latent bug already, and 35 keys in the map have a particle-tailed substitute.
+
+    Rather than reorder the object — which needs to know where the object ends — the swap declines
+    and uses a single-word option, or leaves the word for another pass.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "The system incorporates feedback, applying it accurately across all the modules.",
+            "The team is harnessing it to improve the pipeline for everyone who is involved.",
+            "The project will augment them with extra capacity before the deadline arrives.",
+        ],
+    )
+    def test_no_particle_lands_before_a_pronoun(self, text):
+        import random
+
+        from untell.rewriter.structural import (
+            _PRONOUN_OBJECTS,
+            _SEPARABLE_PARTICLES,
+            _plain_register,
+        )
+
+        for seed in range(30):
+            random.seed(seed)
+            words = _plain_register(text, 1.0).split()
+            for a, b in zip(words, words[1:]):
+                if a.lower() in _SEPARABLE_PARTICLES and b.strip(",.;:").lower() in _PRONOUN_OBJECTS:
+                    raise AssertionError(f"seed {seed}: '{a} {b}' — stranded particle")
+
+    def test_a_phrasal_substitute_is_still_used_before_a_noun(self):
+        """The complement. "spell out the details" is correct, and a rule that banned every
+        particle substitute would delete a third of the map's alternatives for no reason."""
+        import random
+
+        from untell.rewriter.structural import _plain_register
+
+        text = "We must elucidate the details before the review meeting happens next week."
+        seen = {_plain_register(text, 1.0) for seed in range(40) if not random.seed(seed)}
+        assert any("spell out the details" in s for s in seen), seen
+
+    def test_the_particle_and_pronoun_sets_are_not_empty(self):
+        """Either being empty would make the guard above a no-op that still reads as protection."""
+        from untell.rewriter.structural import _PRONOUN_OBJECTS, _SEPARABLE_PARTICLES
+
+        assert len(_SEPARABLE_PARTICLES) >= 8 and len(_PRONOUN_OBJECTS) >= 8

@@ -1024,6 +1024,19 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
         # is spent, because leaving the AI word in place is worse than repeating a plain one.
         fresh = [o for o in options if o not in spent]
         choice = random.choice(fresh or options)
+        # A separable phrasal-verb substitute takes its object INSIDE: "putting it to work", never
+        # "putting to work it". "spell out the details" is fine, so the fault is not the particle —
+        # it is a particle followed by a PRONOUN. FOUND when `applying -> putting to work` turned
+        # "applying it accurately" into "putting to work it accurately"; `harnessing` carried the
+        # same latent bug already. Rather than reorder the object, which needs to know where the
+        # object ends, decline and let another option or another pass handle the word.
+        if " " in choice and choice.rsplit(" ", 1)[-1].lower() in _SEPARABLE_PARTICLES:
+            after = masked[m.end():].lstrip()
+            if after.split()[:1] and after.split()[0].strip(",.;:").lower() in _PRONOUN_OBJECTS:
+                plain = [o for o in (fresh or options) if " " not in o]
+                if not plain:
+                    return m.group(0)
+                choice = random.choice(plain)
         spent.add(choice)
         # Preserve the original capitalisation so sentence starts survive the swap.
         if word[:1].isupper():
@@ -1255,6 +1268,15 @@ _ASIDE_RE = re.compile(
     r"|including\s+[^,.;:()]{5,50}),(?=\s+[a-z])"
 )
 _HUMAN_PARENTHESES_PER_100W = 0.80
+
+# Particles that end a separable phrasal verb. A substitute ending in one cannot be followed
+# directly by a pronoun object: "put it to work", not "put to work it".
+_SEPARABLE_PARTICLES = frozenset(
+    {"work", "to", "in", "on", "up", "out", "over", "through", "into", "down", "off", "apart"}
+)
+_PRONOUN_OBJECTS = frozenset(
+    {"it", "them", "this", "that", "these", "those", "him", "her", "us", "me", "you", "one"}
+)
 
 
 def _parenthesise_asides(text: str) -> str:
