@@ -56,6 +56,16 @@ jobs:
           untell-mcp --list-tools
           command -v untell-loop untell-prove untell-distill
 
+      # `mkdocs build --strict` is run as a LINK CHECKER, not to publish. GitHub Pages serves
+      # docs/ directly and no workflow deploys this build, but it is the only thing that reads
+      # every cross-reference in every document — its first run found 47 broken links, including
+      # three "Next steps" entries in the quickstart pointing at pages that have never existed.
+      # Cheap (under two seconds) and catches the class of rot no test can see.
+      - name: Documentation links resolve
+        run: |
+          pip install mkdocs mkdocs-material
+          mkdocs build --strict --site-dir /tmp/untell-site
+
       # A vulnerable version of a declared dependency is a defect in this repo, not in someone
       # else's. Advisory (`|| true`) on purpose: the alternative is a build that goes red when a
       # CVE lands in a transitive package on a schedule nobody here controls, and a red build that

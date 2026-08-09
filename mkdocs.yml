@@ -45,8 +45,19 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.tabbed:
       alternate_style: true
+  # Slugify the way GitHub does. These documents are read on GitHub — the published Pages site is
+  # docs/ served directly, and free-ceiling-measured.md is not even in the nav below — so a heading
+  # anchor has to match GitHub's rules or the cross-references in it break where people click them.
+  # The two differ on em dashes: GitHub renders "Result 33 — the wall" as `result-33--the-wall`,
+  # dropping the dash and turning both spaces into hyphens, while python-markdown's default
+  # collapses that to one. Nine intra-document links were reported broken for exactly this reason,
+  # and every one of them works on GitHub. Matching GitHub makes the strict build an accurate link
+  # checker instead of a source of false alarms — which is the only reason it is worth running.
   - toc:
       permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - tables
   - attr_list
 
@@ -55,3 +66,12 @@ nav:
   - Quick Start: quickstart.md
   - API Server: api-server.md
   - Demo Page: demo.html
+
+# docs/index.html is the hand-written GitHub Pages landing page, and GitHub Pages serves docs/
+# DIRECTLY — no workflow runs mkdocs, so that file is the live site and this config describes a
+# second, unpublished one. Both are kept: the landing page is what visitors see, and this build is
+# run in CI purely as a link checker over the same documents (`mkdocs build --strict`), which is
+# how 47 broken links were found. Excluded here because it would otherwise overwrite the page
+# generated from index.md and mkdocs warns about the collision.
+exclude_docs: |
+  index.html

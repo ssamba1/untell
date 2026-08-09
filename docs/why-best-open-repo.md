@@ -11,7 +11,7 @@ below for what that census changed. Verdict below is evidenced, not asserted, an
 
 ## The decisive finding
 
-Our own deep-research survey of the field ([`humanizer-research-report.md`](../humanizer-research-report.md))
+Our own deep-research survey of the field ([`humanizer-research-report.md`](https://github.com/ssamba1/untell/blob/main/humanizer-research-report.md))
 ranks the exploitable gaps. Its **first** one, quoted exactly:
 
 > "**Closed-loop detector-feedback rewriting.** No shipping product does iterative rewrite against

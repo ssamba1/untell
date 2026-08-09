@@ -73,6 +73,11 @@ Then: `/untell <your text or file path>`
 
 ## Next steps
 
-- [How the closed loop works](how-it-works.md)
-- [CLI reference](cli/untell.md)
-- [All detector tiers](detectors.md)
+- [How the closed loop works](https://github.com/ssamba1/untell#tldr) — score, rewrite, re-score,
+  and the meaning gates that decide whether a candidate is allowed through.
+- [CLI reference](https://github.com/ssamba1/untell#-quick-start) — every subcommand, or run
+  `untell --help`, which is generated from the same parsers and cannot go stale.
+- [All detector tiers](https://github.com/ssamba1/untell#tiers) — what `lite`, `full`, `heavy` and
+  `commercial` actually load, and what each one is worth.
+- [What the free tier can and cannot do](free-ceiling-measured.md) — the measurements, including
+  the ones that came out against us.
