@@ -37,7 +37,13 @@ REPO = Path(__file__).resolve().parent.parent.parent
 # Documents that describe the CURRENT build. Dated artefacts are excluded on purpose: a changelog
 # entry or a measurement log records what was true when it was written, and "fixing" those to match
 # today's code would destroy the record rather than repair anything.
-LIVE_DOCS = ("README.md", "ROADMAP.md", "docs/why-best-open-repo.md", "docs/index.md")
+LIVE_DOCS = (
+    "README.md",
+    "ROADMAP.md",
+    "docs/why-best-open-repo.md",
+    "docs/index.md",
+    "docs/what-would-make-this-the-top-repo.md",
+)
 
 # A measured number is attributed when its section says how to reproduce it. These are the phrases
 # the documents actually use.

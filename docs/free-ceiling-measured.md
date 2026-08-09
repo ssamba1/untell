@@ -2733,3 +2733,52 @@ rules stated in code:
 - "139 of 435 target another language" is deliberately **not** checked. The census JSON has no
   language field; confirming that count would mean inventing a rule and calling the result a
   verification.
+
+## Result 47
+
+**Engineering raises the floor and does nothing to the ceiling.**
+
+The competitive question this repo had never actually measured: what separates the repos with stars
+from the repos without them? Re-derived from all 435 census records.
+
+| group | repos | median ★ | mean ★ | best |
+|---|---|---|---|---|
+| detector in the loop | 49 | 10 | 320 | 8,720 |
+| automated meaning verification | 85 | 3 | 3,697 | 298,793 |
+| any fact preservation | 131 | 2 | 3,228 | 298,793 |
+| **no mechanical verification at all** | 275 | 1 | 581 | 68,545 |
+
+A detector loop is worth 10× the median of a repo with nothing mechanical in it — and the largest
+repo with no mechanical anything has 68,545 stars, while the largest with a detector loop has
+8,720 and is a red-teaming scanner rather than a humanizer.
+
+By category, the concentration is worse:
+
+| category | repos | median ★ | share of all stars |
+|---|---|---|---|
+| `prompt-guide` | 184 | 1 | **92%** |
+| `rule-based-rewriter` (ours) | 38 | 2 | **0.3%**, best 413 |
+
+584,528 stars over 435 repos; the top 20 hold **98%**. Six of the eight largest contain no
+executable code.
+
+**The technique nobody uses.** Mining the 49 detector-coupled repos for search strategy: 12 iterate
+until it passes, 5 use RL, 4 ensemble detectors, 3 couple per token, 3 use gradients, and **0 use
+beam or tree search**. Every detector-coupled repo in the census, this one included, is greedy —
+`best_of=3` draws three candidates and discards two before either can be extended. A beam keeps *k*
+candidates across iterations, needs no GPU, and costs linearly in width.
+
+Three things worth keeping:
+
+- **A category can be won and still be worth nothing in the currency being counted.** We are near
+  the top of a category holding 0.3% of the field's attention. That is a real position and it is
+  not a star position, and conflating the two would misdirect every future decision.
+- **The measurement contradicts the intuition that quality compounds into adoption.** 275 repos have
+  no mechanical verification of any kind and one of them has 68,545 stars. Tests, gates, CI and
+  published negative results show no correlation worth acting on.
+- **A zero in a technique table is the most interesting cell in it** — provided it is a zero for
+  lack of trying rather than for a reason. Beam search is untried here; whether it pays is a
+  measurement nobody has run, and the honest next step is to run it at matched scoring budget
+  rather than to build it.
+
+Written up as [what-would-make-this-the-top-repo.md](what-would-make-this-the-top-repo.md).

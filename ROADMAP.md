@@ -268,6 +268,11 @@ than a nicety.
   verbatim are locked. This was already shipped by the environment lock while the roadmap listed
   it as pending; verified rather than assumed.
 
+What the census says about becoming the *most starred* repo, as opposed to the best one, is
+measured in [what would make this the top repo](docs/what-would-make-this-the-top-repo.md):
+briefly, engineering raises the floor and not the ceiling, and the one search strategy no
+profiled repo uses is beam search.
+
 Nobody in the census targets thesis and paper writers with fact-integrity guarantees. We have the
 five meaning gates and byte-exact citation locking that **no profiled repo combines**. This is a
 defensible position that does not require beating chengez at evasion.

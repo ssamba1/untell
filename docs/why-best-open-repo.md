@@ -42,6 +42,10 @@ they are not a quotation, and a previous version of this page presented them as 
 >   measurement here are English-only.
 >
 > What survives is the **conjunction plus an installable package**, and the measurement discipline.
+>
+> - **Stars will not follow from any of this.** Measured across the census: our category holds
+>   0.3% of the field's stars and its largest member has 413. Engineering raises the floor and
+>   not the ceiling — see [what would make this the top repo](what-would-make-this-the-top-repo.md).
 > No profiled repo has all four criteria and ships as a package.
 
 > **Correction, 2026-08-05.** This section used to open with a block quote attributed *"verbatim"*
@@ -128,7 +132,7 @@ in this repo: move one edit to the end of a long document and see whether the ve
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
-| Automated tests | ✅ **2543** tests, 80 modules (reproduce with `pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
+| Automated tests | ✅ **2544** tests, 80 modules (reproduce with `pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
 | CI (lite + full-tier, real models) | ✅ 4 jobs | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs without a GPU | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | License | MIT | MIT | MIT | MIT | Apache | MIT | MIT |
