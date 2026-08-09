@@ -263,6 +263,37 @@ does not depend on marketing.
 
 ---
 
+### 📦 `pip install untell` claims the names `eval` and `training` — needs your decision
+
+Found 2026-08-09 by building a wheel and installing it into a clean virtualenv. Confirmed
+empirically there, not inferred:
+
+```
+>>> import eval, training          # after a clean `pip install untell`
+>>> eval.__file__
+.../site-packages/eval/ceiling.py
+```
+
+Seven console scripts point into these two directories (`untell-ceiling`, `untell-compare`,
+`untell-prove`, `untell-detector-audit`, `untell-eval-policy`, `untell-distill`,
+`untell-surrogate`), and `untell/api_server.py` and `untell/mcp_server.py` import from `eval`
+directly. So they must be declared as packages, and being top-level directories they install as
+top-level names.
+
+Both directions of this are real. Another distribution shipping a `training` package overwrites
+ours or is overwritten by it, and a user with a `training.py` in their working directory shadows
+the installed one, so `untell-distill` breaks with an import error that names none of this.
+
+The fix is to move them to `untell/eval/` and `untell/training/`. Mechanical but not small: 179
+references across 47 files, and it **breaks anyone importing `eval.ceiling` directly**. The
+console-script names would not change, and the documented public surface is `untell.*` plus those
+scripts, so the blast radius is probably small — but "probably" is doing work in that sentence and
+it is a published package, so it is your call rather than one to make in passing.
+
+`tests/test_packaging.py` does the non-breaking part: it pins the situation so it stays coherent
+(no console script pointing outside a declared package, no data file tracked but undeclared) and
+does not let it quietly grow.
+
 ## 6. The moat — needs a GPU
 
 - ⛔ **Surrogate distillation** (HMGC, COLING 2024 — prior art for what `training/surrogate.py`
