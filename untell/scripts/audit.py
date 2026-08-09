@@ -339,6 +339,8 @@ def check_derivable(report: Report) -> None:
     check_optional_extras(report)
     check_no_control_characters(report)
     check_census_counts(report)
+    check_named_repo_stars(report)
+    check_largest_repo_claims(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -539,6 +541,129 @@ def check_census_counts(report: Report) -> None:
         "every census count the docs publish is re-derivable from the census data",
         not wrong,
         "; ".join(wrong) if wrong else f"{checked} published counts agree ({counts})",
+    )
+
+
+def _census_keys(record: dict) -> set[str]:
+    """The names a document might reasonably use for one census record.
+
+    Substring matching is not usable here: `Humanizer-zh` is a substring of 56 record names,
+    including `Humanizer-zh-TW`, so a naive `in` test either matches everything or silently picks
+    the wrong repo. Each record contributes its full name, each slash-separated part, and anything
+    in parentheses — so `gzh-rewrite-skill (gongzhonghao-rewrite)` answers to both spellings, and
+    `Humanizer-zh` matches only the repo actually called that.
+    """
+    name = record["name"]
+    keys = {name.lower(), re.sub(r"\s*\([^)]*\)", "", name).strip().lower()}
+    for part in re.split(r"[/()]", name):
+        part = part.strip().lower()
+        if part:
+            keys.add(part)
+    return {k for k in keys if k}
+
+
+# `[^)]*` before the closing paren: a star count is often followed by a clause explaining the
+# repo — `(298.8k★, its validator checklist is quoted in Chinese)`. Requiring the paren to close
+# straight after the star silently skipped every exhibit that carried an explanation, which is
+# most of the interesting ones, and left an ambiguous repo name unchecked.
+# `\s*` alone is not enough: these pages wrap inside blockquotes, so a name and its star count
+# are routinely separated by a newline and a `> ` continuation marker. The first version of this
+# matched one exhibit out of six and reported PASS on the rest.
+_STAR_CLAIM = re.compile(r"`([\w.\-/]+)`[\s>]*\((\d+(?:\.\d+)?)k?★[^)]*\)")
+
+
+def check_named_repo_stars(report: Report) -> None:
+    """A star count quoted next to a repo name must match the census, at the precision quoted.
+
+    These numbers carry the comparative argument — "three of the eight largest" is only worth
+    printing if the sizes behind it are right — and they are the easiest thing in any document to
+    copy once and never revisit. Star counts also only move in one direction, so a stale one
+    understates a competitor, which is the direction that flatters us.
+
+    Rounding is respected rather than fought: `68.5k★` is checked against 68545 by comparing at one
+    decimal place, so the doc is not forced to print 68,545 to pass.
+
+    This is what remains checkable after the language count turned out not to be. That count is a
+    per-record reading — the JSON has no language field, and three defensible keyword rules give
+    130, 135 and 138 against a published 139 — so the pages now say so, and the check covers the
+    part that has data underneath it.
+    """
+    records = _census_records()
+    if not records:
+        return
+    wrong: list[str] = []
+    checked = 0
+    for rel in ("docs/why-best-open-repo.md", "docs/humanizer-census.md", "ROADMAP.md", "README.md"):
+        path = REPO / rel
+        if not path.exists():
+            continue
+        for name, value in _STAR_CLAIM.findall(path.read_text(encoding="utf-8")):
+            matches = [r for r in records if name.lower() in _census_keys(r)]
+            if len(matches) != 1:
+                wrong.append(f"{rel}: `{name}` matches {len(matches)} census records")
+                continue
+            checked += 1
+            actual = matches[0]["stars"]
+            claimed = float(value)
+            # A bare integer means literal stars; a decimal means thousands.
+            shown = round(actual / 1000, 1) if "." in value else actual
+            if abs(claimed - shown) > 0.05:
+                wrong.append(f"{rel}: `{name}` says {value}k★, census has {actual}")
+
+    report.check(
+        "every star count quoted beside a repo name matches the census",
+        not wrong,
+        "; ".join(wrong) if wrong else f"{checked} star counts agree",
+    )
+
+
+def check_largest_repo_claims(report: Report) -> None:
+    """A repo named as one of the N largest must actually be in the top N by stars.
+
+    Written because a page claimed "four of the eight largest repos in the field" and named two
+    that rank 9th and 12th. The count was right — four of the top eight are non-English — but two
+    of the four exhibits were the wrong repos, which is the failure mode a reader cannot catch
+    without the table in front of them.
+    """
+    records = _census_records()
+    if not records:
+        return
+    ranked = sorted(records, key=lambda r: -r["stars"])
+    wrong: list[str] = []
+    checked = 0
+    for rel in ("docs/why-best-open-repo.md", "docs/humanizer-census.md"):
+        path = REPO / rel
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for match in re.finditer(r"of the (\w+) largest", text):
+            word = match.group(1).lower()
+            size = {"three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+                    "nine": 9, "ten": 10}.get(word)
+            if size is None:
+                continue
+            top = {r["name"].lower() for r in ranked[:size]}
+            # Exhibits are the repos named in the clause the claim opens, which ends at the first
+            # semicolon or full stop. The convention these pages follow is exhibits first, caveats
+            # after — and the caveats deliberately name repos that are NOT in the top N, together
+            # with their real rank, so reading past the clause boundary reports the disclaimer as
+            # the very error it exists to record.
+            rest = text[match.end():match.end() + 700]
+            stop = min((i for i in (rest.find(";"), rest.find(". ")) if i != -1), default=len(rest))
+            window = rest[:stop]
+            for name, _value in _STAR_CLAIM.findall(window):
+                hit = [r for r in ranked if name.lower() in _census_keys(r)]
+                if len(hit) != 1:
+                    continue
+                checked += 1
+                if hit[0]["name"].lower() not in top:
+                    rank = ranked.index(hit[0]) + 1
+                    wrong.append(f"{rel}: `{name}` named among the {word} largest but ranks {rank}")
+
+    report.check(
+        "every repo named among the N largest is in the top N",
+        not wrong,
+        "; ".join(wrong) if wrong else f"{checked} exhibits are within their claimed rank",
     )
 
 
