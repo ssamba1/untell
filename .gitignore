@@ -50,3 +50,8 @@ delegation-*
 # machine, and a detached worktree would have shown up as untracked for everyone else.
 .claude/worktrees/
 .claude/tasks/
+
+# mkdocs build output. `mkdocs build --strict` is part of the gate suite, so this
+# directory appears after every verification run; `git add -A` would commit the whole
+# rendered site. It has happened once already, with 14 stray log files.
+site/
