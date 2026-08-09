@@ -2419,3 +2419,50 @@ which trade accuracy for speed, which is a different decision from an optimisati
 `windowed_max` is 66% of the run on its own: long documents are scored in overlapping windows, and
 that is what makes the full tier expensive. It is also what fixed the detectors reading only the
 first ~380 words. The cost is the fix, not an accident of it.
+
+---
+
+## Result 41 — the "higher-fidelity" meaning gate rejected 95% of good rewrites
+
+Six tests skip on every run. Four are honest opt-in gates (a 600 MB model, a tier flag). Two said
+`bert-score not installed` — and **no CI job installed it either**, so they had never run anywhere.
+`bert-score` is declared in the `quality` extra, and `quality.py` treated it as the highest-fidelity
+backend with its own threshold, so `pip install untell[quality]` silently switched the meaning gate
+onto a code path nothing had ever exercised.
+
+Installing it, the two tests fail immediately: a faithful paraphrase is **rejected**.
+
+### It is not a mis-tuned threshold
+
+The first reading is that 0.88 is too tight. Measured on 20 real composite rewrites: median 0.8293,
+and **19 of 20 below the bar**. So `untell[quality]` made the loop discard 95% of its own good
+candidates. But recalibrating cannot fix it, because the two populations are *inverted*:
+
+| | BERTScore range |
+|---|---|
+| faithful paraphrases | 0.7995 – 0.8409 |
+| meaning-CHANGED rewrites (negation, quantifier, role swap, number, evaluation flip) | **0.8526 – 0.9577** |
+
+Every meaning-changed pair scores **above** every faithful one. No threshold separates them.
+
+The cause is structural. BERTScore rewards token-level overlap. A negation flip changes one word
+and keeps the rest; an honest paraphrase changes many. So the metric systematically prefers the
+rewrites the gate exists to reject.
+
+This is the same failure the module already documents for cosine similarity — "it passed rewrites
+that INVERT the source while rejecting 6 of 8 faithful formal→casual rewrites" — which is *why* the
+NLI gate was built. BERTScore has it too. Being a stronger metric does not help when the thing it
+measures is the wrong thing.
+
+### What changed
+
+`similarity()` no longer routes the gate through BERTScore, and `method()` no longer reports
+`"bertscore"` — reporting a backend the gate does not use left `recommended_bar()` selecting a bar
+for a path never taken, which produced a token-overlap bar of 0.5 against a cosine score.
+
+`_bert_score_similarity` is kept and still reported by `untell-quality --json`. Recall against a
+reference is a useful number; it is just not a meaning gate.
+
+The `quality` extra is now installed in the full-tier CI job. An optional extra that no environment
+exercises is an untested code path a user can enable with one pip flag — which is exactly how a
+gate that rejects 95% of good rewrites shipped and stayed.

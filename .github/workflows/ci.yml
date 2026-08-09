@@ -96,7 +96,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[full,eval,dev]"
+          # `quality` (bert-score) included deliberately: its two tests skipped in every
+          # environment because nothing installed it, and the code path they cover had a
+          # gate that rejected 19 of 20 real rewrites. An optional extra nobody exercises
+          # is an untested code path a user can turn on with one pip flag.
+          pip install -e ".[full,eval,quality,dev]"
           python -m spacy download en_core_web_sm || true
 
       - name: Sanity — torch + detectors import and score

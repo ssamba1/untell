@@ -180,10 +180,23 @@ def similarity(a: str, b: str) -> float:
     chunks = aligned_chunks(a, b)
     if len(chunks) > 1:
         return min(similarity(ca, cb) for ca, cb in chunks)
-    bs = _bert_score_similarity(a, b)
-    if bs is not None:
-        # BERTScore F1 (rescaled) — the highest-fidelity backend when bert-score is installed.
-        return max(0.0, min(1.0, bs))
+    # BERTScore is NOT used as the gate. It was, as the "higher-fidelity backend", and MEASURED
+    # 2026-08-09 it is unusable for this job — not mis-tuned, inverted:
+    #
+    #     faithful paraphrases        0.7995 - 0.8409
+    #     meaning-CHANGED rewrites    0.8526 - 0.9577
+    #
+    # Every meaning-changed pair scored ABOVE every faithful one, so no threshold separates them.
+    # The reason is structural: BERTScore rewards token-level overlap, and a negation flip changes
+    # one word while an honest paraphrase changes many. Against the shipped BERTSCORE_BAR of 0.88
+    # it rejected 19 of 20 real composite rewrites — with `pip install untell[quality]`, the loop
+    # threw away 95% of its own good candidates.
+    #
+    # This is the same failure the module docstring already records for cosine similarity, which is
+    # why the NLI gate exists. BERTScore has it too, and being a stronger metric does not help: the
+    # thing being measured is the wrong thing. `_bert_score_similarity` is kept and reported by
+    # `untell-quality --json`, because recall against a reference is a genuinely useful number —
+    # just not a meaning gate.
     cos = _cosine_similarity(a, b)
     if cos is not None:
         # Clamp raw cosine into [0, 1]; the 0.76 bar lives on this raw-cosine scale.
@@ -192,9 +205,13 @@ def similarity(a: str, b: str) -> float:
 
 
 def method() -> str:
-    """Report which backend `similarity` will use: 'bertscore', 'embedding', or 'token_overlap'."""
-    if _bs_scorer() is not None:
-        return "bertscore"
+    """Report which backend `similarity` will use: 'embedding' or 'token_overlap'.
+
+    "bertscore" is no longer a possible answer. It used to be returned whenever `bert-score` was
+    importable, which then selected BERTSCORE_BAR — and the gate rejected 19 of 20 real rewrites.
+    Reporting a backend the gate does not use would leave `recommended_bar` picking a bar for a
+    path that is never taken, which is how that combination produced 0.5 for a cosine score.
+    """
     return "embedding" if _st_model() is not None else "token_overlap"
 
 
@@ -217,8 +234,8 @@ def confidence() -> str:
 def recommended_bar() -> float:
     """The bar appropriate to the active metric (each metric lives on a different scale)."""
     m = method()
-    if m == "bertscore":
-        return BERTSCORE_BAR
+    # No bertscore branch: `similarity` no longer routes the gate through BERTScore, so a bar for
+    # it would describe a path that is not taken. BERTSCORE_BAR is kept for the reported metric.
     return DEFAULT_BAR if m == "embedding" else TOKEN_BAR
 
 

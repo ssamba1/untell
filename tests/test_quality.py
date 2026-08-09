@@ -146,16 +146,38 @@ def test_bertscore_not_active_when_uninstalled():
 
 
 @pytest.mark.skipif(not _bertscore_ready(), reason="bert-score not installed")
-def test_bertscore_backend_active_when_installed():
-    assert method() == "bertscore"
-    assert recommended_bar() == BERTSCORE_BAR
+def test_bertscore_is_not_the_gate_even_when_installed():
+    """It was, and MEASURED it is inverted for this job — not mis-tuned:
+
+        faithful paraphrases       0.7995 - 0.8409
+        meaning-CHANGED rewrites   0.8526 - 0.9577
+
+    Every meaning-changed pair scored above every faithful one, because BERTScore rewards token
+    overlap and a negation flip changes one word where an honest paraphrase changes many. Against
+    the shipped 0.88 bar it rejected 19 of 20 real composite rewrites, so `pip install
+    untell[quality]` made the loop discard 95% of its own good candidates.
+    """
+    assert method() != "bertscore", "the gate is routing through BERTScore again"
+    assert recommended_bar() in (DEFAULT_BAR, TOKEN_BAR)
 
 
 @pytest.mark.skipif(not _bertscore_ready(), reason="bert-score not installed")
-def test_bertscore_paraphrase_above_bar():
+def test_a_faithful_paraphrase_passes_with_bertscore_installed():
+    """The regression that mattered: installing an optional extra must not start rejecting good
+    rewrites."""
     a = "The new system significantly improved response time."
     b = "Response time improved a lot with the new system."
-    assert passes(a, b)  # faithful paraphrase clears the BERTScore bar
+    assert passes(a, b)
+
+
+@pytest.mark.skipif(not _bertscore_ready(), reason="bert-score not installed")
+def test_bertscore_remains_available_as_a_reported_metric():
+    """Demoted from the gate, not deleted — recall against a reference is a useful number to
+    report, it is simply not a meaning gate."""
+    from untell.scripts.quality import _bert_score_similarity
+
+    value = _bert_score_similarity("The cat sat on the mat.", "A cat was sitting on the mat.")
+    assert value is not None and 0.0 <= value <= 1.0
 
 
 def test_confidence_is_high_for_every_semantic_metric(monkeypatch):
