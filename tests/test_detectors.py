@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from untell.detectors.base import clamp01, load_detectors, resolved_tier
@@ -17,6 +19,20 @@ HUMAN_TEXT = (
     "the 8:14 finally rattled up, half-empty, smelling faintly of wet dog and someone's coffee, "
     "and I squeezed into the corner seat I always grab when nobody beats me to it. Worth it."
 )
+
+
+def _why_no_gpt2() -> str:
+    """Say which of the two reasons this is, rather than guessing the interesting one.
+
+    The message used to read "torch present but the GPT-2 path did not initialise" in both cases.
+    Under `UNTELL_LITE_NO_TORCH=1` — which is how the gate suite runs — that is simply false: the
+    environment asked for the stdlib path and got it. A reader chasing a broken ML install would
+    have found nothing wrong, which is the same defect as reporting a Chinese paragraph as "shorter
+    than 5 words": correct behaviour, wrong reason, and the reason is what someone acts on.
+    """
+    if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+        return "UNTELL_LITE_NO_TORCH=1 forces the stdlib path; this test exercises the GPT-2 one"
+    return "torch present but the GPT-2 path did not initialise"
 
 
 def test_lite_detector_always_available():
@@ -209,7 +225,7 @@ def test_full_gpt2_path_is_not_inverted_on_single_sentences():
     """
     det = PerplexityBurstinessDetector()
     if not det._torch_ready():
-        pytest.skip("torch present but the GPT-2 path did not initialise")
+        pytest.skip(_why_no_gpt2())
 
     ai = [det.score(s) for s in _AI_SENTENCES]
     human = [det.score(s) for s in _HUMAN_SENTENCES]
@@ -245,7 +261,7 @@ def test_gpt2_single_sentence_is_not_capped_at_the_lite_ceiling():
 
     det = PerplexityBurstinessDetector()
     if not det._torch_ready():
-        pytest.skip("torch present but the GPT-2 path did not initialise")
+        pytest.skip(_why_no_gpt2())
     score = det.score(_BLAND_AI_SENTENCE)
     assert score > _RATIO_CEILING, (
         f"GPT-2 single-sentence score {score} is at or below the lite cap {_RATIO_CEILING} — "
