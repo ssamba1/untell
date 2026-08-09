@@ -2993,3 +2993,48 @@ Worth keeping: **the second instance of a bug is evidence about where to look, n
 to fix.** Result 51 could have ended at `_normalise_ws` and looked complete; the tell catalogue was
 broken by the identical input, in a different file, with a different symptom — fewer tells rather
 than a higher score — and nothing connected them except asking the question a second time.
+
+## Result 53
+
+**Enumerating the rest of the class: 75 patterns, one residual, and it is not worth fixing.**
+
+Results 51 and 52 fixed the scoring path and the tell catalogue against Unicode spaces. Rather than
+wait for a third instance, every compiled regex in `untell/` was enumerated by AST walk: **75
+contain a literal space**. Where they sit, and whether they are reachable with an unfolded space:
+
+| where | patterns | exposed? |
+|---|---|---|
+| `scripts/tells.py` | 13 | no — folds at entry (Result 52) |
+| `scripts/score.py` | 1 | no — folds at entry (Result 51) |
+| `scripts/preserve.py`, `numerals.py`, `latex.py` | 5 | no — they use `\s`, which matches U+00A0 in Python |
+| `rewriter/structural.py` | 42 | only when `scrub=False` |
+| `layout.py`, `detectors/base.py` | 5 | reached after folding or scrubbing |
+
+The rewriter's 42 are almost all the contraction table — `\bdo not\b`, `\bit is\b`. They are
+protected by `scrub_hidden`, which normalises these characters and runs by default on every
+surface. `untell_text(scrub=False)` is the one path that reaches them raw, and there the transform
+genuinely dies: over 30 seeds on a fixture containing "does not", "they are" and "we will not",
+plain input produced `doesn't` and U+00A0 input produced **nothing at all**.
+
+**And it does not matter.** Measured end to end over 6 HC3 texts, composite, 2 iterations:
+
+| input | scrub | mean final P(AI) |
+|---|---|---|
+| plain | True | 0.4954 |
+| plain | False | 0.4954 |
+| U+00A0 | True | 0.4954 |
+| U+00A0 | False | **0.4965** |
+
+A cost of **0.0011**, against a noise floor of ±0.013 for this harness. One transform dies and the
+other transforms in the composite absorb it completely.
+
+Not fixed, deliberately. Folding at the loop entry independent of `scrub` would mutate the caller's
+text on the one path where they explicitly asked for their characters left alone, and a
+fold-then-restore pass is real machinery. Paying either price for 0.0011 — a number this harness
+cannot distinguish from zero — would be buying complexity with nothing.
+
+Worth keeping: **enumerate the class, then measure each member before fixing it.** The enumeration
+was cheap and worth doing: it turned "where else might this bite?" from a guess into five lines of
+table, and it showed that `\s` had quietly protected a third of the candidates all along. The
+measurement then said the single genuine survivor was not worth touching. Finding a real bug and
+declining to fix it is a result, not an omission.
