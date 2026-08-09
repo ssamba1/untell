@@ -2273,3 +2273,63 @@ The docstring has been corrected to say what is measured rather than what was as
 Also worth recording for anyone choosing a backend: neural is **8.9x** the wall-clock of composite
 (991 s against 112 s for the same eight texts) for that 0.56 → 0.14. That is the actual trade, and
 neither number appears anywhere a user picking `--rewriter` would see it.
+
+---
+
+## Result 39 — spot-checking four documented constants, and the one that is register-blind
+
+`untell-audit` enforces that a measured number states its provenance. It cannot re-derive the
+*value*, so nothing has ever checked whether these constants still describe the corpus they claim
+to. Four re-derived over 400 human documents (200 HC3 + 200 RAID):
+
+| constant | claimed | re-measured |
+|---|---|---|
+| merge connector `, and ` | 0.659 | 0.652 |
+| merge connector `, but ` | 0.216 | 0.224 |
+| merge connector `, so ` | 0.079 | 0.084 |
+| merge connector `, while ` | 0.039 | 0.032 |
+| merge connector `, though ` | 0.007 | 0.007 |
+| parentheses / 100 w | 0.80 | 0.82 |
+| `This …` openers / 100 sentences (RAID) | 4.59 | **4.59** |
+| contractions / 100 w | 0.67 | **0.32** |
+
+Six of seven reproduce. The last one looked like a factor-of-two error and was not: I had pooled
+HC3 with RAID. Split, **HC3 human is 0.66** — the constant is right, and my pooled figure was the
+misleading number. The lesson this repo keeps relearning, this time applied to my own measurement
+before it became a claim.
+
+### The real finding
+
+The constant is correct for HC3 and **applied to everything**. Measured on 25 texts per corpus,
+contractions per 100 words in our own output:
+
+| corpus | human | our output | ratio |
+|---|---|---|---|
+| HC3 | 0.666 | 0.687 | **1.0×** |
+| RAID | 0.045 | 0.200 | **4.4×** |
+
+The pass hits the human rate exactly on forum answers and overshoots academic abstracts by 4.4×.
+That is the third constant in this project to behave differently by register, after
+`formulaic_transition` (0.88 on HC3, 0.60 on RAID) and `hedge_stacking` (0.53 against 0.88).
+
+### The obvious fix, measured and not shipped
+
+The comment above the constant already records that AI input contracts *at or above* the human rate
+in both corpora — so the input's own rate is a register-aware target needing no register detection.
+Capping the budget at `min(constant, input_rate)`:
+
+| corpus | shipped | capped by input rate |
+|---|---|---|
+| HC3 | 1.0× | **0.6×** |
+| RAID | 4.4× | **1.2×** |
+
+Total distributional error falls from 3.4 to 0.6, and it is still not obviously right: it trades an
+overshoot on the corpus the constant was tuned for into an undershoot there. Those are not
+symmetric — overshooting a human distribution manufactures a signature, undershooting merely leaves
+formal text formal — which argues for the cap. Neither version moves the detector: this pass was
+measured at ±0.0003 when it was written, so the whole question is distributional.
+
+**Not shipped on one run of n=25 per corpus.** Result 38 criticised replacing an unnamed-corpus
+claim with a thin one; doing it here would be the same error. What would settle it: both corpora at
+n ≥ 30 with repeats, the detector delta confirmed at zero for the capped version, and a decision
+recorded about whether undershoot on HC3 is an acceptable price for matching RAID.
