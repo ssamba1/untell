@@ -35,3 +35,12 @@ _private/
 # Audit artifacts
 audit_report*.md
 delegation-*
+
+# Agent scratch. Nothing under `.claude/` is tracked — the shipped plugin manifest is
+# in `.claude-plugin/`. Named rather than ignoring the whole directory so that adding
+# something shareable there later is a deliberate act, not a silent one.
+#
+# These lived in .git/info/exclude, which is per-clone: it protected exactly one
+# machine, and a detached worktree would have shown up as untracked for everyone else.
+.claude/worktrees/
+.claude/tasks/
