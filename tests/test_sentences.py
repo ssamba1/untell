@@ -173,3 +173,70 @@ def test_no_warning_when_a_model_backed_detector_will_do_the_ranking(monkeypatch
     ours = [r for r in caplog.records
             if r.levelno >= logging.WARNING and r.name == "untell.scripts.sentences"]
     assert not ours, [r.getMessage() for r in ours]
+
+
+class TestTheResultKeysAreWhatCallersExpect:
+    """Pin the shape of what `score_sentences` returns.
+
+    Three different result dicts in this codebase have now been misread in the same way while
+    probing it: `untell_text` returns the rewrite under `final` (not `text`), `score_text` returns
+    per-detector values under `detectors` (not `scores`), and this one puts the per-sentence
+    probability under `ai` (not `score`). Each mistake produced a plausible-looking wrong answer
+    rather than a KeyError — the sentence-targeting probe reported AUROC "None" on 0 of 40 matched
+    sentences and looked like a broken scorer, when the scorer was fine.
+
+    A caller cannot guess these and there is no one place that lists them, so each surface pins its
+    own contract where the reader will be.
+    """
+
+    TEXT = (
+        "Moreover, the framework leverages a robust approach to deliver outcomes. "
+        "The kettle boiled while I read the last few pages of the book."
+    )
+
+    def test_top_level_keys(self):
+        from untell.scripts.sentences import score_sentences
+
+        result = score_sentences(self.TEXT, tier="lite", threshold=0.30)
+        assert set(result) >= {"sentences", "flagged", "tier", "threshold"}
+
+    def test_each_sentence_carries_text_ai_and_flagged(self):
+        from untell.scripts.sentences import score_sentences
+
+        result = score_sentences(self.TEXT, tier="lite", threshold=0.30)
+        assert result["sentences"], "no sentences returned"
+        for entry in result["sentences"]:
+            assert set(entry) >= {"text", "ai", "flagged"}, sorted(entry)
+            assert isinstance(entry["text"], str) and entry["text"].strip()
+            assert entry["ai"] is None or 0.0 <= float(entry["ai"]) <= 1.0
+            assert isinstance(entry["flagged"], bool)
+
+    def test_there_is_no_score_key_to_mistake_for_ai(self):
+        """If a `score` key appears later it is either the same number under two names or a
+        different one under a confusing name. Both are worth stopping at."""
+        from untell.scripts.sentences import score_sentences
+
+        result = score_sentences(self.TEXT, tier="lite", threshold=0.30)
+        for entry in result["sentences"]:
+            assert "score" not in entry, (
+                "a 'score' key appeared alongside 'ai' — decide which one callers should read"
+            )
+
+    def test_flagged_is_a_list_of_sentence_strings(self):
+        """Not indices, not dicts. A caller filtering their own text needs the text back."""
+        from untell.scripts.sentences import score_sentences
+
+        result = score_sentences(self.TEXT, tier="lite", threshold=0.30)
+        assert isinstance(result["flagged"], list)
+        for item in result["flagged"]:
+            assert isinstance(item, str)
+            assert item in self.TEXT, f"flagged sentence is not from the input: {item!r}"
+
+    def test_flagged_agrees_with_the_per_sentence_verdicts(self):
+        """Two views of one decision. They drifting apart is silent and would make either one
+        untrustworthy without saying which."""
+        from untell.scripts.sentences import score_sentences
+
+        result = score_sentences(self.TEXT, tier="lite", threshold=0.30)
+        from_entries = {e["text"].strip() for e in result["sentences"] if e["flagged"]}
+        assert {f.strip() for f in result["flagged"]} == from_entries
