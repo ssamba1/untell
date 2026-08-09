@@ -757,6 +757,11 @@ def _by_evidence(by_category: dict[str, int]) -> dict[str, int]:
     return {k: v for k, v in out.items() if v}
 
 
+# Below this many words, one tell alone reports a rate above the AI corpus mean (100/14 = 7.1 vs
+# 7.335), so `tells_per_100w` stops being an estimate and becomes an artefact of the word count.
+_MIN_WORDS_FOR_A_RATE = 14
+
+
 def _language_supported(text: str) -> bool:
     """False when the text is mostly a script none of these English patterns can match.
 
@@ -872,6 +877,35 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
             f"{total} tells means the patterns did not apply, NOT that the text reads as human"
         )
         logger.warning(result["warning"])
+    # A rate per 100 words computed from a handful of words is not an estimate of anything: the
+    # smallest non-zero value a text of N words can report is 100/N, so the number is quantised far
+    # above the scale it is meant to be read on. `Moreover.` is one word and one tell, and reports
+    # 100.0 per 100 words — against the measured corpus means of 0.551 for human text and 7.335 for
+    # AI text (Result 45). A reader comparing those would conclude something catastrophic about a
+    # single word.
+    #
+    # 14 is not a round number, it is the point where the arithmetic stops misleading: 100/14 = 7.1,
+    # just under the AI mean. Below it, ANY single tell reports a rate above the AI corpus average
+    # no matter what the text says.
+    #
+    # Only warned when the rate is actually non-zero. Short text usually produces no tells at all —
+    # measured over 60 HC3 pairs truncated to 5 words, the mean rate is 0.00 for human and 0.67 for
+    # AI — and a caveat on a harmless 0.0 would be noise that teaches readers to skip warnings.
+    if result["words"] < _MIN_WORDS_FOR_A_RATE and total > 0:
+        rate_warning = (
+            f"{result['words']} words: `tells_per_100w` is {result['tells_per_100w']}, but a rate "
+            f"per 100 words from {result['words']} words is quantised — one tell alone reports "
+            f"{100 / max(result['words'], 1):.0f}. Compare the COUNT ({total}), not the rate; the "
+            "corpus means it would be read against are 0.551 human and 7.335 AI."
+        )
+        result["warning"] = (
+            f"{result['warning']} Also: {rate_warning}" if result.get("warning") else rate_warning
+        )
+        # Reported in the dict, deliberately NOT logged. The language warning logs because
+        # non-English input is rare and a user hitting it needs telling once. Short text is not
+        # rare — `score_sentences` calls this per sentence, and sentences are almost always under
+        # 14 words, so a log line here would fire on nearly every sentence of every document. The
+        # CLI renders `warning` for the one-shot case, which is where a human is reading.
     if include_matches:
         result["matches"] = matches
     return result
