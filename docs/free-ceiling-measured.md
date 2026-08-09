@@ -2388,6 +2388,32 @@ figure quoted for this pass elsewhere is from the *standalone* surgical rewriter
 not from the composite chain at full tier — a different configuration answering a different
 question, which I had folded into one number.
 
+### The obvious optimisation, measured and rejected
+
+`windowed_max` scores its windows one at a time through a per-window callback, so batching them
+into a single forward pass is the first thing anyone will reach for — 66% of the run, and the repo
+already has `batch_score_texts` elsewhere. Measured on `roberta_openai`, four ~320-word windows:
+
+| | median of 3 |
+|---|---|
+| one at a time | 0.686 s |
+| batched into one forward pass | **0.632 s** |
+
+**8%.** And that is the best case: the four windows in this test were identical, so they padded to
+the same length. Real windows differ, and the padding waste makes batching worse than this.
+
+The profile says why. `torch._C._nn.linear` alone is 223 s of the 409 s — the time is matrix
+multiplication, not Python or framework overhead, and batching amortises only the latter. On a GPU
+this trade looks completely different; on the CPU this project targets, it does not.
+
+Not implemented. An 8% win is not worth a change to every detector adapter and the scoring core,
+and writing that down is the point: the next person to profile this will see 66% in one function
+and reach for the same lever.
+
+The levers that would actually work are fewer windows (a wider window, at the cost of more
+truncation inside each), a smaller model, or not scoring every candidate at full tier — all of
+which trade accuracy for speed, which is a different decision from an optimisation.
+
 ### For anyone choosing a tier
 
 `windowed_max` is 66% of the run on its own: long documents are scored in overlapping windows, and
