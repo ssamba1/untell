@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -109,8 +110,8 @@ def check_derivable(report: Report) -> None:
             continue
         body = doc.read_text(encoding="utf-8")
         for pattern, expected, kind in (
-            (r"(\d+)\s+local", local, "local"),
-            (r"(\d+)\s+commercial", commercial, "commercial"),
+            (r"(\d+)\s+local\b", local, "local"),
+            (r"(\d+)\s+commercial\b", commercial, "commercial"),
         ):
             for found in re.findall(pattern, body):
                 report.check(
@@ -336,6 +337,7 @@ def check_derivable(report: Report) -> None:
     check_skill_commands(report)
     check_version_consistency(report)
     check_optional_extras(report)
+    check_no_control_characters(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -383,6 +385,64 @@ _CORPUS_BOUND_CLAIMS: tuple[tuple[str, str, str], ...] = (
         "same claim, other phrasing",
     ),
 )
+
+
+def check_no_control_characters(report: Report) -> None:
+    r"""No tracked text file may contain a control character other than tab and newline.
+
+    Written after a lone carriage return was spliced into a ROADMAP row: the edit script built the
+    text in a non-raw Python string, so ``\ref`` became CR + ``ef``. Python warns about ``\c`` and
+    stays silent about ``\r``, because ``\r`` is a perfectly valid escape — which is exactly why
+    this one landed. On the page it rendered as ``ef``, and in a diff the CR is invisible.
+
+    That is the fifth time an escape has been mangled by a shell or a string literal in this repo,
+    and the first four were caught by reading the output rather than by any check. This is the
+    mechanical version.
+
+    CRLF is not the target: it is the normal Windows line ending and git converts it on the way in.
+    Only a CR that is not part of a line ending, and other C0 controls, are reported.
+    """
+    offenders: list[str] = []
+    for rel in sorted(_tracked_text_files()):
+        path = REPO / rel
+        try:
+            text = path.read_bytes().decode("utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        stripped = text.replace("\r\n", "\n")
+        for index, char in enumerate(stripped):
+            if char in "\t\n":
+                continue
+            if ord(char) < 0x20 or ord(char) == 0x7F:
+                line = stripped.count("\n", 0, index) + 1
+                offenders.append(f"{rel}:{line} U+{ord(char):04X}")
+                break
+
+    report.check(
+        "no tracked text file carries a stray control character",
+        not offenders,
+        f"found: {offenders[:5]}" if offenders else "clean",
+    )
+
+
+def _tracked_text_files() -> list[str]:
+    """Everything git tracks that is plausibly text, by extension.
+
+    Extension-based rather than content-sniffing: a binary misread as text would be reported as
+    hundreds of control characters, and the point is to catch prose and source, not to classify
+    files.
+    """
+    result = subprocess.run(
+        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, timeout=60
+    )
+    if result.returncode != 0:
+        return []
+    suffixes = {".md", ".py", ".toml", ".yml", ".yaml", ".json", ".txt", ".cfg", ".ini", ".tex"}
+    return [
+        line
+        for line in result.stdout.splitlines()
+        if line and Path(line).suffix in suffixes
+    ]
 
 
 def check_optional_extras(report: Report) -> None:

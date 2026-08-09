@@ -1209,7 +1209,7 @@ _FRONTABLE_RE = re.compile(
 # eligible sentence would take HC3-like text to 100% against a human 22%, trading one distribution
 # error for a larger one. Academic prose is where the gap is real and where this pays.
 _HUMAN_FRONTING_RATE = 0.20
-_FRONTED_RE = re.compile(r"^(?:" + "|".join(_FRONTABLE) + r")[^,]{5,},", re.IGNORECASE)
+_FRONTED_RE = re.compile(r"^(?:" + "|".join(_FRONTABLE) + r")\b[^,]{5,},", re.IGNORECASE)
 
 
 def _front_subordinate_clauses(sentences: list[str], rate: float = 0.0) -> list[str]:
