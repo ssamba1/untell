@@ -150,3 +150,38 @@ def test_a_single_space_run_is_still_collapsed() -> None:
 
     assert _normalise_ws("a  b") == "a b"
     assert _normalise_ws("a\t\tb") == "a b"
+
+
+@pytest.mark.parametrize("name", sorted(UNICODE_SPACES), ids=sorted(UNICODE_SPACES))
+def test_the_tell_catalogue_is_unchanged_by_a_unicode_space(name: str) -> None:
+    """Every multi-word pattern is written with a literal space, so a non-breaking space defeats
+    it: "in conclusion" does not match "in\u00a0conclusion". MEASURED on this paragraph, 5 tells
+    became 3 and humanness moved 37.4 -> 43.9 — an under-report for anyone pasting out of Word, and
+    a one-keystroke evasion of our own catalogue for anyone who notices."""
+    from untell.scripts.tells import score_tells
+
+    ai_prose = (
+        "Moreover, the framework leverages a robust approach to deliver outcomes at scale. "
+        "Furthermore, it is important to note that this significantly enhances overall efficiency. "
+        "In conclusion, this represents a substantial advancement in the field of study today."
+    )
+    plain = score_tells(ai_prose)
+    assert plain["tells"] >= 4, "fixture no longer carries enough tells to detect a loss"
+    swapped = score_tells(ai_prose.replace(" ", UNICODE_SPACES[name]))
+    assert swapped["tells"] == plain["tells"], (
+        f"{name} hid {plain['tells'] - swapped['tells']} of {plain['tells']} tells"
+    )
+    assert swapped["words"] == plain["words"]
+
+
+def test_one_folding_rule_serves_both_callers() -> None:
+    """Scoring and the tell catalogue both need this, and both got it wrong independently. The rule
+    lives in one module so the next caller inherits it instead of re-deriving a narrower version —
+    which is exactly how `_normalise_ws` came to be scoped to `[ \t]{2,}` while meaning to cover
+    spacing in general."""
+    from untell.scripts import tells as tells_mod
+    from untell.scripts.score import fold_unicode_spaces as from_score
+    from untell.text_split import fold_unicode_spaces as canonical
+
+    assert from_score is canonical
+    assert tells_mod.fold_unicode_spaces is canonical
