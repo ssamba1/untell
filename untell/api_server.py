@@ -301,6 +301,35 @@ _RATE_WINDOW_SECONDS = 60
 _DEFAULT_RATE_LIMIT = 60
 _rate_buckets: dict[str, tuple[float, int]] = {}
 
+# The bucket dict is keyed on caller-controlled values — the API key when one is configured, and
+# otherwise the CLIENT IP — and nothing ever removed an entry. A long-running public server
+# therefore accumulates one entry per distinct client forever, and an attacker with many source
+# addresses (trivial over IPv6) grows it without bound. That is memory exhaustion reachable by
+# anyone who can reach the port, in the one component of this project that listens on a socket.
+#
+# Eviction is opportunistic rather than a background task: a sweep runs when the dict crosses the
+# soft cap, dropping every bucket whose window has already expired. Expired buckets are dead
+# weight — `_rate_limited` resets any bucket older than the window on its next hit — so removing
+# them changes no decision the limiter makes.
+_RATE_BUCKET_SOFT_CAP = 4096
+
+
+def _evict_stale_buckets(now: float) -> None:
+    """Drop buckets whose window has expired. No-op below the soft cap."""
+    if len(_rate_buckets) <= _RATE_BUCKET_SOFT_CAP:
+        return
+    stale = [k for k, (started, _n) in _rate_buckets.items() if now - started >= _RATE_WINDOW_SECONDS]
+    for k in stale:
+        del _rate_buckets[k]
+    # Still over the cap means every bucket is live — a genuine burst of distinct clients rather
+    # than accumulation. Drop the oldest so memory stays bounded; the worst case for a dropped
+    # caller is one extra request allowed, which is strictly safer than the server falling over.
+    if len(_rate_buckets) > _RATE_BUCKET_SOFT_CAP:
+        for k, _v in sorted(_rate_buckets.items(), key=lambda kv: kv[1][0])[
+            : len(_rate_buckets) - _RATE_BUCKET_SOFT_CAP
+        ]:
+            del _rate_buckets[k]
+
 
 def _rate_limit() -> int:
     """Requests allowed per window. 0 disables. Read per call so tests and ops can change it."""
@@ -327,6 +356,7 @@ def _rate_limited(request: Request, credential: str) -> int | None:
     bucket_key = credential or client
 
     now = time.monotonic()
+    _evict_stale_buckets(now)
     started, count = _rate_buckets.get(bucket_key, (now, 0))
     if now - started >= _RATE_WINDOW_SECONDS:
         started, count = now, 0

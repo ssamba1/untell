@@ -865,3 +865,70 @@ class TestNumericFieldsAreBounded:
                 "/score", json={"text": self.TEXT, "threshold": 0.3, "tier": "lite"}
             )
         assert resp.status_code == 200, resp.text
+
+
+class TestRateBucketsCannotGrowWithoutBound:
+    """`_rate_buckets` is keyed on caller-controlled values and nothing ever removed an entry.
+
+    With no API key configured the key is the CLIENT IP, so an attacker with many source addresses
+    — trivial over IPv6 — grows the dict without bound. That is memory exhaustion reachable by
+    anyone who can reach the port, in the one component of this project that listens on a socket.
+    A long-running public server hits the same thing without malice, one entry per client forever.
+    """
+
+    def test_expired_buckets_are_dropped(self):
+        import time
+
+        import untell.api_server as api
+
+        api._rate_buckets.clear()
+        now = time.monotonic()
+        for i in range(api._RATE_BUCKET_SOFT_CAP + 1000):
+            api._rate_buckets[f"ip{i}"] = (now - api._RATE_WINDOW_SECONDS - 1, 1)
+        api._evict_stale_buckets(now)
+        assert not api._rate_buckets, "expired buckets survived the sweep"
+
+    def test_a_burst_of_live_clients_is_still_capped(self):
+        """Every bucket live means a genuine burst, not accumulation. Memory must stay bounded
+        anyway: the worst case for a dropped caller is one extra request allowed, which is strictly
+        safer than the server falling over."""
+        import time
+
+        import untell.api_server as api
+
+        api._rate_buckets.clear()
+        now = time.monotonic()
+        for i in range(api._RATE_BUCKET_SOFT_CAP + 1000):
+            api._rate_buckets[f"ip{i}"] = (now, 1)
+        api._evict_stale_buckets(now)
+        assert len(api._rate_buckets) <= api._RATE_BUCKET_SOFT_CAP
+
+    def test_eviction_is_a_noop_below_the_cap(self):
+        """The sweep runs on every request, so it must cost nothing in the normal case."""
+        import time
+
+        import untell.api_server as api
+
+        api._rate_buckets.clear()
+        now = time.monotonic()
+        for i in range(10):
+            api._rate_buckets[f"ip{i}"] = (now - api._RATE_WINDOW_SECONDS - 1, 1)
+        api._evict_stale_buckets(now)
+        assert len(api._rate_buckets) == 10, "stale entries were dropped below the cap"
+
+    def test_the_limiter_still_limits_after_eviction(self):
+        """The point of the guard is memory, not permissiveness. Eviction must not hand an
+        over-limit caller a clean slate while its own window is still open."""
+        import time
+
+        import untell.api_server as api
+
+        api._rate_buckets.clear()
+        now = time.monotonic()
+        # One live caller, already over any sane limit, plus enough expired noise to trip the sweep.
+        api._rate_buckets["attacker"] = (now, 10_000)
+        for i in range(api._RATE_BUCKET_SOFT_CAP + 100):
+            api._rate_buckets[f"old{i}"] = (now - api._RATE_WINDOW_SECONDS - 1, 1)
+        api._evict_stale_buckets(now)
+        assert "attacker" in api._rate_buckets, "a live over-limit bucket was evicted"
+        assert api._rate_buckets["attacker"][1] == 10_000, "its count was reset"
