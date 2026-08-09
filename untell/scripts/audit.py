@@ -330,6 +330,8 @@ def check_derivable(report: Report) -> None:
                 f"named but absent: {absent[:5]}" if absent else f"{len(named)} named",
             )
 
+    check_demo_privacy_claims(report)
+
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
     for rel in LIVE_DOCS:
@@ -350,6 +352,48 @@ def check_derivable(report: Report) -> None:
 # ---------------------------------------------------------------------------
 
 _BOLD_NUMBER = re.compile(r"\*\*([^*\n]{0,80}?\d[^*\n]{0,80}?)\*\*")
+
+
+_LOCAL_SCORING_CLAIMS = (
+    "nothing uploaded",
+    "never uploaded",
+    "client-side port",
+    "scores in the browser",
+    "runs entirely in your browser",
+)
+
+
+def check_demo_privacy_claims(report: Report) -> None:
+    """Fail if a document says the browser demo scores locally while the page calls out.
+
+    The changelog advertised ``docs/demo.html`` as a client-side port of the lite scorer that
+    uploaded nothing. The page POSTs the text to an ``untell-server``. Of every kind of
+    documentation drift, this is the one a reader can be harmed by acting on — pasting something
+    they would not have sent had the page said where it was going.
+
+    No attempt is made to distinguish a claim from a disavowal of one: that needs to read the
+    prose, and a heuristic for it broke on the first correction that spanned two lines. The rule
+    is that the phrases do not appear, so a correction must describe the old wording, not quote it.
+    """
+    demo = REPO / "docs" / "demo.html"
+    if not demo.exists():
+        return
+    posts = "fetch(" in demo.read_text(encoding="utf-8", errors="replace")
+    offenders: list[str] = []
+    if posts:
+        for rel in (*LIVE_DOCS, "CHANGELOG.md"):
+            doc = REPO / rel
+            if not doc.exists():
+                continue
+            text = doc.read_text(encoding="utf-8", errors="replace").lower()
+            offenders += [f"{rel}: {p}" for p in _LOCAL_SCORING_CLAIMS if p in text]
+    report.check(
+        "no document claims the browser demo scores locally",
+        not offenders,
+        f"demo.html POSTs to the API, but: {sorted(set(offenders))}"
+        if offenders
+        else ("demo.html POSTs to the API and no document says otherwise" if posts else "n/a"),
+    )
 
 
 def check_attribution(report: Report) -> None:

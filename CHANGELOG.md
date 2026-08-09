@@ -66,8 +66,13 @@ All notable changes to this project are documented here. The format is based on
 - **One-line installers** (`install.sh` / `install.ps1`) — install the skill in a single command.
 - **Claude Code plugin** packaging (`.claude-plugin/plugin.json` + `marketplace.json`): install via
   `/plugin marketplace add ssamba1/untell` then `/plugin install untell@untell`.
-- **In-browser AI detector** (`docs/demo.html`) — a client-side port of the lite scorer; paste text, get an
-  instant AI-tell score, nothing uploaded.
+- **Browser demo** (`docs/demo.html`) — a front-end for the REST API: paste text, get before/after
+  scoring and a word-level diff. It does **not** score in the browser; the text is POSTed to an
+  `untell-server` instance, which is your own machine unless you point `?api=` somewhere else.
+  (An earlier entry here described the page as scoring locally and promised the text stayed on the
+  machine. It never did either. A privacy promise the shipped page does not keep is worse than no
+  promise, so `untell-audit` now fails the build if any document makes that claim while the page
+  still contains a `fetch(`.)
 - SEO-first README: badges, before/after proof up top, capability comparison table, and an FAQ targeting the
   real search queries (free AI humanizer, bypass GPTZero/Turnitin, meaning preservation).
 - Community health files: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md`, `CITATION.cff`,

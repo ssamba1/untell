@@ -176,3 +176,47 @@ def test_the_meaning_gate_kill_switches_are_documented_as_such():
     assert "unverified" in section or "reversed" in section, (
         "the DISABLE switches are listed without saying what they remove"
     )
+
+
+def _demo_claim_finding(tmp_path, monkeypatch, page: str, doc_text: str):
+    """Run the real check against a throwaway repo and return its finding.
+
+    This calls ``check_derivable`` rather than reimplementing the rule, so the test fails if the
+    rule is deleted — which is the whole point of a guard on a guard.
+    """
+    (tmp_path / "docs").mkdir(exist_ok=True)
+    (tmp_path / "docs" / "demo.html").write_text(page, encoding="utf-8")
+    (tmp_path / "CHANGELOG.md").write_text(doc_text, encoding="utf-8")
+    monkeypatch.setattr(audit, "REPO", tmp_path)
+    monkeypatch.setattr(audit, "LIVE_DOCS", ())
+    report = audit.Report()
+    audit.check_demo_privacy_claims(report)
+    name = "no document claims the browser demo scores locally"
+    return next((f for f in report.findings if f.name == name), None)
+
+
+def test_a_false_local_scoring_claim_is_caught(tmp_path, monkeypatch):
+    """The changelog promised docs/demo.html scored in the browser and uploaded nothing. The page
+    POSTs the text to a server. Of every kind of documentation drift this repo has had, that is the
+    one a reader can be harmed by acting on."""
+    finding = _demo_claim_finding(
+        tmp_path,
+        monkeypatch,
+        page="<script>fetch('/score')</script>",
+        doc_text="- In-browser detector: a client-side port of the scorer, nothing uploaded.\n",
+    )
+    assert finding is not None, "the check did not run"
+    assert not finding.ok, "a false local-scoring claim was not reported"
+
+
+def test_the_claim_check_passes_when_the_page_really_is_local(tmp_path, monkeypatch):
+    """The rule is conditional on the page actually calling out. A page with no ``fetch(`` may
+    legitimately say it scores locally — otherwise the check would block ever shipping one."""
+    finding = _demo_claim_finding(
+        tmp_path,
+        monkeypatch,
+        page="<script>function score(t){return t.length}</script>",
+        doc_text="- In-browser detector: a client-side port of the scorer, nothing uploaded.\n",
+    )
+    assert finding is not None, "the check did not run"
+    assert finding.ok, f"a genuinely local page was reported as lying: {finding.detail}"
