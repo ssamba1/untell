@@ -25,6 +25,7 @@ kind of lie it exists to catch.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
@@ -356,6 +357,7 @@ def check_derivable(report: Report) -> None:
     check_largest_repo_claims(report)
     check_test_inventory(report)
     check_test_count_claims(report)
+    check_no_dead_functions(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -770,6 +772,59 @@ def check_test_count_claims(report: Report) -> None:
         "every 'N tests' claim is close to what pytest collects",
         not wrong,
         "; ".join(wrong) if wrong else f"{checked} claim(s) within 10% of {actual} collected",
+    )
+
+
+# Names that are reached without being written anywhere: an argparse subcommand, a console-script
+# entry point, a framework hook. `main`/`run`/`build_parser` are the entry-point trio this repo
+# uses; a decorated function is registered by its decorator, which is why the FastAPI routes and
+# middleware do not appear by name in any caller.
+_REACHED_WITHOUT_A_CALLER = {"main", "run", "build_parser"}
+
+
+def check_no_dead_functions(report: Report) -> None:
+    """No function in untell/ or eval/ may be unreferenced everywhere.
+
+    A function nobody calls is either a bug (something stopped calling it) or clutter, and both
+    read the same in a diff. This is a textual reference count rather than a call graph, which is
+    the right trade for a codebase that dispatches rewriters and detectors by string name — a call
+    graph would report every registry entry as dead.
+
+    Decorated functions are exempt because their decorator is the registration: `@app.post` and
+    `@app.middleware` were the only two hits when this was first run over 343 functions, and both
+    are live routes.
+    """
+    defined: dict[str, list[str]] = {}
+    decorated: set[str] = set()
+    sources = [*(REPO / "untell").rglob("*.py"), *(REPO / "eval").rglob("*.py")]
+    for path in sources:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError):
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                rel = path.relative_to(REPO).as_posix()
+                defined.setdefault(node.name, []).append(f"{rel}:{node.lineno}")
+                if node.decorator_list:
+                    decorated.add(node.name)
+
+    searched = [*sources, *(REPO / "tests").rglob("*.py"),
+                *REPO.glob("*.toml"), *(REPO / "docs").glob("*.md"), *REPO.glob("*.md")]
+    corpus = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in searched)
+
+    dead: list[str] = []
+    for name, locations in sorted(defined.items()):
+        if name.startswith("__") or name in _REACHED_WITHOUT_A_CALLER or name in decorated:
+            continue
+        # More occurrences than definitions means something other than the `def` line mentions it.
+        if len(re.findall(rf"\b{re.escape(name)}\b", corpus)) <= len(locations):
+            dead.append(f"{name} ({locations[0]})")
+
+    report.check(
+        "no function in untell/ or eval/ is unreferenced",
+        not dead,
+        f"unreferenced: {dead[:6]}" if dead else f"{len(defined)} functions, all referenced",
     )
 
 
