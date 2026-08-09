@@ -171,6 +171,51 @@ def check_derivable(report: Report) -> None:
         f"broken: {broken_entries}" if broken_entries else f"{len(declared)} resolve",
     )
 
+    # --- every CLI flag the README shows must exist ------------------------------------------------
+    # Read from the module SOURCE, not by running `--help`. The subprocess approach looks obvious
+    # and has a silent failure mode that manufactures false alarms: the console scripts are not
+    # necessarily on PATH, `subprocess.run` then raises, and an `except` that yields empty help text
+    # makes EVERY flag look missing. A checker whose failure mode is "everything is broken" gets
+    # ignored, which is worse than not having it.
+    entry_modules: dict[str, str] = dict(
+        re.findall(r"^([\w-]+)\s*=\s*\"([\w.]+):\w+\"", scripts_table, re.MULTILINE)
+    )
+    documented: set[tuple[str, str]] = set()
+    for block in re.findall(r"```(?:bash|sh|console)\n(.*?)```", readme, re.DOTALL):
+        for line in block.splitlines():
+            head = line.split("#")[0].strip()
+            m = re.match(r"(?:\w+=\S+\s+)*(untell[\w-]*)\s+(.*)", head)
+            if not m or m.group(1) not in entry_modules:
+                continue
+            for flag in re.findall(r"(--[a-z][a-z0-9-]*)", m.group(2)):
+                documented.add((m.group(1), flag))
+
+    # Loaded up front, not lazily. The dispatcher's fallback below searches every entry module, and
+    # with a lazy cache that search saw only the modules visited SO FAR — so `untell --best-of`
+    # passed or failed depending on alphabetical order. An order-dependent check is a coin flip
+    # wearing a checkmark.
+    source_cache: dict[str, str] = {}
+    for module in set(entry_modules.values()):
+        path = REPO / Path(*module.split(".")).with_suffix(".py")
+        source_cache[module] = path.read_text(encoding="utf-8") if path.exists() else ""
+
+    unknown_flags: list[str] = []
+    for command, flag in sorted(documented):
+        module = entry_modules[command]
+        body = source_cache[module]
+        if not body:
+            unknown_flags.append(f"{command}: source for {module} not found")
+        elif flag not in body:
+            # The dispatcher delegates, so a subcommand's flag lives in the module it dispatches to.
+            if command == "untell" and any(flag in s for s in source_cache.values()):
+                continue
+            unknown_flags.append(f"{command} {flag}")
+    report.check(
+        "every CLI flag the README shows exists",
+        not unknown_flags,
+        f"unknown: {unknown_flags[:5]}" if unknown_flags else f"{len(documented)} pairs checked",
+    )
+
     # --- calibration constants the docs quote ----------------------------------------------------
     from untell.scripts.score import _STDLIB_PERPLEXITY_VERDICT_THRESHOLD, DEFAULT_THRESHOLD
 

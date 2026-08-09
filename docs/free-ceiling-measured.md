@@ -1716,3 +1716,42 @@ that would be optimising an artefact.
 
 Mean word length and long-word rate both already move toward human, so the lexical axis needs
 nothing. Recorded so the gap is known to have been examined rather than missed.
+
+---
+
+## Result 28 — a per-transform ablation, and why half of it cannot be trusted
+
+Every transform run in isolation against each detector, 14 RAID AI texts, full tier. Delta from
+the unmodified source, so more negative is better. The right-hand column is how often the stage
+changes anything at all, over 120 real texts — without it, half this table is noise.
+
+| stage | fast_detectgpt | ppl_burst | hc3_roberta | roberta_openai | fires |
+|---|---|---|---|---|---|
+| **plain register** | **−0.2198** | **−0.1444** | −0.0203 | **−0.3475** | most texts |
+| merge | −0.0633 | −0.0185 | −0.0017 | −0.0743 | most |
+| strip transitions | −0.0506 | −0.0188 | **−0.0744** | −0.0701 | most |
+| **parenthesise asides** | −0.0416 | −0.0188 | −0.0240 | −0.0795 | 7% of sentences |
+| burstiness | −0.0256 | −0.0183 | −0.0064 | −0.0074 | most |
+| split long | −0.0245 | −0.0215 | −0.0116 | −0.0074 | most |
+| clause fronting | −0.0177 | −0.0211 | −0.0196 | −0.0224 | 20% of eligible |
+| participial | −0.0088 | −0.0008 | −0.0061 | **+0.0212** | **4 / 120** |
+| cliché flattening | −0.0005 | −0.0004 | −0.0006 | 0.0000 | 14 / 120 |
+| filler openers | 0.0000 | 0.0000 | 0.0000 | 0.0000 | **1 / 120** |
+
+**The plain-register pass is worth three to five times any other transform**, on every detector.
+That is the single most useful number here: the cheapest, oldest, least glamorous stage in the
+pipeline — swapping formal vocabulary for plain words — does most of the work.
+
+### The bottom three rows are not results
+
+`filler openers` reads as dead code. It is not: its pattern (`it is worth noting that…`) fires
+correctly on its own example and appears in **1 of 120** real texts. A stage that cannot fire and a
+stage whose trigger is rare produce the same zero, and only the firing rate tells them apart.
+
+Likewise `participial` appears to make `roberta_openai` *worse* by +0.0212. It changes 4 texts in
+120, so across 14 texts it fired at most once or twice: that number is one text, not an effect.
+Reporting it as a regression would be the same error as quoting a single run of a randomised
+rewriter, which this document has had to correct three times.
+
+**An ablation without a firing rate is a list of numbers with no denominators.** Measured this way,
+seven of the eleven rows support a conclusion and four do not.
