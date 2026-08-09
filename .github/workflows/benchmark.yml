@@ -21,9 +21,19 @@ jobs:
         run: |
           pip install -e ".[dev]"
 
+      # --repeats 3, because a single run cannot tell a regression from noise. Measured on this
+      # harness (Result 34 in docs/free-ceiling-measured.md), one unrepeated run carries +/-0.013
+      # on the score and +/-0.075 on the flagged rate — wider than most real changes. The spread
+      # across repeats is what makes the comparison below mean anything.
+      #
+      # --tier lite is a deliberate and limited choice: it needs no model download, so this job
+      # stays a few minutes rather than tens, and it is reproducible week to week. It is also the
+      # tier this repo's own README calls "weak — a demo signal, not an evasion claim", so a pass
+      # here is evidence the pipeline still runs, NOT evidence the product still evades. The
+      # full-tier figures are measured deliberately and written up, not scheduled.
       - name: Measure free ceiling
         run: |
-          untell-ceiling --rewriter composite --tier lite --json \
+          untell-ceiling --rewriter composite --tier lite --repeats 3 --json \
             > benchmark-results.json
           cat benchmark-results.json
 
@@ -36,16 +46,44 @@ jobs:
       - name: Check for regression
         run: |
           python - <<'PY'
-          import json
+          import json, sys
+
           with open("benchmark-results.json") as f:
               r = json.load(f)
-          pre = r.get("pre_flagged_rate", 1.0)
-          post = r.get("post_flagged_rate", 1.0)
-          print(f"Pre-flagged rate: {pre}")
-          print(f"Post-flagged rate: {post}")
+
+          # FIRST: did the thing under test actually run? The previous version of this check
+          # compared post against pre and reported "OK: flagged rate stayed the same" when the
+          # rewriter had not loaded at all — a dead rewriter produces post == pre and sails
+          # through. That is the same failure mode as the dead detectors that used to return a
+          # neutral 0.5, and it makes a green weekly benchmark worth nothing.
+          if not r.get("rewriter_available", False):
+              sys.exit("FAIL: the rewriter did not load - these numbers describe nothing")
+          rewrote, n = r.get("rewrote", 0), r.get("n", 0)
+          if not n:
+              sys.exit("FAIL: no documents were measured")
+          if rewrote == 0:
+              sys.exit(f"FAIL: the rewriter changed 0 of {n} documents - it ran and did nothing")
+          if r.get("unscored", 0) == n:
+              sys.exit(f"FAIL: no detector could score any of the {n} documents")
+
+          pre = r.get("pre_flagged_rate")
+          post = r.get("post_flagged_rate")
+          pre_max = r.get("pre_mean_max")
+          post_max = r.get("post_mean_max")
+          spread = r.get("post_mean_max_stdev")
+          print(f"n={n} rewrote={rewrote} repeats={r.get('repeats')}")
+          print(f"flagged   {pre} -> {post}")
+          print(f"mean max  {pre_max} -> {post_max}  (stdev across repeats: {spread})")
+
+          if None in (pre, post, pre_max, post_max):
+              sys.exit("FAIL: the result is missing the fields this check reads")
+
+          # The bar is deliberately loose: this catches breakage, not drift. A tight threshold on a
+          # weekly job with a +/-0.075 flagged-rate noise floor would cry wolf until it was muted,
+          # and a muted check is worse than none.
           if post > pre:
-              print("WARNING: flagged rate increased — possible regression!")
-              exit(1)
-          else:
-              print("OK: flagged rate decreased or stayed the same.")
+              sys.exit(f"FAIL: flagged rate rose {pre} -> {post}; the rewrite made things worse")
+          if post_max > pre_max:
+              sys.exit(f"FAIL: mean max rose {pre_max} -> {post_max}")
+          print("OK: the rewriter ran, changed text, and did not make the score worse.")
           PY

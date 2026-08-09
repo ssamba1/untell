@@ -333,6 +333,20 @@ _FILLER_RE = re.compile(
 _APHORISM_RE = re.compile(
     r"\b(?:is|are|becomes?|remains?)\s+the\s+new\s+\w+"
     r"|\bis\s+the\s+\w+\s+of\s+(?:the\s+)?\w+(?:\s+(?:web|internet|world|age|era))\b"
+    # "Symmetry is the language of trust" — the pull-quote closer. The branch above only reaches
+    # this shape when it ends in web/internet/world/age/era, which is the narrower half of it. A
+    # closed list of metaphor nouns is what keeps the branch honest: "Paris is the capital of
+    # France" has the same grammar and must not match, so the noun, not the shape, does the work.
+    r"|\b(?:is|are)\s+the\s+(?:foundation|bedrock|engine|backbone|lifeblood"
+    r"|cornerstone|heartbeat|enemy|price|architecture|grammar|soul)\s+of\s+\w+"
+    # "language" and "currency" are the two nouns on that list with an everyday literal sense —
+    # "French is the language of diplomacy", "the euro is the currency of Ireland" are true
+    # statements, not aphorisms. What separates them is the subject, so name the literal subjects
+    # and exclude them. Sentence-initial capitalisation rules out the tidier test of "is the
+    # subject a proper noun", since the aphorism's subject is capitalised just as often.
+    r"|\b(?!(?:french|english|spanish|german|latin|arabic|mandarin|chinese|russian|portuguese"
+    r"|italian|japanese|korean|hindi|greek|hebrew|euro|dollar|yen|pound|peso|rupee|franc|bitcoin"
+    r")\b)\w+\s+(?:is|are)\s+the\s+(?:language|currency)\s+of\s+\w+"
     r"|\bbecomes?\s+a\s+trap\b",
     re.IGNORECASE,
 )
@@ -347,7 +361,13 @@ _RHETORICAL_OPENER_RE = re.compile(
 _CUTOFF_RE = re.compile(
     r"\b(?:as of my (?:last|latest)\s+(?:training|update|knowledge)|"
     r"up to my last training|my training data|as of my knowledge cutoff|"
-    r"maintains a low profile|i do not have access to real-?time)\b",
+    r"maintains a low profile|i do not have access to real-?time|"
+    # The first-person forms above are the easy half. The assistant hedge that actually survives
+    # into pasted output is impersonal — it reads as caution about the subject rather than about
+    # the model, which is why a reader leaves it in. Same artefact, no "my".
+    r"while (?:specific |precise |further )?details (?:are|remain) (?:limited|scarce|sparse)|"
+    r"(?:limited|little|scant) (?:public |reliable |verifiable )?information is available|"
+    r"(?:specific|precise) details (?:are|remain) (?:unclear|unavailable|undisclosed))\b",
     re.IGNORECASE,
 )
 
@@ -361,7 +381,15 @@ _CHALLENGES_RE = re.compile(
 # Notability / media-coverage padding, straight out of generated encyclopedia entries.
 _NOTABILITY_RE = re.compile(
     r"\b(?:independent coverage|(?:local|regional|national|international) media outlets|"
-    r"has been (?:widely )?(?:covered|featured) (?:in|by)|written by a leading expert)\b",
+    r"has been (?:widely )?(?:covered|featured) (?:in|by)|written by a leading expert)\b"
+    # The padding above is the generic kind. The other kind names the outlets — "cited in the New
+    # York Times, the BBC, the FT, and The Hindu" — where the roster IS the claim and no single
+    # citation is given. Three or more is the bar: one or two publications is ordinary sourcing,
+    # and a list is what turns it into notability padding. Case matters here (outlet names are
+    # proper nouns) so this branch opts out of IGNORECASE.
+    r"|\b(?:cited|featured|profiled|mentioned|covered)\s+(?:in|by)\s+"
+    r"(?-i:(?:[Tt]he\s+)?[A-Z][\w.&]*(?:\s+[A-Z][\w.&]*)*"
+    r"(?:,\s+(?:and\s+)?(?:[Tt]he\s+)?[A-Z][\w.&]*(?:\s+[A-Z][\w.&]*)*){2,})",
     re.IGNORECASE,
 )
 
@@ -382,7 +410,14 @@ _CLICHES = [
     r"navigate the complexities of", r"embark on a journey", r"explore the intricacies of",
     r"in conclusion", r"in summary", r"to summarize", r"the future looks bright",
     r"only time will tell", r"one thing is certain", r"as we move forward",
-    r"despite (?:the )?challenges,? \w+ continues to thrive", r"vibrant hub", r"thriving ecosystem",
+    # The subject between "challenges," and "continues" is a noun PHRASE, not a bare noun. The
+    # original `\w+` matched "Despite challenges, Lisbon continues to thrive" and missed "…, the
+    # sector continues to thrive" — the more common shape of the two. Bounded and non-greedy so it
+    # cannot reach across a sentence, and the verb set covers the same boosterism.
+    r"despite (?:(?:the|these|those|its|their|ongoing|numerous|several|many|significant)\s+){0,2}"
+    r"(?:challenges|obstacles|setbacks|difficulties)"
+    r"[^.]{0,40}?continues to (?:thrive|grow|flourish|expand)",
+    r"vibrant hub", r"thriving ecosystem",
     r"rich tapestry of", r"game-?changer", r"game-?changing",
     # 2024-2026 additions — corporate/AI cliché set
     r"in the age of", r"in the world of", r"it'?s no secret that", r"the bottom line is",
