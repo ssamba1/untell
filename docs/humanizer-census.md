@@ -20,8 +20,9 @@ The top 435 by relevance were then read individually: README plus source where r
 | we are the most complete open humanizer | **true only for English.** **139 of 435 (32%) target another language**, including four of the eight largest tools in the field |
 
 Counts across the 435 read: **49** detector-in-loop (44 at inference time) · **85** meaning
-verification · **131** some fact preservation · **136** any tests · **139** non-English (the
-only one of these that is a reading rather than a count derivable from the JSON).
+verification · **131** some fact preservation · **136** any tests · **139** non-English (the last two are
+readings rather than counts derivable from the JSON below, which carries neither a tests
+field nor a language field).
 
 ---
 
@@ -122,7 +123,8 @@ Narrower than before, and checkable:
    profiled repo has all four *and* an installable package.
 2. **Measurement discipline.** No profiled repo publishes negative results, refuted claims, or
    corrections to its own headline numbers. That remains genuinely unusual.
-3. **Test depth** — 1868 tests against 136 repos having "any tests" at all.
+3. **Test depth** — 2543 tests (reproduce with `pytest --collect-only -q`) against the 136
+   repos having "any tests" at all.
 
 And what it should stop claiming: that nobody else closes the loop, that its evasion numbers are
 competitive with the research systems (chengez −87.88% TPR@1%FPR; StealthRL AUROC 0.79→0.43 on
