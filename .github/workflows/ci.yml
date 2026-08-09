@@ -48,8 +48,22 @@ jobs:
           untell-score "Moreover, the system leverages synergies to facilitate outcomes." --threshold 0.30
           printf 'This sentence is plainly written. Another one here.\n' | untell-sentences
           untell-verify --help
-          # untell-mcp/-loop/-prove/-distill launch servers/loops; just assert the entry points exist.
-          command -v untell-loop untell-prove untell-mcp untell-distill
+          # `command -v` only proves the shim was written. untell-mcp passed that check while
+          # answering --help with silence, because its main() never parsed argv and went straight
+          # to serving JSON-RPC on stdin. Every script now has to actually respond; the full
+          # 23-script sweep is tests/test_console_scripts_respond.py.
+          untell-mcp --help > /dev/null
+          untell-mcp --list-tools
+          command -v untell-loop untell-prove untell-distill
+
+      # A vulnerable version of a declared dependency is a defect in this repo, not in someone
+      # else's. Advisory (`|| true`) on purpose: the alternative is a build that goes red when a
+      # CVE lands in a transitive package on a schedule nobody here controls, and a red build that
+      # is routinely ignored is worse than an amber one that gets read. The output is the point.
+      - name: Dependency advisories (advisory, does not fail the build)
+        run: |
+          pip install pip-audit
+          pip-audit --progress-spinner off --desc || true
 
   full:
     name: full-tier (torch + real detectors)
