@@ -2575,3 +2575,53 @@ Not re-tuning it here. The threshold trades false positives against AI recall al
 24 already swept, and picking a new point needs that whole sweep re-run per corpus — plus a decision
 about whether the free tier should be tuned for conversational or formal input, which is a product
 question. What is fixed is the claim: the row now gives both numbers instead of their average.
+
+## Result 44
+
+**A word boundary mangled into a backspace, and the 2526-test suite that did not notice.**
+
+Found by a new `untell-audit` check, written for a different reason. A stray carriage return had
+just been spliced into a ROADMAP row — `\ref` built in a non-raw Python string became CR + `ef`,
+which rendered as `ef` and is invisible in a diff. Python warns about `\c` and says nothing about
+`\r`, because `\r` is a valid escape; that silence is why it landed. The check that catches it
+mechanically — no tracked text file may hold a control character other than tab and newline — found
+the CR, and then found two more offenders that had nothing to do with it:
+
+| file | byte | what it was meant to be |
+|---|---|---|
+| `untell/rewriter/structural.py:1212` | `U+0008` | `\b` in `_FRONTED_RE` |
+| `untell/scripts/audit.py:113-114` | `U+0008` ×2 | `\b` in the local/commercial count patterns |
+
+Both sat inside `r"..."` strings, where a real backslash-b would be correct and a literal backspace
+looks exactly the same on screen. No text contains a backspace, so both patterns matched nothing,
+ever.
+
+`_FRONTED_RE` counts the sentences a block has **already** fronted, so the transform can stop at
+the human rate: `budget = 0.20 * eligible - already`. With the regex dead, `already` was always 0
+and the budget was always full. Measured on a six-sentence block that already fronts three of its
+three eligible sentences — a text that should receive nothing:
+
+| | already counted | budget | sentences newly fronted per run (200 draws) |
+|---|---|---|---|
+| before | 0 | +0.60 | **0.67** |
+| after | 3 | −2.40 | **0.00** |
+
+So the defect was not a dead transform but a broken calibration: untell added fronting to text that
+was already at or above the human share of it — the match-the-human-distribution failure mode
+arriving through a typo instead of through a mis-set constant.
+
+The audit patterns were vacuous in the same way — `(\d+)\s+local\b` could never match, so a check
+that reports PASS today was reporting PASS on nothing.
+
+Three things worth keeping:
+
+- **A regex that matches nothing is indistinguishable from a corpus that contains nothing.** Every
+  one of these read as a legitimate zero. The counter said "this text fronts nothing", the audit
+  said "no mismatch found", and both were true statements about an empty match set.
+- **`r"..."` does not protect you from a byte that is already wrong.** Raw strings prevent Python
+  from interpreting an escape; they do nothing about a file that already holds the interpreted
+  character. Every review of these lines read `\b`, because that is what a backspace looks like.
+- **The suite could not see it.** 2526 tests passed with the regex dead and passed with it live.
+  Nothing asserted that `_FRONTED_RE` matches a fronted sentence, so nothing distinguished the two
+  worlds. The test added with this result is that assertion, plus the below-rate case that would
+  fail if the transform stopped firing entirely.
