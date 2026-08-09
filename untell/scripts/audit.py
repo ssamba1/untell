@@ -335,6 +335,7 @@ def check_derivable(report: Report) -> None:
     check_dynamic_env_vars(report)
     check_skill_commands(report)
     check_version_consistency(report)
+    check_optional_extras(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -382,6 +383,46 @@ _CORPUS_BOUND_CLAIMS: tuple[tuple[str, str, str], ...] = (
         "same claim, other phrasing",
     ),
 )
+
+
+def check_optional_extras(report: Report) -> None:
+    """Every ``untell[extra]`` a document tells a user to install must exist.
+
+    A renamed or removed extra fails only at install time, on someone else's machine, with pip's
+    own unhelpful "does not provide the extra" — and the person hitting it is following our own
+    README. Cheap to check statically, and the audit already owns this class of drift.
+
+    The pattern requires an install context (``pip install`` on the same line, or the
+    ``untell[...]`` spelling) rather than any bracketed word, because a bare ``[...]`` scan matches
+    regex character classes: the first version of this reported ``Mm`` as an undeclared extra,
+    having found ``[Mm]`` inside a pattern in ``preserve.py``.
+    """
+    pyproject = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+    if "[project.optional-dependencies]" not in pyproject:
+        report.check("pyproject declares optional dependencies", False, "section missing")
+        return
+    block = pyproject.split("[project.optional-dependencies]", 1)[1].split("\n[", 1)[0]
+    declared = set(re.findall(r"^(\w+)\s*=\s*\[", block, re.M))
+
+    sources: list[Path] = [
+        *REPO.glob("*.md"),
+        *(REPO / "docs").glob("*.md"),
+        *(REPO / ".github" / "workflows").glob("*.yml"),
+    ]
+    unknown: dict[str, str] = {}
+    for path in sources:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for match in re.finditer(r'untell\[([\w,\s]+)\]|pip install[^\n]*?\.\[([\w,\s]+)\]', text):
+            for name in (match.group(1) or match.group(2)).replace(" ", "").split(","):
+                if name and name not in declared:
+                    unknown.setdefault(name, path.relative_to(REPO).as_posix())
+
+    report.check(
+        "every extra the docs tell a user to install exists",
+        not unknown,
+        f"undeclared: {unknown}" if unknown
+        else f"{len(declared)} extras declared, all references resolve",
+    )
 
 
 def check_version_consistency(report: Report) -> None:
