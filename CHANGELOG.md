@@ -146,6 +146,37 @@ All notable changes to this project are documented here. The format is based on
   console scripts are `untell-*`, and the skill is `/untell`. The `humanize` skill verb stays as plain English.
 
 ### Fixed
+- **Both model-backed meaning gates stopped reading part-way through the document.** The entailment
+  gate tokenises (original, rewrite) as one sequence truncated at 256 tokens, and the similarity
+  gate's embedding backends truncate too, so each was scoring only the front of a long input while
+  reporting a verdict about all of it. Measured with the *same* edit moved to a different position:
+  a negation 143 words in scored **0.0179** — the contradiction score for two identical strings —
+  and replacing a whole sentence 280 words in scored a similarity of **1.0000**. Neither is a
+  mis-set threshold; the changed text was never fed to the model, so no bar could have caught it,
+  and a rewriter could invert any claim after roughly the first 130 words unnoticed. Both gates now
+  score `difflib`-aligned chunks and take the worst (`max` contradiction, `min` similarity), which
+  costs 0.17s → 0.57s per pair on a 298-word input and rejects 0 of 30 real rewrites. `roles`,
+  `hedges` and `numerals` were probed the same way and are position-independent to 552 words.
+- **A substitution could strengthen a claim, and no gate could ever catch it.**
+  `demonstrates → proves` scores 0.993 entailment with 0.0009 contradiction — it passes cleanly and
+  always will, because a strictly stronger claim entails the weaker one by construction.
+  Entailment is the wrong instrument for this class, so the offenders are removed at source:
+  `prove`/`proves`/`proving`, `arguably → possibly`, `unprecedented → record`,
+  `various → all sorts of`. Also `demonstrate → display`, which was simply ungrammatical
+  ("the experiments display **that** it works"), and `arguably → one could say`, which put a clause
+  in an adverb slot.
+- **The pronoun "I" was being lowercased** — `"...slow, and i believe the cache was cold."` It sat
+  in the 220-word safe-to-lowercase list among the other pronouns, and it is the one word in
+  English that never is.
+- **A quotation was merged into the narration**, producing
+  `'"...," she said, and "And, the cost is prohibitive.".'` — the connector landing before an
+  opening quote, and a second full stop appended because the quoted sentence's own stop is inside
+  the quotation where `rstrip` cannot reach it.
+- **`untell-mcp --help` printed nothing and started a server.** `main()` never parsed `argv`, so
+  the flag fell through to serving JSON-RPC on stdin. `untell-audit` passed this script because it
+  checks that entry points *resolve*, which is not the same as running.
+- **Three tests were failing in CI's full-tier job**, asserting numbers only true of the
+  pure-Python lite scorer while reading that path out of the ambient environment.
 - **`.tex` input was a complete no-op.** `document` is an environment, so preserve-lock masked the entire
   file and the rewriter saw nothing to change. End-to-end score on a LaTeX document: 0.6261 → 0.0815.
 - **Sentence-boundary detection ignored half the sentinels.** `_plain_register` re-stashes preserve-locks
