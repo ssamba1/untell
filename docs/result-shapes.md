@@ -35,7 +35,7 @@ score_text        ai_percent, detector_modes, detectors, flagged, max, mean, thr
                   + failed_detectors and detector_errors, only when a detector raised
 
 score_tells       burstiness_cv, by_category, by_evidence, language_supported,
-                  low_burstiness, tells, tells_per_100w, words
+                  low_burstiness, tells, tells_per_100w, words, warning (only when a caveat applies)
 
 score_sentences   flagged, note, sentences, threshold, tier
 
