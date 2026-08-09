@@ -337,8 +337,12 @@ _APHORISM_RE = re.compile(
     # this shape when it ends in web/internet/world/age/era, which is the narrower half of it. A
     # closed list of metaphor nouns is what keeps the branch honest: "Paris is the capital of
     # France" has the same grammar and must not match, so the noun, not the shape, does the work.
+    # "price" was on this list and was the only human false positive in 1,200 documents — "the cost
+    # of gasoline at the pump is the price of oil" is a literal price. Unlike language and currency
+    # it cannot be rescued by naming its literal subjects, because the literal sense takes an open
+    # set of commodities, so it is dropped rather than guarded.
     r"|\b(?:is|are)\s+the\s+(?:foundation|bedrock|engine|backbone|lifeblood"
-    r"|cornerstone|heartbeat|enemy|price|architecture|grammar|soul)\s+of\s+\w+"
+    r"|cornerstone|heartbeat|enemy|architecture|grammar|soul)\s+of\s+\w+"
     # "language" and "currency" are the two nouns on that list with an everyday literal sense —
     # "French is the language of diplomacy", "the euro is the currency of Ireland" are true
     # statements, not aphorisms. What separates them is the subject, so name the literal subjects
