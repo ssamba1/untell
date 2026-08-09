@@ -2625,3 +2625,57 @@ Three things worth keeping:
   Nothing asserted that `_FRONTED_RE` matches a fronted sentence, so nothing distinguished the two
   worlds. The test added with this result is that assertion, plus the below-rate case that would
   fail if the transform stopped firing entirely.
+
+## Result 45
+
+**`tells/100w` points the right way, and is mostly one category.**
+
+Re-derivation of the defect row "the headline naturalness metric pointed **backwards** on real
+text", at n=100 pairs per corpus.
+
+| corpus | human tells/100w | AI tells/100w | direction |
+|---|---|---|---|
+| HC3 | 0.551 | 7.335 | correct, gap +6.78 |
+| RAID | 1.215 | 12.884 | correct, gap +11.67 |
+
+The row is fixed: the metric ranks AI text above human text on both corpora, by a wide margin. But
+the original defect was a *component* pointing the wrong way while the aggregate looked fine, so the
+aggregate agreeing is not the end of the check. Per category:
+
+| | HC3 | RAID |
+|---|---|---|
+| `repeated_phrasing` share of every tell counted | **91.1%** | **82.7%** |
+| all other categories combined, per AI text | 1.34 hits | 6.74 hits |
+| categories firing on ≤5% of AI texts | 4 of 9 | 6 of 12 |
+| categories that never fired on AI text at all | 7 of 16 | 4 of 16 |
+
+So `tells/100w` is, to a first approximation, a repeated-phrasing meter wearing the name of a
+sixteen-category catalogue. That is not a defect — the metric does the job the row asked about —
+but it does mean a change to `repeated_phrasing` moves the headline number and a change to anything
+else effectively does not.
+
+**Nine categories appear to point backwards, and none of them do.** Read as rates, nine categories
+show human above AI on at least one corpus, three of them on both (`em_dash`, `semicolon_crutch`,
+`inflated_copula`). Read as counts, over 200 texts:
+
+| category | HC3 human / AI | RAID human / AI |
+|---|---|---|
+| `em_dash` | 2 / 0 | 1 / 0 |
+| `semicolon_crutch` | 4 / 0 | 4 / 3 |
+| `inflated_copula` | 1 / 0 | 1 / 1 |
+
+Single-digit hits. Every one of those "inversions" is one or two paragraphs, and a rate computed
+from two hits and printed to three decimals looks exactly like a finding. The direction of a
+near-inert pattern is not measurable at this n, and reporting one would have been the same error as
+the original row in the opposite direction.
+
+Two things worth keeping:
+
+- **A correct aggregate can rest on one component.** Checking the headline number told us nothing
+  about fifteen of the sixteen categories, and the original defect lived in exactly that gap.
+- **Normalise, then look at the raw count before believing the normalised value.** Per-100-word
+  rates made four categories look like real inversions. The counts behind them were 1, 1, 2 and 4.
+
+The direction is now a test (`tests/test_tells_point_the_right_way.py`) with offline fixtures that
+reproduce the corpus separation closely — 11.66 AI vs 0.52 human, against 7.3/0.6 on HC3 — so CI
+catches an inversion without a corpus download.
