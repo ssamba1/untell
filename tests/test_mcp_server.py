@@ -255,3 +255,52 @@ class TestMcpRejectsOutOfRangeArguments:
         text = "Furthermore, the system leverages robust methodologies to optimize outcomes."
         assert "unknown tier" in tools["score"](text, tier="fulll").get("error", "")
         assert "outside 1..100" in tools["untell"](text, tier="lite", max_iters=0).get("error", "")
+
+
+def test_advertised_tool_names_match_what_the_server_registers():
+    """`--help` and `--list-tools` print a literal list, because they must work on an install
+    without the optional `mcp` package. A literal drifts; this is what stops it.
+
+    Registration is not uniform — most tools use the `@server.tool()` decorator but `untell` is
+    registered manually afterwards, because the decorator snapshots `__doc__` at registration time
+    and the style list is patched in after definition. So the check has to ask the built server,
+    not the source.
+    """
+    mcp = pytest.importorskip("mcp")  # noqa: F841
+    import asyncio
+
+    from untell.mcp_server import _TOOL_NAMES, _server
+
+    registered = {t.name for t in asyncio.run(_server().list_tools())}
+    assert registered == set(_TOOL_NAMES), (
+        f"registered but not advertised: {sorted(registered - set(_TOOL_NAMES))}; "
+        f"advertised but not registered: {sorted(set(_TOOL_NAMES) - registered)}"
+    )
+
+
+def test_help_does_not_start_the_server():
+    """`untell-mcp --help` used to print nothing and exit 0, having briefly started a JSON-RPC
+    server that blocked on stdin. Silence is indistinguishable from a broken install."""
+    from untell.mcp_server import build_parser
+
+    with pytest.raises(SystemExit) as exc:
+        build_parser().parse_args(["--help"])
+    assert exc.value.code == 0
+
+
+def test_list_tools_flag_exits_without_starting_the_server(capsys):
+    from untell.mcp_server import _TOOL_NAMES, main
+
+    assert main(["--list-tools"]) == 0
+    printed = capsys.readouterr().out.split()
+    assert printed == list(_TOOL_NAMES)
+
+
+def test_an_unknown_flag_is_rejected_rather_than_ignored():
+    """The bug underneath the missing --help: argv was never parsed, so any flag at all fell
+    through to starting a server."""
+    from untell.mcp_server import build_parser
+
+    with pytest.raises(SystemExit) as exc:
+        build_parser().parse_args(["--not-a-real-flag"])
+    assert exc.value.code != 0

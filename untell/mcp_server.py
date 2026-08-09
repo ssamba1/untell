@@ -1,7 +1,9 @@
 """MCP server — expose the humanizer as tools to Claude Desktop and other MCP clients.
 
 Run: ``untell-mcp`` (after ``pip install -e ".[mcp]"``). Register it in your MCP client's config.
-Tools: ``score``, ``sentences``, ``tells``, ``untell``, ``verify``, ``compare``, ``ceiling``, ``scrub``.
+Tools: ``score``, ``sentences``, ``tells``, ``untell``, ``verify_commercial``, ``compare``,
+``ceiling``, ``scrub`` — the authoritative list is ``_TOOL_NAMES`` below, and ``untell-mcp
+--list-tools`` prints it. (This line said ``verify``; no such tool has ever been registered.)
 
 The ``mcp`` package is imported lazily so this module imports fine without it (the server build needs
 it). Keeping logic thin: each tool delegates to the same functions the CLIs use.
@@ -9,6 +11,7 @@ it). Keeping logic thin: each tool delegates to the same functions the CLIs use.
 
 from __future__ import annotations
 
+import argparse
 import logging
 
 # Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
@@ -20,6 +23,13 @@ _FREE_REWRITERS = frozenset(
 
 
 _TIERS = ("lite", "full", "heavy", "commercial")
+
+# The tools this server registers. A literal rather than a derived list because `_server()`
+# needs the optional `mcp` package, and `--help` must work on an install that does not have it.
+# tests/test_mcp_server.py asserts this matches what the server actually registers, so the two
+# cannot drift apart silently.
+_TOOL_NAMES = ("score", "sentences", "tells", "untell", "verify_commercial",
+               "ceiling", "compare", "scrub")
 
 
 # Module level, not nested in `_server`, so the checks are testable without the optional `mcp`
@@ -306,7 +316,38 @@ def _server():
     return server
 
 
+def build_parser() -> argparse.ArgumentParser:
+    """Every other console script in this package answers ``--help``; this one did not.
+
+    ``main`` ignored ``argv`` entirely and went straight to ``_server().run()``, which speaks the
+    MCP protocol over stdin/stdout. So ``untell-mcp --help`` printed nothing and exited 0 — and any
+    mistyped flag silently started a server that then blocked waiting for JSON-RPC on a terminal.
+    Silence is the worst possible response to ``--help``: it is indistinguishable from a broken
+    install, and the thing it actually did was invisible.
+    """
+    p = argparse.ArgumentParser(
+        prog="untell-mcp",
+        description=(
+            "Run the untell MCP server. It speaks JSON-RPC over stdin/stdout and is meant to be "
+            "launched by an MCP client (Claude Desktop and similar), not run by hand — started "
+            "from a terminal it will simply wait for input. Register it in your client's config "
+            "instead. Tools exposed: " + ", ".join(_TOOL_NAMES) + "."
+        ),
+        epilog="Requires the optional dependency: pip install -e \".[mcp]\"",
+    )
+    p.add_argument(
+        "--list-tools",
+        action="store_true",
+        help="print the tool names this server exposes and exit, without starting it",
+    )
+    return p
+
+
 def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if args.list_tools:
+        print("\n".join(_TOOL_NAMES))
+        return 0
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     _server().run()
     return 0
