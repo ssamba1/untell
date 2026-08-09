@@ -1028,3 +1028,91 @@ class TestTheScoreResponseIsSafeToConsume:
         assert "hc3_roberta__error" in result["detectors"], (
             "the library-level sidecar was removed; in-repo consumers filter on it"
         )
+
+
+class TestTheOpenApiSchemaDescribesTheRealResponse:
+    """The README advertises OpenAPI docs. Every endpoint returned a bare ``dict``, so FastAPI
+    generated ``{"type": "object", "additionalProperties": true}`` for all seven — a page that tells
+    a client nothing about what comes back.
+
+    The schemas are attached with ``responses=``, not ``response_model=``, and that choice matters:
+    a response model FILTERS, silently dropping any key it does not declare. Several of these
+    responses carry keys only in particular circumstances — ``failed_detectors`` and
+    ``detector_errors`` when a detector dies, ``warning`` on a tier downgrade — so a strict model
+    would delete exactly the diagnostics a caller most needs. Describing without constraining is the
+    right trade, but it means nothing enforces that the description is true. These tests do.
+    """
+
+    @staticmethod
+    def _schema(path: str, method: str = "post") -> dict:
+        from untell.api_server import app
+
+        return app.openapi()["paths"][path][method]["responses"]["200"]["content"][
+            "application/json"
+        ]["schema"]
+
+    @staticmethod
+    def _client():
+        from fastapi.testclient import TestClient
+
+        from untell.api_server import app
+
+        return TestClient(app)
+
+    TEXT = "Moreover, the framework leverages a robust approach to deliver outcomes for teams."
+
+    CALLS = [
+        ("/health", "get", None),
+        ("/score", "post", {"text": TEXT, "tier": "lite"}),
+        ("/tells", "post", {"text": TEXT}),
+        ("/sentences", "post", {"text": TEXT + " It works well enough.", "tier": "lite"}),
+        ("/verify", "post", {"text": TEXT}),
+    ]
+
+    @pytest.mark.parametrize("path,method,body", CALLS)
+    def test_every_required_field_is_actually_returned(self, path, method, body):
+        client = self._client()
+        response = client.get(path) if method == "get" else client.post(path, json=body)
+        assert response.status_code == 200
+        payload = response.json()
+        missing = [k for k in self._schema(path, method).get("required", []) if k not in payload]
+        assert not missing, f"{path} declares {missing} required but did not return them"
+
+    @pytest.mark.parametrize("path,method,body", CALLS)
+    def test_no_documented_field_is_stale(self, path, method, body):
+        """A property the endpoint no longer returns is a promise the schema is still making.
+
+        Conditional fields are excluded by name: they are documented precisely because they appear
+        only sometimes, and their absence in a healthy call is correct.
+        """
+        conditional = {"warning", "failed_detectors", "detector_errors", "note", "results"}
+        client = self._client()
+        response = client.get(path) if method == "get" else client.post(path, json=body)
+        payload = response.json()
+        documented = set(self._schema(path, method).get("properties", {}))
+        stale = sorted(documented - set(payload) - conditional)
+        assert not stale, f"{path} documents fields it did not return: {stale}"
+
+    def test_no_endpoint_is_left_undescribed(self):
+        """Guards against a new route shipping with the empty schema all seven started with."""
+        from untell.api_server import app
+
+        undescribed = []
+        for path, ops in app.openapi()["paths"].items():
+            for method, op in ops.items():
+                schema = (
+                    op.get("responses", {}).get("200", {})
+                    .get("content", {}).get("application/json", {}).get("schema", {})
+                )
+                if not schema.get("properties"):
+                    undescribed.append(f"{method.upper()} {path}")
+        assert not undescribed, f"undocumented response shape: {undescribed}"
+
+    def test_describing_does_not_filter(self):
+        """The reason for `responses=` over `response_model=`. `detector_modes` is returned but not
+        required; if a response model were introduced it would vanish and this would catch it."""
+        payload = self._client().post(
+            "/score", json={"text": self.TEXT, "tier": "lite"}
+        ).json()
+        assert "detector_modes" in payload
+        assert "verdict_threshold" in payload

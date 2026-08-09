@@ -402,7 +402,155 @@ async def auth_middleware(request: Request, call_next) -> JSONResponse | Respons
 # ---------------------------------------------------------------------------
 
 
-@app.get("/health")
+# --- documented response shapes ------------------------------------------------------------------
+# Every endpoint returns a bare ``dict``, so FastAPI generated `{"type": "object",
+# "additionalProperties": true}` for all seven — that is, the OpenAPI page the README advertises
+# told a client nothing whatsoever about what comes back.
+#
+# Attached with ``responses=`` rather than ``response_model=`` on purpose. A response model FILTERS:
+# any key not declared is silently dropped from the payload. Several of these responses carry keys
+# only in particular circumstances — ``failed_detectors`` and ``detector_errors`` appear when a
+# detector dies, ``warning`` when the tier is downgraded — and a strict model would delete exactly
+# the diagnostics a caller most needs, turning a documentation improvement into data loss. These
+# describe without constraining.
+def _obj(description: str, properties: dict, *, required: list[str] | None = None) -> dict:
+    return {
+        200: {
+            "description": description,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": properties,
+                        "required": required or [],
+                        "additionalProperties": True,
+                    }
+                }
+            },
+        }
+    }
+
+
+_NUM = {"type": "number"}
+_STR = {"type": "string"}
+_BOOL = {"type": "boolean"}
+_INT = {"type": "integer"}
+_SCORE_MAP = {
+    "type": "object",
+    "additionalProperties": {"type": ["number", "null"]},
+    "description": "detector name -> P(AI) in [0,1], or null when that detector produced no score",
+}
+
+_HEALTH_RESPONSES = _obj(
+    "Service and detector-stack status.",
+    {
+        "status": _STR, "version": _STR, "detector_tier": _STR, "detector_count": _INT,
+        "detectors": {"type": "array", "items": _STR},
+    },
+    required=["status", "version"],
+)
+
+_SCORE_RESPONSES = _obj(
+    "AI-likelihood for the text.",
+    {
+        "tier": {**_STR, "description": "the tier that actually produced numbers"},
+        "tier_requested": {**_STR, "description": "what was asked for; differs when detectors failed"},
+        "detectors": _SCORE_MAP,
+        "detector_errors": {
+            "type": "object", "additionalProperties": _STR,
+            "description": "present only when a detector raised: name -> message",
+        },
+        "failed_detectors": {
+            "type": "array", "items": _STR,
+            "description": "present only when a detector raised",
+        },
+        "detector_modes": {
+            "type": "object", "additionalProperties": _STR,
+            "description": "which scoring path ran, where a detector has more than one",
+        },
+        "max": {**_NUM, "description": "highest P(AI) across detectors — the headline number"},
+        "mean": _NUM,
+        "ai_percent": {**_NUM, "description": "max * 100"},
+        "threshold": {**_NUM, "description": "the value supplied by the caller"},
+        "verdict_threshold": {
+            **_NUM,
+            "description": "the calibrated bar `flagged` is decided on; not always `threshold`",
+        },
+        "flagged": _BOOL,
+        "warning": {**_STR, "description": "present only when the effective tier was downgraded"},
+    },
+    required=["tier", "detectors", "max", "ai_percent", "flagged"],
+)
+
+_TELLS_RESPONSES = _obj(
+    "Mechanical AI-tell counts. Lower is more human-reading.",
+    {
+        "words": _INT, "tells": _INT, "tells_per_100w": _NUM,
+        "by_category": {"type": "object", "additionalProperties": _INT},
+        "by_evidence": {
+            "type": "object", "additionalProperties": _INT,
+            "description": "counts split by how incriminating the category is: strong/moderate/weak",
+        },
+        "burstiness_cv": {"type": ["number", "null"]},
+        "low_burstiness": _BOOL,
+        "language_supported": {
+            **_BOOL,
+            "description": "false when the text is mostly a script this English catalogue "
+                           "cannot match; the counts are then not evidence of anything",
+        },
+    },
+    required=["words", "tells", "tells_per_100w", "by_category", "language_supported"],
+)
+
+_SENTENCES_RESPONSES = _obj(
+    "Per-sentence scores and the sentences worth rewriting.",
+    {
+        "tier": _STR, "threshold": _NUM,
+        "sentences": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
+        "flagged": {"type": "array", "items": _STR},
+        "note": {**_STR, "description": "caveat about what this tier's targeting is worth"},
+    },
+    required=["tier", "sentences", "flagged"],
+)
+
+_VERIFY_RESPONSES = _obj(
+    "Commercial-detector verification. Only detectors with a configured key are consulted.",
+    {
+        "configured": {"type": "array", "items": _STR},
+        "threshold": _NUM,
+        "results": {"type": "object", "additionalProperties": True},
+        "passes_all": _BOOL, "n_configured": _INT, "n_passing": _INT,
+    },
+    required=["configured", "passes_all", "n_configured"],
+)
+
+_HUMANIZE_RESPONSES = _obj(
+    "The rewritten text plus before/after evidence.",
+    {
+        "final": {**_STR, "description": "the rewritten text — this is the output"},
+        "iterations": _INT, "rewrites": _INT, "adopted": _INT, "changed": _BOOL,
+        "pre": {"type": "object", "additionalProperties": True, "description": "score before"},
+        "post": {"type": "object", "additionalProperties": True, "description": "score after"},
+        "similarity": {**_NUM, "description": "meaning similarity against the source"},
+        "sim_bar": _NUM, "quality_metric": _STR,
+        "meaning_gate": {
+            **_STR,
+            "description": "which gate produced the verdict: 'nli', or a similarity-only fallback "
+                           "when the NLI stack is unavailable or disabled",
+        },
+        "tier": _STR, "flagged": _BOOL,
+        "stopped": {**_STR, "description": "why the loop stopped"},
+    },
+    required=["final", "changed", "pre", "post", "flagged"],
+)
+
+_CEILING_RESPONSES = _obj(
+    "Measured evasion ceiling over a sample.",
+    {"n": _INT, "tier": _STR, "results": {"type": "object", "additionalProperties": True}},
+)
+
+
+@app.get("/health", responses=_HEALTH_RESPONSES)
 async def health() -> dict:
     """Health check. Returns service info and the available detector tier."""
     from untell.detectors.base import load_detectors, resolved_tier
@@ -445,7 +593,7 @@ def _numeric_detectors(result: dict) -> dict:
     return cleaned
 
 
-@app.post("/score")
+@app.post("/score", responses=_SCORE_RESPONSES)
 async def score(body: ScoreRequest) -> dict:
     """Score text for AI-likelihood. Returns max, ai_percent, and per-detector breakdown."""
     return _numeric_detectors(
@@ -453,7 +601,7 @@ async def score(body: ScoreRequest) -> dict:
     )
 
 
-@app.post("/humanize")
+@app.post("/humanize", responses=_HUMANIZE_RESPONSES)
 async def humanize(body: HumanizeRequest) -> JSONResponse:
     """Run the closed-loop humanizer. Returns the humanized text + before/after stats.
 
@@ -493,19 +641,19 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
     return _safe(result)
 
 
-@app.post("/tells")
+@app.post("/tells", responses=_TELLS_RESPONSES)
 async def tells(body: TellsRequest) -> dict:
     """Count AI writing tells. Returns total count, rate per 100 words, and per-category breakdown."""
     return score_tells(body.text, include_matches=body.include_matches)
 
 
-@app.post("/sentences")
+@app.post("/sentences", responses=_SENTENCES_RESPONSES)
 async def sentences(body: SentencesRequest) -> dict:
     """Per-sentence AI scores. Flags the worst ~third of sentences for rewrite targeting."""
     return score_sentences(body.text, tier=body.tier, threshold=body.threshold)
 
 
-@app.post("/verify")
+@app.post("/verify", responses=_VERIFY_RESPONSES)
 async def verify_endpoint(body: VerifyRequest) -> dict:
     """Pass/fail vs every configured commercial checker plus the local detector ensemble."""
     browser_list = [s.strip() for s in body.browser.split(",")] if body.browser else None
@@ -513,7 +661,7 @@ async def verify_endpoint(body: VerifyRequest) -> dict:
     return verify(body.text, threshold=body.threshold, sandbox=body.sandbox, browser=browser_list, tier=tier_arg)
 
 
-@app.post("/ceiling")
+@app.post("/ceiling", responses=_CEILING_RESPONSES)
 async def ceiling(body: CeilingRequest) -> dict:
     """Measure untell's inference-only evasion ceiling against the local detector ensemble."""
     from eval.ceiling import _SAMPLE, measure_ceiling
