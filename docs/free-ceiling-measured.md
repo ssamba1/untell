@@ -1662,3 +1662,57 @@ another. It is not. n = 40 RAID, 3 repeats, shipped configuration:
 Better on score by more than either run's spread, better on flagged rate, and **half the
 run-to-run variance**. Sentence-length inflation was costing more than the CV was buying, which is
 not what the burstiness literature would predict and is the reason to measure rather than reason.
+
+---
+
+## Result 27 — a punctuation sweep, and a stylometric one that came back negative
+
+Two dimensions nobody had measured here. One produced a shipped transform; the other produced a
+reason not to build anything, which took the same effort and is worth the same.
+
+### Punctuation: humans bracket, AI does not
+
+Share of words that are each mark, 120 pairs per corpus:
+
+| mark | HC3 human | HC3 ai | RAID human | RAID ai |
+|---|---|---|---|---|
+| **parenthesis** | **0.679** | 0.177 | **0.924** | 0.421 |
+| question mark | 0.246 | 0.016 | — | — |
+| quote mark | 1.046 | 0.437 | — | — |
+| exclamation | 0.074 | 0.025 | — | — |
+| comma | 4.953 | 5.018 | 4.442 | 5.134 |
+
+Only the bracket gap is **safe** to close. A question mark at human frequency would invent
+rhetoric the source never had, an exclamation a tone, and a quotation mark would fabricate a
+quotation — each is a meaning change no gate here would catch, because the gates check entailment
+and semantic roles, not speech acts.
+
+Parenthesising an aside that is *already comma-bounded* is punctuation and nothing else: `the iris,
+which is the coloured part of your eye, controls…` → `the iris (which is the coloured part of your
+eye) controls…`. No word added, removed or reordered. 7.1% of AI sentences carry one. Rate-targeted
+like the other distribution fixes; measured after, HC3 0.195 → **0.308** and RAID 0.348 → **0.554**,
+about 40% of the gap in both.
+
+Restrictive clauses are excluded and the distinction matters: *the method that is fast works* says
+**which** method, so bracketing it changes the claim — and nothing downstream would notice.
+
+### Lexical diversity: a gap that is not a lever
+
+| | human | ai | ours |
+|---|---|---|---|
+| type-token ratio (HC3) | 0.6508 | 0.5066 | 0.5169 |
+| hapax rate (HC3) | 0.4862 | 0.3226 | 0.3351 |
+
+A large gap, and the rewriter barely moves it — which looks like an obvious next target. It is not.
+Correlating type-token ratio against detector max over 100 real AI texts:
+
+    corr(TTR, detector max)  = +0.229     more diverse vocabulary -> HIGHER P(AI)
+    corr(length, TTR)        = -0.558     TTR falls with length by construction
+
+The sign is the **opposite** of the intuition, and the second row says why the first is not to be
+trusted either: TTR is mechanically a function of length, so a correlation with anything
+length-sensitive is confounded before it is interpreted. Building a diversity-raising transform on
+that would be optimising an artefact.
+
+Mean word length and long-word rate both already move toward human, so the lexical axis needs
+nothing. Recorded so the gap is known to have been examined rather than missed.
