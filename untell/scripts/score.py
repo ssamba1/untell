@@ -76,6 +76,10 @@ def batch_score_texts(
 
 
 _WS_RUN_RE = re.compile(r"[ \t]{2,}")
+# Unicode space separators (category Zs) other than the plain space, folded before runs are
+# collapsed. A non-breaking space is what copying out of Word, a web page or a PDF produces,
+# and it is visually identical to a space — but no tokeniser treats it as one.
+_UNICODE_SPACE_RE = re.compile("[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]")
 _BLANK_RUN_RE = re.compile(r"\n{3,}")
 
 
@@ -96,7 +100,15 @@ def _normalise_ws(text: str) -> str:
     unaffected. It is a no-op on ordinary prose: verified byte-identical on the HC3 sample, so it
     cannot disturb the detector calibrations fitted against that corpus.
     """
-    return _BLANK_RUN_RE.sub("\n\n", _WS_RUN_RE.sub(" ", text))
+    # Unicode spaces are folded FIRST, so a run of them collapses like any other run.
+    #
+    # MEASURED on 10 HC3 pairs at full tier, replacing every space with U+00A0: human text
+    # went from 5/10 flagged to 9/10, mean P(AI) 0.4322 -> 0.7801, and hc3_roberta alone
+    # moved by 0.9990. AI text was unaffected (10/10 either way), so the whole effect landed
+    # on human writers — and a non-breaking space is not exotic input, it is what a paste out
+    # of Word or a web page contains. `scrub_hidden` already normalises these, so the rewrite
+    # loop was safe; the scoring path a user hits directly with `untell score` was not.
+    return _BLANK_RUN_RE.sub("\n\n", _WS_RUN_RE.sub(" ", _UNICODE_SPACE_RE.sub(" ", text)))
 
 
 def _truncate(text: str) -> str:
