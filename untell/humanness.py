@@ -62,6 +62,22 @@ def _warn_too_short() -> None:
     )
 
 
+_WARNED_UNSUPPORTED_LANGUAGE = False
+
+
+def _warn_unsupported_language() -> None:
+    """Say the catalogue does not cover this script, rather than that the text is too short."""
+    global _WARNED_UNSUPPORTED_LANGUAGE
+    if _WARNED_UNSUPPORTED_LANGUAGE:
+        return
+    _WARNED_UNSUPPORTED_LANGUAGE = True
+    logger.warning(
+        "the text is mostly a script this English-only catalogue cannot match, so humanness is "
+        "reported as 50 (undetermined) rather than as a verdict. See untell/languages.py for how "
+        "a catalogue for another language would be registered."
+    )
+
+
 def humanness(text: str, tier: str = "full") -> float:
     """Return a humanness score in [0, 100] — higher = more human-like.
 
@@ -98,7 +114,15 @@ def humanness(text: str, tier: str = "full") -> float:
     # 50.0 is the same "cannot tell" answer empty text gets, and lands in the `mixed` band. That is
     # the honest reading: a confident 100 on one word is noise reported as certainty.
     if len(_WORD_RE.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
-        _warn_too_short()
+        # Distinguish "too short" from "not English". `_WORD_RE` is [A-Za-z']+, so a 40-character
+        # Chinese paragraph has zero words by this count and used to be reported as "shorter than 5
+        # words" — true of the regex, absurd to the reader, and it points them at the wrong fix
+        # (write more) instead of the real limit (the catalogue is English-only). Both answers are
+        # 50, which is correct either way; only the reason was wrong.
+        if not score_tells(text).get("language_supported", True):
+            _warn_unsupported_language()
+        else:
+            _warn_too_short()
         return 50.0
 
     # 1. AI-tells signal
