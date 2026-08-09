@@ -14,6 +14,40 @@ Legend: ✅ shipped · 🔜 buildable now · ⛔ needs a GPU · ❌ ruled out, w
 
 ---
 
+## Status — what is left, and who it is waiting on
+
+Every item below is enumerated from the sections that follow, and
+`tests/test_roadmap_status.py` fails if this table disagrees with them. A status summary that
+drifts from the plan it summarises is worse than none, because it is the part people read.
+
+**Nothing actionable without a decision from you remains open.**
+
+| # | item | status | waiting on |
+|---|---|---|---|
+| 1 | `untell-audit` — every derivable claim re-checked in CI | ✅ done | — |
+| 2 | Every category must prove it fires | ✅ done | — |
+| 3 | Publish the negative results as a first-class artifact | ✅ done | — |
+| 4 | Make the default configuration the good one | ✅ done | — |
+| 5 | Retire or rehabilitate the dead weight | ✅ done — nothing retired, and the measurement says why | — |
+| 6 | Finish the surgical objective | ✅ done — the competitor row stays faithful | — |
+| 7 | LaTeX preserve-locking | ✅ done | — |
+| 8 | BibTeX-aware verification | ✅ done | — |
+| 9 | `.tex` round-trip | ✅ done | — |
+| 10 | Structure-aware skipping | ✅ done | — |
+| 11 | Refuse to fake non-English input | ✅ done | — |
+| 12 | Per-language catalogue **registry** | ✅ done — additive, ships with English only | — |
+| 13 | The per-language **catalogues** | 🔜 open | **people who speak those languages.** Not ours to write: Korean 번역체 calques and Chinese academic-register tells are not guessable from outside, and a catalogue needs the paired-corpus precision measurement every English figure has. [How to add one](CONTRIBUTING.md#adding-a-language). |
+| 14 | `pip install untell` claims the top-level names `eval` and `training` | 📦 open | **your decision.** The fix is mechanical — move them under `untell/` — but it is 179 references across 47 files and breaks anyone importing `eval.ceiling` directly. A published package's import surface is not something to change in passing. |
+| 15 | Surrogate distillation | ⛔ blocked | a GPU |
+| 16 | RL-against-ensemble | ⛔ blocked | a GPU |
+| 17 | Alignment rewriter | ⛔ blocked | a GPU |
+
+Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
+evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
+Turnitin for free. They are in §1 and are not counted as open work.
+
+---
+
 ## 0. What the competition actually is
 
 The census read 435 of 1287 repos. The single most useful finding is what the field is *made of*:
