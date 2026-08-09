@@ -331,6 +331,7 @@ def check_derivable(report: Report) -> None:
             )
 
     check_demo_privacy_claims(report)
+    check_corpus_bound_claims(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -361,6 +362,76 @@ _LOCAL_SCORING_CLAIMS = (
     "scores in the browser",
     "runs entirely in your browser",
 )
+
+
+_CORPUS_BOUND_CLAIMS: tuple[tuple[str, str, str], ...] = (
+    # (phrase that overclaims, a qualifier that makes it honest, why it matters)
+    (
+        "drives the AI-tells rate to zero",
+        "demo corpus",
+        "true on the three built-in demo paragraphs (14.46 -> 0.0) and false on real HC3 text "
+        "(4.22 -> 3.81); docs/humanizer-comparison.md already says the zero belongs to the demo "
+        "corpus alone",
+    ),
+    (
+        "drives the tell rate to zero",
+        "demo corpus",
+        "same claim, other phrasing",
+    ),
+)
+
+
+def check_corpus_bound_claims(report: Report) -> None:
+    """Fail when a headline states a corpus-bound result without naming its corpus.
+
+    Found by running `untell-compare` on two corpora. The README said the loop "drives the
+    AI-tells rate to zero while preserving meaning" full stop; measured, that is 14.46 -> 0.0 on
+    the three built-in demo paragraphs and 4.22 -> 3.81 on HC3. Worse, the document the sentence
+    links to had already been corrected and read "Any claim of 'drives the tell rate to zero' is a
+    property of the demo corpus alone" — so the summary was contradicted by its own evidence and
+    nothing noticed.
+
+    This is the one failure mode `untell-audit`'s attribution check cannot see: the sentence
+    carries no number, so there is nothing to demand provenance for. The claim IS the number.
+    """
+    offenders: list[str] = []
+    for rel in (*LIVE_DOCS, "README.md", "CHANGELOG.md"):
+        doc = REPO / rel
+        if not doc.exists():
+            continue
+        text = doc.read_text(encoding="utf-8", errors="replace")
+        # Emphasis markers are stripped before matching, and positions are preserved by replacing
+        # each with a space rather than deleting it. The first version matched the raw text and
+        # missed the exact sentence it was written for, because the README writes the claim as
+        # "to **zero while preserving meaning**" and the asterisks sit inside the phrase. A checker
+        # that any bold-face defeats is worse than none: it reports PASS.
+        lowered = re.sub(r"[*_`]", " ", text.lower())
+        lowered = re.sub(r"\s+", " ", lowered)
+        flat_offsets = text.lower()
+        for raw_phrase, raw_qualifier, _why in _CORPUS_BOUND_CLAIMS:
+            # Case-fold the NEEDLE too. The first version compared a phrase written with its
+            # natural capitalisation ("drives the AI-tells rate to zero") against lowercased text,
+            # so it never matched anything and reported PASS on the exact sentence it was written
+            # for. A check that cannot fail is worse than no check: it converts "nobody looked"
+            # into "we verified it", which is the sentence at the top of this file.
+            phrase, qualifier = raw_phrase.lower(), raw_qualifier.lower()
+            start = 0
+            while (idx := lowered.find(phrase, start)) != -1:
+                start = idx + 1
+                # The qualifier has to be near the claim, not merely somewhere in the file.
+                window = lowered[max(0, idx - 400) : idx + 400]
+                if qualifier not in window:
+                    # `lowered` has collapsed whitespace so its offsets no longer map to the file;
+                    # locate a stable anchor in the original for the line number.
+                    anchor = phrase.split()[0]
+                    pos = flat_offsets.find(anchor)
+                    line = text[:pos].count(chr(10)) + 1 if pos != -1 else 0
+                    offenders.append(f"{rel}:{line}: {phrase!r} with no corpus named")
+    report.check(
+        "no headline states a corpus-bound result without naming the corpus",
+        not offenders,
+        "; ".join(offenders) if offenders else f"{len(_CORPUS_BOUND_CLAIMS)} phrases checked",
+    )
 
 
 def check_demo_privacy_claims(report: Report) -> None:

@@ -474,9 +474,13 @@ and the ~110-repo capability audit in **[docs/competitive-gap-plan.md](docs/comp
 
 **vs the *free SaaS* humanizers** (Undetectable, QuillBot, HIX Bypass, Humanize AI Pro, …): they all
 reduce to 3–4 mechanisms we already implement, so we benchmark them apples-to-apples and measure that
-our loop is the **only** technique that drives the AI-tells rate to **zero while preserving meaning**.
-Their "99% bypass" claims don't survive independent testing (Originality flags the top "free" tool at
-**100% AI**). The reproducible head-to-head, the catalog, and the honest verdict:
+our loop is the **only** technique that lowers the AI-tells rate while holding the meaning gate —
+on the built-in demo corpus it reaches **zero tells** (14.46 → 0.0, meaning 0.93, n=3); on real HC3
+text the same configuration gets **4.22 → 3.81** and the detector barely moves. The zero is a
+property of the demo paragraphs, not of the tool, and
+[docs/humanizer-comparison.md](docs/humanizer-comparison.md) has said so for longer than this line
+did. Their "99% bypass" claims don't survive independent testing (Originality flags the top "free"
+tool at **100% AI**). The reproducible head-to-head, the catalog, and the honest verdict:
 **[docs/humanizer-comparison.md](docs/humanizer-comparison.md)**.
 
 ---

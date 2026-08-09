@@ -99,7 +99,9 @@ All notable changes to this project are documented here. The format is based on
 - **Definitive comparison vs the free humanizers** — [`docs/humanizer-comparison.md`](docs/humanizer-comparison.md).
   tool reduces to 3–4 techniques we already implement. A reproducible, $0 head-to-head (`untell-compare`)
   scores each technique class by ensemble P(AI), AI-tells, and meaning — finding our loop is the only
-  mechanism that drives the AI-tells rate to **zero while preserving meaning**, and that the free tools'
+  mechanism that lowers the AI-tells rate while holding the meaning gate (to **zero** on the built-in
+  demo corpus, 14.46 → 0.0; on real HC3 text, 4.22 → 3.81 — the zero belongs to those three
+  paragraphs, not to the tool), and that the free tools'
   "99% bypass" claims don't survive independent testing (Originality flags the top "free" tool at 100% AI).
 - **`untell tells` / `tells.py`** — a mechanical, detector-*independent* AI-tells scorer (em-dashes, the
   "delve" vocabulary, formulaic transitions, reader-steering openers, negated contrast, participial
