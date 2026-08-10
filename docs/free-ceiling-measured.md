@@ -3427,3 +3427,120 @@ Three things worth keeping:
   killable background job is a destructive operation with no undo, and the window where the tree is
   reverted is exactly the window where something else can read it. Commit first and benchmark the
   committed state, or work from copies outside the tree.
+
+## Result 62
+
+**Zero-width injection clears AI text on 14 of 20 texts — the mirror image of Result 51.**
+
+[Result 60](free-ceiling-measured.md) fixed the tell count against invisible characters and left the
+detector score warning rather than stripping, on the grounds that a real detector sees those
+characters too. That was the right call, but it was made without measuring **which direction** the
+distortion runs. Measured on 20 pairs per corpus, a zero-width space between every character:
+
+| corpus | text | humanness | P(AI) | verdict flips |
+|---|---|---|---|---|
+| HC3 | **AI** | **+9.71** | **−0.1943** | **14/20** |
+| HC3 | human | +2.99 | −0.0600 | 3/20 |
+| RAID | AI | +1.02 | −0.0207 | 8/20 |
+| RAID | human | −1.83 | +0.0363 | 4/20 |
+
+On HC3 this is a working evasion: AI text loses 0.19 of detector score and **its verdict flips to
+clean on 14 of 20 texts**, while humanness rises nearly 10 points. The effect on human text is a
+third of that.
+
+**This is the exact opposite direction from the non-breaking space.** U+00A0 produced false
+accusations of humans (Result 51: 5/10 → 9/10 flagged, and AI text unaffected). U+200B produces
+false clearances of AI. Same family of character, same one-keystroke edit, opposite victim — which
+is why "invisible characters distort scoring" is not a finding one can act on, and the direction is.
+
+Two changes, neither of them stripping:
+
+- The caveat now **names the direction and the remedy**: that a clean result on such input is not
+  evidence, and that `untell scrub` fixes it. A warning saying only "this affects the score" leaves
+  a reader with a cleared verdict and no reason to distrust it.
+- `humanness` **surfaces it**. It returns a bare float, so every caveat `score_text` produced was
+  being discarded — and this is the one a caller cannot recover any other way, on the surface where
+  the drift is largest.
+
+Worth keeping: **a symmetric-sounding defect usually is not symmetric, and the asymmetry is the
+actionable part.** Result 51 and this one are the same mechanism at the same layer, and one costs
+innocent writers an accusation while the other lets prepared text through. Neither is visible in a
+mean taken over both halves of a corpus; both are obvious the moment the halves are split.
+
+## Result 63
+
+**Homoglyphs are the strongest evasion measured, and one earlier fix already covered half of it.**
+
+Continuing the class from [Result 62](free-ceiling-measured.md): if invisible characters clear AI
+text, what do *visible* lookalikes do? Mapping `a e o p c` to their Cyrillic counterparts — a
+substitution no reader can see — over 15 pairs per corpus:
+
+| corpus | text | P(AI) | tells | verdict flips |
+|---|---|---|---|---|
+| HC3 | **AI** | **−0.2884** | **+0.00** | **13/15** |
+| HC3 | human | −0.2407 | +0.00 | 4/15 |
+| RAID | AI | −0.0916 | +0.00 | 2/15 |
+| RAID | human | −0.0792 | +0.00 | 1/15 |
+
+Stronger than zero-width injection (−0.1943, 14/20) on the score, and it flips 13 of 15 HC3 AI
+verdicts to clean.
+
+**The tells column is the interesting one.** It is `+0.00` everywhere — the tell catalogue is
+completely immune, because [Result 60](free-ceiling-measured.md) routed it through `scrub_hidden`,
+and scrubbing maps confusables back to ASCII. That fix was written for soft hyphens and zero-width
+carriers; homoglyph immunity came free, and was noticed only because this measurement printed a
+column nobody expected to be interesting.
+
+`score_text` still warns rather than scrubs, for the reason [Result 60](free-ceiling-measured.md)
+gives, so it needed a detector of its own. The signature is precise: **a word containing both Latin
+and Cyrillic/Greek letters**. Legitimate multilingual text does not mix scripts *inside* a word —
+quoting Russian puts whole Russian words in. Verified: fires on `r{U+0435}sults`, silent on plain
+English, silent on `The sign said привет which means hello`.
+
+**One vector in this family is clean.** NFD versus NFC — decomposed and precomposed accents, which
+render identically and which macOS produces routinely — moves nothing at all: P(AI) 0.6949 either
+way on an accent-heavy paragraph, identical tell count, identical word count. Worth stating
+explicitly, because "Unicode normalisation form" sounds exactly like the previous three findings
+and is not one of them. Accented text is also rare in these corpora: 0 of 30 HC3 AI texts and 1 of
+30 RAID.
+
+Two things worth keeping:
+
+- **A fix aimed at one mechanism can cover a neighbouring one, and you will only know if you
+  measure the neighbour.** Nothing about "strip zero-width carriers" advertises "immune to Cyrillic
+  substitution". The column that proved it was included out of habit, not design.
+- **Detection beats normalisation when the two surfaces answer different questions.** Scrubbing
+  would have been the easy fix for both surfaces and the wrong one for `score_text`, which must
+  report what a detector sees. A narrow, high-precision *detector* preserved the honest number and
+  still told the user their clean verdict was worthless.
+
+## Result 64
+
+**A concurrent finding that could have invalidated nine numbers, checked rather than assumed.**
+
+Another session found that `detector_audit --pairs` was scoring RAID **as stored**: its human
+documents are hard-wrapped scrapes at 84.52 single newlines per 1,000 words, its machine
+continuations unwrapped at 2.79, and **newline density alone separates the two halves at AUROC
+1.0000**. A detector that reads nothing and counts line breaks is perfect on that corpus.
+
+Every RAID figure in this log was produced from `load_pairs` text as-supplied, so the obvious
+question is how many of them were measuring layout. Re-run with the same `collapse_layout` applied
+to both halves, 100 pairs:
+
+| corpus | | human | AI | gap |
+|---|---|---|---|---|
+| HC3 | as supplied | 0.642 | 7.320 | +6.678 |
+| HC3 | collapsed | 0.642 | 7.320 | **identical** |
+| RAID | as supplied | 1.153 | 12.460 | +11.308 |
+| RAID | collapsed | 1.161 | 12.457 | +11.296 |
+
+**The tell metric is not affected**: HC3 byte-identical, RAID moving by 0.012 on a gap of 11.3. The
+direction result in [Result 45](free-ceiling-measured.md) stands, and so do the RAID rows in the
+evasion results, which are within-text comparisons where layout is held constant on both sides
+anyway.
+
+Worth keeping: **a confound in a shared corpus is everyone's problem, and "my measurement probably
+doesn't depend on that" is a guess until it is a measurement.** The check cost one script and five
+minutes. Had it come out the other way, nine published numbers would have needed retracting — and
+the reason to run it was not doubt about this metric but the fact that somebody had just proved the
+corpus lies about *something*.
