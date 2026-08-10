@@ -78,6 +78,21 @@ def _warn_unsupported_language() -> None:
     )
 
 
+_WARNED_INVISIBLE = False
+
+
+def _warn_about_invisibles(warning: str | None) -> None:
+    """Pass through only the invisible-character caveat, once, and drop the rest."""
+    global _WARNED_INVISIBLE
+    if not warning or "invisible character" not in warning or _WARNED_INVISIBLE:
+        return
+    _WARNED_INVISIBLE = True
+    logger.warning(
+        "the text carries invisible characters; they shift the detector component of this score "
+        "without changing anything a reader can see. Run `untell score` for the details."
+    )
+
+
 def humanness(text: str, tier: str = "full") -> float:
     """Return a humanness score in [0, 100] — higher = more human-like.
 
@@ -139,6 +154,13 @@ def humanness(text: str, tier: str = "full") -> float:
     # reported ordinary AI text as clearly human. score_text sets `scored: False` and a warning
     # for exactly this case; the fix is to read them.
     detector_result = score_text(text, tier=tier)
+    # `humanness` returns a bare float, so every caveat `score_text` produced is discarded here.
+    # Most of them are about the detector configuration and the caller can look them up. One is
+    # not: invisible characters move the detector component without changing anything a reader can
+    # see, and MEASURED on a 37-word paragraph with a zero-width space between every character the
+    # score drifts 62.5 -> 64.8 — upward, so the effect is to make text look MORE human. That is an
+    # evasion vector reported through no other channel on this surface, so it is logged once.
+    _warn_about_invisibles(detector_result.get("warning"))
     detector_scored = detector_result.get("scored") is not False
     detector_max = float(detector_result.get("max", 0.0)) if detector_scored else None
     if not detector_scored:
