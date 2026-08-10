@@ -69,7 +69,16 @@ _SYN: dict[str, list[str]] = {
     "seamless": ["smooth", "easy"],
     "seamlessly": ["smoothly", "easily"],
     "tapestry": ["mix", "array", "range"],
-    "testament": ["proof", "sign", "mark"],
+    # "testament" is NOT here, deliberately. It governs "to" — "a testament to the work" — and every
+    # sensible substitute governs "of", so a word-for-word swap leaves the preposition stranded. It
+    # shipped as ["proof", "sign", "mark"] and produced "It's a sign to the work." and "A mark to
+    # the effort." in real output. A tell catalogue counts vocabulary and never parses, so both read
+    # as an improvement: the ai_vocab hit was gone and the sentence was broken.
+    #
+    # Handled in structural.py's phrase table instead, which rewrites the noun and the preposition
+    # together ("a testament to" -> "proof of", "is a testament to" -> "shows"). A single-word table
+    # cannot express that, which is the general limit worth remembering here: any headword whose
+    # substitutes govern a different preposition belongs in the phrase table, not this one.
     "realm": ["area", "space", "field"],
     "landscape": ["scene", "setting", "field"],
     "underscore": ["show", "highlight", "stress"],

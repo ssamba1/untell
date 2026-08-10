@@ -1148,6 +1148,14 @@ _CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bat\s+the\s+end\s+of\s+the\s+day\b", re.IGNORECASE), "in the end"),
     (re.compile(r"\bin\s+the\s+realm\s+of\b", re.IGNORECASE), "in"),
     (re.compile(r"\bstands?\s+as\s+a\s+testament\s+to\b", re.IGNORECASE), "shows"),
+    # "testament" governs "to"; every word-level substitute for it governs "of". The entry in
+    # `word_importance._SYN` swapped the noun and left the preposition, so real output read
+    # "It's a sign to the work." and "A mark to the effort." — ungrammatical, and invisible to the
+    # tell catalogue, which counts vocabulary and never parses. The line above only covered the
+    # "stands as a testament to" form; these two carry the rest, rewriting noun and preposition
+    # together so no later pass has to guess which one is wrong.
+    (re.compile(r"\bis\s+a\s+testament\s+to\b", re.IGNORECASE), "shows"),
+    (re.compile(r"\ba\s+testament\s+to\b", re.IGNORECASE), "proof of"),
 ]
 
 _AFTER_SENTENCE_START = re.compile(r"(^|[.!?]\s+)([a-z])")
