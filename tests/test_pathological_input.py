@@ -289,3 +289,84 @@ def test_clean_prose_gets_no_invisible_warning() -> None:
     from untell.scripts.score import _invisible_char_warning
 
     assert _invisible_char_warning(_PROSE) is None
+
+
+def test_the_invisible_warning_names_the_direction_and_the_remedy() -> None:
+    """A caveat that only says "this affects the score" leaves the reader unable to act.
+
+    MEASURED on 20 HC3 pairs with a zero-width space between every character: AI text moved
+    -0.1943 and its verdict flipped to CLEAN on 14 of 20; human text moved -0.0600. The effect is
+    overwhelmingly to make AI text look human, so a clean result on such input is not evidence —
+    and that is the opposite direction from the non-breaking space in Result 51, which produced
+    false accusations of humans.
+    """
+    from untell.scripts.score import _invisible_char_warning
+
+    warning = _invisible_char_warning("a\u200bb") or ""
+    assert "14 of 20" in warning, warning
+    assert "CLEAN" in warning, warning
+    assert "untell scrub" in warning, "the caveat must name the command that fixes it"
+
+
+def test_humanness_surfaces_the_invisible_caveat(caplog: pytest.LogCaptureFixture) -> None:
+    """`humanness` returns a bare float, so every caveat score_text produced is discarded. This one
+    cannot be: it shifts the number with nothing visible to the reader."""
+    import logging
+
+    import untell.humanness as mod
+
+    mod._WARNED_INVISIBLE = False
+    with caplog.at_level(logging.WARNING, logger=mod.logger.name):
+        mod.humanness(_inject(_PROSE, "\u200b"), tier="lite")
+    assert "invisible characters" in caplog.text, caplog.text
+
+
+def test_humanness_is_quiet_on_clean_text(caplog: pytest.LogCaptureFixture) -> None:
+    """Guards the guard: warning on everything would pass the test above."""
+    import logging
+
+    import untell.humanness as mod
+
+    mod._WARNED_INVISIBLE = False
+    with caplog.at_level(logging.WARNING, logger=mod.logger.name):
+        mod.humanness(_PROSE, tier="lite")
+    assert "invisible characters" not in caplog.text
+
+
+# --- homoglyphs: the strongest evasion measured, and invisible to a reader ------------------------
+# MEASURED on 15 HC3 pairs, mapping a/e/o/p/c to Cyrillic lookalikes: AI text moved -0.2884 and its
+# verdict flipped to CLEAN on 13 of 15. `score_tells` is already immune because it scrubs, and
+# scrubbing maps these back to ASCII — a fix written for invisible characters that turned out to
+# cover this too. `score_text` deliberately does not scrub, so it warns.
+
+_HOMOGLYPHS = {"a": "\u0430", "e": "\u0435", "o": "\u043e", "p": "\u0440", "c": "\u0441"}
+
+
+def _homoglyph(text: str) -> str:
+    return "".join(_HOMOGLYPHS.get(ch, ch) for ch in text)
+
+
+def test_homoglyph_substitution_is_warned_about() -> None:
+    from untell.scripts.score import score_text
+
+    warning = score_text(_homoglyph(_PROSE), tier="lite").get("warning") or ""
+    assert "homoglyph" in warning, warning
+    assert "13 of 15" in warning, "the caveat must carry the measured direction"
+
+
+def test_the_tell_count_is_immune_to_homoglyphs() -> None:
+    """Not a separate fix — scrubbing for invisible characters covered this for free."""
+    from untell.scripts.tells import score_tells
+
+    assert score_tells(_homoglyph(_PROSE))["tells"] == score_tells(_PROSE)["tells"]
+    assert score_tells(_homoglyph(_PROSE))["words"] == score_tells(_PROSE)["words"]
+
+
+def test_real_cyrillic_text_is_not_flagged_as_homoglyphs() -> None:
+    """The discrimination that makes this usable. Legitimate multilingual text puts whole words in
+    another script; homoglyph substitution puts one letter inside an English word. Warning on the
+    former would fire on every quotation of Russian."""
+    from untell.scripts.score import _homoglyph_warning
+
+    assert _homoglyph_warning("The sign said привет which means hello, and we moved on.") is None
+    assert _homoglyph_warning(_PROSE) is None
