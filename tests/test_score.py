@@ -112,9 +112,18 @@ class TestTheResultNamesTheScoringPath:
         assert result["detector_modes"]["perplexity_burstiness"] == "stdlib"
 
     def test_the_stdlib_path_warns_when_it_is_the_whole_verdict(self, monkeypatch):
+        """The warning must name BOTH thresholds, because they answer different questions.
+
+        It used to say "flags 69% of HUMAN text", which conflated them: 64% of human text scores
+        above the 0.30 loop threshold, but `flagged` is decided by the 0.45 verdict threshold,
+        where the figure is 30%. A reader maps "flags" onto the `flagged` field and takes away a
+        number more than twice the truth — the same conflation Result 43 corrected in the docs,
+        which never reached this string.
+        """
         monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
-        result = score_text(self.TEXT, tier="lite")
-        assert "69% of HUMAN text" in result.get("warning", "")
+        warning = score_text(self.TEXT, tier="lite").get("warning", "")
+        assert "64%" in warning and "30%" in warning, warning
+        assert "verdict" in warning, "the warning must say which threshold decides `flagged`"
 
     def test_the_detector_reports_both_paths(self, monkeypatch):
         from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector

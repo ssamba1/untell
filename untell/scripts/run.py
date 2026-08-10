@@ -204,7 +204,9 @@ def untell_text(
     # which at least reports what it left behind.
     #
     # This is the hazard that branch already documents: 701 zero-width characters surviving into
-    # `final`, and those characters flip an AI verdict to clean on 14 of 20 texts (Result 62). A
+    # `final`. Those characters flipped an AI verdict to clean on 14 of 20 texts until the
+    # detectors were fixed to normalise them (Result 67); they no longer move OUR score, but
+    # they still travel with the text and another tool may read them differently. A
     # caller who ignores `error` and ships `final` was shipping an evasion payload — and one who
     # pasted the text out of a PDF was shipping soft hyphens that make an unhardened detector read
     # 0.0002 where untell reports 0.9869.
@@ -217,7 +219,7 @@ def untell_text(
         # `scrub=False` is a legitimate request — the caller asked for their characters left alone —
         # but it is not obvious that the OUTPUT then carries them too. MEASURED on one HC3 answer
         # with a zero-width space between every character: 701 of them survive into `final`, and the
-        # result dict said nothing at all. Those characters flip an AI verdict to clean on 14 of 20
+        # result dict said nothing at all. Those characters flipped an AI verdict to clean on 14 of 20
         # texts (Result 62), so a caller shipping this output is shipping an evasion payload they
         # may not know is there. Reported, not removed: removing it would be ignoring the flag.
         from untell.scripts.score import _homoglyph_warning, _invisible_char_warning

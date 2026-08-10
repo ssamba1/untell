@@ -972,7 +972,7 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
             f"{result['words']} words: `tells_per_100w` is {result['tells_per_100w']}, but a rate "
             f"per 100 words from {result['words']} words is quantised — one tell alone reports "
             f"{100 / max(result['words'], 1):.0f}. Compare the COUNT ({total}), not the rate; the "
-            "corpus means it would be read against are 0.551 human and 7.335 AI."
+            "corpus means it would be read against are 0.642 human and 7.320 AI (100 HC3 pairs, >=60 words)."
         )
         result["warning"] = (
             f"{result['warning']} Also: {rate_warning}" if result.get("warning") else rate_warning

@@ -106,10 +106,18 @@ def test_no_caveat_once_there_are_enough_words() -> None:
 
 
 def test_the_caveat_points_at_the_count_not_the_rate() -> None:
-    """The actionable part. A caveat that only says "unreliable" leaves the reader with nothing."""
+    """The actionable part. A caveat that only says "unreliable" leaves the reader with nothing.
+
+    The corpus means are pinned EXACTLY, deliberately, even though that means a re-measurement
+    breaks this test. That is the point: it broke once already, when the figures were re-derived
+    from 0.551/7.335 to 0.642/7.320 on 100 HC3 pairs at >=60 words, and the failure is what forced
+    the update to be conscious rather than silent. A structural assertion — "quotes two numbers" —
+    would survive any drift, including drift into being wrong.
+    """
     warning = score_tells("Moreover.").get("warning") or ""
     assert "COUNT" in warning, warning
-    assert "0.551" in warning and "7.335" in warning, warning
+    assert "0.642" in warning and "7.320" in warning, warning
+    assert "HC3" in warning, "a corpus-bound number has to name its corpus"
 
 
 def test_the_rate_bar_is_derived_not_chosen() -> None:

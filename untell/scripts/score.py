@@ -383,9 +383,10 @@ def _score_with_detectors(
     # is not its to decide.
     elif effective == "lite" and modes.get("perplexity_burstiness") == "stdlib" and len(numeric) == 1:
         result["warning"] = (
-            "lite tier on the stdlib path: measured on 100 HC3 pairs at this threshold it flags "
-            "69% of HUMAN text (6% when torch is installed and it uses GPT-2). Treat a flag here "
-            "as a prompt to re-run at --tier full, not as a verdict."
+            "lite tier on the stdlib path. Re-measured on 100 HC3 pairs: 64% of HUMAN text scores "
+            "above the 0.30 loop threshold, and 30% is FLAGGED — `flagged` uses the 0.45 verdict "
+            "threshold, not the loop one, so the two numbers answer different questions. Either "
+            "way this path is weak evidence: treat a flag as a prompt to re-run at --tier full."
         )
     # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
     elif _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):

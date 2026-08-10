@@ -537,8 +537,9 @@ _VERIFY_RESPONSES = _obj(
             **_STR,
             "description": (
                 "present only when the text carries invisible characters or homoglyph "
-                "substitution. Both flip an AI verdict to clean — 14 of 20 and 13 of 15 HC3 texts "
-                "respectively — so a PASS accompanied by this field is not evidence."
+                "substitution. These no longer move the score — the detectors normalise them, "
+                "verified at 0.0000 on both tiers — but they are still in the submitted text and "
+                "another tool may read them differently."
             ),
         },
     },
