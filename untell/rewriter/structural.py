@@ -148,6 +148,26 @@ _LEADING_SUBORDINATOR_RE = re.compile(
     r"^(?:because|while|although|though|since|whereas|unless|whether)\b", re.IGNORECASE
 )
 
+# The openers this rewriter INSERTS, hoisted so the "already has a marker" guard can be derived from
+# them rather than maintained beside them. `_LEADING_MARKER_RE` above lists coordinating markers and
+# none of these, so a sentence that had already been given "Basically," was not recognised as
+# carrying a marker and got a second one. MEASURED over 120 rewrites: 7 stacked pairs — "So, in
+# short, the reason that airplane technology…", "Basically, in short, the color of your eyes…".
+#
+# The guard for this was already written and already correct in intent; it just consulted a list
+# that did not include the transform's own vocabulary.
+_OPENERS = (
+    "Actually,", "In practice,", "In short,", "Put simply,",
+    "Also,", "Now,", "Basically,", "Well,", "Of course,",
+)
+_ANY_LEADING_MARKER_RE = re.compile(
+    r"^(?:"
+    + "|".join(re.escape(o.rstrip(",")) for o in _OPENERS)
+    + r"|and|but|or|so|yet|plus|also|then|however|moreover|furthermore|additionally"
+    r"|overall|therefore|thus|hence|indeed|besides|meanwhile|still)\b,?\s+",
+    re.IGNORECASE,
+)
+
 # Clause connectors for the sentence merge, weighted to the frequencies HUMANS actually use.
 #
 # No "; " in this list. The merge runs after the semicolon strip, so a semicolon inserted as a
@@ -1440,10 +1460,7 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     #
     # Every entry is screened against score_tells and _TRANSITIONS_RE, so none is a catalogued tell
     # and none would be deleted by the stripper that runs later.
-    openers = [
-        "Actually,", "In practice,", "In short,", "Put simply,",
-        "Also,", "Now,", "Basically,", "Well,", "Of course,",
-    ]
+    openers = list(_OPENERS)
     context = " ".join(sentences)
     # Openers already spent in this text. Picking independently from an 8-item pool at ~0.3 rate
     # means a long passage reuses one: MEASURED over 60 RAID+HC3 texts, "Looking at this," was the
@@ -1468,7 +1485,7 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
         # produced "Put simply, also, wine is often shipped at specific temperatures" — found by
         # scanning 30 real HC3 rewrites for mechanical breakage. `_LEADING_MARKER_RE` exists for
         # exactly this and was consulted only by the clause-merge path.
-        if random.random() < rate and not _LEADING_MARKER_RE.match(s):
+        if random.random() < rate and not _ANY_LEADING_MARKER_RE.match(s):
             first_word = s.split()[0] if s.split() else ""
             # No `first_word not in subjects` test here. It skipped every sentence opening with
             # The/This/It/That/There — which are precisely the sentences that duplicate an opener

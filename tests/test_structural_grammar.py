@@ -1245,24 +1245,21 @@ class TestOpenersAreOnesHumansActuallyUse:
     BANNED = ("Broadly,", "Looking at this,", "As it turns out,", "Realistically,")
 
     def test_the_unattested_openers_are_gone(self):
-        import inspect
+        # Reads the tuple rather than parsing the function's source. The source form broke the
+        # moment the pool was hoisted to module level so the stacking guard could be derived from
+        # it, and a test that inspects where a literal is WRITTEN fails on a refactor that does not
+        # change what it says.
+        from untell.rewriter.structural import _OPENERS
 
-        from untell.rewriter.structural import _vary_openers
-
-        src = inspect.getsource(_vary_openers)
-        pool = src.split("openers = [", 1)[1].split("]", 1)[0]
         for dead in self.BANNED:
-            assert dead not in pool, f"{dead} is written by nobody in either half of the corpus"
+            assert dead not in _OPENERS, f"{dead} is written by nobody in either half of the corpus"
 
     def test_no_opener_asserts_a_relation_the_gates_cannot_check(self):
         """Temporal, causal and deictic markers claim something about the sentence they precede."""
-        import inspect
+        from untell.rewriter.structural import _OPENERS
 
-        from untell.rewriter.structural import _vary_openers
-
-        src = inspect.getsource(_vary_openers)
-        pool = src.split("openers = [", 1)[1].split("]", 1)[0].lower()
-        for unsafe in ("recently,", "meanwhile,", "then,", '"so,"', "here,"):
+        pool = {o.lower() for o in _OPENERS}
+        for unsafe in ("recently,", "meanwhile,", "then,", "so,", "here,"):
             assert unsafe not in pool, f"{unsafe} asserts a relation no meaning gate verifies"
 
     def test_every_opener_is_screened_against_the_catalogue(self):
