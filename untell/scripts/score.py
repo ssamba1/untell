@@ -197,6 +197,34 @@ _SHORT_TEXT_BANDS = ((5, "98%"), (10, "62%"), (20, "40%"), (40, "28%"))
 _MIN_WORDS_FOR_A_VERDICT = 40
 
 
+# Characters with no visible width that nonetheless change every tokenisation: zero-width space,
+# ZWNJ/ZWJ, word joiner, bidi marks, BOM, and the soft hyphen that justified PDF text is full of.
+_INVISIBLE_RE = re.compile("[" + "\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad" + "]")
+
+
+def _invisible_char_warning(text: str) -> str | None:
+    """Say when the text carries invisible characters, because they move the score a long way.
+
+    Not stripped here, deliberately, and this is the opposite call from the one `score_tells` makes.
+    A tell count describes the WRITING, and "889 words" for a 209-word text is simply false, so
+    there the characters are removed. This number describes what a DETECTOR would say about the
+    exact string the user is about to submit — and a real detector will see those characters too.
+    Scrubbing them would report a score for a document that does not exist.
+
+    MEASURED on 6 HC3 texts with a zero-width space between every character: mean |dP(AI)| 0.2176,
+    and the flagged verdict flipped on 6 of 6. That is far too large to leave unexplained.
+    """
+    n = len(_INVISIBLE_RE.findall(text))
+    if not n:
+        return None
+    return (
+        f"{n} invisible character(s) present (zero-width, bidi or soft hyphen). They are scored as "
+        f"the detector would see them, NOT removed — MEASURED on 6 HC3 texts, inserting one between "
+        f"every character moved P(AI) by 0.2176 and flipped the verdict on all 6. If they are an "
+        f"artefact of a PDF or web paste rather than your writing, strip them and re-score."
+    )
+
+
 def _short_text_warning(text: str) -> str | None:
     """Warn when the text is too short for the flag to mean anything, with the measured rate."""
     words = len(text.split())
@@ -340,9 +368,11 @@ def _score_with_detectors(
     # Appended rather than folded into the chain above: length and tier are independent problems,
     # and a short text scored on a downgraded tier has both. An elif would have reported whichever
     # one happened to be checked first and hidden the other.
-    short = _short_text_warning(text)
-    if short:
-        result["warning"] = f'{result["warning"]} Also: {short}' if result.get("warning") else short
+    for extra in (_short_text_warning(text), _invisible_char_warning(text)):
+        if extra:
+            result["warning"] = (
+                f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
+            )
     return result
 
 
