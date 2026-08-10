@@ -58,6 +58,18 @@ def test_markup_survives_a_real_rewrite(token: str) -> None:
 
     A single seed proves nothing here — the rewriter is stochastic, and the failure mode this row
     described is intermittent by nature. Several seeds, and the token must survive every one.
+
+    Two things have to be forced for that claim to be tested at all, and neither was:
+
+    ``rewriter="composite"`` — without it the loop resolves no rewriter unless an API key happens to
+    be configured, and returns ``{"error": ..., "final": PAPER}``. The token then survived because
+    nothing had touched it. On a machine with no key, which is CI, this ran five seeds of nothing.
+
+    ``threshold=0.0`` — the fixture already scores clean, so even with a rewriter the loop stops at
+    ``"passed"`` before the first draw. An unreachable threshold is what keeps it rewriting.
+
+    The assertion on ``rewrites`` is the guard: if either condition regresses, this fails instead of
+    quietly going hollow again.
     """
     import random
 
@@ -68,8 +80,14 @@ def test_markup_survives_a_real_rewrite(token: str) -> None:
         # `untell_text` takes no seed; the rewriter draws from the global RNG, so seeding it here
         # is what makes each iteration a distinct draw rather than five identical ones.
         random.seed(seed)
-        out = untell_text(PAPER, tier="lite", max_iters=1)["final"]
-        assert token in out, f"seed {seed} destroyed {token!r}:\n{out}"
+        result = untell_text(
+            PAPER, tier="lite", max_iters=1, rewriter="composite", threshold=0.0
+        )
+        assert result.get("rewrites"), (
+            f"seed {seed}: the loop never rewrote, so nothing about survival was tested "
+            f"(stopped={result.get('stopped') or result.get('error')})"
+        )
+        assert token in result["final"], f"seed {seed} destroyed {token!r}:\n{result['final']}"
 
 
 def test_cjk_is_undetermined_not_clean() -> None:
