@@ -21,12 +21,22 @@ import pytest
 from untell.detectors.base import normalise_whitespace
 
 # The artefact in each of the forms that reached the model.
+#
+# The Unicode entries are not padding. The first version of this fix scoped itself to `[ \t]+`,
+# which closed the ASCII door and left every non-ASCII space separator open beside it: replacing
+# each space with U+00A0 took hc3_roberta from 0.1580 to 0.0002, the same collapse the fix had
+# just repaired. `fold_unicode_spaces` had already recorded that exact failure mode ("one rule,
+# one place") against a different normaliser, and this one reproduced it.
 EQUIVALENT_SPACINGS = [
     "The result was clear. The team shipped it.",
     "The result was clear.  The team shipped it.",  # double space after the period
     "The result was clear.   The team shipped it.",  # triple
     "The result was clear . The team shipped it .",  # space before the period (the HC3 artefact)
     "The result was clear.\tThe team shipped it.",  # tab
+    "The result was clear. The team shipped it.",  # non-breaking space
+    "The result was clear. The team shipped it.",  # thin space
+    "The result was clear.　The team shipped it.",  # ideographic space
+    "The result was clear. The team shipped it.",  # narrow no-break space
 ]
 
 
@@ -108,6 +118,8 @@ def test_spacing_does_not_change_the_score(name: str) -> None:
         _SAMPLE.replace(".", " ."),  # drove hc3_roberta to 0.000 on 25 of 25 documents
         _SAMPLE.replace(". ", ".  "),
         _SAMPLE.replace(" ", "  "),
+        _SAMPLE.replace(" ", " "),  # 0.1580 -> 0.0002 before unicode spaces were folded
+        _SAMPLE.replace(" ", "　"),
     ):
         got = d.score(variant)
         assert got is not None

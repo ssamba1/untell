@@ -18,6 +18,8 @@ from __future__ import annotations
 import re
 from typing import Protocol, runtime_checkable
 
+from untell.text_split import fold_unicode_spaces
+
 # Tier ordering: a request for "full" also includes "lite" detectors, etc.
 Tier = str  # "lite" | "full" | "heavy" | "commercial"
 _TIER_RANK = {"lite": 0, "full": 1, "heavy": 2, "commercial": 3}
@@ -104,8 +106,15 @@ def normalise_whitespace(text: str) -> str:
     Line structure is deliberately preserved. Newlines carry paragraphing, they are not part of the
     artefact, and they were measured not to move any detector — so only whitespace *before* a
     newline is removed, and indentation after one is left as a single space rather than stripped.
+
+    Unicode spaces are folded FIRST, via the shared helper rather than a pattern of our own. The
+    first version of this function scoped itself to ``[ \\t]+`` and so missed every non-ASCII space
+    separator: MEASURED, replacing each space with U+00A0 took hc3_roberta from 0.1580 to 0.0002 —
+    the same collapse the ASCII fix had just closed, through a door left open beside it.
+    ``fold_unicode_spaces`` documents this exact failure ("one rule, one place"; a normaliser scoped
+    to ``[ \\t]{2,}`` missing most of its class) and this function had reproduced it.
     """
-    out = _HORIZONTAL_RUN.sub(" ", text)
+    out = _HORIZONTAL_RUN.sub(" ", fold_unicode_spaces(text))
     out = _TRAILING_HORIZONTAL.sub("", out)
     return _SPACE_BEFORE_PUNCT.sub(r"\1", out)
 
