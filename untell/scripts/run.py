@@ -183,7 +183,9 @@ def untell_text(
 
     Keys: ``final`` (humanized text, spans restored), ``iterations``, ``pre``/``post`` score dicts,
     ``similarity``, ``tier``, ``sim_bar``, ``flagged`` (final), and ``stopped`` (why it stopped).
-    If no rewriter is available, returns ``{"error": ...}`` without modifying the text.
+    If no rewriter is available, returns ``{"error": ...}`` without rewriting the text. ``final`` on
+    that path is still scrubbed when ``scrub=True`` (the default): the caller asked for hidden
+    characters removed, and that request is independent of whether a rewriter turned up.
 
     ``browser`` (e.g. ``"zerogpt"`` or ``"zerogpt,detecting-ai"``) scores each iteration against free
     web detector(s) instead of local proxies — optimizing against the **max** across real checkers, no
@@ -193,6 +195,39 @@ def untell_text(
     """
     if sim_bar is None:
         sim_bar = recommended_bar()
+
+    # Scrub BEFORE the rewriter is resolved, so the early error returns below cannot ship the
+    # payload back. They used to: both of them answer `"final": text` from before this ran, and
+    # "no rewriter configured" is the single most likely error there is — it is what every new user
+    # without an API key hits. So the default `scrub=True` was silently skipped on the most common
+    # path in the function, and the result dict said nothing, unlike the `scrub=False` branch below
+    # which at least reports what it left behind.
+    #
+    # This is the hazard that branch already documents: 701 zero-width characters surviving into
+    # `final`, and those characters flip an AI verdict to clean on 14 of 20 texts (Result 62). A
+    # caller who ignores `error` and ships `final` was shipping an evasion payload — and one who
+    # pasted the text out of a PDF was shipping soft hyphens that make an unhardened detector read
+    # 0.0002 where untell reports 0.9869.
+    carried_payload = None
+    if scrub:  # strip any hidden watermark / zero-width / homoglyph chars before we start
+        from untell.attacks import scrub_hidden
+
+        text = scrub_hidden(text)
+    else:
+        # `scrub=False` is a legitimate request — the caller asked for their characters left alone —
+        # but it is not obvious that the OUTPUT then carries them too. MEASURED on one HC3 answer
+        # with a zero-width space between every character: 701 of them survive into `final`, and the
+        # result dict said nothing at all. Those characters flip an AI verdict to clean on 14 of 20
+        # texts (Result 62), so a caller shipping this output is shipping an evasion payload they
+        # may not know is there. Reported, not removed: removing it would be ignoring the flag.
+        from untell.scripts.score import _homoglyph_warning, _invisible_char_warning
+
+        found = [w for w in (_invisible_char_warning(text), _homoglyph_warning(text)) if w]
+        if found:
+            carried_payload = (
+                "scrub=False, so these are still in the output: " + " ".join(found)
+            )
+
     # `rewriter` may be a rewriter object OR a name. Every caller in this repo — the CLI, the MCP
     # server, the REST API — resolves the name itself before calling, so the parameter was
     # effectively object-only while being untyped and named after the thing users type on the
@@ -220,11 +255,6 @@ def untell_text(
             "UNTELL_POLICY_DIR",
             "final": text,
         }
-
-    if scrub:  # strip any hidden watermark / zero-width / homoglyph chars before we start
-        from untell.attacks import scrub_hidden
-
-        text = scrub_hidden(text)
 
     # A voice sample below the documented minimum yields a profile built on too few sentences to
     # mean anything, and the tie-break then runs on noise. `untell humanize --voice-sample` warns
@@ -566,6 +596,7 @@ def untell_text(
         # already gone), so compare the scrubbed original against the actual final instead of stale.
         "similarity": similarity(text, final) if polished_applied else similarity(masked, best_masked),
         "tier": best_score.get("tier", tier),
+        **({"warning": carried_payload} if carried_payload else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),
         # WHICH meaning gate ran. `quality_metric` names the similarity backend but says nothing
@@ -1057,8 +1088,13 @@ def main(argv: list[str] | None = None) -> int:
                 post_score=result.get("post", {}),
                 iterations=result.get("iterations", 0),
                 stopped=result.get("stopped", "unknown"),
+                warning=result.get("warning"),
             )
-        except Exception:
+        except ImportError:
+            # Narrowed from `except Exception`. The fallback exists for a missing `rich`, which is
+            # an ImportError; catching everything meant a TypeError from a wrong argument list
+            # rendered as a normal degraded run, and it silently swallowed exactly that mistake
+            # while this warning was being wired in. A bug in the renderer should be loud.
             print(_render(result))
     return 1 if "error" in result else 0
 
