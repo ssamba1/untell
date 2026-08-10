@@ -3080,3 +3080,51 @@ and it needs its own measurement rather than a guess; recorded here as the open 
 Worth keeping: **"diminishing returns" and "safe to repeat" are different claims.** The aggregate
 supports the first. Only the per-text record shows that one input in ten hits a discontinuity, and
 a user re-running on a whole corpus would meet it about that often.
+
+## Result 55
+
+**An inconclusive experiment, and why it is inconclusive.**
+
+[Result 54](free-ceiling-measured.md) left one question: should the loop refuse a candidate that
+pushes repetition past the 5% bar the tell category thresholds on? A guard was built and measured
+against an unguarded arm, paired on the seed, on the only population it can act on — texts that
+START under the bar, which is 40% of HC3 AI texts (mean share 7.33%, 24 of 60 under 5%; human text
+is 92% under, mean 1.36%).
+
+Over 12 such texts, 2 passes, 3 iterations, 4 draws — **288 candidate draws — the guard blocked
+nothing and neither arm crossed the bar.** Both arms finished identical: P(AI) 0.4250, 0.08 tells,
+3.05% repetition.
+
+That is not evidence the guard is unnecessary. **The harness does not reproduce the phenomenon.**
+Run on the exact text that crossed in Result 54, it finishes at 3.60% with 0 tells and never comes
+near the bar. The shipped loop, same text, same seeds:
+
+| stage | words | repeated trigrams | share |
+|---|---|---|---|
+| original | 210 | 8 | 3.81% |
+| pass 1 | 214 | 8 | 3.74% |
+| pass 2 | 220 | **11** | **5.00%** |
+
+So the phenomenon is real, and it is genuinely new repetition rather than an artefact of the share
+being a ratio: the text got *longer* (214 -> 220 words) while gaining three repeats, which is the
+opposite of what a shortening-inflates-the-share explanation predicts. That alternative was checked
+and refuted rather than assumed away. And it lands on **exactly 5.00%** — the sharpest possible
+illustration of the cliff, 11 reported tells against 0 for a text a hair under.
+
+**The methodological error is the result worth keeping.** This harness was validated in
+[Result 48](free-ceiling-measured.md) — its greedy arm reproduced the shipped loop 5 of 6 texts
+byte-identical — and that validation was for *detector score*. Reusing it to measure *repetition
+behaviour* assumed the validation transfers between properties. It does not: the shipped loop's
+selection has tells, voice and ensemble-mean tie-breaks that the harness omits, and those are
+precisely the terms that decide between candidates the detector rates equally, which is where
+repetition differences live.
+
+So the guard question stays open, and a valid test needs the shipped selection instrumented rather
+than reimplemented. Nothing is shipped on this evidence. Two rules earned the hard way:
+
+- **A harness is validated for a property, not in general.** "5 of 6 byte-identical" was a true
+  statement about one measurement and I read it as a licence for another.
+- **When a harness reports a clean zero, check it can produce a non-zero.** 288 draws and no blocks
+  looked like a decisive negative until the known-positive case also came back clean. That is the
+  same shape as [Result 44](free-ceiling-measured.md) — a check that cannot fire reads exactly like
+  a check that found nothing.
