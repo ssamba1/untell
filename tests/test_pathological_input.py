@@ -185,3 +185,47 @@ def test_one_folding_rule_serves_both_callers() -> None:
 
     assert from_score is canonical
     assert tells_mod.fold_unicode_spaces is canonical
+
+
+# --- a sentinel hides tells, and only ever hides them -------------------------------------------
+# The loop's tells tie-break used to count on the MASKED candidate while its detector score counted
+# on the restored one. MEASURED over 120 HC3+RAID texts, 91 of which lock at least one span: the
+# two views disagree on 44%, by a mean of 3.33 tells and up to 27 — and the minimum delta is +0, so
+# masking never over-counts. The texts that lock spans are the ones carrying citations and numbers,
+# which is the academic register this repo targets.
+
+
+def test_masking_never_invents_tells_and_sometimes_hides_them() -> None:
+    """Both halves matter. If masking could ADD a tell the fix would be a trade rather than a
+    correction, and if it never hid one there would be nothing to correct."""
+    from untell.scripts.preserve import lock, restore
+    from untell.scripts.tells import score_tells
+
+    paper = (
+        "Moreover, the framework leverages a robust approach to deliver outcomes at scale "
+        "(Smith 2020). Furthermore, it is important to note that accuracy improved by 12.4% "
+        "over the baseline of Jones (2019). In conclusion, this represents a substantial "
+        "advancement, delving into the rich tapestry of the field as reported by 47 studies."
+    )
+    masked, mapping = lock(paper)
+    assert mapping, "fixture no longer locks anything, so it cannot exercise the difference"
+    hidden = score_tells(restore(masked, mapping))["tells"] - score_tells(masked)["tells"]
+    assert hidden >= 0, (
+        f"masking INVENTED {-hidden} tells — the tie-break would then be trading one error for "
+        "another rather than correcting one"
+    )
+
+
+def test_the_loop_counts_tells_on_restored_text() -> None:
+    """The fix itself. Reading the source is brittle, but the alternative is asserting on a
+    tie-break that only fires among candidates within _TELLS_EPS of each other — measured as no
+    observable output change on 14 RAID texts, so there is no behaviour to assert on."""
+    import inspect
+
+    from untell.scripts import run
+
+    source = inspect.getsource(run)
+    assert "score_tells(restore(candidate, mapping))" in source, (
+        "the tells tie-break no longer counts on the restored candidate; a sentinel hides tells "
+        "and never adds them, so counting on the masked text systematically under-reads"
+    )
