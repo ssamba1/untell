@@ -234,3 +234,45 @@ class TestTheLoopCliActuallyReadsTheConfig:
 
         monkeypatch.setattr(config, "get", boom)
         assert self._parse(["x"]).tier == "full"
+
+
+# --- an env var must not change a key's TYPE ----------------------------------------------------
+# `_coerce`'s docstring states the hazard: the same key answering 0.30 (float) from a file and
+# "0.30" (str) from the environment makes `get("threshold") < 0.5` raise TypeError only when the
+# env var happens to be set. The coercion that prevents it was gated on the caller passing a
+# default, so the promise held for `get(key, default)` and not for `get(key)`.
+
+
+def test_an_env_var_takes_its_type_from_the_config_file(tmp_path, monkeypatch):
+    """The path the docstring promised and the code did not cover."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "untell.yaml").write_text("threshold: 0.11\nbest_of: 7\n", encoding="utf-8")
+    from untell import config
+
+    monkeypatch.setenv("UNTELL_THRESHOLD", "0.99")
+    monkeypatch.setenv("UNTELL_BEST_OF", "3")
+    assert config.get("threshold") == pytest.approx(0.99)
+    assert isinstance(config.get("threshold"), float), "env value came back as a string"
+    assert config.get("best_of") == 3
+    assert isinstance(config.get("best_of"), int)
+
+
+def test_a_key_with_no_type_anywhere_stays_a_string(tmp_path, monkeypatch):
+    """The documented limit, pinned so it is a decision rather than a surprise. With neither a
+    default nor a file value there is nothing to infer a type from, and guessing would make
+    UNTELL_X=1 an int while UNTELL_X=1.0 is a float."""
+    monkeypatch.chdir(tmp_path)
+    from untell import config
+
+    monkeypatch.setenv("UNTELL_TOTALLYUNKNOWN", "1.5")
+    assert config.get("totallyunknown") == "1.5"
+
+
+def test_a_passed_default_still_wins_the_type(tmp_path, monkeypatch):
+    """Guards the guard: the original behaviour must be untouched."""
+    monkeypatch.chdir(tmp_path)
+    from untell import config
+
+    monkeypatch.setenv("UNTELL_THRESHOLD", "0.42")
+    assert config.get("threshold", 0.30) == pytest.approx(0.42)
+    assert isinstance(config.get("threshold", 0.30), float)

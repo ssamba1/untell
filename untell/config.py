@@ -160,5 +160,17 @@ def get(key: str, default: Any = None) -> Any:
     """
     val = os.environ.get(f"UNTELL_{key.upper()}")
     if val is not None:
-        return _coerce(val, default, key) if default is not None else val
+        if default is not None:
+            return _coerce(val, default, key)
+        # No default to take a type from, so fall back to the type the CONFIG FILE uses for this
+        # key. Without this the promise above holds only for callers who pass a default:
+        # `get("threshold")` returned 0.11 (float) from untell.yaml and "0.99" (str) from the
+        # environment — the same conditional TypeError the docstring on `_coerce` describes, in the
+        # one path that was not covered.
+        #
+        # When neither a default nor a file value exists there is nothing to infer a type from, and
+        # the raw string is returned. That is a real limit, not an oversight: guessing int-vs-float
+        # from the text would make `UNTELL_THRESHOLD=1` an int and `=1.0` a float.
+        typed = load().get(key)
+        return _coerce(val, typed, key) if typed is not None else val
     return load().get(key, default)
