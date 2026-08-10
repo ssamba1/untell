@@ -357,6 +357,7 @@ def check_derivable(report: Report) -> None:
     check_largest_repo_claims(report)
     check_test_inventory(report)
     check_test_count_claims(report)
+    check_unreleased_changelog_is_current(report)
     check_no_dead_functions(report)
 
     # --- links that documents make to each other -------------------------------------------------
@@ -825,6 +826,53 @@ def check_no_dead_functions(report: Report) -> None:
         "no function in untell/ or eval/ is unreferenced",
         not dead,
         f"unreferenced: {dead[:6]}" if dead else f"{len(defined)} functions, all referenced",
+    )
+
+
+def check_unreleased_changelog_is_current(report: Report) -> None:
+    """Numbers in `[Unreleased]` describe what will ship, so they are held to the live standard.
+
+    The rest of the changelog is deliberately exempt: a released entry records what was true when
+    it was written, and "correcting" it would destroy the record rather than repair anything. That
+    exemption does not extend upward. An `[Unreleased]` entry has not been published yet — it is a
+    draft of the next release notes, and shipping a superseded number in it is shipping a wrong
+    claim, not preserving a historical one.
+
+    Found by re-deriving the tell-rate corpus means: the caveat in the code said 0.551/7.335, the
+    re-measurement said 0.642/7.320, and the `[Unreleased]` entry describing that very change still
+    carried the old pair.
+
+    Checks the narrow, mechanical thing: any number the entry attributes to a constant or string in
+    the code must still match it. Prose claims are not checked here — `check_attribution` already
+    requires them to name a source.
+    """
+    path = REPO / "CHANGELOG.md"
+    if not path.exists():
+        return
+    text = path.read_text(encoding="utf-8")
+    if "## [Unreleased]" not in text:
+        report.check("the changelog has an Unreleased section", True, "none; nothing to check")
+        return
+    start = text.index("## [Unreleased]")
+    end = text.find("\n## [", start + 1)
+    unreleased = text[start : end if end != -1 else len(text)]
+
+    from untell.scripts.tells import _MIN_WORDS_FOR_A_RATE, score_tells
+
+    wrong: list[str] = []
+    # The corpus means the tells caveat quotes, taken from the caveat itself rather than hard-coded
+    # here — two copies of a number is how they drift apart in the first place.
+    caveat = score_tells("Moreover.").get("warning") or ""
+    for value in re.findall(r"\b\d\.\d{3}\b", caveat):
+        if value not in unreleased and "corpus means" in unreleased:
+            wrong.append(f"caveat quotes {value}, Unreleased does not")
+    if f"{_MIN_WORDS_FOR_A_RATE} words" not in unreleased and "corpus means" in unreleased:
+        wrong.append(f"the rate bar is {_MIN_WORDS_FOR_A_RATE} words; Unreleased says otherwise")
+
+    report.check(
+        "numbers in the Unreleased changelog match the code they describe",
+        not wrong,
+        "; ".join(wrong) if wrong else "corpus means and rate bar agree with the shipped caveat",
     )
 
 
