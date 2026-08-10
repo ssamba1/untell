@@ -358,7 +358,24 @@ GPU or skip. The product works without a trained adapter.
 
 ---
 
-## 7. Sequencing
+## 7. Open questions, already measured
+
+Each of these was investigated to the point of a number and then deliberately left. They are listed
+so the next attempt starts from the measurement rather than from the intuition — and in two cases
+the measurement is the reason not to proceed.
+
+| question | what is known | what would settle it |
+|---|---|---|
+| **Should the loop refuse candidates that raise repetition?** | Efficient slack is 0.5 points: blocks 2 of 216 draws, eliminates the cliff. Costs +0.0023 detector at n=12 and **+0.0075 at n=30** — inside the ±0.013 noise floor but positive in both runs. Prevents a **1-in-30** event ([Result 56](docs/free-ceiling-measured.md)) | A larger sample. The cost direction is consistent, so the question is whether ~3% of texts justifies a default change |
+| **The loop selects on masked text; the metric scores restored text** | Repetition share differs by a mean of −0.055 points but up to **+4.26**, and flips which side of the 5% bar the text falls on for 1 of 41 texts that lock a span. The tells tie-break was fixed ([Result 57](docs/free-ceiling-measured.md)); selection still reads masked repetition | Whether any other selection term reads a masked quantity that the user is judged on restored |
+| **`untell_text(scrub=False)` leaves the contraction transform dead** | Over 30 seeds the transform produces nothing on U+00A0 input. End-to-end cost **0.0011** against a ±0.013 floor ([Result 53](docs/free-ceiling-measured.md)) | Nothing — this is a decided non-fix. Folding at loop entry would mutate text on the one path where the caller asked for it untouched |
+| **Beam search over rewrite candidates** | Closed. At matched budget, paired on the seed, beam **loses more often than it wins** on three of four arm/corpus combinations ([Result 48](docs/free-ceiling-measured.md)) | Nothing. The zero in the census technique table is not an opportunity |
+| **Does a second pass help?** | Yes, modestly: **+0.0275**, about 27% of the first pass, better on 6 of 10 texts and worse on none, for 0.0036 extra meaning drift ([Result 54](docs/free-ceiling-measured.md)) | Whether to surface it as a documented recommendation |
+
+Two open items are **not** autonomous and are unchanged: per-language tell catalogues need someone
+who reads the language (§5), and three items need a GPU (§6).
+
+## 8. Sequencing
 
 1. **Default rewriter change** — measured, small, currently costs every full-tier user a result.
 2. **`untell-audit` + CI claim checking** — converts tonight's one-off discipline into a standing property.
@@ -366,7 +383,7 @@ GPU or skip. The product works without a trained adapter.
 4. **Language plugin architecture** — pending your decision; biggest ceiling, biggest refactor.
 5. **GPU moat** — only with real hardware.
 
-## 8. How we would know it worked
+## 9. How we would know it worked
 
 Not stars. These:
 
