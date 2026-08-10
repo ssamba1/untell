@@ -3735,3 +3735,39 @@ Worth keeping: **an exemption is a rule, and rules have boundaries nobody writes
 changelog is history" was true of every line anyone had looked at when the exemption was written.
 The one section where it is false is the section that is about to become the release notes — the
 highest-visibility text in the repository, and the only part of that file a user is likely to read.
+
+## Result 70
+
+**A docstring described the fix; the fix covered half the paths.**
+
+`untell/config.py` documents the hazard precisely: *"the SAME key answers `0.30` (float) from a file
+and `"0.30"` (str) from the environment, so `get("threshold", 0.30) < 0.5` raises TypeError only
+when the env var happens to be set — the worst kind of conditional failure."* `_coerce` exists to
+prevent it, and it works.
+
+It is invoked as `_coerce(val, default, key) if default is not None else val`. So the promise holds
+for `get(key, default)` and not for `get(key)`. Probed with a real `untell.yaml`:
+
+| call | from file | from env | |
+|---|---|---|---|
+| `get("threshold", 0.30)` | 0.11 float | 0.99 **float** | correct |
+| `get("threshold")` | 0.11 float | **`"0.99"` str** | the documented failure, uncovered |
+
+Only one in-repo caller passes a default, so the gap is latent rather than live — but the docstring
+states the invariant without qualification, and a latent contradiction between a documented promise
+and the code is the thing this repo treats as a defect in its own right.
+
+Fixed by falling back to the type of the **config-file** value when no default is given. Where
+neither exists there is nothing to infer from, and the raw string is returned — a real limit, now
+stated and pinned by a test, because guessing would make `UNTELL_X=1` an int while `UNTELL_X=1.0`
+is a float.
+
+**The tests I wrote for it failed on their first run**, calling `config.load.cache_clear()`. `load`
+is not cached; the attribute never existed. Three tests, one wrong assumption, caught immediately
+because they were run — the same class as the `'composite'`-vs-`"composite"` no-op in Result 61,
+and the reason a test is worth more the first time it fails than the tenth time it passes.
+
+Worth keeping: **read the qualifier on the code, not the claim in the docstring.** The docstring was
+written by someone who understood the bug exactly and fixed the path they were looking at. The
+sentence generalises; the code does not; and nothing flags the difference because both are correct
+about what they describe.
