@@ -229,3 +229,63 @@ def test_the_loop_counts_tells_on_restored_text() -> None:
         "the tells tie-break no longer counts on the restored candidate; a sentinel hides tells "
         "and never adds them, so counting on the masked text systematically under-reads"
     )
+
+
+# --- invisible characters: stripped for the tell count, warned about for the score ---------------
+# A zero-width space or soft hyphen between every character shatters the word count. MEASURED on a
+# 209-word HC3 answer: 889 words and 436 tells against 209 and 23, with 433 of the extra tells
+# coming from repeated_phrasing, because single-character fragments repeat constantly.
+#
+# The two surfaces take opposite decisions on purpose. A tell count describes the WRITING, and
+# "889 words" is a false description, so score_tells strips. score_text describes what a DETECTOR
+# would say about the exact string being submitted, and a real detector sees those characters too,
+# so it warns instead of silently scoring a document that does not exist.
+
+INVISIBLES = {
+    "zero_width_space": "\u200b",
+    "zero_width_non_joiner": "\u200c",
+    "word_joiner": "\u2060",
+    "soft_hyphen": "\u00ad",
+    "bom": "\ufeff",
+}
+
+
+def _inject(text: str, ch: str) -> str:
+    return " ".join(ch.join(w) for w in text.split(" "))
+
+
+@pytest.mark.parametrize("name", sorted(INVISIBLES), ids=sorted(INVISIBLES))
+def test_the_tell_count_ignores_invisible_characters(name: str) -> None:
+    from untell.scripts.tells import score_tells
+
+    plain = score_tells(_PROSE)
+    injected = score_tells(_inject(_PROSE, INVISIBLES[name]))
+    assert injected["words"] == plain["words"], (
+        f"{name} changed the word count from {plain['words']} to {injected['words']} — every "
+        "number in the result is derived from it"
+    )
+    assert injected["tells"] == plain["tells"]
+
+
+def test_a_soft_hyphen_is_not_an_attack() -> None:
+    """Justified PDF text is full of them, so this is the ordinary case rather than the adversarial
+    one, and it is the reason the fix is not gated behind an opt-in."""
+    from untell.scripts.tells import score_tells
+
+    assert score_tells(_inject(_PROSE, "\u00ad"))["words"] == score_tells(_PROSE)["words"]
+
+
+@pytest.mark.parametrize("name", sorted(INVISIBLES), ids=sorted(INVISIBLES))
+def test_the_score_warns_rather_than_stripping(name: str) -> None:
+    """The opposite decision, and the test says so: the score must still reflect the real string."""
+    from untell.scripts.score import score_text
+
+    warning = score_text(_inject(_PROSE, INVISIBLES[name]), tier="lite").get("warning") or ""
+    assert "invisible character" in warning, warning
+
+
+def test_clean_prose_gets_no_invisible_warning() -> None:
+    """Guards the guard: warning on everything would pass the test above and mean nothing."""
+    from untell.scripts.score import _invisible_char_warning
+
+    assert _invisible_char_warning(_PROSE) is None
