@@ -54,6 +54,7 @@ def print_humanize_result(
     post_score: dict,
     iterations: int,
     stopped: str,
+    warning: str | None = None,
 ):
     """Print a professional before/after comparison to the terminal."""
     # An unchanged result is a real outcome — the loop returns the original when no candidate beat
@@ -139,6 +140,11 @@ def print_humanize_result(
             original[:2000] + ("..." if len(original) > 2000 else ""),
             title="Text (unchanged)", border_style="yellow",
         ))
+    # After the panels, not before: the output is what the reader came for. A payload the caller
+    # asked to keep (`--no-scrub`) still travels in that output, and nothing else says so.
+    if warning:
+        _CONSOLE.print()
+        _CONSOLE.print(_Panel(warning, title="Warning", border_style="red"))
     _CONSOLE.print()
 
 
