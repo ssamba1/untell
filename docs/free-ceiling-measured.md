@@ -3128,3 +3128,67 @@ than reimplemented. Nothing is shipped on this evidence. Two rules earned the ha
   looked like a decisive negative until the known-positive case also came back clean. That is the
   same shape as [Result 44](free-ceiling-measured.md) — a check that cannot fire reads exactly like
   a check that found nothing.
+
+## Result 56
+
+**The repetition guard, tested properly: characterised, and still not shipped.**
+
+[Result 55](free-ceiling-measured.md) failed because it reimplemented the selection loop. The fix
+was to stop reimplementing: wrap the **rewriter object**, which is the one thing `untell_text` calls
+to produce candidates, and let every tie-break, adoption guard and stall check stay exactly as
+shipped. A vetoed draw returns the incumbent unchanged — a no-op candidate the loop already knows
+how to handle.
+
+**First run, and the guard still never fired.** Tracing every draw on the known-positive text
+explained why:
+
+```
+pass 2 draws (incumbent% -> candidate%)
+   3.35 -> 4.69      <- the damage, entirely below the bar
+   4.69 -> 4.67 / 4.69 / 4.65 ...
+final masked 4.65%      final restored 5.00%
+```
+
+Two separate problems, neither visible without the trace:
+
+1. **The rise happens below the bar.** One draw adds 1.34 points in a single step and never
+   crosses 5%. A guard that blocks bar-*crossings* has nothing to block.
+2. **The loop selects on masked text; the metric scores restored text.** 4.65% against 5.00% on the
+   same document. Across 60 HC3 texts, 41 lock at least one span; the restored-minus-masked
+   difference is a mean of −0.055 points but reaches **+4.26**, and on 1 of those 41 it flips which
+   side of the 5% bar the text falls on. The loop cannot see the quantity that gets reported.
+
+Re-tested with the guard the trace implies — veto a draw that *raises* the share by more than
+`slack` points, 12 eligible texts, 2 passes:
+
+| guard | P(AI) | tells | over the bar | draws blocked |
+|---|---|---|---|---|
+| none | 0.4272 | 1.08 | 1/12 | — |
+| slack 1.0 | 0.4272 | 1.08 | 1/12 | 0/216 |
+| **slack 0.5** | 0.4295 | **0.08** | **0/12** | 2/216 |
+| slack 0.0 | 0.4295 | 0.08 | 0/12 | 15/216 |
+
+That looked like a bargain: two draws in 216, the cliff gone, +0.0023 detector. Replicated at n=30:
+
+| guard | P(AI) | tells | over the bar | blocked |
+|---|---|---|---|---|
+| none | 0.4429 | 0.53 | **1/30** | — |
+| slack 0.5 | 0.4504 | 0.13 | 0/30 | 7/540 |
+
+**Not shipped.** The cost is +0.0075 — still inside the ±0.013 noise floor, but positive in both
+runs, so "free" is not a claim the data supports. The benefit is a 1-in-30 event, and the entire
+tells improvement is that one text. Changing a default for every user to prevent a 3% event at a
+cost that is merely too small to measure is not a trade this evidence justifies.
+
+What it did buy is a precise question in place of a vague one. The mechanism is understood, the
+efficient slack is 0.5, the cost is bounded at under 0.01, and the frequency is ~3%. Anyone
+revisiting it starts from there instead of from "the rewriter sometimes adds repetition".
+
+Two things worth keeping:
+
+- **n=12 said +0.0023 and n=30 said +0.0075.** Both are inside the noise floor and the first looked
+  three times better than the second. A cost estimate from a single small sample is a direction, not
+  a magnitude — and the direction was consistent, which is the part that decided this.
+- **The trace was worth more than either arm.** Both guard runs returned "blocked 0" and looked like
+  clean negatives. Nine lines of per-draw logging showed the guard was well-formed and aimed at the
+  wrong event, which no amount of re-running would have revealed.
