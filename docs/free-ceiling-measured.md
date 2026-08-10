@@ -3583,3 +3583,90 @@ Worth keeping: **audit by surface, not by mechanism.** Both evasions were unders
 fixed two results ago; the question "which surfaces report a verdict, and does each one carry the
 caveat?" is a different question from "is the mechanism handled", and only the second had been
 answered. The gap was not in the hard part.
+
+## Result 66
+
+**`--no-scrub` shipped 701 evasion characters in the output and said nothing.**
+
+[Result 65](free-ceiling-measured.md) noted that the rewrite loop is safe by default and that
+`scrub=False` lets both evasions through "by request". That was the correct description and the
+wrong place to stop: the caller asked to keep their characters in the *input*, and what they get
+back is an *output* carrying 701 zero-width characters — with a result dict that had no `warning`
+key at all, and a CLI that printed nothing.
+
+Those characters flip an AI verdict to clean on 14 of 20 texts. A caller shipping that output is
+shipping an evasion payload, possibly without knowing it exists.
+
+Now reported and still not removed — removing it would be ignoring the flag. The warning fires only
+when a payload is actually present *and* survives, so `--no-scrub` on clean text stays silent.
+
+**Two bugs found on the way, both mine, both instructive:**
+
+The wiring landed inside the `stopped=` argument, producing `stopped=result.get("stopped",
+"unknown", warning=...)`. The CLI did not crash. It printed a perfectly ordinary plain-text result,
+because the rich renderer was wrapped in `except Exception` — so a `TypeError` from a wrong argument
+list was indistinguishable from `rich` not being installed. The only symptom was that the output
+looked *slightly different from last time*, and the only reason it was caught is that the previous
+run's format was still on screen.
+
+That fallback is now `except ImportError`, which is the thing it was written for. A missing optional
+dependency should degrade quietly; a bug in the renderer should be loud.
+
+Worth keeping: **a broad `except` around a fallback path converts programming errors into feature
+detection.** The handler was correct about what it wanted to catch and wrong about how to say it,
+and the cost was that it hid a live bug for as long as nobody compared two runs side by side.
+
+## Result 67
+
+**My fix was obsolete within hours, and keeping its numbers would have been the exact failure this log exists to catch.**
+
+[Results 62 and 63](free-ceiling-measured.md) measured two working evasions and added caveats to
+`score_text`, `humanness` and `verify` carrying the numbers: zero-width injection moved AI text
+−0.1943 and flipped 14 of 20 verdicts to clean; homoglyph substitution −0.2884 and 13 of 15.
+
+A concurrent session then fixed the **detector layer** — normalising these characters before
+scoring (`2e41f57`, `468dcbf`). Re-measured after their commits:
+
+| tier | vector | mean \|Δ P(AI)\| | verdict flips |
+|---|---|---|---|
+| lite | zero-width | **0.0000** | 0/10 |
+| lite | homoglyph | **0.0000** | 0/10 |
+| lite | soft hyphen | **0.0000** | 0/10 |
+| full | all three | **0.0000** | 0/10 |
+
+Both evasions are dead at both tiers. Which makes every caveat I had just shipped a **false
+statement**: they told the reader the score is affected and a clean result is not evidence, and
+neither is true any more.
+
+Rewritten to what remains true — the characters are still in the user's text, they will travel with
+it, and another tool may not normalise them. `untell scrub` is still the remedy, for a different
+reason than the one originally given. The tests that asserted `"14 of 20"` and `"13 of 15"` now
+assert the current claim instead.
+
+The `scrub=False` warning from [Result 66](free-ceiling-measured.md) is unaffected and stays exactly
+as written: it is about the payload surviving into the *output*, which no detector fix changes.
+
+Three things worth keeping:
+
+- **A fix at a lower layer can obsolete a fix at a higher one, and nothing announces it.** Both
+  changes were correct when written. The only reason the staleness was caught within the hour is
+  that the other session's commit titles named the characters I had been working on, so I
+  re-measured instead of assuming my numbers still held.
+- **A caveat carrying a measured number has an expiry date the number does not advertise.** Putting
+  "−0.1943, 14 of 20" in user-facing text made the warning concrete and useful, and it also meant
+  the warning could go stale in a way a vaguer one could not. That trade is still worth making —
+  but only if something re-checks.
+- **Two sessions converged on one problem from opposite ends and both fixes were needed.** Theirs
+  removed the vulnerability; mine tells the user their document still contains the characters.
+  Neither subsumes the other, and the overlap was in the *justification*, not the behaviour.
+
+**And they caught a hollow test of mine.** `test_markup_survives_a_real_rewrite`, written earlier in
+this session to pin the LaTeX defect row, called `untell_text` without `rewriter="composite"`. With
+no API key configured — which is CI — the loop returns `{"error": ..., "final": <input>}` and every
+must-survive token "survived" because nothing had touched it. Five seeds of nothing, passing
+cleanly. They added an assertion on `rewrites` so the test fails instead of going quiet.
+
+That is the same defect this log has recorded four times in other people's code and twice in my
+own harnesses — a check that cannot fire reads exactly like a check that found nothing — and I
+wrote it into a test whose entire purpose was anti-vacuity. Ignoring the `error` key was the
+specific mechanism, which is the third time this session that key has been the thing that mattered.
