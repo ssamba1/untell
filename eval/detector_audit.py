@@ -53,6 +53,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 
 # Run-as-file support: put the package parent on sys.path when executed directly.
 if __package__ in (None, ""):
@@ -190,6 +191,36 @@ def _mean(xs: list[float]) -> float:
     return sum(xs) / len(xs)
 
 
+_WHITESPACE_RUN = re.compile(r"\s+")
+_WORD_RE = re.compile(r"[A-Za-z0-9']+")
+
+
+def collapse_layout(text: str) -> str:
+    """Put both halves of a corpus on one layout convention: every whitespace run becomes a space.
+
+    Line breaks are how a corpus was *stored*, not how its text was written. Collapsing them is what
+    stops a paired measurement scoring the scrape instead of the prose — see `layout_shortcut`.
+    """
+    return _WHITESPACE_RUN.sub(" ", text).strip()
+
+
+def _layout_only_auroc(human: list[str], ai: list[str]) -> float | None:
+    """AUROC reachable from newline density alone — the words discarded entirely.
+
+    This is the ceiling a detector could hit on this corpus without reading anything. Near 0.5 means
+    layout carries no class information and the corpus is safe to score as supplied. Near 1.0 (or
+    near 0.0, which is the same shortcut pointing the other way) means it is not.
+    """
+    if not human or not ai:
+        return None
+
+    def density(t: str) -> float:
+        return 1000 * t.count("\n") / max(len(_WORD_RE.findall(t)), 1)
+
+    au = auroc([density(t) for t in ai], [density(t) for t in human])
+    return None if au is None else max(au, 1 - au)
+
+
 def auroc(ai: list[float], human: list[float]) -> float | None:
     """P(a random AI sample scores above a random human one), ties counted as half.
 
@@ -286,13 +317,56 @@ def audit_all(pairs: int = 0, dataset: str = "hc3") -> dict:
     """
     probes = None
     source = "packaged probes (smoke test)"
+    layout_shortcut = None
     if pairs > 0:
         from eval.datasets import load_pairs
 
         loaded = load_pairs(dataset, pairs)
         if loaded:
-            probes = ([h for h, _ in loaded], [a for _, a in loaded])
-            source = f"{dataset} labelled pairs (n={len(loaded)})"
+            # Layout is collapsed on BOTH halves before anything is scored.
+            #
+            # MEASURED, and this is not a precaution: on RAID, newline density ALONE — every word
+            # discarded, the count of "\n" per 1,000 words used as the entire score — separates the
+            # two halves at AUROC 1.0000. A detector that reads nothing and counts line breaks is
+            # perfect on this corpus. RAID's human documents are hard-wrapped scrapes (84.52 single
+            # newlines per 1,000 words) and its machine continuations are unwrapped (2.79); double
+            # newlines run 0.00 against 14.50. That is how the corpus was assembled, not a way that
+            # human writing differs from machine writing, and real assistant output is full of
+            # blank lines.
+            #
+            # With a perfect shortcut available, an AUROC over as-supplied text cannot be claimed to
+            # measure authorship — it can only be an upper bound. What the detectors actually took
+            # from it was smaller than that ceiling implies, which is worth recording because it is
+            # the reassuring direction and was not guaranteed (60 pairs):
+            #
+            #     perplexity_burstiness   1.0000 -> 0.9983
+            #     roberta_openai          0.9406 -> 0.8875   <- the one that leaned on it
+            #     hc3_roberta             0.9975 -> 0.9881
+            #     mage                    1.0000 -> 1.0000
+            #     fast_detectgpt          1.0000 -> 1.0000
+            #
+            # so the published RAID figures were inflated by up to 0.053 rather than fabricated.
+            #
+            # This is applied to every corpus rather than special-cased to RAID, because RAID is not
+            # the only one affected and the collapse is provably free where it is not needed:
+            #
+            #     layout-only AUROC   RAID 1.0000   HC3 0.9667   MAGE 0.5000
+            #
+            # HC3 carries nearly the same shortcut (its ChatGPT half is newline-formatted, its human
+            # half is not) though no detector took more than 0.0017 from it. MAGE is clean at chance,
+            # and there the collapse moves all five detectors by exactly 0.0000 — which is the
+            # evidence that this cannot damage a corpus that did not need it.
+            #
+            # `layout_shortcut` below reports the ceiling for whichever corpus is in use, so a
+            # future corpus with the same defect announces itself instead of being trusted.
+            human_raw = [h for h, _ in loaded]
+            ai_raw = [a for _, a in loaded]
+            layout_shortcut = _layout_only_auroc(human_raw, ai_raw)
+            probes = (
+                [collapse_layout(h) for h in human_raw],
+                [collapse_layout(a) for a in ai_raw],
+            )
+            source = f"{dataset} labelled pairs (n={len(loaded)}, layout collapsed)"
         else:
             source = f"{dataset} unavailable — fell back to packaged probes"
 
@@ -360,12 +434,32 @@ def audit_all(pairs: int = 0, dataset: str = "hc3") -> dict:
             or r["auroc"] <= SENTENCE_BROKEN_AUROC
         )
     ]
-    return {"results": rows, "broken": broken, "source": source}
+    return {
+        "results": rows,
+        "broken": broken,
+        "source": source,
+        "layout_shortcut": (
+            round(layout_shortcut, 4) if layout_shortcut is not None else None
+        ),
+    }
+
+
+# Above this, layout alone separates the corpus well enough that an as-supplied AUROC would be
+# measuring the scrape. RAID sits at 1.0000. Layout is always collapsed, so this is a statement
+# about the corpus rather than a caveat on the numbers below — but a reader comparing these figures
+# with someone else's, taken over raw text, needs to know the two are not the same measurement.
+LAYOUT_SHORTCUT_WARN = 0.70
 
 
 def render(report: dict) -> str:
+    shortcut = report.get("layout_shortcut")
     lines = [
         f"probe set: {report.get('source', 'packaged probes')}",
+    ]
+    if shortcut is not None:
+        note = "" if shortcut < LAYOUT_SHORTCUT_WARN else "  <- layout alone nearly separates this corpus"
+        lines.append(f"layout-only AUROC (newline density, no words): {shortcut:.4f}{note}")
+    lines += [
         "",
         f"{'detector':24} {'verdict':14} {'AUROC':>7} {'human':>7} {'ai':>7} {'gap':>7} "
         f"{'FPR':>6} {'TPR':>6}",
