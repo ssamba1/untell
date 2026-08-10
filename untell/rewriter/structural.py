@@ -1210,6 +1210,22 @@ _CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
     # The entries below are the subset where a plain rewrite is unambiguous. Pure scaffolding is
     # deleted; a phrase carrying meaning is replaced by the plainest wording of the same meaning.
     # Nothing here is a judgement call about what the author meant.
+    #
+    # WHAT THIS BUYS ON TODAY'S CORPORA: nothing measurable, and that is stated rather than left to
+    # be assumed. Measured with the table before and after this block:
+    #
+    #     HC3  (60)  mean tells/100w 6.045 -> 6.040   cliche hits after rewrite 1 -> 0
+    #     RAID (80)  15 cliche hits in source, 0 after rewrite with EITHER table
+    #     MAGE (80)   2 cliche hits in source, 0 after rewrite with EITHER table
+    #
+    # The 41-of-57 coverage gap was a real property of the table and the phrases it missed barely
+    # occur in these corpora, so closing it moves no number. Kept anyway, for the reason
+    # `scripts/tells.py` gives for keeping the tells these corpora never fire: HC3 is 2022-era
+    # ChatGPT and RAID's generators are not much newer, while "game-changer", "deep dive" and "the
+    # tip of the iceberg" are current corporate-AI vocabulary. Declining to treat a modern phrase
+    # because a dated benchmark does not contain it is the same mistake as deleting the pattern
+    # that detects it. What is NOT claimed is an improvement: on anything measurable here, this is
+    # a no-op.
     (re.compile(r"\bin\s+conclusion,?\s*", re.IGNORECASE), ""),
     (re.compile(r"\b(?:in\s+summary|to\s+summari[sz]e),?\s*", re.IGNORECASE), ""),
     (re.compile(r"\bit\s+should\s+be\s+noted\s+that\s+", re.IGNORECASE), ""),
