@@ -443,12 +443,40 @@ def lock(text: str) -> tuple[str, dict[str, str]]:
     return "".join(out), mapping
 
 
+# A span is safe to capitalise only when its first word is plain lowercase letters. That excludes
+# every form whose case is load-bearing: "doi:10.1000/xyz" (colon), "iPhone" and "mRNA" (internal
+# capitals), "e-mail" is fine but "pH" is not. Getting this wrong writes "Doi:10.1000/xyz" into a
+# citation, which is worse than the lowercase sentence it fixes.
+_PLAIN_LOWERCASE_WORD = re.compile(r"^[a-z]+(?=\s|$)")
+# Sentinel at the very start, or following a sentence terminator — i.e. where a capital belongs.
+_SENTINEL_AT_SENTENCE_START = re.compile(r"(?:^|(?<=[.!?])\s+)(⟦HZ\d{4,}⟧)")
+
+
 def restore(masked: str, mapping: dict[str, str]) -> str:
-    """Inverse of :func:`lock` — substitute each sentinel with its original span."""
+    """Inverse of :func:`lock` — substitute each sentinel with its original span.
+
+    A span locked mid-sentence carries mid-sentence casing, and the rewriter is free to move it.
+    MEASURED on real output: "the New York Times" was locked out of "...published by various
+    organizations, and the New York Times is just one...", the loop split the sentence at that
+    clause, and restore wrote it back verbatim — "...in the book industry. the New York Times Best
+    seller list is..." The masked candidate is clean; the lowercase sentence start is created here,
+    which is why no check on the rewriter's output could see it.
+
+    So a sentinel that lands at a sentence start has its span capitalised, and only when that is
+    unambiguously safe — see `_PLAIN_LOWERCASE_WORD`.
+    """
     def _sub(m: re.Match) -> str:
         return mapping.get(m.group(0), m.group(0))
 
-    return _SENTINEL_RE.sub(_sub, masked)
+    def _capitalise(m: re.Match) -> str:
+        span = mapping.get(m.group(1))
+        if span and _PLAIN_LOWERCASE_WORD.match(span):
+            return m.group(0).replace(m.group(1), span[0].upper() + span[1:])
+        return m.group(0)
+
+    # Sentence-initial sentinels are resolved first, while they are still identifiable AS sentinels;
+    # the pass below then fills in every one that was left alone.
+    return _SENTINEL_RE.sub(_sub, _SENTINEL_AT_SENTENCE_START.sub(_capitalise, masked))
 
 
 def find_sentinels(text: str) -> set[str]:

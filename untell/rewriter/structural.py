@@ -131,6 +131,23 @@ _LEADING_MARKER_RE = re.compile(
     re.IGNORECASE,
 )
 
+# The SUBORDINATORS in `_CONJ` — because, while, although, though, since — are the other half of the
+# same problem and cannot go in the list above. Found by scanning 60 rewrites for grammar shapes the
+# tell catalogue cannot see: "…equal rights for the LGBT community, but though, there are some
+# conservatives…". `_CONJ` can emit all five, so a second clause opening with one takes a connector
+# on top of the one it already has.
+#
+# They are NOT stripped, because stripping them is unsafe in a way the discourse markers are not.
+# `_LEADING_MARKER_RE` removes only the marker and its comma, which is right for "Moreover, X" —
+# the word carries nothing but the join. A subordinator governs what follows it: "Because of this,
+# Y" would become "and of this, Y", turning a broken join into a broken clause.
+#
+# So the merge is SKIPPED instead. Two sentences that both want to be subordinate clauses are not a
+# merge this rewriter can do correctly, and leaving them apart costs only a merge opportunity.
+_LEADING_SUBORDINATOR_RE = re.compile(
+    r"^(?:because|while|although|though|since|whereas|unless|whether)\b", re.IGNORECASE
+)
+
 # Clause connectors for the sentence merge, weighted to the frequencies HUMANS actually use.
 #
 # No "; " in this list. The merge runs after the semicolon strip, so a semicolon inserted as a
@@ -570,6 +587,15 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
             # ", and " + "plus, it improves..." reads "and plus, it improves". Strip the marker
             # first — the connector about to be added does the same job.
             b = _LEADING_MARKER_RE.sub("", b, count=1)
+            # A clause that opens with a subordinator keeps it (see `_LEADING_SUBORDINATOR_RE`):
+            # stripping would break the clause, and adding a connector in front of it produces
+            # "but though, there are…". Neither is acceptable, so this pair is not merged — the
+            # first sentence is emitted on its own, exactly as the "not safe to demote" branch
+            # below does. Advancing without appending it would delete it from the output.
+            if _LEADING_SUBORDINATOR_RE.match(b):
+                out.append(sentences[i])
+                i += 1
+                continue
             merged_ok = bool(b) and (
                 b[0].islower() or _safe_to_lowercase(b.split()[0], " ".join(sentences))
             )
