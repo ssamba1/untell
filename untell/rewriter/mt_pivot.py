@@ -13,6 +13,12 @@ mode — a rewriter that repeats a clause restores the citation twice. Verified 
 malicious rewriters, one dropping a sentinel and one duplicating it: both candidates are rejected
 and the locked citation and number survive intact.
 
+What no check covers is REORDERING: the same sentinels in different positions have an identical
+multiset, and the meaning gate does not see it either (a swap measures similarity 0.9992 masked,
+0.9823 restored, and passes both). Nothing is lost, but a citation can attach to the wrong clause.
+Measured at zero across 100 draws from the four local rewriters, so it is an LLM-rewriter risk;
+see tests/test_sentinel_net_rejects_bad_candidates.py for why no guard was added.
+
 Most useful on watermarked / repetitively-phrased input, where round-trip MT breaks the n-gram
 patterns statistical detectors key on. Needs ``.[full]`` (torch + transformers + sentencepiece);
 degrades to a safe no-op when unavailable, exactly like the other optional rewriters.

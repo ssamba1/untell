@@ -77,12 +77,29 @@ def test_a_corrupted_candidate_never_reaches_the_output(mode: str) -> None:
         assert fragment in final, f"{mode} rewriter lost {fragment!r}"
 
 
-def test_the_swap_case_is_documented_as_out_of_scope() -> None:
-    """A multiset compare cannot catch REORDERING — the same sentinels in different places.
+def test_the_swap_case_is_uncaught_by_anything() -> None:
+    """A multiset compare cannot catch REORDERING, and neither can the meaning gate.
 
-    Asserted so the limit is explicit rather than assumed. Every locked span still appears exactly
-    once, so nothing is lost; what a swap could do is attach the right citation to the wrong clause.
-    The meaning gate is what stands between that and the output, not this check.
+    An earlier version of this docstring said "the meaning gate is what stands between that and the
+    output". That was asserted, not measured, and it is false. MEASURED on a swap of two sentinels:
+
+        masked domain (what run.py gates on)    similarity 0.9992   meaning_preserved True
+        restored domain                         similarity 0.9823   meaning_preserved True
+
+    The masked figure is unsurprising — sentinels are opaque tokens, so exchanging two of them
+    barely changes the string. The restored one is the real result: the text restores to "97 kg
+    reported 42 kg of yield, while Jones (2021) reported Smith (2020)", which is broken on its face,
+    and the gate still passes it. Gating on restored text would not fix this.
+
+    No guard was added, on the evidence rather than for lack of an idea. An order check is the
+    obvious one and it would reject legitimate clause reordering, which is a core humanising move.
+    MEASURED over 100 draws — composite, structural, surgical and targeted, 25 seeds each, 12
+    sentinels — the order is preserved 100 out of 100 times and the multiset never changes. So the
+    hole is real and unexercised by any local rewriter; it is specifically a risk for an LLM
+    rewriter, which regenerates prose and can misattribute a citation. Trading a working
+    capability against a hypothesis measured at zero is the wrong trade.
+
+    This test asserts only what is true today: a swap loses nothing.
     """
     adversary = _Adversary("swap")
     result = untell_text(_TEXT, rewriter=adversary, tier="lite", max_iters=1, threshold=0.0)
