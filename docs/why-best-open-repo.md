@@ -77,7 +77,7 @@ Against our own four criteria, this repo has all four:
 | (a) validated vs **multiple live detectors** | 8 local adapters — 5 run by default (RoBERTa-OpenAI, HC3, Fast-DetectGPT, MAGE, GPT-2 perplexity); RADAR is opt-in via `UNTELL_ENABLE_RADAR=1` (non-commercial license) and Binoculars needs CUDA — + **7 commercial API adapters** + browser checkers; **live-proven 100%→0% on ZeroGPT** (measured 2026-06-25 on the formulaic demo paragraphs; a third-party site that can change without notice — re-run `--browser zerogpt` before citing it) |
 | (b) quality/meaning **verifier** | semantic-similarity gate + preserve-lock (citations/numbers/entities) + `untell-verify` |
 | (c) **iterative detector-feedback loop at inference** | the core loop + **per-sentence targeting** (rewrite only the flagged sentences) |
-| (d) **user-installable package** | `pip install` + **23** console scripts (`untell`, `-score`, `-loop`, `-humanize`, `-verify`, `-prove`, `-sentences`, `-tells`, `-voice`, `-humanness`, `-hedges`, `-numbers`, `-scrub`, `-compare`, `-ceiling`, `-detector-audit`, `-eval-policy`, `-distill`, `-surrogate`, `-server`, `-mcp`) **and** an MCP server, a REST API and a Claude skill |
+| (d) **user-installable package** | `pip install` + **23** console scripts (`untell`, `-score`, `-loop`, `-humanize`, `-verify`, `-prove`, `-sentences`, `-tells`, `-voice`, `-humanness`, `-hedges`, `-numbers`, `-scrub`, `-compare`, `-ceiling`, `-detector-audit`, `-eval-policy`, `-distill`, `-surrogate`, `-server`, `-mcp`, `-audit`, `-latex`) **and** an MCP server, a REST API and a Claude skill |
 
 ---
 
@@ -132,7 +132,7 @@ in this repo: move one edit to the end of a long document and see whether the ve
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
-| Automated tests | ✅ **2788** tests, 91 modules (reproduce with `pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
+| Automated tests | ✅ **2799** tests, 91 modules (reproduce with `pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
 | CI (lite + full-tier, real models) | ✅ 4 jobs | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs without a GPU | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | License | MIT | MIT | MIT | MIT | Apache | MIT | MIT |
