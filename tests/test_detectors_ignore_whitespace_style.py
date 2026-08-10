@@ -51,6 +51,31 @@ def test_normalisation_does_not_touch_decimals_or_ellipses() -> None:
     assert normalise_whitespace("It cost 3.50 and took 1,200 ms...") == "It cost 3.50 and took 1,200 ms..."
 
 
+# The scope of the normalisation is a decision, not an oversight, so it is pinned. An audit of 28
+# surface features across all three corpora found other lopsided splits, and they are deliberately
+# left alone: they carry real style information where whitespace carries none. Widening the helper
+# to "clean up" any of them would delete signal from the detector's input.
+DELIBERATELY_PRESERVED = [
+    # HC3: 0.90 semicolons per 1,000 human words vs 0.00 for ChatGPT, and hc3_roberta did learn it
+    # (0.8381 AUROC vs 0.9613 for the period control). But 2022 ChatGPT genuinely avoided
+    # semicolons -- a stale style correlate, not a preprocessing artefact.
+    "It works; it scales; nobody disagrees.",
+    # HC3: spaced contractions are 9.34 per 1,000 human words vs 0.00 -- an infinite ratio that
+    # nonetheless costs hc3_roberta only 0.033 AUROC. Corpus asymmetry alone does not make a shortcut.
+    "It 's fine and it does n't matter.",
+    # Newlines are paragraphing. Measured not to move any detector, and RAID's own halves differ
+    # 30:1 on them, so normalising here would import that corpus's layout bias into every score.
+    "First point.\n\nSecond point.",
+    # Curly quotes and dashes are typography the author chose.
+    "She said “the project” — and meant it.",
+]
+
+
+@pytest.mark.parametrize("text", DELIBERATELY_PRESERVED)
+def test_normalisation_leaves_real_style_alone(text: str) -> None:
+    assert normalise_whitespace(text) == text
+
+
 def _detector(name: str):
     from untell.detectors import load_detectors
 

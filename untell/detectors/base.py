@@ -53,6 +53,43 @@ def clamp01(x: float) -> float:
 # This is applied to detector INPUT only and never to text the user gets back. It is not a claim
 # that whitespace is meaningless; it is that this model reads it as authorship when it is punctuation
 # style, and a PDF extractor or a double-space-after-period habit produces it by accident.
+#
+# --- why nothing else is normalised -------------------------------------------------------------
+# The obvious follow-up question is whether the other detectors carry shortcuts of the same kind.
+# AUDITED, and the answer is no. Method: rank 28 surface features by how hard they separate the two
+# halves of each corpus (the fingerprint that caught the whitespace artefact), then perturb the
+# candidates against every loadable detector WITH CONTROLS, because a surface edit that also changes
+# grammar cannot be told apart from real signal without one. 40 RAID pairs, AUROC:
+#
+#                            baseline   ", and "->"; "   control ", and "->". "
+#     roberta_openai           0.8581       0.5719              0.5769
+#     hc3_roberta              0.9850       0.8381              0.9613
+#     fast_detectgpt           1.0000       1.0000              1.0000
+#     perplexity_burstiness    0.9812       0.9688              0.9487
+#
+# `roberta_openai` looks catastrophically semicolon-sensitive until the control lands on the same
+# number: splitting a long compound sentence is what moves it, whichever mark does the splitting.
+# That is burstiness — real signal, and exactly what the structural rewriter is for. Not a shortcut.
+# `fast_detectgpt` is zero-shot, so it has no training corpus to carry an artefact, and measures
+# immune. `mage` is correctly oriented and sharp (2.6e-05 on a human sample, 0.99999 on an AI one).
+#
+# `hc3_roberta` is the exception again: for it the semicolon does something the period does not
+# (0.8381 vs 0.9613), and HC3 has the matching asymmetry — 0.90 semicolons per 1,000 human words
+# against 0.00 for ChatGPT. But unlike whitespace this one is NOT normalised, because it is not an
+# artefact: 2022-era ChatGPT really did avoid semicolons. It is a stale style correlate, so removing
+# it from the input would delete signal rather than noise. It is recorded here as a known evasion
+# lever instead.
+#
+# One calibration point worth keeping, because it is what stops this method over-firing: a lopsided
+# corpus ratio is NOT sufficient to make a shortcut. HC3's human half writes spaced contractions
+# ("it 's", "does n't") at 9.34 per 1,000 words against ChatGPT's 0.00 — an infinite ratio, the same
+# fingerprint as the whitespace artefact — and reproducing them costs hc3_roberta 0.033 AUROC. The
+# corpus screen proposes; only the perturbation test decides.
+#
+# Caveat for anyone measuring ON these corpora rather than fixing a detector: RAID separates its own
+# halves 30:1 on single newlines (84.52 vs 2.79 per 1,000 words) and infinitely on double newlines
+# (0.00 vs 14.50). An AUROC computed over RAID with layout preserved is partly scoring formatting.
+# The figures above avoid it by whitespace-joining both halves, which is a thing to do deliberately.
 _HORIZONTAL_RUN = re.compile(r"[ \t]+")
 _TRAILING_HORIZONTAL = re.compile(r"[ \t]+(?=\n)")
 _SPACE_BEFORE_PUNCT = re.compile(r"[ \t]+([.,;:!?])")
