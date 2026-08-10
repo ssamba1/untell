@@ -3192,3 +3192,50 @@ Two things worth keeping:
 - **The trace was worth more than either arm.** Both guard runs returned "blocked 0" and looked like
   clean negatives. Nine lines of per-draw logging showed the guard was well-formed and aimed at the
   wrong event, which no amount of re-running would have revealed.
+
+## Result 57
+
+**The tie-break was ranking on masked text — the same defect the detector score already fixed.**
+
+Found by the trace in [Result 56](free-ceiling-measured.md), which showed the loop working with a
+4.65% repetition share while the metric reported 5.00%. Chasing that discrepancy to its source: the
+candidate tuple was built as
+
+```python
+cscore = score(candidate)                                  # restores first
+valid.append((candidate, cscore, score_tells(candidate)))  # does not
+```
+
+Two quantities about the same candidate, one measured on what a reader sees and one on a string
+full of sentinels. `score()` restores because of a fix already made and documented in this file —
+*"the size of the misreport is not the argument for this fix; that the loop was RANKING on a
+quantity nobody is judged on is."* The tells term never got the same treatment.
+
+MEASURED over 120 HC3+RAID texts, 91 of which lock at least one span:
+
+| | |
+|---|---|
+| texts where masked and restored tell counts disagree | **40 of 91 (44%)** |
+| mean difference (restored − masked) | **+3.33 tells** |
+| largest | **+27** |
+| smallest | **+0** |
+
+That last row is the important one. The minimum delta is zero, so **masking never invents a tell;
+it only ever hides them.** The bias is one-directional and systematic, and it lands hardest on
+texts that lock spans — the ones carrying citations and numbers, which is the academic register
+this repo targets.
+
+**It changes no output.** Measured end to end on 14 RAID texts that lock a span: P(AI) 0.2413 and
+30.14 tells, identical before and after, because the tells term only breaks ties among candidates
+already within `_TELLS_EPS` (0.02) of the best detector score, and that band rarely holds two
+candidates whose tell counts differ.
+
+Kept anyway, on the precedent quoted above. A ranking key that is systematically wrong in one
+direction is worth correcting whether or not today's inputs happen to expose it — and the cost is
+one string substitution and one regex pass per candidate, against a detector pass that already
+dominates the loop.
+
+Worth keeping: **an inconsistency found while investigating something else is still a finding.**
+This was not on any list. It surfaced because Result 56 needed to explain a 0.35-point gap between
+two numbers that should have been the same, and the explanation was two lines of code disagreeing
+about which string they were describing.
