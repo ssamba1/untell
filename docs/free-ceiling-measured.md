@@ -3539,8 +3539,47 @@ direction result in [Result 45](free-ceiling-measured.md) stands, and so do the 
 evasion results, which are within-text comparisons where layout is held constant on both sides
 anyway.
 
+Independently confirmed: the session that found the layout bias reached the same conclusion for the
+tell catalogue from the other direction (commit `cbbf78f`, "the catalogue AUROC had no layout bias")
+— and caught a separate staleness of 0.32 in the published figure while doing so.
+
 Worth keeping: **a confound in a shared corpus is everyone's problem, and "my measurement probably
 doesn't depend on that" is a guess until it is a measurement.** The check cost one script and five
 minutes. Had it come out the other way, nine published numbers would have needed retracting — and
 the reason to run it was not doubt about this metric but the fact that somebody had just proved the
 corpus lies about *something*.
+
+## Result 65
+
+**Where each evasion lands, checked surface by surface — and the one that mattered most was silent.**
+
+[Results 62 and 63](free-ceiling-measured.md) measured two evasions that flip an AI verdict to
+clean. This traces both through every surface that reports a verdict.
+
+| surface | zero-width | homoglyph | state |
+|---|---|---|---|
+| rewrite loop, default | removed | removed | safe — `scrub` runs by default |
+| rewrite loop, `scrub=False` | **701 survive** | **262 survive** | by request; the caller asked |
+| `score_tells` | immune (strips) | immune (strips) | Result 60 |
+| `score_text` | warns | warns | Results 62, 63 |
+| `humanness` | warns | via `score_text` | Result 62 |
+| **`verify`** | **silent** | **silent** | **fixed here** |
+| `/tells` | immune | immune | no caveat needed |
+
+`verify` was the gap, and it is the worst one to have. It is the surface that produces a **pass/fail
+verdict and a process exit code** — the thing a user consults to decide whether their text is clean,
+and the thing a script branches on. It reported PASS on injected text in silence while `score_text`
+warned about the identical string.
+
+Both caveats now attach to the result dict, print **after** the verdict rather than before it — a
+caveat above the answer gets skimmed past, and a PASS obtained this way is precisely the one to
+distrust — and are documented in the REST `/verify` schema, which is all a machine client has.
+
+`/tells` needs no caveat and does not get one: `score_tells` strips, so its numbers are already
+correct on injected input. Adding a warning there would be noise about a problem that no longer
+exists on that surface.
+
+Worth keeping: **audit by surface, not by mechanism.** Both evasions were understood, measured and
+fixed two results ago; the question "which surfaces report a verdict, and does each one carry the
+caveat?" is a different question from "is the mechanism handled", and only the second had been
+answered. The gap was not in the hard part.
