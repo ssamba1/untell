@@ -146,6 +146,27 @@ logger = logging.getLogger(__name__)
 #     right way; it has no observations pointing the right way at all. It stays in the catalogue
 #     as `weak` because a caller scanning for the famous tells should see it reported and see the
 #     number next to it — deleting it silently would leave them assuming it was never checked.
+#
+#     Read the DENOMINATOR before acting on any precision in these tables — it is per FIRING, not
+#     per document scanned, and "0 out of 400 documents" is 7 firings. Re-derived with
+#     `python -m eval.tells_auroc --precision`, which now reports n and a 95% Wilson interval:
+#
+#         em_dash            human 7  ai 0   n=7    0.000  [0.00, 0.35]   p=0.016
+#         semicolon_crutch   human 6  ai 1   n=7    0.143  [0.03, 0.51]   p=0.125
+#         inflated_copula    human 2  ai 2   n=4    0.500  [0.15, 0.85]   p=1.000
+#         rule_of_three      human 1  ai 0   n=1    0.000  [0.00, 0.79]   p=1.000
+#
+#     em_dash survives this: 7 firings, all 7 on human text, p=0.016 pooled. The direction is
+#     established even though the interval on the rate spans [0.00, 0.35]. `semicolon_crutch` and
+#     `inflated_copula` do NOT survive it — the published 0.000 for inflated_copula came from ONE
+#     firing, and its interval [0.00, 0.79] is equally consistent with it being among the better
+#     categories. Nine of the fifteen categories that fire at all on RAID do so fewer than ten
+#     times, so their point estimates are decoration.
+#
+#     Nothing was decided on those entries, which is the saving grace: the "five categories fire
+#     more on human writing" note below leads to no action, because they are explicitly NOT dropped
+#     or reweighted. Had they been dropped, three of the five would have been dropped on a single
+#     observation each.
 #  5. **`hedge_stacking` is register, not authorship.** 0.53 on forum answers and 0.88 on
 #     abstracts. Same pattern, same code, opposite usefulness — which is the third category after
 #     `formulaic_transition` and `moreover` to behave this way, and the reason no single number

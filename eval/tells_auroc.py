@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 
@@ -29,6 +30,11 @@ from untell.scripts.tells import score_tells
 
 # Cannot fire without line structure.
 LAYOUT_CATEGORIES = frozenset({"markdown_artifact", "title_case_heading", "diff_anchored"})
+
+# A 95% interval wider than this spans too much to act on. `inflated_copula` was published at
+# precision 0.000 from a single firing, whose interval is [0.00, 0.79] -- consistent with the
+# category being useless AND with it being one of the better ones.
+UNINFORMATIVE_CI_WIDTH = 0.5
 
 _WHITESPACE_RUN = re.compile(r"\s+")
 
@@ -42,6 +48,80 @@ def auroc(ai: list[float], human: list[float]) -> float | None:
     if not ai or not human:
         return None
     return sum((a > h) + 0.5 * (a == h) for a in ai for h in human) / (len(ai) * len(human))
+
+
+def wilson(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson score interval for a proportion.
+
+    Wilson rather than the normal approximation because every interesting entry here is at or near
+    0 or 1 with a single-digit denominator, which is exactly where the normal approximation returns
+    a nonsense interval (or a width of zero).
+    """
+    if n == 0:
+        return (0.0, 1.0)
+    p = successes / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+    return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def binom_two_sided(successes: int, n: int) -> float | None:
+    """Two-sided exact binomial test against p=0.5 — "is this split further from even than chance".
+
+    Exact rather than a normal approximation for the same reason as Wilson: n is single digits.
+    Returns None for n=0. A first draft used ``0.5 ** n``, which is only the probability of EVERY
+    firing landing on one class — it labelled a 3-vs-4 split as p=0.008 when the true answer is 1.0.
+    """
+    if n == 0:
+        return None
+    k = max(successes, n - successes)
+    tail = sum(math.comb(n, i) for i in range(k, n + 1)) / (2**n)
+    return round(min(1.0, 2 * tail), 4)
+
+
+def precision_table(pairs: list[tuple[str, str]]) -> list[dict]:
+    """Per-category P(text is AI | category fired), with the denominator and its interval.
+
+    The denominator is what this exists to surface. A category's precision is quoted per *firing*,
+    not per document scanned, and several categories fire fewer than ten times in 400 documents --
+    at which point a headline like "0.000" is compatible with almost anything. Reporting n and a
+    Wilson interval is the difference between "this pattern is useless" and "this pattern was
+    barely observed".
+    """
+    human_hits: dict[str, int] = {}
+    ai_hits: dict[str, int] = {}
+    for human, ai in pairs:
+        for k in score_tells(human)["by_category"]:
+            human_hits[k] = human_hits.get(k, 0) + 1
+        for k in score_tells(ai)["by_category"]:
+            ai_hits[k] = ai_hits.get(k, 0) + 1
+
+    rows = []
+    for cat in sorted(set(human_hits) | set(ai_hits)):
+        h, a = human_hits.get(cat, 0), ai_hits.get(cat, 0)
+        n = h + a
+        lo, hi = wilson(a, n)
+        rows.append(
+            {
+                "category": cat,
+                "human": h,
+                "ai": a,
+                "n": n,
+                "precision": round(a / n, 3) if n else None,
+                "ci_low": round(lo, 3),
+                "ci_high": round(hi, 3),
+                "ci_width": round(hi - lo, 3),
+                # The read that survives a tiny n: the SIZE of the precision may be unpinnable
+                # while its DIRECTION is not. em_dash fires 7 times across both corpora and all 7
+                # land on human text -- p = 0.016, so "this leans human" is established even though
+                # the interval on the rate itself spans [0.00, 0.35].
+                "p_direction": binom_two_sided(max(h, a), n),
+                "informative": (hi - lo) <= UNINFORMATIVE_CI_WIDTH,
+            }
+        )
+    rows.sort(key=lambda r: (-(r["precision"] or 0), -r["n"]))
+    return rows
 
 
 def _rate(text: str, exclude: frozenset[str] = frozenset()) -> float:
@@ -112,6 +192,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--pairs", type=int, default=200)
     ap.add_argument("--min-words", type=int, default=60)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument(
+        "--precision",
+        action="store_true",
+        help="per-category P(AI | fired), with the denominator and a 95%% Wilson interval",
+    )
     args = ap.parse_args(argv)
 
     from eval.datasets import load_pairs
@@ -124,6 +209,23 @@ def main(argv: list[str] | None = None) -> int:
             else f"no pairs available from {args.dataset} — pip install '.[eval]'"
         )
         return 2
+
+    if args.precision:
+        rows = precision_table(pairs)
+        if args.json:
+            print(json.dumps({"dataset": args.dataset, "categories": rows}, indent=2))
+        else:
+            print(f"per-category precision — {args.dataset}, {len(pairs)} pairs\n")
+            print(f"{'category':26} {'human':>6} {'ai':>4} {'n':>4} {'prec':>6}  {'95% CI':>14}  note")
+            for r in rows:
+                note = "" if r["informative"] else "too few firings to read"
+                if not r["informative"] and r["p_direction"] and r["p_direction"] <= 0.05:
+                    note = f"direction holds (p={r['p_direction']:.3f}), size does not"
+                print(
+                    f"{r['category']:26} {r['human']:>6} {r['ai']:>4} {r['n']:>4} "
+                    f"{r['precision']:>6.3f}  [{r['ci_low']:.2f}, {r['ci_high']:.2f}]  {note}"
+                )
+        return 0
 
     m = measure(pairs)
     print(json.dumps({"dataset": args.dataset, **m}, indent=2) if args.json else render(args.dataset, m))

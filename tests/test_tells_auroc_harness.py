@@ -18,7 +18,16 @@ from __future__ import annotations
 
 import pytest
 
-from eval.tells_auroc import LAYOUT_CATEGORIES, auroc, collapse_layout, measure, render
+from eval.tells_auroc import (
+    LAYOUT_CATEGORIES,
+    auroc,
+    binom_two_sided,
+    collapse_layout,
+    measure,
+    precision_table,
+    render,
+    wilson,
+)
 
 # Enough tells to score, and plain prose that scores near zero.
 _AI = (
@@ -119,3 +128,63 @@ def test_layout_categories_are_the_line_anchored_ones() -> None:
 def test_collapse_layout_preserves_words() -> None:
     text = "One two.\n\nThree   four.\tFive."
     assert collapse_layout(text).split() == text.split()
+
+
+class TestSmallSampleStatistics:
+    """A precision is quoted per FIRING, and most categories fire single-digit times.
+
+    `inflated_copula` shipped at precision 0.000 from one observation, whose interval is
+    [0.00, 0.79] — consistent with it being useless and with it being one of the best in the
+    catalogue. These pin the two statistics that tell those cases apart.
+    """
+
+    def test_wilson_widens_as_n_shrinks(self) -> None:
+        wide = wilson(0, 1)
+        narrow = wilson(0, 100)
+        assert (wide[1] - wide[0]) > (narrow[1] - narrow[0])
+
+    def test_wilson_does_not_collapse_at_the_boundary(self) -> None:
+        """The normal approximation returns width zero at p=0, which is the whole reason for Wilson."""
+        lo, hi = wilson(0, 3)
+        assert lo == 0.0
+        assert hi > 0.4
+
+    def test_wilson_stays_inside_the_unit_interval(self) -> None:
+        for k, n in ((0, 1), (1, 1), (0, 7), (7, 7), (3, 4)):
+            lo, hi = wilson(k, n)
+            assert 0.0 <= lo <= hi <= 1.0
+
+    def test_wilson_empty_denominator_spans_everything(self) -> None:
+        assert wilson(0, 0) == (0.0, 1.0)
+
+    def test_binomial_calls_an_even_split_chance(self) -> None:
+        """The bug this replaced: `0.5 ** n` scored a 3-vs-4 split at p=0.008."""
+        assert binom_two_sided(4, 7) == 1.0
+
+    def test_binomial_finds_the_em_dash_result(self) -> None:
+        """7 firings, all human, pooled across both corpora — the direction does hold."""
+        assert binom_two_sided(7, 7) == 0.0156
+
+    def test_binomial_does_not_call_three_of_three_significant(self) -> None:
+        """em_dash on HC3 alone is 0-of-3; only pooling gets it over the bar."""
+        assert binom_two_sided(3, 3) > 0.05
+
+    def test_binomial_empty_returns_none(self) -> None:
+        assert binom_two_sided(0, 0) is None
+
+
+def test_precision_table_reports_the_denominator_not_just_the_rate() -> None:
+    sparse = "The framework serves as a foundation for the work described in the report below."
+    rows = precision_table([(_HUMAN, sparse)] * 2)
+    assert rows, "probe fired nothing"
+    for r in rows:
+        assert r["n"] == r["human"] + r["ai"]
+        assert r["ci_low"] <= r["precision"] <= r["ci_high"]
+        assert isinstance(r["informative"], bool)
+
+
+def test_a_single_firing_is_never_marked_informative() -> None:
+    rows = precision_table([(_HUMAN, "The framework serves as a foundation.")])
+    single = [r for r in rows if r["n"] == 1]
+    assert single, "expected at least one single-firing category"
+    assert all(not r["informative"] for r in single)
