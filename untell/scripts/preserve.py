@@ -451,6 +451,13 @@ _PLAIN_LOWERCASE_WORD = re.compile(r"^[a-z]+(?=\s|$)")
 # Sentinel at the very start, or following a sentence terminator — i.e. where a capital belongs.
 _SENTINEL_AT_SENTENCE_START = re.compile(r"(?:^|(?<=[.!?])\s+)(⟦HZ\d{4,}⟧)")
 
+# An article immediately before a sentinel. A rewriter cannot see inside a locked span, so when the
+# span already opens with an article the rewriter may supply a second one. MEASURED in
+# t5_paraphrase output: "...worth mentioning that the ⟦HZ0004⟧ best seller list..." restored to
+# "the the New York Times best seller list". Neither side is at fault — the rewriter is blind to the
+# span by design, and the span is correct — so restore is the only place that can see both.
+_ARTICLE_BEFORE_SENTINEL = re.compile(r"\b(a|an|the)(\s+)(⟦HZ\d{4,}⟧)", re.IGNORECASE)
+
 
 def restore(masked: str, mapping: dict[str, str]) -> str:
     """Inverse of :func:`lock` — substitute each sentinel with its original span.
@@ -474,9 +481,23 @@ def restore(masked: str, mapping: dict[str, str]) -> str:
             return m.group(0).replace(m.group(1), span[0].upper() + span[1:])
         return m.group(0)
 
-    # Sentence-initial sentinels are resolved first, while they are still identifiable AS sentinels;
-    # the pass below then fills in every one that was left alone.
-    return _SENTINEL_RE.sub(_sub, _SENTINEL_AT_SENTENCE_START.sub(_capitalise, masked))
+    def _dedupe_article(m: re.Match) -> str:
+        span = mapping.get(m.group(3))
+        if not span:
+            return m.group(0)
+        first = span.split(maxsplit=1)[0] if span.split() else ""
+        # Any article, not only a matching one: "a ⟦HZ⟧" over "the modest gain" restores to
+        # "a the modest gain", which is just as broken as the doubled "the". Dropping the OUTER
+        # article is safe in every case because the locked span is never touched — the span keeps
+        # whatever article it was locked with, which is the one the source author chose.
+        if first.lower() in ("a", "an", "the"):
+            return m.group(3)
+        return m.group(0)
+
+    # Order matters: the duplicate article is removed while the sentinel is still a sentinel, and
+    # that can leave the sentinel at a sentence start, which the capitalisation pass then fixes.
+    out = _ARTICLE_BEFORE_SENTINEL.sub(_dedupe_article, masked)
+    return _SENTINEL_RE.sub(_sub, _SENTINEL_AT_SENTENCE_START.sub(_capitalise, out))
 
 
 def find_sentinels(text: str) -> set[str]:

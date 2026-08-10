@@ -79,3 +79,45 @@ def test_an_untouched_round_trip_is_the_identity() -> None:
     ]:
         masked, mapping = lock(text)
         assert restore(masked, mapping) == text
+
+
+class TestDuplicatedArticle:
+    """A rewriter cannot see inside a locked span, so it may supply an article the span already has.
+
+    MEASURED in t5_paraphrase output: "...worth mentioning that the ⟦HZ0004⟧ best seller list..."
+    restored to "the the New York Times best seller list". Neither side is at fault — the rewriter
+    is blind to the span by design and the span itself is correct — so restore is the only place
+    that can see both halves.
+
+    The OUTER article is dropped, never the span's. The span keeps the article the source author
+    chose, and the locked text is never edited.
+    """
+
+    @pytest.mark.parametrize(
+        "masked,span,expected",
+        [
+            (f"that the {_SENTINEL} list", "the New York Times", "that the New York Times list"),
+            (f"saw a {_SENTINEL} effect", "the modest gain", "saw the modest gain effect"),
+            (f"saw the {_SENTINEL} effect", "a modest gain", "saw a modest gain effect"),
+            (f"saw An {_SENTINEL} case", "an odd result", "saw an odd result case"),
+        ],
+    )
+    def test_the_outer_article_goes(self, masked: str, span: str, expected: str) -> None:
+        assert _restore(masked, span) == expected
+
+    @pytest.mark.parametrize(
+        "masked,span",
+        [
+            (f"saw the {_SENTINEL} effect", "Smith (2020)"),  # span has no article
+            (f"saw {_SENTINEL} today", "the New York Times"),  # no outer article
+            (f"saw this {_SENTINEL} effect", "the modest gain"),  # determiner, not an article
+        ],
+    )
+    def test_everything_else_is_left_alone(self, masked: str, span: str) -> None:
+        assert _restore(masked, span) == masked.replace(_SENTINEL, span)
+
+    def test_dedupe_and_capitalisation_compose(self) -> None:
+        """Removing the article can leave the sentinel starting the sentence; both passes must run."""
+        assert _restore(f"Alpha. The {_SENTINEL} is big.", "the New York Times") == (
+            "Alpha. The New York Times is big."
+        )
