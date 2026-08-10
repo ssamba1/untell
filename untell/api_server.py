@@ -533,6 +533,14 @@ _VERIFY_RESPONSES = _obj(
         },
         "n_configured": {**_INT, "description": "how many checkers actually ran; 0 means none"},
         "n_passing": _INT,
+        "warning": {
+            **_STR,
+            "description": (
+                "present only when the text carries invisible characters or homoglyph "
+                "substitution. Both flip an AI verdict to clean — 14 of 20 and 13 of 15 HC3 texts "
+                "respectively — so a PASS accompanied by this field is not evidence."
+            ),
+        },
     },
     required=["configured", "passes_all", "n_configured"],
 )

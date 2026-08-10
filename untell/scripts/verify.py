@@ -131,7 +131,15 @@ def verify(
     # detector is, so including it could never change that verdict.
     checkers = [n for n in names if not n.startswith("local:max ")]
     passing = [n for n in checkers if results.get(n, {}).get("passes")]
-    return {
+    # This is the surface that produces a VERDICT and an exit code, so it is the one where an
+    # evasion does the most damage: zero-width injection flips an AI text's verdict to clean on
+    # 14 of 20 HC3 texts, homoglyph substitution on 13 of 15 (Results 62 and 63). `score_text`
+    # warns about both; `verify` was reporting PASS on the same input in silence.
+    from untell.scripts.score import _homoglyph_warning, _invisible_char_warning
+
+    caveats = [w for w in (_invisible_char_warning(text), _homoglyph_warning(text)) if w]
+
+    out = {
         "configured": names,
         "threshold": threshold,
         "results": results,
@@ -139,6 +147,9 @@ def verify(
         "n_configured": len(checkers),
         "n_passing": len(passing),
     }
+    if caveats:
+        out["warning"] = " ".join(caveats)
+    return out
 
 
 def _render(v: dict) -> str:
@@ -162,6 +173,11 @@ def _render(v: dict) -> str:
         if v["passes_all"]
         else f"FAILS — {v['n_passing']}/{v['n_configured']} checkers passed"
     )
+    # Printed after the verdict, not before it: the verdict is what the reader came for, and a
+    # caveat above it would be skimmed past. A PASS obtained this way is the one to distrust.
+    if v.get("warning"):
+        lines.append("")
+        lines.append(f"WARNING: {v['warning']}")
     return "\n".join(lines)
 
 
