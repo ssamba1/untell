@@ -119,6 +119,30 @@ def normalise_whitespace(text: str) -> str:
     return _SPACE_BEFORE_PUNCT.sub(r"\1", out)
 
 
+def normalise_for_scoring(text: str) -> str:
+    """What every detector should see: invisible characters stripped, then whitespace normalised.
+
+    Invisible codepoints are the same class of defect as the whitespace artefact and considerably
+    worse in effect. MEASURED on a human-written paragraph, inserting a soft hyphen between every
+    character — which is precisely what extracting text from a justified PDF produces:
+
+        clean          max 0.1295   flagged False
+        soft-hyphened  max 1.0000   flagged True    <- mage 0.0 -> 1.0, roberta_openai 0.033 -> 1.0
+
+    A false positive at certainty 1.0000 on somebody's own writing, reachable by pasting it out of
+    a PDF. `score_tells` has scrubbed since Result 51 and is unaffected (59 words either way); the
+    detector path never did, so the two halves of the product disagreed about what the input was.
+
+    `scrub_hidden` rather than a local stripper, for the reason its own callers give: it already
+    distinguishes an orphan zero-width joiner from one holding an emoji sequence together, and a
+    second nearly-identical stripper is how a rule ends up applied in some places and missed in the
+    rest. Imported lazily to keep importing this package cheap, matching `score_tells`.
+    """
+    from untell.attacks import scrub_hidden
+
+    return normalise_whitespace(scrub_hidden(text))
+
+
 # Words per scoring window. The supervised adapters cap at 512 word-piece tokens, which is roughly
 # 380 English words; 320 leaves headroom for tokenizer expansion on punctuation and rare words.
 WINDOW_WORDS = 320
@@ -168,6 +192,12 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
     correctness check — the ensemble max may come from a window the edit never touched.
     """
     from untell.text_split import split_sentences
+
+    # Normalised HERE because this is the one function every windowing adapter routes its input
+    # through, and doing it per adapter is how six get it and the seventh does not. The word count
+    # below depends on it too: a soft hyphen between every character turned a 209-word document
+    # into 889 "words", which re-windows the text as well as corrupting the score.
+    text = normalise_for_scoring(text)
 
     if len(text.split()) <= window_words:
         return score_window(text)

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from .base import clamp01, normalise_whitespace, windowed_max
+from .base import clamp01, windowed_max
 
 logger = logging.getLogger(__name__)
 
@@ -85,5 +85,5 @@ class RobertaOpenAIDetector:
         # AUROC (0.8858 -> 0.8519) where it costs hc3_roberta 0.8300. Small, and free to recover.
         # Windowed: the pipeline truncates at 512 tokens, so everything past ~380 words was
         # invisible — a long document was scored on its opening paragraph alone.
-        fake = windowed_max(normalise_whitespace(text), _one)
+        fake = windowed_max(text, _one)
         return None if fake is None else clamp01(fake)

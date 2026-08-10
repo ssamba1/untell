@@ -21,7 +21,7 @@ import logging
 import math
 import re
 
-from .base import clamp01
+from .base import clamp01, normalise_for_scoring
 
 logger = logging.getLogger(__name__)
 
@@ -461,6 +461,12 @@ class PerplexityBurstinessDetector:
         # AI-generated.
         if not text or not text.strip():
             return None
+        # This adapter is the one that does not route through `windowed_max`, so it does not inherit
+        # the normalisation applied there and has to do it itself. Both of its terms depend on the
+        # word and sentence counts, which invisible characters destroy directly: a soft hyphen
+        # between every character turned a 209-word document into 889 "words". MEASURED, that took
+        # this detector from 0.3464 to 0.9669 on unchanged prose.
+        text = normalise_for_scoring(text)
         # The same abstention floor both paths are supposed to share. It lived only inside
         # `lite_score`, so whenever torch was importable — the default once `.[full]` is installed —
         # `_full_score` ran instead and no floor applied at all. Its own guard is on TOKEN count

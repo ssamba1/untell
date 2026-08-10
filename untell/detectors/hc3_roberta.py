@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-from .base import clamp01, normalise_whitespace, windowed_max
+from .base import clamp01, windowed_max
 
 logger = logging.getLogger(__name__)
 
@@ -75,5 +75,5 @@ class HC3RobertaDetector:
         # a space before each period takes AUROC on RAID from 0.9871 to 0.1571: not blinded,
         # inverted. On clean text the normalisation is a no-op and the score is unchanged.
         # Windowed: truncation at 512 tokens made everything past ~380 words invisible.
-        p_ai = windowed_max(normalise_whitespace(text), _one)
+        p_ai = windowed_max(text, _one)
         return None if p_ai is None else clamp01(float(p_ai))
