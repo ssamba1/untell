@@ -788,7 +788,28 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
     #
     # Folded here rather than per-pattern for the reason the scoring path learned the hard way: a
     # rule applied in some places is a rule that will be missed in the rest.
-    text = fold_unicode_spaces(text)
+    #
+    # Invisible characters are stripped for a harder reason than tidiness: they shatter the word
+    # count, and every number here is derived from it. MEASURED on a 209-word HC3 answer with a
+    # zero-width space inserted between every character — which is what a soft hyphen from a PDF
+    # extraction or a steganographic watermark looks like to the tokeniser:
+    #
+    #     plain            209 words,  23 tells, 11.0 per 100w
+    #     zero-width       889 words, 436 tells, 49.0 per 100w   <- 433 of them repeated_phrasing
+    #     scrubbed first   209 words,  23 tells, 11.0 per 100w   <- identical to plain
+    #
+    # Single-character fragments repeat constantly, so trigram repetition explodes. "889 words" is
+    # not a surprising description of a 209-word text, it is a false one, and everything computed
+    # from it inherits that. Soft hyphens in particular are not an attack — justified PDF text is
+    # full of them.
+    #
+    # `scrub_hidden` rather than a narrower local stripper, deliberately: it already distinguishes
+    # an orphan zero-width joiner from one holding an emoji sequence together, and writing a second
+    # nearly-identical stripper here is the exact mistake Result 51 recorded — a rule applied in
+    # some places is a rule that will be missed in the rest.
+    from untell.attacks import scrub_hidden
+
+    text = fold_unicode_spaces(scrub_hidden(text))
     words = len(_WORD.findall(text))
     by_category: dict[str, int] = {}
     matches: dict[str, list[str]] = {}
