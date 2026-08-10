@@ -89,10 +89,31 @@ logger = logging.getLogger(__name__)
 #     STRONGEST category on RAID at 0.96. Dropping the silent categories, which the HC3 numbers
 #     alone would have justified, would have deleted the best pattern in the catalogue.
 #  3. **Some of this measures REGISTER, not authorship.** `formulaic_transition` fires on 43 of 150
-#     human RAID texts — those are academic abstracts, where "Furthermore" is native. Overall
-#     separation is worse on RAID than HC3 (AUROC 0.638 vs 0.705, tells/100w gap +0.227 vs +0.307)
-#     precisely because RAID's human half is formal writing. A catalogue tuned on forum answers
-#     partly learns "formal" rather than "machine".
+#     human RAID texts — those are academic abstracts, where "Furthermore" is native. A catalogue
+#     tuned on forum answers partly learns "formal" rather than "machine".
+#
+#     This finding used to carry the claim that overall separation was WORSE on RAID than HC3
+#     (AUROC 0.638 vs 0.705, tells/100w gap +0.227 vs +0.307). That ordering has inverted, and the
+#     figures were stale rather than wrong — re-derive them with `python -m eval.tells_auroc`:
+#
+#                       AUROC            tells/100w human    ai      gap
+#         RAID (200)    0.9555                    1.139   12.823   +11.683
+#         HC3  (200)    0.8696                    0.635    6.834    +6.199
+#
+#     The cause is the two repetition tells, which landed after 0.638 was written and are listed
+#     below as the strongest categories in the catalogue. Excluding them reproduces the old numbers
+#     exactly — RAID 0.6379 — which is how the drift was identified rather than guessed at. Their
+#     effect is +0.3175 on RAID and +0.1373 on HC3, so RAID now separates BETTER than HC3 and the
+#     register argument no longer rests on the overall gap. It still rests on
+#     `formulaic_transition`'s own 43-of-150 human hits, which is the evidence that was always
+#     doing the work.
+#
+#     Layout was checked at the same time, since RAID separates its own halves at AUROC 1.0000 on
+#     newline density alone and `eval/detector_audit.py` collapses layout for exactly that reason.
+#     It does not affect this metric: collapsing whitespace moves the AUROC by +0.0000 on RAID, HC3
+#     and MAGE, because the three line-anchored categories fire on 0, 1 and 1 of 400 documents. So
+#     layout is deliberately NOT collapsed here — those categories are line-anchored by design and
+#     silencing them would delete signal, not bias. `eval.tells_auroc` reports the delta every run.
 #
 # They are NOT dropped or reweighted. Ten categories never fire on HC3 at all —
 # chatbot_artifact, cutoff_disclaimer, aphorism, notability_padding and the formatting ones — and
@@ -102,7 +123,9 @@ logger = logging.getLogger(__name__)
 # caller can see whether a score rests on strong evidence or on style preferences.
 #
 # CONFIRMED at a larger n, 2026-08-09 — the same measurement re-run at 200 pairs on BOTH corpora,
-# which reproduces every figure above and adds the categories the 150-pair run left unlisted:
+# which reproduces the PER-CATEGORY precisions above and adds the ones the 150-pair run left
+# unlisted. It did not re-derive the overall AUROC, and that is what let the 0.638/0.705 pair in
+# finding 3 go stale while the table below was being updated around it:
 #
 #                             HC3 (200)      RAID (200)
 #     participial_trailer     never fires    0.971  (150-pair run: 0.96)
