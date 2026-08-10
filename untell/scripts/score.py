@@ -219,9 +219,39 @@ def _invisible_char_warning(text: str) -> str | None:
         return None
     return (
         f"{n} invisible character(s) present (zero-width, bidi or soft hyphen). They are scored as "
-        f"the detector would see them, NOT removed — MEASURED on 6 HC3 texts, inserting one between "
-        f"every character moved P(AI) by 0.2176 and flipped the verdict on all 6. If they are an "
-        f"artefact of a PDF or web paste rather than your writing, strip them and re-score."
+        f"the detector would see them, NOT removed. MEASURED on 20 HC3 pairs, inserting one between "
+        f"every character: AI text moved -0.1943 and its verdict flipped to CLEAN on 14 of 20, "
+        f"human text moved -0.0600. So this usually makes AI text look human, and a clean result "
+        f"here is not evidence. Run `untell scrub` and re-score before believing it."
+    )
+
+
+# A word containing BOTH Latin and Cyrillic/Greek letters. Legitimate multilingual text does not
+# mix scripts INSIDE a word — quoting Russian puts whole Russian words in, not a Cyrillic 'a' in
+# the middle of an English one. So this is a precise signature for homoglyph substitution, and
+# it costs almost nothing in false positives.
+_LATIN = re.compile("[A-Za-z]")
+_CONFUSABLE_SCRIPT = re.compile("[\u0400-\u04ff\u0370-\u03ff]")
+
+
+def _homoglyph_warning(text: str) -> str | None:
+    """Warn when Cyrillic or Greek letters sit inside Latin words.
+
+    MEASURED on 15 HC3 pairs, mapping a/e/o/p/c to their Cyrillic lookalikes: AI text moved
+    -0.2884 and its verdict flipped to clean on **13 of 15**; human text moved -0.2407 and
+    flipped on 4. A stronger evasion than the zero-width case, and invisible to a reader.
+
+    `score_tells` is already immune — it scrubs, and scrubbing maps these back to ASCII. This
+    surface deliberately does not scrub (see `_invisible_char_warning`), so it has to say so.
+    """
+    mixed = [w for w in text.split() if _LATIN.search(w) and _CONFUSABLE_SCRIPT.search(w)]
+    if not mixed:
+        return None
+    return (
+        f"{len(mixed)} word(s) mix Latin with Cyrillic/Greek letters — the signature of homoglyph "
+        f"substitution. MEASURED on 15 HC3 pairs, this moved AI text by -0.2884 and flipped its "
+        f"verdict to CLEAN on 13 of 15, so a clean result here is not evidence. Run "
+        f"`untell scrub` and re-score."
     )
 
 
@@ -368,7 +398,7 @@ def _score_with_detectors(
     # Appended rather than folded into the chain above: length and tier are independent problems,
     # and a short text scored on a downgraded tier has both. An elif would have reported whichever
     # one happened to be checked first and hidden the other.
-    for extra in (_short_text_warning(text), _invisible_char_warning(text)):
+    for extra in (_short_text_warning(text), _invisible_char_warning(text), _homoglyph_warning(text)):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
