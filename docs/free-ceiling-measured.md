@@ -3386,3 +3386,44 @@ Two things worth keeping:
 - **"Which question does this number answer?" decided both fixes.** The same input, the same
   characters, two surfaces, opposite correct answers. Neither follows from a general principle
   about invisible characters; both follow immediately from asking what the number is *for*.
+
+## Result 61
+
+**Three failed attempts to measure one fix, and what each failure was.**
+
+The sentence-targeting fix from [Result 58](free-ceiling-measured.md) has a verified *mechanism* —
+masking moves the flagged sentence set on 25% of texts on the model-backed path — and no
+demonstrated *benefit*. Three attempts, each broken in a different way, each caught:
+
+1. **Benchmarked with the wrong rewriter.** Ran before/after with `composite`, got byte-identical
+   output, and nearly wrote it up as "no effect". `flagged_sentences` is read only by
+   `untell/rewriter/prompts.py` and `targeted.py` — the composite path never looks at it, so the
+   benchmark was measuring a code path the fix cannot reach.
+2. **A silent no-op edit.** The fix-up replaced `get_rewriter('composite')` with single quotes
+   against a file containing double quotes. No assertion, so the substitution did nothing, the
+   harness ran unchanged, and it reported the *same ten numbers to three decimals* as the previous
+   run. Two different rewriters cannot agree on ten floats — that implausibility is the only reason
+   it was caught.
+3. **An arm killed at 1 of 10.** The corrected run's "after" arm died to a timeout while the
+   "before" arm completed, leaving a single-arm comparison that looks like a result.
+
+The fix is kept anyway, on the same grounds as [Result 57](free-ceiling-measured.md): the loop
+should rank on the text a reader sees. But the code comment now says the benefit is unmeasured
+rather than implying it was measured at zero, because those are very different claims.
+
+Three things worth keeping:
+
+- **Every string replacement in a throwaway script needs an assertion.** The no-op edit is the
+  fourth time this session a silent substitution produced a confident wrong number. A one-line
+  `assert old in text` converts it from a wrong result into a crash.
+- **Implausible agreement is a bug report.** Identical means could be a real null result; identical
+  *per-text values to three decimals across two different implementations* cannot. The habit of
+  printing per-item values rather than only aggregates is what made it visible — the same habit
+  that caught Results 45, 48 and 54.
+- **Know which code path consumes the thing you changed** before benchmarking it. One grep for
+  `flagged_sentences` would have shown that the default rewriter ignores it, and would have saved
+  two of the three runs.
+- **Never benchmark uncommitted work with a harness that reverts files.** A `git checkout` inside a
+  killable background job is a destructive operation with no undo, and the window where the tree is
+  reverted is exactly the window where something else can read it. Commit first and benchmark the
+  committed state, or work from copies outside the tree.
