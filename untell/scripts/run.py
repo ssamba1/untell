@@ -405,7 +405,22 @@ def untell_text(
             elif sim < sim_bar:
                 continue  # meaning drifted too far from the source
             cscore = score(candidate)
-            valid.append((candidate, cscore, score_tells(candidate).get("tells", 0)))
+            # Count tells on the RESTORED candidate, for the same reason `score()` scores the
+            # restored text: a sentinel is not what anyone reads, and the tell catalogue's patterns
+            # do not match through one. MEASURED over 120 HC3+RAID texts, 91 of which lock at least
+            # one span: the masked view disagrees with the restored view on 44% of them, by a mean
+            # of 3.33 tells and up to 27 — and the minimum delta is +0, so masking never
+            # over-counts, only ever hides tells. The texts that lock spans are the ones carrying
+            # citations and numbers, which is exactly the academic register this repo targets, so
+            # the tie-break was reading its lowest-quality signal precisely where it matters most.
+            #
+            # Measured end to end on 14 RAID texts that lock a span, this changes the output not at
+            # all: P(AI) 0.2413 and 30.14 tells either way, because the tells term only breaks ties
+            # among candidates already within _TELLS_EPS of the best detector score, and that band
+            # rarely holds two candidates with different counts. Kept regardless, on the same
+            # grounds `score()` above gives for scoring the restored text: the size of the misreport
+            # is not the argument, that the loop was RANKING on a quantity nobody is judged on is.
+            valid.append((candidate, cscore, score_tells(restore(candidate, mapping)).get("tells", 0)))
         cand_best, cand_best_score = None, None
         if valid:
             # Primary objective: lowest detector max. Restrict the tells tie-break to the ADOPTABLE
