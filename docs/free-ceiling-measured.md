@@ -3707,3 +3707,31 @@ Worth keeping: **a measured number in a string is a claim with no owner.** The d
 re-derived, the README gets audited, tests pin constants — but a sentence inside a warning is read
 by users and by nothing else. Six of them, and the only one still true was the one whose value was
 "indistinguishable from chance", which is the one kind of claim that cannot drift.
+
+## Result 69
+
+**The changelog's historical exemption does not extend to `[Unreleased]`.**
+
+`untell-audit` deliberately exempts the changelog: "a changelog entry records what was true when it
+was written, and fixing those to match today's code would destroy the record rather than repair
+anything." That reasoning is correct, and it stops being correct one heading up.
+
+[Result 68](free-ceiling-measured.md) re-derived the tell-rate corpus means from 0.551/7.335 to
+0.642/7.320 and corrected the caveat in the code. The `[Unreleased]` changelog entry *describing
+that very caveat* still carried the old pair — and `[Unreleased]` is not history. It is a draft of
+the next release notes. Shipping a superseded number there is shipping a wrong claim, not preserving
+a historical one.
+
+Corrected, and now guarded. `check_unreleased_changelog_is_current` reads the numbers **out of the
+shipped caveat itself** rather than hard-coding them a second time — two copies of a number is how
+they drift apart in the first place — and requires the `[Unreleased]` section to agree. Verified by
+reverting the entry to the stale pair: the audit fails and names both numbers.
+
+Scoped narrowly on purpose. It checks only what the entry attributes to a constant or string in the
+code; prose claims are left to `check_attribution`, which already requires them to name a source.
+Released sections are untouched, and the docstring says why.
+
+Worth keeping: **an exemption is a rule, and rules have boundaries nobody writes down.** "The
+changelog is history" was true of every line anyone had looked at when the exemption was written.
+The one section where it is false is the section that is about to become the release notes — the
+highest-visibility text in the repository, and the only part of that file a user is likely to read.
