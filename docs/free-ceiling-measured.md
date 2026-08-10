@@ -3057,6 +3057,8 @@ on 6 of 10 texts, **worse on none**. Extra meaning drift is 0.0036. So a second 
 worth it, with diminishing returns exactly as expected.
 
 **The tells row is one text.** 7.10 -> 8.20 looks like the second pass degrading naturalness by 15%.
+*(Superseded in part: the 1-in-10 crossing rate implied here is a small-sample artefact. Measured
+at n=105 in [Result 59](free-ceiling-measured.md) it is 1 in 105.)*
 Per text: unchanged on 9, and **+11 on one**. Quoting the mean here would have produced "a second
 pass makes text read measurably worse", which is false for 90% of inputs — the same means-versus-
 per-item error already recorded in [Result 45](free-ceiling-measured.md) (a rate hiding a count of
@@ -3175,6 +3177,9 @@ That looked like a bargain: two draws in 216, the cliff gone, +0.0023 detector. 
 | none | 0.4429 | 0.53 | **1/30** | — |
 | slack 0.5 | 0.4504 | 0.13 | 0/30 | 7/540 |
 
+*(Superseded: the 1-in-30 rate below is also a small-sample artefact — 1 in 105 at n=105,
+[Result 59](free-ceiling-measured.md), which closes this question.)*
+
 **Not shipped.** The cost is +0.0075 — still inside the ±0.013 noise floor, but positive in both
 runs, so "free" is not a claim the data supports. The benefit is a 1-in-30 event, and the entire
 tells improvement is that one text. Changing a default for every user to prevent a 3% event at a
@@ -3239,3 +3244,145 @@ Worth keeping: **an inconsistency found while investigating something else is st
 This was not on any list. It surfaced because Result 56 needed to explain a 0.35-point gap between
 two numbers that should have been the same, and the explanation was two lines of code disagreeing
 about which string they were describing.
+
+## Result 58
+
+**Every masked read in the loop, enumerated — and the rule that separates the safe from the wrong.**
+
+[Result 57](free-ceiling-measured.md) found the tells tie-break ranking on masked text. Rather than
+wait for the next one, an AST walk listed every call in `run.py` that takes a masked string as its
+first argument. There are **13**:
+
+| call | verdict |
+|---|---|
+| `score(masked)`, `score(candidate)` | safe — the closure restores internally |
+| `similarity(masked, candidate)` ×3 | safe **by symmetry** — both sides masked |
+| `meaning_preserved(masked, candidate)` | safe by symmetry |
+| `rewrite(best_masked)` | correct — masking is the whole point of locking |
+| `findall(candidate)`, `findall(masked)` | correct — the sentinel-integrity check must see sentinels |
+| `restore(...)` ×3 | correct — these are the restore |
+| `_voice_key(candidate)` | **already correct** — strips sentinels first, and its docstring says why |
+| `score_sentences(best_masked)` | measured — see below |
+| `score_tells(candidate)` | **was wrong**, fixed in Result 57 |
+
+**The rule is symmetry.** A call that compares two masked strings is safe because the distortion
+appears on both sides and cancels. A call that produces an *absolute number a user is judged on* is
+not, because there is nothing to cancel against. Every one of the 13 sorts cleanly under that test,
+and it is a cheaper thing to check than re-deriving each call from scratch.
+
+`score_sentences` needed measuring rather than reasoning, because its output is a list of sentence
+*strings* that must stay masked to match what the rewriter is handed — so "just restore it" is not
+available. Measured over texts that lock a span, comparing which sentence *indices* get flagged on
+the masked and restored views:
+
+| per-sentence path | texts | flagged sets differ | mean Jaccard |
+|---|---|---|---|
+| stdlib | 61 | **0** | 1.000 |
+| GPT-2 | 12 | **3 (25%)** | 0.833 |
+
+The first row was written up as "no change needed" before the second finished, and it was wrong.
+The stdlib per-sentence path is **AUROC 0.493** — a coin flip, documented as such in
+`score_sentences`' own docstring — and two coin flips agreeing is not evidence of anything. On the
+model-backed path, which is the one the README markets, masking moves the target a quarter of the
+time.
+
+**Fixed**: the loop now scores the *restored* sentences and returns the *masked* strings at the
+flagged indices, pairing the two lists by position. When locking changes the sentence split the two
+cannot be paired, and it falls back to the old behaviour rather than guessing an alignment — a
+wrong pairing would target sentences nobody asked about, which is worse than the imprecision it
+replaces.
+
+Two things worth keeping:
+
+- **`_voice_key` had already solved this, and said so in its docstring.** The information needed to
+  avoid the tells bug was sitting in the same file, in a function two screens away, written by
+  someone who had hit the same wall. Enumerating found the fix as well as the defect.
+- **A rule that sorts every case is worth more than a fix.** "Restore before you measure" would
+  have been wrong for `rewrite`, `findall` and the similarity calls. "Symmetry cancels; absolutes
+  do not" sorts all 13 correctly and generalises past this file.
+- **A clean result from a near-chance configuration is not a clean result.** The stdlib run said
+  61 of 61 identical and would have closed the question. The path it measured cannot tell AI text
+  from human text at the sentence level, so it also cannot tell masked from restored — the
+  agreement was a property of the instrument, not of the thing being measured. The only reason the
+  model-backed check ran at all is that it had been queued alongside it.
+
+## Result 59
+
+**The repetition guard, closed: the event happens once in 105 texts, and the guard hurts more than it helps.**
+
+[Result 56](free-ceiling-measured.md) left this open with the honest note that its cost estimate
+came from small samples. Run properly on both corpora, 2 passes each, paired on the seed:
+
+| corpus | arm | P(AI) | over the bar | paired better / worse / tied | draws blocked |
+|---|---|---|---|---|---|
+| HC3 (n=60) | none | 0.4396 | **0/60** | — | — |
+| HC3 (n=60) | slack 0.5 | 0.4460 | 0/60 | 1 / **5** / 54 | 12/1050 |
+| RAID (n=45) | none | 0.3152 | **1/45** | — | — |
+| RAID (n=45) | slack 0.5 | 0.3178 | 0/45 | 2 / 1 / 42 | 33/501 |
+
+**One crossing in 105 texts.** The earlier rates — 1 in 10 from Result 54, 1 in 30 from Result 56 —
+were small-sample noise, and the direction of that error was to make the problem look ten times
+more common than it is.
+
+The guard does prevent that one crossing. It also costs +0.0063 on HC3 and +0.0026 on RAID, and on
+HC3 the paired record is **worse on 5 texts against better on 1** — the first time the cost has been
+visible per-text rather than only in the mean. Blocking a draw removes a candidate the loop would
+have adopted, and most of the time that candidate was fine.
+
+**Not shipping it, and the question is now closed rather than open.** A guard that fires on 45 of
+1551 draws to prevent a 1% event, while making 5 texts worse for every 1 it improves, is not a
+trade that needs a bigger sample to settle.
+
+Worth keeping: **the honest thing about Result 56 was saying the sample was small; the useful thing
+was going back and fixing it.** Three estimates of the same quantity — 1/10, 1/30, 1/105 — each
+from a bigger sample than the last, each smaller than the last. When successive samples move a rate
+monotonically toward zero, the earlier ones were not measuring the rate, they were measuring
+whether the rare thing happened to be in the sample.
+
+
+## Result 60
+
+**Invisible characters: 209 words become 889, and the two surfaces need opposite fixes.**
+
+An extended invariance battery — twelve transforms rather than the six in
+[Result 51](free-ceiling-measured.md) — against the scoring path and the tell catalogue. Seven of
+the twelve are zero-width or invisible characters inserted between every character of every word,
+which is what a soft hyphen from a justified PDF, a web paste, or a steganographic watermark looks
+like to a tokeniser.
+
+All seven behave identically, and the effect is enormous. On one 209-word HC3 answer:
+
+| | words | tells | tells/100w | top category |
+|---|---|---|---|---|
+| plain | 209 | 23 | 11.0 | `repeated_phrasing` 21 |
+| zero-width injected | **889** | **436** | 49.0 | `repeated_phrasing` **433** |
+| scrubbed first | 209 | 23 | 11.0 | `repeated_phrasing` 21 |
+
+Words shatter into single-character fragments, and single characters repeat constantly, so trigram
+repetition explodes. Across 6 texts the detector score moved by a mean of **0.2176** and the flagged
+verdict flipped on **6 of 6**.
+
+**The two surfaces take opposite fixes, and that is the point.**
+
+- `score_tells` **strips them**. A tell count describes the *writing*, and "889 words" is not a
+  surprising description of a 209-word text, it is a false one. Everything else in that result —
+  the rate, the categories, humanness — is derived from the word count and inherits the error.
+- `score_text` **warns instead**. That number describes what a *detector* would say about the exact
+  string the user is about to submit, and a real detector sees those characters too. Scrubbing them
+  would report a score for a document that does not exist. The warning carries the measured 0.2176
+  and tells the reader to strip and re-score if the characters came from a PDF rather than from
+  them.
+
+`scrub_hidden` does the stripping, rather than a narrower local helper: it already distinguishes an
+orphan zero-width joiner from one holding an emoji sequence together, and writing a second
+nearly-identical stripper is the mistake Result 51 recorded.
+
+Two things worth keeping:
+
+- **A soft hyphen is not an attack.** Six of the seven characters here read as adversarial, and one
+  is in every justified PDF in existence. Had the battery only contained the exotic ones, the fix
+  would plausibly have been gated behind an opt-in flag for "hostile input" and would have missed
+  the common case entirely.
+- **"Which question does this number answer?" decided both fixes.** The same input, the same
+  characters, two surfaces, opposite correct answers. Neither follows from a general principle
+  about invisible characters; both follow immediately from asking what the number is *for*.
