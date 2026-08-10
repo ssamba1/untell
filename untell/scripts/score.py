@@ -218,11 +218,11 @@ def _invisible_char_warning(text: str) -> str | None:
     if not n:
         return None
     return (
-        f"{n} invisible character(s) present (zero-width, bidi or soft hyphen). They are scored as "
-        f"the detector would see them, NOT removed. MEASURED on 20 HC3 pairs, inserting one between "
-        f"every character: AI text moved -0.1943 and its verdict flipped to CLEAN on 14 of 20, "
-        f"human text moved -0.0600. So this usually makes AI text look human, and a clean result "
-        f"here is not evidence. Run `untell scrub` and re-score before believing it."
+        f"{n} invisible character(s) present (zero-width, bidi or soft hyphen). They no longer "
+        f"affect the score — the detectors normalise them, verified at 0.0000 movement on both "
+        f"tiers — but they are still IN YOUR TEXT and will travel with it wherever you send it. "
+        f"They were a working evasion until the detectors were fixed, so anywhere else may still "
+        f"read them differently. Run `untell scrub` to remove them."
     )
 
 
@@ -249,9 +249,9 @@ def _homoglyph_warning(text: str) -> str | None:
         return None
     return (
         f"{len(mixed)} word(s) mix Latin with Cyrillic/Greek letters — the signature of homoglyph "
-        f"substitution. MEASURED on 15 HC3 pairs, this moved AI text by -0.2884 and flipped its "
-        f"verdict to CLEAN on 13 of 15, so a clean result here is not evidence. Run "
-        f"`untell scrub` and re-score."
+        f"substitution. The score is unaffected (the detectors normalise confusables, verified at "
+        f"0.0000 movement), but the substitution is still in your text and another tool may not "
+        f"normalise it. Run `untell scrub` to restore plain ASCII."
     )
 
 

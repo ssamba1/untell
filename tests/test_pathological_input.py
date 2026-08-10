@@ -303,8 +303,11 @@ def test_the_invisible_warning_names_the_direction_and_the_remedy() -> None:
     from untell.scripts.score import _invisible_char_warning
 
     warning = _invisible_char_warning("a\u200bb") or ""
-    assert "14 of 20" in warning, warning
-    assert "CLEAN" in warning, warning
+    # The score impact these once described is GONE — the detectors were fixed to normalise
+    # these characters (0.0000 movement at both tiers), so a caveat claiming the score moves
+    # would now be a false claim. What remains true, and is what the caveat must say: the
+    # characters are still in the user's text and will travel with it.
+    assert "still IN YOUR TEXT" in warning, warning
     assert "untell scrub" in warning, "the caveat must name the command that fixes it"
 
 
@@ -351,7 +354,9 @@ def test_homoglyph_substitution_is_warned_about() -> None:
 
     warning = score_text(_homoglyph(_PROSE), tier="lite").get("warning") or ""
     assert "homoglyph" in warning, warning
-    assert "13 of 15" in warning, "the caveat must carry the measured direction"
+    assert "still in your text" in warning.lower(), (
+        "the score impact is gone; what remains is that the substitution travels with the text"
+    )
 
 
 def test_the_tell_count_is_immune_to_homoglyphs() -> None:
@@ -393,3 +398,46 @@ def test_the_verify_caveat_is_printed_after_the_verdict() -> None:
     lines = [ln for ln in _render(verify(_inject(_PROSE, "\u200b"), tier="lite")).splitlines() if ln]
     assert "WARNING" in lines[-1], lines[-3:]
     assert any("CHECKER" in ln or "FAILS" in ln for ln in lines[:-1]), lines
+
+
+# --- scrub=False keeps the payload in the OUTPUT, and used to say nothing ------------------------
+
+
+def test_no_scrub_reports_the_payload_it_carries() -> None:
+    """`scrub=False` is a legitimate request, but it is not obvious that the OUTPUT still carries
+    the characters. MEASURED on one HC3 answer with a zero-width space between every character:
+    701 survive into `final`, and the result dict said nothing at all. Those characters flip an AI
+    verdict to clean on 14 of 20 texts, so a caller shipping this output is shipping an evasion
+    payload they may not know is there."""
+    from untell.rewriter import get_rewriter
+    from untell.scripts.run import untell_text
+
+    rw = get_rewriter("composite")
+    injected = _inject(_PROSE, "\u200b")
+    kept = untell_text(injected, tier="lite", max_iters=1, best_of=2, rewriter=rw, scrub=False)
+    assert "\u200b" in kept["final"], "fixture no longer carries the payload through"
+    assert "scrub=False" in (kept.get("warning") or ""), kept.get("warning")
+
+
+def test_scrubbing_removes_it_and_says_nothing() -> None:
+    """The default path has nothing to report — the characters are gone. A warning here would be
+    noise about a problem that no longer exists."""
+    from untell.rewriter import get_rewriter
+    from untell.scripts.run import untell_text
+
+    rw = get_rewriter("composite")
+    scrubbed = untell_text(
+        _inject(_PROSE, "\u200b"), tier="lite", max_iters=1, best_of=2, rewriter=rw, scrub=True
+    )
+    assert "\u200b" not in scrubbed["final"]
+    assert scrubbed.get("warning") is None
+
+
+def test_clean_text_with_no_scrub_is_not_warned_about() -> None:
+    """Guards the guard: warning whenever scrub is off would fire on every such run."""
+    from untell.rewriter import get_rewriter
+    from untell.scripts.run import untell_text
+
+    rw = get_rewriter("composite")
+    out = untell_text(_PROSE, tier="lite", max_iters=1, best_of=2, rewriter=rw, scrub=False)
+    assert out.get("warning") is None
