@@ -354,12 +354,32 @@ def untell_text(
         # rewriter fixes only those instead of re-rolling the whole text (fewer iters, less drift).
         try:
             from untell.scripts.sentences import score_sentences
+            from untell.text_split import split_sentences
 
-            best_score = {
-                **best_score,
-                "flagged_sentences": score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"],
-                "style": style,
-            }
+            # Score the RESTORED sentences and hand back the MASKED ones. The rewriter matches
+            # these strings against the masked text it is given, so they have to stay masked — but
+            # scoring them masked points the targeting at the wrong sentences.
+            #
+            # MEASURED on texts that lock a span, comparing which sentence INDICES get flagged:
+            #   stdlib per-sentence path   61 texts, identical on all 61, Jaccard 1.000
+            #   GPT-2 per-sentence path    12 texts, differ on 3 (25%), Jaccard 0.833
+            # The stdlib agreement is not reassurance — that path is AUROC 0.493, a coin flip, and
+            # two coin flips agreeing says nothing. On the model-backed path, which is the one the
+            # README markets, masking moves the target a quarter of the time.
+            masked_sents = split_sentences(best_masked)
+            restored_sents = split_sentences(restore(best_masked, mapping))
+            if len(masked_sents) == len(restored_sents):
+                scored = score_sentences(
+                    restore(best_masked, mapping), tier="lite", threshold=threshold
+                )["flagged"]
+                flagged_idx = {i for i, s in enumerate(restored_sents) if s in scored}
+                flagged = [s for i, s in enumerate(masked_sents) if i in flagged_idx]
+            else:
+                # Locking changed the sentence split, so the two lists cannot be paired by index.
+                # Fall back rather than guess an alignment: a wrong pairing would target sentences
+                # the rewriter was not asked about, which is worse than the masked score it replaces.
+                flagged = score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"]
+            best_score = {**best_score, "flagged_sentences": flagged, "style": style}
         except Exception:
             pass
         # Best-of-N: draw `best_of` candidates this round and keep the strongest VALID one. A
