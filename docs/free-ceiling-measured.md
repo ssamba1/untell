@@ -3670,3 +3670,40 @@ That is the same defect this log has recorded four times in other people's code 
 own harnesses — a check that cannot fire reads exactly like a check that found nothing — and I
 wrote it into a test whose entire purpose was anti-vacuity. Ignoring the `error` key was the
 specific mechanism, which is the third time this session that key has been the thing that mattered.
+
+## Result 68
+
+**Every measured number in a user-facing string, re-checked: five of six were wrong.**
+
+[Result 67](free-ceiling-measured.md) found one caveat gone stale within an hour. That is not a
+one-off risk — it is a property of putting measurements in strings — so an AST walk pulled every
+string in `untell/` carrying a number and a word like "measured", "flagged" or "human". 84 hits,
+mostly docstrings; six are text a user actually reads. Each was re-measured:
+
+| claim | as written | re-measured | verdict |
+|---|---|---|---|
+| invisible-char caveat | −0.1943, flips 14/20 | 0.0000, 0/10 | **stale** (Result 67) |
+| homoglyph caveat | −0.2884, flips 13/15 | 0.0000, 0/10 | **stale** (Result 67) |
+| REST `/verify` schema | "both flip an AI verdict to clean" | no longer true | **stale, missed in 67** |
+| `run.py` comments ×2 | "flip … on 14 of 20 texts" | past tense now | **stale tense** |
+| stdlib lite: "flags 69% of HUMAN text" | 69% | **64% at 0.30, 30% flagged** | **misleading** |
+| tells caveat corpus means | 0.551 / 7.335 | **0.642 / 7.320** | **stale** |
+| per-sentence AUROC | 0.493 | **0.501** | **stands** — both are a coin flip |
+
+**The stdlib one is the interesting failure.** "It flags 69% of HUMAN text" is not simply out of
+date — it conflates two thresholds. 64% of human text scores above the **0.30 loop threshold**, but
+`flagged` is decided by the **0.45 verdict threshold**, where the figure is 30%. A reader maps the
+word "flags" onto the `flagged` field and takes away a number more than twice the truth. This is
+the same threshold conflation [Result 43](free-ceiling-measured.md) corrected in the docs — and the
+warning string was never updated with them. Now states both, and says which decides `flagged`.
+
+**A test caught the corpus-means change and that was the system working.** `test_the_caveat_points_
+at_the_count_not_the_rate` pins `0.551` and `7.335` literally, so correcting them broke it. The
+right response was to update it consciously, not to loosen it into "quotes two numbers" — a
+structural assertion survives any drift, including drift into being wrong. The docstring now records
+why the exact pin is deliberate.
+
+Worth keeping: **a measured number in a string is a claim with no owner.** The doc log gets
+re-derived, the README gets audited, tests pin constants — but a sentence inside a warning is read
+by users and by nothing else. Six of them, and the only one still true was the one whose value was
+"indistinguishable from chance", which is the one kind of claim that cannot drift.

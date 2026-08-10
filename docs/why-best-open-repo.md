@@ -132,7 +132,7 @@ in this repo: move one edit to the end of a long document and see whether the ve
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
-| Automated tests | ✅ **2755** tests, 88 modules (reproduce with `pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
+| Automated tests | ✅ **2774** tests, 89 modules (reproduce with `pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
 | CI (lite + full-tier, real models) | ✅ 4 jobs | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs without a GPU | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | License | MIT | MIT | MIT | MIT | Apache | MIT | MIT |
