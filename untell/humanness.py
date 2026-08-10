@@ -87,9 +87,15 @@ def _warn_about_invisibles(warning: str | None) -> None:
     if not warning or "invisible character" not in warning or _WARNED_INVISIBLE:
         return
     _WARNED_INVISIBLE = True
+    # They no longer shift the score, which is what this used to say. Detector input is scrubbed, so
+    # this number is now the number for the text a reader sees — measured identical at 90.8 with and
+    # without a soft hyphen between every character. The caveat is still worth emitting, because the
+    # characters are still IN the caller's text and every other tool they reach is unhardened: the
+    # same paragraph took an external detector from 0.0002 to 0.7900 depending only on those bytes.
     logger.warning(
-        "the text carries invisible characters; they shift the detector component of this score "
-        "without changing anything a reader can see. Run `untell score` for the details."
+        "the text carries invisible characters. They do not move this score — detector input is "
+        "scrubbed — but they are still in your text, and tools that do not scrub will read it "
+        "differently. Run `untell scrub` to remove them, or `untell score` for the details."
     )
 
 
@@ -156,10 +162,15 @@ def humanness(text: str, tier: str = "full") -> float:
     detector_result = score_text(text, tier=tier)
     # `humanness` returns a bare float, so every caveat `score_text` produced is discarded here.
     # Most of them are about the detector configuration and the caller can look them up. One is
-    # not: invisible characters move the detector component without changing anything a reader can
-    # see, and MEASURED on a 37-word paragraph with a zero-width space between every character the
-    # score drifts 62.5 -> 64.8 — upward, so the effect is to make text look MORE human. That is an
-    # evasion vector reported through no other channel on this surface, so it is logged once.
+    # not: invisible characters. They USED to move the detector component without changing anything
+    # a reader can see — measured on a 37-word paragraph with a zero-width space between every
+    # character, the score drifted 62.5 -> 64.8, upward, making the text look more human.
+    #
+    # That is fixed: detector input is scrubbed, and the same paragraph now measures 90.8 with and
+    # without a soft hyphen between every character. The warning stays, with its wording corrected,
+    # because the characters are still in the CALLER's text and every unhardened tool downstream
+    # still reads them — the same text took an external detector from 0.0002 to 0.7900 on those
+    # bytes alone. This surface returns a bare float, so a log line is the only channel it has.
     _warn_about_invisibles(detector_result.get("warning"))
     detector_scored = detector_result.get("scored") is not False
     detector_max = float(detector_result.get("max", 0.0)) if detector_scored else None
