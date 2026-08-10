@@ -35,6 +35,12 @@ INVISIBLES = {
     "left-to-right mark": "‎",
 }
 
+# Unicode's own line terminators. Not scrubbed — they mean "line break", so they are translated to
+# "\n" rather than deleted. Found by enumerating all 2,239 invisible-ish codepoints against the
+# scrub: every Cf format character was already handled, and these two were what got through.
+# Untranslated, U+2028 moved roberta_openai +0.9407.
+LINE_SEPARATORS = {"line separator": " ", "paragraph separator": " "}
+
 _SAMPLE = (
     "The committee published its findings on Tuesday after a review that had run for most of the "
     "year. Three of the seven recommendations concern procurement, and the rest deal with how "
@@ -77,6 +83,49 @@ class TestNormaliser:
 
     def test_clean_text_is_untouched(self) -> None:
         assert normalise_for_scoring(_SAMPLE) == _SAMPLE
+
+
+class TestLineSeparators:
+    @pytest.mark.parametrize("name,ch", LINE_SEPARATORS.items(), ids=list(LINE_SEPARATORS))
+    def test_translated_to_a_newline_not_deleted(self, name: str, ch: str) -> None:
+        """They carry meaning, unlike the invisibles above, so deleting them would join words."""
+        assert normalise_for_scoring(f"one{ch}two") == "one\ntwo"
+
+    @pytest.mark.parametrize("name,ch", LINE_SEPARATORS.items(), ids=list(LINE_SEPARATORS))
+    def test_a_document_scores_the_same_whichever_break_character_encodes_it(
+        self, name: str, ch: str
+    ) -> None:
+        """The invariant is equivalence with "\\n", NOT invariance to adding line breaks.
+
+        A first draft asserted that replacing every SPACE with U+2028 changed nothing. That is the
+        wrong claim and it correctly failed: it turns the text into one word per line, which is a
+        different document, and newlines are deliberately preserved because they carry paragraphing.
+        What must hold is that the same document scores the same however its breaks are encoded.
+        """
+        with_newlines = _SAMPLE.replace(". ", ".\n")
+        with_separators = _SAMPLE.replace(". ", f".{ch}")
+        for det in _available():
+            base, got = det.score(with_newlines), det.score(with_separators)
+            if base is None and got is None:
+                continue
+            assert abs(base - got) < 1e-6, f"{det.name}: {name} moved {base:.4f} -> {got:.4f}"
+
+
+def test_no_format_character_survives_the_scrub() -> None:
+    """The sweep that found the line separators, kept so a future Unicode version is re-checked.
+
+    Category Cf is the invisible-by-definition class — zero-width spaces, joiners, bidi controls,
+    watermark carriers. Not one of them may reach a tokenizer.
+    """
+    import unicodedata
+
+    survivors = [
+        f"U+{cp:04X} {unicodedata.name(chr(cp), '?')}"
+        for cp in range(0x110000)
+        if unicodedata.category(chr(cp)) == "Cf"
+        and normalise_for_scoring(f"ab{chr(cp)}cd") != "abcd"
+    ]
+    assert not survivors, f"format characters reaching the detectors: {survivors[:10]}"
 
 
 @pytest.mark.parametrize("name,ch", INVISIBLES.items(), ids=list(INVISIBLES))

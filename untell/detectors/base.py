@@ -95,6 +95,13 @@ def clamp01(x: float) -> float:
 _HORIZONTAL_RUN = re.compile(r"[ \t]+")
 _TRAILING_HORIZONTAL = re.compile(r"[ \t]+(?=\n)")
 _SPACE_BEFORE_PUNCT = re.compile(r"[ \t]+([.,;:!?])")
+# Unicode's own line terminators. They render as a line break and are not "\n", so a tokenizer sees
+# an unknown character where a newline belongs. Word, some PDF extractors and a few web editors emit
+# them routinely. MEASURED, replacing every space with U+2028 moved roberta_openai +0.9407 (0.0427
+# to 0.983) and perplexity_burstiness +0.4164 — the same shape as the soft-hyphen false positive.
+# They survive `scrub_hidden` correctly: it strips characters that carry NO meaning, and these carry
+# "line break", so the fix is to translate them rather than to delete them.
+_UNICODE_LINEBREAK = re.compile("[  ]")
 
 
 def normalise_whitespace(text: str) -> str:
@@ -114,7 +121,8 @@ def normalise_whitespace(text: str) -> str:
     ``fold_unicode_spaces`` documents this exact failure ("one rule, one place"; a normaliser scoped
     to ``[ \\t]{2,}`` missing most of its class) and this function had reproduced it.
     """
-    out = _HORIZONTAL_RUN.sub(" ", fold_unicode_spaces(text))
+    out = _UNICODE_LINEBREAK.sub("\n", fold_unicode_spaces(text))
+    out = _HORIZONTAL_RUN.sub(" ", out)
     out = _TRAILING_HORIZONTAL.sub("", out)
     return _SPACE_BEFORE_PUNCT.sub(r"\1", out)
 
