@@ -3,8 +3,15 @@
 Wraps :class:`~untell.attacks.back_translation.BackTranslator` so back-translation can run *inside*
 the sentinel-protected loop. MarianMT does not understand ``⟦HZxxxx⟧`` sentinels, so each is swapped
 for an ALLCAPS placeholder (which MT models copy verbatim), translated, then swapped back. If any
-sentinel is lost in translation the input is returned unchanged — the loop's own sentinel check
-(``run.py``: ``find_sentinels(candidate) != set(mapping)``) is the second net.
+sentinel is lost in translation the input is returned unchanged — the loop's own sentinel check is
+the second net, and it is a MULTISET compare of the candidate against the masked source
+(``run.py``: ``Counter(_SENTINEL_RE.findall(candidate)) != Counter(_SENTINEL_RE.findall(masked))``).
+
+This docstring used to describe that net as ``find_sentinels(candidate) != set(mapping)``, which is
+the weaker check: a set compare cannot see a DUPLICATED sentinel, and duplication is a real failure
+mode — a rewriter that repeats a clause restores the citation twice. Verified against deliberately
+malicious rewriters, one dropping a sentinel and one duplicating it: both candidates are rejected
+and the locked citation and number survive intact.
 
 Most useful on watermarked / repetitively-phrased input, where round-trip MT breaks the n-gram
 patterns statistical detectors key on. Needs ``.[full]`` (torch + transformers + sentencepiece);
