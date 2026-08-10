@@ -370,3 +370,26 @@ def test_real_cyrillic_text_is_not_flagged_as_homoglyphs() -> None:
 
     assert _homoglyph_warning("The sign said привет which means hello, and we moved on.") is None
     assert _homoglyph_warning(_PROSE) is None
+
+
+# --- verify is the verdict surface, so it is where an evasion does the most damage ---------------
+
+
+def test_verify_carries_the_evasion_caveats() -> None:
+    """`verify` produces a pass/fail and an exit code — exactly what the evasions flip. It was
+    reporting PASS on injected text in silence while `score_text` warned about the same input."""
+    from untell.scripts.verify import verify
+
+    assert verify(_PROSE, tier="lite").get("warning") is None
+    assert "invisible" in (verify(_inject(_PROSE, "\u200b"), tier="lite").get("warning") or "")
+    assert "homoglyph" in (verify(_homoglyph(_PROSE), tier="lite").get("warning") or "")
+
+
+def test_the_verify_caveat_is_printed_after_the_verdict() -> None:
+    """Before it would be skimmed past. The verdict is what the reader came for, and a PASS
+    obtained this way is the one to distrust."""
+    from untell.scripts.verify import _render, verify
+
+    lines = [ln for ln in _render(verify(_inject(_PROSE, "\u200b"), tier="lite")).splitlines() if ln]
+    assert "WARNING" in lines[-1], lines[-3:]
+    assert any("CHECKER" in ln or "FAILS" in ln for ln in lines[:-1]), lines
