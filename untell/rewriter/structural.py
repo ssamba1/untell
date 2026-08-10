@@ -1202,6 +1202,48 @@ _CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
     # together so no later pass has to guess which one is wrong.
     (re.compile(r"\bis\s+a\s+testament\s+to\b", re.IGNORECASE), "shows"),
     (re.compile(r"\ba\s+testament\s+to\b", re.IGNORECASE), "proof of"),
+    # --- coverage pass -------------------------------------------------------------------------
+    # AUDITED by probing every pattern in `tells._CLICHES` through this rewriter: 41 of 57 fired as
+    # a `cliche` tell and survived every draw. `cliche` is the strongest category in the catalogue
+    # (precision 0.902 on HC3, 0.941 on RAID) and this table was treating 16 of them.
+    #
+    # The entries below are the subset where a plain rewrite is unambiguous. Pure scaffolding is
+    # deleted; a phrase carrying meaning is replaced by the plainest wording of the same meaning.
+    # Nothing here is a judgement call about what the author meant.
+    (re.compile(r"\bin\s+conclusion,?\s*", re.IGNORECASE), ""),
+    (re.compile(r"\b(?:in\s+summary|to\s+summari[sz]e),?\s*", re.IGNORECASE), ""),
+    (re.compile(r"\bit\s+should\s+be\s+noted\s+that\s+", re.IGNORECASE), ""),
+    (re.compile(r"\bit'?s\s+no\s+secret\s+that\s+", re.IGNORECASE), ""),
+    (re.compile(r"\bat\s+its\s+core,?\s*", re.IGNORECASE), ""),
+    (re.compile(r"\bthe\s+bottom\s+line\s+is\s+that\s+", re.IGNORECASE), ""),
+    (re.compile(r"\bthe\s+bottom\s+line\s+is\b", re.IGNORECASE), "in short"),
+    (re.compile(r"\blet'?s\s+dive\s+in(?:to)?\b", re.IGNORECASE), "let's start"),
+    (re.compile(r"\b(?:deep\s+dive|deep-dive)\b", re.IGNORECASE), "close look"),
+    (re.compile(r"\bdive\s+into\b", re.IGNORECASE), "look at"),
+    (re.compile(r"\bshed\s+light\s+on\b", re.IGNORECASE), "explain"),
+    (re.compile(r"\bgame[-\s]?chang(?:er|ing)\b", re.IGNORECASE), "major change"),
+    (re.compile(r"\bat\s+the\s+forefront\s+of\b", re.IGNORECASE), "leading"),
+    (re.compile(r"\bpush\s+the\s+boundaries\s+of\b", re.IGNORECASE), "extend"),
+    (re.compile(r"\ba\s+double[-\s]edged\s+sword\b", re.IGNORECASE), "a trade-off"),
+    (re.compile(r"\bthe\s+tip\s+of\s+the\s+iceberg\b", re.IGNORECASE), "a small part of it"),
+    (re.compile(r"\bin\s+the\s+(?:age|world)\s+of\b", re.IGNORECASE), "in"),
+    (re.compile(r"\bin\s+an\s+era\s+where\b", re.IGNORECASE), "when"),
+    (re.compile(r"\bas\s+technology\s+continues\s+to\s+evolve,?\s*", re.IGNORECASE), ""),
+    #
+    # "one of the most important" is deliberately absent. "a key" is the natural flattening and it
+    # disagrees in number with the plural noun that always follows: "one of the most important
+    # rules" -> "a key rules". Same shape as the testament/preposition break above — a substitution
+    # table matches a string and cannot inflect what comes after it, so a phrase whose replacement
+    # must agree with its object does not belong in one. Caught by reading the output of this very
+    # pass, which is the third time that has been the only thing that would have.
+    #
+    # NOT added, and the reason is the same for all of them: they assert something. "The future
+    # looks bright", "only time will tell", "one thing is certain", "the possibilities are
+    # endless", "as we move forward" and "a sea change" are claims about the world, not
+    # scaffolding around a claim. Deleting one removes a proposition the author made; replacing it
+    # requires deciding what they meant by it. Both are meaning edits, which is not this
+    # transform's job — it flattens phrasing. They stay catalogued as tells so a caller sees them,
+    # and the rewrite is left to the neural path or to the author.
 ]
 
 _AFTER_SENTENCE_START = re.compile(r"(^|[.!?]\s+)([a-z])")
