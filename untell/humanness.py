@@ -217,6 +217,24 @@ def humanness(text: str, tier: str = "full") -> float:
     # also runs the other way from what the old note claimed: AI text now carries roughly five
     # times the catalogued tells of human text, so the term pushes AI text DOWN, as intended.
     #
+    # RE-DERIVED 2026-08-10, because the figures above predate the two repetition tells and those
+    # moved the catalogue hard (its overall AUROC went 0.638 -> 0.9555 on RAID for the same reason).
+    # 60 pairs per corpus:
+    #
+    #                     HC3      RAID
+    #     tells          0.890    0.935     human mean 0.029 / 0.035, ai mean 0.273 / 0.455
+    #     bursty         0.856    0.791
+    #
+    # This does not just refresh a number, it reverses the ordering the paragraph above rests on.
+    # "About as well as burstiness" was true at 0.789 against 0.843; the tells term now separates
+    # BETTER than burstiness on both corpora, and by a wide margin on RAID. It is the second
+    # strongest of the three signals and carries the same 0.25 weight as the weakest.
+    #
+    # Still not refitted, for the reason below, which the new numbers do not touch: choosing weights
+    # against these corpora is fitting to 2022-era ChatGPT and to RAID's particular generators. What
+    # changed is that the argument for leaving them alone can no longer include "tells is the weak
+    # term" — it is not.
+    #
     # BANDS NOW RECALIBRATED (2026-08-07) — the objection below was that refitting against one
     # dated corpus trades a real signal for a better benchmark number. That objection is answered:
     # the same failure replicated on RAID (multi-domain, multi-generator, exact pairing) with ai
