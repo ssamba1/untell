@@ -68,6 +68,46 @@ def blocks(text: str) -> list[str]:
     return out
 
 
+def restore_layout_lines(original: str, transformed: str) -> str:
+    """Put back every non-prose line of ``original``, by line index.
+
+    For a transform that substitutes words IN PLACE — `surgical` is the one here — this protects
+    layout without costing context, which splitting into blocks does. MEASURED over 50 HC3 and RAID
+    texts, running `surgical` per block instead of per document left the detector score unchanged
+    and made tell removal WORSE: 9.576 -> 10.616 tells/100w on RAID, because a short block scores
+    badly and the substitution ranking is only as good as the score it ranks against. Whole-document
+    plus this restore keeps the context and still cannot corrupt a code block.
+
+    Line-index alignment is the whole mechanism, so it is checked rather than assumed: over the same
+    50 texts and both structured fixtures, `surgical` changed the line count zero times. When the
+    counts do differ the transform reflowed, this cannot align, and the transformed text is returned
+    untouched — a reflowing transform needs :func:`apply_per_block`, not this.
+    """
+    src = original.replace("\r\n", "\n").split("\n")
+    out = transformed.replace("\r\n", "\n").split("\n")
+    if len(src) != len(out):
+        return transformed
+    mask = _prose_line_mask(original)
+    if len(mask) != len(src):  # a classifier/line disagreement is not something to guess through
+        return transformed
+    merged = [o if keep else s for s, o, keep in zip(src, out, mask)]
+    joined = "\n".join(merged)
+    return joined.replace("\n", "\r\n") if "\r\n" in original else joined
+
+
+def _prose_line_mask(text: str) -> list[bool]:
+    """One flag per line: True where the line is transformable prose.
+
+    Built on :func:`_segments` rather than beside it, for the reason that function's own docstring
+    gives — two partitioners twenty lines apart drift, and this one deciding a line is prose while
+    that one decides it is layout is exactly the failure both exist to prevent.
+    """
+    mask: list[bool] = []
+    for kind, _prefix, body in _segments(text.replace("\r\n", "\n")):
+        mask.extend([kind == "prose"] * (body.count("\n") + 1))
+    return mask
+
+
 def _segments(text: str):
     """Partition ``text`` into (kind, prefix, body) triples, in order.
 
@@ -92,7 +132,24 @@ def _segments(text: str):
             return [("prose", "", joined)]
         return []
 
-    for line in text.split("\n"):
+    # YAML front matter: a `---` on the very first line, up to the next `---`. Only at position 0 —
+    # a `---` later in a document is a thematic break, and that one is already left alone.
+    # MEASURED before this: `title: Moreover the framework` came back as `title: What is more the
+    # system`. Document metadata is not prose, and a title is the field most likely to be quoted
+    # verbatim somewhere else.
+    lines = text.split("\n")
+    front_matter_end = -1
+    if lines and lines[0].strip() == "---":
+        for i in range(1, len(lines)):
+            if lines[i].strip() in ("---", "..."):
+                front_matter_end = i
+                break
+
+    for index, line in enumerate(lines):
+        if index <= front_matter_end:
+            yield from flush()
+            yield ("layout", "", line)
+            continue
         marker_match = _FENCE_RE.match(line)
         if marker_match:
             run = marker_match.group(1)
@@ -107,6 +164,44 @@ def _segments(text: str):
             continue
         if fence is not None or not line.strip():
             yield from flush()
+            yield ("layout", "", line)
+            continue
+        # A TABLE ROW is structure and data, not prose. It has no line marker, so it was gathered
+        # into the surrounding block and rewritten as a paragraph. MEASURED on a document ending in
+        # a results table, at every seed tried:
+        #
+        #     | Method | Score |   ->   | Way | Score |   /   | Approach | Score |   /   | Technique |
+        #
+        # A column heading is a label the surrounding text refers to and often a term of art, and
+        # nothing downstream can restore it. The cells are worse in principle than the heading: a
+        # sentence-level transform gathering several rows into one block is free to merge or split
+        # across the pipes, which would destroy the table rather than relabel it.
+        #
+        # The test is the leading pipe, which is what every markdown table row and delimiter row
+        # has and what ordinary prose never starts with.
+        if line.lstrip().startswith("|"):
+            yield from flush()
+            yield ("layout", "", line)
+            continue
+        # An INDENTED CODE BLOCK — four spaces or a tab, starting a block. MEASURED before this,
+        # at every seed:
+        #
+        #         def f():
+        #             return utilize(x)
+        #       ->
+        #     def f():
+        #             return use(x)
+        #
+        # Both halves of that are damage. The identifier was renamed, and the first line lost its
+        # indent, so what is left is not a code block at all — it renders as prose. The fenced form
+        # has been protected since this module was written; the indented form is the same construct
+        # and had nothing.
+        #
+        # `not buffer` is what keeps this off a soft-wrapped paragraph's continuation lines: an
+        # indented line only starts code when it BEGINS a block, which after a blank line it does.
+        # A line indented in the middle of a gathered paragraph stays prose, which is what a wrapped
+        # paragraph in a list item looks like.
+        if not buffer and (line.startswith("    ") or line.startswith("\t")):
             yield ("layout", "", line)
             continue
         # A markdown HARD BREAK — two or more trailing spaces — is not a soft wrap. It is the

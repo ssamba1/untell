@@ -54,6 +54,7 @@ class SurgicalRewriter:
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         from untell.attacks import surgical_substitute
+        from untell.layout import restore_layout_lines
 
         # Target the tier the loop is actually scoring against so the swaps lower the RIGHT signal.
         # Composite labels (e.g. a browser scorer's "browser:zerogpt") aren't directly scoreable;
@@ -69,6 +70,26 @@ class SurgicalRewriter:
         # `surgical_substitute` itself, because eval/compare_humanizers.py uses that function as the
         # `synonym_swap` row standing in for the QuillBot / TextFooler class, and that baseline has
         # to keep modelling their technique rather than inheriting ours.
-        return surgical_substitute(
+        #
+        # Layout protection was a property of `structural` alone — it and `mt_pivot` were the only
+        # rewriters calling into `layout` — so the same document survived `--rewriter structural`
+        # and was corrupted by the default `composite`, which reaches this class. MEASURED at every
+        # seed, on a four-space indented code block:
+        #
+        #         def f():                          def f():
+        #             return utilize(x)      ->          return use(x)
+        #
+        # Both halves are damage: the identifier was renamed, and the first line lost its indent, so
+        # what remains does not render as code at all. `structural` had protected the same construct
+        # for as long as `layout` has existed.
+        #
+        # Whole document, then restore the layout lines — NOT `apply_per_block`. Splitting was the
+        # first fix and it cost quality: MEASURED over 50 HC3 and RAID texts, per-block left the
+        # detector score unchanged and made tell removal worse, 9.576 -> 10.616 tells/100w on RAID.
+        # A short block scores badly, and this rewriter ranks its swaps by that score. Substitution
+        # happens in place and never reflows — line count was identical on all 50 — so restoring by
+        # line index protects the layout at no cost to context.
+        rewritten = surgical_substitute(
             text, tier=tier, threshold=threshold, max_subs=self.max_subs, prefer_tells=True
         )["text"]
+        return restore_layout_lines(text, rewritten)
