@@ -134,9 +134,29 @@ def _techniques(tier: str, threshold: float):
     }
 
 
-def compare(texts: list[str], tier: str = "full", threshold: float = DEFAULT_THRESHOLD) -> dict:
+def compare(
+    texts: list[str],
+    tier: str = "full",
+    threshold: float = DEFAULT_THRESHOLD,
+    corpus: str = "unspecified",
+) -> dict:
+    """Score every technique over ``texts``. ``corpus`` labels what they came from.
+
+    The label is a parameter rather than something the caller bolts on afterwards, because
+    `_render` already reads ``result["corpus"]`` and `compare` never set it — so calling this
+    function directly produced a report headed ``corpus=unknown``, which is precisely the
+    unquotable comparison the note in `main` warns about. Only the CLI happened to fill it in.
+
+    It matters more here than in most places: the ranking this function produces is not stable
+    across corpora. On 6 HC3 answers at the lite tier, back-translation comes out BEST
+    (`ai_max_mean` 0.5149 against the composite loop's 0.5596, and the only technique to move the
+    flagged rate off 1.00), while `docs/free-ceiling-measured.md` records it as the worst method
+    tested and "made one text more detectable than the input it was given". Both are real; they
+    are measurements of different corpora, and a row with no corpus attached cannot tell them
+    apart.
+    """
     if not texts:  # no corpus -> nothing to score (the per-technique means would divide by zero)
-        return {"n": 0, "tier": tier, "threshold": threshold, "techniques": {}}
+        return {"n": 0, "tier": tier, "threshold": threshold, "techniques": {}, "corpus": corpus}
     from untell.scripts.quality import similarity
 
     rows: dict[str, dict] = {}
@@ -184,7 +204,13 @@ def compare(texts: list[str], tier: str = "full", threshold: float = DEFAULT_THR
                 ),
                 "unscored": n - len(measured),
             }
-    return {"n": len(texts), "tier": tier, "threshold": threshold, "techniques": rows}
+    return {
+        "n": len(texts),
+        "tier": tier,
+        "threshold": threshold,
+        "corpus": corpus,
+        "techniques": rows,
+    }
 
 
 def _render(r: dict) -> str:
@@ -262,10 +288,10 @@ def main(argv: list[str] | None = None) -> int:
     if not texts:
         print(json.dumps({"error": "empty corpus"}))
         return 2
-    result = compare(texts, tier=args.tier, threshold=args.threshold)
     # Which corpus produced these numbers. Nine results in this repository once generalised
-    # from a demo corpus, so a comparison that does not name its own is unquotable.
-    result["corpus"] = corpus
+    # from a demo corpus, so a comparison that does not name its own is unquotable. Passed in
+    # rather than assigned afterwards, so a library caller gets the same guarantee the CLI does.
+    result = compare(texts, tier=args.tier, threshold=args.threshold, corpus=corpus)
     print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
     return 0
 
