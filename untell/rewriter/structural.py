@@ -293,9 +293,26 @@ _INFLATED_COPULA_RE = re.compile(
 _BOASTS_RE = re.compile(r"\bboasts\b", re.IGNORECASE)
 
 # Vague attribution: "studies show", "research suggests".
+#
+# This is NARROWER than `tells._VAGUE_ATTR_RE`, which flags it, and the gap is deliberate — but it
+# was too narrow by exactly the impersonal forms. FOUND by counting detections against fixes over
+# 120 corpus texts: `vague_attribution` fired on one text and the flattener acted on none of them.
+# The phrase was "it is generally accepted", which the detector covers via
+# `it is (widely|often|generally) (believed|said|understood|accepted)` and this had only
+# `it is (widely )?believed`. So the loop counted a tell, tried to remove it, failed, and scored the
+# result as unimproved.
+#
+# The rest of the detector's vocabulary stays out, and the reason is measured rather than assumed.
+# It also flags attributed subjects — reports, surveys, analysts, observers, critics, sources — and
+# rewriting "Critics argue that X" to "Evidence suggests that X" changes WHO SAID IT. The meaning
+# gates do not catch that: on five such pairs, similarity 0.905-0.947, `contradicts` False and
+# `role_swap` False on every one. So a wider flattener would ship attribution changes past every
+# guard this repo has. The impersonal forms below have no attributor to lose, which is the whole
+# reason they are safe to add.
 _VAGUE_ATTR_RE = re.compile(
     r"\b(studies show|research suggests?|experts? (?:believe|say|agree)|scientists? believe|"
-    r"it is (?:widely )?believed|many believe|some argue)\b",
+    r"it is (?:widely |often |generally )?(?:believed|said|understood|accepted)|"
+    r"many believe|some argue)\b",
     re.IGNORECASE,
 )
 
@@ -1596,9 +1613,22 @@ def _flatten_copula(text: str) -> str:
 
 
 def _flatten_vague_attribution(text: str) -> str:
-    """Replace 'studies show' with concrete alternatives."""
-    text = _VAGUE_ATTR_RE.sub("evidence suggests", text)
-    return text
+    """Replace 'studies show' with concrete alternatives.
+
+    Case is carried across from whatever was matched. The substitution was a flat string, so a
+    sentence-initial "Studies show that ..." became ". evidence suggests that ..." — caught by the
+    battery's own `lowercase_after_full_stop` check, which fires on the output and not on the source.
+
+    It went unnoticed because this transform never fired on real corpus text: over 50 HC3 and RAID
+    documents it changed 0. Widening the pattern to cover the impersonal forms the detector already
+    flags is what made the defect reachable, so it is fixed in the same commit rather than shipped
+    by it.
+    """
+
+    def _replace(match: re.Match) -> str:
+        return "Evidence suggests" if match.group(0)[:1].isupper() else "evidence suggests"
+
+    return _VAGUE_ATTR_RE.sub(_replace, text)
 
 
 # Subordinators whose clause can move to the FRONT of its sentence without changing what the
