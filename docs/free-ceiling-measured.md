@@ -4112,3 +4112,45 @@ Worth keeping: **a scalar return value is where caveats go to die.** Four times 
 rich function knew the limit and the convenient one discarded it, and each time the convenient one
 is what a caller reaches for. Returning a float is a decision to throw away everything the
 computation learned except its answer.
+
+## Result 79
+
+**A warning can be present, prominent, and still describe the wrong event.**
+
+Result 78 ended on the shape where a scalar drops its caveat. The obvious next question is whether
+the caveats that *are* carried say the right thing. On the voice path, one did not.
+
+There are two floors on a voice sample, in two different files:
+
+| floor | where | what happens below it |
+|---|---|---|
+| 20 words | `run._MIN_VOICE_SAMPLE_WORDS` | `_voice_key` returns a constant — **the tie-break does not run** |
+| 150 words | `voice.MIN_SAMPLE_WORDS` | it runs, on a profile whose same-author/cross-author AUROC is 0.680 |
+
+The structured `voice_warning` tested only the second. MEASURED, over the `untell_text` result dict:
+
+```
+  5 words -> "voice_sample is 5 words; ... the voice tie-break is close to arbitrary."
+ 75 words -> "voice_sample is 75 words; ... the voice tie-break is close to arbitrary."
+200 words -> None
+```
+
+The same sentence for both, though at 5 words there was no tie-break to be arbitrary. A caller reads
+"close to arbitrary" as *your voice was used, weakly* and acts on it by trusting the output a little
+less. The truth was *your sample had no effect at all*, which calls for a different action entirely:
+supply more text, or stop believing the feature is on. The distance between those two readings is
+the whole value of the warning.
+
+The stderr message on the same condition has always been right — *"voice matching is disabled for
+this run"*. So the CLI user, who has a human watching a terminal, was told the truth, and the REST
+and MCP callers, who read only the dict, were told the other thing. That is the fifth consecutive
+instance of one asymmetry: **the surface with a human watching is guarded, the programmatic surface
+is not.** Results 62, 73, 77, 78 and this one.
+
+The fix branches on which floor was crossed. The test that matters is not the wording but the
+behaviour underneath it: below 20, all three candidates key identically (`{0.0}`); above it, all
+three key differently. A message about a tie-break is now pinned to whether a tie-break happened.
+
+Worth keeping: **checking that a caveat exists is not checking that it is true.** Every audit so far
+has looked for missing warnings. This one was present, was read, and was wrong — and no count of
+warnings, no coverage number, and no test asserting `warning is not None` would have found it.
