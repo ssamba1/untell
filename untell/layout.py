@@ -26,6 +26,10 @@ _LINE_MARKER_RE = re.compile(r"^([ \t]*(?:[-*+][ \t]+|\d+[.)][ \t]+|>[ \t]?|#{1,
 # character as its opener and at least as many of them, which is exactly how a document shows
 # fenced-code syntax inside a fenced block.
 _FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
+# A line ending here finished a sentence, so the newline after it is a boundary the author chose
+# rather than a soft wrap to be absorbed. Closers are allowed after the terminator so a line ending
+# in a quotation, a parenthesis or a bracket still counts. See the branch in `_segments`.
+_SENTENCE_END_RE = re.compile(r"[.!?][\"')\]”’]*[ \t]*$")
 
 
 def apply_per_block(text: str, transform: Callable[[str], str]) -> str:
@@ -119,10 +123,37 @@ def _segments(text: str):
             buffer.append(line)
             yield from flush()
             continue
+        # A line that ENDS A SENTENCE is a boundary too. Gathering consecutive plain lines assumes
+        # they are a soft-wrapped paragraph, and for text that puts one paragraph per line — which
+        # is how chat models and forum answers are usually pasted — that assumption deletes the
+        # paragraph breaks: the block is rejoined with " " and the separators never come back.
+        #
+        # MEASURED end to end on HC3 answers, before this branch existed: 3 of 4 documents came
+        # back as a single paragraph (3 -> 1, 3 -> 1, 4 -> 1). The module's docstring promises
+        # "preserving all layout" and "the original separators are restored verbatim", and nothing
+        # downstream objects — the meaning gate compares meaning, the detectors score statistics,
+        # and neither looks at layout.
+        #
+        # The two cases separate cleanly on the last character. Over 12 HC3 documents, 34 of 34
+        # non-final lines end in sentence-terminating punctuation; in genuinely soft-wrapped prose
+        # 0 of 2 do, because a soft wrap breaks mid-clause. So this keeps hard-wrapped paragraphs
+        # gathered while leaving paragraph-per-line documents intact.
+        #
+        # Same trade as the hard-break branch above, for the same reason: the block ends, so the
+        # transform sees less context, and honouring a boundary the author put there beats
+        # optimising across it.
         marker = _LINE_MARKER_RE.match(line)
         if marker:
             yield from flush()
             yield ("prose", marker.group(1), marker.group(2))
+            continue
+        # AFTER the marker branch, deliberately. A list item ends in a full stop as often as a
+        # paragraph does, so testing this first swallowed "- Furthermore, it is robust." into the
+        # prose buffer with its bullet attached — `blocks()` strips the marker and `apply_per_block`
+        # did not, and the two partitions disagreed. Their agreement test caught it.
+        if _SENTENCE_END_RE.search(line):
+            buffer.append(line)
+            yield from flush()
             continue
         buffer.append(line)
     yield from flush()
