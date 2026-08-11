@@ -4071,3 +4071,44 @@ Worth keeping: **check whether a guarantee and its report share a code path.** T
 and nothing in either file said so. The locking is structural and the reporting is a command
 whitelist, which is why one covered biblatex and the other did not — and why the gap could sit
 there indefinitely without a single citation ever being lost.
+
+## Result 78
+
+**Three surfaces probed, two clean, and the third was the same shape for the fourth time.**
+
+`untell-audit` and the gate work covered the scoring and rewriting paths. These are the surfaces
+nothing had touched.
+
+**The REST server is solid.** With `UNTELL_API_KEY` set: 401 without a key, 401 with a wrong one,
+200 with the right one, and `/health`, `/docs`, `/openapi.json` open by design. Payloads over
+`MAX_INPUT_CHARS` are rejected 422 in milliseconds, every numeric parameter carries a `Field`
+bound, and each rejection names its limit — *"String should have at most 50000 characters"*,
+*"Input should be less than or equal to 32"*. Nothing to fix.
+
+I did report one gap that was not there: the 50,000 limit looked undocumented because I searched
+`docs/api-server.md` for `50000` and the document writes `50,000`. Reading it rather than trusting
+the grep is what caught that — the same class as the substring and boundary failures recorded
+throughout this log, in the check rather than the code again.
+
+**`voice_distance` had the recurring defect.** `voice_report` returns the thin-sample caveat as a
+`warning` key. `voice_distance` returns a bare float and returned it in silence — a **9-word sample
+against a documented 150-word minimum answered 2.6543**, with nothing to say the number sits where
+the same-author/cross-author AUROC is 0.680 and the feature noise rivals the signal.
+
+That is the fourth instance of one shape:
+
+| surface | rich form carries the caveat | scalar form dropped it |
+|---|---|---|
+| `humanness` | `score_text`'s `warning` | fixed, Result 62 |
+| meaning gates | `meaning_preserved` conjunction | polarity added, Result 73 |
+| `--against` | `lock()` protects structurally | reporting was blind, Result 77 |
+| **`voice_distance`** | **`voice_report`'s `warning`** | **fixed here** |
+
+The loop guarded it separately in every case — `untell humanize --voice-sample` warns on stderr — so
+each gap was on the direct-call path only, which is exactly the path a library user takes and the
+one no CLI test covers.
+
+Worth keeping: **a scalar return value is where caveats go to die.** Four times in this codebase the
+rich function knew the limit and the convenient one discarded it, and each time the convenient one
+is what a caller reaches for. Returning a float is a decision to throw away everything the
+computation learned except its answer.

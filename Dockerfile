@@ -12,7 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY --from=builder /build/dist/*.whl /tmp/
-RUN pip install --no-cache-dir /tmp/untell-*.whl[server] && rm /tmp/untell-*.whl
+# The wheel path is expanded BEFORE the extras are appended. Written as
+# `pip install /tmp/untell-*.whl[server]`, the shell reads `[server]` as a glob character
+# class, so the whole word only expands if a file matches `untell-*.whl` followed by one of
+# s/e/r/v — which no wheel is, since wheels end at `.whl`. The pattern therefore never
+# matches, the shell passes the literal string through, and pip fails with
+# "untell-*.whl is not a valid wheel filename". No CI job builds this image, so it went
+# unnoticed.
+RUN WHEEL="$(ls /tmp/untell-*.whl)" \
+    && pip install --no-cache-dir "${WHEEL}[server]" \
+    && rm /tmp/untell-*.whl
 
 EXPOSE 8000
 ENV UNTELL_API_KEY=""
