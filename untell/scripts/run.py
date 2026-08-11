@@ -263,12 +263,27 @@ def untell_text(
     # about exactly this on stderr; REST and MCP take the sample as TEXT and said nothing, so the
     # two network surfaces silently used a sample the CLI would have flagged. Reported in the
     # result rather than printed, because that is the only channel those callers read.
+    #
+    # There are TWO floors, not one, and they mean different things. Below
+    # `_MIN_VOICE_SAMPLE_WORDS` (20) `_voice_key` returns a constant, so the tie-break does not run
+    # at all; below `MIN_SAMPLE_WORDS` (150) it runs on a profile whose AUROC is 0.680. One message
+    # covered both, and it was the weaker claim: a 5-word sample — matching DISABLED — was reported
+    # as "the voice tie-break is close to arbitrary", which says it ran and was noisy. The stderr
+    # warning above gets this right and says "disabled for this run"; the structured field, which is
+    # the only channel REST and MCP read, described the case that did not happen.
     voice_warning = None
     if voice_sample:
         from untell.scripts.voice import _WORD, MIN_SAMPLE_WORDS
 
         n_words = len(_WORD.findall(voice_sample))
-        if n_words < MIN_SAMPLE_WORDS:
+        if n_words < _MIN_VOICE_SAMPLE_WORDS:
+            voice_warning = (
+                f"voice_sample is {n_words} words, under the {_MIN_VOICE_SAMPLE_WORDS} needed to "
+                "build a style profile at all — voice matching was DISABLED for this run and the "
+                "sample had no effect on the output. Supply at least "
+                f"{MIN_SAMPLE_WORDS} words for a profile that measures anything."
+            )
+        elif n_words < MIN_SAMPLE_WORDS:
             voice_warning = (
                 f"voice_sample is {n_words} words; below {MIN_SAMPLE_WORDS} its style profile is "
                 "not statistically meaningful, so the voice tie-break is close to arbitrary."
