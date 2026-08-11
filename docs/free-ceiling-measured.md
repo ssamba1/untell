@@ -5900,3 +5900,56 @@ here are the same mistake at different scales — "somewhere in the document" an
 containing this word" are both proximity standing in for reference. The check only becomes real when
 it points at the thing that defines the value, and finding that out took writing the failing case
 rather than reading the passing one.
+
+## Result 112
+
+**The last three unprobed modules, and the one claim among them worth pinning.**
+
+**`browser_check.py`** — sound, and instructively so. `parse_ai_percent` handles 14 of 16 probe
+shapes exactly, and both apparent failures are **deliberate refusals in the safe direction**:
+
+- A human-only percentage returns `None`. "Human: 45%" means 45% human, i.e. 55% AI, and returning
+  0.45 would hand the loop a verdict wrong in the dangerous direction. Sites word their output
+  differently and change it without notice, so an ambiguous readout is refused rather than guessed.
+- A negative percentage returns `None`. The digit-only pattern cannot see a leading sign, so
+  "-10% AI" once read as 0.10 — a low score, i.e. "looks human".
+
+The asymmetry is stated outright in the docstring: *"A reading that OVER-states AI is safe — the
+loop simply keeps rewriting. One that UNDER-states it is how text ships believing it passed."* And
+an unparseable page raises a named `RuntimeError` quoting the raw text rather than fabricating 0.5,
+with the reason recorded: a fake score enters the numeric list, drives `max()`, and suppresses the
+all-checkers-failed flag that exists for exactly that case.
+
+Worth noticing what this costs, since nothing else says it: **the parser can read a failure verdict
+but not a success one.** A page reporting only "100% Human written" is unparseable, so the checker
+is excluded precisely when the rewrite worked. That is the safe direction — exclusion, loudly — but
+it means a browser check can never confirm success on a site that reports only the human share.
+
+**`training/`** — all modules import cleanly.
+
+**`prompt-rubric.md`** — the one testable behavioural claim in the reference docs, and it had no
+test. Its first and most emphatic item:
+
+> **Em dashes (`—`).** The single most recognizable AI signature. Do not add them. … If the original
+> had one, you may keep it, but never *add*.
+
+`ai-tells.md` calls the em-dash "the most measurable single tell (GPT-4.1 ~10 per 1,000 words)" and
+`tells.py` counts it as a category — so an injecting rewriter would have this repo scoring its own
+output for a tell it had just added. MEASURED over 80 HC3 and RAID paragraphs through `composite`:
+
+```
+hc3    40 texts | em-dash 0 -> 0 (added 0) | semicolon 0 -> 0 (added 0)
+raid   40 texts | em-dash 0 -> 0 (added 0) | semicolon 3 -> 3 (added 0)
+```
+
+Zero added of either, and the three semicolons RAID's sources carried all survive. Now asserted
+across all four CPU rewriters — the layout defect in Result 95 was one backend behaving differently
+from the rest, and this is the same shape of question.
+
+The test keeps the rubric's own asymmetry: **keeping** a mark the source had is fine, and a test
+demanding removal would push the rewriter into deleting the author's punctuation — a different kind
+of damage that nothing here asks for.
+
+Worth keeping: **a rule written for the LLM rewriter is a rule the free rewriters are silently held
+to as well.** `prompt-rubric.md` reads as instructions for a model, so nothing thought to check the
+deterministic path against it — and that path is the default.
