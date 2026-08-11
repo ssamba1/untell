@@ -359,6 +359,7 @@ def check_derivable(report: Report) -> None:
     check_test_count_claims(report)
     check_unreleased_changelog_is_current(report)
     check_no_dead_functions(report)
+    check_no_shadowed_definitions(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -801,6 +802,53 @@ def check_test_count_claims(report: Report) -> None:
 # uses; a decorated function is registered by its decorator, which is why the FastAPI routes and
 # middleware do not appear by name in any caller.
 _REACHED_WITHOUT_A_CALLER = {"main", "run", "build_parser"}
+
+
+def check_no_shadowed_definitions(report: Report) -> None:
+    """No module may define the same top-level name twice.
+
+    Python keeps the last definition, silently, and every caller of the first one gets the second.
+    MEASURED, this happened here: `structural` had a `_content_words` returning a set of words, a
+    second `_content_words` returning an int was added 280 lines later, and `_drop_restatements` —
+    which had not been touched — began raising
+
+        TypeError: object of type 'int' has no len()
+
+    No test caught it. The suite exercises `_drop_restatements` through the rewriter, and the
+    rewriter crashed only on the corpus sweep that happened to run first. In a 2500-line module two
+    functions wanting the same name is ordinary, and the cost of noticing is one AST pass.
+
+    Scans `untell/`, `eval/` and `tests/` at module level only. A method redefined inside a class is
+    the same defect, but nested scopes also carry legitimate redefinition — a `try`/`except
+    ImportError` pair defining a fallback is the common one here — and this check is not worth a
+    false positive.
+    """
+    dupes: list[str] = []
+    scanned = 0
+    for path in sorted(
+        [*(REPO / "untell").rglob("*.py"), *(REPO / "eval").glob("*.py"),
+         *(REPO / "tests").glob("*.py")]
+    ):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        seen: dict[str, int] = {}
+        for node in tree.body:
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                continue
+            scanned += 1
+            if node.name in seen:
+                dupes.append(
+                    f"{path.relative_to(REPO).as_posix()}: {node.name} redefined at line "
+                    f"{node.lineno}, shadowing line {seen[node.name]}"
+                )
+            seen[node.name] = node.lineno
+    report.check(
+        "no module defines the same top-level name twice",
+        not dupes,
+        "; ".join(dupes) if dupes else f"{scanned} definitions, none shadowed",
+    )
 
 
 def check_no_dead_functions(report: Report) -> None:
