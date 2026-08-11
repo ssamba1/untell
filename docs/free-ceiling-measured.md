@@ -23,6 +23,32 @@ ensemble that untell can actually put in its loop.**
 > **0.859 → 0.261 ± 0.027, flagged rate 1.00 → 0.148.** Use `--repeats ≥ 9`; three repeats gave
 > 0.247 ± 0.015 and 0.330 ± 0.118 on the same command.
 
+> ## ⚠️ The composite numbers here no longer reproduce (re-measured 2026-08-11)
+>
+> Running the command this document gives for Result 11 —
+> `UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3 --max-iters 5
+> --rewriter composite`:
+>
+> | | post | flagged | `hc3_roberta` |
+> |---|---|---|---|
+> | recorded here | 0.860 | 1.00 | 0.810 |
+> | re-measured | **0.9995** | 1.00 | **0.9992** |
+>
+> The rewriter is not the cause — it rewrote 6 of 6, and the opener-dose change made the same day
+> was ruled out directly (0.9996 current against 0.9994 old). The detectors are **pinned** on this
+> corpus: `mage` 1.0000 on 6/6, `hc3_roberta` 0.9992–0.9993 on 6/6, `roberta_openai` ≥0.999 on 5/6.
+> Three of five saturate, so `max` cannot move for *any* rewriter, with or without `mage`.
+>
+> Ten commits have touched `untell/detectors/` since these figures were taken, several of them
+> closing scoring shortcuts — `hc3_roberta` read punctuation spacing as authorship, and collapsing
+> newlines still moves `roberta_openai` by up to 0.59 on its own. The most likely reading is that
+> these numbers were true when taken and measured evasion of artifacts that have since been removed.
+>
+> That does not weaken this document's *conclusions* — "some real AI text is unclearable by
+> meaning-preserving rewriting" is, if anything, stronger at 0.9995 than at 0.860. It does mean
+> **every composite figure below is a historical record, not a current measurement.** The `neural`
+> rows have not been re-run at all.
+>
 > ## ⚠️ Read the corpus before reading any number here
 >
 > **Results 1–9 are all measured on the same three hand-written paragraphs** (mean 36 words), and
