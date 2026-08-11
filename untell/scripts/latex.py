@@ -69,7 +69,17 @@ _DROP_ARG = re.compile(r"\\[a-zA-Z@]+\*?(?:\[[^\]]*\])*\{[^{}]*\}")
 _BARE_CMD = re.compile(r"\\[a-zA-Z@]+\*?")
 _ENV_MARK = re.compile(r"\\(?:begin|end)\{[^}]*\}")
 
-CITE = re.compile(r"\\(?:cite[a-zA-Z]*|nocite)(?:\[[^\]]*\])*\{([^}]*)\}")
+# `cite[a-zA-Z]*` matches only commands that START with "cite", which is natbib and APA.
+# biblatex — the modern standard — puts the stem in the middle: \parencite, 	extcite,
+# ootcite, utocite. Those returned NO keys, so `--against` reported "keeps every
+# citation" on a rewrite that had destroyed all of them, and no key was ever checked against
+# the .bib. `preserve.lock()` was never fooled — it masks LaTeX commands structurally and all
+# three forms survive a rewrite byte-exact — so the byte-locking promise held while the
+# REPORTING on it was blind.
+#
+# The starred forms (\citep*, \parencite*) failed for a second reason: the star sits between
+# the command and its optional argument.
+CITE = re.compile(r"\\(?:[a-zA-Z]*cite[a-zA-Z]*|nocite)\*?(?:\[[^\]]*\])*\{([^}]*)\}")
 _BIB_ENTRY = re.compile(r"@\w+\s*\{\s*([^,\s}]+)", re.MULTILINE)
 
 
