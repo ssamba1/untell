@@ -360,6 +360,7 @@ def check_derivable(report: Report) -> None:
     check_unreleased_changelog_is_current(report)
     check_no_dead_functions(report)
     check_no_shadowed_definitions(report)
+    check_selection_does_not_read_a_bare_max(report)
 
     # --- links that documents make to each other -------------------------------------------------
     broken: list[str] = []
@@ -848,6 +849,92 @@ def check_no_shadowed_definitions(report: Report) -> None:
         "no module defines the same top-level name twice",
         not dupes,
         "; ".join(dupes) if dupes else f"{scanned} definitions, none shadowed",
+    )
+
+
+SELECTION_ON_BARE_MAX_ALLOWED = {
+    # module::function -> why comparing the bare max is right here
+    "untell/scripts/run.py::_passed": "acceptance against the shipped threshold, not a choice "
+    "between candidates",
+    "untell/scripts/run.py::untell_text": "candidate selection, but with the measured tells "
+    "tie-break inside _TELLS_EPS — a documented secondary objective, not a blind max",
+    "untell/scripts/verify.py::verify": "reports the verdict a caller asked for",
+    "untell/attacks/word_importance.py::surgical_substitute": "the prefer_tells branch ranks on "
+    "(tells, max); the score-only branch is the caller's explicit opt-out",
+}
+
+
+def check_selection_does_not_read_a_bare_max(report: Report) -> None:
+    """Comparing detector ``max`` values to pick a candidate needs the shared selector.
+
+    `max` is one detector's number, and a saturating member pins it. MEASURED over 80 corpus texts:
+    the ensemble max reaches >=0.999 on 100% of HC3 AI text and 30% of RAID's, against 0% of human
+    text; `roberta_openai` returns 0.9992 on nearly every HC3 sentence. Five seeded candidates per
+    text gave ONE distinct max on 4 of 6 documents and one distinct mean on 1 of 6 — so a selector
+    reading `max` alone is choosing among candidates it cannot tell apart.
+
+    This has now been found twice. `composite._selection_key` was written for it, with its own
+    measurement. `targeted` still compared bare floats and was discarding 15 of 19 real per-sentence
+    improvements, every one of them a strict win on mean under a tied max. The fix is the same
+    `(max, mean)` selector, which is why it lives in `untell/rewriter/base.py`.
+
+    Not every `max` comparison is a selection. Acceptance against a threshold, a reported verdict and
+    a selector with a different measured secondary objective are all legitimate, so each is listed in
+    ``SELECTION_ON_BARE_MAX_ALLOWED`` with its reason rather than pattern-matched around. A NEW site
+    fails this check, which is the point: the ad-hoc grep that found the second instance becomes a
+    thing the repository does every run.
+    """
+
+    def _is_max_read(node: ast.expr) -> bool:
+        while (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "float"
+            and node.args
+        ):
+            node = node.args[0]
+        if (
+            isinstance(node, ast.Subscript)
+            and isinstance(node.slice, ast.Constant)
+            and node.slice.value == "max"
+        ):
+            return True
+        return (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "get"
+            and bool(node.args)
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "max"
+        )
+
+    ordering = (ast.Lt, ast.Gt, ast.LtE, ast.GtE)
+    found: set[str] = set()
+    for path in sorted((REPO / "untell").rglob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        rel = path.relative_to(REPO).as_posix()
+        for fn in ast.walk(tree):
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            for node in ast.walk(fn):
+                if not isinstance(node, ast.Compare):
+                    continue
+                if not any(isinstance(op, ordering) for op in node.ops):
+                    continue
+                if any(_is_max_read(side) for side in [node.left, *node.comparators]):
+                    found.add(f"{rel}::{fn.name}")
+    unlisted = sorted(found - set(SELECTION_ON_BARE_MAX_ALLOWED))
+    stale = sorted(set(SELECTION_ON_BARE_MAX_ALLOWED) - found)
+    problems = [f"unlisted: {s}" for s in unlisted] + [f"no longer present: {s}" for s in stale]
+    report.check(
+        "every bare-max comparison is a listed non-selection",
+        not problems,
+        "; ".join(problems)
+        if problems
+        else f"{len(found)} sites, all accounted for",
     )
 
 
