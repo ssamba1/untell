@@ -4884,3 +4884,53 @@ Worth keeping: **a damage check is code, and it gets the same treatment as code.
 added with a measurement, a probe, and an explicit narrowing after a false positive — and still
 shipped with a second false positive that only a corpus sweep would find. The instrument needs the
 same auditing as the thing it measures, and "it found real bugs" is not evidence that it is right.
+
+## Result 93
+
+**Chasing the last residual: two stubs, one artefact, one real — and a self-inflicted crash.**
+
+Result 92's sweep left `stub_sentence: 2` on RAID. Both, looked at:
+
+```
+text 23:  "TAN is"                      source ends mid-sentence at "In conclusion, TAN represents"
+text 10:  "Put simply, in this paper."  source ends normally
+```
+
+The first is the truncated-source artefact already documented beside the check. The second is a
+defect, and an interaction rather than a rule:
+
+```
+In this paper, we present a new method...            -> refused, "In this paper" is 3 words
+Put simply, in this paper, we present a new method   -> "Put simply, in this paper."
+```
+
+`_MIN_SPLIT_SIDE` exists to stop a fronted adverbial becoming a sentence. A marker `_vary_openers`
+prepended inflates the token count by exactly enough to clear it — three content words either way,
+five tokens with the marker. One pass fragmenting the output of the pass before it, which is the
+same shape the `"Of course."` comment beside `_split_one` already records, one marker further along.
+The battery strips these before judging a fragment; the splitter that produces them was counting
+them.
+
+Counting content words on the left half fixes it: RAID `stub_sentence` 2 → 1, and the remaining one
+is the artefact.
+
+**The fix broke the module on its first run, and the crash is worth recording.** I named the helper
+`_content_words`. `structural` already had a `_content_words` — returning a **set** of words, used by
+`_drop_restatements` — and mine returned an **int**. The later definition wins, so an unrelated
+function began raising
+
+```
+TypeError: object of type 'int' has no len()
+```
+
+Not caught by any test, because I ran the corpus sweep before the suite and the sweep crashed. A
+2500-line module has room for two functions to want the same name, and `grep` before defining is the
+whole cost of avoiding it. Both names now exist and differ — `_content_words` for the set,
+`_content_word_count` for the number — with a test asserting they still return different types,
+since the collision is only safe while that holds.
+
+Worth keeping: **the guard against fragments and the pass that creates them measure the same
+sentence differently.** The battery strips markers before judging; the splitter counted them. Every
+defect in Results 87–93 is one pass disagreeing with another about what a sentence is — where it
+ends, what opens it, what counts as a word in it — and none of them is visible from inside either
+pass alone.
