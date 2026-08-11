@@ -533,6 +533,15 @@ _SENTENCES_RESPONSES = _obj(
         "sentences": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
         "flagged": {"type": "array", "items": _STR},
         "note": {**_STR, "description": "caveat about what this tier's targeting is worth"},
+        # Not the same thing as `note`, which is always present and is about per-sentence noise in
+        # general. This appears only when the configured tier cannot rank sentences at all —
+        # MEASURED, the pure-stdlib path returns 6 distinct values across 100 sentences, 91 of them
+        # exactly 0.250, AUROC 0.515 against 0.965 at the full tier.
+        "warning": {
+            **_STR,
+            "description": "present when the configured tier's per-sentence ranking is near-chance "
+                           "(the pure-stdlib path). The `flagged` list is then close to arbitrary",
+        },
     },
     required=["tier", "sentences", "flagged"],
 )

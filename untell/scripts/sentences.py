@@ -36,31 +36,46 @@ logger = logging.getLogger(__name__)
 _WARNED_UNINFORMATIVE = False
 
 
-def _warn_if_targeting_is_uninformative(tier: str) -> None:
-    """Say once when the only detector that will score these sentences cannot rank them.
+UNINFORMATIVE_TARGETING_WARNING = (
+    "per-sentence targeting on the pure-stdlib path is near-chance (measured AUROC 0.493 on "
+    "labelled data, vs 0.89-1.00 for the model-backed detectors). The 'flagged' sentences are "
+    "close to arbitrary. Install .[full] for targeting that means anything."
+)
+
+
+def _targeting_is_uninformative(tier: str) -> bool:
+    """Whether the only detector that will score these sentences cannot rank them.
 
     Measured per-sentence AUROC on real labelled data: 0.493 for the stdlib heuristic against
-    0.886-1.000 for every model-backed detector. A caller has no way to see that from the output —
-    the scores look like scores.
+    0.886-1.000 for every model-backed detector. Re-measured at 100 HC3 sentences while adding the
+    result field below, and the shape is worse than a low AUROC suggests: the stdlib path returns
+    **6 distinct values across 100 sentences, 91 of them exactly 0.250**, for an AUROC of 0.515.
+    The full tier returns 39 distinct values at 0.965. It is not a weak ranking, it is a constant
+    with a few exceptions.
     """
-    global _WARNED_UNINFORMATIVE
-    if _WARNED_UNINFORMATIVE:
-        return
     from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
 
-    det = PerplexityBurstinessDetector()
-    if det._torch_ready():
-        return  # lite auto-upgrades to GPT-2 perplexity, which ranks sentences at AUROC 0.968
+    if PerplexityBurstinessDetector()._torch_ready():
+        return False  # lite auto-upgrades to GPT-2 perplexity, which ranks sentences at AUROC 0.968
     from untell.detectors.base import load_detectors
 
-    if any(d.name != "perplexity_burstiness" for d in load_detectors(tier)):
-        return  # some model-backed detector is present and will do the ranking
+    # Some model-backed detector is present and will do the ranking.
+    return not any(d.name != "perplexity_burstiness" for d in load_detectors(tier))
+
+
+def _warn_if_targeting_is_uninformative(tier: str) -> None:
+    """Log it once per process. The RESULT carries it on every call — see `score_sentences`.
+
+    Once-per-process is right for a log line and wrong for a verdict. A long-running API server
+    logs this on its first request and is silent for every caller after that, and no caller reads
+    the server's log anyway. Same split the score result already makes: warn the terminal once,
+    return the caveat every time.
+    """
+    global _WARNED_UNINFORMATIVE
+    if _WARNED_UNINFORMATIVE or not _targeting_is_uninformative(tier):
+        return
     _WARNED_UNINFORMATIVE = True
-    logger.warning(
-        "per-sentence targeting on the pure-stdlib path is near-chance (measured AUROC 0.493 on "
-        "labelled data, vs 0.89-1.00 for the model-backed detectors). The 'flagged' sentences are "
-        "close to arbitrary. Install .[full] for targeting that means anything."
-    )
+    logger.warning(UNINFORMATIVE_TARGETING_WARNING)
 
 
 def score_sentences(
@@ -121,6 +136,9 @@ def score_sentences(
         "flagged": flagged,
         "note": "per-sentence scores are noisy (esp. short sentences); 'flagged' = the worst "
         "sentences to rewrite first, not an absolute verdict",
+        # The caveat that matters most is the one a machine client could not see: the log line
+        # above fires once per PROCESS, so an API server tells its first caller and nobody else.
+        **({"warning": UNINFORMATIVE_TARGETING_WARNING} if _targeting_is_uninformative(tier) else {}),
     }
 
 
