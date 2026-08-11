@@ -75,6 +75,24 @@ class CompositeRewriter(Rewriter):
         # as a best-of-N SAMPLER: draw ``t5_best_of`` diverse paraphrases and keep the lowest-scoring
         # one that also beats the original — turning the variance into an advantage. Sentinel-safe:
         # the paraphraser restores every locked span or falls back per sentence.
+        #
+        # WHAT THE NEURAL STAGE BUYS, on the one axis the rule-based path cannot reach. Repeated
+        # phrasing is the largest untreated tell in the catalogue: the structural rewriter closes
+        # 7-17% of the gap to human text and leaves output repeating about 6x more (see the note in
+        # structural.py). Measured as the share of tokens inside a repeated 3-gram, on RAID:
+        #
+        #     structural       10.27 -> 8.92    13% less repetition   (20 docs)
+        #     t5_paraphrase     9.12 -> 4.50    51%                   ( 8 docs)
+        #     t5_paraphrase     9.88 -> 6.93    30%                   (10 docs, different slice)
+        #
+        # Two to four times the reduction, because the half structural cannot touch is clause
+        # restatement and a paraphraser rewrites clauses. That is the concrete reason to reach for
+        # `--rewriter neural` on repetitive input.
+        #
+        # The two t5 figures are also the argument for the sampler, and for never quoting one run:
+        # 51% and 30% on different slices of the same corpus, and per document the reduction ranges
+        # from -87% to +71%. It makes some documents materially worse. Best-of-N with a
+        # score-beats-original guard is what converts that spread into a floor.
         self._t5 = None
         if use_t5:
             try:
