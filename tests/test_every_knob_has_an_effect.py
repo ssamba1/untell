@@ -51,7 +51,8 @@ def _run(text: str = AI, seed: int = 0, **kw):
         ("threshold", {"threshold": 0.9}),
         ("max_iters", {"max_iters": 3}),
         ("best_of", {"best_of": 1}),
-        ("polish", {"polish": True}),
+        # `polish` is NOT here — see `test_polish_changes_the_run_across_seeds`. It needs both a
+        # condition and a seed sweep, which is more than this parametrize can express.
         ("rewriter=surgical", {"rewriter": "surgical"}),
         ("rewriter=structural", {"rewriter": "structural"}),
         ("rewriter=targeted", {"rewriter": "targeted"}),
@@ -66,6 +67,45 @@ def test_the_knob_changes_the_run(name: str, kwargs: dict) -> None:
         reference["final"],
         reference.get("iterations"),
     ), f"{name} did not change the run"
+
+
+def test_polish_changes_the_run_across_seeds() -> None:
+    """`polish` re-runs `surgical_substitute` over the FINAL text, so it can only act on output a
+    surgical pass has not already been over.
+
+    The default rewriter here is `composite`, which IS structural + surgical — so polish was being
+    asked to find swaps in text its own second stage had just produced. MEASURED, substitutions
+    polish found on the final text under `composite`: **0 at every one of 6 seeds**. Not a gate
+    rejecting a candidate; nothing left to swap. Across rewriters, polish changed the run on:
+
+        targeted 5/6    structural 1/6    composite 0/6    surgical 0/6
+
+    So the knob is not inert — it was measured against the one rewriter that makes it redundant by
+    construction. `targeted` is the condition it responds to.
+
+    Swept rather than pinned at one seed, for the reason the style test gives: `targeted` responds
+    on 5 of 6 seeds, and asserting the difference at a single one would fail the day the rewriter's
+    randomness lands on the sixth.
+    """
+    differ = 0
+    for seed in range(12):
+        reference = _run(seed=seed, rewriter="targeted")
+        polished = _run(seed=seed, rewriter="targeted", polish=True)
+        differ += polished["final"] != reference["final"]
+    assert differ > 0, "polish=True cannot change the output at any of 12 seeds, even with a rewriter whose pipeline has no surgical stage"
+
+
+def test_polish_is_redundant_after_a_surgical_stage() -> None:
+    """The other half, stated so it is not mistaken for a bug later.
+
+    `composite` ends in a surgical pass, so polish finding nothing there is CORRECT. Pinning it
+    stops someone "fixing" the redundancy by making polish fire on text that does not need it.
+    """
+    from untell.attacks import surgical_substitute
+
+    final = _run(rewriter="composite")["final"]
+    again = surgical_substitute(final, tier="lite", threshold=0.30)
+    assert again["text"] == final, "a second surgical pass should find nothing to change"
 
 
 def test_style_changes_the_run_across_seeds() -> None:
