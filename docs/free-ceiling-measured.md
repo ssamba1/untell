@@ -4251,3 +4251,54 @@ an assertion in the test file rather than a fact I happened to check.
 Worth keeping: **a field that reports a capability is not reporting an event.** `_torch_ready()`
 answers "can this run", `mode()` was asked "what ran", and the gap between them is invisible until
 the thing that can run, doesn't.
+
+## Result 82
+
+**The ensemble handled a dead detector correctly and reported the consequence nowhere.**
+
+Continuing the sweep of the thirteen behavioural caveats. `commercial.py` claims a broken adapter
+"was EXCLUDED from the ensemble", and that claim is **true** — better than true, the surface is
+carefully built:
+
+```
+HEALTHY   detectors={pb: 0.0843, roberta: 0.6566, hc3: 0.0911, fast: 0.1058}   mean 0.2344
+ABSTAIN   detectors={pb: 0.0843, roberta: None,   hc3: 0.0911, fast: 0.1058}   mean 0.0937
+RAISE     ... plus roberta_openai__error, failed_detectors=['roberta_openai']
+```
+
+The mean is taken over three, not over four-with-a-zero — a `None` coerced to 0.0 would have dragged
+the mean down while looking like a measurement. Abstention and crash are distinguished. Nothing to
+fix in the mechanism.
+
+**The verdict is where it goes wrong.** `max` over fewer members can only fall, so a lost detector
+errs in exactly one direction:
+
+```
+all four live    max 0.6566    flagged True
+one silent       max 0.1058    flagged False
+```
+
+The verdict flipped from *this is AI* to *this is clean*, and the only trace was a `null` nested
+inside `detectors` — a `null` in the JSON that no API client has a reason to inspect once `flagged`
+has answered the question. `failed_detectors` covers the raising case, but it names *which* detector
+died and says nothing about what its absence did to the answer.
+
+This is precisely the scenario `commercial.py`'s docstring already describes: a provider changes its
+response shape, the adapter starts returning None, and a detector the user is being billed for
+leaves the ensemble quietly. The adapter warns on stderr. The result dict did not. Sixth instance of
+the same asymmetry.
+
+**The caveat is rare by measurement, not by hope.** Over 80 real HC3 texts at ≥60 words, partial
+abstentions were **0/80**. The path is reachable only through a genuinely broken detector, so the
+warning cannot fire on healthy scoring — which is the whole reason it is worth reading when it does.
+
+One methodological note. The first version of the flip test asserted `flagged is False` after
+silencing the top member. It passed with torch and **failed under `UNTELL_LITE_NO_TORCH=1`**, where
+a different set of detectors loads and both maxima land above 0.30. The claim was never about 0.30:
+it is that a band exists where the same text is flagged with the full ensemble and cleared without
+it. Taking the cut from the two measured maxima states that claim directly and holds on whatever
+detectors the machine has.
+
+Worth keeping: **a test that encodes an environment instead of a claim passes where it was written
+and fails where it matters.** The fix was not to relax the assertion but to find what the assertion
+was actually about.
