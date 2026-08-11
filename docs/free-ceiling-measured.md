@@ -5547,3 +5547,79 @@ Worth keeping: **when two surfaces disagree about the same input, one of them is
 will tell you.** `humanness` and `score_tells` had disagreed about letterless text for as long as
 both have existed. Nothing failed, because nothing compares them — the same shape as Result 98's four
 surfaces, on a question about the input rather than about the defaults.
+
+## Result 105
+
+**Any three-digit number in an error message made a permanent failure look transient.**
+
+`_retry.py` already carried two documented fixes, which is usually a sign a module has been looked
+at. What it had not been asked is whether its *classification* is right, and the way to ask is to
+hand it messages providers actually emit.
+
+`_is_retryable` read status codes with a bare `\b([1-5]\d{2})\b`. MEASURED against nine realistic
+non-retryable messages, **four were retried**:
+
+```
+invalid_request_error: max_tokens must be <= 500
+context length 502 tokens exceeds the 500 token limit
+ValueError: expected 429 items in the batch, got 12
+invalid parameter: timeout must be a positive number
+```
+
+The first three are configuration mistakes: three attempts with exponential backoff for an answer
+that cannot change, multiplied by best-of-N draws across iterations. The fourth is worse — a bug in
+our own call, masked by retrying it.
+
+**Tightening broke the other direction twice**, which is the part worth recording. Requiring a word
+boundary before the keyword lost `HTTPError: 500` and `APIStatusError: 500`, where there is no
+boundary inside the token. Requiring the code at the head of the message lost
+`(429) rate_limit_exceeded`. Both were caught only because the genuine-retryable list was checked as
+carefully as the false-positive list on every iteration — a rule that is getting stricter is exactly
+when the other side breaks, and a one-sided check would have shipped a classifier that never retried
+an SDK exception.
+
+**And the tightening surfaced a gap in the code set itself.** Checking
+`anthropic.APIStatusError: 529 overloaded` failed — not because of the regex, but because **529 was
+not in `_RETRYABLE_HTTP`**. That is Anthropic's capacity code, on a package that ships an Anthropic
+rewriter: the provider whose overload signal we would see most often was the one not retried. 408
+Request Timeout was missing for the same reason — the set had been built from the familiar 5xx
+family and 429.
+
+Final: **15 of 15** transient messages retried, **13 of 13** permanent ones refused on the first
+attempt.
+
+**Then the suite failed, and the failure was the biggest finding of the three.**
+`test_retry_exhausts_on_persistent_error` raises `TimeoutError("timeout")`, which had been matching
+on the bare `timeout` keyword in its message. With the keyword tightened it stopped — and the class
+check did not catch it either, because `_RETRYABLE_ERRS` contains the string `"Timeout"` and the
+builtin is named `TimeoutError`.
+
+Pulling on that exposed a pre-existing hole the whole time. The class set matches by NAME, so it
+misses every subclass:
+
+```
+ConnectionError          retryable
+ConnectionResetError     NOT retried
+ConnectionAbortedError   NOT retried
+ConnectionRefusedError   NOT retried
+TimeoutError             NOT retried
+BrokenPipeError          retried — only because its default message says "broken pipe"
+```
+
+`ConnectionError` is in the set and is a base class **nobody raises directly**. The three subclasses
+that are actually raised — reset, aborted, refused — are the commonest transient network failures in
+Python, and all three were reaching the classifier through their message text or not at all. Change
+`BrokenPipeError`'s message and it stops being retryable.
+
+Matched by type now, with the name set kept for third-party SDK exceptions that cannot be imported
+without depending on them. `PermissionError` and `FileNotFoundError` are `OSError` subclasses and
+stay refused, which is what a type check written one level too high would have broken.
+
+Final: **15 of 15** transient messages retried, **13 of 13** permanent refused, all six builtin
+transient exceptions retried, five builtin permanent ones refused.
+
+Worth keeping: **a set that looks complete is complete for the cases you thought of.** `{429, 500,
+502, 503, 504}` reads as the canonical retryable list and is, for a generic HTTP client — the gap
+opened where this package stopped being generic. And matching exceptions by name reads as
+equivalent to matching by type until you notice that the entry in the set is the one class the
+runtime never hands you.
