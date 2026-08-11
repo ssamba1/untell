@@ -1248,11 +1248,51 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.add_argument("--json", action="store_true", help="machine-readable output")
+    p.add_argument(
+        "--fix-counts",
+        action="store_true",
+        help="rewrite the 'N tests, M modules' claims in the comparative docs to what is on disk",
+    )
     return p
+
+
+def fix_counts() -> list[str]:
+    """Rewrite the test/module counts in the comparative docs to the measured values.
+
+    These two numbers went stale four times in a single session — not because anyone abandoned the
+    document, but because two agents were adding test modules faster than a hand-maintained figure
+    in a comparison table can track. The check catches it every time and the repair was four
+    identical manual edits.
+
+    Only the counts are touched, and only in `COMPARATIVE_DOCS`. The module count is exact. The test
+    count is taken from a LITE collection — `UNTELL_LITE_NO_TORCH=1` — because that is the smaller
+    of the two and the number `test_why_best_test_count_is_not_stale` compares against; a figure
+    from a full-tier run is correct there and fails here, which is how this last broke.
+
+    Returns a description of each edit, empty when nothing needed changing.
+    """
+    modules = len(sorted((REPO / "tests").glob("test_*.py")))
+    collected = _collected_test_count()
+    edits: list[str] = []
+    for rel in COMPARATIVE_DOCS:
+        path = REPO / rel
+        if not path.exists():
+            continue
+        before = path.read_text(encoding="utf-8")
+        after = re.sub(r"(\d+)(\s+(?:test\s+)?modules\b)", rf"{modules}\2", before)
+        if collected is not None:
+            after = re.sub(r"\*\*(\d+)\*\*(\s+tests\b)", rf"**{collected}**\2", after)
+        if after != before:
+            path.write_text(after, encoding="utf-8")
+            edits.append(f"{rel}: counts set to {collected} tests, {modules} modules")
+    return edits
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.fix_counts:
+        edits = fix_counts()
+        print("\n".join(edits) if edits else "counts already match what is on disk")
     report = run()
     print(_render(report, args.json))
     return 0 if (not report.failures and not report.unattributed) else 1
