@@ -902,6 +902,24 @@ def _semicolons_to_periods(text: str) -> str:
     return "".join(out)
 
 
+def _gerund_takes_an_object(following: list[str]) -> bool:
+    """``following`` starts at the gerund. Does a noun phrase come after it?
+
+    This is what separates "needs calibrating before every session" — correct, the passive reading
+    holds — from "needs balancing accuracy, speed and efficiency", which is not English. No parser
+    is available on this tier, so the test is the word after the gerund: a preposition or a
+    conjunction ends the phrase, anything else opens the object.
+
+    A gerund at the end of a sentence has no object either, which is the "needs calibrating." case.
+    """
+    if len(following) < 2:
+        return False
+    gerund = following[0]
+    if gerund.rstrip(",.;:!?") != gerund:  # punctuation right after it closes the phrase
+        return False
+    return following[1].strip(",.;:!?()").lower() not in _NOT_AN_OBJECT
+
+
 def _looks_like_a_serial_list(words: list[str]) -> bool:
     """Do the commas in this sentence separate list items rather than clauses?
 
@@ -1306,14 +1324,26 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
             next_word = after.split()[0].strip(",.;:").lower() if after.split() else ""
             if next_word in _PREPOSITION_BOUND[word.lower()]:
                 return m.group(0)
+        # The headword is followed by a comma and some substitutes cannot precede one — see
+        # `_COMMA_UNSAFE`.
+        comma_unsafe = _COMMA_UNSAFE.get(word.lower())
+        if comma_unsafe and (tail or masked[m.end():]).lstrip(" \t").startswith(","):
+            usable = [o for o in (fresh or options) if o.lower() not in comma_unsafe]
+            if not usable:
+                return m.group(0)
+            choice = random.choice(usable)
         # A gerund follows, and some substitutes cannot govern one — see `_GERUND_UNSAFE`. Filtered
         # rather than declined: `involves -> means` reads correctly in the same slot, so the swap is
         # still worth making.
-        unsafe = _GERUND_UNSAFE.get(word.lower())
-        if unsafe:
-            after = (tail or masked[m.end():]).lstrip()
-            next_word = after.split()[0].strip(",.;:") if after.split() else ""
+        always = _GERUND_UNSAFE.get(word.lower(), frozenset())
+        with_object = _GERUND_OBJECT_UNSAFE.get(word.lower(), frozenset())
+        if always or with_object:
+            following = (tail or masked[m.end():]).lstrip().split()
+            next_word = following[0].strip(",.;:") if following else ""
             if next_word.lower().endswith("ing") and len(next_word) > 4:
+                unsafe = always | (
+                    with_object if _gerund_takes_an_object(following) else frozenset()
+                )
                 usable = [o for o in (fresh or options) if o.lower() not in unsafe]
                 if not usable:
                     return m.group(0)
@@ -1678,11 +1708,69 @@ _PREPOSITION_BOUND: dict[str, frozenset[str]] = {
 # all the others are adjective-plus-noun ("robust testing", "novel tracking") or noun-plus-
 # participle ("approach using"), where no verb complement is involved at all.
 #
-# `involves` only. An entry for `involved` was written here and removed the same hour: the table has
-# no `involved` headword, so it guarded a substitution that cannot happen and would have read as
-# protection forever. `test_the_unsafe_map_names_real_substitutes` is what caught it.
+# An entry for `involved` was written here and removed the same hour: the table has no `involved`
+# headword, so it guarded a substitution that cannot happen and would have read as protection
+# forever. `test_the_unsafe_map_names_real_substitutes` is what caught it.
+#
+# `requires` is here for a reason worth stating, because the first version of this rule left it out
+# on the grounds that "requires calibrating" -> "needs calibrating" is correct. It is — and a
+# corpus sweep of 80 rewritten texts found the counter-example anyway:
+#
+#     ...as it requires balancing accuracy, speed, and computational efficiency
+#       -> ...as it NEEDS BALANCING accuracy, speed, and computational efficiency
+#
+# So the boundary is not the headword, it is whether the gerund takes an OBJECT. "needs balancing"
+# alone carries the passive reading and is fine; "needs balancing accuracy" is not. See
+# `_gerund_takes_an_object`.
+# Two maps, because the two headwords fail for different reasons and a single rule got both wrong.
+#
+# `involves X-ing` never maps to `needs X-ing` — "includes the activity of" and "requires being" are
+# different claims whether or not an object follows. "The procedure involves staring at a fixed
+# point" -> "...needs staring at a fixed point" has no object and is still wrong.
 _GERUND_UNSAFE: dict[str, frozenset[str]] = {
     "involves": frozenset({"needs", "takes"}),
+}
+
+# `requires X-ing` DOES map to `needs X-ing` — both carry the passive reading — until the gerund
+# takes an object, at which point the passive reading is unavailable. FOUND by sweeping 80
+# rewritten texts after the first version of this rule declared `requires` safe on the strength of
+# "requires calibrating" -> "needs calibrating":
+#
+#     ...as it requires balancing accuracy, speed, and computational efficiency
+#       -> ...as it NEEDS BALANCING accuracy, speed, and computational efficiency
+#
+# `needs` is its only substitute, so in that slot the swap is declined outright. That is correct
+# here rather than a sign the entry should go: the other slot still converts.
+_GERUND_OBJECT_UNSAFE: dict[str, frozenset[str]] = {
+    "requires": frozenset({"needs"}),
+}
+
+# Words that can follow a gerund WITHOUT being its object: prepositions, conjunctions, and the
+# clause-level words that end the phrase. Anything else after the gerund is a noun phrase, which is
+# what makes the passive "needs X-ing" reading impossible.
+_NOT_AN_OBJECT = frozenset({
+    "before", "after", "under", "over", "with", "without", "for", "from", "into", "onto", "than",
+    "at", "by", "in", "on", "to", "of", "as", "and", "or", "but", "so", "because", "when", "while",
+    "if", "unless", "though", "although", "during", "across", "through", "within", "between",
+})
+
+# Substitutes that cannot stand in front of the comma the headword is already carrying.
+#
+# "However," is a sentence adverb and takes a comma. "But" and "though" are conjunctions and do not:
+# "But, existing methods are limited" and "Though, existing methods are limited" are not English.
+# FOUND by reading RAID output, where both forms appeared.
+#
+# MEASURED across 240 HC3 and RAID texts: "However," occurs 95 times, and "But," and "Though," occur
+# ZERO times in either the human or the AI half. So the substitution was not merely ungrammatical,
+# it emitted a form nobody in the reference corpus writes — the tell this rewriter exists to remove,
+# manufactured by the pass meant to remove it.
+#
+# 86% of the 117 `however` occurrences are followed by a comma, so this is the usual slot, not the
+# rare one. Without the comma the same substitutes are correct — "the method is fast, however it
+# fails" -> "...but it fails" — which is why this filters on the comma rather than dropping them.
+# "by contrast" is a sentence adverb and stays available in both slots.
+_COMMA_UNSAFE: dict[str, frozenset[str]] = {
+    "however": frozenset({"but", "though"}),
 }
 
 # Particles that end a separable phrasal verb. A substitute ending in one cannot be followed
@@ -1805,13 +1893,61 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
         spent.add(pick)
         return pick
 
+    # `rate` is a BUDGET SHARE, not a per-sentence coin flip. Flipping a coin per sentence makes the
+    # output share equal to `rate`, and `rate` was derived from intensity with nothing to anchor it
+    # to how often humans actually do this. The frequencies above are the anchor and they were
+    # already in this function: humans open with these specific markers ~1.4% of the time.
+    #
+    # MEASURED, share of sentences opening with a marker from this pool (HC3, >=90 words):
+    #
+    #     human                 13 / 415   3.13%
+    #     AI, unrewritten        1 / 368   0.27%
+    #     untell output         19 /  52  36.54%      <- 12x human, 135x the input
+    #
+    # A third of all sentences opening with "Basically," / "Well," / "Now," is a fingerprint in its
+    # own right, and this transform is supposed to REMOVE fingerprints. The failure is not the pool
+    # — every member was frequency-screened — it is the dose.
+    #
+    # So spend a budget instead: cap total pool-openers near the human share, and spend what is
+    # available on the sentences that actually need it. The job this transform exists for is
+    # `repeated_sentence_openers`, so a sentence whose first word repeats another sentence's first
+    # word is served before an already-distinct one. Same work, a twelfth of the noise.
+    #
+    # Fractional, like the fronting and parentheses budgets above, and for a reason this transform
+    # specifically needs. `round()` collapses the rate into an integer, and the style knobs are
+    # MULTIPLIERS on it — `blunt` and `minimalist` are 1.2x the neutral opener rate. On a paragraph
+    # of this length 0.30 and 0.36 both round to the same budget, so those two styles produced
+    # byte-identical output to no-style at every seed and
+    # `test_the_previously_inert_styles_now_bite` failed on both: the flag could no longer change
+    # the output at all, which is the exact regression that test was written for.
+    #
+    # Carrying the remainder as a probability keeps the dose right on average — the whole point of
+    # the budget — while letting a 1.2x rate still show up somewhere in a 60-seed sweep.
+    marked = sum(1 for s in sentences if _ANY_LEADING_MARKER_RE.match(s))
+    raw = rate * len(sentences) - marked
+    budget = max(0, int(raw))
+    if random.random() < raw - budget:
+        budget += 1
+
+    first_words = [(s.split()[0].lower().strip(".,;:!?") if s.split() else "") for s in sentences]
+    counts: dict[str, int] = {}
+    for w in first_words:
+        counts[w] = counts.get(w, 0) + 1
+    # Duplicate-opening sentences first, then the rest; `random.random()` keeps the choice within
+    # each group non-deterministic so the best-of-N sweep still explores different drafts.
+    order = sorted(
+        range(len(sentences)),
+        key=lambda i: (0 if counts.get(first_words[i], 0) > 1 else 1, random.random()),
+    )
+    chosen = set(order[:budget])
+
     out: list[str] = []
-    for s in sentences:
+    for _i, s in enumerate(sentences):
         # A sentence that ALREADY opens with a discourse marker gets no second one. Stacking them
         # produced "Put simply, also, wine is often shipped at specific temperatures" — found by
         # scanning 30 real HC3 rewrites for mechanical breakage. `_LEADING_MARKER_RE` exists for
         # exactly this and was consulted only by the clause-merge path.
-        if random.random() < rate and not _ANY_LEADING_MARKER_RE.match(s):
+        if _i in chosen and not _ANY_LEADING_MARKER_RE.match(s):
             first_word = s.split()[0] if s.split() else ""
             # No `first_word not in subjects` test here. It skipped every sentence opening with
             # The/This/It/That/There — which are precisely the sentences that duplicate an opener
@@ -2371,7 +2507,12 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         split_rate = min(0.9, intensity * 0.5 * profile["sentences"])
         sents = _split_long_sentences(sents, rate=split_rate)
 
-        open_rate = min(0.9, intensity * 0.6 * profile["openers"])
+        # Target SHARE of sentences carrying a leading marker, not a per-sentence probability.
+        # `intensity * 0.6` gave 0.42 at the default intensity, against a measured human share of
+        # 3.13% — see `_vary_openers`. The ceiling is 0.9 in name only when the floor of the
+        # comparison is 0.03. Scaled so the default lands a little above human rather than 12x it,
+        # leaving headroom at intensity 1.0 for the duplicate-opener work the transform exists for.
+        open_rate = min(0.20, intensity * 0.10 * profile["openers"])
         sents = _vary_openers(sents, rate=open_rate)
 
         # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
