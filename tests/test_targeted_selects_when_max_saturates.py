@@ -16,6 +16,23 @@ Not one tie was neutral or worse. End to end on the same 8 documents, seeded ide
     AFTER  (max, mean)   7/8 texts changed, every one lowering the ensemble mean
                          similarity min 0.966, meaning gates 7/7
 
+**Through the shipped pipeline the effect is tier-dependent, and invisible in the headline number.**
+Re-measured through `untell_text(rewriter="targeted")` rather than the rewriter alone:
+
+    lite tier, 6 texts    byte-identical in both arms
+    full tier, 4 texts    changed 3/4 -> 4/4, adopted 3 -> 4
+                          tells/100w 3.80 -> 2.98, similarity min 0.992 -> 0.971
+                          post-max 0.9997 -> 0.9997
+
+Lite is inert because its detector does not saturate — and because `min_score` is an absolute 0.30
+that no single sentence clears on the stdlib path, so the per-sentence loop never runs at all and
+`targeted` falls back to a whole-text rewrite. The saturation this selector exists for is a full-tier
+condition.
+
+And the full-tier gain does not show up in `post`: the reported max sits at 0.9997 in both arms,
+because the number the loop reports is the same saturated maximum that could not see the improvement
+in the first place. A 22% cut in tell density with an unmoved headline score.
+
 The selector moved to `untell/rewriter/base.py` rather than being copied, because two selectors
 ordering the same candidates differently is the failure this repo keeps re-finding.
 
