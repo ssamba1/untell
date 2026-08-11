@@ -96,17 +96,44 @@ _TENS = {
 # Tens-and-units compounds are matched FIRST, so "twenty-four" reads as 24 rather than as 20 and 4
 # — which would demand the candidate contain both and veto the perfectly faithful "24".
 _SPELLED_RE = re.compile(
-    r"(?<![\w-])(?:(?:" + "|".join(_TENS) + r")(?:[-\s](?:one|" + "|".join(_UNITS) + r"))?"
-    r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))(?![\w-])",
+    r"(?<![\w-])(?:"
+    # A multiplier compound first, so "two hundred and forty" is one number rather than two.
+    r"(?:(?:one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")[-\s]+(?:hundred|thousand|million)"
+    r"(?:[-\s]+and)?(?:[-\s]+(?:(?:" + "|".join(_TENS) + r")(?:[-\s]+(?:one|" + "|".join(_UNITS) + r"))?|(?:" + "|".join(_TEENS) + r")|(?:one|" + "|".join(_UNITS) + r")))?)"
+    r"|(?:(?:" + "|".join(_TENS) + r")(?:[-\s](?:one|" + "|".join(_UNITS) + r"))?"
+    r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
+    r")(?![\w-])",
     re.IGNORECASE,
 )
 
 
 def _spelled_value(match: str) -> str:
-    total = 0
+    """The integer a spelled-out number names, including hundreds and thousands.
+
+    Purely additive summing reads "two hundred and forty" as 2 + 40 = 42, so a source saying 240
+    and a rewrite spelling it out looked like a dropped quantity — and the module docstring
+    promises a numeral counts "as a numeral or as its English word". MEASURED: 5, 12, 20 and 100
+    all round-tripped, and 240 did not, because the small values are covered by the exact word
+    forms and 100 by the loose-synonym map while anything compound fell through both.
+
+    Multipliers scale what precedes them and the running total carries across them, which is how
+    "one thousand two hundred and forty" reaches 1240 rather than 1000 + 200 + 40 by luck.
+    """
+    total = chunk = 0
     for part in re.split(r"[-\s]+", match.strip().lower()):
-        total += _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
-    return str(total)
+        if part in ("and", ""):
+            continue
+        if part == "hundred":
+            chunk = (chunk or 1) * 100
+            continue
+        if part in ("thousand", "million"):
+            scale = 1000 if part == "thousand" else 1_000_000
+            total += (chunk or 1) * scale
+            chunk = 0
+            continue
+        value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
+        chunk += value
+    return str(total + chunk)
 
 
 def _numbers(text: str) -> list[str]:
