@@ -1,0 +1,107 @@
+"""Every documented knob must be able to change a run. A knob that cannot is a defect.
+
+This repo has had that defect repeatedly — the log records five separate guards that "declined the
+job they exist to do", four style flags that could not change the output at any seed, and a fronting
+budget that was permanently full. A knob is easy to leave inert because nothing fails when it is.
+
+What makes this file worth having is that a naive version of it is WRONG. Sweeping the knobs at one
+seed against one fixture reported three of them dead:
+
+    style=casual   NO EFFECT
+    margin=0.2     NO EFFECT
+    scrub=False    NO EFFECT
+
+All three were the probe, not the code. `style` sets rates, so a single seed can land where the
+styled and unstyled paths coincide. `margin` only decides anything when the text would otherwise
+PASS — with an unreachable threshold there is no borderline pass to withhold. `scrub` only matters
+when there is something hidden to remove. Each test below therefore builds the condition its knob
+responds to, and says which one.
+"""
+
+from __future__ import annotations
+
+import random
+
+import pytest
+
+from untell.scripts.run import untell_text
+from untell.scripts.score import score_text
+
+AI = (
+    "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
+    "It significantly improves overall efficiency and accuracy across the evaluated corpus. "
+    "In conclusion, these findings underscore the importance of a comprehensive approach here."
+)
+HUMAN = (
+    "I went to the shop on the corner. It was closed for the day. So I walked home again, "
+    "fairly annoyed about it."
+)
+
+
+def _run(text: str = AI, seed: int = 0, **kw):
+    base = dict(tier="lite", max_iters=1, rewriter="composite", threshold=0.0)
+    base.update(kw)
+    random.seed(seed)
+    return untell_text(text, **base)
+
+
+@pytest.mark.parametrize(
+    ("name", "kwargs"),
+    [
+        ("threshold", {"threshold": 0.9}),
+        ("max_iters", {"max_iters": 3}),
+        ("best_of", {"best_of": 1}),
+        ("polish", {"polish": True}),
+        ("rewriter=surgical", {"rewriter": "surgical"}),
+        ("rewriter=structural", {"rewriter": "structural"}),
+        ("rewriter=targeted", {"rewriter": "targeted"}),
+    ],
+    ids=lambda x: str(x)[:20],
+)
+def test_the_knob_changes_the_run(name: str, kwargs: dict) -> None:
+    """These respond on the default fixture at a single seed, so no special condition is needed."""
+    reference = _run()
+    changed = _run(**kwargs)
+    assert (changed["final"], changed.get("iterations")) != (
+        reference["final"],
+        reference.get("iterations"),
+    ), f"{name} did not change the run"
+
+
+def test_style_changes_the_run_across_seeds() -> None:
+    """`style` sets RATES. Asserting a difference at one seed asks for something it does not
+    promise — the first version of this sweep called it dead for exactly that reason."""
+    differ = 0
+    for seed in range(40):
+        differ += _run(seed=seed)["final"] != _run(seed=seed, style="casual")["final"]
+    assert differ > 0, "style=casual cannot change the output at any of 40 seeds"
+
+
+def test_margin_withholds_a_borderline_pass() -> None:
+    """`margin` decides nothing unless the text would otherwise pass — with an unreachable
+    threshold there is no pass to withhold, which is why a naive sweep reads it as inert.
+
+    Built from the measured score so the band is real on whatever detectors this machine has:
+    a threshold just above the score passes immediately, and the same threshold minus a margin
+    that straddles it does not.
+    """
+    scored = score_text(HUMAN, tier="lite")["max"]
+    threshold = round(scored + 0.05, 3)
+
+    without = _run(HUMAN, threshold=threshold, max_iters=2, margin=0.0)
+    withheld = _run(HUMAN, threshold=threshold, max_iters=2, margin=0.10)
+
+    assert without["stopped"] == "passed" and without["iterations"] == 0, without
+    assert withheld["iterations"] > 0, (
+        f"margin did not withhold a pass at {scored:.4f} against threshold {threshold} "
+        f"minus 0.10: {withheld}"
+    )
+
+
+def test_scrub_only_matters_when_something_is_hidden() -> None:
+    """`scrub` is a no-op on clean text, which is most text — so the condition has to be built."""
+    dirty = AI.replace(" the ", " the​ ")
+    assert dirty.count("​") > 0, "premise: the fixture must carry hidden characters"
+
+    assert _run(dirty, scrub=True)["final"].count("​") == 0
+    assert _run(dirty, scrub=False)["final"].count("​") > 0
