@@ -1120,6 +1120,24 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
         # so matching the bare word alone silently never fires.
         if _at_sentence_start(masked, m.start()) and _TRANSITIONS_RE.match(word + ", x"):
             return m.group(0)
+        # A word with both an adverb and an adjective sense, whose substitutes only have the adverb
+        # one. "overall" is the only such headword in the table — MEASURED by scanning every _SYN
+        # entry with a phrasal substitute for `<determiner> <head> <noun>` in 240 HC3 texts, which
+        # returns "overall" and nothing else with a live adjective sense. All three of its
+        # substitutes are sentence adverbs, so in the adjective slot all three break:
+        #
+        #     the overall cost           -> the all told cost / the in the end cost
+        #     improves overall efficiency -> improves in the end efficiency
+        #
+        # The adverbial slots are fine and stay fine — "improved overall." and "the result,
+        # overall, was" all three substitute cleanly, and sentence-initial "Overall," is already
+        # declined above and left to the transition stripper. So the test is not the determiner
+        # before it (the third example has none) but the word after it: a letter means the next
+        # token is what "overall" is modifying, and an adverb phrase cannot modify a noun.
+        if word.lower() in _ADVERB_SLOT_ONLY:
+            after = (tail or masked[m.end():]).lstrip(" \t")
+            if after[:1].isalpha():
+                return m.group(0)
         # Prefer an option this text has not used yet; fall back to the full list when every option
         # is spent, because leaving the AI word in place is worse than repeating a plain one.
         fresh = [o for o in options if o not in spent]
@@ -1154,6 +1172,19 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
             next_word = after.split()[0].strip(",.;:").lower() if after.split() else ""
             if next_word in _PREPOSITION_BOUND[word.lower()]:
                 return m.group(0)
+        # An article already sits in front of this word, so a substitute that begins with its own
+        # determiner stacks two. FOUND on the one corpus case of the shape: "a significantly longer
+        # wait" -> "an a lot longer wait", where `agree_article` had also faithfully re-agreed "a"
+        # to "an" for the following vowel, making the output worse rather than catching it. Filter
+        # rather than decline, matching the separable-particle rule above — "sharply" and "greatly"
+        # are fine in this slot and the swap is still worth making.
+        if article and choice.split(" ", 1)[0].lower() in _BARE_ARTICLES:
+            usable = [
+                o for o in (fresh or options) if o.split(" ", 1)[0].lower() not in _BARE_ARTICLES
+            ]
+            if not usable:
+                return m.group(0)
+            choice = random.choice(usable)
         spent.add(choice)
         # Preserve the original capitalisation so sentence starts survive the swap.
         if word[:1].isupper():
@@ -1484,6 +1515,16 @@ _SEPARABLE_PARTICLES = frozenset(
 _PRONOUN_OBJECTS = frozenset(
     {"it", "them", "this", "that", "these", "those", "him", "her", "us", "me", "you", "one"}
 )
+
+# Headwords whose substitutes are all sentence adverbs, but which also have a live adjective sense.
+# Substituting in the adjective slot produces "the in the end cost". Derived, not guessed: every
+# _SYN entry with a phrasal substitute was scanned for `<determiner> <head> <noun>` across 240 HC3
+# texts, and "overall" is the only one with a real adjective sense among the hits.
+_ADVERB_SLOT_ONLY = frozenset({"overall"})
+
+# A substitute that opens with one of these cannot follow an article — the output stacks two
+# determiners ("an a lot longer wait").
+_BARE_ARTICLES = frozenset({"a", "an", "the"})
 
 
 def _parenthesise_asides(text: str) -> str:
