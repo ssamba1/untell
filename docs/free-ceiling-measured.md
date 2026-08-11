@@ -6486,3 +6486,43 @@ Worth keeping: **a fix with a measurement attached is a fix for a class, and the
 grepping.** `_selection_key` carried a careful docstring explaining why `max` alone disables a
 rewriter on the input it exists for. The same three-line comparison sat two files away, untouched,
 for as long as the fix has existed.
+
+## Result 123
+
+**The grep that found the second instance is now something the repository does every run.**
+
+Result 122 ended on "a fix with a measurement attached is a fix for a class, and the class needs
+grepping". So the grep became an AST pass. Every comparison in `untell/` with a detector `max` on
+either side, keyed by enclosing function:
+
+```
+untell/scripts/run.py::_passed                          acceptance against the shipped threshold
+untell/scripts/run.py::untell_text                      selection, with the measured tells tie-break
+untell/scripts/verify.py::verify                        reports the verdict a caller asked for
+untell/attacks/word_importance.py::surgical_substitute  score-only branch is the caller's opt-out
+```
+
+Four sites, and **none of them is a third instance of the defect.** That is the useful outcome, not a
+disappointing one: the loop's own selector reads `max` and then breaks ties on tells inside
+`_TELLS_EPS`, which is a different measured secondary objective rather than a missing one, and the
+comment there already cites "the same no-harm principle as the composite/ensemble selectors". The
+search that would have found the `targeted` defect months earlier finds nothing left today.
+
+**Written as an allowlist rather than a pattern**, because every one of those four is a legitimate
+read of `max` and no expression-level rule separates them from the illegitimate kind. Each entry
+carries its reason, and a test asserts the reasons are sentences rather than a suppression file.
+
+The check fails in both directions:
+
+- a NEW site not on the list fails — verified against a synthetic module containing exactly the
+  `targeted` defect, `if score["max"] < best["max"]`;
+- a LISTED site that disappears fails too, so a reason cannot outlive the call site it explains.
+
+The second half matters more than it looks. An allowlist that only checks one direction becomes a
+list of claims about code that may not exist any more — the same decay this audit was built to catch
+in documents, reintroduced in the audit itself.
+
+Worth keeping: **turning a one-off search into a standing check is cheap, and the moment to do it is
+immediately after it finds something.** The AST pass is thirty lines. It would have caught the
+`targeted` defect the day `_selection_key` was written, and the reason it did not exist is that
+nobody had yet been burned twice.
