@@ -175,6 +175,51 @@ def _strip_orphan_scripted_marks(text: str) -> str:
     return text
 
 
+# Deepest legitimate combining-mark stack, measured after NFC on real text in the scripts that use
+# them most heavily:
+#
+#     hebrew (niqqud)  3      devanagari  2      thai  2      arabic (full diacritics)  2
+#     vietnamese       0      greek       0      korean 0     latin                     0
+#
+# Vietnamese and Latin come out at 0 because NFC composes their accents into precomposed
+# codepoints. 4 leaves headroom above every observed case.
+_MAX_MARK_STACK = 4
+
+
+def _strip_mark_stacks(text: str, keep: int = _MAX_MARK_STACK) -> str:
+    """Drop combining marks stacked deeper than any script actually stacks them.
+
+    Combining marks are the one invisible-carrier class this module cannot filter by identity: the
+    exact codepoints that encode a payload are the ones that write Hebrew, Thai and Devanagari, so
+    a blocklist would corrupt those languages the way the blanket homoglyph map corrupted Russian.
+
+    Same rule as ``_strip_orphan_bidi`` and ``_strip_orphan_scripted_marks``, one level up: the
+    character is not the problem, the ABSENCE OF ANYTHING FOR IT TO ACT ON is. A mark composing a
+    base character is doing work; the twentieth mark on the same base is not composing anything.
+
+    MEASURED before this existed — a 24-mark payload on one base character survived ``scrub_hidden``
+    intact (24 of 24 marks) and ``count_hidden`` reported **0**, so the tool said the text was clean
+    while the payload rode through. That is the same failure this module already recorded twice, in
+    a codepoint class it had not swept.
+
+    KNOWN RESIDUAL, stated rather than papered over: an attacker who spreads marks at or below the
+    cutoff across many base characters is, at that point, writing something a diacritic-bearing
+    script would also write. Distinguishing those needs language context this function does not
+    have. This closes stacking, which is the form that is unambiguous.
+    """
+    out: list[str] = []
+    run = 0
+    for ch in text:
+        if unicodedata.category(ch) == "Mn":
+            run += 1
+            if run > keep:
+                continue
+        else:
+            run = 0
+        out.append(ch)
+    return "".join(out)
+
+
 def _strip_orphan_bidi(text: str) -> str:
     """Drop bidi format controls unless the text actually contains a right-to-left script."""
     if _RTL_CHARS.search(text):
@@ -230,6 +275,7 @@ def scrub_hidden(text: str) -> str:
     text = _strip_orphan_bidi(text)
     text = _DEPRECATED_FORMAT.sub("", text)
     text = _strip_orphan_scripted_marks(text)
+    text = _strip_mark_stacks(text)
     # Drop C0/C1 control characters (category Cc) except common whitespace; KEEP format characters
     # (category Cf) such as bidi marks, which carry layout meaning.
     text = "".join(ch for ch in text if ch in "\t\n\r" or unicodedata.category(ch) != "Cc")
@@ -331,6 +377,9 @@ def count_hidden(text: str) -> int:
     # they are scrubbed, by diffing against the function that does the scrubbing.
     orphan_vs = len(text) - len(_strip_orphan_variation_selectors(text))
     orphan_bidi = len(text) - len(_strip_orphan_bidi(text))
+    # Fifth carrier class, counted the way it is scrubbed. A 24-mark stack on one base character
+    # survived the scrub AND was reported as 0 hidden characters before `_strip_mark_stacks`.
+    mark_stacks = len(text) - len(_strip_mark_stacks(text))
     # C0/C1 controls are stripped by scrub_hidden too (everything in category Cc except tab, newline
     # and carriage return), so they must be counted here or the same under-report recurs — this is
     # the third carrier class to go missing from this function.
@@ -348,5 +397,5 @@ def count_hidden(text: str) -> int:
     nfc_singletons = sum(1 for ch in text if unicodedata.normalize("NFC", ch) != ch)
     return (
         invisible + exotic_spaces + homoglyphs + orphan_zwj + orphan_vs + orphan_bidi
-        + controls + nfc_singletons
+        + controls + nfc_singletons + mark_stacks
     )
