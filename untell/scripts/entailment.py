@@ -251,6 +251,25 @@ def entailment_score(a: str, b: str) -> float | None:
         # An unchanged chunk is perfectly entailed in both directions, so it scores 1.0 without a
         # model call — same reasoning as in `contradiction_score`, and it is most chunks of a real
         # rewrite.
+        #
+        # KNOWN LIMIT, measured rather than assumed. Chunking moves the blind spot; it does not
+        # remove it. A deletion is scored against the whole chunk it lands in, so the surrounding
+        # identical text dilutes it. Deleting the same 27-word clause at increasing depth:
+        #
+        #     document  30-174 words   entailment 0.0014-0.0032   caught
+        #     document      318 words   entailment 0.0842         MISSED
+        #
+        # At 318 words the text splits into four ~80-word chunks; three are identical and the
+        # fourth holds 80 source words against 53, so the deleted clause is a third of a chunk that
+        # is otherwise word-for-word the same, and the model reads the chunk as largely entailed.
+        # Smaller deletions run out of margin earlier: a 9-word clause lands at 0.0021-0.0054
+        # against a 0.005 floor, straddling it, which is the same narrow gap the floor's own note
+        # records (bad rewrites 0.003-0.011, faithful ones down to 0.012).
+        #
+        # Not fixed here because the obvious repair — smaller chunks — trades against the
+        # misalignment that caused the original revert, and neither bound has been measured. What
+        # is fixed is the case that was unconditional: before chunking, ANY deletion past ~130
+        # words scored 0.98 and passed.
         return min(
             1.0
             if ca == cb
