@@ -67,6 +67,48 @@ def test_declared_globs_all_match_something() -> None:
         )
 
 
+def _declared_scripts() -> dict[str, str]:
+    block = PYPROJECT[PYPROJECT.index("[project.scripts]") :]
+    end = block.find("\n[", 1)
+    return dict(
+        re.findall(r'^([\w-]+)\s*=\s*"([^"]+)"', block[:end] if end != -1 else block, re.M)
+    )
+
+
+def test_every_console_script_resolves_to_a_callable() -> None:
+    """The companion to the test below, which is textual and cannot see this.
+
+    That one checks the module NAME sits inside a declared package. It passes for
+    ``untell-voice = "untell.scripts.voice:main"`` after ``main`` is renamed, after the module stops
+    importing, and after the attribute becomes a constant — every one of which installs fine and
+    then fails the first time a user types the command.
+
+    Importing all 23 is cheap here because the suite has already imported most of the package.
+    """
+    import importlib
+
+    broken: list[str] = []
+    for name, target in sorted(_declared_scripts().items()):
+        module, _, attribute = target.partition(":")
+        try:
+            resolved = importlib.import_module(module)
+        except Exception as exc:  # noqa: BLE001 - the failure mode IS "any import error"
+            broken.append(f"{name} -> {target}: import failed, {type(exc).__name__}: {exc}")
+            continue
+        if not hasattr(resolved, attribute):
+            broken.append(f"{name} -> {target}: module has no attribute {attribute!r}")
+        elif not callable(getattr(resolved, attribute)):
+            broken.append(f"{name} -> {target}: {attribute!r} is not callable")
+    assert not broken, "console scripts that would fail at the shell:\n  " + "\n  ".join(broken)
+
+
+def test_the_script_scan_finds_them_all() -> None:
+    """Guards the guard: a parse that returns {} makes the check above vacuous."""
+    scripts = _declared_scripts()
+    assert len(scripts) >= 20, f"only {len(scripts)} console scripts parsed out of pyproject"
+    assert "untell" in scripts and "untell-audit" in scripts
+
+
 def test_every_console_script_points_into_a_declared_package() -> None:
     """A script whose module lives outside ``packages`` installs and then fails on import.
 
