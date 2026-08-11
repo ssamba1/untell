@@ -5495,3 +5495,55 @@ Worth keeping: **the code that displays a result is as capable of being wrong as
 computes it, and nobody tests it.** Every measurement in this log has been about what the loop does.
 This one was about what the loop *says* it does, and it was off by a factor of twenty in the only
 place a user looks.
+
+## Result 104
+
+**Two surfaces read the same text and disagreed about whether it could be read at all.**
+
+`languages.py` and the rest of the display layer were the last unprobed modules. Script detection is
+sound — Han, Hiragana, Hangul, Cyrillic, Arabic, Hebrew and Greek all identified, and a
+mostly-English passage quoting Chinese correctly keeps its English catalogue. What it does with text
+that has **no letters** is not:
+
+```
+empty string        script=Latin   catalogue=English
+punctuation only    script=Latin   catalogue=English
+digits only         script=Latin   catalogue=English
+```
+
+`_language_supported` compares Latin letters against non-Latin ones and returns True when there are
+no non-Latin ones — which is exactly the letterless case, since digits and punctuation are neither.
+MEASURED on `... --- !!! ??? ;;; ::: ,,,`:
+
+```
+tells 7   by_category {'rule_of_three': 1, 'semicolon_crutch': 6}   words 0
+```
+
+**Six "semicolon crutches" in `;;; ;;;`.** A semicolon crutch is a prose habit. There is no prose —
+`words` is zero, `matches` is empty, and the total does not reconcile with its own breakdown. The
+catalogue was matching its punctuation patterns against punctuation and reporting the result as a
+finding about writing.
+
+And `humanness` returned **50.0 — undetermined —** on every one of these inputs. Two surfaces, one
+text, opposite answers about whether it is readable. The CJK case had already been fixed to report
+`language_supported: False`; letterless text is the same situation and reached the opposite verdict
+through a branch that never considered it.
+
+**The message needed the same fix as the verdict.** With `language_supported` corrected, the warning
+read *"the text is mostly non-Latin script"* — true of a Chinese paragraph, false of `;;; ...`, which
+has no script at all. That is precisely the defect fixed earlier when a 40-character Chinese
+paragraph was reported as "shorter than 5 words": the right verdict for the wrong stated reason,
+which sends the reader at the wrong fix. Both branches now name their own cause.
+
+The tells are caveated, not suppressed. Hiding them would be a second wrong answer, and a caller who
+wants the raw pattern count can still have it.
+
+**One existing fixture moved rather than being deleted.** `""` sat in `test_tells.py`'s list of
+"English text stays supported" cases. An empty string is not an example of English, and calling it
+supported is the same claim that let punctuation report six semicolon crutches — so it moved to the
+new file with a note saying why, rather than being quietly dropped from a list it was failing.
+
+Worth keeping: **when two surfaces disagree about the same input, one of them is wrong and neither
+will tell you.** `humanness` and `score_tells` had disagreed about letterless text for as long as
+both have existed. Nothing failed, because nothing compares them — the same shape as Result 98's four
+surfaces, on a question about the input rather than about the defaults.
