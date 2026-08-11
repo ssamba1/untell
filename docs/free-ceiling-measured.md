@@ -6570,3 +6570,39 @@ Worth keeping: **a fix measured at the layer you edited is measured at the layer
 contradict you.** The rewriter-level number was correct and the conclusion drawn from it was too
 broad — the pipeline has a `min_score` gate, a fallback path and a tier that each decide whether the
 edited line is reached at all, and none of them is visible from inside the function.
+
+## Result 125
+
+**The check written two results ago caught the code written in this one.**
+
+Result 124 found the reporting surface carrying the same blind spot the selector had: at the full
+tier, 4 documents rewritten, tells/100w 3.80 → 2.98, and `max` sat at **0.9997 before and after**, so
+the Delta column printed `—` on a 22% cut in tell density. Fixing the selector and leaving that in
+place would mean the product does better work and reports the same number.
+
+So both surfaces now say when the comparison cannot move:
+
+- the CLI report prints *"the hardest detector is pinned at 0.9997, so the P(AI) delta above cannot
+  show an improvement either way"*, with the ensemble mean that did move (0.8100 → 0.6200);
+- the result dict carries the same sentence on `warning`, composed with the existing caveats rather
+  than replacing them, because a JSON, MCP or REST caller reads only that field and would otherwise
+  see `pre` and `post` identical to four decimals on text that improved.
+
+The bar is 0.99 rather than 0.999, so a detector pinned just under the rounding edge is caught. The
+human side of both corpora never exceeded 0.4, so nothing legitimate is near it.
+
+**And then the audit failed.** `check_selection_does_not_read_a_bare_max`, added in Result 123,
+flagged `untell/rich_output.py::print_humanize_result` as an unlisted bare-max comparison — my own
+new code, in the same session, three loops after building the check.
+
+It is a legitimate read: the new comparison tests whether the max is *pinned* so the report can say
+the delta beside it means nothing, which is the opposite of trusting it to choose. But that is
+exactly what the allowlist is for, and the check did the one thing an allowlist-based guard has to do
+— it refused to let a new site in silently, without any judgement about whether the site was fine.
+
+Worth keeping: **the first thing a new guard catches is usually you.** Result 123 ended with "thirty
+lines of AST would have caught the `targeted` defect the day `_selection_key` was written". Its first
+real firing was two loops later, on code added by the person who wrote the guard, for a reason the
+guard could not have known was good. That is not the guard being wrong. It is the only design that
+could have caught the original defect, behaving identically on the case where the answer is "fine,
+write it down".
