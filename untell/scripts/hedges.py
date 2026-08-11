@@ -308,3 +308,45 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# Negation markers. `n't` is deliberately NOT wrapped in \b: in "aren't" the apostrophe-t is
+# preceded by a word character, so \bn't\b never matches and every contraction reads as having lost
+# its negation. That exact mistake produced a phantom "negations decreased on 4 of 25 outputs"
+# while measuring this check — the same \b failure recorded in Result 44, in the instrument rather
+# than the code.
+# "not only X but also Y" is a correlative conjunction, not a polarity marker — the claim is
+# that BOTH hold. The structural rewriter turns it into "X and Y", which preserves the meaning
+# exactly and removes the word "not". Counting it as a negation made that legitimate transform
+# look like a polarity flip: MEASURED over 30 RAID texts it was the ONLY apparent loss, 1 of
+# 30, and it was this. Excluded with a lookahead so the check can be symmetric at no cost.
+_NEGATION_RE = re.compile(
+    r"n't|\bnot\b(?!\s+only\b)|\b(?:never|no|none|neither|nor|cannot|without|fails? to|unable to)\b",
+    re.I,
+)
+
+
+def negation_count(text: str) -> int:
+    """How many negation markers ``text`` carries."""
+    return len(_NEGATION_RE.findall(text))
+
+
+def polarity_kept(source: str, candidate: str) -> bool:
+    """True when the rewrite neither adds nor removes a negation.
+
+    A polarity flip is the cheapest possible meaning inversion and the NLI gate does not reliably
+    catch it inside a long sentence. MEASURED with every gate live and both models available:
+
+        "The trial enrolled 240 patients and the drug reduced mortality by 12% compared with
+         placebo, though the effect may not hold in older adults."
+     -> the same with "reduced" changed to "did not reduce"
+        contradiction 0.066, entailment 0.929, role_swap False  ->  PASSED every gate
+
+    Symmetric on purpose. Removing a negation ("did not reduce" -> "reduced") inverts the claim
+    exactly as badly as adding one, and `certainty_kept` covers hedges rather than polarity.
+
+    The cost is what makes it shippable: MEASURED over real loop output, the negation count was
+    unchanged on every text — the rewriter's transforms are substitutions, merges and splits, none
+    of which touches polarity, and contractions ("do not" -> "don't") keep the marker.
+    """
+    return negation_count(source) == negation_count(candidate)

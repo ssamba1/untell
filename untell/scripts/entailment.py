@@ -315,12 +315,19 @@ def meaning_preserved(
     # Running them first is also the cheap order: a candidate rejected here skips four NLI forward
     # passes and a spaCy parse. All the checks are conjunctive vetoes, so order cannot change the
     # verdict, only the cost of reaching it.
-    from untell.scripts.hedges import certainty_kept
+    from untell.scripts.hedges import certainty_kept, polarity_kept
     from untell.scripts.numerals import numbers_kept
 
     if not numbers_kept(source, candidate):
         return False
     if not certainty_kept(source, candidate):
+        return False
+    # Polarity, which the NLI pair below does not reliably catch inside a long sentence. MEASURED
+    # with every gate live: negating the main clause of a 24-word clinical sentence scored
+    # contradiction 0.066 and entailment 0.929, and passed. Cost of the check on real output:
+    # 0 of 30 HC3 and 0 of 30 RAID loop results change their negation count, because the
+    # rewriter's transforms are substitutions, merges and splits — none of which touches polarity.
+    if not polarity_kept(source, candidate):
         return False
 
     if not available():
