@@ -23,7 +23,7 @@ from collections import Counter
 
 from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE
 
-from .base import Rewriter
+from .base import Rewriter, selection_key
 
 logger = logging.getLogger(__name__)
 
@@ -110,12 +110,12 @@ class TargetedRewriter(Rewriter):
                 out.append(sent)
                 continue
             try:
-                before = float(score_text(body, tier=tier)["max"])
+                before = selection_key(score_text(body, tier=tier))
             except Exception:
                 out.append(sent)
                 continue
             # Leave sentences that already read as human completely untouched.
-            if before < self.min_score:
+            if before[0] < self.min_score:
                 out.append(sent)
                 continue
             targetable += 1
@@ -129,10 +129,22 @@ class TargetedRewriter(Rewriter):
                 out.append(sent)
                 continue
             try:
-                after = float(score_text(cand, tier=tier)["max"])
+                after = selection_key(score_text(cand, tier=tier))
             except Exception:
                 out.append(sent)
                 continue
+            # `(max, mean)`, not `max` — the same selector `composite` uses, for the same reason,
+            # found here after it was fixed there. MEASURED over 8 HC3 AI answers, per sentence:
+            #
+            #     max improved (adopted)        4
+            #     max worse (rejected)          0
+            #     max TIED, mean improved      15   <- every one of these was discarded
+            #     max TIED, mean not improved   0
+            #
+            # `roberta_openai` returns 0.9992 on nearly every sentence of that genre, so `max` is
+            # a constant and `after < before` is false on text that genuinely improved: mean
+            # 0.6839 -> 0.5821, 0.7663 -> 0.6978, 0.7504 -> 0.6792. Fifteen of nineteen real
+            # improvements thrown away, and not one tie that was neutral or worse.
             if cand and after < before:  # adopt only a genuine per-sentence improvement
                 trailing = sent[len(sent.rstrip()):]  # preserve the original inter-sentence spacing
                 out.append(cand + trailing)
@@ -192,10 +204,10 @@ class TargetedRewriter(Rewriter):
         if not stripped:
             return body
         try:
-            before = float(score_text(stripped, tier=tier)["max"])
+            before = selection_key(score_text(stripped, tier=tier))
         except Exception:
             return body
-        if before < self.min_score:
+        if before[0] < self.min_score:
             return body
         try:
             cand = self._inner.rewrite(stripped, score_result, threshold).strip()
@@ -204,7 +216,7 @@ class TargetedRewriter(Rewriter):
         if Counter(_SENTINEL_RE.findall(cand)) != Counter(_SENTINEL_RE.findall(stripped)):
             return body
         try:
-            after = float(score_text(cand, tier=tier)["max"])
+            after = selection_key(score_text(cand, tier=tier))
         except Exception:
             return body
         if cand and after < before:
