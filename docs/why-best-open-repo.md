@@ -29,7 +29,7 @@ they are not a quotation, and a previous version of this page presented them as 
 >   44 of them at inference time. `chengez/Adversarial-Paraphrasing` couples it *per token*.
 > - **Automated meaning verification is not ours alone.** 85 of 435 verify meaning, and 131 do some
 >   form of fact preservation. `Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI
->   entailment gate this repo does. 
+>   entailment gate this repo does.
 > - **"Most complete open humanizer" holds only in English.** 139 of the 435 (32%) target another
 >   language — a per-record *reading*, not a derived count: the census JSON has no language field,
 >   and three defensible keyword rules give 130, 135 and 138. Treat it as "roughly a third".

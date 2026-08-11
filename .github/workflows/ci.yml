@@ -235,3 +235,28 @@ jobs:
       - name: Stop the container
         if: always()
         run: docker rm -f untell-ci || true
+
+  pre-commit:
+    name: pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # .pre-commit-config.yaml declares eight hooks and nothing ran them. Ruff is covered by the
+      # lite job, so what went unchecked were the file-hygiene ones — and they had found real
+      # things by the time this was added: trailing whitespace in docs/why-best-open-repo.md and a
+      # missing final newline in docs/humanizer-census.json, both committed.
+      #
+      # Linux runner on purpose. `mixed-line-ending --fix=lf` is a no-op here because every Python
+      # file is LF in the index (`git ls-files --eol` reports i/lf for all 184); on a Windows
+      # checkout with core.autocrlf=true it would rewrite the working tree instead, which says
+      # nothing about the repository.
+      - name: Run every hook
+        run: |
+          python -m pip install --disable-pip-version-check pre-commit
+          pre-commit run --all-files --show-diff-on-failure
