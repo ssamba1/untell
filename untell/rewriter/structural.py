@@ -1350,6 +1350,17 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
             next_word = after.split()[0].strip(",.;:").lower() if after.split() else ""
             if next_word in _PREPOSITION_BOUND[word.lower()]:
                 return m.group(0)
+        # A noun-phrase adverbial cannot premodify anything but a comparative — see
+        # `_POSTMODIFIER_ONLY`. Filtered, not declined: "sharply" and "greatly" are correct in the
+        # same slot and are what the swap should use there.
+        postmod = _POSTMODIFIER_ONLY.get(word.lower())
+        if postmod:
+            following = (tail or masked[m.end():]).lstrip().split()
+            if following and following[0][:1].isalpha() and not _premodifies_a_comparative(following):
+                usable = [o for o in (fresh or options) if o.lower() not in postmod]
+                if not usable:
+                    return m.group(0)
+                choice = random.choice(usable)
         # The headword is followed by a comma and some substitutes cannot precede one — see
         # `_COMMA_UNSAFE`.
         comma_unsafe = _COMMA_UNSAFE.get(word.lower())
@@ -1808,6 +1819,35 @@ _NOT_AN_OBJECT = frozenset({
 _COMMA_UNSAFE: dict[str, frozenset[str]] = {
     "however": frozenset({"but", "though"}),
 }
+
+# Substitutes that are noun-phrase adverbials, so they can only sit AFTER what they modify.
+#
+# "a lot" is the one in the table. "improved significantly" -> "improved a lot" is right; the same
+# swap one word earlier is not. FOUND in the `--json` output of the humanize CLI:
+#
+#     It significantly improves overall efficiency   ->   It A LOT IMPROVES overall efficiency
+#
+# MEASURED across 240 HC3 and RAID texts, 67 of the 68 `significantly` occurrences are followed by
+# a word, so the bad slot is the usual one and the clause-final case is the exception.
+#
+# The exception that keeps this from being a blanket rule is the COMPARATIVE: "significantly longer"
+# -> "a lot longer" is correct, and so is "a lot better" and "a lot more". A noun-phrase adverbial
+# can premodify a comparative and nothing else, which is a rule about the following word rather than
+# about the part of speech, so it is checkable here without a parser.
+_POSTMODIFIER_ONLY: dict[str, frozenset[str]] = {
+    "significantly": frozenset({"a lot"}),
+}
+# Comparatives a noun-phrase adverbial may premodify. `-er` covers the morphological ones; the rest
+# are the suppletive and periphrastic forms, which have no ending to match on.
+_COMPARATIVES = frozenset({"more", "less", "better", "worse", "further", "fewer", "greater"})
+
+
+def _premodifies_a_comparative(following: list[str]) -> bool:
+    """Is the word after the headword a comparative, the one thing "a lot" may premodify?"""
+    if not following:
+        return False
+    word = following[0].strip(",.;:!?()").lower()
+    return word in _COMPARATIVES or (len(word) > 4 and word.endswith("er"))
 
 # Particles that end a separable phrasal verb. A substitute ending in one cannot be followed
 # directly by a pronoun object: "put it to work", not "put to work it".
