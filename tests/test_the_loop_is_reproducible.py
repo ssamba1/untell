@@ -46,8 +46,22 @@ def _warm_up() -> None:
 
 
 def _run(rewriter, text: str, seed: int = 42) -> str:
+    """`threshold=0.0` so the loop actually rewrites.
+
+    At the default threshold this returned the input untouched: TEXTS[0] scores 0.1681 at lite
+    tier, below 0.30, so the loop answered `stopped: passed` with `iterations: 0, rewrites: 0`.
+    Every reproducibility test above was then comparing three identical no-ops — which is the exact
+    hazard `test_the_rewrite_actually_did_something` exists to catch, and it duly failed while its
+    neighbours passed for the wrong reason.
+
+    Forcing the threshold makes the loop run on text that does not need it, which is what these
+    tests want: the property under test is that a rewrite is deterministic, not that this
+    particular text triggers one.
+    """
     random.seed(seed)
-    return untell_text(text, tier="lite", max_iters=1, best_of=2, rewriter=rewriter)["final"]
+    return untell_text(
+        text, tier="lite", max_iters=1, best_of=2, rewriter=rewriter, threshold=0.0
+    )["final"]
 
 
 @pytest.mark.parametrize("text", TEXTS, ids=["ai_formal", "ai_marketing"])
