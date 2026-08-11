@@ -96,15 +96,29 @@ def test_the_prose_beside_it_is_still_rewritten(rewriter: str) -> None:
     assert changed, f"{rewriter} no longer changes a document containing a code block"
 
 
-def test_surgical_still_substitutes() -> None:
+def test_surgical_still_substitutes(monkeypatch: pytest.MonkeyPatch) -> None:
     """`surgical` now runs per block, so `max_subs` is per block rather than per document. That is
     the honest reading of the knob — it caps how much of any one passage is rewritten — but the
-    substitution itself has to keep working."""
+    substitution itself has to keep working.
+
+    Pin the stdlib detector path. `tier="lite"` silently upgrades to GPT-2 perplexity whenever
+    torch is importable, and the two disagree about this very text: stdlib scores it 0.6848
+    (flagged at the 0.30 default, 2 substitutions) while the torch-backed path scores it 0.2824 —
+    already passing, so `surgical_substitute` correctly declines to touch it and returns 0
+    substitutions. The product behaviour is right on both paths; the test was reading an unpinned
+    configuration and failed on any machine with torch installed. Same fix, and the same reason, as
+    the two tests in tests/test_run.py that carry this note.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
     text = (
         "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
         "It significantly improves overall efficiency and accuracy across the evaluated corpus."
     )
+    scored = score_text(text, tier="lite")
+    assert scored["max"] >= 0.3, (
+        f"premise: this text must be flagged for a substitution to be requested (got {scored['max']})"
+    )
     rw = get_rewriter("surgical")
-    out = rw.rewrite(text, score_text(text, tier="lite"), 0.3)
+    out = rw.rewrite(text, scored, 0.3)
     assert out != text
     assert "Moreover," not in out
