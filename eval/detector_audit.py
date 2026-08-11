@@ -480,10 +480,31 @@ def render(report: dict) -> str:
                 f"{r['ai_mean']:7.3f} {r['gap']:+7.3f} {fpr} {tpr}"
             )
     lines.append("")
+    # Sentence rows with a bad verdict but an AUROC above the small-sample bar are EXCLUDED from
+    # `broken` on purpose — see the comment beside that list. Saying so here is the point: the
+    # table printed `fast_detectgpt [sentence]  INVERTED  0.444` directly above
+    # "every available detector responds in the correct direction", and a reader cannot reconcile
+    # those two lines without opening the source. The summary was true of its own computation and
+    # misleading beside the data it summarises.
+    excused = [
+        r["detector"]
+        for r in report["results"]
+        if r.get("granularity") == "sentence"
+        and r["verdict"] in ("DEAD", "INVERTED", "MISCALIBRATED")
+        and r.get("auroc") is not None
+        and r["auroc"] > SENTENCE_BROKEN_AUROC
+    ]
     if report["broken"]:
         lines.append(f"BROKEN (dead or inverted): {', '.join(report['broken'])}")
     else:
         lines.append("BROKEN: none — every available detector responds in the correct direction.")
+    if excused:
+        lines.append(
+            f"  Not counted: {', '.join(excused)} — a bad verdict at sentence granularity needs "
+            f"AUROC <= {SENTENCE_BROKEN_AUROC} to count, because six probes per class is 36 pairs "
+            "and a value near chance is noise. Re-measured on 40 real HC3 sentence pairs, these "
+            "score 0.9+."
+        )
     return "\n".join(lines)
 
 
