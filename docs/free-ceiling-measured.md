@@ -5810,3 +5810,48 @@ Worth keeping: **a conjunction of guards needs a test that each conjunct is load
 gates that all fire on the same defects would be four gates of theatre, and nothing in a per-gate
 test suite can tell the difference — every one of them passes either way. The distinguishing
 measurement is the cross-product, and it takes one table.
+
+## Result 110
+
+**The catalogue and the detector that implements it had never been compared.**
+
+`untell/references/ai-tells.md` is the tell catalogue; `untell/scripts/tells.py` implements it. A
+documentation/implementation pair, and nothing checked they agree. The doc's headline section lists
+"the 20 highest-signal tells", so: write a textbook example of each and run it.
+
+**The first pass measured the wrong thing**, in a way worth recording. I appended a shared padding
+sentence to every probe and accepted "any category fired" as a hit, which gave 18 of 20. Both
+choices were wrong: the pad changed sentence-length variance, so the burstiness probe was measuring
+my padding, and five "hits" had fired only on `low_burstiness` rather than on the tell being tested.
+Re-run with no pad and requiring the tell's **own** category: **13 of 16** that name a detector.
+
+The three that did not are all documentation mismatches rather than dead code, and each wanted a
+different answer:
+
+**`false_range` missed the catalogue's own quoted example.** Item 17 gives *"from ancient
+civilizations to modern startups"*; the pattern required `to the`, and that half has no article. The
+scope word at the front is what stops it matching an ordinary range, so the article was carrying no
+weight. MEASURED over 120 HC3 and RAID pairs, dropping it changes the counts by **zero in both
+corpora** — the shape does not occur there — so closing a documented-example gap cost nothing. Fixed,
+with `from Monday to Friday` and `from London to Paris` asserted to stay unmatched.
+
+**`rule_of_three` implements half the item, deliberately.** It detects the staccato form
+("Fast. Simple. Effective.") and skips the comma tricolon, and its docstring records why with
+numbers: POS-tagging the coordinated items and keeping the adjective runs the catalogue describes
+gives RAID 1.04, HC3 2.10, MAGE 0.36 — no signal, inverted on one corpus. The doc lists both forms.
+
+**`markdown_artifact` implements a different tell than the one it is named for.** Item 12 describes
+heading and bullet density ("3+ headings in <300 words"); the pattern matches boilerplate section
+titles — "Key takeaways", "TL;DR", a heading containing an emoji.
+
+The last two are pinned as **known divergences** rather than fixed. Narrowing the doc would lose real
+writing advice — the comma tricolon is a genuine tell to avoid even where detecting it costs more
+than it earns — and widening the detectors was already measured and rejected in their own docstrings.
+The test asserts they still do NOT fire, so the divergence stays a decision on record: if one starts
+firing, the note describing the limit is stale and should go.
+
+Worth keeping: **a doc that guides generation and a detector that measures it will diverge, and the
+divergence is only a defect when nobody has written it down.** Two of these three are legitimate —
+the catalogue is advice for a writer, the detector is an instrument, and they answer to different
+constraints. What was missing was any place recording which items are which, so a reader of either
+file would assume the other agreed.
