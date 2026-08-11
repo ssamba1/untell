@@ -5321,3 +5321,49 @@ one that has been paying all session — construct the condition the thing respo
 Three false positives in one sweep is a high enough rate that the sweep would have been actively
 misleading shipped as-is: a future reader deleting `margin` on its evidence would have removed a
 working feature.
+
+## Result 101
+
+**Running the README instead of reading it.**
+
+`untell-audit` verifies the repo's *numeric* claims. Nothing verifies its *behavioural* ones — a
+README that says "type this and get that" is a promise no check tests. So: extract every `untell`
+command from the README's fenced blocks and run it.
+
+Thirty candidates, thirteen of them offline and safe to run here. All thirteen work:
+
+```
+untell humanize                   rc=0
+untell humanize --rewriter surgical    rc=0
+untell humanize --rewriter ensemble    rc=0
+untell score / tells / loop (alias)    rc=0
+untell verify --file                   rc=1   <- correct; documented as "exit 0 = all pass"
+untell-score / -loop / -tells          rc=0
+untell-verify                          rc=1   <- same contract
+```
+
+The `verify` exit codes are the documented contract, not failures, and checking that they are the
+documented ones rather than assuming is the whole reason to run the commands.
+
+**Two things the run surfaced that reading could not.**
+
+`untell-humanness` and `untell-audit` are declared in `pyproject.toml` and were **not present in the
+virtualenv** — 13 of 23 console scripts installed. That is a stale editable install rather than a
+repo defect: the other ten entry points were added after the last `pip install -e`. Worth knowing
+anyway, because a user who installed once and pulled since is in exactly that state, and the failure
+they see is `command not found` with no hint that a reinstall is the fix.
+
+And it raised the question that mattered: **do all 23 entry points actually resolve?** They do —
+checked by importing each module and confirming the named attribute exists and is callable.
+
+**The existing packaging test could not have caught it if they did not.** It checks that each
+script's module NAME sits inside a declared package, which is textual. It passes for
+`untell-voice = "untell.scripts.voice:main"` after `main` is renamed, after the module stops
+importing, and after the attribute becomes a constant — three states that install cleanly and fail
+the first time a user types the command. That is now a companion test, confirmed to catch all three
+by planting each one.
+
+Worth keeping: **the failures that reach users live between the declaration and the code.** Every
+test in this repo imports the package the way a developer does; nobody was checking the way a
+`pip install` does. The check costs one import per entry point and covers the entire gap between
+"the repo works" and "the install works".
