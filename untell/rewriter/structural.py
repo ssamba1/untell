@@ -1759,6 +1759,13 @@ _PREPOSITION_BOUND: dict[str, frozenset[str]] = {
     "demand": frozenset({"for"}),
     "need": frozenset({"for"}),
     "capacity": frozenset({"for"}),
+    # "in combination WITH" is a fixed frame and its substitutes do not fit it: FOUND by reading
+    # loop output, "used in combination with other methods" became "used in pairing with other
+    # methods", and `mix` and `blend` break it the same way. Bound to `with` only — "a combination
+    # of X" takes every substitute cleanly ("a mix of", "a blend of"), and that is 46 of the 47
+    # occurrences across 240 HC3 and RAID texts, so binding the word outright would cost the common
+    # case to fix the rare one.
+    "combination": frozenset({"with"}),
 }
 
 # Substitutes that cannot take a gerund complement, keyed by the headword they replace.

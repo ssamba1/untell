@@ -6005,3 +6005,50 @@ ran one iteration of one draw, because that is fast and deterministic enough to 
 shipped default runs fifteen rewrites per document, and the defects that only appear there are
 compounding ones — a transform mangling what another transform produced — which is precisely the
 class a single pass cannot exhibit.
+
+## Result 114
+
+**A correction to Result 113, and the defect that was real underneath it.**
+
+Result 113 listed three further defects seen in the same deep read and not fixed. One of them was
+not a defect at all, and finding that out is worth more than the note was.
+
+> `"By contrast, despite these potential downsides, ..."` stacks a contrastive on a concessive.
+
+The source already reads **"However, despite these potential downsides, many communities continue to
+use salt..."** The stacking is in the original HC3 text. The rewriter substituted `However` →
+`By contrast` faithfully and changed nothing about the shape.
+
+I attributed a corpus artefact to the rewriter by reading the output alone. The battery in
+`test_output_is_mechanically_sound.py` exists precisely to prevent that — it scores every check on
+the OUTPUT **and** the SOURCE and fails only on a positive delta, with a comment saying the corpora
+contain their own artefacts. I violated that discipline the moment I read by eye instead.
+
+**The second note was also mine to correct**, in the other direction. `"...for many communities,
+especially."` — a stranded modifier — does not come from `structural_rewrite`: across 40 seeds it
+never strands `especially`. It appeared only in the five-iteration loop, so it is a compounding
+artefact, which is what Result 113 said about the class but not about this instance.
+
+**And chasing that produced a real defect.** The same 40-seed sweep showed what `structural_rewrite`
+*does* do to that sentence:
+
+```
+used in combination with other methods   ->   used in pairing with other methods
+                                         ->   used in mix with other methods
+                                         ->   used in blend with other methods
+```
+
+`combination` was not in `_PREPOSITION_BOUND`. "in combination **with**" is a fixed frame and none of
+its substitutes fit it — the same shape as `approach to`, `reliance on` and `capacity for` already in
+that map.
+
+Bound to `with` only, and the measurement is why: across 240 HC3 and RAID texts, `combination`
+appears 47 times and **46 of them are "combination of"**, which takes every substitute cleanly ("a
+mix of", "a blend of"). Binding the word outright would have cost the common case to fix the rare
+one.
+
+Worth keeping: **reading output without the source beside it is guessing.** Two of the three notes in
+Result 113 were wrong about where the text came from, and the tool that would have told me — score
+the source too, blame only the delta — was already in the repository, written for this exact failure.
+The real defect surfaced only when I stopped reading the loop's output and started diffing a single
+transform against its own input.
