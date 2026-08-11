@@ -488,17 +488,29 @@ def untell_text(
             # MEASURED over 80 documents per corpus: `repeated_phrasing` fires on 48 of 80 (HC3) and
             # 61 of 80 (RAID), and where it fires it is 94% (HC3) and 83% (RAID) of the total on
             # average — above 90% in 36 of those 48 HC3 documents. So the tie-break mostly ranks
-            # candidates by how much duplicated phrasing they removed, and a draw that cleared three
-            # clichés and a chatbot artifact loses to one that removed four repeated trigrams, even
-            # though `meta_closer` and `sycophancy` carry precision 1.00 against its 0.925.
+            # candidates by how much duplicated phrasing they removed.
             #
-            # Evidence-weighting is the obvious repair and it does nothing: scoring candidates by
-            # `_EVIDENCE` (strong 4 / moderate 2 / weak 1) instead of the flat count picks a
-            # DIFFERENT candidate in 0 of 80 documents on either corpus. `repeated_phrasing` is
-            # itself classed `strong`, so weighting multiplies the category that already dominates.
-            # Left alone on that evidence — changing it would need per-category normalisation (a cap
-            # on any one category's contribution), which is a different proposal with its own
-            # measurement, not a weight table.
+            # That sounds like a defect and is not, which took two further measurements to
+            # establish. It is not costing the other categories anything, because by the time
+            # candidates are compared those categories are already gone. Non-repetition tells across
+            # 40 documents, source against candidate:
+            #
+            #     HC3    69 -> 10        RAID   272 -> 65
+            #
+            # and 61 of RAID's 65 are `repeated_sentence_openers`, which is itself repetition. So a
+            # draw with three clichés left to clear does not exist: the flatten and substitution
+            # passes remove cliche and ai_vocab outright (100%) and formulaic_transition at 93-97%.
+            # After a rewrite, repetition of two kinds IS the residual.
+            #
+            # Both obvious repairs were tried and neither helps. Evidence-weighting (`_EVIDENCE`,
+            # strong 4 / moderate 2 / weak 1) picks a different candidate in 0 of 80 documents —
+            # `repeated_phrasing` is itself classed strong, so weighting multiplies the category
+            # that already dominates. Per-category capping does change the pick, in 1 of 40 (HC3)
+            # and 9 of 40 (RAID), but in none of those does the capped choice carry fewer
+            # other-strong tells, because both choices carry zero. It moves the answer without
+            # improving it.
+            #
+            # Left as a flat count on that evidence. The thing to fix is not the ranking function.
             near = [v for v in pool if v[1]["max"] <= min_score + _TELLS_EPS]
             # Never trade a PASS for a lower tell count. The band is +/- _TELLS_EPS (0.02), so when
             # the best candidate sits just under the threshold the band straddles it and a
