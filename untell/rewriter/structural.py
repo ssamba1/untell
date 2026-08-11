@@ -194,7 +194,20 @@ _ANY_LEADING_MARKER_RE = re.compile(
     r"^(?:"
     + "|".join(re.escape(o.rstrip(",")) for o in _OPENERS)
     + r"|and|but|or|so|yet|plus|also|then|however|moreover|furthermore|additionally"
-    r"|overall|therefore|thus|hence|indeed|besides|meanwhile|still)\b,?\s+",
+    r"|overall|therefore|thus|hence|indeed|besides|meanwhile|still"
+    # Subordinators and concessives. The guard only has to cover the OPENER POOL to stop this
+    # transform stacking on itself, and it did — but other transforms put markers at the front of a
+    # sentence too, and this one then treated the result as unmarked. `however` was covered while
+    # `though`, the word the substitution table rewrites it TO, was not. MEASURED over 6 real HC3
+    # answers, 51 sentences:
+    #
+    #     "Well, though, despite these potential downsides, many communities continue ..."
+    #     "Basically, though, many people believe that the color of your eyes ..."
+    #
+    # Adding these can only make the guard decline more sentences: `_ANY_LEADING_MARKER_RE` has
+    # exactly one caller, the stacking check below.
+    r"|though|although|while|whereas|despite|nonetheless|nevertheless|regardless"
+    r"|conversely|anyway|instead|otherwise|because|since|unless)\b,?\s+",
     re.IGNORECASE,
 )
 
@@ -1293,6 +1306,18 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
             next_word = after.split()[0].strip(",.;:").lower() if after.split() else ""
             if next_word in _PREPOSITION_BOUND[word.lower()]:
                 return m.group(0)
+        # A gerund follows, and some substitutes cannot govern one — see `_GERUND_UNSAFE`. Filtered
+        # rather than declined: `involves -> means` reads correctly in the same slot, so the swap is
+        # still worth making.
+        unsafe = _GERUND_UNSAFE.get(word.lower())
+        if unsafe:
+            after = (tail or masked[m.end():]).lstrip()
+            next_word = after.split()[0].strip(",.;:") if after.split() else ""
+            if next_word.lower().endswith("ing") and len(next_word) > 4:
+                usable = [o for o in (fresh or options) if o.lower() not in unsafe]
+                if not usable:
+                    return m.group(0)
+                choice = random.choice(usable)
         # An article already sits in front of this word, so a substitute that begins with its own
         # determiner stacks two. FOUND on the one corpus case of the shape: "a significantly longer
         # wait" -> "an a lot longer wait", where `agree_article` had also faithfully re-agreed "a"
@@ -1632,6 +1657,32 @@ _PREPOSITION_BOUND: dict[str, frozenset[str]] = {
     "demand": frozenset({"for"}),
     "need": frozenset({"for"}),
     "capacity": frozenset({"for"}),
+}
+
+# Substitutes that cannot take a gerund complement, keyed by the headword they replace.
+#
+# "involves X-ing" means *includes the activity of* X-ing; "needs X-ing" means *requires being*
+# X-ed. With an object following, the second reading collapses. FOUND by reading RAID output:
+#
+#     a fundamental task in computer vision that involves allowing a user to interact
+#       -> ...that NEEDS ALLOWING a user to interact
+#
+# "means allowing a user to interact" is fine, so this filters rather than declines.
+#
+# MEASURED across 240 HC3 and RAID texts, `involves` is followed by a gerund in 33% of its HC3
+# occurrences and 72% of its RAID ones — the majority case in academic prose, not an edge.
+#
+# `requires`/`require` -> `needs`/`need` look like the same shape and are not: "requires
+# calibrating" and "needs calibrating" both carry the passive reading, so they are correct and
+# stay. The scan that produced this entry found 29 headwords that ever precede an -ing word, and
+# all the others are adjective-plus-noun ("robust testing", "novel tracking") or noun-plus-
+# participle ("approach using"), where no verb complement is involved at all.
+#
+# `involves` only. An entry for `involved` was written here and removed the same hour: the table has
+# no `involved` headword, so it guarded a substitution that cannot happen and would have read as
+# protection forever. `test_the_unsafe_map_names_real_substitutes` is what caught it.
+_GERUND_UNSAFE: dict[str, frozenset[str]] = {
+    "involves": frozenset({"needs", "takes"}),
 }
 
 # Particles that end a separable phrasal verb. A substitute ending in one cannot be followed
