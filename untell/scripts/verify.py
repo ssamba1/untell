@@ -186,11 +186,17 @@ def _render(v: dict) -> str:
         )
     lines = [f"AI-checker verification (threshold {v['threshold']}: AI prob must be below it)", ""]
     for name, r in v["results"].items():
+        # The aggregate row is marked as one. It is excluded from `n_configured` on purpose — see
+        # the comment beside `checkers` — so the table prints two rows above "0/1 checkers passed"
+        # and a reader has no way to tell which of the two is not a checker. The count is right and
+        # the display was making it look wrong, which is the same reader-facing gap as the detector
+        # audit's summary contradicting its own table.
+        aggregate = " (aggregate, not counted)" if name.startswith("local:max ") else ""
         if r.get("error"):
-            lines.append(f"  {name:24} ERROR: {r['error']}")
+            lines.append(f"  {name:24} ERROR: {r['error']}{aggregate}")
         else:
             mark = "PASS" if r["passes"] else "FAIL"
-            lines.append(f"  {name:24} AI={r['ai']:.3f}  [{mark}]")
+            lines.append(f"  {name:24} AI={r['ai']:.3f}  [{mark}]{aggregate}")
     lines.append("")
     lines.append(
         f"PASSES ALL {v['n_configured']} CHECKERS"
