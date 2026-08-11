@@ -139,6 +139,13 @@ def _key(token) -> str:
     return _stem((token.lemma_ or token.text).lower().strip())
 
 
+# Prepositions that introduce a comparison ARM rather than an ordinary oblique argument. Only
+# these get a triple of their own: "benefit from tools" is already handled by the no-object
+# fallback, and treating every preposition this way would make ordinary rephrasing look like a
+# swap ("in April" -> "during April").
+_COMPARISON_PREPS = frozenset({"than", "versus", "vs", "vs.", "against", "with", "to", "over"})
+
+
 def _triples(doc) -> list[tuple[str, str, str | None]]:
     """(subject, verb, object) per predicate, with the passive normalised into active order.
 
@@ -186,6 +193,34 @@ def _triples(doc) -> list[tuple[str, str, str | None]]:
         if subj is None and obj is None:
             continue
         out.append((subj or "", _stem((tok.lemma_ or tok.text).lower()), obj))
+
+        # A COMPARISON arm is a second argument the triple above cannot hold. The fallback further
+        # up only fires when there is no direct object, so "the drug reduced mortality compared
+        # with placebo" captures (drug, reduce, mortality) and drops "placebo" entirely — and
+        # swapping the arms leaves every triple identical. MEASURED, this evaded every gate:
+        #     "The drug reduced mortality by 12% compared with placebo."
+        #  -> "Placebo reduced mortality by 12% compared with the drug."
+        #     contradiction 0.004, entailment 0.991, role_swap False
+        #
+        # In clinical and academic prose "A compared with B" is the commonest structure whose
+        # inversion changes the finding, which is exactly the register this repo targets. Emitted
+        # as its own triple so a swap changes the set without disturbing the main one.
+    # Comparison arms are collected per SENTENCE, not per verb. "compared with placebo" hangs off
+    # the participle "compared", and "than group B" off the adjective "higher" — in neither case is
+    # the preposition a child of the main verb, so a per-verb scan finds nothing. Pairing the arm
+    # with the sentence's subject is what puts both entities in one triple, which is what rule 1
+    # needs to see them exchanged.
+    for sent in doc.sents:
+        subject = next((_key(tok) for tok in sent if tok.dep_ in _SUBJ), None)
+        if not subject:
+            continue
+        for tok in sent:
+            if tok.dep_ != "prep" or tok.text.lower() not in _COMPARISON_PREPS:
+                continue
+            for g in tok.children:
+                if g.dep_ == "pobj":
+                    out.append((subject, _stem(tok.text.lower()), _key(g)))
+                    break
     return out
 
 
