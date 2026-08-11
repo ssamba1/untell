@@ -3984,3 +3984,39 @@ Worth keeping: **decide which direction of an error is the defect before choosin
 checks measure drift between a document and the code. One asked "are these equal", the other asked
 "is the document claiming more than exists" — and only the second question survives a repository
 that more than one person is writing to.
+
+## Result 76
+
+**The first rewrite in a process is not reproducible with the ones after it.**
+
+Every measurement in this log assumes the loop is deterministic under a fixed seed, and nothing had
+asserted it. It is — with one exception that took six probes to corner.
+
+| what was tested | result |
+|---|---|
+| fresh rewriter, 6 HC3 texts, 3 runs each | 6/6 reproducible |
+| **fresh rewriter, synthetic text, 4 runs** | **2 distinct outputs** |
+| reused rewriter, same seed | reproducible |
+| one text's output after another ran on the same instance | identical — no state leakage |
+
+The failing case narrowed to a cold start: **run 0 differs, runs 1–4 are byte-identical.**
+
+It is not the rewriter. `rw.rewrite()` called directly is identical 4 of 4, fresh instance or
+reused. It is not the scorers — `score_text`, `score_tells` and `similarity` return the same values
+on five consecutive calls. It is not the gates: `entailment.available()`, `roles.available()`,
+`meaning_preserved` and `role_swap` are stable. It is not sentence targeting.
+
+The first call **lazy-loads models, and that loading draws from the global RNG.** The substitution
+step downstream then sees a different stream, and picks different synonyms — "setup taps into"
+against "structure uses", with identical `rewrites`, `adopted`, `stopped` and `post` values. Once
+warm, the RNG state after each call is identical and a fresh rewriter reproduces exactly.
+
+**What this does and does not mean for the numbers in this log.** A harness that seeds before its
+first call gets exactly one perturbed result — at n=6 that is 17% of the sample. But every
+comparison here is *paired*: both arms process the same corpus in the same order, so text 0 takes
+the cold-start hit in both, and the difference between arms is unaffected. The measurements stand,
+and they stand for a reason that had not been checked until now.
+
+Worth keeping: **"deterministic" is a property of a warm process, and nothing says so.** Six
+components were individually verified stable before the cause turned out to be the *act of loading
+them*. A test that seeds and asserts on its first call is testing the loading, not the loop.
