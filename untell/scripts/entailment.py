@@ -160,8 +160,25 @@ def contradiction_score(a: str, b: str) -> float | None:
         # One contradicted chunk disqualifies the whole rewrite, so: max over chunks, and over
         # both directions within each chunk. Short inputs yield a single chunk of (a, b), which is
         # exactly the previous behaviour.
+        #
+        # An UNCHANGED chunk scores 0 without asking the model. Text cannot contradict itself, and
+        # the model does not know that: MEASURED, `contradiction_score(doc, doc)` on a real 301-word
+        # RAID abstract returns 0.6091 — over the 0.50 bar — so `meaning_preserved(text, text)` was
+        # False and no rewrite of that document could ever be adopted. 1 of 30 RAID documents and
+        # 3 of 60 across both corpora sit at or above 0.25 on the identity case alone.
+        #
+        # The cause is not alignment: the offending chunk is byte-identical on both sides. It is
+        # that a chunk is a mid-document slice, so it starts mid-sentence ("extensively evaluated
+        # on a large dataset of SAS images, showcasing…"), and an NLI model given a fragment as both
+        # premise and hypothesis returns noise. Comparing a string with itself is the one case where
+        # the answer is known in advance, so it is answered here instead of asked.
+        #
+        # This also removes the model call for every untouched chunk of a real rewrite, which is
+        # most of them — the rewriter edits a fraction of a long document.
         return max(
-            max(float(_pair_probs(ca, cb)[idx]), float(_pair_probs(cb, ca)[idx]))
+            0.0
+            if ca == cb
+            else max(float(_pair_probs(ca, cb)[idx]), float(_pair_probs(cb, ca)[idx]))
             for ca, cb in aligned_chunks(a, b)
         )
     except Exception as exc:
