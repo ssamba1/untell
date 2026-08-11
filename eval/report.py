@@ -108,11 +108,24 @@ def summarize(by_strategy: dict[str, list], threshold: float) -> dict:
         # — declaring the project's headline claim proven while single_pass was five times better in
         # absolute terms.
         comparable = fl["n_scored"] == fl["n"] and sp["n_scored"] == sp["n"]
-        summary["thesis_pass"] = bool(
-            comparable
-            and fl["bypass_rate"] >= sp["bypass_rate"]
-            and fl["mean_similarity"] >= sp["mean_similarity"] - 0.02
-        )
+        # `>=` on the bypass rate alone passes when BOTH rates are zero, which is the most common
+        # outcome on real AI text and carries no information about the thesis at all. MEASURED on 8
+        # HC3 answers: single_pass 0%, full_loop 0%, thesis_pass True — the project's headline claim
+        # declared proven by a run in which neither strategy cleared a single sample, and in which
+        # single_pass had actually scored WORSE than doing nothing (0.6354 against noop's 0.6217).
+        #
+        # So the claim has to rest on a STRICT improvement somewhere. Bypass rate is the metric the
+        # thesis is stated in, so it decides when it separates them; when it ties — including the
+        # degenerate 0-0 tie — fall through to the mean post `max`, which is the same quantity
+        # measured before it has been thresholded. `thesis_basis` records which comparison answered,
+        # so a reader never has to guess whether a pass came from the informative one.
+        similarity_ok = fl["mean_similarity"] >= sp["mean_similarity"] - 0.02
+        if fl["bypass_rate"] != sp["bypass_rate"]:
+            better, basis = fl["bypass_rate"] > sp["bypass_rate"], "bypass_rate"
+        else:
+            better, basis = fl["mean_post_max"] < sp["mean_post_max"], "mean_post_max (bypass tied)"
+        summary["thesis_pass"] = bool(comparable and better and similarity_ok)
+        summary["thesis_basis"] = basis
         if not comparable:
             summary["thesis_undecided"] = (
                 f"not comparable: full_loop scored {fl['n_scored']}/{fl['n']}, "
