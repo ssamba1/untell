@@ -772,6 +772,27 @@ _FRONTABLE_LEADS = frozenset(
 # anything below this is a stranded opener rather than a sentence.
 _MIN_SPLIT_SIDE = 4
 
+
+def _content_word_count(words: list[str]) -> int:
+    """Words in a would-be sentence, not counting a discourse marker this rewriter prepended.
+
+    `_MIN_SPLIT_SIDE` exists to stop a fronted adverbial becoming a sentence, and a marker added by
+    `_vary_openers` is not content — it inflates the count by exactly the amount needed to defeat
+    the rule. FOUND in a corpus sweep, as the one `stub_sentence` on RAID that was not the known
+    truncated-source artefact:
+
+        In this paper, we present a new method...           -> refused, "In this paper" is 3 words
+        Put simply, in this paper, we present a new method  -> "Put simply, in this paper."
+
+    Three content words either way. The battery already strips these before judging a fragment
+    (`_strip_our_opener`); the splitter that produces them was counting them.
+    """
+    text = " ".join(words)
+    marker = _ANY_LEADING_MARKER_RE.match(text)
+    if marker:
+        text = text[marker.end():]
+    return len(text.split())
+
 # Words that open a subordinate clause, so a half ENDING inside one is a fragment. Wider than
 # `_LEADING_SUBORDINATOR_RE`, which governs a different decision (whether two sentences can be
 # merged) and was measured for that; "if" is absent there and is the one that produced this bug.
@@ -988,8 +1009,13 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
             while split_at > 1 and words[split_at - 1].rstrip(",").lower() in _SPLIT_CONJUNCTIONS:
                 split_at -= 1
             # Same minimum-side rule as _split_one: a one- or two-word left half is a stranded
-            # discourse marker, not a sentence.
-            if split_at < _MIN_SPLIT_SIDE or len(words) - split_at < _MIN_SPLIT_SIDE:
+            # discourse marker, not a sentence. Counted in CONTENT words — see `_content_words` —
+            # because a marker `_vary_openers` prepended inflates the count by exactly enough to
+            # get past this rule.
+            if (
+                _content_word_count(words[:split_at]) < _MIN_SPLIT_SIDE
+                or len(words) - split_at < _MIN_SPLIT_SIDE
+            ):
                 out.append(s)
                 continue
             first = " ".join(words[:split_at]).rstrip(",")
@@ -2127,7 +2153,10 @@ def _split_one(s: str) -> list[str] | None:
     # the midpoint, so with a single early comma it happily picks position 1 — and _vary_openers
     # puts one there. "Of course, the model works well ..." split into "Of course." plus the rest,
     # i.e. this pass fragmenting the output of the pass before it.
-    if best < _MIN_SPLIT_SIDE or len(words) - best < _MIN_SPLIT_SIDE:
+    # In CONTENT words: "Put simply, in this paper" is five tokens and three of them are a sentence,
+    # so the raw count cleared this rule and produced "Put simply, in this paper." — the same shape
+    # as the "Of course." case above, one marker further along.
+    if _content_word_count(words[:best]) < _MIN_SPLIT_SIDE or len(words) - best < _MIN_SPLIT_SIDE:
         return None
     first_words = words[:best]
     # A coordinator at the RIGHT edge of the first half is left dangling against the full stop:
