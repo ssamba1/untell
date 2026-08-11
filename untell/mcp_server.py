@@ -66,7 +66,7 @@ def _server():
     from untell.attacks import count_hidden, scrub_hidden
     from untell.rewriter.prompts import STYLE_NAMES
     from untell.scripts.run import untell_text
-    from untell.scripts.score import score_text
+    from untell.scripts.score import score_text, split_detector_errors
     from untell.scripts.sentences import score_sentences
     from untell.scripts.tells import score_tells
     from untell.scripts.verify import verify
@@ -84,7 +84,12 @@ def _server():
         caller could not ask the question they meant to ask.
         """
         bad = _bad_args(tier=(tier, "tier"), threshold=(threshold, "probability"))
-        return bad or score_text(text, tier=tier, threshold=threshold)
+        # Same normalisation the REST surface applies: a failed detector's message travels in
+        # `detector_errors` rather than inside `detectors`, where it makes a map of numbers hold a
+        # string. MEASURED with three detectors broken, this surface returned
+        # {'roberta_openai': None, 'roberta_openai__error': 'broken on purpose', ...} — mixed
+        # float / None / str — because the fix lived in api_server and only /score called it.
+        return bad or split_detector_errors(score_text(text, tier=tier, threshold=threshold))
 
     @server.tool()
     def sentences(text: str, tier: str = "lite", threshold: float = 0.30) -> dict:
@@ -205,7 +210,9 @@ def _server():
                     "(pip install -e '.[full]'). Refusing to silently fall back to a paid rewriter; "
                     "pass rewriter='composite' for the zero-dependency free path."
                 }
-        return untell_text(
+        # `pre` and `post` are score dicts of their own, so they carry the same `name__error`
+        # sidecars — two per response, on the surface a client is most likely to read numerically.
+        return split_detector_errors(untell_text(
             text,
             tier=tier,
             threshold=threshold,
@@ -216,7 +223,7 @@ def _server():
             margin=margin,
             polish=polish,
             voice_sample=voice_sample,
-        )
+        ))
 
     # Put the real style list into the tool's advertised description. Generated, not restated, so
     # it cannot drift out of sync with `--style` the way the hand-written list did.

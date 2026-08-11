@@ -44,7 +44,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from untell._env import load_env
 from untell.rewriter.prompts import STYLE_NAMES
 from untell.scripts.run import untell_text
-from untell.scripts.score import DEFAULT_THRESHOLD, MAX_INPUT_CHARS, score_text
+from untell.scripts.score import (
+    DEFAULT_THRESHOLD,
+    MAX_INPUT_CHARS,
+    score_text,
+    split_detector_errors,
+)
 from untell.scripts.sentences import score_sentences
 from untell.scripts.tells import score_tells
 from untell.scripts.verify import verify
@@ -679,31 +684,14 @@ async def health() -> dict:
 
 
 def _numeric_detectors(result: dict) -> dict:
-    """Move the ``name__error`` sidecars out of ``detectors`` before answering an HTTP client.
+    """Kept as the name the API tests use; the implementation is shared.
 
-    Internally the score result carries a failure message inside the same mapping as the scores —
-    ``{"hc3_roberta": None, "hc3_roberta__error": "..."}`` — and every in-repo consumer knows to
-    filter keys ending in ``__error``. That is a deliberate internal convention with a comment
-    explaining it in `scripts/score.py`.
-
-    It is not a reasonable thing to hand a REST client. The obvious ``max(detectors.values())``
-    raises ``TypeError: '>' not supported between instances of 'str' and 'float'``, and nothing in
-    the response or the schema warns them: the field looks like a map of numbers because every
-    other response it is a map of numbers. The failing detectors are already named in
-    ``failed_detectors``; the messages now travel beside them in ``detector_errors`` instead of
-    inside the scores.
+    It moved to `untell/scripts/score.py` when the same defect turned up on `/humanize`, whose
+    `pre` and `post` are score dicts of their own and were going out with `name__error` strings
+    mixed in among the floats. One definition, three callers — this endpoint, /humanize, and the
+    MCP score tool, which normalised nothing at all.
     """
-    detectors = result.get("detectors")
-    if not isinstance(detectors, dict):
-        return result
-    suffix = "__error"
-    errors = {k[: -len(suffix)]: v for k, v in detectors.items() if k.endswith(suffix)}
-    if not errors:
-        return result
-    cleaned = dict(result)
-    cleaned["detectors"] = {k: v for k, v in detectors.items() if not k.endswith(suffix)}
-    cleaned["detector_errors"] = errors
-    return cleaned
+    return split_detector_errors(result)
 
 
 @app.post("/score", responses=_SCORE_RESPONSES)
@@ -751,7 +739,7 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
         detector_thresholds=body.detector_thresholds,
         voice_sample=body.voice_sample,
     )
-    return _safe(result)
+    return _safe(_numeric_detectors(result))
 
 
 @app.post("/tells", responses=_TELLS_RESPONSES)

@@ -620,3 +620,60 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+DETECTOR_ERROR_SUFFIX = "__error"
+
+# Which nested keys of a result are themselves score dicts. `untell_text` returns two, and they were
+# the ones a network client actually received unnormalised.
+_NESTED_SCORE_KEYS = ("pre", "post")
+
+
+def split_detector_errors(result: dict) -> dict:
+    """Move the ``name__error`` sidecars out of ``detectors``, including nested score dicts.
+
+    Internally a score result carries a failure message inside the same mapping as the scores —
+    ``{"hc3_roberta": None, "hc3_roberta__error": "..."}`` — and every in-repo consumer knows to
+    filter keys ending in ``__error``. That is a deliberate internal convention.
+
+    It is not a reasonable thing to hand a network client. ``max(detectors.values())`` raises
+    ``TypeError: '>' not supported between instances of 'str' and 'float'``, and nothing in the
+    response says so: the field looks like a map of numbers because in every other response it is
+    one.
+
+    This lived in `api_server` and was applied to ``/score`` alone. MEASURED with three detectors
+    broken on purpose:
+
+        /score      detectors all numeric-or-null, detector_errors populated
+        /humanize   post.detectors -> {'perplexity_burstiness': 0.1111, 'roberta_openai': None,
+                    'roberta_openai__error': 'broken on purpose', ...}, detector_errors None
+                    — mixed types float / NoneType / str, and TWO such dicts per response
+
+    So the surface that returns two score dicts was the one that normalised neither, and the MCP
+    server normalised nothing at all. Shared here so all three read one definition.
+    """
+    if not isinstance(result, dict):
+        return result
+    out = result
+    detectors = result.get("detectors")
+    if isinstance(detectors, dict):
+        errors = {
+            k[: -len(DETECTOR_ERROR_SUFFIX)]: v
+            for k, v in detectors.items()
+            if k.endswith(DETECTOR_ERROR_SUFFIX)
+        }
+        if errors:
+            out = dict(result)
+            out["detectors"] = {
+                k: v for k, v in detectors.items() if not k.endswith(DETECTOR_ERROR_SUFFIX)
+            }
+            out["detector_errors"] = errors
+    for key in _NESTED_SCORE_KEYS:
+        nested = out.get(key)
+        if isinstance(nested, dict):
+            cleaned = split_detector_errors(nested)
+            if cleaned is not nested:
+                if out is result:
+                    out = dict(result)
+                out[key] = cleaned
+    return out
