@@ -212,7 +212,12 @@ _SYN: dict[str, list[str]] = {
     # to move exactly where it was. Same shape as the four synonyms that were themselves ai_vocab,
     # in a dimension the tell catalogue does not cover — MEASURED, AI text carries 36% more
     # nominalisations per 100 words than human text answering the same prompt (2.575 vs 1.896).
-    "effectiveness": ["success", "value", "how well it works"],
+    # No "how well it works". `effectiveness` is a noun and this table substitutes word-for-word,
+    # so a clause dropped into a noun slot produces "the how well it works of our benchmark" —
+    # MEASURED in real rewriter output, from "the effectiveness of our benchmark". The rule is the
+    # same one the `testament` entry records above: a substitute has to be able to stand where the
+    # headword stood. A noun needs a noun.
+    "effectiveness": ["success", "value", "impact"],
     # Register nominalisations, substituted for plain non-nominal words. Deliberately NOT
     # "robustness", "contribution", "development", "importance" or "complexity": in a paper each of
     # those carries meaning — a contribution IS the novel claim, robustness IS a measured property —
@@ -264,7 +269,10 @@ _SYN: dict[str, list[str]] = {
     "additionally": ["also", "plus", "on top of that"],
     "consequently": ["so", "as a result", "because of that"],
     "therefore": ["so", "that is why", "which is why"],
-    "accordingly": ["so", "in line with that", "to match"],
+    # "to match" is a purpose phrase, not a sentence adverb, so it only reads correctly where
+    # "accordingly" was already sentence-final ("...revised the schedule accordingly"). Mid-sentence
+    # it produces "the team to match revised the schedule". Same slot rule as `effectiveness`.
+    "accordingly": ["so", "in line with that"],
     "hence": ["so", "for that reason", "that is why"],
     "subsequently": ["later", "next", "afterward"],
     "nevertheless": ["still", "even so", "yet"],

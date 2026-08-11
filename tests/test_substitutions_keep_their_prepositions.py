@@ -94,3 +94,54 @@ def test_no_single_word_substitute_strands_a_preposition() -> None:
     assert not offenders, (
         f"these swap a 'to' noun for an 'of' noun and strand the preposition: {offenders}"
     )
+
+
+def test_no_substitute_is_a_clause_where_the_headword_was_a_noun() -> None:
+    """A substitute has to be able to stand where the headword stood.
+
+    `"effectiveness": [..., "how well it works"]` shipped, and this table substitutes word for word,
+    so the clause landed in a noun slot: MEASURED in real rewriter output, "the effectiveness of our
+    benchmark" became "the how well it works of our benchmark". `"accordingly": [..., "to match"]`
+    is the same shape — a purpose phrase where a sentence adverb was, giving "the team to match
+    revised the schedule" anywhere the original was not sentence-final.
+
+    Both are the generalisation of the `testament` preposition case: the table matches a string and
+    knows nothing about the slot it is filling.
+    """
+    from untell.attacks.word_importance import _SYN
+
+    # A multi-word substitute opening with any of these is usually a clause or subordinate phrase
+    # rather than the noun/adjective/adverb the headword is. "Usually" is doing real work: this is
+    # a first-word proxy for a syntactic category, so it needs an exception list rather than
+    # pretending to be exact.
+    CLAUSE_HEADS = {"how", "what", "why", "when", "where", "it", "they", "is", "are", "to"}
+    # "moreover" is a sentence adverb and "what is more" is an adverbial phrase — the same slot, and
+    # idiomatic in every position "moreover" appears. Flagged by the proxy, correct in fact.
+    ALLOWED = {("moreover", "what is more")}
+    offenders = [
+        (head, sub)
+        for head, subs in _SYN.items()
+        for sub in subs
+        if len(sub.split()) > 1
+        and sub.split()[0].lower() in CLAUSE_HEADS
+        and (head, sub) not in ALLOWED
+    ]
+    assert not offenders, (
+        f"clause-shaped substitutes that cannot fill their headword's slot: {offenders}"
+    )
+
+
+@pytest.mark.parametrize(
+    "text,broken",
+    [
+        ("We demonstrate the effectiveness of our benchmark across datasets.", "the how well it works"),
+        ("The effectiveness of the treatment was measured over twelve weeks.", "how well it works of"),
+        ("The team revised the schedule accordingly after the review.", " the to match "),
+    ],
+)
+def test_the_slot_break_does_not_appear_in_output(text: str, broken: str) -> None:
+    import random
+
+    for seed in range(12):
+        random.seed(seed)
+        assert broken not in _rewrite(text).lower(), f"seed {seed}: {_rewrite(text)!r}"
