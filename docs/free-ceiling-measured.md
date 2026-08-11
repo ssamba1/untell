@@ -5058,3 +5058,89 @@ Worth keeping: **"is it protected?" is a question about the pipeline, not about 
 protection existed, was well written, had its own tests, and covered one of four backends. Nothing
 in a per-function view of the code shows that — it took running the same document through every
 rewriter in the registry, which is four lines of probe.
+
+## Result 96
+
+**Four probes that found nothing, which is worth the same paragraph as one that did.**
+
+After Result 95, the natural worry is that layout was one instance of a general problem: protections
+attached to a backend rather than to the pipeline. Checked, by measurement rather than by reading
+the call sites:
+
+- **`lock()` / `restore()`** — citations, numbers, entities. Applied in `run.py`, so uniform. Ran a
+  LaTeX paragraph through all four CPU rewriters at four seeds each: `\citet{smith2023}`,
+  `\citep{jones2022}`, `\cite{li2024mage}`, `12.4`, `$\alpha = 0.01$`, `3 seeds`, `NASA` and
+  `Dr. Chen` survived every one.
+- **Inline structures in prose** — a URL, a code span, a file path, an email address, a version
+  string, a CLI flag and a markdown link, each embedded in an AI-sounding sentence. All seven intact
+  across five seeds.
+- **CLI file handling** — a BOM is stripped, CRLF is read, an empty file answers `{"error": "empty
+  input"}`, accented UTF-8 works, and a binary file gets the best error message in the repo:
+  *"decoded text contains NUL bytes — this is a binary file, or text in an encoding this reader
+  could not identify."*
+- **Effort spread on a long document** — 2761 words, 14 paragraphs. All 14 changed, 7/7 in each
+  half. No early-concentration bug, which is the failure a document-wide substitution budget would
+  produce.
+
+**And one measured non-fix.** The loop sometimes leaves text with MORE tells than it started with —
+4/30 on HC3, 1/30 on RAID. That looks like a defect until the trade is measured:
+
+```
+raid  # 9   tells +1.84   score -0.0859
+hc3   # 0   tells +1.32   score -0.0920
+hc3   #24   tells +1.00   score -0.1691
+hc3   #21   tells +0.10   score -0.1939
+hc3   # 7   tells +0.02   score -0.0080   <- inside the noise band, a wash
+```
+
+Four of the five bought a substantial score improvement with a small tell increase, which is the
+trade the loop exists to make: the detector score is the objective and tells are the tie-break. The
+mean movement is −0.643 tells/100w on HC3 and −2.233 on RAID. Not changed.
+
+Worth keeping: **a probe that finds nothing has told you where not to look next.** Four surfaces are
+now known-clean by measurement rather than by assumption, and the fifth — the one place a rewriter
+touched something it should not — was found in the same afternoon precisely because the search had
+somewhere specific left to go.
+
+## Result 97
+
+**Found in the one output path I had not been reading.**
+
+Every reading so far has gone through the library API. Checking the CLI's `--json` — the path a
+caller actually pipes text out of — surfaced this in the first paragraph:
+
+> *It **a lot improves** overall efficiency and accuracy across the corpus.*
+
+`significantly` → `a lot`. "a lot" is a noun phrase. It can follow what it modifies — *"improved a
+lot"* is right — and premodify nothing but a comparative.
+
+MEASURED across 240 HC3 and RAID texts: **67 of the 68** `significantly` occurrences are followed by
+a word. So the broken slot is not an edge case, it is the position the word almost always occupies,
+and one substitute in three was wrong there.
+
+The exception is what keeps this from being a blanket rule, and it is the same shape as Result 85's
+`overall`:
+
+| slot | example | `a lot` |
+|---|---|---|
+| before a verb | `significantly improves` | broken |
+| before a plain adjective | `significantly difficult` | broken |
+| **before a comparative** | `significantly longer`, `significantly better` | **correct** |
+| clause-final | `improved significantly,` | **correct** |
+
+A noun-phrase adverbial premodifies a comparative and nothing else. That is a rule about the
+following *word* — `-er`, or one of the suppletive forms — rather than about its part of speech, so
+it is decidable without a parser on the zero-dependency tier.
+
+Filtered rather than declined: `sharply` and `greatly` are correct before a verb, and leaving
+`significantly` in place would leave an AI-vocabulary word the table exists to flatten.
+
+**The category is closed and pinned.** Scanning `_SYN` for every `-ly` headword offering a
+noun-phrase substitute — multi-word, opening with a determiner or quantifier — returns
+`significantly` and nothing else. A standing test asserts that stays true, the same shape as the
+conjunction-opener check in Result 91.
+
+Worth keeping: **each output path is its own reading.** The library API, the CLI report, the `--json`
+field and the REST response are four renderings of the same run, and the defect had been in every
+one of them for as long as the table has existed. It surfaced when I looked at a different one,
+which is the only variable that changed.
