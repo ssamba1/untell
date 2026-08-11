@@ -6606,3 +6606,45 @@ real firing was two loops later, on code added by the person who wrote the guard
 guard could not have known was good. That is not the guard being wrong. It is the only design that
 could have caught the original defect, behaving identically on the case where the answer is "fine,
 write it down".
+
+## Result 126
+
+**Two endpoints returned a `warning` field the OpenAPI spec did not mention, and the test for that
+only looked one way.**
+
+Result 125 put the pinned-max caveat on the result dict specifically so a machine client could read
+it. Checking that it actually arrives: it does, and it is undocumented. Diffing every endpoint's real
+response against its declared schema:
+
+```
+/health      5 fields   undocumented: []
+/score      11 fields   undocumented: []
+/humanize   15 fields   undocumented: ['warning']
+/tells       9 fields   undocumented: ['warning']
+/sentences   5 fields   undocumented: []
+/verify      6 fields   undocumented: []
+```
+
+On `/humanize` that is the field carrying *"the hardest detector is pinned, so the before/after P(AI)
+comparison cannot move"* — the only channel a machine client has for it, and absent from the spec a
+generated client is built from. On `/tells` it is the one that says the counts are not evidence
+because the text is in a script the catalogue cannot read.
+
+**The suite already had a test for schema drift, and it could not see this.**
+`test_no_documented_field_is_stale` compares schema → payload: a property the endpoint no longer
+returns. Nothing compared payload → schema. `warning` even appears in that test's `conditional`
+exclusion set, which is correct for the direction it checks and is exactly why the other direction
+went unnoticed — the field was named in the test file as a known-conditional, so it read as handled.
+
+Both schemas now declare `warning` (and `/humanize` declares `voice_warning`), and the missing
+direction is a test. Verified by removing the declaration again and watching it fail on `/tells`.
+
+This is the second one-directional guard found in three loops. The audit allowlist in Result 123 was
+built to fail on additions and on removals from the start, because Result 122 had just made the cost
+of a half-check obvious. This one predates that and had the same hole.
+
+Worth keeping: **naming something in a test does not mean the test checks it.** `warning` was in
+`conditional = {"warning", "failed_detectors", "detector_errors"}` — written deliberately, with a
+comment about a previous exclusion that had been guessed rather than measured. It was still the field
+that slipped through, because an exclusion list makes a field *look* considered from either side
+while only one side is actually running.
