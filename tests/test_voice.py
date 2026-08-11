@@ -81,8 +81,11 @@ class TestDistance:
         Built by holding the matchable features fixed — the two texts are the same sentences —
         while changing an advisory one, so any movement in the distance is the bug.
         """
-        a = "I ran the tests. I fixed the bug. I shipped it."
-        b = "We ran the tests. We fixed the bug. We shipped it."
+        # The pronouns have to be the SAME LENGTH. The original pair was "I"/"We", which changes
+        # mean_word_len as well — so it did not hold the matchable features fixed, which is what
+        # this test says it does. It only passed because mean_word_len was itself unscored.
+        a = "us ran the tests. us fixed the bug. us shipped it."
+        b = "he ran the tests. he fixed the bug. he shipped it."
         assert voice_gaps(a, b)["first_person_per_100w"] != 0  # the advisory feature did change
         assert voice_distance(a, b) == 0.0  # ...and the scored distance did not move
 

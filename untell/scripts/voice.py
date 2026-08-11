@@ -72,7 +72,14 @@ logger = logging.getLogger(__name__)
 
 _WORD = re.compile(r"[A-Za-z0-9']+")
 _CONTRACTION = re.compile(r"\b\w+['’](?:s|t|re|ve|ll|d|m)\b", re.IGNORECASE)
-_FIRST_PERSON = re.compile(r"\b(?:I|we|my|our|me|us)\b")
+# IGNORECASE, which the line above already has and this one was missing. Without it "We", "My",
+# "Our", "Me" and "Us" go uncounted — and sentence-initial is exactly where a first-person pronoun
+# appears most, especially in the register this feature is meant to distinguish ("We propose…",
+# "My experience was…"). MEASURED across 120 documents per corpus: 13% of first-person pronouns
+# missed on HC3 and 50% on RAID, whose abstracts open sentence after sentence with "We".
+# "I" is unaffected, being capitalised either way, which is what let this survive — the pronoun
+# most people check with is the one case cannot break.
+_FIRST_PERSON = re.compile(r"\b(?:I|we|my|our|me|us)\b", re.IGNORECASE)
 
 # Feature spread across 150 real human HC3 texts. One unit = one typical between-author gap.
 _SCALE = {
@@ -87,7 +94,30 @@ _SCALE = {
 # The features a free rewriter can actually move (see the module docstring). Matching is scored on
 # these alone; the others are reported but carry zero weight, because scoring a feature nothing can
 # change would let a candidate win or lose on noise.
-MATCHABLE = ("sent_len", "burst", "comma_per_100w")
+#
+# `mean_word_len` was excluded on that rule and is now included, because it fails the rule's own
+# premise. A feature nothing can change contributes the SAME value to every candidate's distance and
+# therefore cannot move the ranking at all. MEASURED over 30 documents with four draws each, adding
+# it changes which candidate wins in 6 of them — so the candidates do differ on it, and the
+# rewriter's synonym pass is what moves them ("utilize" -> "use" shortens words directly). Its
+# movement is 0.103 between-author units per rewrite against 0.243-0.331 for the three above: the
+# weakest of the four, not zero.
+#
+# What it buys is most of the signal. Discriminating same-author text (halves of one HC3 answer)
+# from different-register text (an HC3 answer against a RAID abstract), by AUROC:
+#
+#     sent_len + burst + comma_per_100w      0.554   <- chance
+#     mean_word_len alone                    0.981
+#     the four together                      0.880
+#
+# The three shipped features were not telling voices apart at all. Adding contractions instead was
+# tried first and makes it worse (0.530): the obvious candidate is not the one that works.
+#
+# `first_person_per_100w` stays out and the rule stays right for it — 0.001 units of movement, which
+# really is nothing, and changing how often an author says "I" is a content edit rather than a style
+# one. Voice remains a tie-break applied after tells, so none of this can displace the primary
+# objective; on the 6 documents whose pick changed, the new pick also carried one fewer tell.
+MATCHABLE = ("sent_len", "burst", "comma_per_100w", "mean_word_len")
 
 # Calibrated, not guessed — see the table in the module docstring. Below 150 words the
 # same-author and cross-author distance distributions overlap heavily, because sentence-length
