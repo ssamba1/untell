@@ -128,3 +128,54 @@ def test_bullet_count_is_not_silently_shrinking() -> None:
     text = CHANGELOG.read_text(encoding="utf-8")
     bullets = re.findall(r"^- ", text, flags=re.MULTILINE)
     assert len(bullets) >= 70, f"only {len(bullets)} entries — did a rewrite lose some?"
+
+
+def test_the_shipped_version_appears_in_the_changelog() -> None:
+    """A user who installs 0.3.0 and opens CHANGELOG.md must find 0.3.0 in it.
+
+    MEASURED at the time of writing: `pyproject`, `untell.__version__`, `plugin.json`,
+    `marketplace.json` and `CITATION.cff` all said 0.3.0, and the changelog's newest heading was
+    `[0.1.0]`. Neither 0.2.0 nor 0.3.0 appeared anywhere in the file, so two releases shipped with
+    their notes still sitting under `[Unreleased]` — 91 bullets of them.
+
+    The existing tests in this file all check the SHAPE of the changelog: standard section names,
+    no duplicate headings, no orphaned entries. Every one of them passed. Nothing tied the file to
+    the version actually being shipped, which is the thing a reader is checking it against.
+    """
+    import pathlib
+    import re
+    import tomllib
+
+    version = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"][
+        "version"
+    ]
+    text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+    headings = re.findall(r"^## \[([^\]]+)\]", text, re.M)
+    assert version in headings, (
+        f"version {version} ships but has no changelog heading; headings are {headings}. "
+        f"Either release the notes under [Unreleased] as {version}, or the version was bumped "
+        f"without recording what changed."
+    )
+
+
+def test_unreleased_is_not_the_only_place_work_accumulates() -> None:
+    """`[Unreleased]` growing without bound is how the above happens.
+
+    Not a size limit for its own sake — a large Unreleased section is normal mid-cycle. It is a
+    limit relative to the released history: if more has accumulated unreleased than every release
+    combined, the file has stopped describing what people are running.
+    """
+    import pathlib
+    import re
+
+    text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+    parts = re.split(r"^## \[", text, flags=re.M)
+    unreleased = next((p for p in parts if p.startswith("Unreleased]")), "")
+    released = [p for p in parts if p and not p.startswith("Unreleased]") and "]" in p[:20]]
+    n_unreleased = unreleased.count("\n- ")
+    n_released = sum(p.count("\n- ") for p in released)
+    assert n_released, "no released section has any entries"
+    assert n_unreleased <= n_released * 3, (
+        f"[Unreleased] holds {n_unreleased} entries against {n_released} across every release. "
+        f"Cut a release, or the changelog describes a version nobody has."
+    )

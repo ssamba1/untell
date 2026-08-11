@@ -5,6 +5,19 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Released the accumulated notes as 0.3.0.** 0.2.0 and 0.3.0 both shipped without a
+  changelog heading: the entries stayed under `[Unreleased]` while `pyproject`,
+  `untell.__version__`, `plugin.json`, `marketplace.json` and `CITATION.cff` all moved to
+  0.3.0, so anyone who installed 0.3.0 and opened this file was told the latest release was
+  0.1.0. They are recorded under 0.3.0 rather than split between the two, because the
+  boundary is not recoverable from the file and inventing one would be worse than saying so.
+  `tests/test_changelog.py` now ties the newest heading to the shipped version — the existing
+  tests there checked the file's shape (standard sections, no duplicate headings, no orphaned
+  entries) and all of them passed throughout.
+
+## [0.3.0]
+
 ### Added
 - **Described OpenAPI responses for all seven endpoints.** Every handler returns a bare `dict`, so
   FastAPI had generated `{"type": "object", "additionalProperties": true}` for each — the docs page
