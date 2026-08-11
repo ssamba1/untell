@@ -113,6 +113,28 @@ def humanness(text: str, tier: str = "full") -> float:
         lite gives mean 62.8 and calls all six "mostly human"; full gives mean 43.4 and calls all
         six "mixed". Always report the tier next to the score — the CLI does.
 
+        **Nor is it comparable across LENGTHS**, which is the same caveat one axis over. MEASURED
+        on 24 corpus texts of 220+ words, truncated to a series of windows and compared against
+        their own 220-word score:
+
+            window            60w    100w   140w   180w
+            mean |delta|      8.9     7.3    5.1    2.5
+            max  |delta|     21.1    23.4   22.8    9.4
+
+        **15 of the 24 change BAND** somewhere across that range, and not only toward the answer
+        more evidence would give: one human text reads "human" at 100 words and "mixed" at 220
+        (79.7 -> 56.3), another goes "mixed" at 60 and "mostly human" at 220. So two documents of
+        different lengths cannot be ranked against each other by this number, and the same document
+        cannot be spot-checked on an excerpt.
+
+        **50.0 is returned by abstention AND reachable by computation.** Empty text, text under
+        ``_MIN_WORDS_FOR_SIGNAL`` and unreadable scripts all return a literal 50.0, and so does a
+        text whose three terms happen to sum there — MEASURED on a 100-word HC3 answer with the
+        detector ensemble at P(AI) = 0.9992, near-zero tells and healthy burstiness, returned as a
+        dead tie. A caller holding the bare float cannot distinguish the two. Nothing shipped
+        branches on ``== 50.0`` and ``tests/test_the_abstention_value_is_also_a_real_score.py``
+        keeps it that way; the CLI reads the band, which is an honest "mixed" either way.
+
         The bands are the ones :func:`classification` actually implements, recalibrated
         2026-08-07 against HC3 and RAID (see that function for the measurement):
         - ≥ 75: human
