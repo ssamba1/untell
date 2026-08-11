@@ -6424,3 +6424,65 @@ Worth keeping: **the term that carries half the weight was not the term that mov
 of length findings all pointed at the detector by association — it is the strongest signal, so it
 must be the one doing this — and it turned out to be perfectly flat. Decomposition took one probe;
 the assumption would have survived indefinitely without it.
+
+## Result 122
+
+**The fix was already written. It was applied to one rewriter and not the one next to it.**
+
+Result 121 noted in passing that the detector ensemble sits at P(AI) = 1.000 on every AI window.
+Following that up: over 80 corpus texts, the ensemble max reaches ≥ 0.999 on **100% of HC3 AI text**
+and 30% of RAID's, against 0% of human text in both. `roberta_openai` returns 0.9992 on nearly every
+HC3 sentence.
+
+A saturated maximum is a flat objective. Five seeded candidate rewrites per text, six texts:
+
+```
+distinct values of MAX across candidates    1 on 4 of 6 texts   (spread ≤ 0.0006)
+distinct values of MEAN across candidates   1 on 1 of 6 texts   (spread up to 0.2195)
+```
+
+The mean carries information exactly where the max carries none. That is not a new discovery here —
+`composite._selection_key` was written for it, with its own measurement, and ranks candidates by
+`(max, mean)`.
+
+**`targeted` was still comparing bare floats.** Both of its accept tests read `after < before` on
+`max` alone. Measured over 8 HC3 answers, per sentence:
+
+```
+max improved (adopted)        4
+max worse (rejected)          0
+max TIED, mean improved      15   <- every one discarded
+max TIED, mean not improved   0
+```
+
+**Fifteen of nineteen real improvements thrown away, and not one tie that was neutral or worse.**
+Mean 0.6839 → 0.5821, 0.7663 → 0.6978, 0.7504 → 0.6792 — all rejected because 0.9992 is not less
+than 0.9992.
+
+End to end on the same 8 documents, seeded identically, with the max-only ordering reproduced
+faithfully rather than described:
+
+```
+BEFORE (max only)    3/8 texts changed
+AFTER  (max, mean)   7/8 texts changed, every one lowering the ensemble mean
+                     similarity min 0.966, meaning gates 7/7
+```
+
+The deltas are not uniformly larger — one document improved by 0.0314 under `max` alone and by less
+afterwards, because adopting a different sentence changes what the rest of the pass sees. The claim
+is *more documents improved*, not *every document improved more*.
+
+The selector moved to `untell/rewriter/base.py` rather than being copied. Two selectors ordering the
+same candidates differently is a failure this repo has now found three times — the vocabulary drift
+in Result 115, the pattern drift in Result 116, and this.
+
+**And the guard for it was wrong about the code it guards.** My `min_score` test asserted that a
+document with no targetable sentence comes back unchanged. That is behaviour this module
+deliberately stopped having: `targetable == 0` falls back to a whole-text rewrite, documented at the
+call site with the measurement that motivated it. The test was written against what the gate *sounds
+like* rather than what the module does, and only failing made me read the fallback.
+
+Worth keeping: **a fix with a measurement attached is a fix for a class, and the class needs
+grepping.** `_selection_key` carried a careful docstring explaining why `max` alone disables a
+rewriter on the input it exists for. The same three-line comparison sat two files away, untouched,
+for as long as the fix has existed.
