@@ -5673,3 +5673,43 @@ Worth keeping: **check what two lines say together, not what each says alone.** 
 defect found in this session — the 61%/2.9% diff, the mode label, this — survived because each
 component was individually defensible. Nothing in a per-function review reads two lines at once; only
 running the thing and looking at the output does.
+
+## Result 107
+
+**Reading every report in turn, and the two that reconciled.**
+
+Result 106 named the method: check what two lines say *together*. Applied to each reporting surface:
+
+- **`score`** — coherent. `max 0.6091` against `verdict_threshold 0.45` gives `flagged: true`, and
+  the two thresholds it carries (0.30 loop, 0.45 verdict) are both present with a warning saying
+  they answer different questions. `detector_modes: stdlib` matches the caveat about that path.
+- **`tells`** — coherent, and reconciles three ways: `AI-tells: 2` equals `by evidence: moderate 1,
+  weak 1` equals `by category: formulaic_transition 1, ai_vocab 1`.
+- **`verify`** — did not.
+
+The verify table prints:
+
+```
+  local:perplexity_burstiness AI=0.609  [FAIL]
+  local:max (lite)            AI=0.609  [FAIL]
+
+FAILS — 0/1 checkers passed
+```
+
+Two rows, denominator of one. And in the JSON, `configured` lists **two** names while
+`n_configured` says **one** — two fields describing the same thing, disagreeing.
+
+The count is right, and deliberately so. `local:max` is an aggregate of the local detectors rather
+than an independent checker, and the comment beside its exclusion records the bug that motivated it:
+*"two of five passing were reported as 2/5 checkers passed, and a run with one local detector read
+as 1/2"*. What a reader had no way to tell is which of the two rows is not a checker.
+
+Marked now, and asserted as an invariant rather than as a string: **rows shown, minus rows marked as
+aggregates, equals the number the summary divides by.** `passes_all` is untouched and still computed
+over every row — the max is below threshold exactly when every local detector is, so including it
+cannot change the verdict.
+
+Worth keeping: **two of three reports reconciled, and finding that out cost one command each.** The
+value of reading them all is not the hit rate; it is that "this report is fine" stops being an
+assumption. `tells` reconciling three different ways is now a fact rather than a hope, and that is
+the same kind of result as the defect.
