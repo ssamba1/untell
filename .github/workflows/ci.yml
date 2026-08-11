@@ -197,3 +197,41 @@ jobs:
           if ($json.tier -ne "lite") { throw "expected lite tier (zero-dep), got '$($json.tier)'" }
           if ($null -eq $json.max)   { throw "score output has no 'max' field" }
           Write-Host "OK: zero-dep lite score ran from $($PWD.Path) - tier=$($json.tier) max=$($json.max)"
+
+  docker:
+    name: docker image builds and serves
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Nothing built this image, and a shipped Dockerfile that cannot build is the one kind of
+      # breakage no unit test reaches. It shipped with `pip install /tmp/untell-*.whl[server]`,
+      # where `[server]` is a shell glob character class rather than pip's extras syntax — the
+      # pattern never matches a real wheel, the literal string reaches pip, and the build fails
+      # with "untell-*.whl is not a valid wheel filename". Both installers have had a CI job since
+      # they were written; this artifact did not.
+      - name: Build the image
+        run: docker build -t untell:ci .
+
+      # Building proves the recipe resolves. Starting it proves the entrypoint and the [server]
+      # extra actually came through, which is what the broken line was trying to install.
+      - name: The server starts and answers
+        run: |
+          docker run -d --name untell-ci -p 8000:8000 untell:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/openapi.json >/dev/null 2>&1; then
+              echo "server answered after ${i}s"; break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "server did not answer within 30s; logs:" >&2
+              docker logs untell-ci >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          curl -fsS -X POST http://127.0.0.1:8000/tells             -H 'content-type: application/json'             -d '{"text":"Moreover, the framework leverages robust methodologies at scale."}'             | tee /tmp/tells.json
+          python -c "import json,sys; d=json.load(open('/tmp/tells.json')); assert d['tells']>0, d; print('tells:',d['tells'])"
+
+      - name: Stop the container
+        if: always()
+        run: docker rm -f untell-ci || true
