@@ -609,6 +609,12 @@ _HUMANIZE_RESPONSES = _obj(
             **_STR,
             "description": "present when a voice sample was supplied but could not be used",
         },
+        "rewriter_warning": {
+            **_STR,
+            "description": "present when the requested rewriter was not the one that ran — today "
+                           "that means no hosted or local-policy backend was configured and the "
+                           "free 'composite' path ran instead",
+        },
     },
     required=["final", "changed", "pre", "post", "flagged"],
 )

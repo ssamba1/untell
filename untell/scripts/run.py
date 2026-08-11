@@ -94,6 +94,14 @@ _MIN_VOICE_SAMPLE_WORDS = 20
 _WARNED_VOICE_SAMPLE = False
 _WARNED_FREE_FALLBACK = False
 
+# One string, two readers — the stderr line and the result field. Two copies of a caveat drifting
+# apart is a defect this repo has found repeatedly.
+FREE_FALLBACK_WARNING = (
+    "no hosted or local-policy rewriter is configured, so the free 'composite' path ran "
+    "instead. Pass rewriter='composite' to make that explicit, or set ANTHROPIC_API_KEY / "
+    "OPENAI_API_KEY / UNTELL_POLICY_DIR to use a configured one."
+)
+
 
 def _warn_free_rewriter_fallback() -> None:
     """Say once that no configured rewriter was found and the free path ran instead.
@@ -106,11 +114,7 @@ def _warn_free_rewriter_fallback() -> None:
     if _WARNED_FREE_FALLBACK:
         return
     _WARNED_FREE_FALLBACK = True
-    logging.getLogger(__name__).warning(
-        "no hosted or local-policy rewriter is configured, so the free 'composite' path ran "
-        "instead. Pass rewriter='composite' to make that explicit, or set ANTHROPIC_API_KEY / "
-        "OPENAI_API_KEY / UNTELL_POLICY_DIR to use a configured one.",
-    )
+    logging.getLogger(__name__).warning(FREE_FALLBACK_WARNING)
 
 
 def _warn_voice_sample_too_short(words: int) -> None:
@@ -317,6 +321,7 @@ def untell_text(
                     "`untell --check` for the installed list) or install its extra",
                     "final": text,
                 }
+    rewriter_warning: str | None = None
     rw = rewriter if rewriter is not None else get_rewriter()
     if rw is None:
         # Fall back to the free path rather than refusing. `get_rewriter()` answers "is a HOSTED or
@@ -336,11 +341,15 @@ def untell_text(
         # identical CLI invocation worked". The library entry point is the one a Python user reaches
         # for first, and it was the only one left refusing.
         #
-        # Said once, on stderr, because a caller with a key who expected the hosted rewriter should
-        # know the free path ran instead — silently substituting a weaker backend is the failure
-        # this repo keeps finding on other surfaces.
+        # On stderr once, AND on the result every time. The voice-sample block twelve lines below
+        # already made this argument and acted on it: "REST and MCP take the sample as TEXT and said
+        # nothing, so the two network surfaces silently used a sample the CLI would have flagged."
+        # The same sentence is true here and this branch kept only the stderr half — so a caller who
+        # set a key, expected the hosted rewriter and got `composite` learned about it once per
+        # process, in a log they may not be reading, on a surface that returns a dict.
         rw = get_rewriter("composite")
         _warn_free_rewriter_fallback()
+        rewriter_warning = FREE_FALLBACK_WARNING
 
     # A voice sample below the documented minimum yields a profile built on too few sentences to
     # mean anything, and the tie-break then runs on noise. `untell humanize --voice-sample` warns
@@ -721,6 +730,9 @@ def untell_text(
 
     return {
         **({"voice_warning": voice_warning} if voice_warning else {}),
+        # Which BACKEND ran, kept separate from `warning`, which is about how to read the numbers.
+        # Same shape as `voice_warning` directly above, for the same reason it exists.
+        **({"rewriter_warning": rewriter_warning} if rewriter_warning else {}),
         "final": final,
         "iterations": iters,
         # Draws attempted, INCLUDING candidates the sentinel/meaning/score guards threw away.
