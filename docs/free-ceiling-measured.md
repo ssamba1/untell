@@ -6767,3 +6767,47 @@ Worth keeping: **a comment that names a failure is not a fix for it, and the two
 function.** Both blocks were written by someone who had the principle exactly right. What separated
 them was that one had a `voice_warning` key already in the return dict and the other had a `logger`
 in scope.
+
+## Result 130
+
+**Checking a claim I made without checking it, and the check found something else.**
+
+Result 129 asserted that nine of the ten warn-once flags are fine because "`score_text` already
+reports that load failure through `scored`, `detector_modes` and `failed_detectors`". That was
+reasoning, not measurement, and it went into a committed result. So: break three detectors on
+purpose and read what comes out.
+
+**The first attempt measured nothing.** Patching `untell.detectors.base.load_detectors` left both
+arms byte-identical — `score.py` imports the name into its own namespace, so the seam was one module
+over. The premise line existed only because the probe printed the detector values, and they were
+unchanged. A probe that cannot fail is worth nothing, and this one nearly shipped as evidence.
+
+Patched at the right seam, the claim holds:
+
+```
+3 of 4 broken   failed_detectors ['roberta_openai','hc3_roberta','fast_detectgpt'], surviving score used
+4 of 4 broken   scored False, max 0.0, flagged False, warning names every failure
+```
+
+**But the same probe showed the failure messages riding inside the scores on two surfaces.**
+`api_server._numeric_detectors` exists precisely to stop that, and its docstring names the failure:
+`max(detectors.values())` raises `TypeError: '>' not supported between instances of 'str' and
+'float'`, and the field looks like a map of numbers because in every other response it is one. It was
+called on `/score` and nowhere else:
+
+```
+/score      detectors numeric-or-null, detector_errors populated
+/humanize   post.detectors -> {'perplexity_burstiness': 0.1111, 'roberta_openai': None,
+            'roberta_openai__error': 'broken on purpose', ...}   detector_errors None
+            mixed float / NoneType / str, and TWO such dicts per response (pre and post)
+MCP         no normalisation at all, on either tool
+```
+
+The endpoint that returns *two* score dicts normalised neither, and the surface with no HTTP layer in
+front of it had nothing. The helper moved to `untell/scripts/score.py`, recurses into `pre` and
+`post`, and all three surfaces read it. The library shape is deliberately unchanged: the sidecars are
+the internal convention and in-repo consumers filter on the suffix.
+
+Worth keeping: **verifying an old claim is worth doing even when the claim turns out to be true.**
+The answer here was "yes, Result 129 was right" — and the probe built to confirm it is what surfaced
+a live defect two surfaces wide, which no amount of re-reading the assertion would have.
