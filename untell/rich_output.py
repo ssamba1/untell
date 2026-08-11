@@ -21,29 +21,43 @@ except Exception:
 
 
 def _diff_words(a: str, b: str) -> str:
-    """Simple word-level diff of two strings. Returns rich-markup string or plain."""
+    """Word-level diff of two strings. Returns rich-markup string or plain.
+
+    Uses `difflib` rather than comparing word *i* of one against word *i* of the other. The
+    positional version was correct only when the rewrite preserved word count exactly, because a
+    single insertion shifts every following word out of alignment and paints it as changed.
+    MEASURED on a seven-word sentence:
+
+        one word inserted at the front   7 of 8 words marked changed
+        one word inserted mid-sentence   6 of 8
+        one word deleted                 5 of 6
+        one word substituted             1 of 7      <- the only shape it got right
+
+    This is the report a user reads to see what the loop did, and the loop inserts openers, deletes
+    transitions and splits sentences on almost every run — so the common case was the broken one,
+    and the tool was claiming to have rewritten a paragraph it had barely touched. That is the
+    opposite of what it exists to demonstrate.
+
+    `SequenceMatcher` is stdlib, so this costs no dependency on the zero-dependency tier.
+    """
     if not _RICH:
         return b
+    import difflib
+
     a_words = a.split()
     b_words = b.split()
     result = _Text()
-    # Find added/changed words
-    b_idx = 0
-    for w in a_words:
-        if b_idx < len(b_words) and w == b_words[b_idx]:
-            result.append(w + " ")
-            b_idx += 1
-        else:
-            # Word was removed or changed
-            if b_idx < len(b_words):
-                result.append(b_words[b_idx] + " ", style="bold green")
-                b_idx += 1
-            else:
-                result.append(" ", style="dim")
-    # Any remaining new words
-    while b_idx < len(b_words):
-        result.append(b_words[b_idx] + " ", style="bold green")
-        b_idx += 1
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a_words, b_words).get_opcodes():
+        if tag == "equal":
+            result.append(" ".join(b_words[j1:j2]) + " ")
+        elif tag in ("replace", "insert"):
+            result.append(" ".join(b_words[j1:j2]) + " ", style="bold green")
+        elif tag == "delete":
+            # Show WHAT was removed, struck through, rather than a blank. The positional version
+            # appended a bare space here, so a deleted clause left no trace in the report at all —
+            # and "did the rewriter drop my content" is one of the questions this view exists to
+            # answer.
+            result.append(" ".join(a_words[i1:i2]) + " ", style="dim strike")
     return result
 
 

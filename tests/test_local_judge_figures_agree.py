@@ -28,7 +28,25 @@ _ATTRIBUTED = re.compile(r"AUROC \*{0,2}0\.\d+\*{0,2}\s+on\s+\d+\s+labelled")
 
 
 def _judge_lines(text: str) -> list[str]:
-    return [ln for ln in text.splitlines() if "judge" in ln.lower() and _AUROC.search(ln)]
+    """Claims about the judge, scoped to the CLAIM rather than to the line.
+
+    A markdown table row is one line and can carry several unrelated figures. The tier table's
+    heavy row holds both `AUROC 0.591` (the judge, on 20 labelled HC3 pairs) and `AUROC 0.531`
+    (`hc3_roberta` on MAGE, a different detector entirely) — so a per-line filter swept up the
+    second and reported the README as quoting a figure `local_judge.py` never produced.
+
+    Splitting on sentence boundaries keeps each figure with the detector it belongs to. The split
+    is deliberately crude — a period or a dash followed by space — because these are prose claims
+    inside table cells, not parseable structure.
+    """
+    claims: list[str] = []
+    for line in text.splitlines():
+        if not _AUROC.search(line):
+            continue
+        for claim in re.split(r"(?<=[.!?])\s+|\s+—\s+|\s+\|\s+", line):
+            if "judge" in claim.lower() and _AUROC.search(claim):
+                claims.append(claim)
+    return claims
 
 
 def test_the_source_still_records_both_runs() -> None:

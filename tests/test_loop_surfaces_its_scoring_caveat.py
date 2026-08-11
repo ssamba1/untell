@@ -63,9 +63,18 @@ def test_the_language_reason_reaches_the_top_level_too():
     assert "not in a script" in warning, warning
 
 
-def test_a_clean_run_says_nothing():
-    """Guards the guard. A caveat on every run is noise, and noise is how a real one is missed."""
-    assert _run(LONG_ENGLISH).get("warning") is None
+def test_a_clean_run_says_nothing_about_the_text():
+    """Guards the guard. A caveat on every run is noise, and noise is how a real one is missed.
+
+    Scoped to caveats about the TEXT, not to the field. These tests run at `lite`, where the
+    stdlib-path caveat fires on every input by design — it is a statement about the DETECTOR, and
+    64% of human text scoring above the loop threshold is exactly the thing a reader needs told
+    whatever they passed in. Asserting `is None` therefore asserted "this tier has nothing to say
+    about itself", which is a different and false claim.
+    """
+    warning = _run(LONG_ENGLISH).get("warning") or ""
+    for about_the_text in ("not in a script", "too short", "hidden", "homoglyph", "entirely"):
+        assert about_the_text not in warning, warning
 
 
 def test_the_caveat_matches_what_the_score_itself_reported():
