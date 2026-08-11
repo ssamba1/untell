@@ -5762,3 +5762,51 @@ Worth keeping: **a fix that removes the symptom can install a subtler version of
 label not being derived from the number beside it — and the first repair addressed the appearance
 rather than the derivation. The question that separates them is not "does this look right now" but
 "what is this value computed from, and is that the quantity being displayed".
+
+## Result 109
+
+**The Claude skill works end to end, and the gates it runs are complementary in a way nothing had
+written down.**
+
+`untell/SKILL.md` is a shipped surface making behavioural claims that no check verifies — it
+instructs Claude to run twelve scripts by path (`python scripts/preserve.py …`) rather than through
+the console entry points, so none of the packaging work covers it. Run:
+
+- All twelve referenced scripts exist and execute standalone.
+- The pipeline round-trips: `scrub` → `preserve` masks `Smith (2020)` and `47%` behind sentinels →
+  the gates run on the masked pair → `preserve --restore` returns both verbatim.
+- `sentences` prints its own AUROC caveat to stderr on the stdlib path, as it should.
+
+Nothing to fix. Which left the more interesting question: the skill runs the gates as five separate
+scripts, and the loop calls them as one conjunction. Do they agree, and does the conjunction earn
+its complexity?
+
+```
+pair             sim    passes  numbers  polarity  certainty  roles  contradicts
+faithful         0.877  True    True     True      True       False  False
+number changed   0.848  True    False    True      True       False  True
+negated          0.726  False   True     False     True       True   True
+hedge dropped    0.989  True    True     True      False      False  False
+role swapped     0.988  True    True     True      True       True   False
+unrelated        0.000  False   True     True      True       False  False
+```
+
+**Similarity alone would let four of six through.** A changed number scores **0.848**, a dropped
+hedge **0.989**, a swapped role **0.988** — all comfortably above the 0.76 bar, and each is a
+different kind of lie about the source. `47%` becoming `74%`, "may improve" becoming "improves", and
+the compiler and parser trading places are invisible to a cosine.
+
+And the converse is why similarity stays. An unrelated paragraph **contradicts nothing** — NLI is
+right that rainfall does not contradict frameworks — and every lexical gate passes it, because
+nothing was dropped or negated. Only similarity catches that one. Dropping it as the weakest gate
+would open exactly that hole.
+
+Each gate was already tested alone. What was not written down is the claim those tests add up to,
+which is the argument for having five: **every gate is the only one that catches its own class, and
+one of them catches a class none of the others can see.** That is now a table in a test rather than
+a design intention.
+
+Worth keeping: **a conjunction of guards needs a test that each conjunct is load-bearing.** Five
+gates that all fire on the same defects would be four gates of theatre, and nothing in a per-gate
+test suite can tell the difference — every one of them passes either way. The distinguishing
+measurement is the cross-product, and it takes one table.
