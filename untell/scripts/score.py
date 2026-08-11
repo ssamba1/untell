@@ -396,10 +396,42 @@ def _score_with_detectors(
             + f". The reported numbers reflect the '{effective}' tier only "
             "(commonly a NumPy 2.x / torch mismatch — see the README troubleshooting section)."
         )
+    # A detector that loaded and then produced nothing shrinks the ensemble the verdict is drawn
+    # from, and `max` over fewer members can only fall — so the whole error is toward NOT flagged,
+    # which is telling someone their AI text reads as human. MEASURED with the strongest member of
+    # a four-detector full-tier ensemble returning None on a real AI paragraph:
+    #
+    #     all four live    max 0.6566   flagged True
+    #     one silent       max 0.1058   flagged False
+    #
+    # Both ways of producing nothing count. `failed_detectors` names the ones that RAISED, and says
+    # nothing about what their absence did to the verdict; the ones that merely returned None had no
+    # top-level trace at all — the verdict flipped and the only sign was a `null` nested inside
+    # `detectors`, which is a `null` in the JSON an API client has no reason to inspect once
+    # `flagged` answered the question. This is the shape `commercial.py` already warns about on
+    # stderr: a provider changes its response format, its adapter starts returning None, and the
+    # detector quietly leaves the ensemble on a service the user is being billed for.
+    #
+    # Rare enough to be worth saying: MEASURED over 80 real HC3 texts at >=60 words, partial
+    # abstentions were 0/80. This does not fire on healthy scoring.
+    absent = [
+        name
+        for name, val in scores.items()
+        if val is None and not name.endswith("__error") and name not in failed
+    ]
+    ensemble_warning = None
+    if (absent or failed) and numeric:
+        gone = ", ".join(sorted(absent) + [f"{n} (errored)" for n in sorted(failed)])
+        ensemble_warning = (
+            f"{len(numeric)} of {len(numeric) + len(absent) + len(failed)} detectors produced a "
+            f"score; {gone} returned nothing. `max` is taken over the survivors, so a missing "
+            "detector can only lower it — this verdict errs toward NOT flagged."
+        )
     # Appended rather than folded into the chain above: length and tier are independent problems,
     # and a short text scored on a downgraded tier has both. An elif would have reported whichever
     # one happened to be checked first and hidden the other.
-    for extra in (_short_text_warning(text), _invisible_char_warning(text), _homoglyph_warning(text)):
+    for extra in (ensemble_warning, _short_text_warning(text), _invisible_char_warning(text),
+                  _homoglyph_warning(text)):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
