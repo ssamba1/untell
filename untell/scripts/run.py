@@ -726,6 +726,33 @@ def _stronger_rewriter_hint(rw, flagged: bool, tier: str) -> dict:
     better per detector, losing on roberta_openai (0.300 against composite's 0.124) while winning
     the `max` that decides the verdict. That is the user's call, so this states the numbers and
     lets them make it.
+
+    THOSE NUMBERS NO LONGER REPRODUCE (re-measured 2026-08-11). Running the command in the table
+    above, `UNTELL_DISABLE_MAGE=1 untell-ceiling --dataset hc3 --n 6 --tier full --best-of 3
+    --max-iters 5 --rewriter composite`:
+
+                        post    flagged   hc3_roberta
+        recorded       0.8052    1.00        0.7559
+        re-measured    0.9995    1.00        0.9992     (rewrote 6/6)
+
+    Not the rewriter. It rewrote every sample, and the opener-dose change made in this session was
+    ruled out directly — 0.9996 at the current dose against 0.9994 at the old one. The reason no
+    rewriter reaches 0.8052 on this corpus is that the detectors are pinned:
+
+        mage 1.0000 on 6/6      hc3_roberta 0.9992-0.9993 on 6/6      roberta_openai >=0.999 on 5/6
+
+    Three of five saturate, so `max` cannot move whether mage is excluded or not. Ten commits have
+    touched `untell/detectors/` since these figures were recorded, several of them closing scoring
+    shortcuts — `hc3_roberta` read punctuation spacing as authorship, and collapsing newlines still
+    moves `roberta_openai` by up to 0.59 on its own. A rewrite that "beat" a detector through one of
+    those is not beating it any more, which is the most likely reading: the figures were true when
+    taken and measured evasion of an artifact that has since been removed.
+
+    The user-facing string therefore no longer quotes the composite/neural comparison as a fact
+    about what they will get. `neural` is still worth offering — it is a genuinely different lever
+    (see the repetition measurements in rewriter/composite.py) — but the size of the win is
+    unverified on current code, and one run would not establish it anyway: `neural` is 4x as
+    variable as composite, so it needs `--repeats >= 3`.
     """
     if not flagged or tier != "full":
         return {}
@@ -734,10 +761,13 @@ def _stronger_rewriter_hint(rw, flagged: bool, tier: str) -> dict:
         return {}
     return {
         "suggestion": (
-            f"still flagged with rewriter={name!r}. MEASURED on the same six real AI texts at "
-            f"this tier: composite ends at 0.805 with 0% clearing, neural at 0.502 with 50% "
-            f"clearing (hc3_roberta 0.756 vs 0.407). Try --rewriter neural — it needs the .[full] "
-            f"extra, is several times slower, and trades meaning (similarity ~0.94 against ~0.99)."
+            f"still flagged with rewriter={name!r}. Try --rewriter neural: it paraphrases whole "
+            f"clauses, which is the one axis a rule-based rewrite cannot reach (measured 2-4x less "
+            f"repeated phrasing). It needs the .[full] extra, is several times slower, and trades "
+            f"meaning (similarity ~0.94 against ~0.99). How much it lowers the score on YOUR text "
+            f"is not something this tool can promise — the recorded comparison no longer "
+            f"reproduces, and neural varies enough between runs that a single run proves little. "
+            f"Measure it with `untell-ceiling --rewriter neural --repeats 3`."
         )
     }
 

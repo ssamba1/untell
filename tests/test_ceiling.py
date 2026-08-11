@@ -263,6 +263,12 @@ class TestTheResultNamesItsRewriter:
         neural      0.999 -> 0.502   flagged 0.50   hc3_roberta 0.407
     The repo's headline real-text figure was recorded without naming the rewriter and was then
     read as a property of the free TIER. `rewriter_available` records only THAT one ran.
+
+    Re-measured 2026-08-11, composite comes back at 0.9995 with hc3_roberta 0.9992 while
+    rewriting 6 of 6 — three of five detectors saturate on this corpus, so `max` cannot move for
+    any rewriter. The point this class makes is unaffected: a ceiling still belongs to a named
+    rewriter, and this test asserts the NAME is recorded, never the figures. See
+    `untell/scripts/run.py::_stronger_rewriter_hint`.
     """
 
     TEXT = ["Moreover, we leverage robust solutions. Furthermore, this underscores the pivotal role."]

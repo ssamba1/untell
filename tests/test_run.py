@@ -608,6 +608,14 @@ class TestStrongerRewriterHint:
     at 0.9994 for both:
         composite   post 0.8052   flagged 1.00   hc3_roberta 0.7559   sim 0.986/0.965
         neural      post 0.5017   flagged 0.50   hc3_roberta 0.4072   sim 0.941/0.884
+
+    THOSE FIGURES NO LONGER REPRODUCE (2026-08-11). The same command now gives composite
+    post 0.9995, hc3_roberta 0.9992, rewriting 6 of 6 — because three of five detectors are
+    pinned on this corpus (mage 1.0000 on 6/6, hc3_roberta 0.9992-0.9993 on 6/6), so `max`
+    cannot move for any rewriter. See `_stronger_rewriter_hint` for the full re-measurement.
+
+    These tests deliberately assert only that the hint FIRES and names `neural`, never the
+    numbers, which is why they still hold. The suggestion text no longer quotes them either.
     """
 
     class _RW:
