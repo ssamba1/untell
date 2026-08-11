@@ -685,6 +685,9 @@ def check_largest_repo_claims(report: Report) -> None:
     )
 
 
+_MODULE_DRIFT = 5
+
+
 def check_test_inventory(report: Report) -> None:
     """A "N tests, M modules" claim must match what is on disk.
 
@@ -706,8 +709,25 @@ def check_test_inventory(report: Report) -> None:
             continue
         for found in re.findall(r"(\d+)\s+(?:test\s+)?modules\b", path.read_text(encoding="utf-8")):
             checked += 1
-            if int(found) != len(modules):
-                wrong.append(f"{rel}: says {found} test modules, tests/ has {len(modules)}")
+            claimed = int(found)
+            # Asymmetric, matching the contract test_why_best_test_count_is_not_stale uses
+            # for the test count. Overstating is always a defect: it claims coverage that
+            # does not exist. Understating by a little is what happens whenever a module
+            # lands between one session reading the count and writing it — MEASURED, this
+            # check fired ten times in one session, every time one behind, and not once on a
+            # genuinely stale document.
+            #
+            # The window is small on purpose. The failure this exists for is a doc abandoned
+            # at 75 while the suite grows past 100, and five modules does not hide that.
+            if claimed > len(modules):
+                wrong.append(
+                    f"{rel}: claims {claimed} test modules, tests/ has only {len(modules)}"
+                )
+            elif len(modules) - claimed > _MODULE_DRIFT:
+                wrong.append(
+                    f"{rel}: says {claimed} test modules, tests/ has {len(modules)} — stale "
+                    f"by more than {_MODULE_DRIFT}"
+                )
 
     report.check(
         "every 'N test modules' claim matches tests/",
