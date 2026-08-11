@@ -498,6 +498,13 @@ _TELLS_RESPONSES = _obj(
             "description": "false when the text is mostly a script this English catalogue "
                            "cannot match; the counts are then not evidence of anything",
         },
+        # Returned all along and documented nowhere, so an API consumer reading the spec had no
+        # reason to look for the one field that says the numbers above it mean nothing.
+        "warning": {
+            **_STR,
+            "description": "present when the counts should not be read at face value — text with "
+                           "no letters at all, or mostly in a script this catalogue cannot match",
+        },
     },
     required=["words", "tells", "tells_per_100w", "by_category", "language_supported"],
 )
@@ -562,6 +569,20 @@ _HUMANIZE_RESPONSES = _obj(
         },
         "tier": _STR, "flagged": _BOOL,
         "stopped": {**_STR, "description": "why the loop stopped"},
+        # The caveats a machine client has no other channel for. `pre` and `post` can be identical
+        # to four decimals on text that measurably improved — MEASURED, tells/100w 3.80 -> 2.98 with
+        # `max` pinned at 0.9997 either side — and this is the only field that says so.
+        "warning": {
+            **_STR,
+            "description": "present when the numbers need a caveat: the text carried invisible "
+                           "characters, no detector could score it, or the hardest detector is "
+                           "pinned so the before/after P(AI) comparison cannot move. Several are "
+                           "joined with 'Also:'",
+        },
+        "voice_warning": {
+            **_STR,
+            "description": "present when a voice sample was supplied but could not be used",
+        },
     },
     required=["final", "changed", "pre", "post", "flagged"],
 )

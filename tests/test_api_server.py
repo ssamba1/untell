@@ -1097,6 +1097,28 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         stale = sorted(documented - set(payload) - conditional)
         assert not stale, f"{path} documents fields it did not return: {stale}"
 
+    @pytest.mark.parametrize("path,method,body", CALLS)
+    def test_no_returned_field_is_undocumented(self, path, method, body):
+        """The other direction, which was missing.
+
+        `test_no_documented_field_is_stale` checks schema -> payload: a property the endpoint no
+        longer returns. Nothing checked payload -> schema, and a field that exists but is not in the
+        spec is invisible to every consumer generating a client from it. MEASURED when this was
+        added: `/humanize` and `/tells` both returned `warning` and neither documented it — on
+        `/humanize` that is the field carrying "the hardest detector is pinned, so the before/after
+        P(AI) comparison cannot move", which is the only channel a machine client has for it.
+
+        A one-directional check on a two-directional invariant is the same shape as an allowlist
+        that only fails on additions: it holds while the drift runs the way it happens to be looking.
+        """
+        client = self._client()
+        response = client.get(path) if method == "get" else client.post(path, json=body)
+        assert response.status_code == 200
+        payload = response.json()
+        documented = set(self._schema(path, method).get("properties", {}))
+        undocumented = sorted(set(payload) - documented)
+        assert not undocumented, f"{path} returns undocumented fields: {undocumented}"
+
     def test_no_endpoint_is_left_undescribed(self):
         """Guards against a new route shipping with the empty schema all seven started with."""
         from untell.api_server import app
