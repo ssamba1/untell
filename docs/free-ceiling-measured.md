@@ -6178,3 +6178,55 @@ Worth keeping: **"the rewriter cannot fix this tell" and "this tell should not b
 the same number.** The sweep column that found a real gap in Result 115 pointed at a false positive
 in Result 116, and only opening the actual text distinguishes them. A count of unfixed detections is
 a place to look, never a verdict.
+
+## Result 117
+
+**The largest gap in the sweep was not a missing transform. The detector fires on a share and scores
+a count.**
+
+Result 116 chased the three categories at zero. The biggest absolute gap was elsewhere:
+`repeated_sentence_openers`, 47 texts flagged and 15 reduced. Opening the other 32 showed the
+repeated openers are *the*, *in*, *we*, *our* — ordinary function words, not the AI markers
+`_vary_openers` targets. That much was expected. The numbers next to them were not.
+
+`_duplicate_sentence_starts` fires when duplicate openers reach **40% of sentences** and then returns
+the **raw duplicate count**. A rewrite that adds sentences grows the denominator. Over the 47 texts
+that fire — sentence count changed on 34 of them:
+
+```
+share improved, count did not fall     15
+share worsened, count did not rise      0
+the two agree                          32
+```
+
+One row carries it: **share 70.0% → 53.8%, count 7 → 7.** A sixteen-point improvement on the
+detector's own criterion, scored as no change at all. Nearly a third of the texts where this tell
+fires get no credit for a real improvement.
+
+**The error is one-directional, and that is the whole reason it stays.** Fifteen cases hide an
+improvement; zero hide damage. The loop under-credits a good rewrite and is never fooled by a bad
+one — the safe side of the ledger.
+
+**The obvious fix was built, measured, and reverted.** Reporting the excess above the threshold
+(`dupes - ceil(0.40 * n)`) compresses the magnitude out of the signal:
+
+| variant | RAID AUROC | HC3 AUROC | hides improvement | hides DAMAGE |
+|---|---|---|---|---|
+| shipped, raw count | **0.9555** | 0.8696 | 15 | **0** |
+| excess, floored at 1 | 0.9381 | 0.8738 | 12 | 5 |
+| excess, unfloored | 0.9336 | 0.8756 | 6 | 1 |
+
+Both variants buy a smaller blind spot with a worse one. The unfloored variant is worse than the
+table shows: a text can sit above the 40% bar and report 0, so the detector fires and contributes
+nothing — the same criterion-disagrees-with-value defect relocated.
+
+**And the guard for it was vacuous on the first attempt.** The test meant to reject the excess
+variants compared a repetitive text against a sparse one — and the sparse one was under the 60-word
+repetition floor, so it scored 0 under every variant and the comparison decided nothing. It passed
+under the fix it existed to reject. Replaced with a direct assertion that the reported magnitude *is*
+the duplicate count, which fails under both variants; verified by running the suite against each.
+
+Worth keeping: **the size of a gap says nothing about where the defect is.** Three categories at zero
+turned out to be one real gap, one detector false positive and two by-design. The category with the
+largest gap had no rewriter defect at all — the tell was being reduced and the number could not
+show it.
