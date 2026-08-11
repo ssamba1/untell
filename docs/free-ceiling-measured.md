@@ -4584,3 +4584,75 @@ And the corollary, which is why the re-read mattered: **fixing two defects in a 
 what the third one looks like.** The bracketed fragment was present in the very first batch and I
 read past it, because at that point it was one line below a worse fragment and a destroyed serial
 list. Reading output is not a step that completes.
+
+## Result 88
+
+**A different corpus, read the same way: there was no "natural midpoint", only a midpoint.**
+
+Result 87 read HC3. RAID is academic abstracts — longer sentences, quoted titles, compound technical
+terms — and the first paragraph produced this:
+
+```
+...a team of experts in the field of artificial.
+Intelligence (AI) and medical imaging set out a set of guiding principles...
+```
+
+Straight through the middle of "artificial intelligence". Nothing downstream could catch it: the
+right half opens with a capitalised noun and reads as a perfectly good sentence to every guard in
+the file, including the two added one result ago.
+
+The cause is one line. `_split_long_sentences` initialised `split_at = mid` and only moved it if a
+comma turned up nearby, so **a sentence with no comma was cut at whatever word sat halfway.** The
+comment above it called this "a natural midpoint". MEASURED over 269 long sentences (>28 words)
+across HC3 and RAID:
+
+| | count | share |
+|---|---:|---:|
+| a plain comma token is found | 242 | 90.0% |
+| a comma only visible after stripping a closing quote | 1 | 0.4% |
+| **no comma at all — cut at the midpoint** | **26** | **9.7%** |
+
+Not splitting those 26 costs a transform on a tenth of long sentences. Splitting them costs grammar
+on all of it.
+
+**And the 1 is the sentence above.** Its only comma is in `Imaging,"` — a comma closing a quoted
+title — which does not `endswith(",")`, so the search found nothing and fell through to the
+midpoint. Stripping the closing quote makes that boundary visible, and then the appositive guard
+*correctly refuses to split there*, because `In the paper X,` followed by `a team of experts` is
+exactly the shape that guard exists for. Visible-then-rejected and invisible-then-butchered produce
+very different sentences, and only the first leaves this one intact.
+
+Splits still happen after the change: 18 net new sentence terminators on HC3 and 76 on RAID, over 40
+texts each.
+
+**The test measured the wrong thing first, and passed.** `_split_long_sentences` returns one element
+per INPUT sentence and puts the split *inside* the string, so `len(result)` is always 1 —
+`assert len(...) == 1` was true no matter what the code did. It was caught by the neighbouring
+guard-the-guard test failing: the fixture that was supposed to split also reported 1, which is the
+only reason the measure got examined at all. Counting terminators instead makes both assertions real.
+
+**Re-reading again found the next one, in the next sentence of the same abstract.**
+
+```
+...to address the ethical.
+Social, and technical challenges associated with the use of AI in medical imaging.
+```
+
+A serial list of adjectives cut in half. `_split_one` has refused this shape for a long time — its
+`list_like` guard counts comma-terminated tokens and this sentence has four — and
+`_split_long_sentences` had no such guard at all.
+
+That is the **third** time these two functions have been found with the same hole in one of them.
+The fragment guard was the first, the midpoint default the second. Both times the file's own comments
+record that fixing one left the damage rate unmoved because the other kept producing it. A predicate
+that one splitter can have and the other can lack *is* the shape of this bug, so it is now one
+function with two callers, and a test asserts the threshold appears exactly once in the module.
+
+Split rate barely moves: HC3 18 → 13, RAID 76 → 75 over 40 texts each. The guard is precise rather
+than blunt, which is what a 4-comma threshold should be.
+
+Worth keeping: **a vacuous assertion and a correct one look identical when the code is right.** The
+positive control is what separates them — not as a nicety, but as the only mechanism that surfaces a
+measure which cannot fail. Every "does it still work?" test in this log has now earned its place
+twice: once for the regression it guards, and once for exposing a sibling assertion that measured
+nothing.
