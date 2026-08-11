@@ -132,11 +132,25 @@ class EnsembleRewriter(Rewriter):
                 # the ensemble then looks like it is simply not helping.
                 if _name not in _MEMBER_FAILED:
                     _MEMBER_FAILED.add(_name)
+                    # Counted against THIS ensemble's members. `_MEMBER_FAILED` is module-level, so
+                    # subtracting its total length charged one ensemble for another's failures —
+                    # the set accumulates every name that has ever failed anywhere in the process,
+                    # and different ensembles have different members. MEASURED with three
+                    # ensembles built in one process, one member failing in each:
+                    #
+                    #     A (3 members)   "2 of 3"     correct
+                    #     B (2 members)   "0 of 2"     one live member, reported as none
+                    #     C (1 member)    "-2 of 1"    a negative count of rewriters
+                    #
+                    # "0 of 2" says the ensemble cannot function; it had a working member. The
+                    # warning exists because a shrinking pool makes this class look like it is
+                    # simply not helping, and an overstated shrink is the same error louder.
+                    live = sum(1 for n, _ in self._members if n not in _MEMBER_FAILED)
                     logger.warning(
                         "ensemble member %r failed and is being skipped (%s: %s); the ensemble is "
                         "now selecting over %d of %d members.",
                         _name, type(exc).__name__, str(exc)[:120],
-                        len(self._members) - len(_MEMBER_FAILED), len(self._members),
+                        live, len(self._members),
                     )
                 continue
             if not cand.strip() or cand == text:
