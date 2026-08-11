@@ -144,6 +144,7 @@ def test_the_shipped_version_appears_in_the_changelog() -> None:
     """
     import pathlib
     import re
+
     import tomllib
 
     version = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"][
