@@ -5855,3 +5855,48 @@ divergence is only a defect when nobody has written it down.** Two of these thre
 the catalogue is advice for a writer, the detector is an instrument, and they answer to different
 constraints. What was missing was any place recording which items are which, so a reader of either
 file would assume the other agreed.
+
+## Result 111
+
+**Five documented constants, all correct, and nothing keeping them so.**
+
+`untell/references/thresholds.md` ships with the skill and is the reference a user reads to
+understand what the loop's numbers mean. It is **not in `audit.LIVE_DOCS`**, so neither the claim
+check nor the attribution check touches it. Checked by hand against the code:
+
+| doc | code | |
+|---|---|---|
+| `threshold` `0.30` | `untell_text(threshold=0.3)` | ✓ |
+| similarity bar `0.76` embedding | `recommended_bar()` = 0.76, `method()` = embedding | ✓ |
+| contradiction `< 0.50` | `DEFAULT_CONTRADICTION_BAR` = 0.5 | ✓ |
+| entailment `≥ 0.005` | `DEFAULT_ENTAILMENT_FLOOR` = 0.005 | ✓ |
+| relaxed sim bar `0.30` | `RELAXED_SIM_BAR` = 0.3 | ✓ |
+
+All five right today, by nobody's arrangement. Now pinned.
+
+**The test was wrong twice, and both corrections are the point of this result.**
+
+The first version asked whether each value appeared *anywhere* in the document. Its own non-vacuity
+probe killed it: of three invented "moved constants", **two — `0.35` and `0.007` — already appear
+elsewhere in the file**. The doc quotes 46 numbers, so a threshold drifting to a coincidental value
+would have been reported as documented. "Present in the file" is not "documented as this constant".
+
+Anchoring each value to a line mentioning its name fixed that, and introduced the second error. I
+anchored the entailment floor on the word **"entailment"** — which also appears in the *quantity
+check* row's prose: *"contradiction `0.011`, entailment `0.007` — clearing the floor by `0.002`"*.
+So the anchor matched a second row and let exactly the coincidence back in. Both NLI bars live on
+the `meaning gate` row, and anchoring there is what actually works.
+
+Confirmed after: four coincidental values, including both that defeated the loose version, are now
+caught.
+
+Deliberately not solved by adding the file to `LIVE_DOCS`. That list subjects every numeric claim in
+a document to the attribution rule, and this one quotes 46 numbers — most of them measurements from
+tables rather than constants. Pinning the five that ARE constants is the part that can drift
+silently.
+
+Worth keeping: **an anchor has to name the row, not a word the row happens to use.** Both failures
+here are the same mistake at different scales — "somewhere in the document" and "somewhere on a line
+containing this word" are both proximity standing in for reference. The check only becomes real when
+it points at the thing that defines the value, and finding that out took writing the failing case
+rather than reading the passing one.
