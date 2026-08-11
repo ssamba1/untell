@@ -4026,3 +4026,41 @@ and they stand for a reason that had not been checked until now.
 Worth keeping: **"deterministic" is a property of a warm process, and nothing says so.** Six
 components were individually verified stable before the cause turned out to be the *act of loading
 them*. A test that seeds and asserts on its first call is testing the loading, not the loop.
+
+## Result 77
+
+**The citation guarantee worked; the check that would tell you it had stopped working did not.**
+
+`--against` is the academic headline — report any citation a rewrite lost. Probed with twelve
+citation forms:
+
+| family | recognised |
+|---|---|
+| natbib `\citet` `\citep` `\cite`, APA `\citeA`, `\nocite` | yes |
+| **biblatex `\parencite` `\textcite` `\footcite` `\autocite`** | **no** |
+| **starred `\citep*` `\parencite*`** | **no** |
+
+`CITE` matched `\(?:cite[a-zA-Z]*|nocite)` — commands that *start* with "cite". biblatex, which is
+the modern standard, puts the stem in the middle. Those returned **no keys at all**, so `--against`
+printed "keeps every citation" on a rewrite that had destroyed every one of them, and no biblatex
+key was ever checked against the `.bib`. The starred forms failed separately: the star sits between
+the command and its optional argument.
+
+**`preserve.lock()` was never fooled.** It masks LaTeX commands structurally, and measured on a
+full rewrite, `\parencite{smith2023}`, `\textcite{jones2022}` and `\citep*{li2024}` all survive
+byte-exact. So the guarantee held the whole time — and the instrument that reports on it was blind.
+That is the more dangerous half: a broken guarantee with working reporting gets fixed, and a
+working guarantee with blind reporting is discovered the day it breaks.
+
+Fixed, and end to end a lost biblatex key is now named and the exit code is 1.
+
+**Two false alarms of my own, both from the shell.** The first: `latex … | tail` reported exit 0
+because `$?` is `tail`'s — the identical pipeline mistake recorded earlier in this session, made
+again while checking a feature's exit code. The second: a `printf` fixture turned the `\t` of
+`\textcite` into a literal tab, so the tool correctly counted 2 citations in a 3-citation file and
+I nearly wrote up a phantom inconsistency between the counter and the loss check.
+
+Worth keeping: **check whether a guarantee and its report share a code path.** They did not here,
+and nothing in either file said so. The locking is structural and the reporting is a command
+whitelist, which is why one covered biblatex and the other did not — and why the gap could sit
+there indefinitely without a single citation ever being lost.
