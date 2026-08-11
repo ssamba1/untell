@@ -29,7 +29,7 @@ import re
 import pytest
 
 from untell.attacks.word_importance import _SYN
-from untell.rewriter.structural import structural_rewrite
+from untell.rewriter.structural import _ADVERB_SLOT_ONLY, structural_rewrite
 from untell.text_split import split_sentences
 
 # Each check is (name, pattern). A match is damage.
@@ -60,12 +60,22 @@ _CHECKS: dict[str, re.Pattern[str]] = {
     # demonstrative and a relative pronoun are the same token, so including them makes this check
     # fire on correct English, and a damage check that cries wolf gets its fixture edited instead
     # of the bug fixed.
+    #
+    # And the phrases are the ADVERBIAL ones, not every phrasal substitute in the table. The broad
+    # version shipped for one session and a 40-text RAID sweep found it flagging `a focus on`, which
+    # is correct English and was present in the untouched INPUT — "focus on" is a substitute for
+    # "prioritize", so the check fired on text the rewriter had never touched. Most phrasal
+    # substitutes are noun or verb phrases and sit after a determiner perfectly well ("the plus
+    # points of", "a focus on"). Only an adverb phrase cannot, which is the defect this models, so
+    # the set is derived from the headwords already known to be adverb-slot-only.
     "determiner_then_phrase": re.compile(
         r"\b(?:a|an|the|its|their|our|his|her|your|each|every)\s+(?:"
         + "|".join(
             re.escape(p)
             for p in sorted(
-                {s for subs in _SYN.values() for s in subs if " " in s}, key=len, reverse=True
+                {s for head in _ADVERB_SLOT_ONLY for s in _SYN.get(head, ()) if " " in s},
+                key=len,
+                reverse=True,
             )
         )
         + r")\b",
