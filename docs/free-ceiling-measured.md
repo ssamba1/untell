@@ -4154,3 +4154,100 @@ three key differently. A message about a tie-break is now pinned to whether a ti
 Worth keeping: **checking that a caveat exists is not checking that it is true.** Every audit so far
 has looked for missing warnings. This one was present, was read, and was wrong — and no count of
 warnings, no coverage number, and no test asserting `warning is not None` would have found it.
+
+## Result 80
+
+**A check designed from a defect that would not have caught the defect.**
+
+Result 79 suggested a mechanical rule: *a warning naming a literal number must name the constant
+that gated it.* Written as an AST pass over `untell/`, it fired twice across 57 files:
+
+```
+tells.py:970  gate={_MIN_WORDS_FOR_A_RATE: 14}  msg names 100    "a rate per 100 words"
+tells.py:970  gate={_MIN_WORDS_FOR_A_RATE: 14}  msg names 0.642, 7.32, 60, 100
+```
+
+Both are correct code. The first is the unit the rate is expressed in; the second is a quoted corpus
+mean. Zero true positives.
+
+And the decisive part: **it would not have caught Result 79.** That message interpolated
+`{MIN_SAMPLE_WORDS}` — it named its gate, accurately. The bug was that the gate itself was the wrong
+constant, chosen in a different module from the one controlling the behaviour. A rule about the
+relationship between a message and its own branch cannot see a bug about the relationship between
+two branches. Not shipped.
+
+**What was worth doing instead: count them.** Seven constants gate a text-length decision, in seven
+modules that do not reference one another:
+
+|  value | constant | module |
+|---:|---|---|
+| 5 | `_MIN_WORDS_FOR_SIGNAL` | `detectors/perplexity_burstiness.py` |
+| 5 | `_MIN_WORDS_FOR_SIGNAL` | `humanness.py` |
+| 14 | `_MIN_WORDS_FOR_A_RATE` | `scripts/tells.py` |
+| 20 | `_MIN_VOICE_SAMPLE_WORDS` | `scripts/run.py` |
+| 40 | `_MIN_WORDS_FOR_A_VERDICT` | `scripts/score.py` |
+| 60 | `_MIN_WORDS_FOR_REPETITION` | `scripts/tells.py` |
+| 150 | `MIN_SAMPLE_WORDS` | `scripts/voice.py` |
+
+They are not meant to agree — five words is enough to refuse a perplexity score and nowhere near
+enough to profile six style features. Two of them are the same concept twice: `humanness` abstains
+where its detector abstains, and between two different floors is a band where a score is reported
+over an abstention. That pair is now asserted equal.
+
+Each of the others is a published number some result in this log was measured against, so a silent
+change invalidates a result without touching the document. The census pins all seven with their
+derivations, and a final scan fails if an eighth appears — which is the case Result 79 was.
+
+Worth keeping: **when a check built from a bug cannot catch that bug, the bug was not the kind the
+check models.** The honest move is to say so and count the thing instead. An enumeration is weaker
+than a rule and it was available; the rule was stronger and was fiction.
+
+## Result 81
+
+**A guard against accusing humans, switched off by the failure it was built for.**
+
+Result 79's lesson was that a caveat can be present and untrue, so the next step was to enumerate
+every caveat in `untell/` that makes a checkable claim about behaviour — *disabled*, *ignored*,
+*falls back*, *excluded*, *abstains*. Thirteen of them. This is the one that was wrong, and it is
+worse than the voice case, because the field involved exists for no other purpose than to answer
+this question.
+
+`perplexity_burstiness` has two scoring paths. Its own docstring carries the difference:
+
+```
+path      FPR     TPR     AUROC    human mean
+gpt2      6.0%    98.0%   0.9972   0.129
+stdlib   69.0%    93.0%   0.7545   0.399
+```
+
+`mode()` returned `"gpt2" if self._torch_ready() else "stdlib"` — **which path would run**, not which
+one did. The two answers separate on precisely the failure `score()` already logs: torch imports
+fine, the model raises at scoring time, the stdlib heuristic produces the number, and the field
+reports the model.
+
+That would be a mislabel if `detector_modes` were only diagnostic. It is not.
+`score._verdict_threshold` reads it and raises the reported cut from 0.30 to 0.45 when the stdlib
+path is the whole verdict — because the average human paragraph scores 0.399 on that path, above
+0.30. MEASURED end to end, on a human paragraph, with the full path forced to raise:
+
+```
+healthy    mode=gpt2      cut 0.30    max 0.1502    not flagged
+before     mode=gpt2      cut 0.30    max 0.4044    FLAGGED
+after      mode=stdlib    cut 0.45    max 0.4044    not flagged
+```
+
+A GPU running out of memory told someone their own writing reads as AI. The guard that exists to
+prevent exactly that was disabled by the failure it exists to cover, and — the question memory says
+to ask of an asymmetric error — it landed on the accusing side.
+
+The first probe of this was wrong and worth recording. I broke the full path on a one-sentence
+fixture and got a byte-identical score, which reads as "the fallback changes nothing." It changed
+nothing because burstiness over a single sentence is undefined, so `_full_score` was already
+returning the lite value — full and lite agreed at 0.37863636363636366 before anything was broken.
+A fixture where the two paths coincide cannot test which label was attached to them. Establishing
+that they differ (0.6221 vs 0.1086) was the step that made the probe mean anything, and it is now
+an assertion in the test file rather than a fact I happened to check.
+
+Worth keeping: **a field that reports a capability is not reporting an event.** `_torch_ready()`
+answers "can this run", `mode()` was asked "what ran", and the gap between them is invisible until
+the thing that can run, doesn't.
