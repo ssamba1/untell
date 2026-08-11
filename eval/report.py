@@ -36,18 +36,42 @@ def _per_detector(results: list, threshold: float) -> dict[str, dict[str, float]
                 names.append(k)
     out: dict[str, dict[str, float]] = {}
     for name in names:
-        pre_vals = [r.pre["detectors"][name] for r in results if name in r.pre.get("detectors", {}) and isinstance(r.pre["detectors"][name], (int, float))]
-        post_vals = [r.post["detectors"][name] for r in results if name in r.post.get("detectors", {}) and isinstance(r.post["detectors"][name], (int, float))]
-        beat = [1.0 if v < threshold else 0.0 for v in post_vals]
-        out[name] = {"pre": _mean(pre_vals), "post": _mean(post_vals), "beat_rate": _mean(beat)}
+        # PAIRED: a sample counts for this detector only when BOTH its pre and post scores are
+        # numbers. Filtering the two sides independently is the same defect `summarize` was already
+        # fixed for at the aggregate level, one row further in. Measured: a detector scoring 0.95 on
+        # 4 samples pre, then erroring on the 3 hard ones, rendered as "0.95 -> 0.10, beat 100%" —
+        # a pre-mean over 4 samples beside a post-mean over 1. Worse than a wrong number: because
+        # `_hardest_detector` ranks by LOWEST beat rate, the detector that fell over on every hard
+        # sample is promoted to the easiest one, and the genuinely hardest detector loses the
+        # headline. Erroring out must never read as bypassing.
+        paired = [
+            (r.pre["detectors"][name], r.post["detectors"][name])
+            for r in results
+            if isinstance(r.pre.get("detectors", {}).get(name), (int, float))
+            and isinstance(r.post.get("detectors", {}).get(name), (int, float))
+        ]
+        beat = [1.0 if post < threshold else 0.0 for _, post in paired]
+        out[name] = {
+            "pre": _mean([pre for pre, _ in paired]),
+            "post": _mean([post for _, post in paired]),
+            "beat_rate": _mean(beat),
+            # Carried so the renderer can show the denominator rather than implying it is `n`.
+            "n": float(len(paired)),
+        }
     return out
 
 
 def _hardest_detector(per_detector: dict[str, dict[str, float]]) -> str | None:
-    """The detector hardest to beat = lowest beat rate (ties broken by highest mean post)."""
-    if not per_detector:
+    """The detector hardest to beat = lowest beat rate (ties broken by highest mean post).
+
+    Detectors with no paired sample are not candidates. `_mean([])` is 0.0, which is the lowest
+    beat rate expressible — so a detector that errored on EVERY sample outranked every detector
+    that actually ran, and the report named it the hardest to beat on zero observations.
+    """
+    usable = {d: v for d, v in per_detector.items() if v.get("n", 0.0) > 0}
+    if not usable:
         return None
-    return min(per_detector, key=lambda d: (per_detector[d]["beat_rate"], -per_detector[d]["post"]))
+    return min(usable, key=lambda d: (usable[d]["beat_rate"], -usable[d]["post"]))
 
 
 def summarize(by_strategy: dict[str, list], threshold: float) -> dict:
@@ -139,7 +163,15 @@ def render(by_strategy: dict[str, list], threshold: float) -> str:
             cells = []
             for d in detector_names:
                 pd = st["per_detector"].get(d)
-                cells.append(f"{pd['pre']:.2f}->{pd['post']:.2f} ({pd['beat_rate']:.0%})" if pd else "-")
+                if not pd or not pd.get("n"):
+                    # No paired sample: the detector never produced both a pre and a post number.
+                    # Rendering 0.00->0.00 (0%) here would be indistinguishable from a real result.
+                    cells.append("-")
+                    continue
+                # Flag the denominator inline when this detector saw fewer samples than the
+                # strategy did, so a beat rate off 1 of 4 samples cannot be read as off 4.
+                suffix = "" if int(pd["n"]) == st["n_scored"] else f" [n={int(pd['n'])}]"
+                cells.append(f"{pd['pre']:.2f}->{pd['post']:.2f} ({pd['beat_rate']:.0%}){suffix}")
             hardest = st.get("hardest_detector") or "-"
             lines.append(f"| {name} | " + " | ".join(cells) + f" | {hardest} |")
         # Headline: how the strongest strategy fares against the single hardest detector.
