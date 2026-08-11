@@ -1525,7 +1525,17 @@ _CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
     # and the rewrite is left to the neural path or to the author.
 ]
 
-_AFTER_SENTENCE_START = re.compile(r"(^|[.!?]\s+)([a-z])")
+# `(?<!\.)` so the LAST dot of an ellipsis is not read as a sentence end. An ellipsis is a pause,
+# and the clause after it continues in lowercase — capitalising there manufactures a subjectless
+# fragment out of correct input. MEASURED at intensity 1.0, on 4 of 12 seeds:
+#
+#     "He paused... then continued with the analysis."
+#       -> "He paused... Then continued with the analysis."
+#
+# Invisible to every gate: no word changed, so similarity, NLI and the role check all pass, and a
+# fragment is clean to a tell catalogue. `[!?]` is deliberately still allowed after a dot-free
+# terminator, so "What?! yes ..." keeps its capital.
+_AFTER_SENTENCE_START = re.compile(r"(^|(?<!\.)[.!?]\s+)([a-z])")
 
 
 def _flatten_cliches(text: str) -> str:

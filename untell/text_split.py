@@ -74,12 +74,35 @@ def ends_with_abbreviation(fragment: str) -> bool:
     return all(p.isdigit() for p in parts) and tail == fragment.strip()
 
 
+# An ellipsis is a pause, not a terminator. `_SENT_SPLIT` looks behind for `[.!?]`, so the last dot
+# of "..." ends a sentence and the rest of the clause becomes its own "sentence" — starting in
+# lowercase, with no subject. MEASURED, splitting then rewriting at intensity 1.0:
+#
+#     "He paused... then continued with the analysis."
+#       -> "He paused... Then continued with the analysis."     (3 of 3 probes)
+#
+# The transform is behaving correctly on what it was handed; the split was wrong. And the damage is
+# invisible to every gate: no word changed, so similarity, NLI and the role check all pass, and a
+# fragment is clean to a tell catalogue.
+#
+# The test is the NEXT word's case. A genuine sentence after an ellipsis is capitalised
+# ("It works... Mostly."); a continuation is not. Narrow on purpose — a real sentence boundary
+# after an ellipsis still splits.
+_ELLIPSIS_END_RE = re.compile(r"(?:\.{2,}|…)[\"'”’)\]}»]*$")
+
+
+def _continues_after_ellipsis(previous: str, nxt: str) -> bool:
+    return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()
+
+
 def split_sentences(text: str) -> list[str]:
-    """Split on sentence-final punctuation, keeping abbreviations and initials intact."""
+    """Split on sentence-final punctuation, keeping abbreviations, initials and ellipses intact."""
     parts = [s for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
     merged: list[str] = []
     for part in parts:
-        if merged and ends_with_abbreviation(merged[-1]):
+        if merged and (
+            ends_with_abbreviation(merged[-1]) or _continues_after_ellipsis(merged[-1], part)
+        ):
             merged[-1] = f"{merged[-1].rstrip()} {part.strip()}"
         else:
             merged.append(part.strip())
