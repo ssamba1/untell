@@ -757,6 +757,26 @@ _CANNOT_OPEN_A_CLAUSE = frozenset(
         "rather", "instead", "along", "across", "toward", "towards", "upon", "regarding",
     }
 )
+
+# Fronted adverbials, which are a DIFFERENT case from the set above and cannot join it.
+#
+# "Regardless of their actions or beliefs." is a fragment; "Regardless of the cost, we proceed." is
+# a sentence. Same lead word, and the set above is unconditional — so adding `regardless` to it
+# would block a legitimate split, while leaving it out let this through. FOUND at best_of=3 over
+# five iterations, which is where enough transforms fire for it to appear:
+#
+#     ...condone the assassination of any individual, regardless of their actions or beliefs.
+#       ->  ...condone the assassination of any individual.
+#           Regardless of their actions or beliefs.
+#
+# `regarding` is already in the set above; `regardless` was simply missed, and the family with it.
+# What separates the two readings is whether a MAIN CLAUSE follows, and a fronted adverbial that has
+# one is separated from it by a comma. Checked on ten pairs — one fragment and one sentence for each
+# of five leads — the comma rule splits all ten correctly.
+_NEEDS_A_MAIN_CLAUSE = frozenset(
+    {"regardless", "despite", "notwithstanding", "unlike", "throughout", "during",
+     "within", "beyond", "concerning", "versus", "besides", "amid", "amidst"}
+)
 _ARTICLES = frozenset({"a", "an", "the"})
 
 # Words that open a DEPENDENT clause, so a sentence starting with one is not complete until
@@ -881,6 +901,11 @@ def _cannot_start_a_sentence(second: str, first: str) -> bool:
         return True
     lead = head[0].rstrip(",.;:").lower()
     if lead in _SPLIT_CONJUNCTIONS or lead in _CANNOT_OPEN_A_CLAUSE:
+        return True
+    # A fronted adverbial with no main clause after it — see `_NEEDS_A_MAIN_CLAUSE`. Conditional on
+    # the comma, because these leads are the one family where the same word opens a fragment and a
+    # sentence: "Regardless of their beliefs." against "Regardless of the cost, we proceed."
+    if lead in _NEEDS_A_MAIN_CLAUSE and "," not in second:
         return True
     if lead in _ARTICLES:
         tail = first.split()
