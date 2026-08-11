@@ -5623,3 +5623,53 @@ Worth keeping: **a set that looks complete is complete for the cases you thought
 opened where this package stopped being generic. And matching exceptions by name reads as
 equivalent to matching by type until you notice that the entry in the set is the one class the
 runtime never hands you.
+
+## Result 106
+
+**The measurement tool is correct and its report contradicts itself.**
+
+`eval/detector_audit.py` produces every AUROC claim in this repo, so the first question is whether
+its primitive is right. It is, exactly:
+
+| case | `auroc` |
+|---|---|
+| perfect separation | 1.0 |
+| perfect inversion | 0.0 |
+| all tied | 0.5 |
+| either side empty | `None` |
+
+and it matches `sklearn.metrics.roc_auc_score` to within 1e-9 on five random 40-versus-40 trials.
+Ties counted as half, threshold-free. Nothing to fix in the number that everything else rests on.
+
+**The report built from it does not read as consistent.** The smoke run prints:
+
+```
+fast_detectgpt [sentence]  INVERTED  0.444  0.355  0.212  -0.142  67%  33%
+...
+BROKEN: none — every available detector responds in the correct direction.
+```
+
+Both lines are correct. Sentence rows are deliberately held to `AUROC <= 0.20` before counting as
+broken, and the reason is written down beside the list: six probes per class is 36 pairs, 0.444 is
+chance, and the same detector scores **0.915 on 40 real HC3 sentence pairs**. Gating CI on the smoke
+number would turn the build red over sampling. That judgement is right.
+
+But a reader sees `INVERTED` four lines above `every available detector responds in the correct
+direction` and cannot reconcile them without opening the source — and the summary is the line people
+quote. It now names what it excluded and why, with the bar stated rather than referenced.
+
+This is the third instance in this log of one shape: **a value that is true about its own computation
+and misleading beside the data it is printed next to.** `mode()` reported what `_torch_ready()`
+predicted rather than what ran; `rewriter_available` reported that a loop had returned rather than
+that a rewrite happened; and here a summary reports its own filtered list beside the unfiltered
+table. Each was defensible in isolation and wrong in context.
+
+The guard-the-guard matters more than usual: an AUROC of 0.000 on the same 36 pairs is a **real**
+inversion — chance cannot produce it — and must stay in the broken list. A caveat that excused
+everything would turn the small-sample allowance into a way to hide the defect it exists to
+contextualise.
+
+Worth keeping: **check what two lines say together, not what each says alone.** Every reporting
+defect found in this session — the 61%/2.9% diff, the mode label, this — survived because each
+component was individually defensible. Nothing in a per-function review reads two lines at once; only
+running the thing and looking at the output does.
