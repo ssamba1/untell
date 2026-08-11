@@ -19,7 +19,19 @@ _ENV = [
 
 
 class _NoopRW:
+    """A rewriter double. It must satisfy the whole protocol, not the part currently exercised.
+
+    `available()` was missing. That went unnoticed while `prove()` passed no rewriter at all —
+    `untell_text` took the object branch and never asked. Once `prove` gained a `rewriter` name
+    (defaulting to "composite", so the tool works without a hosted-LLM key), the string branch runs
+    and calls `available()` on whatever `get_rewriter` returns. A double that implements less than
+    the interface it stands in for only works until the caller uses the rest of it.
+    """
+
     name = "noop"
+
+    def available(self):
+        return True
 
     def rewrite(self, text, score_result, threshold=0.30):
         return text
