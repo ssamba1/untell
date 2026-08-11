@@ -1233,6 +1233,72 @@ def _inject_contractions(text: str, rate: float = 1.0) -> str:
     return text
 
 
+# Words that may remain in a trailing sentence after its sign-off phrase is removed and still count
+# as pure scaffolding. `_META_CLOSER_RE` matches a PREFIX for half its alternatives — "Let me know
+# if X" leaves X behind — so the remainder length is what separates a sign-off from a sentence
+# wearing one. MEASURED on seven sign-offs and three content sentences that begin with the same
+# phrases:
+#
+#     scaffolding remainders   0, 0, 3, 4, 5, 5, 5
+#     content remainders       10, 11, 17
+#
+# Six sits between them with margin on both sides. The evidence is thin — ONE of those content
+# sentences is a real corpus instance and the rest are constructed — so this is a threshold to
+# re-measure if a document ever loses a sentence it should have kept, not a fitted constant.
+_CLOSER_REMAINDER_WORDS = 6
+
+
+def _strip_meta_closers(text: str) -> str:
+    """Drop a chatbot sign-off from the END of the text.
+
+    `meta_closer` was FLAGGED AND UNREMOVABLE: sweeping every tell category over 120 corpus texts for
+    "detected, and does the rewriter reduce it" gave `false_range` 2/0, `meta_closer` 1/0 and
+    `challenges_section` 1/0 — three categories the catalogue counts and no transform could act on.
+    Of the three this is the one with an obvious safe action: "I hope this helps!" carries no content
+    at all, so removing it is not a rewrite, it is a deletion of scaffolding.
+
+    MEASURED on four sign-offs appended to a real paragraph — the tell goes 1 -> 0 (2 -> 0 for a
+    doubled one) and every gate passes: similarity 0.981-0.997, `passes` True, `contradicts` False,
+    numerals kept.
+
+    Built on `tells._META_CLOSER_RE` rather than a second pattern of its own. The `vague_attribution`
+    defect one commit earlier was exactly two vocabularies drifting apart — the detector flagging a
+    phrase the flattener had never heard of — and the cheapest way not to repeat it is to have one
+    pattern with two readers.
+
+    Only at the END, and only a whole trailing sentence. "Let me know if the build fails" mid-document
+    is a real instruction to a reader, and "In this article we'll explore ..." is an opener the same
+    pattern matches; deleting either would remove content rather than scaffolding.
+
+    And only when the sentence is NOTHING BUT the closer. The first version of this deleted any
+    trailing sentence the pattern matched, and the one real corpus instance is
+
+        "I hope this helps to explain why we might not have high resolution color cameras on some
+         space probes and satellites."
+
+    — the paragraph's conclusion, wearing a sign-off as a prefix. Removing the matched phrase leaves
+    **17 words** there against **0** for "I hope this helps!", so the remainder is the test. A tell
+    fix that deletes the user's last sentence is a far worse defect than the tell.
+    """
+    from untell.scripts.tells import _META_CLOSER_RE
+
+    def _is_pure_scaffolding(sentence: str) -> bool:
+        match = _META_CLOSER_RE.search(sentence)
+        if not match:
+            return False
+        remainder = (sentence[: match.start()] + sentence[match.end() :]).strip(" .!?,;:")
+        return len(remainder.split()) <= _CLOSER_REMAINDER_WORDS
+
+    sentences = _split_sentences(text)
+    kept_sentences = list(sentences)
+    while len(kept_sentences) > 1 and _is_pure_scaffolding(kept_sentences[-1]):
+        kept_sentences.pop()
+    if len(kept_sentences) == len(sentences):
+        return text
+    kept = " ".join(s.strip() for s in kept_sentences).strip()
+    return kept or text
+
+
 def _strip_filler_openers(text: str) -> str:
     """Remove low-content AI scaffolding openers ("It is worth noting that ...") and keep the clause,
     re-capitalizing the sentence start that the strip exposes."""
@@ -2485,6 +2551,11 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
 
     # 0. Strip low-content scaffolding openers (pure filler)
     text = _strip_filler_openers(text)
+
+    # 0b. And the matching sign-off at the other end. Beside the opener strip because it is the same
+    # move — deleting scaffolding rather than rewriting content — and because `meta_closer` was one
+    # of three tell categories the catalogue counted and nothing could act on.
+    text = _strip_meta_closers(text)
 
     # 1. Flatten participial trailers (always, these are pure tell)
     text = _flatten_participial_trailers(text)

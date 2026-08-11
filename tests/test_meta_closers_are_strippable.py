@@ -1,0 +1,113 @@
+"""A chatbot sign-off is scaffolding and can be deleted. A sentence wearing one is not.
+
+Sweeping every tell category over 120 corpus texts for "detected, and does the rewriter reduce it"
+found three the catalogue counts and nothing could act on:
+
+    false_range           2 flagged, 0 reduced
+    meta_closer           1 flagged, 0 reduced
+    challenges_section    1 flagged, 0 reduced
+
+`meta_closer` is the one with an obvious safe action — "I hope this helps!" carries no content, so
+removing it is a deletion of scaffolding rather than a rewrite. MEASURED on four sign-offs appended
+to a real paragraph: the tell goes 1 -> 0, similarity 0.981-0.997, `passes` True, `contradicts`
+False, numerals kept.
+
+**The first version of the transform deleted a paragraph's conclusion.** The one real corpus instance
+is
+
+    "I hope this helps to explain why we might not have high resolution color cameras on some space
+     probes and satellites."
+
+— substance wearing a sign-off as a prefix. Removing the matched phrase leaves 17 words there
+against 0 for "I hope this helps!", so the remainder is the test. Measured over seven sign-offs and
+three content sentences beginning with the same phrases:
+
+    scaffolding remainders   0, 0, 3, 4, 5, 5, 5
+    content remainders       10, 11, 17
+
+That corpus instance is therefore still counted and still not reduced, and correctly so — it is a
+DETECTOR false positive, not a rewriter gap. A tell fix that deletes the user's last sentence is a
+far worse defect than the tell.
+"""
+
+from __future__ import annotations
+
+import logging
+
+import pytest
+
+from untell.rewriter.structural import _CLOSER_REMAINDER_WORDS, _strip_meta_closers
+from untell.scripts.quality import passes, similarity
+
+BODY = (
+    "Salt lowers the freezing point of water, which is why it is spread on roads in winter. "
+    "It works down to about minus nine degrees, below which other chemicals are needed. "
+    "Most councils mix it with grit so the surface also gains traction."
+)
+
+SCAFFOLDING = [
+    "I hope this helps!",
+    "I hope this helps.",
+    "Let me know if you need anything else.",
+    "Let me know if you have any other questions.",
+    "Feel free to reach out if you need more detail.",
+]
+
+CARRIES_CONTENT = [
+    "I hope this helps to explain why we might not have high resolution colour cameras.",
+    "Let me know if the build fails on the new continuous integration runner tonight.",
+    "I hope this helps you decide which of the three approaches fits your dataset best.",
+]
+
+
+@pytest.fixture(autouse=True)
+def _quiet(caplog):
+    caplog.set_level(logging.CRITICAL)
+
+
+@pytest.mark.parametrize("closer", SCAFFOLDING, ids=lambda c: c[:22])
+def test_a_pure_sign_off_is_removed(closer: str) -> None:
+    text = f"{BODY} {closer}"
+    out = _strip_meta_closers(text)
+    assert out != text
+    assert closer.rstrip(".!?") not in out
+
+
+@pytest.mark.parametrize("ending", CARRIES_CONTENT, ids=lambda c: c[:22])
+def test_a_sentence_wearing_a_sign_off_is_kept(ending: str) -> None:
+    """Guards the guard, and it is the whole reason for the remainder rule. The first version of
+    this transform deleted the corpus's one real instance, which is a paragraph's conclusion."""
+    text = f"{BODY} {ending}"
+    assert _strip_meta_closers(text) == text
+
+
+def test_several_stacked_sign_offs_all_go() -> None:
+    text = f"{BODY} I hope this helps! Let me know if you have questions."
+    out = _strip_meta_closers(text)
+    assert "hope this helps" not in out and "Let me know" not in out
+
+
+def test_a_sign_off_mid_document_is_not_touched() -> None:
+    """"Let me know if the build fails" early in a document is an instruction to a reader."""
+    text = f"Let me know if the build fails. {BODY}"
+    assert _strip_meta_closers(text) == text
+
+
+def test_a_document_that_is_only_a_sign_off_is_not_emptied() -> None:
+    assert _strip_meta_closers("I hope this helps!") == "I hope this helps!"
+
+
+@pytest.mark.parametrize("closer", SCAFFOLDING, ids=lambda c: c[:22])
+def test_the_deletion_survives_the_meaning_gate(closer: str) -> None:
+    """Deleting a sentence is the one move in this file that removes content outright, so the gate
+    that exists to catch that has to be asked."""
+    text = f"{BODY} {closer}"
+    out = _strip_meta_closers(text)
+    assert passes(text, out), similarity(text, out)
+    assert similarity(text, out) >= 0.95
+
+
+def test_the_threshold_sits_between_the_two_measured_groups() -> None:
+    """Scaffolding remainders measured at 0-5, content at 10-17. A threshold outside that gap
+    silently reverts this file to one of the two failures it documents."""
+    assert 5 < _CLOSER_REMAINDER_WORDS < 10
