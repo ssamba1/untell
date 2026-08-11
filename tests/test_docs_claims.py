@@ -393,11 +393,12 @@ class TestResult19ConstantsMatchTheProse:
 
     def test_the_dropped_openers_are_really_gone(self, prose):
         """The doc names four openers as removed. If one came back, the claim is false."""
-        import inspect
+        # Reads the tuple, not the function's source text. The pool was hoisted to module level
+        # so the opener-stacking guard could be derived from it, and source-parsing broke on a
+        # refactor that did not change what the pool says. Third test in this repo to do that.
+        from untell.rewriter.structural import _OPENERS
 
-        from untell.rewriter.structural import _vary_openers
-
-        pool = inspect.getsource(_vary_openers).split("openers = [", 1)[1].split("]", 1)[0].lower()
+        pool = " ".join(_OPENERS).lower()
         for dead in ("broadly", "looking at this", "as it turns out", "realistically"):
             assert f'"{dead}' not in pool, f"Result 19 says {dead!r} was dropped; it is still shipped"
             assert dead in prose.lower(), f"{dead!r} was dropped without the doc recording it"
