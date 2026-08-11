@@ -148,6 +148,24 @@ _LEADING_SUBORDINATOR_RE = re.compile(
     r"^(?:because|while|although|though|since|whereas|unless|whether)\b", re.IGNORECASE
 )
 
+# HOW WELL THIS TRANSFORM ACTUALLY WORKS, measured as duplicate sentence openers per sentence so
+# the number is not a function of document length (raw counts mislead here: HC3's AI half has FEWER
+# duplicate openers than its human half in absolute terms, 28 against 40, purely because the human
+# documents are longer):
+#
+#                 human    ai    after rewrite   result
+#     HC3         0.028  0.060       0.029       105% of the human rate — lands on it
+#     RAID        0.040  0.339       0.127       318% — still three times human
+#
+# HC3 is as close to right as this can get. RAID is not, and raising `intensity` from 0.7 to 1.0
+# only moves it to 263%, so the limit is not the rate.
+#
+# It is the mechanism. This transform PREPENDS a marker; it does not change how the sentence itself
+# begins. RAID's AI half opens a third of its sentences the same way ("We propose…", "We evaluate…",
+# "The proposed method…"), and prepending reaches only the sentences it fires on — marking every one
+# of them would be a tell in itself. Closing the rest needs a transform that changes the subject
+# position, which is what `_front_subordinate_clauses` does, not another opener.
+#
 # The openers this rewriter INSERTS, hoisted so the "already has a marker" guard can be derived from
 # them rather than maintained beside them. `_LEADING_MARKER_RE` above lists coordinating markers and
 # none of these, so a sentence that had already been given "Basically," was not recognised as
