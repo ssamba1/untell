@@ -859,6 +859,8 @@ SELECTION_ON_BARE_MAX_ALLOWED = {
     "untell/scripts/run.py::untell_text": "candidate selection, but with the measured tells "
     "tie-break inside _TELLS_EPS — a documented secondary objective, not a blind max",
     "untell/scripts/verify.py::verify": "reports the verdict a caller asked for",
+    "untell/rich_output.py::print_humanize_result": "tests whether the max is PINNED so the report "
+    "can say the delta beside it means nothing — the opposite of trusting it to choose",
     "untell/attacks/word_importance.py::surgical_substitute": "the prefer_tells branch ranks on "
     "(tells, max); the score-only branch is the caller's explicit opt-out",
 }

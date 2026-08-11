@@ -50,6 +50,28 @@ _TELLS_EPS = 0.02
 _POLISH_FAILED: set[str] = set()
 
 
+# At or above this the ensemble max cannot show an improvement, so `pre` and `post` being equal is
+# not evidence that nothing changed. Same constant and same measurement as `rich_output`.
+_SATURATED_MAX = 0.99
+
+
+def _saturated_max_caveat(pre: dict, post: dict) -> str | None:
+    """Say when the reported P(AI) could not have moved, whatever the rewrite did."""
+    a, b = pre.get("max"), post.get("max")
+    if not (isinstance(a, (int, float)) and isinstance(b, (int, float))):
+        return None
+    if a < _SATURATED_MAX or b < _SATURATED_MAX:
+        return None
+    pre_mean, post_mean = pre.get("mean"), post.get("mean")
+    tail = ""
+    if isinstance(pre_mean, (int, float)) and isinstance(post_mean, (int, float)):
+        tail = f" Ensemble mean moved {pre_mean:.4f} -> {post_mean:.4f}."
+    return (
+        f"the hardest detector is pinned at {b:.4f}, so the before/after P(AI) comparison cannot "
+        f"show an improvement either way — read `mean` or the tell counts instead.{tail}"
+    )
+
+
 def _merge_warnings(*parts: str | None) -> str | None:
     """Join the caveats that apply to one run, dropping blanks and exact repeats.
 
@@ -726,8 +748,17 @@ def untell_text(
         # problem `_bypass_rate` already guards — the information exists on the result and the
         # summary line does not carry it. Composed rather than replaced, so a run can report a
         # scrub payload and a scoring caveat at once.
-        **({"warning": _merge_warnings(carried_payload, best_score.get("warning"))}
-           if (carried_payload or best_score.get("warning")) else {}),
+        # A pinned max is a third caveat that belongs on the same channel. MEASURED at the full
+        # tier: 4 documents rewritten, tells/100w 3.80 -> 2.98, and `max` sat at 0.9997 before AND
+        # after — so `pre` and `post` are identical to four decimals on text that measurably
+        # improved. Over 80 corpus texts the max reaches >=0.999 on 100% of HC3 AI text against 0%
+        # of human text, so this is the ordinary case for the input this tool exists for, not an
+        # edge. The CLI says it too; a JSON, MCP or REST caller reads only this field.
+        **({"warning": _merge_warnings(
+            carried_payload, best_score.get("warning"), _saturated_max_caveat(pre, best_score)
+        )}
+           if (carried_payload or best_score.get("warning")
+               or _saturated_max_caveat(pre, best_score)) else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),
         # WHICH meaning gate ran. `quality_metric` names the similarity backend but says nothing

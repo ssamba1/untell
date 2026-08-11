@@ -12,6 +12,13 @@ _RICH: bool = False
 # How close to the verdict cut still reads as "borderline" rather than "clear". The loop's own
 # noise band, so a run that lands just under the cut is not reported as comfortably clean.
 _VERDICT_BAND = 0.10
+
+# At or above this, the ensemble max cannot show an improvement, so a flat delta beside it is not
+# evidence that nothing happened. MEASURED over 80 corpus texts: the max reaches >=0.999 on 100% of
+# HC3 AI text and 30% of RAID's, against 0% of human text, because `roberta_openai` returns 0.9992
+# on nearly every sentence of that genre. Set at 0.99 rather than 0.999 so a detector pinned just
+# below the rounding edge is caught too; the human side of both corpora is nowhere near it.
+_SATURATED_MAX = 0.99
 try:
     from rich.console import Console as _Console
     from rich.panel import Panel as _Panel
@@ -90,10 +97,38 @@ def print_humanize_result(
             "or a different --rewriter."
         )
 
+    # A pinned max reports "no change" on text that did change. MEASURED through the pipeline at the
+    # full tier: 4 documents rewritten, tells/100w 3.80 -> 2.98, and `max` sat at 0.9997 before and
+    # after — so the Delta column below printed "—" on a 22% cut in tell density. The mean moves
+    # where the max cannot, and it is already in both score dicts; withholding it here leaves the
+    # reader with the one number that provably could not see what happened.
+    saturated = (
+        isinstance(pre_score.get("max"), (int, float))
+        and isinstance(post_score.get("max"), (int, float))
+        and pre_score["max"] >= _SATURATED_MAX
+        and post_score["max"] >= _SATURATED_MAX
+    )
+    mean_note = ""
+    if saturated:
+        pre_mean, post_mean = pre_score.get("mean"), post_score.get("mean")
+        if isinstance(pre_mean, (int, float)) and isinstance(post_mean, (int, float)):
+            mean_note = (
+                f"The hardest detector is pinned at {post_score['max']:.4f}, so the P(AI) delta "
+                f"above cannot show an improvement either way. Ensemble mean: "
+                f"{pre_mean:.4f} -> {post_mean:.4f}."
+            )
+        else:
+            mean_note = (
+                f"The hardest detector is pinned at {post_score['max']:.4f}, so the P(AI) delta "
+                "above cannot show an improvement either way."
+            )
+
     if not _RICH:
         # Fallback: plain text
         print(f"Iterations: {iterations}  Stopped: {stopped}")
         print(f"Before: P(AI)={pre_score.get('max', 0):.2f}  After: P(AI)={post_score.get('max', 0):.2f}")
+        if mean_note:
+            print(mean_note)
         if note:
             print(f"\n{note}")
         print(f"\n--- Original ---\n{original}")
@@ -112,6 +147,8 @@ def print_humanize_result(
     _CONSOLE.print(_Panel(header, style="yellow" if no_change else "cyan"))
     if note:
         _CONSOLE.print(f"[yellow]{note}[/]")
+    if mean_note:
+        _CONSOLE.print(f"[yellow]{mean_note}[/]")
 
     # Score comparison
     table = _Table(show_header=True, header_style="bold magenta")
