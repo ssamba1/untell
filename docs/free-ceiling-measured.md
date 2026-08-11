@@ -4656,3 +4656,122 @@ positive control is what separates them — not as a nicety, but as the only mec
 measure which cannot fail. Every "does it still work?" test in this log has now earned its place
 twice: once for the regression it guards, and once for exposing a sibling assertion that measured
 nothing.
+
+## Result 89
+
+**With the splitting damage gone, the substitution damage underneath it became readable.**
+
+Fourth pass over the same RAID abstracts. The structural breakage from Results 87 and 88 is absent —
+the quoted title survives, the serial lists survive, no sentence ends mid-term. What is left is one
+bad verb:
+
+> *a fundamental task in computer vision that **needs allowing** a user to interact with an image*
+
+`involves` → `needs`. Those are different sentences. *"involves X-ing"* means **includes the
+activity of** X-ing; *"needs X-ing"* means **requires being** X-ed. With an object following the
+gerund, the second reading collapses into nothing.
+
+MEASURED across 240 HC3 and RAID texts, `involves` is followed by a gerund in **33% of its HC3
+occurrences and 72% of its RAID ones**. In academic prose it is the majority case, not an edge, so
+this fired on most uses of the word in the corpus this repo has an explicit niche in.
+
+`means allowing` reads correctly, so the fix filters the option list rather than declining the swap —
+the same shape as the separable-particle rule beside it.
+
+**The near-miss matters more than the fix.** `requires`/`require` → `needs`/`need` looks like exactly
+the same pattern and is correct: *"requires calibrating"* and *"needs calibrating"* both carry the
+passive reading. A rule stated as "needs cannot take a gerund" would have broken working output. The
+rule is about `involves` specifically, and there is a test asserting `requires calibrating` still
+converts, so a future tidy-up that generalises this cannot do so silently.
+
+The scan that produced the entry found 29 headwords that ever precede an `-ing` word. All the others
+are adjective-plus-noun (`robust testing`, `novel tracking`) or noun-plus-participle (`approach
+using`) — no verb complement involved at all. One real case out of 29 candidates.
+
+**And the guard caught my own entry within the hour.** I wrote `_GERUND_UNSAFE` with two keys,
+`involves` and `involved`. The table has no `involved` headword, so that entry guarded a
+substitution that cannot happen — a guard pointing at nothing, which reads as protection forever.
+`test_the_unsafe_map_names_real_substitutes` failed on the first run and named it.
+
+**One more read, and the worst one yet — because it is a tell, not just bad grammar.**
+
+```
+However, existing methods for interactive segmentation are limited...
+  -> But, existing techniques ...
+  -> Though, existing techniques ...
+```
+
+Neither is English. And measured across the same 240 texts, neither is anything at all:
+
+| form | occurrences |
+|---|---:|
+| `However,` | 95 |
+| `But,` | **0** |
+| `Though,` | **0** |
+
+Zero in the human half and zero in the AI half. The substitution did not merely produce bad grammar:
+it produced **a form nobody in the reference corpus writes**, which is the definition of the tell
+this rewriter exists to remove. The pass meant to erase a fingerprint was minting one.
+
+`however` is not in `_TRANSITIONS_RE`, so the sentence-start decline that protects `moreover`,
+`furthermore` and `therefore` never applied to it — and it should not, because those are deleted
+outright and `however` carries a contrast that deletion would lose. It needed the other kind of
+guard, and had neither.
+
+86% of the 117 `however` occurrences carry that comma, so this is the usual slot. Bare, the same
+substitutes are correct — "the method is fast, however it fails" → "...but it fails" — so the rule
+filters on the comma rather than dropping them. `by contrast` is a sentence adverb and works in both.
+
+Worth keeping: **the guard-the-guard test is not only for the future.** It has now caught a defect in
+the very commit that introduced it, twice in this log — the fixture that was supposed to split and
+reported 1 in Result 88, and the phantom `involved` entry here. Writing the negative case is cheap
+enough that it is worth doing even when the positive case is the point.
+
+And the sharper one: **a rewriter that substitutes from a table can invent a tell the table was
+built to remove.** Three of this session's substitution defects share that shape — `in the end
+efficiency`, `an a lot longer`, `But,` — and none of them is visible to a detector, a tell
+catalogue, or a meaning gate. The only instrument that finds them is a reader, and the only
+instrument that keeps them out afterwards is a corpus count of the form being emitted.
+
+## Result 90
+
+**A budget that rounds turns a multiplier into a no-op.**
+
+Not from reading output — from a red suite. The opener-dose rework replaced a per-sentence
+probability with a spend-a-budget rule:
+
+```python
+budget = max(0, round(rate * len(sentences)) - marked)
+```
+
+Correct in intent, and it made two style flags inert. The style knobs are **multipliers** on that
+rate: `blunt` and `minimalist` are 1.2x the neutral opener rate. On a paragraph of the test's length
+0.30 and 0.36 round to the same integer, so those styles produced **byte-identical output to no-style
+at every one of 60 seeds** — and `test_the_previously_inert_styles_now_bite`, a test written for
+exactly that regression, failed on both.
+
+The fix is the idiom this file already uses twice, for the fronting budget and the parentheses
+budget, both with a comment saying why:
+
+```python
+raw = rate * len(sentences) - marked
+budget = max(0, int(raw))
+if random.random() < raw - budget:
+    budget += 1
+```
+
+Carrying the remainder as a probability keeps the dose right on average — the entire point of the
+budget — while letting a 1.2x rate still appear somewhere in a 60-seed sweep.
+
+Worth keeping: **rounding is a lossy operation on a knob.** Any continuous parameter that reaches
+its effect through `round()` has a dead band around every half-integer, and a multiplier smaller than
+that band does nothing at all. The two earlier budgets in this file each hit it and each solved it;
+the third one was written without them in view. That the file already contained the answer twice is
+the useful part — a fix recorded next to the code it fixes is not the same as a fix that transfers.
+
+A note on where this came from, since it matters for how much to trust it: this was found because
+the suite went red on work another session had in flight, in the same file I was editing. The first
+suspicion was my own change, and the way to settle it was to run the failing test with only the
+other session's edits present — not to read the diff and reason about it. Reading the diff would have
+pointed at the opener rework, which is right, but "the diff looks responsible" and "the diff is
+responsible" are different claims, and only one of them is cheap to check.
