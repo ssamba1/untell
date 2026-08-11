@@ -28,6 +28,7 @@ import re
 
 import pytest
 
+from untell.attacks.word_importance import _SYN
 from untell.rewriter.structural import structural_rewrite
 from untell.text_split import split_sentences
 
@@ -44,7 +45,45 @@ _CHECKS: dict[str, re.Pattern[str]] = {
     "an_before_consonant": re.compile(r"\ban\s+[bcdfgjklmnpqrstvwxyz]\w", re.IGNORECASE),
     "dangling_coordinator": re.compile(r"\b(and|but|or|so|because|while|which)\s*[.!?]"),
     "doubled_particle": re.compile(r"\b(to|of|in|on|for|with|through)\s+\1\b", re.IGNORECASE),
+    # Two determiners in a row. Added after `a significantly longer wait` became `an a lot longer
+    # wait`: the substitute brought its own article, and `agree_article` then re-agreed the existing
+    # one to the vowel in "a lot", so the article fix made the output worse rather than catching it.
+    # `an_before_consonant` misses this because "a" IS a vowel.
+    "stacked_determiners": re.compile(r"\b(?:a|an|the)\s+(?:a|an|the)\b", re.IGNORECASE),
+    # A phrasal substitute sitting where only a determiner's noun phrase can go: "the all told
+    # cost". Built from the table rather than hand-listed, so a phrase added to `_SYN` later is
+    # covered without anyone remembering this check exists.
+    #
+    # Articles and possessives only. `this/that/these/those` were in the list for one run and the
+    # EdgeFlow fixture immediately produced a false positive on "...flow THAT LEANS ON edge-guided
+    # flow" — a relative pronoun followed by a perfectly good substitute for "leverages". A
+    # demonstrative and a relative pronoun are the same token, so including them makes this check
+    # fire on correct English, and a damage check that cries wolf gets its fixture edited instead
+    # of the bug fixed.
+    "determiner_then_phrase": re.compile(
+        r"\b(?:a|an|the|its|their|our|his|her|your|each|every)\s+(?:"
+        + "|".join(
+            re.escape(p)
+            for p in sorted(
+                {s for subs in _SYN.values() for s in subs if " " in s}, key=len, reverse=True
+            )
+        )
+        + r")\b",
+        re.IGNORECASE,
+    ),
 }
+
+# MEASURED over 60 real HC3 AI paragraphs rewritten by `composite`: the eleven checks above
+# introduce 1 finding (a stub sentence) and the two added here introduce 0, with 0 already present
+# in the untouched inputs. They are not quiet because they are broken — each fires on the real
+# output that prompted it, pinned in `test_every_check_can_actually_fire`.
+#
+# What they do NOT catch is worth stating. The third shape from the same defect,
+# "improves in the end efficiency", has no determiner in front of the phrase, and separating it
+# from a legitimate "in the end we decided" needs to know that "efficiency" is a noun and "we" is
+# not. There is no POS tagger on the zero-dependency path, so that shape is guarded at the source
+# instead — `structural._ADVERB_SLOT_ONLY` declines the substitution rather than detecting it
+# afterwards. Two layers where the output is checkable, one where it is not.
 
 # Leads that cannot open an independent clause, so a sentence starting with one is a fragment.
 # Openers the rewriter legitimately prepends are stripped before judging — "Of course, in this
@@ -159,6 +198,9 @@ def test_every_check_can_actually_fire():
         "an_before_consonant": "an cat",
         "dangling_coordinator": "the cat sat and.",
         "doubled_particle": "walk to to the shop",
+        # Both probes are real rewriter output, not invented shapes.
+        "stacked_determiners": "There was an a lot longer wait than expected.",
+        "determiner_then_phrase": "This adds to the all told cost of the project.",
     }
     assert set(probes) == set(_CHECKS), "a check has no probe, or a probe has no check"
     for name, probe in probes.items():
