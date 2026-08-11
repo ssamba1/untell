@@ -5248,3 +5248,51 @@ here were reading "this run errored" as a proxy for something else — no rewrit
 rewrite performed, a baseline was requested, no caveats apply. None of them said so, and each was
 correct until the day the error stopped happening. When an error becomes a fallback, the search is
 not for callers of the error but for **tests that were quietly using it as a signal**.
+
+## Result 100
+
+**A sweep that reported three dead knobs, all three of which work.**
+
+The defect class is real and this repo has had it repeatedly: five guards that "declined the job
+they exist to do", four style flags that could not change the output at any seed, a fronting budget
+permanently full. So sweeping every knob of `untell_text` and asking whether each can change a run
+is an obvious check to want.
+
+The obvious version of it is wrong. One seed, one fixture:
+
+```
+threshold=0.9          changes the run
+max_iters=3            changes the run
+best_of=1              changes the run
+polish=True            changes the run
+style=academic         changes the run
+style=casual           NO EFFECT
+margin=0.2             NO EFFECT
+scrub=False            NO EFFECT
+rewriter=surgical      changes the run
+rewriter=structural    changes the run
+rewriter=targeted      changes the run
+```
+
+Three findings, none of them a finding:
+
+- **`style` sets rates.** At one seed the styled and unstyled paths can coincide. Over 40 seeds,
+  `casual` differs on 3 — which the existing style tests already record as its genuine weakness, and
+  which is not the same claim as "inert".
+- **`margin` decides nothing unless the text would otherwise PASS.** The sweep ran at
+  `threshold=0.0`, where nothing can ever pass, so there was no borderline pass to withhold. Given a
+  threshold that straddles the measured score — 0.8225, threshold 0.873 — it is unambiguous:
+  `margin=0.00` stops at `passed` with **0 iterations**, `margin=0.10` runs **1**.
+- **`scrub` only matters when something is hidden.** On clean text it is a no-op by construction.
+  With zero-width characters injected: 0 survive with `scrub=True`, 3 with `scrub=False`.
+
+Every knob works. The check is now a test that builds each knob's condition and says in its docstring
+which one, so the next person to run the naive version finds the answer instead of the false
+positive.
+
+Worth keeping: **"this knob does nothing" and "my fixture does not exercise this knob" produce the
+same reading, and the second is far more common.** The discipline that separates them is the same
+one that has been paying all session — construct the condition the thing responds to, then check.
+Three false positives in one sweep is a high enough rate that the sweep would have been actively
+misleading shipped as-is: a future reader deleting `margin` on its evidence would have removed a
+working feature.
