@@ -41,6 +41,37 @@ def _intensity_sweep(base: float, n: int) -> list[float]:
     return out
 
 
+def _selection_key(result: dict) -> tuple[float, float]:
+    """Rank a candidate by ``(max, mean)`` — max is the objective, mean breaks ties it cannot see.
+
+    Selecting on `max` alone silently disables this rewriter on the input it exists for. `max` is a
+    single detector's number, and a saturating member pins it: MEASURED over 6 real HC3 AI answers
+    at >=90 words, every baseline scored **exactly 1.000000** because `mage` returns exactly 1.0 on
+    that genre. All 3 candidates per document were genuinely different text, and 0 of 3 satisfied
+    `cand < baseline` — because `1.0 < 1.0` is false. So `composite`, the DEFAULT rewriter, returned
+    its input byte-identical on 6 of 6 documents while `structural`, `surgical` and `targeted` each
+    changed the same text. The rewriting was never the problem; the selector threw all of it away.
+
+    The mean separates what the max cannot. Same 6 documents, 18 candidates:
+
+        base mean 0.8661 -> 0.8193 / 0.8437 / 0.8226
+        base mean 0.8337 -> 0.6789 / 0.6008 / 0.8046
+        base mean 0.8944 -> 0.8774 / 0.6700 / 0.6490      (18 of 18 improved)
+
+    This is NOT the reverted "consolation rewrite", which adopted a candidate that scored WORSE on
+    the theory that changing the text was worth something. A tie on max plus a strict improvement on
+    mean is a real measured gain on a real axis; a candidate that ties on both, or loses on either,
+    is still rejected and the original still wins. Lexicographic order gives exactly that.
+    """
+    mx = float(result["max"])
+    vals = [
+        float(v)
+        for v in result.get("detectors", {}).values()
+        if isinstance(v, (int, float)) and not isinstance(v, bool)
+    ]
+    return (mx, sum(vals) / len(vals) if vals else mx)
+
+
 class CompositeRewriter(Rewriter):
     """Chain StructuralRewriter → SurgicalRewriter for the strongest free rewrite.
 
@@ -128,13 +159,16 @@ class CompositeRewriter(Rewriter):
                     if para.strip() and para != text:
                         text = para
                 else:
-                    base = float(score_text(text, tier=tier)["max"])
+                    # Same (max, mean) key as the rule-based selector below: a saturating detector
+                    # pins `max` here too, and "no draw beat the original" would then discard every
+                    # paraphrase for the same non-reason. See `_selection_key`.
+                    base = _selection_key(score_text(text, tier=tier))
                     best_para, best_para_score = None, base
                     for _ in range(max(1, self.t5_best_of)):
                         para = self._t5.rewrite(text, score_result, threshold)
                         if not para.strip() or para == text:
                             continue
-                        ps = float(score_text(para, tier=tier)["max"])
+                        ps = _selection_key(score_text(para, tier=tier))
                         if ps < best_para_score:
                             best_para, best_para_score = para, ps
                     if best_para is not None:
@@ -153,7 +187,7 @@ class CompositeRewriter(Rewriter):
             restructured = self._structural.rewrite(text, score_result, threshold)
             return self._surgical.rewrite(restructured, score_result, threshold)
         try:
-            baseline = float(score_text(text, tier=tier)["max"])
+            baseline = _selection_key(score_text(text, tier=tier))
         except Exception:
             # A candidate scoring failure below is swallowed; this one used to propagate and abort
             # the whole rewrite. Same transient cause (detector timeout, OOM spike), opposite
@@ -184,7 +218,7 @@ class CompositeRewriter(Rewriter):
             polished = self._surgical.rewrite(restructured, score_result, threshold)
             # Score the candidate
             try:
-                cand_score = float(score_text(polished, tier=tier)["max"])
+                cand_score = _selection_key(score_text(polished, tier=tier))
                 if cand_score < best_score:
                     best_text = polished
                     best_score = cand_score
