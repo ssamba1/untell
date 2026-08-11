@@ -2057,6 +2057,27 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         # anaphora transform, and it is a different and much cheaper thing than paraphrasing a
         # sentence.
         #
+        # PROTOTYPED AND NOT SHIPPED, with the numbers so the next attempt starts from them.
+        # Replacing later mentions of a repeated 3+ word noun chunk with "the <head noun>" — which
+        # keeps the referent explicit, unlike a pronoun, so the reference cannot go ambiguous:
+        #
+        #     RAID   18 of 40 docs touched, 95 mentions shortened, 9.14 -> 8.24 (10% less
+        #            repetition), meaning gate passed 17/18
+        #     HC3     4 of 40 docs touched, 12 mentions shortened, 6.42 -> 6.20 (3%), gate 4/4
+        #
+        # Safe and real, but modest, and corpus-dependent for a reason: HC3's repetition is 45%
+        # clause restatement against 32% noun phrases, so there is little for it to shorten. The
+        # crude upper bound — pronominalising the top three repeated trigrams outright — is 25% on
+        # RAID and 42% on HC3, so most of the available reduction is NOT in the safe transform.
+        #
+        # The blocking objection is not the size, it is the dependency. Identifying a noun chunk
+        # needs a parser, and this module is stdlib + `re` on purpose: it is the free path that runs
+        # with no model download. Adding spaCy to it to buy 3-10% less repetition on one of two
+        # corpora is the wrong trade. If this is built, it belongs behind the same optional-extra
+        # guard as the neural rewriters, and the one gate failure to look at first is a definition
+        # site — shortening a term in the sentence that introduces it ("called deep active contours
+        # using locally controlled distance vector flow") is wrong even when the rule is right.
+        #
         # Widening the scope is NOT the fix, which is why it is not done here. Running
         # `_drop_restatements` over the whole document instead of the block:
         #
