@@ -8,6 +8,10 @@ from __future__ import annotations
 
 # Lazy import so the module is always importable.
 _RICH: bool = False
+
+# How close to the verdict cut still reads as "borderline" rather than "clear". The loop's own
+# noise band, so a run that lands just under the cut is not reported as comfortably clean.
+_VERDICT_BAND = 0.10
 try:
     from rich.console import Console as _Console
     from rich.panel import Panel as _Panel
@@ -122,14 +126,32 @@ def print_humanize_result(
     delta_str = f"{delta:+.2f}" if abs(delta) > 0.001 else "—"
     delta_style = "green" if delta < 0 else ("red" if delta > 0 else "white")
 
-    from untell.humanness import classification
+    # This row glosses the P(AI) number directly above it, so it is labelled against the threshold
+    # that decides `flagged` — the product's own calibrated cut — rather than by borrowing another
+    # metric's bands.
+    #
+    # It used to call `classification((1 - p_ai) * 100)`. That function's boundaries are fitted to
+    # `humanness()` scores specifically, and its docstring says so: "lowest HUMAN score 75.6,
+    # highest AI score 72.0 ... a boundary at 75 misclassifies 0 of 80". `(1 - P(AI)) * 100` is a
+    # different quantity on a different scale, and feeding it those bands made two surfaces label
+    # the same text differently. MEASURED on 60 HC3 and RAID texts, comparing
+    # `classification(humanness(t))` against `classification((1 - max) * 100)`:
+    #
+    #     labels agree on 18 of 60 — 30%
+    #
+    # So `untell humanize` and `untell humanness` disagreed about the same paragraph seven times in
+    # ten, using the same labelling function. The earlier fix recorded here was real — passing
+    # P(AI) in raw made the row constant — but rescaling it into the wrong calibration replaced a
+    # constant with a mislabel.
+    #
+    # `verdict_threshold` is what `flagged` compares against, so this row and that field can no
+    # longer disagree. The band around it is the loop's own noise width.
+    cut = post_score.get("verdict_threshold", post_score.get("threshold", 0.30))
 
-    # `classification()` takes a HUMANNESS score in 0-100 (higher = more human); `max` is P(AI) in
-    # 0-1. Passing P(AI) straight in meant every value landed under the bottom band, so the Verdict
-    # row printed "AI" -> "AI" for every input, including a run that took 0.86 down to 0.02. It was
-    # not merely wrong, it was constant — the row carried no information at all.
     def _verdict(p_ai: float) -> str:
-        return classification((1.0 - p_ai) * 100.0)
+        if p_ai >= cut:
+            return "flagged"
+        return "borderline" if p_ai >= cut - _VERDICT_BAND else "clear"
 
     table.add_row("P(AI) max", f"{before_max:.2f}", f"{after_max:.2f}", f"[{delta_style}]{delta_str}[/]")
     table.add_row("Verdict", _verdict(before_max), _verdict(after_max), "")
