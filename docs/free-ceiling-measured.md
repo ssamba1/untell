@@ -3771,3 +3771,45 @@ Worth keeping: **read the qualifier on the code, not the claim in the docstring.
 written by someone who understood the bug exactly and fixed the path they were looking at. The
 sentence generalises; the code does not; and nothing flags the difference because both are correct
 about what they describe.
+
+## Result 71
+
+**Markdown structure survives the loop — except the one break that means "do not join these".**
+
+`layout.py` exists because rewriters reassemble text with `" ".join(sentences)` and flatten
+documents. Eight markdown edge cases through the full loop, checking line counts and structural
+markers:
+
+| case | lines | markers | |
+|---|---|---|---|
+| nested list, task list, setext heading | preserved | preserved | ok |
+| HTML block, footnote, indented code | preserved | preserved | ok |
+| YAML front matter | preserved | preserved | ok |
+| fenced code | preserved | **byte-identical** | ok |
+| **hard break** (two trailing spaces) | **2 → 1** | — | **broken** |
+
+Seven of eight clean, including a full document with headings, both list kinds, a blockquote, a
+table and a code fence — all structure intact, code block byte-identical.
+
+The eighth: `apply_per_block` gathers consecutive plain lines into one block "so a soft-wrapped
+paragraph is transformed as a unit", which is right for a soft wrap and wrong for a hard break.
+The author asked for a rendered line break; the merge transform joined straight across it and
+returned one sentence.
+
+**It survived when nothing else changed**, which is what made it invisible — the loss appears only
+once the merge transform fires, so any spot-check on unmodified text says the layout is fine.
+
+Fixed in two parts, and the second was only found by re-measuring the first:
+
+1. A hard break now ends a block. That alone took the line count from 2→1 back to 2→2 — and left
+   the output rendering as a soft wrap anyway, because
+2. every transform strips trailing whitespace, so the marker was gone. The marker is now held
+   aside and re-attached around the transform.
+
+Ending the block costs the transform some context: the following line is rewritten on its own. That
+is the right trade — the author asked for a boundary, and this module's job is to honour one rather
+than optimise across it.
+
+Worth keeping: **"the line count is right" is not "the layout is right".** The first fix passed the
+obvious check and produced output that renders differently from its input. Only asking what the
+*characters* were, rather than how many lines there were, showed it.
