@@ -541,7 +541,13 @@ _HEDGE_STACK_RE = re.compile(
 # False-range / unearned breadth (§17) — "whether you're a X or a Y", "from X to Y" sweeping scope.
 _FALSE_RANGE_RE = re.compile(
     r"\bwhether you'?re\s+(?:an?\s+)?\w+[^.!?]{0,40}\bor\s+(?:an?\s+)?\w+"
-    r"|\bfrom\s+(?:ancient|the everyday|the mundane|individual|small|humble)\b[^.!?]{0,50}\bto\s+the\b"
+    # `to the` was required here, so this alternative missed the catalogue's OWN headline example:
+    # `ai-tells.md` item 17 quotes "from ancient civilizations to modern startups", and the second
+    # half has no article. The scope word at the front is what keeps this from matching an ordinary
+    # range, so the article was carrying no weight. MEASURED over 120 HC3 and RAID pairs, dropping
+    # it changes the counts on real text by ZERO in both corpora — the shape simply does not occur
+    # there — so this closes a documented-example gap at no measured cost.
+    r"|\bfrom\s+(?:ancient|the everyday|the mundane|individual|small|humble)\b[^.!?]{0,50}\bto\s+\w+"
     # The generic sweep, which is the form that actually appears: "everything from X to Y",
     # "from startups to enterprises". The list above only caught six hand-picked openers, so the
     # category shipped while missing its own headline construction. Requires a scope word
