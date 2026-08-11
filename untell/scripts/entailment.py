@@ -210,26 +210,53 @@ def entailment_score(a: str, b: str) -> float | None:
     if not available() or not a.strip() or not b.strip():
         return None
     try:
-        forward = _pair_probs(a, b)
-        idx = (_NLI.label_idx or {}).get("entailment")  # resolved during the first load
+        # One pass to resolve the label positions on first use; the chunk loop below does the work.
+        if _NLI.label_idx is None:
+            _pair_probs(a, b)
+        idx = (_NLI.label_idx or {}).get("entailment")
         if idx is None:
             return None
-        backward = _pair_probs(b, a)
-        # NOT chunked, unlike `contradiction_score`. Chunking this was implemented and reverted:
-        # over 30 real rewrites it took the veto count from 0 to 2, and printing the responsible
-        # chunk pair showed the cause was misalignment, not damage —
+        # CHUNKED, and the history matters because it was deliberately not for a while. Chunking
+        # this was implemented and reverted once: over 30 real rewrites it took the veto count from
+        # 0 to 2, and the responsible chunk pair showed misalignment rather than damage —
         #
         #     SRC chunk: "Our results demonstrate that the attention mechanism improves ..."
         #     OUT chunk: "We also perform a series of ablation studies ... Our results show that
         #                 the attention mechanism improves ..."
         #
-        # The rewrite chunk begins a sentence earlier, because proportional splitting drifts once
-        # the rewriter has changed sentence lengths. Contradiction survives that drift (it is a MAX
-        # over chunks, and unrelated text is "neutral" rather than contradictory — measured
-        # unchanged at 1 veto in 30 either way), but entailment is a MIN over eight directional
-        # scores and every misaligned pair drags it down. A safety check that rejects faithful
-        # output is not a safer check.
-        return min(float(forward[idx]), float(backward[idx]))
+        # The rewrite chunk began a sentence earlier because PROPORTIONAL splitting drifts once the
+        # rewriter has changed sentence lengths. Contradiction survived that drift (a MAX over
+        # chunks, and unrelated text is neutral rather than contradictory) but entailment is a MIN
+        # over directional scores, so every misaligned pair dragged it down.
+        #
+        # That reason no longer holds: `aligned_chunks` cuts on difflib opcodes, not proportions.
+        # RE-MEASURED against the current aligner — of 25 candidates the gate accepts today,
+        # chunked entailment newly vetoes 0.
+        #
+        # And leaving it unchunked was not free. The whole-pair call truncates, so it stops seeing
+        # anything past roughly the first 130 words. MEASURED, deleting most of a sentence at
+        # increasing depth into a document:
+        #
+        #     loss after  10 words   entailment 0.0017   caught
+        #     loss after 140 words   entailment 0.9800   MISSED
+        #     loss after 280 words   entailment 0.9800   MISSED
+        #
+        # with contradiction innocent at 0.003 (dropping content contradicts nothing), similarity
+        # 0.965, and the numeral, certainty and polarity guards all clean. So a rewriter could
+        # delete the second half of any sentence past the first ~130 words and the whole gate passed
+        # it. Chunked, the same edits score 0.0038 and 0.0032 — under the floor, caught. This is the
+        # meaning-LOSS half of the failure the repo's own worked example describes for inversion;
+        # the inversion half was fixed by chunking contradiction and this half was left open.
+        #
+        # An unchanged chunk is perfectly entailed in both directions, so it scores 1.0 without a
+        # model call — same reasoning as in `contradiction_score`, and it is most chunks of a real
+        # rewrite.
+        return min(
+            1.0
+            if ca == cb
+            else min(float(_pair_probs(ca, cb)[idx]), float(_pair_probs(cb, ca)[idx]))
+            for ca, cb in aligned_chunks(a, b)
+        )
     except Exception as exc:
         _NLI.dead = True
         if not _NLI.warned:

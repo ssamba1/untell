@@ -89,3 +89,65 @@ def test_an_inversion_inside_an_otherwise_unchanged_document_is_still_caught() -
     flipped = _LONG.replace("improved segmentation accuracy", "degraded segmentation accuracy")
     assert flipped != _LONG
     assert not meaning_preserved(_LONG, flipped, similarity(_LONG, flipped), 0.76)
+
+
+class TestMeaningLossDeepInADocument:
+    """The gate missed content deletion past its truncation point, and only for LOSS.
+
+    `_pair_probs` tokenises (premise, hypothesis) as one 256-token sequence, so each side gets
+    roughly 128 words. `contradiction_score` was chunked to survive that; `entailment_score` was
+    deliberately left whole-text, and entailment is the half that catches meaning LOSS — dropping
+    content contradicts nothing. MEASURED before chunking it, deleting most of a sentence:
+
+        loss after  10 words   entailment 0.0017   caught
+        loss after 140 words   entailment 0.9800   MISSED
+        loss after 280 words   entailment 0.9800   MISSED
+
+    with contradiction at 0.003, similarity 0.965, and the numeral, certainty and polarity guards
+    all clean — so the whole gate passed it. The repo's own worked example describes exactly this
+    failure for INVERSION and records it as fixed; the loss half was still open.
+    """
+
+    _FILLER = (
+        "The report covers procurement, staffing, and the maintenance backlog across regional "
+        "offices. "
+    )
+    _TAIL = (
+        " The trial enrolled patients from rural clinics and ran under close supervision by an "
+        "external board."
+    )
+
+    def _pair(self, pad_words: int) -> tuple[str, str]:
+        pad = " ".join((self._FILLER * 40).split()[:pad_words])
+        return pad + self._TAIL, pad + " The trial ran."
+
+    @pytest.mark.parametrize("depth", [10, 140, 280, 400], ids=lambda d: f"{d}w")
+    def test_content_deletion_is_caught_at_any_depth(self, depth: int) -> None:
+        _skip_without_nli()
+        source, cut = self._pair(depth)
+        assert not meaning_preserved(source, cut, similarity(source, cut), 0.76), (
+            f"content deleted after {depth} words passed the gate"
+        )
+
+    @pytest.mark.parametrize("depth", [140, 400], ids=lambda d: f"{d}w")
+    def test_the_lexical_guards_are_not_what_catches_it(self, depth: int) -> None:
+        """The probe has no numbers, hedges or polarity words, so only the NLI half can catch it.
+
+        Without this, a fixture containing "five sites" would be caught by `numbers_kept` and the
+        test would pass while the hole stayed open — which is what happened to the first version.
+        """
+        from untell.scripts.hedges import certainty_kept, polarity_kept
+        from untell.scripts.numerals import numbers_kept
+
+        source, cut = self._pair(depth)
+        assert numbers_kept(source, cut)
+        assert certainty_kept(source, cut)
+        assert polarity_kept(source, cut)
+
+
+def test_a_faithful_reorder_still_passes() -> None:
+    """Chunking entailment was reverted once for false vetoes; this is the shape that caused them."""
+    _skip_without_nli()
+    a = "The committee approved the plan on Tuesday after a long review."
+    b = "On Tuesday, after a long review, the committee approved the plan."
+    assert meaning_preserved(a, b, similarity(a, b), 0.76)
