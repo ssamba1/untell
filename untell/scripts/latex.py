@@ -69,13 +69,13 @@ _DROP_ARG = re.compile(r"\\[a-zA-Z@]+\*?(?:\[[^\]]*\])*\{[^{}]*\}")
 _BARE_CMD = re.compile(r"\\[a-zA-Z@]+\*?")
 _ENV_MARK = re.compile(r"\\(?:begin|end)\{[^}]*\}")
 
-# `cite[a-zA-Z]*` matches only commands that START with "cite", which is natbib and APA.
-# biblatex — the modern standard — puts the stem in the middle: \parencite, 	extcite,
-# ootcite, utocite. Those returned NO keys, so `--against` reported "keeps every
-# citation" on a rewrite that had destroyed all of them, and no key was ever checked against
-# the .bib. `preserve.lock()` was never fooled — it masks LaTeX commands structurally and all
-# three forms survive a rewrite byte-exact — so the byte-locking promise held while the
-# REPORTING on it was blind.
+# `cite[a-zA-Z]*` matched only commands that START with "cite", which is natbib and APA.
+# biblatex is the modern standard and puts the stem in the middle: \parencite,
+# \textcite, \footcite, \autocite. Those returned NO keys, so `--against` reported
+# "keeps every citation" on a rewrite that had destroyed all of them, and no key was ever
+# checked against the .bib. `preserve.lock()` was never fooled — it masks LaTeX commands
+# structurally and all three forms survive a rewrite byte-exact — so the byte-locking promise
+# held while the REPORTING on it was blind.
 #
 # The starred forms (\citep*, \parencite*) failed for a second reason: the star sits between
 # the command and its optional argument.

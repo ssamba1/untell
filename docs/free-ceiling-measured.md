@@ -4060,6 +4060,13 @@ again while checking a feature's exit code. The second: a `printf` fixture turne
 `\textcite` into a literal tab, so the tool correctly counted 2 citations in a 3-citation file and
 I nearly wrote up a phantom inconsistency between the counter and the loss check.
 
+**And the comment describing the fix was itself mangled by the same class of bug.** Writing it
+through a shell turned the `	` of `	extcite` into a tab, the `` of `ootcite` into a form
+feed and the `` of `utocite` into a BEL — three control characters committed into a source
+file, in a comment about escape handling. `check_no_control_characters`, added in
+[Result 44](free-ceiling-measured.md) after exactly this, caught all three on the next audit run.
+Sixth escape mangling this session, and the first one a standing check found rather than a reader.
+
 Worth keeping: **check whether a guarantee and its report share a code path.** They did not here,
 and nothing in either file said so. The locking is structural and the reporting is a command
 whitelist, which is why one covered biblatex and the other did not — and why the gap could sit
