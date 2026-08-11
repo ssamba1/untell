@@ -73,13 +73,51 @@ def test_per_detector_threshold_blocks_pass(monkeypatch):
     assert res["iterations"] == 2
 
 
-def test_untell_text_no_rewriter_returns_error(monkeypatch):
+def test_untell_text_with_nothing_configured_falls_back_and_says_so(monkeypatch, caplog):
+    """No hosted or local-policy rewriter is not an error — it is the state of a fresh install.
+
+    This asserted `"error" in res` and was the last surface still refusing; `composite` is free,
+    needs no key, and is what the CLI, MCP and REST paths already fall back to. See
+    `test_auto_falls_back_to_the_free_path_instead_of_refusing`, whose docstring records the four
+    surfaces and which one disagreed.
+
+    The fallback must still be AUDIBLE. A weaker backend substituted with nothing to say so is the
+    failure this repository keeps finding elsewhere, so the warning is asserted here rather than
+    left to be noticed.
+    """
+    import logging
+
     import untell.scripts.run as run_mod
 
-    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: None)
-    res = untell_text(AI, tier="lite")
-    assert "error" in res
-    assert res["final"] == AI  # unchanged
+    # The hosted/local selector finds nothing; a named rewriter still resolves, or the fallback has
+    # nothing to reach.
+    real = run_mod.get_rewriter
+    monkeypatch.setattr(
+        run_mod, "get_rewriter", lambda prefer=None: None if prefer is None else real(prefer)
+    )
+    run_mod._WARNED_FREE_FALLBACK = False
+
+    with caplog.at_level(logging.WARNING, logger="untell.scripts.run"):
+        res = untell_text(AI, tier="lite")
+
+    assert "error" not in res, res.get("error")
+    assert res["final"].strip(), "the fallback must produce usable text"
+    assert "composite" in caplog.text, caplog.text
+
+
+def test_a_hosted_rewriter_lookup_returning_none_is_still_reported(monkeypatch):
+    """Guards the guard: the fallback must not swallow the fact that nothing was configured.
+
+    `get_rewriter()` still answers None for "is a hosted or local-policy rewriter configured" —
+    that question is unchanged, and only the interpretation of the answer moved.
+    """
+    import untell.scripts.run as run_mod
+
+    real = run_mod.get_rewriter
+    monkeypatch.setattr(
+        run_mod, "get_rewriter", lambda prefer=None: None if prefer is None else real(prefer)
+    )
+    assert run_mod.get_rewriter() is None
 
 
 def test_untell_text_survives_rewriter_exception(monkeypatch):
@@ -122,14 +160,47 @@ def test_cli_json_output(monkeypatch, capsys):
     assert "final" in parsed and parsed["iterations"] >= 1
 
 
-def test_cli_no_rewriter_exits_nonzero(monkeypatch, capsys):
+def test_auto_falls_back_to_the_free_path_instead_of_refusing(monkeypatch, capsys):
+    """`--rewriter auto` with nothing configured runs `composite` rather than exiting 1.
+
+    This test asserted the refusal, and the refusal was the last surface still doing it. MEASURED on
+    an install with no key, before the change:
+
+        untell humanize        composite   works
+        MCP untell()           composite   works
+        POST /humanize         composite   works
+        untell_text(text)      None        {"error": "no rewriter configured"}
+
+    `composite` is free, needs no key, and is the documented zero-dependency path; MCP and REST were
+    each changed to default to it for exactly this reason. `get_rewriter()` still answers None —
+    that question is "is a HOSTED or local-policy rewriter configured", and the test pinning it
+    stays — but treating that as "no rewriter exists" was the error.
+    """
     import untell.scripts.run as run_mod
 
-    monkeypatch.setattr(run_mod, "get_rewriter", lambda prefer=None: None)
-    # Explicitly request 'auto' rewriter (which fails without a key)
+    # Nothing configured: the hosted/local selector finds nothing, which is the state a fresh
+    # install is in. `prefer="composite"` must still resolve, or the fallback has nothing to reach.
+    real = run_mod.get_rewriter
+    monkeypatch.setattr(
+        run_mod, "get_rewriter", lambda prefer=None: None if prefer is None else real(prefer)
+    )
     rc = main(["--rewriter", "auto", "--tier", "lite", "some text to untell here please"])
-    assert rc == 1
-    assert "ERROR" in capsys.readouterr().out
+    assert rc == 0
+    assert "ERROR" not in capsys.readouterr().out
+
+
+def test_a_named_rewriter_that_is_unavailable_still_fails():
+    """Guards the guard. The fallback is for "choose for me", not for a named backend that is not
+    there — silently substituting another attributes results to the wrong technique.
+
+    Asserted on `untell_text` rather than through `main`, because the CLI's `--rewriter` choices are
+    validated by argparse and an unknown name never reaches the loop. The library takes any string.
+    """
+    from untell.scripts.run import untell_text
+
+    result = untell_text("some text to untell here please", tier="lite", rewriter="no_such_backend")
+    assert "not available" in result["error"]
+    assert result["final"] == "some text to untell here please"
 
 
 def test_deterministic_rewriter_stops_early_on_stall(monkeypatch):

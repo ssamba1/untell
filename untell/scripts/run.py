@@ -50,11 +50,45 @@ _TELLS_EPS = 0.02
 _POLISH_FAILED: set[str] = set()
 
 
+def _merge_warnings(*parts: str | None) -> str | None:
+    """Join the caveats that apply to one run, dropping blanks and exact repeats.
+
+    Two independent things can be worth saying at once — the text carried hidden characters AND no
+    detector could score it — and an `or` between them would silently drop whichever came second.
+    `score_text` composes its own warnings the same way, with "Also:" between clauses.
+    """
+    seen: list[str] = []
+    for part in parts:
+        text = (part or "").strip()
+        if text and text not in seen:
+            seen.append(text)
+    return " Also: ".join(seen) if seen else None
+
+
 # A style profile needs enough words to mean anything. Matches the floor the rest of the codebase
 # uses for "too short to measure" (humanness._MIN_WORDS_FOR_SIGNAL, the detectors' own abstention),
 # raised here because a profile has six features to estimate rather than one score.
 _MIN_VOICE_SAMPLE_WORDS = 20
 _WARNED_VOICE_SAMPLE = False
+_WARNED_FREE_FALLBACK = False
+
+
+def _warn_free_rewriter_fallback() -> None:
+    """Say once that no configured rewriter was found and the free path ran instead.
+
+    Silence here would be the failure this repo keeps finding elsewhere: a weaker backend
+    substituted with nothing in the result to say so. A caller who set a key and expected the hosted
+    rewriter needs to know it was not reached.
+    """
+    global _WARNED_FREE_FALLBACK
+    if _WARNED_FREE_FALLBACK:
+        return
+    _WARNED_FREE_FALLBACK = True
+    logging.getLogger(__name__).warning(
+        "no hosted or local-policy rewriter is configured, so the free 'composite' path ran "
+        "instead. Pass rewriter='composite' to make that explicit, or set ANTHROPIC_API_KEY / "
+        "OPENAI_API_KEY / UNTELL_POLICY_DIR to use a configured one.",
+    )
 
 
 def _warn_voice_sample_too_short(words: int) -> None:
@@ -241,26 +275,50 @@ def untell_text(
     # `AttributeError: 'str' object has no attribute 'rewrite'`, which says nothing about the cause.
     if isinstance(rewriter, str):
         name = rewriter
-        rewriter = get_rewriter(prefer=name)
-        # Do NOT fall back to auto-selection here. A caller who names a rewriter wants that one, and
-        # silently substituting another produces results attributed to the wrong technique.
-        if rewriter is None or not rewriter.available():
-            return {
-                "error": f"rewriter {name!r} is not available — check the name (see `untell --check` "
-                "for the installed list) or install its extra",
-                "final": text,
-            }
+        # "auto" is the CLI's spelling of "choose for me", and it is in `--rewriter`'s advertised
+        # choice list. It was not a name this function accepted, so a caller who read the CLI help
+        # and passed `rewriter="auto"` to `untell_text` got "rewriter 'auto' is not available" —
+        # about the one value the documentation tells them is the default. Same divergence as the
+        # None case below, one layer up: the CLI translates it and nothing else did.
+        if name.lower() == "auto":
+            # Leave it None and let the auto-selection below run — "auto" is a request FOR that
+            # path, not a name to look up. Falling through to the availability check would answer
+            # "rewriter 'auto' is not available", which is what it used to do.
+            rewriter = None
+        else:
+            rewriter = get_rewriter(prefer=name)
+            # Do NOT fall back to auto-selection here. A caller who names a rewriter wants that one,
+            # and silently substituting another produces results attributed to the wrong technique.
+            if rewriter is None or not rewriter.available():
+                return {
+                    "error": f"rewriter {name!r} is not available — check the name (see "
+                    "`untell --check` for the installed list) or install its extra",
+                    "final": text,
+                }
     rw = rewriter if rewriter is not None else get_rewriter()
     if rw is None:
-        return {
-            # Name the library form too. `get_rewriter()` with no preference returns None unless an
-            # API key is configured, so a caller of `untell_text(text)` — with no CLI in sight —
-            # was told to pass a command-line flag they cannot pass.
-            "error": "no rewriter configured — pass rewriter='composite' (or --rewriter composite "
-            "on the CLI): free, $0, no key. Otherwise set ANTHROPIC_API_KEY / OPENAI_API_KEY / "
-            "UNTELL_POLICY_DIR",
-            "final": text,
-        }
+        # Fall back to the free path rather than refusing. `get_rewriter()` answers "is a HOSTED or
+        # local-policy rewriter configured", and None is the right answer to that question — the
+        # test pinning it stays. What was wrong is treating that as "no rewriter exists", when
+        # `composite` is always available, needs no key, and is the documented zero-dependency path.
+        #
+        # This was the last surface still doing it. MEASURED on an install with no key:
+        #
+        #     untell humanize          composite   works
+        #     MCP untell()             composite   works
+        #     POST /humanize           composite   works
+        #     untell_text(text)        None        {"error": "no rewriter configured"}
+        #
+        # MCP and REST were each changed to default to `composite` for exactly this reason, and
+        # their own comments record it as "the flagship tool failed out of the box while the
+        # identical CLI invocation worked". The library entry point is the one a Python user reaches
+        # for first, and it was the only one left refusing.
+        #
+        # Said once, on stderr, because a caller with a key who expected the hosted rewriter should
+        # know the free path ran instead — silently substituting a weaker backend is the failure
+        # this repo keeps finding on other surfaces.
+        rw = get_rewriter("composite")
+        _warn_free_rewriter_fallback()
 
     # A voice sample below the documented minimum yields a profile built on too few sentences to
     # mean anything, and the tie-break then runs on noise. `untell humanize --voice-sample` warns
@@ -657,7 +715,19 @@ def untell_text(
         # already gone), so compare the scrubbed original against the actual final instead of stale.
         "similarity": similarity(text, final) if polished_applied else similarity(masked, best_masked),
         "tier": best_score.get("tier", tier),
-        **({"warning": carried_payload} if carried_payload else {}),
+        # The SCORE's own caveat travels with the verdict, not just inside `post`. `carried_payload`
+        # covers hidden characters and was the only thing that ever reached this field, so a caller
+        # reading the documented top-level `warning` got None while `post["warning"]` said
+        #
+        #     "no detector produced a score — max/mean are placeholders, not a verdict"
+        #
+        # MEASURED on Chinese input: `changed=False`, `rewrites=3`, top-level warning None, and a
+        # `flagged` boolean computed from placeholder maxima. Same shape as the `scored: False`
+        # problem `_bypass_rate` already guards — the information exists on the result and the
+        # summary line does not carry it. Composed rather than replaced, so a run can report a
+        # scrub payload and a scoring caveat at once.
+        **({"warning": _merge_warnings(carried_payload, best_score.get("warning"))}
+           if (carried_payload or best_score.get("warning")) else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),
         # WHICH meaning gate ran. `quality_metric` names the similarity backend but says nothing

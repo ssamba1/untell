@@ -209,7 +209,7 @@ def measure_ceiling(
     # deliberately conservative and the env var exists to tune it per machine.
     for _run in range(max(1, repeats)):
         run_posts: list[float] = []
-        for _text, pre, res in _each_text(
+        for _source, pre, res in _each_text(
             texts, tier, threshold, max_iters, rewriter, best_of, workers
         ):
             # An unscored result carries max: 0.0 as a placeholder, and flagged_rate below counts
@@ -229,7 +229,18 @@ def measure_ceiling(
                     run_posts.append(post["max"])
                     for k, v in _numeric(post).items():
                         per_post.setdefault(k, []).append(v)
-                rewrote += 1
+                # Count a REWRITE, not a run. This was `rewrote += 1` on every result that carried a
+                # `post`, which is every result that did not error — so it counted loop invocations
+                # and happened to be right only because the "no rewriter configured" error path
+                # returned no `post` at all. Once that path became a fallback to `composite`, a
+                # `max_iters=0` baseline started reporting `rewriter_available: True`.
+                #
+                # `rewrites` is the loop's own count of candidate rewrites drawn. The text check is
+                # the fallback for a stubbed loop — tests replace `untell_text` wholesale and their
+                # doubles do not carry every key — and it is the more direct evidence anyway: the
+                # output differs from the input, so something rewrote it.
+                if res.get("rewrites") or res.get("final", _source) != _source:
+                    rewrote += 1
                 # Evasion without meaning preservation is worthless — a rewrite that destroys the
                 # text trivially "beats" every detector. Report it alongside, so a ceiling number
                 # can never be read without the fidelity it cost.

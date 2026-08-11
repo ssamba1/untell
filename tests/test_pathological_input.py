@@ -430,7 +430,13 @@ def test_scrubbing_removes_it_and_says_nothing() -> None:
         _inject(_PROSE, "\u200b"), tier="lite", max_iters=1, best_of=2, rewriter=rw, scrub=True
     )
     assert "\u200b" not in scrubbed["final"]
-    assert scrubbed.get("warning") is None
+    # The SCRUB caveat specifically, not the field. `warning` now merges every caveat a run
+    # produced \u2014 the score-level "lite tier on the stdlib path" note lands here too \u2014 so `is None`
+    # stopped meaning "nothing to report about scrubbing" and started meaning "nothing to report
+    # about anything", which is a different and much stronger claim than this test is making.
+    said = (scrubbed.get("warning") or "").lower()
+    assert "hidden" not in said, scrubbed.get("warning")
+    assert "scrub" not in said, scrubbed.get("warning")
 
 
 def test_clean_text_with_no_scrub_is_not_warned_about() -> None:
@@ -440,4 +446,6 @@ def test_clean_text_with_no_scrub_is_not_warned_about() -> None:
 
     rw = get_rewriter("composite")
     out = untell_text(_PROSE, tier="lite", max_iters=1, best_of=2, rewriter=rw, scrub=False)
-    assert out.get("warning") is None
+    # As above: assert the absence of the carried-payload caveat, not the absence of all caveats.
+    assert "hidden" not in (out.get("warning") or "").lower(), out.get("warning")
+    assert "scrub" not in (out.get("warning") or "").lower(), out.get("warning")

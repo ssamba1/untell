@@ -105,14 +105,37 @@ class TestStrictLoadingRefusesToSubstitute:
             getattr(mod, func)(**kwargs)
 
 
-def test_baseline_without_rewriter():
-    # No rewriter and no API key => baseline (pre) only; post is None but the run still succeeds.
-    r = measure_ceiling(_SAMPLE[:2], tier="lite", max_iters=2, rewriter=None)
+def test_baseline_is_requested_explicitly_not_inherited_from_the_environment():
+    """A baseline run is `max_iters=0`, not "happens to have no API key".
+
+    This asked for `rewriter=None` and asserted `rewriter_available is False`, which held only
+    because `untell_text` refused when nothing was configured. It no longer refuses — `composite` is
+    free and always available, and every other surface already fell back to it — so a baseline that
+    depended on that refusal was measuring the machine rather than the corpus. It would also have
+    reported post=None on a developer box and real numbers in CI, from the same command.
+
+    `max_iters=0` says what it means and gives the same answer everywhere.
+    """
+    r = measure_ceiling(_SAMPLE[:2], tier="lite", max_iters=0, rewriter=None)
     assert r["n"] == 2
     assert r["rewriter_available"] is False
     assert r["pre_flagged_rate"] is not None
-    assert r["post_flagged_rate"] is None
     assert r["pre_mean_max"] is not None
+    # post == pre, rather than the None the old error path produced. A baseline that reports its
+    # post scores is strictly more useful — it shows the loop ran and changed nothing — and it is
+    # the same shape as every other run, so a caller does not have to special-case it.
+    assert r["post_flagged_rate"] == r["pre_flagged_rate"]
+    assert r["post_mean_max"] == r["pre_mean_max"]
+
+
+def test_the_free_path_runs_when_nothing_is_configured():
+    """The other half: with iterations allowed, a run on a keyless machine now measures something.
+
+    Before, `untell-ceiling` with no key produced a baseline-only report — which reads as "the loop
+    does nothing" rather than "no rewriter was reached"."""
+    r = measure_ceiling(_SAMPLE[:2], tier="lite", max_iters=1, rewriter=None)
+    assert r["rewriter_available"] is True
+    assert r["post_flagged_rate"] is not None
 
 
 def test_full_delta_with_stub_rewriter():
