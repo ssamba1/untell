@@ -742,6 +742,58 @@ _FRONTABLE_LEADS = frozenset(
 # anything below this is a stranded opener rather than a sentence.
 _MIN_SPLIT_SIDE = 4
 
+# Words that open a subordinate clause, so a half ENDING inside one is a fragment. Wider than
+# `_LEADING_SUBORDINATOR_RE`, which governs a different decision (whether two sentences can be
+# merged) and was measured for that; "if" is absent there and is the one that produced this bug.
+_SUBORDINATORS = frozenset({
+    "if", "when", "whenever", "unless", "although", "though", "because", "since", "while",
+    "whereas", "whether", "after", "before", "until", "once", "as",
+})
+# The subset that opens a clause wherever it appears, not only at the head of a segment. Needed
+# because the subordinator is often buried: "this means THAT IF we only had HD channels," splits
+# into a fragment while its segment begins with an innocent "this".
+#
+# The others are deliberately absent. "as", "since", "while", "after", "before", "until" and "once"
+# are prepositions at least as often as they are subordinators — "as many HD channels as we have",
+# "before deployment" — so testing for them anywhere would reject correct splits. They stay in the
+# head-of-segment check above, where they are unambiguous.
+_CLAUSE_OPENERS_ANYWHERE = frozenset({
+    "if", "when", "whenever", "unless", "although", "though", "because", "whereas", "whether",
+})
+# A split half may end on a coordinator plus a subordinate clause — "..., so if we only had X" —
+# and the coordinator must be stepped over to see the subordinator behind it.
+_LEADING_COORDINATORS = frozenset({"so", "and", "but", "or", "yet", "for"})
+
+
+def _orphans_a_subordinate_clause(first: str) -> bool:
+    """Would ending the sentence here strand a subordinate clause without its main clause?
+
+    `_cannot_start_a_sentence` asks the same question of the RIGHT half and has always been
+    checked. The left half was not, so a split at the comma that CLOSES an if-clause passed every
+    guard. FOUND by reading loop output on HC3:
+
+        These TVs can only display SD channels, so if we only had HD channels, those people
+        wouldn't be able to watch TV.
+          -> These TVs can only display SD channels, so if we only had HD channels.
+             Those people wouldn't be able to watch TV.
+
+    The right half is a perfectly good sentence, which is why the existing guard waved it through.
+    The left half is a conditional with nothing conditional on it.
+
+    Only the final segment matters: an earlier subordinate clause in the same half has already been
+    resolved by the text that follows it inside that half.
+    """
+    segment = first.rstrip().rstrip(",").rsplit(",", 1)[-1].split()
+    if segment and segment[0].lower() in _LEADING_COORDINATORS:
+        segment = segment[1:]
+    if not segment:
+        return False
+    if segment[0].lower().strip(",;:") in _SUBORDINATORS:
+        return True
+    # The segment has no commas in it — that is what `rsplit` guarantees — so a clause opened
+    # anywhere inside it is still open at the split point.
+    return any(w.lower().strip(",;:()") in _CLAUSE_OPENERS_ANYWHERE for w in segment)
+
 
 def _cannot_start_a_sentence(second: str, first: str) -> bool:
     """Would promoting ``second`` to its own sentence leave a fragment?
@@ -764,7 +816,16 @@ def _cannot_start_a_sentence(second: str, first: str) -> bool:
     if left and left[0].rstrip(",.;:").lower() in _FRONTABLE_LEADS:
         return True
 
-    head = second.split()
+    # Leading punctuation is stripped before the word is read. `_parenthesise_asides` runs before
+    # this pass, so by the time the split is judged the aside may already carry a bracket, and
+    # "(which" matched nothing in the set. FOUND by reading loop output on HC3:
+    #
+    #     ...pigments in your iris. (which is the colored part of your eye) and by the way...
+    #
+    # The guard was working and the token had changed under it — the fragment is identical, one
+    # character wider. Quotes are stripped for the same reason: `_swap` and the dialogue passes can
+    # both put one in front of a clause this pass then has to judge.
+    head = second.lstrip("([{\"'“‘").split()
     if not head:
         return True
     lead = head[0].rstrip(",.;:").lower()
@@ -861,7 +922,10 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                 #    leverages the concept of edge-guided flow."   (appositive comma)
                 # Broken English is worse for a reader than any detector score, and nothing in the
                 # suite was looking: score_tells has no grammaticality check.
-                if _cannot_start_a_sentence(second, first):
+                # The left half is asked the same question — see `_orphans_a_subordinate_clause`.
+                # This function and `_split_one` had the identical hole once before, and fixing one
+                # of them left the fragment count unmoved because the other kept producing them.
+                if _cannot_start_a_sentence(second, first) or _orphans_a_subordinate_clause(first):
                     out.append(_terminated(f"{first}, {second}"))
                 else:
                     out.append(f"{_terminated(first)} {_terminated(second[0].upper() + second[1:])}")
@@ -1784,6 +1848,9 @@ def _split_one(s: str) -> list[str] | None:
                 and not _cannot_start_a_sentence(
                     " ".join(words[pos + 1:]), " ".join(words[:pos + 1])
                 )
+                # The same question asked of the other half. The guard above rejects a right side
+                # that cannot open a clause; this rejects a left side that cannot close one.
+                and not _orphans_a_subordinate_clause(" ".join(words[:pos + 1]))
             ):
                 best = pos + 1
                 break
