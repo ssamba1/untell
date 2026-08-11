@@ -63,6 +63,28 @@ def verify(
     # Local ensemble scores first (when a tier is requested — default is full unless commercial-only).
     if tier is not None:
         local = score_text(text, tier=tier, threshold=threshold)
+        # Verdict surfaces use the CALIBRATED cut, not the loop's optimisation target. `score_text`
+        # publishes `verdict_threshold` for exactly this: on the stdlib lite path the swept optimum
+        # is 0.45, while the rewrite loop keeps driving against 0.30 so stronger rewriting is not
+        # traded away for a kinder verdict. That fix landed in `score` and not here, and this
+        # command is the one that exits non-zero.
+        #
+        # MEASURED over 40 human HC3 texts on the stdlib lite path:
+        #
+        #     raw max >= 0.30          21/40  (52%)
+        #     score_text "flagged"      7/40  (18%)   <- calibrated
+        #     verify "not passing"     21/40  (52%)   <- this surface, uncalibrated
+        #
+        # Two commands in one tool disagreeing about the same text, with the CI-facing one nearly
+        # three times more likely to call human writing AI.
+        #
+        # Only when the caller did not choose a threshold. An explicit `--threshold` is a request,
+        # and silently substituting a different number would be its own dishonesty.
+        verdict_cut = threshold
+        if threshold == DEFAULT_THRESHOLD:
+            published = local.get("verdict_threshold")
+            if isinstance(published, (int, float)) and not isinstance(published, bool):
+                verdict_cut = float(published)
         for det_name, val in (local.get("detectors") or {}).items():
             # Skip the diagnostic sidecar keys ("<name>__error", "<name>__out_of_range") — they are
             # metadata about a detector, not detectors, and a float sidecar would otherwise appear
@@ -70,7 +92,7 @@ def verify(
             if isinstance(val, (int, float)) and "__" not in det_name:
                 key = f"local:{det_name}"
                 names.append(key)
-                results[key] = {"ai": round(val, 4), "passes": val < threshold}
+                results[key] = {"ai": round(val, 4), "passes": val < verdict_cut}
         key = f"local:max ({local['tier']})"
         names.append(key)
         if local.get("scored") is False:
@@ -86,8 +108,10 @@ def verify(
         else:
             results[key] = {
                 "ai": round(local["max"], 4),
-                "passes": local["max"] < threshold,
+                "passes": local["max"] < verdict_cut,
                 "tier": local["tier"],
+                # Say which cut answered, so a pass at 0.38 is not read as a pass at 0.30.
+                "verdict_threshold": verdict_cut,
             }
 
     for d in (d for d in detectors if d.available()):
