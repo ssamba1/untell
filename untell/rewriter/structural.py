@@ -166,6 +166,18 @@ _LEADING_SUBORDINATOR_RE = re.compile(
 # of them would be a tell in itself. Closing the rest needs a transform that changes the subject
 # position, which is what `_front_subordinate_clauses` does, not another opener.
 #
+# Except that it cannot either, and this is the part worth knowing before reaching for it.
+# Instrumented over 50 RAID documents at rate=1.0: 211 calls, 536 sentences seen, and 7 sentences
+# actually fronted — 1.3%. It needs a subordinate clause to move, and the text that has this problem
+# is simple declaratives ("We propose X. We evaluate Y."), which have none. The transform is not
+# throttled, it is inapplicable.
+#
+# So on this kind of input neither available mechanism can change how a sentence begins: prepending
+# reaches a fraction and marking everything is a tell, fronting has nothing to move. What is left is
+# real syntactic restructuring — voice change, nominalisation — which is a paraphrase-level
+# operation. That is the same conclusion the repetition analysis reached from the other direction,
+# and it is why both halves of the post-rewrite residual point at the neural path.
+#
 # The openers this rewriter INSERTS, hoisted so the "already has a marker" guard can be derived from
 # them rather than maintained beside them. `_LEADING_MARKER_RE` above lists coordinating markers and
 # none of these, so a sentence that had already been given "Basically," was not recognised as
