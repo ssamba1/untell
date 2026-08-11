@@ -4496,3 +4496,91 @@ member is now resolved from the measurement rather than named.
 Worth keeping: **"the checks pass" and "the output is sound" are different claims, and only the
 first one is ever measured.** The gap between them is exactly the set of failures nobody has thought
 of yet, which is why reading real output keeps paying and running a green battery does not.
+
+## Result 87
+
+**Ten paragraphs of real loop output, read rather than scored, gave two defects.**
+
+Result 86 ended on the claim that reading output keeps paying where a green battery does not. This
+is the test of that: ten HC3 AI paragraphs through `composite`, printed side by side, read.
+
+**One: the parenthesiser closed its bracket inside the aside.**
+
+```
+one called melanin, which gives your skin, hair, and eyes their color, and another called...
+  -> one called melanin (which gives your skin) hair, and eyes their color, and another...
+```
+
+`_ASIDE_RE` excludes commas from the aside body, so when the real aside contains one the pattern
+matches a *prefix* and brackets that — leaving a dangling "hair, and eyes their color". The
+transform is documented to change punctuation and nothing else, and every meaning gate agrees with
+that documentation: no word is added, removed or reordered, so cosine, NLI and semantic roles all
+pass a sentence that has been cut in half.
+
+The fix reads what FOLLOWS the closing comma. A serial list continues with more items and a
+coordinator; a genuine aside end is followed by the sentence resuming — "...of your eye, **and by
+the way that** the iris scatters light" — where the coordinator comes first and no item list
+precedes it. Checked after the match rather than by widening the body, because a body that allowed
+commas would swallow the coordinate clause after a real aside: the opposite error, same damage.
+
+**Two: the splitter guarded one half of the split and not the other.**
+
+```
+These TVs can only display SD channels, so if we only had HD channels, those people wouldn't...
+  -> These TVs can only display SD channels, so if we only had HD channels.
+     Those people wouldn't be able to watch TV.
+```
+
+`_cannot_start_a_sentence` has guarded the right half for a long time, and the right half here is a
+perfectly good sentence — which is exactly why it passed. Nobody was asking whether the LEFT half
+could close a clause. A conditional with nothing conditional on it.
+
+The existing `fragment_lead` check cannot see this either: it reads the first word of a sentence,
+and this sentence begins with "These".
+
+The first version of the guard tested only the head of the final segment, and the same paragraph
+immediately produced a second one — *"Basically, this means that if we only had HD channels."* —
+where the subordinator is buried mid-segment behind an innocent "this". So the check looks for a
+clause opener anywhere in the segment, which is sound because `rsplit` guarantees the segment
+contains no commas: a clause opened inside it is still open at the split point.
+
+Which words go in that "anywhere" set is the whole difficulty. `as`, `since`, `while`, `after`,
+`before`, `until`, `once` are prepositions at least as often as subordinators — *"as many HD
+channels as we have"*, *"before deployment"* — so testing for them anywhere rejects correct splits.
+They stay in the head-of-segment check, where they are unambiguous. Two sets, and the reason for
+the difference is written down.
+
+MEASURED over 60 HC3 AI paragraphs after both fixes: **0 orphaned subordinate clauses introduced,
+with 30 net new sentence terminators** — the fragments are gone and the splitting still happens.
+Both numbers are needed; either alone is satisfied by a transform that has quietly stopped working.
+
+**Three: re-reading the same ten paragraphs found the fix's own leftover.**
+
+```
+...pigments in your iris. (which is the colored part of your eye) and by the way...
+```
+
+Not a new rule — an interaction. `_parenthesise_asides` runs *before* the split is judged, so by the
+time `_cannot_start_a_sentence` looks at the right half it reads `(which`, and `which` is in its
+fragment set while `(which` is in nothing. The guard was working correctly the whole time and the
+token had changed underneath it: the same fragment, one character wider.
+
+Verified directly rather than through the pipeline — `_cannot_start_a_sentence` returned `True` for
+`"which ..."` and `False` for `"(which ..."` on identical text. Leading brackets and quotes are now
+stripped before the word is read, and a bracketed clause that genuinely can stand alone is still
+allowed, so the strip did not turn every parenthesis into a fragment.
+
+**Three defects from one reading of ten paragraphs**, in code that passes 4300 tests, a 13-check
+damage battery and every meaning gate.
+
+Worth keeping: **a guard on one side of a symmetric operation is not half a guard, it is a guard
+with a blind spot the shape of the other side.** All three had a careful, well-documented check
+sitting next to the hole — the aside pattern reasoned about restrictive versus non-restrictive
+clauses and never about its own closing comma; the splitter reasoned about what the second half
+opens with and never about what the first half ends with; and the fragment set reasoned about words
+while the pass upstream of it was busy prefixing those words with brackets.
+
+And the corollary, which is why the re-read mattered: **fixing two defects in a pipeline changes
+what the third one looks like.** The bracketed fragment was present in the very first batch and I
+read past it, because at that point it was one line below a worse fragment and a destroyed serial
+list. Reading output is not a step that completes.
