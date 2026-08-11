@@ -515,14 +515,18 @@ Dropping `hc3_roberta` weakly dominates the default everywhere and costs no AI r
 
 **Re-run on REWRITTEN text** (n=8/corpus, the loop's actual job — raw-text accuracy could not tell "this detector does nothing" apart from "dropping it just makes the loop's target easier"):
 
-| | HC3 human FPR | HC3 rewritten AI recall | RAID rewritten AI recall |
-|---|---|---|---|
-| default (all 5) | **0.75** | 1.000 | 1.000 |
-| minus `hc3_roberta` | 0.625 | **1.000** | **1.000** |
-| minus `mage` | 0.25 | 1.000 | 0.875 |
-| minus both | **0.00** | 1.000 | 0.750 |
+| | HC3 human FPR | HC3 rewritten recall | RAID rewritten recall | MAGE rewritten recall |
+|---|---|---|---|---|
+| default (all 5) | **0.75** | 1.000 | 1.000 | 1.000 |
+| minus `hc3_roberta` | 0.625 | **1.000** | **1.000** | **1.000** |
+| minus `mage` | 0.25 | 1.000 | 0.875 | 0.750 |
+| minus both | **0.00** | 1.000 | 0.750 | 0.750 |
 
-`hc3_roberta` costs **zero** recall on rewritten text on both corpora — so it does not earn its place by refusing to move; it does not earn it at all, and no composition catches rewritten AI the default misses. `mage` splits the other way: it flags **6 of 8 human texts on HC3** (the whole reason the default lands at 0.625 balanced accuracy there) while on RAID removing it costs 0.125 recall outright. One member, precision-catastrophic on one corpus and load-bearing on another. Still **not acted on** — n=8, one threshold, one rewriter, and the MAGE corpus run did not finish inside its budget, which is reported rather than filled in. The 15% figure is left in place above because it is what the heavy-tier comparison was made against. A 1.5B model asked "rate how likely this is AI" answers high almost regardless of input; that is instruction-following, not detection. |
+**`hc3_roberta` costs zero recall on rewritten text on all three corpora**, and no composition catches rewritten AI that the default misses. So it does not earn its place by refusing to move — it does not earn it at all. Dropping it ties or beats the default on every corpus, raw and rewritten, which no other composition does.
+
+**`mage` cannot be dropped.** It is the only detector reaching some AI text on two of three corpora — removing it costs 0.125 recall on RAID and 0.250 on MAGE — while on HC3 it flags **6 of 8 human texts**, single-handedly why the default sits at 0.625 balanced accuracy there. One member, load-bearing on two corpora and precision-catastrophic on the third; there is no composition that is best everywhere.
+
+Still **not acted on**: dropping a detector from a shipped default is a product decision, and this is n=8 (n=4 on MAGE), one threshold, one rewriter. What it does establish is that the two members behave oppositely and that the case against `hc3_roberta` no longer has a counterargument from recall. The 15% figure is left in place above because it is what the heavy-tier comparison was made against. A 1.5B model asked "rate how likely this is AI" answers high almost regardless of input; that is instruction-following, not detection. |
 | **commercial** | `pip install -e ".[commercial]"` + your keys | + Originality.ai, GPTZero, Winston, Sapling, ZeroGPT, Copyleaks, **LLM-as-judge** | The real checkers. Key-gated; nothing runs or bills unless you set a key. LLM-as-judge = a frontier model rates AI-likelihood against the ai-tells catalog (often the best free-of-proxy signal). |
 
 ```bash
