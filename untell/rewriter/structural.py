@@ -2014,6 +2014,40 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
 
         # Drop restatements BEFORE merging: a merge would fuse a restatement onto its own source
         # and preserve the duplication inside one longer sentence instead of removing it.
+        #
+        # SCOPE PROBLEM, measured and left in place deliberately. `_rewrite_prose` handles one
+        # BLOCK of prose, so this sees a paragraph, while the restatement it targets is
+        # document-scale — an opening states X, the body restates X, the close restates it again.
+        # Instrumented over 40 RAID documents: 171 calls, mean 2.5 sentences per call, and 156 of
+        # them return immediately on this function's own `len(sentences) < 4` guard. It fires on 0
+        # of 80 documents. The transform aimed at the strongest tell in the catalogue is inert in
+        # the shipped path.
+        #
+        # That matters because `repeated_phrasing` is where all the residual lives. Per 100 words,
+        # after a full structural rewrite:
+        #
+        #                 human    ai    ai after rewrite   gap closed
+        #     HC3         0.394   6.138       5.856             5%
+        #     RAID        0.243   9.684       8.027            18%
+        #
+        # Every other category is essentially solved — cliche and ai_vocab 100% removed,
+        # formulaic_transition 93-97% — and this one leaves output repeating 15x (HC3) to 33x
+        # (RAID) more than human text.
+        #
+        # Widening the scope is NOT the fix, which is why it is not done here. Running
+        # `_drop_restatements` over the whole document instead of the block:
+        #
+        #     RAID   9.684 -> 8.163   drops 3.5% of AI sentences, 0.0% of human   <- clean
+        #     HC3    6.138 -> 5.779   drops 0.9% of AI sentences, 0.9% of human   <- no better
+        #                                                                            than chance
+        #
+        # On RAID that is a real gain with no false drops; on HC3 it deletes human sentences at
+        # exactly the rate it deletes AI ones. And even the good case closes about a sixth of a
+        # 33x gap. Deletion is the wrong instrument: the duplication is spread across sentences
+        # that each carry some content, so removing whole sentences cannot reach most of it. What
+        # would is rewriting a restating sentence rather than dropping it, which needs a
+        # paraphraser and its own meaning check — a different piece of work, sized here rather
+        # than guessed at.
         sents = _drop_restatements(sents)
 
         merge_rate = min(0.7, intensity * 0.6)
