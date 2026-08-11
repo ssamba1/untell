@@ -15,6 +15,24 @@ words and asking what fraction of the HUMAN half flags:
        40             28%         100%
        80             17%         100%
 
+RE-MEASURED 2026-08-11 by the SAME method — truncation to the first N words, 40 HC3 human texts —
+and the human column has moved a long way:
+
+    words   then   now
+        5    98%   100%
+       10    62%    85%
+       20    40%    85%
+       40    28%   100%
+
+Same method, so this is not two ways of measuring: the numbers are stale. Naturally-short texts
+(no truncation) give 71% at <=20 words and 86% at <=40, which brackets the truncated figures
+rather than explaining them away. Every band except the 5-word one understated by two to three and
+a half times, in the direction that reassures a reader whose verdict is unreliable.
+
+`_SHORT_TEXT_BANDS` now carries ranges spanning both methods, and the test below reads the rate
+from that constant instead of repeating it — see its docstring for why that one is deliberately
+tolerant where `test_the_caveat_points_at_the_count_not_the_rate` is deliberately exact.
+
 At five words the two are indistinguishable. The fix is the one the lite-tier stdlib path already
 uses: keep the number, and say with the measured rate that this configuration is not one to trust.
 `max` is deliberately unchanged — callers store and compare it, and silently zeroing it would break
@@ -49,11 +67,28 @@ def test_long_enough_text_is_not_warned_about(n: int) -> None:
 
 
 def test_the_warning_carries_the_measured_rate() -> None:
-    """A caveat without a number is advice; with one it is evidence the reader can weigh."""
-    warning = _short_text_warning(_words(5)) or ""
-    assert "98%" in warning, warning
-    assert "HUMAN" in warning, warning
-    assert _short_text_warning(_words(30)) and "28%" in _short_text_warning(_words(30))
+    """A caveat without a number is advice; with one it is evidence the reader can weigh.
+
+    The rate is read from `_SHORT_TEXT_BANDS` rather than written here as a literal. This test
+    hardcoded "98%" and "28%", so re-measuring the bands broke it — and those bands DID need
+    re-measuring: both were stale by two to three and a half times, in the direction that
+    reassures. A test that pins the number as well as the mechanism turns a corrected measurement
+    into a failure, which is pressure in exactly the wrong direction.
+    """
+    import re
+
+    from untell.scripts.score import _SHORT_TEXT_BANDS
+
+    def _band_for(words: int) -> str:
+        return next(pct for bound, pct in _SHORT_TEXT_BANDS if words <= bound)
+
+    for n in (5, 30):
+        warning = _short_text_warning(_words(n)) or ""
+        assert _band_for(n) in warning, f"{n} words: {warning!r}"
+        assert "HUMAN" in warning, warning
+
+    # The mechanism the literals were standing in for: a real percentage, not a placeholder.
+    assert re.search(r"\d+%", _short_text_warning(_words(5)) or "")
 
 
 def test_one_word_is_singular() -> None:

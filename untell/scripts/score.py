@@ -243,7 +243,26 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 # Corpus-scoped as well, like every other false-positive figure in this repo: the same sweep over
 # RAID human text gives 5% at 80-160 words and 4% above 160, against HC3's 52% and 23%. Whatever
 # replaces these bands has to say which corpus it describes.
-_SHORT_TEXT_BANDS = ((5, "98%"), (10, "62%"), (20, "40%"), (40, "28%"))
+# SETTLED 2026-08-11 by measuring BOTH ways. Neither reproduces the old numbers, so they were not
+# a different-but-valid methodology — they were stale. 40 HC3 human texts (mean 212 words):
+#
+#     band   old      truncated to N words   naturally <= N words
+#       5    98%           100%              (no natural texts this short)
+#      10    62%            85%              (n=1, not quotable)
+#      20    40%            85%              71%  (n=14)
+#      40    28%           100%              86%  (n=51)
+#
+# Only the 5-word band survived. Everything below it understated by two to three and a half times,
+# in the same direction: this string exists to tell a caller their verdict is unreliable, and it was
+# reassuring them instead.
+#
+# Ranges rather than points, deliberately. The two methods disagree because they measure different
+# things — a 20-word truncation of a 212-word answer is a fragment, a naturally 20-word answer is a
+# complete short reply — and both are things a user might paste. A range says "this is unreliable"
+# more honestly than a false precision, which is the whole job of the sentence it appears in.
+# Truncated figures are the upper bound, natural the lower; the 5 and 10 rows carry the truncated
+# number alone because natural HC3 text does not go that short.
+_SHORT_TEXT_BANDS = ((5, "~100%"), (10, "~85%"), (20, "71-85%"), (40, "86-100%"))
 _MIN_WORDS_FOR_A_VERDICT = 40
 
 
@@ -366,6 +385,44 @@ def _short_text_warning(text: str) -> str | None:
         f"{words} word{'' if words == 1 else 's'}: too short for a reliable verdict. MEASURED on 40 HC3 pairs at this "
         f"threshold, {rate} of HUMAN text this length also flags. Score longer text, or treat this "
         f"as no evidence either way."
+    )
+
+
+def _single_sentence_warning(text: str, detectors: list) -> str | None:
+    """Warn when the only detector scoring this text needs sentences it does not have.
+
+    The stdlib heuristic is half perplexity and half BURSTINESS, and burstiness is the variation in
+    sentence length — undefined on one sentence. MEASURED over 60 real HC3 sentences, scoring the
+    first sentence alone against the first two together:
+
+        single-sentence scores      8 distinct values of 60, and 82% are exactly 0.2500
+        |delta| from one more       median 0.406, mean 0.367, range 0.000-0.672
+        share moving by >0.30       67%
+
+    0.2500 is what falls out when the burstiness term has no variance to measure — a placeholder
+    wearing the shape of a score. (The first version of this note quoted 0.68 from a single hand-
+    picked pair; the pair used in the test moves 0.063, which is why the range is stated.)
+
+    The existing short-text guard does not catch this: it is a WORD count, and a 71-word single
+    sentence clears its 40-word bar and still scores exactly 0.2500 with nothing said. Length and
+    sentence count are different limits and a long run-on has only the second one.
+
+    This is also the mechanism behind the per-sentence result: `score_sentences` on the stdlib path
+    returns 6 distinct values across 100 sentences, 91 of them 0.250, AUROC 0.515. The detector is
+    not weak at sentence granularity, it is undefined there — and at DOCUMENT granularity it is
+    fine, 119 distinct values across 120 documents, AUROC 0.864 on HC3.
+    """
+    if any(getattr(d, "name", "") != "perplexity_burstiness" for d in detectors):
+        return None  # a model-backed detector is scoring this and does not need sentence variation
+    from untell.text_split import split_sentences
+
+    if len([s for s in split_sentences(text) if s.strip()]) >= 2:
+        return None
+    return (
+        "one sentence: the stdlib heuristic is half burstiness, which is the variation in sentence "
+        "length and is undefined here. MEASURED over 60 HC3 sentences, 82% of single sentences "
+        "score exactly 0.2500 and adding one more moves the score by a median of 0.41 — this is a "
+        "placeholder, not a verdict. Score a paragraph, or install .[full]."
     )
 
 
@@ -531,7 +588,8 @@ def _score_with_detectors(
     # Appended rather than folded into the chain above: length and tier are independent problems,
     # and a short text scored on a downgraded tier has both. An elif would have reported whichever
     # one happened to be checked first and hidden the other.
-    for extra in (ensemble_warning, _short_text_warning(text), _invisible_char_warning(text),
+    for extra in (ensemble_warning, _short_text_warning(text),
+                  _single_sentence_warning(text, detectors), _invisible_char_warning(text),
                   _homoglyph_warning(text)):
         if extra:
             result["warning"] = (
