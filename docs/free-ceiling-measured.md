@@ -4433,3 +4433,66 @@ removal here would have cost the 89% of `overall` occurrences that substitute pe
 guard keeps them. What made that possible was measuring each slot separately instead of the entry as
 a whole: read the output, then ask which *positions* the failure occupies rather than whether it
 occurs at all.
+
+## Result 86
+
+**The damage battery was quiet because it was incomplete, not because the output was clean.**
+
+Result 85 found two ungrammatical substitutions by reading output. The obvious follow-up is whether
+the existing mechanical-soundness battery — eleven regex checks plus fragment, quote and bracket
+counting — would have caught either. Neither:
+
+- `an a lot longer wait` slips past `an_before_consonant`, because "a" is a vowel. The article-
+  agreement code had *correctly* re-agreed "a" to "an" for it.
+- `the all told cost` matches nothing in the set at all.
+
+And the battery ran on four hand-written fixtures. MEASURED over 60 real HC3 AI paragraphs rewritten
+by `composite`, the eleven checks introduce **1** finding (a stub sentence). So the surface is
+genuinely clean by what it measures, and what it measures had a hole the size of the defect.
+
+Two checks added. `stacked_determiners` covers the first shape. `determiner_then_phrase` covers the
+second and is **built from `_SYN` itself**, so a phrase added to the table later is covered without
+anyone remembering this check exists. Both probes are real rewriter output rather than invented
+shapes.
+
+**The false positive is the interesting part.** The first version of the second check included
+`this/that/these/those`, and the EdgeFlow fixture flagged immediately:
+
+> *...edge-guided flow **that leans on** edge-guided flow...*
+
+A relative pronoun in front of a perfectly good substitute for "leverages". A demonstrative and a
+relative pronoun are the same token, so those four words make the check fire on correct English —
+and a damage check that cries wolf gets its fixture edited instead of the bug fixed. Narrowed to
+articles and possessives: still fires on both real defects, 0 false positives across 60 rewritten
+texts and their untouched inputs.
+
+Note which method caught that. **The 60-text corpus sweep did not; the four hand-written fixtures
+did.** Those fixtures carry shapes chosen because each one broke something once — an appositive,
+a serial list, a quotation containing a coordinator, a relative clause. That is a different kind of
+coverage from volume, and this is the first time in this log that the difference has been visible
+in a result rather than argued for.
+
+**What the battery still cannot do, stated rather than papered over.** The third shape from the same
+defect, `improves in the end efficiency`, has no determiner in front of the phrase. Separating it
+from a legitimate "in the end we decided" requires knowing that "efficiency" is a noun and "we" is
+not, and there is no POS tagger on the zero-dependency path. That shape stays guarded at the source
+by `_ADVERB_SLOT_ONLY`, which declines the substitution instead of detecting it afterwards. Two
+layers where the output is checkable, one where it is not — written into the module so the gap is a
+decision on record rather than an oversight waiting to be rediscovered.
+
+**A correction to Result 82, found by someone else reading the test.** Those tests silenced
+`roberta_openai` and called it "the strongest member". On the full model set that is false — the
+ensemble reads `mage 1.0000, perplexity_burstiness 0.8264, roberta_openai 0.2991` — so `mage`
+saturates the max, silencing roberta moves it not at all, and both tests fail on their own premise.
+They passed when written because the probe environment had `UNTELL_DISABLE_MAGE=1` set, leaving four
+detectors with roberta on top.
+
+That is the same defect Result 82 recorded one paragraph earlier, at a different level: I fixed the
+version that encoded a *threshold* from the environment and shipped one that encoded a *member*.
+Which detector tops an ensemble is a property of the model set and the input; the invariant under
+test — losing a member can only push `max` down, and that has to be said out loud — is not. The
+member is now resolved from the measurement rather than named.
+
+Worth keeping: **"the checks pass" and "the output is sound" are different claims, and only the
+first one is ever measured.** The gap between them is exactly the set of failures nobody has thought
+of yet, which is why reading real output keeps paying and running a green battery does not.
