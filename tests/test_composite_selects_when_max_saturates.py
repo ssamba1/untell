@@ -61,3 +61,23 @@ def test_booleans_are_not_treated_as_scores():
 
 def test_an_empty_ensemble_falls_back_to_max():
     assert _selection_key(_result(0.42, {})) == (0.42, 0.42)
+
+
+def test_the_published_mean_is_preferred_over_recomputing_it():
+    """`score_text` computes `mean` before rounding the per-detector values to 4dp.
+
+    Recomputing from the rounded dict disagreed by ~4e-5 on 5 of 6 real documents, and
+    `EnsembleRewriter._rank` ranks on `(max, mean)` from the same published field — two selectors
+    in one codebase must not order the same candidates differently.
+    """
+    result = {"max": 1.0, "mean": 0.25, "detectors": {"a": 1.0, "b": 0.9}}
+    assert _selection_key(result) == (1.0, 0.25)
+
+
+def test_the_fallback_still_works_without_a_published_mean():
+    assert _selection_key({"max": 1.0, "detectors": {"a": 1.0, "b": 0.0}}) == (1.0, 0.5)
+
+
+def test_a_boolean_mean_is_not_trusted():
+    key = _selection_key({"max": 0.8, "mean": True, "detectors": {"a": 0.8, "b": 0.2}})
+    assert key == (0.8, 0.5)

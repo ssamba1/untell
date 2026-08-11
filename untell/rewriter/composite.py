@@ -64,6 +64,14 @@ def _selection_key(result: dict) -> tuple[float, float]:
     is still rejected and the original still wins. Lexicographic order gives exactly that.
     """
     mx = float(result["max"])
+    # `score_text` already publishes `mean`, computed before the per-detector values are rounded to
+    # 4dp, and `EnsembleRewriter._rank` ranks on exactly this pair. Prefer it: recomputing from the
+    # rounded `detectors` dict double-rounds (measured, it disagrees by ~4e-5 on 5 of 6 documents)
+    # and would let two selectors in the same codebase order the same candidates differently.
+    # The fallback stays for score dicts that carry no `mean` — non-numeric entries and bools are
+    # excluded there because `isinstance(True, int)` is True and a flag must not enter a score mean.
+    if isinstance(result.get("mean"), (int, float)) and not isinstance(result.get("mean"), bool):
+        return (mx, float(result["mean"]))
     vals = [
         float(v)
         for v in result.get("detectors", {}).values()
