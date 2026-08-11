@@ -18,6 +18,33 @@ These are the knobs the `untell` loop uses. Override per-run if the user asks.
 `threshold` does two jobs: it is the loop's **stop target**, and it is the bar `flagged` reports a
 verdict against. Measured on 40 labelled HC3 human/AI pairs, after the detector recalibration:
 
+> ⚠️ **The false-positive columns below are substantially understated — re-measured 2026-08-11.**
+> At the default 0.30 this table says 5% (lite) / 12% (full) of human documents flag. Measured
+> again:
+>
+> | | this table | re-measured |
+> |---|---|---|
+> | lite, stdlib path | 5% | **52%** (21/40 human HC3 texts) |
+> | full tier | 12% | **40–42%** at natural document length |
+>
+> The lite figure depends on which sub-path runs: `perplexity_burstiness` silently upgrades to
+> GPT-2 when `torch` is importable, and the two are not close — **5% FPR on the GPT-2 path against
+> 52% on the stdlib one**, which is what a clean install gets. One tier name, two calibrations.
+>
+> The full-tier figure is driven by `mage`, which flags 33% of human text on its own via `max`
+> aggregation — and that 33% is itself HC3-specific (0% on RAID, 3.3% on MAGE). Every number in
+> this section is an HC3 number.
+>
+> **Also missing from this document:** the reported verdict does not always use `threshold`. On the
+> stdlib lite path it uses a calibrated `verdict_threshold` of **0.45**, while the loop keeps
+> optimising against 0.30 so stronger rewriting is not traded for a kinder verdict. `score_text`
+> publishes both. That cut takes stdlib human false positives from 52% to 18%, and it is the
+> single most important number here for whether a human gets accused.
+>
+> The original rows are left in place rather than overwritten: they were measured, and replacing
+> them silently would repeat the mistake this note exists to flag.
+
+
 | threshold | lite FPR | lite TPR | full FPR | full TPR |
 |---|---|---|---|---|
 | 0.15 | 35% | 100% | 45% | 100% |
