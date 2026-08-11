@@ -303,6 +303,23 @@ def classification(score: float) -> str:
     catalogue fires on 7 of 20 categories there against 9 on RAID. Same lesson as the ceiling
     figures: a number measured across pooled corpora is not a number about either one.
 
+    WHICH TERM IS RESPONSIBLE, decomposed over those same 40 HC3 human texts:
+
+                        detector max   tells/100w   burstiness cv   words
+        below 75 (14)       0.987         0.84          0.517        274
+        at/above (26)       0.154         0.43          0.538        178
+
+    The detector term is the entire difference — 6.4x apart, while burstiness is flat (0.517 against
+    0.538) and both tell rates are near zero. So this scale mislabels human writing exactly when the
+    detector ensemble false-positives on it, and nothing is wrong with the naturalness half. Anyone
+    trying to fix the 35% should start at the ensemble's own false-positive rate (the README records
+    40-42% of human text flagged at the full tier, driven by `mage`), not at these bands.
+
+    The word counts differ too, but that is NOT a length effect: binned over the same texts, the
+    flag rate is 11/23 under 150 words, 3/11 at 150-250, then 2/4 and 1/2 above. Non-monotonic, and
+    the upper bins are too small to carry a claim. Recorded so the 274-against-178 above is not read
+    as one.
+
     Scoped to the FULL tier, deliberately. The lite tier compresses the range (its own scores flag
     57-65% of human text at the shipped detector threshold — see the tier table in the README), so
     a lite score sits higher than a full one for the same text. That is why the CLI prints the tier
