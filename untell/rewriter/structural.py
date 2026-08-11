@@ -439,7 +439,24 @@ def _strip_transitions(
             if lead:
                 prefix, body = lead.group(0), s[lead.end():]
             m = _TRANSITIONS_RE.match(body)
-            if not (m and m.group(1).lower() in keep):
+            # Capitalise ONLY when a transition was actually removed. `not (m and ...)` is True when
+            # `m` is None, so this branch used to run on sentences with no transition at all: the
+            # `sub` was a harmless no-op, but the capitalisation still fired. Harmless too while
+            # `body` was the whole sentence (already uppercase) — and wrong the moment a sentence
+            # OPENS with a locked span, because then `body` is the mid-sentence remainder.
+            #
+            # MEASURED on a real HC3 answer. `lock()` masks the entity, so the rewriter sees
+            #
+            #     "⟦HZ0001⟧ best seller list is a weekly list that ranks ..."
+            #
+            # the sentinel is set aside as `prefix`, `body` becomes "best seller list is ...", no
+            # transition matches, and the first letter is upcased regardless. After `restore`:
+            #
+            #     "The New York Times Best seller list is a weekly list ..."
+            #
+            # Twice in one document, on 3 of 3 runs. Invisible until `composite` started adopting
+            # candidates at all — its selector was discarding every draft (see composite.py).
+            if m and m.group(1).lower() not in keep:
                 body = _TRANSITIONS_RE.sub("", body)
                 # Capitalise the clause the strip exposes, not the sentinel prefix.
                 if body and body[0].islower():
@@ -872,23 +889,63 @@ def _semicolons_to_periods(text: str) -> str:
     return "".join(out)
 
 
+def _looks_like_a_serial_list(words: list[str]) -> bool:
+    """Do the commas in this sentence separate list items rather than clauses?
+
+    Three or more comma-terminated tokens is the signal:
+
+        "The authors, Smith, Jones, and Patel, reported that ..."
+          -> "The authors, Smith, Jones, and Patel." + the subjectless "Reported that ..."
+        "...to address the ethical, social, and technical challenges..."
+          -> "...to address the ethical." + "Social, and technical challenges..."
+
+    Shared by both splitters on purpose. `_split_one` has had this guard for a long time and
+    `_split_long_sentences` did not, which is the THIRD time these two functions have been found
+    with the same hole in one of them — the fragment guard and the midpoint default were the other
+    two, and both times fixing one left the damage rate unmoved because the other kept producing it.
+    A predicate one of them can have and the other can lack is the shape of that bug, so there is
+    now one definition and two callers.
+    """
+    return sum(1 for w in words if w.endswith(",")) >= 3
+
+
 def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float = 0.25) -> list[str]:
     """Split sentences longer than ``max_words`` words at a suitable break point."""
     out: list[str] = []
     for s in sentences:
         words = s.split()
-        if len(words) > max_words and random.random() < rate:
-            # Find a good split: after a comma, semicolon, or at a natural midpoint.
+        if len(words) > max_words and random.random() < rate and not _looks_like_a_serial_list(words):
+            # Find a good split: after a comma. There is no "natural midpoint" — a word boundary
+            # chosen by counting is a clause boundary only by luck.
             mid = len(words) // 2
-            # Look for a comma around the midpoint.
-            split_at = mid
+            # Look for a comma around the midpoint. `split_at` starts at None, not at `mid`: it used
+            # to default to the midpoint, so a sentence with NO comma was split at whatever word
+            # sat halfway. FOUND by reading RAID output:
+            #
+            #   ...a team of experts in the field of artificial.
+            #   Intelligence (AI) and medical imaging set out a set of guiding principles...
+            #
+            # cut through the middle of "artificial intelligence". Nothing downstream could catch
+            # it — "Intelligence (AI) and medical imaging set out..." opens with a capitalised noun
+            # and reads as a sentence to every guard here. MEASURED over 269 long sentences across
+            # HC3 and RAID, 26 of them (9.7%) contain no comma at all and were being cut this way.
+            # Not splitting them costs a transform on a tenth of long sentences; splitting them
+            # costs grammar on all of it.
+            split_at = None
             for offset in range(mid):
                 for pos in (mid + offset, mid - offset):
-                    if 0 < pos < len(words) and words[pos].endswith(","):
+                    # `.rstrip` before the test: a comma that closes a quotation or a bracket lives
+                    # in a token like `Imaging,"`, which does not end with a comma and made the one
+                    # real boundary in that RAID sentence invisible — which is how it reached the
+                    # midpoint fallback in the first place. 1 sentence in 269, and it was this one.
+                    if 0 < pos < len(words) and words[pos].rstrip("\"')]”’").endswith(","):
                         split_at = pos + 1
                         break
-                if split_at != mid:
+                if split_at is not None:
                     break
+            if split_at is None:
+                out.append(s)
+                continue
             # A midpoint split can land immediately AFTER a conjunction, stranding it at the end of
             # the first half. MEASURED on real HC3 text (composite rewriter):
             #   "... they had no representation in the British government and. Were being dictated
@@ -1827,9 +1884,9 @@ def _split_one(s: str) -> list[str] | None:
     #     -> "The authors, Smith, Jones, and Patel." + the subjectless "Reported that ..."
     #   "Revenue rose in Q1, Q2, and Q3, but ..."
     #     -> "Revenue rose in Q1." + "Q2, and Q3, but ..."
-    # Three or more comma-terminated tokens means the commas separate list items. The conjunction
-    # branch below is unaffected and can still find a real boundary in such a sentence.
-    list_like = sum(1 for w in words if w.endswith(",")) >= 3
+    # The conjunction branch below is unaffected and can still find a real boundary in such a
+    # sentence.
+    list_like = _looks_like_a_serial_list(words)
     mid = len(words) // 2
     best: int | None = None
     for off in range(mid):  # nearest comma to the midpoint
