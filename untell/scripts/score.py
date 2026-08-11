@@ -259,6 +259,20 @@ _LATIN = re.compile("[A-Za-z]")
 _CONFUSABLE_SCRIPT = re.compile("[\u0400-\u04ff\u0370-\u03ff]")
 
 
+def _is_all_confusable(word: str) -> bool:
+    """A word with no Latin letters whose every letter has an ASCII lookalike.
+
+    Built on the scrubber's own `_UNHOMOGLYPH` map so the two cannot disagree about what a
+    confusable is — a second hand-written list is how a detector and its remedy drift apart.
+    """
+    from untell.attacks.unicode_tricks import _UNHOMOGLYPH
+
+    letters = [c for c in word if c.isalpha()]
+    if not letters or any("a" <= c.lower() <= "z" for c in letters):
+        return False
+    return all(c in _UNHOMOGLYPH for c in letters)
+
+
 def _homoglyph_warning(text: str) -> str | None:
     """Warn when Cyrillic or Greek letters sit inside Latin words.
 
@@ -270,10 +284,27 @@ def _homoglyph_warning(text: str) -> str | None:
     surface deliberately does not scrub (see `_invisible_char_warning`), so it has to say so.
     """
     mixed = [w for w in text.split() if _LATIN.search(w) and _CONFUSABLE_SCRIPT.search(w)]
-    if not mixed:
+    # A word converted ENTIRELY mixes nothing, so the test above cannot see it. "саре" — c, a, p, e
+    # all Cyrillic — reads as "cape" and returned None. That word carries exactly the risk this
+    # warning exists for: it is still in the text, and another tool may not normalise it.
+    #
+    # The signal is CONFUSABILITY, not script. Flagging any non-Latin word would fire on a Russian
+    # quotation inside an English document, which is ordinary multilingual text and not an attack.
+    # A converted word is one where every letter has an ASCII lookalike, so the test is membership
+    # in `_UNHOMOGLYPH` — the scrubber's own map, rather than a second list that could drift from
+    # it. Genuine Cyrillic words contain letters with no Latin twin (п, и, в, ...) and do not match.
+    converted = [w for w in text.split() if _is_all_confusable(w)]
+    if not mixed and not converted:
         return None
+    if converted and not mixed:
+        return (
+            f"{len(converted)} word(s) are written entirely in Cyrillic/Greek letters that look "
+            f"like ASCII — {', '.join(repr(w) for w in converted[:3])}. That is homoglyph "
+            f"substitution, not another language. Run `untell scrub` to restore plain ASCII."
+        )
     return (
-        f"{len(mixed)} word(s) mix Latin with Cyrillic/Greek letters — the signature of homoglyph "
+        f"{len(mixed) + len(converted)} word(s) mix Latin with Cyrillic/Greek letters — the "
+        f"signature of homoglyph "
         f"substitution. The score is unaffected (the detectors normalise confusables, verified at "
         f"0.0000 movement), but the substitution is still in your text and another tool may not "
         f"normalise it. Run `untell scrub` to restore plain ASCII."
