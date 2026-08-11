@@ -4302,3 +4302,134 @@ detectors the machine has.
 Worth keeping: **a test that encodes an environment instead of a claim passes where it was written
 and fails where it matters.** The fix was not to relax the assertion but to find what the assertion
 was actually about.
+
+## Result 83
+
+**"Defaults are in use" was false whenever a second config file existed.**
+
+`config.load()` returns the first source that yields anything — `untell.yaml`, then
+`pyproject.toml`. Falling through is deliberate and documented: a repo with both files and no
+PyYAML installed should still get its pyproject settings. But both readers told the user the
+opposite about the consequence:
+
+> *"Its settings are NOT applied and defaults are in use."*
+
+The first clause is true. The second is false exactly when the fallthrough does its job. MEASURED
+with a malformed `untell.yaml` beside a `pyproject.toml` carrying `threshold = 0.91`:
+
+```
+warning:    "...are NOT applied and defaults are in use."
+effective:  {'threshold': 0.91}
+```
+
+0.91 is a cut at which almost nothing flags. Someone reading that warning concludes their clean
+verdicts came from the 0.30 default; they came from a file they had just been told was not in play.
+Third result running, the error lands on the reassuring side.
+
+The readers now stop at what they can know — *its settings are NOT applied* — and `load()` says the
+rest, naming the file that actually supplied the values, because it is the only place that knows
+which source won.
+
+Most of the work in the fix was keeping it quiet. Three shapes must produce nothing: no config at
+all, a lone `pyproject.toml` with settings, and a `pyproject.toml` with no `[tool.untell]` — that
+last one yields `{}` and is the final source, so there is nothing below it to report, and it is the
+shape of most real repositories.
+
+Worth keeping: **a warning that names a cause is safer than one that predicts an effect.** "Your
+file was dropped" is knowable at the point of dropping. "Defaults are in use" is a claim about the
+whole resolution chain, made by a function that can see one link of it.
+
+## Result 84
+
+**A count of working rewriters that could go negative.**
+
+`EnsembleRewriter` warns when a member raises, because a shrinking pool makes the class look like it
+is simply not helping rather than like it is missing parts. The count was
+`len(self._members) - len(_MEMBER_FAILED)`, and `_MEMBER_FAILED` is module-level — it accumulates
+every member name that has failed anywhere in the process, across ensembles with different members.
+MEASURED with three ensembles built in one process, one member failing in each:
+
+```
+A (3 members)    "2 of 3"      correct
+B (2 members)    "0 of 2"      one live member, reported as none
+C (1 member)     "-2 of 1"     a negative count of rewriters
+```
+
+"0 of 2" states that the ensemble is selecting over nothing — that it cannot function — while it had
+a working member producing rewrites. The warning was added so a degraded ensemble would not be
+mistaken for a useless one, and in this state it asserted precisely the thing it existed to prevent.
+
+Counted against `self._members` now. Note what makes the bug visible: **three ensembles in one
+process.** Any test that builds one ensemble passes on the old arithmetic and the new one
+identically, which is presumably why a warning added with care carried this for as long as it did.
+
+The two remaining behavioural caveats from the sweep are sound. `targeted.py`'s "nothing to work on"
+really does fall back to a whole-text rewrite rather than returning the input, and says so; the
+comment beside it records that returning the input was the previous behaviour and why it was worse.
+`commercial.py`'s exclusion claim was verified in Result 82.
+
+Worth keeping: **process-global state makes per-instance arithmetic wrong in a way one instance
+cannot show.** The set was global for a good reason — say it once, not once per call — and the
+count was local. Nothing in either decision is wrong alone.
+
+## Result 85
+
+**The bug was in the output of the probe, not in the thing the probe was testing.**
+
+I was verifying `targeted.py`'s claim that "nothing to work on" falls back to a whole-text rewrite
+rather than returning the input. It does — the claim is true, the output changed, the inner rewriter
+ran. But the output it produced was:
+
+> *It greatly improves **in the end efficiency** and accuracy across the checked corpus*
+
+`overall` → `in the end`, in a slot where "overall" is an adjective.
+
+Two separate defects came out of pulling that thread, and both are invisible to every measurement
+this repo has. A tell catalogue scores "in the end efficiency" as clean. A detector scores it as
+human — more human, if anything, since it is not fluent machine prose. Only reading it finds it.
+
+**Defect one: an adjective sense with adverb-only substitutes.** All three of `overall`'s
+substitutes are sentence adverbs, so all three break before a noun:
+
+```
+the overall cost             -> the all told cost / the in the end cost / the on the whole cost
+The overall distribution     -> The in the end distribution
+improves overall efficiency  -> improves in the end efficiency
+```
+
+Derived rather than guessed. Every `_SYN` entry with a phrasal substitute was scanned for
+`<determiner> <head> <noun>` across 240 HC3 texts; `overall` is the only hit with a live adjective
+sense. It is also frequent — **4 of its 35 corpus occurrences are adjectival**, so this fired on
+about one occurrence in nine.
+
+The important half of the fix is what it does *not* touch. Measured slot by slot:
+
+| slot | example | all three substitutes |
+|---|---|---|
+| adjective | `the overall cost` | break |
+| sentence-final | `improved overall.` | fine |
+| comma-flanked | `the result, overall, was` | fine |
+| sentence-initial | `Overall, the price` | already declined, left to the transition stripper |
+
+So the test is not the determiner in front — one of the broken examples has none — but the word
+behind. A letter after it means the next token is what `overall` is modifying, and an adverb phrase
+cannot modify a noun.
+
+**Defect two, found by the same scan: a substitute that brings its own determiner.** One corpus case
+of the shape, and it produced:
+
+```
+There was a significantly longer wait  ->  There was an a lot longer wait
+```
+
+`agree_article` had faithfully re-agreed "a" to "an" for the vowel in "a lot" — the article-agreement
+fix working correctly on input it should never have been handed, which made the output worse instead
+of catching it. Filtered rather than declined, matching the separable-particle rule beside it:
+"sharply longer" and "greatly longer" are fine and still fire.
+
+Worth keeping: **the fix for a bad substitution is not always to delete the entry.** The table's
+established remedy has been removal (`arguably`, `possibly`, `significantly` under `profound`), and
+removal here would have cost the 89% of `overall` occurrences that substitute perfectly. A slot
+guard keeps them. What made that possible was measuring each slot separately instead of the entry as
+a whole: read the output, then ask which *positions* the failure occupies rather than whether it
+occurs at all.
