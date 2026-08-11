@@ -7,40 +7,47 @@ the interesting part was in the numbers, not the words.
 
 `_duplicate_sentence_starts` fires when duplicate openers reach 40% of sentences, and then returns
 the raw duplicate COUNT. A rewrite that adds sentences grows the denominator, so the share can fall
-while the count does not. MEASURED over the 47 texts that fire (sentence count changed on 34):
+while the count does not — and **the count is the one to trust.** MEASURED over the 47 texts that
+fire, on the 18 where the share fell without the count falling:
 
-    share improved, count did not fall     15
-    share worsened, count did not rise      0
-    the two agree                          32
+    duplicate openers IDENTICAL before and after    14
+    duplicate openers actually ROSE                  4
 
-One example carries it: **share 70.0% -> 53.8%, count 7 -> 7.** A 16-point improvement on the
-detector's own criterion, scored as no change at all.
+Not one repetition was removed in those 14. The share fell because sentences were added. The
+worst case — 14 sentences with 8 duplicate openers becoming 18 with 10 — has the share reporting an
+improvement while the repetition got measurably worse.
 
-**The error is one-directional, and that is what makes it tolerable.** It hides improvement and
-never hides damage, so the loop under-credits a good rewrite but is never fooled by a bad one. That
-direction is the invariant this file pins.
+I read this backwards first, as the detector failing to credit a real improvement, and wrote it up
+that way. Reading the incidents beside the share is what corrected it. The count is length-invariant
+by design, the same reason `_repeated_trigrams` reports a count: its raw AUROC is roughly 40% length
+rather than style.
 
-**The obvious fix was measured and is worse.** Reporting the excess above the threshold
-(`dupes - ceil(0.40 * n)`) compresses the magnitude out of the signal:
+**The fix I reached for before understanding that was measured and is worse anyway.** Reporting the
+excess above the threshold (`dupes - ceil(0.40 * n)`) compresses the magnitude out of the signal:
 
-    variant                      RAID AUROC   HC3 AUROC   hides improvement   hides DAMAGE
-    shipped (raw count)            0.9555      0.8696          15                  0
-    excess, floored at 1           0.9381      0.8738          12                  5
-    excess, unfloored              0.9336      0.8756           6                  1
+    variant                      RAID AUROC   HC3 AUROC
+    shipped (raw count)            0.9555      0.8696
+    excess, floored at 1           0.9381      0.8738
+    excess, unfloored              0.9336      0.8756
 
-Both variants trade a blind spot that only ever hides improvement for one that hides damage, and
-both cost RAID AUROC. The unfloored variant is worse than the table shows: a text can be over the
-40% bar and report 0, so the detector fires and contributes nothing — the same
-criterion-disagrees-with-value defect in a new place.
+Both cost RAID AUROC because the residual above a threshold is nearly binary. The unfloored variant
+has a second defect: a text can be over the 40% bar and report 0, so the detector fires and
+contributes nothing.
 """
 
 from __future__ import annotations
 
 import logging
+from collections import Counter
 
 import pytest
 
-from untell.scripts.tells import _WORD, _duplicate_sentence_starts, _sentences
+from untell.scripts.tells import (
+    _WORD,
+    _duplicate_sentence_starts,
+    _repeated_trigrams,
+    _sentences,
+)
 
 BODY = (
     "The system reads the file. The parser splits it into records. The loader writes each record. "
@@ -75,12 +82,21 @@ def test_more_repetition_never_scores_lower() -> None:
     assert _duplicate_sentence_starts(worse) >= _duplicate_sentence_starts(BODY)
 
 
-def test_added_variety_can_go_unnoticed_but_never_backwards() -> None:
-    """The measured blind spot, pinned with its own example rather than left to be rediscovered.
-    Appending distinct openers lowers the duplicate SHARE and leaves the duplicate COUNT alone."""
+def test_appending_fresh_openers_removes_no_repetition_and_scores_no_credit() -> None:
+    """The case I first mistook for a blind spot. Appending distinct openers lowers the duplicate
+    SHARE while every existing repetition survives untouched, so the count holding still is correct
+    — 14 of the 18 corpus cases are exactly this. Diluting a tell is not removing it."""
     varied = BODY + " Salt melts ice. Grit adds traction. Councils mix both."
-    assert _share(varied) < _share(BODY), "premise: the share must actually improve"
+    assert _share(varied) < _share(BODY), "premise: the share must fall"
     assert _duplicate_sentence_starts(varied) == _duplicate_sentence_starts(BODY)
+
+
+def test_the_share_can_call_worse_repetition_an_improvement() -> None:
+    """The other 4 of the 18, and the reason the count is the quantity that ships. Adding sentences
+    that themselves repeat an opener grows the repetition and shrinks the density at once."""
+    worse = BODY + " Salt melts ice. Grit adds traction. The lock is released. The log is closed."
+    assert _share(worse) < _share(BODY), "premise: the share must report an improvement"
+    assert _duplicate_sentence_starts(worse) > _duplicate_sentence_starts(BODY)
 
 
 def test_the_reported_value_is_the_raw_duplicate_count() -> None:
@@ -95,6 +111,21 @@ def test_the_reported_value_is_the_raw_duplicate_count() -> None:
     for text in (BODY, BODY + " The queue is drained last. The log is closed."):
         starts = [_WORD.findall(s)[0].lower() for s in _sentences(text) if _WORD.findall(s)]
         assert _duplicate_sentence_starts(text) == len(starts) - len(set(starts))
+
+
+def test_the_other_repetition_tell_reports_a_count_too() -> None:
+    """`_repeated_trigrams` is built the same way — fires on a 5% share, returns the repeat count —
+    and its docstring opened by calling the return "a share of its tokens (percent, floored)",
+    contradicting the "counted once per repeat" line below it and the code between them. 150 words
+    with 143 repeats returns 143, not 95. Pinned so the description cannot drift off the code
+    again."""
+    text = "The system reads the file. " * 30
+    words = [w.lower() for w in _WORD.findall(text)]
+    grams = Counter(tuple(words[i : i + 3]) for i in range(len(words) - 2))
+    repeats = sum(c - 1 for c in grams.values() if c > 1)
+    assert repeats / len(words) * 100 >= 5.0, "premise: it must fire"
+    assert _repeated_trigrams(text) == repeats
+    assert _repeated_trigrams(text) > 100, "a percentage could not exceed 100"
 
 
 def test_a_text_that_fires_always_reports_something() -> None:

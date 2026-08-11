@@ -638,7 +638,13 @@ _MIN_WORDS_FOR_REPETITION = 60
 
 
 def _repeated_trigrams(text: str) -> int:
-    """Word 3-grams the text uses more than once, as a share of its tokens (percent, floored).
+    """Word 3-grams the text uses more than once, counted, once the count clears 5% of its tokens.
+
+    The share is the FIRING RULE; the number returned is the raw repeat count, not the percentage.
+    This line used to say "as a share of its tokens (percent, floored)", which contradicted the
+    "counted once per repeat" line below it and the code between them: 150 words with 143 repeats
+    returns 143, not 95. The count is the right choice and the reason is three paragraphs down —
+    the share is confounded by length and this text's length is something the rewriter changes.
 
     The strongest single signal measured in this repo, and it replicates across corpora — but the
     headline number is inflated by LENGTH and the honest figure is the controlled one:
@@ -703,16 +709,19 @@ def _duplicate_sentence_starts(text: str) -> int:
     This is the mechanical form of a documented tell: machine prose cycles through a small set of
     openers ("Additionally", "The", "This"), where a person varies them without trying.
 
-    It FIRES on a share and REPORTS a count, and the two can disagree. A rewrite that adds sentences
-    grows the denominator, so the share falls while the raw count does not. MEASURED over the 47
-    corpus texts that fire (sentence count changed on 34 of them): the share improved without the
-    count falling 15 times, the reverse 0 times — one example is share 70.0% -> 53.8% scored as no
-    change at all. The error only ever hides an improvement, never damage, which is why it stays.
+    It FIRES on a share and REPORTS a count. They disagree whenever a rewrite changes the sentence
+    count, and **the count is the one to trust**: it measures repetition INCIDENTS, which is what a
+    reader notices, while the share measures DENSITY against a denominator the rewriter itself
+    moves. MEASURED over the 47 corpus texts that fire, on the 18 where the share fell without the
+    count falling: the duplicate openers were IDENTICAL before and after on 14 of them — not one
+    repetition removed, the share fell only because sentences were added — and on the other 4 the
+    repetition genuinely got WORSE while the share said better (e.g. 14 sentences with 8 duplicate
+    openers becoming 18 with 10, share 57.1% -> 55.6%).
 
-    Reporting the excess above the threshold instead was measured and is worse on both counts: RAID
-    AUROC 0.9555 -> 0.9381 floored at 1 / 0.9336 unfloored, and it introduces cases where the share
-    worsens and the value does not rise. See
-    `tests/test_opener_repetition_fires_on_a_share_and_scores_a_count.py`.
+    So the count is length-invariant by design, the same reason `_repeated_trigrams` reports a count:
+    its raw AUROC is ~40% length rather than style. Reporting the excess above the threshold instead
+    was measured and is worse anyway — RAID AUROC 0.9555 -> 0.9381 floored at 1 / 0.9336 unfloored.
+    See `tests/test_opener_repetition_fires_on_a_share_and_scores_a_count.py`.
     """
     words = _WORD.findall(text)
     if len(words) < _MIN_WORDS_FOR_REPETITION:
