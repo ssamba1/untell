@@ -7,6 +7,14 @@ strongest member of a four-detector full-tier ensemble silenced:
     all four live    max 0.6566   flagged True
     one silent       max 0.1058   flagged False
 
+RE-MEASURED on the five-detector ensemble this repo now loads, same AI_TEXT:
+
+    all five live    max 1.0000   flagged True
+    top silent       max 0.8264   flagged False (at the midpoint cut)
+
+The drop is smaller because the members changed, not because the effect weakened — see
+`_top_member` for why naming the strongest one in the test body was the actual bug.
+
 `failed_detectors` named the raising case and said nothing about what the absence did to the
 verdict. The abstaining case had no top-level trace at all — the only sign was a `null` nested
 inside `detectors`, which is a `null` in the JSON no API client inspects once `flagged` has answered
@@ -39,6 +47,33 @@ def _detector_class():
     return getattr(R, names[0])
 
 
+def _top_member(result: dict) -> tuple[type, str]:
+    """The class and name of whichever detector actually set `max` on this machine.
+
+    Naming a member here is a standing bug. These two tests hard-coded `roberta_openai` as "the
+    strongest member", and by the time it was checked that was false: on this same AI_TEXT the
+    ensemble reads
+
+        mage 1.0000   perplexity_burstiness 0.8264   roberta_openai 0.2991
+        hc3_roberta 0.0003   fast_detectgpt 0.0146
+
+    `mage` is saturated at exactly 1.0, so silencing roberta_openai moved `max` not at all and both
+    tests failed on their own premise — not on the behaviour they exist to protect. Which detector
+    tops the ensemble is a property of the model set and the input, and it changes; the invariant
+    under test (losing a member can only push `max` down, and that has to be said out loud) does
+    not. So resolve the member from the measurement instead of asserting a name.
+    """
+    from untell.detectors.base import load_detectors
+
+    scored = {k: v for k, v in result["detectors"].items() if isinstance(v, (int, float))}
+    assert scored, "no detector produced a number; nothing to silence"
+    name = max(scored, key=lambda k: scored[k])
+    for d in load_detectors("full"):
+        if d.name == name:
+            return type(d), name
+    raise AssertionError(f"{name} set max but is not in load_detectors('full')")
+
+
 @pytest.fixture
 def healthy() -> dict:
     result = score_text(AI_TEXT, tier="full")
@@ -47,11 +82,12 @@ def healthy() -> dict:
 
 
 def test_an_abstaining_detector_is_reported(healthy, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(_detector_class(), "score", lambda self, text: None)
+    cls, name = _top_member(healthy)
+    monkeypatch.setattr(cls, "score", lambda self, text: None)
     result = score_text(AI_TEXT, tier="full")
 
     assert result["max"] < healthy["max"], "premise: silencing the top member must lower max"
-    assert "roberta_openai" in (result.get("warning") or "")
+    assert name in (result.get("warning") or "")
     assert "errs toward NOT flagged" in result["warning"]
 
 
@@ -64,7 +100,8 @@ def test_losing_a_detector_can_flip_the_verdict(healthy, monkeypatch: pytest.Mon
     ensemble and cleared without it. Taking the cut from the two measured maxima tests exactly that,
     on whatever detectors this machine has.
     """
-    monkeypatch.setattr(_detector_class(), "score", lambda self, text: None)
+    cls, _ = _top_member(healthy)
+    monkeypatch.setattr(cls, "score", lambda self, text: None)
     reduced = score_text(AI_TEXT, tier="full")
     assert reduced["max"] < healthy["max"], "premise: the top member must have been the silenced one"
 
@@ -72,7 +109,7 @@ def test_losing_a_detector_can_flip_the_verdict(healthy, monkeypatch: pytest.Mon
     monkeypatch.undo()
     assert score_text(AI_TEXT, tier="full", threshold=cut)["flagged"] is True
 
-    monkeypatch.setattr(_detector_class(), "score", lambda self, text: None)
+    monkeypatch.setattr(cls, "score", lambda self, text: None)
     after = score_text(AI_TEXT, tier="full", threshold=cut)
     assert after["flagged"] is False, "the verdict must actually flip in this band"
     assert "errs toward NOT flagged" in (after.get("warning") or ""), (
