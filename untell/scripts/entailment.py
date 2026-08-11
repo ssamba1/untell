@@ -127,8 +127,10 @@ def _pair_probs(premise: str, hypothesis: str):
 # of the original has to be scored against the piece of the rewrite that corresponds to it. How
 # that alignment is done matters more than it sounds — see `_aligned_chunks`.
 #
-# Applied to CONTRADICTION only. `entailment_score` stays whole-text, with the measurement for why
-# recorded there.
+# Applied to BOTH scores. It was contradiction-only at first, because chunking entailment with a
+# proportional splitter caused false vetoes; that reason expired when the cut points moved to
+# difflib, and leaving entailment whole-text meant deletions past ~130 words scored 0.98 and passed
+# every gate. The measurement for both halves is recorded in `entailment_score`.
 #
 # Cost, over 30 real rewrites of median 298 words: 0.17s -> 0.57s per pair, so the gate is roughly
 # 3.4x dearer on long input and unchanged on short (one chunk reproduces the old call exactly).
