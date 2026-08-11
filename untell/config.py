@@ -55,6 +55,22 @@ def _try_pyproject(path: Path) -> dict[str, Any]:
             tomllib = None
 
     if tomllib is None:
+        # Same situation as PyYAML being absent in `_try_yaml`, and it deserves the same warning:
+        # the settings exist in the file and are not being applied. That branch says so and this
+        # one returned {} silently, so `[tool.untell]` was quietly ignored on Python 3.9 and 3.10
+        # — both of which this package declares support for (`requires-python = ">=3.9"`, and the
+        # classifiers list them) — while the README documents the file as a supported config source
+        # with no version caveat.
+        #
+        # `tomli` is not added as a dependency because the base install is intentionally
+        # zero-dependency, which is a stronger constraint than this feature. Telling the user is the
+        # part that was missing.
+        logger.warning(
+            "ignoring [tool.untell] in %s: this Python has no `tomllib` (added in 3.11) and "
+            "`tomli` is not installed, so those settings are NOT applied "
+            "(pip install tomli, or use untell.yaml, or set the UNTELL_* environment variables).",
+            path,
+        )
         return {}
 
     try:
@@ -67,7 +83,7 @@ def _try_pyproject(path: Path) -> dict[str, Any]:
         # config should not stop the tool, but it must not be invisible either.
         logger.warning(
             "ignoring %s: it exists but could not be parsed (%s: %s). Its [tool.untell] settings "
-            "are NOT applied and defaults are in use.", path, type(exc).__name__, exc,
+            "are NOT applied.", path, type(exc).__name__, exc,
         )
         return {}
 
@@ -90,8 +106,8 @@ def _try_yaml(path: Path) -> dict[str, Any]:
             data = yaml.safe_load(f)
     except Exception as exc:
         logger.warning(
-            "ignoring %s: it exists but could not be parsed (%s: %s). Its settings are NOT applied "
-            "and defaults are in use.", path, type(exc).__name__, exc,
+            "ignoring %s: it exists but could not be parsed (%s: %s). Its settings are NOT "
+            "applied.", path, type(exc).__name__, exc,
         )
         return {}
     if data is not None and not isinstance(data, dict):
@@ -117,11 +133,27 @@ def load() -> dict[str, Any]:
     dependency.
     """
     cwd = Path.cwd()
+    dropped: list[Path] = []
     for path, reader in ((cwd / "untell.yaml", _try_yaml), (cwd / "pyproject.toml", _try_pyproject)):
         if path.is_file():
             data = reader(path)
             if data:
+                # Only `load` knows this, and it is the part that was wrong. The readers above each
+                # said the dropped file's settings "are NOT applied and defaults are in use" — true
+                # about the file, false about the outcome, because falling through means the NEXT
+                # source applies, not the defaults. MEASURED with a broken untell.yaml beside a
+                # pyproject.toml carrying `threshold = 0.91`: the warning said defaults were in use
+                # and the effective threshold was 0.91, a cut at which almost nothing flags. A user
+                # reading that believes their verdicts came from 0.30.
+                if dropped:
+                    logger.warning(
+                        "settings came from %s. %s existed and supplied nothing, so it did not "
+                        "override anything — the values in use are the ones below it in the chain, "
+                        "not the defaults.",
+                        path, ", ".join(str(p) for p in dropped),
+                    )
                 return data
+            dropped.append(path)
     return {}
 
 
