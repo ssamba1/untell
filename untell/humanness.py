@@ -280,6 +280,29 @@ def classification(score: float) -> str:
     are placed around it rather than around round numbers. Measured against that same 80-pair set,
     75 of 80 AI texts now land in "mixed" or lower against 0 before.
 
+    **THAT SEPARABILITY DOES NOT HOLD, and it was never a property of both corpora.** Re-measured
+    2026-08-11 on the same protocol, 40 pairs each from HC3 and RAID:
+
+        corpus   lowest HUMAN   highest AI   human below 75   AI at or above 75
+        RAID          79.2         44.0           0 / 40            0 / 40
+        HC3           41.0         44.0          14 / 40            0 / 40
+        combined      41.0         44.0          14 / 80            0 / 80
+
+    The claim survives on RAID and fails on HC3, where 35% of genuine human answers land below the
+    boundary — in "mixed" or "likely AI". Worse than a moved boundary: at 41.0 against 44.0 the two
+    ranges now OVERLAP, so no cut separates them and "fully separable" is not recoverable by
+    retuning. Averaging the two corpora is what hid this; the combined minimum is HC3's alone.
+
+    The boundary is NOT moved, for a reason worth stating. Every error is in one direction: no AI
+    text reached 75 in either corpus (0 of 80), so nothing here calls AI writing human. What it does
+    is decline to confirm a third of real HC3 answers as human, and the honest fix for that is a
+    caveat rather than a cut that would start passing AI text to buy it back.
+
+    Why HC3 and not RAID: HC3 human answers are short, conversational forum replies — the register
+    this scale's own components read as least "human", since burstiness needs sentences and the tell
+    catalogue fires on 7 of 20 categories there against 9 on RAID. Same lesson as the ceiling
+    figures: a number measured across pooled corpora is not a number about either one.
+
     Scoped to the FULL tier, deliberately. The lite tier compresses the range (its own scores flag
     57-65% of human text at the shipped detector threshold — see the tier table in the README), so
     a lite score sits higher than a full one for the same text. That is why the CLI prints the tier
