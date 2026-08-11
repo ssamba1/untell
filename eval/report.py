@@ -124,7 +124,29 @@ def summarize(by_strategy: dict[str, list], threshold: float) -> dict:
             better, basis = fl["bypass_rate"] > sp["bypass_rate"], "bypass_rate"
         else:
             better, basis = fl["mean_post_max"] < sp["mean_post_max"], "mean_post_max (bypass tied)"
-        summary["thesis_pass"] = bool(comparable and better and similarity_ok)
+        # And it has to beat DOING NOTHING. `single_pass` is a deliberate stand-in for a naive
+        # commercial tool, and measured on 12 HC3 answers it is net-HARMFUL: it raises the detector
+        # score on 8 of them, mean +0.0156, worst +0.1082. Beating a baseline that is worse than
+        # `noop` is not evidence the loop works, and `noop` was already being computed and then
+        # ignored here. On the 8-answer run above the margins were 0.5982 against single_pass's
+        # 0.6354 but only 0.6217 for noop — a real win, and a much smaller one than the headline
+        # comparison implies.
+        #
+        # Only applied when the harness actually ran `noop`; a caller comparing two strategies
+        # without a control still gets the comparison it asked for, with the basis naming it.
+        beats_nothing = True
+        if "noop" in strategies:
+            np = strategies["noop"]
+            if np["n_scored"] != np["n"]:
+                beats_nothing = False
+                summary["thesis_undecided"] = (
+                    f"noop scored {np['n_scored']}/{np['n']} — the control is not comparable, so "
+                    "there is nothing to measure the loop against. Fix the detector stack and re-run."
+                )
+            else:
+                beats_nothing = fl["mean_post_max"] < np["mean_post_max"]
+                basis = f"{basis} + beats noop" if beats_nothing else f"{basis} but NOT better than noop"
+        summary["thesis_pass"] = bool(comparable and better and similarity_ok and beats_nothing)
         summary["thesis_basis"] = basis
         if not comparable:
             summary["thesis_undecided"] = (

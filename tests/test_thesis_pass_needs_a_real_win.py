@@ -90,3 +90,49 @@ def test_incomparable_denominators_still_block_the_claim():
     s = _run(_strategy(0.64, 0), fl)
     assert s["thesis_pass"] is False
     assert "not comparable" in s["thesis_undecided"]
+
+
+def test_the_loop_must_also_beat_doing_nothing():
+    """`single_pass` is a stand-in for a naive tool and is measurably net-HARMFUL.
+
+    On 12 HC3 answers it raises the detector score on 8, mean +0.0156. Beating a baseline that
+    is worse than `noop` is not evidence the loop works, and `noop` was already being computed
+    and ignored.
+    """
+    by = {
+        "noop": _strategy(0.55, 0),
+        "single_pass": _strategy(0.64, 0),
+        "full_loop": _strategy(0.60, 0),     # beats single_pass, LOSES to noop
+    }
+    s = summarize(by, THRESHOLD)
+    assert s["thesis_pass"] is False
+    assert "NOT better than noop" in s["thesis_basis"]
+
+
+def test_beating_both_baselines_passes_and_says_so():
+    by = {
+        "noop": _strategy(0.62, 0),
+        "single_pass": _strategy(0.64, 0),
+        "full_loop": _strategy(0.59, 0),
+    }
+    s = summarize(by, THRESHOLD)
+    assert s["thesis_pass"] is True
+    assert "beats noop" in s["thesis_basis"]
+
+
+def test_without_a_control_the_comparison_still_runs():
+    """A caller comparing two strategies with no `noop` gets what it asked for."""
+    s = _run(_strategy(0.64, 0), _strategy(0.60, 0))
+    assert s["thesis_pass"] is True
+    assert "noop" not in s["thesis_basis"]
+
+
+def test_an_unscored_control_blocks_the_claim():
+    noop = _strategy(0.62, 0)
+    noop[0].post["scored"] = False
+    s = summarize(
+        {"noop": noop, "single_pass": _strategy(0.64, 0), "full_loop": _strategy(0.59, 0)},
+        THRESHOLD,
+    )
+    assert s["thesis_pass"] is False
+    assert "control is not comparable" in s["thesis_undecided"]
