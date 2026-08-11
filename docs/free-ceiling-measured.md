@@ -34,6 +34,31 @@ ensemble that untell can actually put in its loop.**
 > | recorded here | 0.860 | 1.00 | 0.810 |
 > | re-measured | **0.9995** | 1.00 | **0.9992** |
 >
+> **REPLICATED at `--repeats 3`** (the standard this document sets for a quotable number):
+>
+> ```
+> post mean max P(AI) 0.9994    per-run [0.9995, 0.9993, 0.9993]    stdev 0.0001
+> rewrote 18/18                 similarity 0.9848 mean / 0.9523 worst
+> ```
+>
+> A single run was not the problem — the spread is 0.0001. The recorded 0.860 does not reproduce.
+>
+> **And the per-detector split says why, which the aggregate hides.** Same run, before → after:
+>
+> | detector | before | after | |
+> |---|---|---|---|
+> | `roberta_openai` | 0.9986 | **0.5847** | moves 0.41 |
+> | `fast_detectgpt` | 0.6563 | **0.4534** | moves |
+> | `perplexity_burstiness` | 0.6316 | **0.5584** | moves |
+> | `hc3_roberta` | 0.9992 | **0.9992** | **does not move at all** |
+>
+> So the rewriter is working, and working well: it rewrote every sample, cut the strongest mobile
+> detector by 0.41, and held meaning at 0.9848. The ceiling is set by **one immobile detector**.
+> `max` reports 0.9994 because `hc3_roberta` sits at 0.9992 and will not shift by any amount of
+> meaning-preserving rewriting — which is exactly what Results 1–2 originally called the content
+> wall, on the corpus `hc3_roberta` was trained on. The old 0.810 figure had it *moving*; it no
+> longer does, and the shortcut-closing commits below are the likeliest reason.
+>
 > The rewriter is not the cause — it rewrote 6 of 6, and the opener-dose change made the same day
 > was ruled out directly (0.9996 current against 0.9994 old). The detectors are **pinned** on this
 > corpus: `mage` 1.0000 on 6/6, `hc3_roberta` 0.9992–0.9993 on 6/6, `roberta_openai` ≥0.999 on 5/6.
