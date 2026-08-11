@@ -399,12 +399,16 @@ class TestNonEnglishIsNotReportedAsClean:
         [
             "Moreover, we leverage robust solutions to delve into the tapestry.",
             "I walked to the shop and it was shut. Typical. Went home instead.",
-            "",
+            # `""` was here and has moved to `test_letterless_text_is_undetermined.py`. An empty
+            # string has no letters, so the English catalogue cannot read a word of it, and calling
+            # that "supported" was the same claim that let a punctuation-only string report six
+            # semicolon crutches. This fixture list is about ENGLISH staying supported; the empty
+            # string was never an example of English.
             "Numbers 123 and punctuation -- all fine!",
             # Mostly English, quoting a foreign phrase: must stay supported.
             "The sign said 你好 which means hello, and moreover we leverage robust solutions.",
         ],
-        ids=["ai", "human", "empty", "punctuation", "english-quoting-chinese"],
+        ids=["ai", "human", "punctuation", "english-quoting-chinese"],
     )
     def test_english_text_stays_supported(self, text):
         r = score_tells(text)

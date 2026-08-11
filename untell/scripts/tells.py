@@ -839,6 +839,19 @@ def _language_supported(text: str) -> bool:
     """
     non_latin = len(_NON_LATIN_RE.findall(text))
     latin = sum(1 for ch in text if ch.isascii() and ch.isalpha())
+    # No letters at all is the same situation as the wrong script, and it reached the opposite
+    # answer: digits, punctuation and emoji are neither Latin nor non-Latin, so `non_latin == 0`
+    # returned True for text the catalogue cannot read a word of. MEASURED on a punctuation-only
+    # string:
+    #
+    #     tells 7   by_category {'rule_of_three': 1, 'semicolon_crutch': 6}   words 0
+    #
+    # Six "semicolon crutches" counted in `;;; ;;;`. A semicolon crutch is a prose habit, and there
+    # is no prose here — the finding is the catalogue matching its own punctuation patterns against
+    # punctuation. `humanness` already abstains on these inputs and returns 50.0; this is the same
+    # judgement, on the same text, from the surface that was disagreeing with it.
+    if latin == 0:
+        return False
     if non_latin == 0:
         return True
     return latin > non_latin
@@ -970,8 +983,18 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         "by_evidence": _by_evidence(by_category),
     }
     if not result["language_supported"]:
+        # Two different reasons, and saying the wrong one sends the reader at the wrong fix. "mostly
+        # non-Latin script" is true of a Chinese paragraph and false of `;;; ...`, which has no
+        # script at all — the same distinction `humanness` already draws between "too short" and
+        # "not English", and for the same reason: the message is what a reader acts on.
+        has_letters = any(ch.isalpha() for ch in text)
+        why = (
+            "the text is mostly non-Latin script"
+            if has_letters
+            else "the text contains no letters at all, so there is no prose to read"
+        )
         result["warning"] = (
-            "this catalogue is English-only, and the text is mostly non-Latin script — a score of "
+            f"this catalogue is English-only, and {why} — a score of "
             f"{total} tells means the patterns did not apply, NOT that the text reads as human"
         )
         logger.warning(result["warning"])
