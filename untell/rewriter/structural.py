@@ -2023,16 +2023,39 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         # of 80 documents. The transform aimed at the strongest tell in the catalogue is inert in
         # the shipped path.
         #
-        # That matters because `repeated_phrasing` is where all the residual lives. Per 100 words,
-        # after a full structural rewrite:
+        # That matters because `repeated_phrasing` is where all the residual lives. Every other
+        # category is essentially solved — cliche and ai_vocab 100% removed, formulaic_transition
+        # 93-97%.
         #
-        #                 human    ai    ai after rewrite   gap closed
-        #     HC3         0.394   6.138       5.856             5%
-        #     RAID        0.243   9.684       8.027            18%
+        # MEASURE THE RATE, NOT THE CATEGORY COUNT. `_repeated_trigrams` ends in
+        # `return repeats if (repeats / len(words) * 100) >= 5.0 else 0`, so the category is a
+        # high-precision FLAG for heavy repetition, not a rate: 77 of 80 human RAID documents
+        # report exactly 0, which is what earns it precision 0.925/0.942 and also makes a ratio of
+        # its means meaningless. Comparing those means gives "53x", and an earlier version of this
+        # note quoted 15-33x from the same mistake.
         #
-        # Every other category is essentially solved — cliche and ai_vocab 100% removed,
-        # formulaic_transition 93-97% — and this one leaves output repeating 15x (HC3) to 33x
-        # (RAID) more than human text.
+        # On the continuous share of tokens in a repeated 3-gram:
+        #
+        #                 human     ai    ai after rewrite   gap closed
+        #     HC3          1.31    7.32        6.92              7%
+        #     RAID         1.77   10.54        9.03             17%
+        #
+        # So the real figure is about 6x, not 33x — still the largest untreated gap in the
+        # catalogue, and the "barely closed" part is unchanged.
+        #
+        # What the repetition IS, which decides what could fix it. Only 1% of repeated trigrams are
+        # all function words, so this is real content. Splitting the types by syntax:
+        #
+        #     RAID   54% noun phrases ("medical image segmentation" x57, "the proposed method")
+        #            20% contain a verb (clause restatement)
+        #     HC3    45% contain a verb, 32% noun phrases
+        #
+        # and both halves of the gap are real: noun-phrase repeats run 4.7x human on RAID, clause
+        # repeats 8.1x. The noun-phrase half is not paraphraseable — a paper cannot stop saying
+        # "medical image segmentation" — but humans writing the same document reach for a shorter
+        # reference ("the method", "it") where the model restates the full phrase. That is an
+        # anaphora transform, and it is a different and much cheaper thing than paraphrasing a
+        # sentence.
         #
         # Widening the scope is NOT the fix, which is why it is not done here. Running
         # `_drop_restatements` over the whole document instead of the block:
