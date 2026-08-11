@@ -54,10 +54,29 @@ ensemble that untell can actually put in its loop.**
 >
 > So the rewriter is working, and working well: it rewrote every sample, cut the strongest mobile
 > detector by 0.41, and held meaning at 0.9848. The ceiling is set by **one immobile detector**.
-> `max` reports 0.9994 because `hc3_roberta` sits at 0.9992 and will not shift by any amount of
-> meaning-preserving rewriting — which is exactly what Results 1–2 originally called the content
-> wall, on the corpus `hc3_roberta` was trained on. The old 0.810 figure had it *moving*; it no
+> `max` reports 0.9994 because `hc3_roberta` sits at 0.9992 and does not shift — which is exactly
+> what Results 1–2 originally called the content wall. The old 0.810 figure had it *moving*; it no
 > longer does, and the shortcut-closing commits below are the likeliest reason.
+>
+> **That immobility is HOME-FIELD ADVANTAGE, not a property of the detector.** The sentence above
+> first read "will not shift by any amount of meaning-preserving rewriting", which is true on HC3
+> and false in general — corrected here rather than quietly reworded. Measured across three corpora
+> × two rewriters, mean `hc3_roberta` before → after:
+>
+> | corpus | `composite` | `structural` |
+> |---|---|---|
+> | **HC3** (its own training corpus) | 0.9992 → 0.9992 | 0.9992 → 0.9992 |
+> | **RAID** | 0.5014 → **0.2546** (−0.247) | 0.5014 → **0.3296** (−0.172) |
+> | **MAGE** | 0/3 rewrites — inconclusive | 1/4 rewrites — inconclusive |
+>
+> The split is by CORPUS, not by rewriter: both rewriters agree within each corpus. `hc3_roberta`
+> is immobile when it starts at its ceiling on the distribution it was trained on, and moves
+> substantially when it does not. MAGE settles nothing — its texts start near the FLOOR (0.015),
+> so there is nothing to reduce, and the rewriter declined to change most of them anyway.
+>
+> What this does not support: any transfer of the effect SIZES between corpora, and any claim about
+> `hc3_roberta` under the composite rewriter on MAGE, where 0 of 3 completed samples were rewritten
+> at all. Direction and mobility only.
 >
 > The rewriter is not the cause — it rewrote 6 of 6, and the opener-dose change made the same day
 > was ruled out directly (0.9996 current against 0.9994 old). The detectors are **pinned** on this
