@@ -6289,3 +6289,47 @@ Worth keeping: **when two measurements of the same thing disagree, the reason to
 which moved in the direction you expected.** I had the per-item record available in Result 117 —
 sentence counts were right there in the output — and read the aggregate instead. One extra column,
 the raw incident count, inverts the conclusion.
+
+## Result 119
+
+**The tells catalogue beats counting words by 0.025 on RAID.**
+
+Result 118 ended on a rewriter changing the denominator of a density. The same question asked of the
+headline metric: `tells_per_100w` divides by words, so it looks length-controlled. It is not — the
+two repetition categories only fire above thresholds a longer text crosses more easily, and the rate
+climbs steeply with length. Measured on RAID+HC3 AI text:
+
+```
+under 150 words     3.68 tells/100w
+over  250 words    12.33 tells/100w
+```
+
+So the catalogue was measured against the dumbest competitor available, `len(text.split())`, at 200
+pairs per corpus:
+
+| corpus | catalogue AUROC | word count alone | margin | AI words | human words |
+|---|---|---|---|---|---|
+| RAID | 0.9555 | **0.9303** | **+0.025** | 285.9 | 194.6 |
+| HC3 | 0.8696 | 0.6922 | +0.177 | 190.1 | 184.9 |
+
+**Fifteen categories, five hundred-odd patterns, two repetition statistics and a burstiness
+coefficient beat a word counter by two and a half points on RAID.** Its AI halves are 47% longer
+than its human halves, and that asymmetry is most of what the headline number reports.
+
+HC3 is the control that makes this a finding rather than a corpus complaint: near-identical lengths,
+and there the same catalogue earns +0.177. Same code, opposite readings.
+
+**Truncating both halves to a fixed window was tried first and does not answer the question.** RAID
+lands at 0.619 / 0.695 / 0.815 for a 120 / 150 / 180-word window — a wider window removes less of the
+asymmetry *and* hands the repetition tells more text to fire on, so the two effects run in opposite
+directions and no single window is the honest one. The word-count baseline needs no truncation,
+discards no pairs, and is not a control so much as a competitor.
+
+`eval/tells_auroc` now prints it on every run beside the mean word counts, with a NOTE when the
+margin falls under 0.10 — a floor the two corpora sit either side of by a wide margin, so it is not
+doing discrimination it cannot support.
+
+Worth keeping: **a separation number means nothing without the dumbest baseline printed beside it.**
+This module was built precisely so the catalogue's AUROC could not go stale in a comment, and it
+reported 0.9555 for months. The number was correct. What it measured was mostly that RAID's machine
+half is longer.
