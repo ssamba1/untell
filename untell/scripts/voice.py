@@ -20,11 +20,17 @@ each, comparing the spread ACROSS DRAWS of one text against the spread BETWEEN d
     contractions_per_100w          3%
     first_person_per_100w          1%
 
-So the lever is real, but it is **structural, not lexical**. Splitting and merging sentences and
-repunctuating is what the free rewriters do; they do not change person, contract words, or reach
-for longer ones. Only the first three features are therefore used for matching, and the rest are
+So the lever is real, but it is mostly **structural, not lexical**. Splitting and merging
+sentences and repunctuating is what the free rewriters do; they do not change person or contract
+words. The first three features and ``mean_word_len`` are used for matching, and the rest are
 reported for the human to act on. A matcher that claimed to fit your contraction habit or your
 first-person rate would be a placebo — there is nothing behind it to select over.
+
+``mean_word_len`` moves least of the four (8% here, 0.103 between-author units per rewrite) and
+carries most of the discrimination: without it the other three separate same-author from
+cross-register text at AUROC 0.554, which is chance. The table above measures how much the rewriter
+MOVES a feature; it does not measure whether the feature distinguishes anything, and those turned
+out to be nearly opposite orderings. See the note on ``MATCHABLE``.
 
 The scale constants are the standard deviation of each feature across 150 real human texts, so a
 distance of 1.0 in any feature means "one typical between-author gap". That makes the per-feature
@@ -161,12 +167,39 @@ def voice_gaps(sample: str, draft: str) -> dict[str, float]:
     return {k: round((b[k] - a[k]) / _SCALE[k], 4) for k in _SCALE}
 
 
+_WARNED_THIN_SAMPLE = False
+
+
+def _warn_if_sample_is_thin(sample: str) -> None:
+    """Say once when the sample is too small for the distance to mean much.
+
+    `voice_report` already carries this as a `warning` key. `voice_distance` returns a bare float,
+    so a library caller got a confident number and no caveat — MEASURED, a 9-word sample against
+    the documented 150-word minimum returned 2.6543 in silence. The loop guards it separately
+    (`untell humanize --voice-sample` warns on stderr), so this closes the direct-call path.
+
+    Same shape as the `humanness` fix: the rich function reports the limit, the scalar one drops
+    it, and the scalar one is what most callers reach for.
+    """
+    global _WARNED_THIN_SAMPLE
+    if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:
+        return
+    _WARNED_THIN_SAMPLE = True
+    logger.warning(
+        "the voice sample is under %d words, which is where the same-author/cross-author AUROC "
+        "of 0.680 was measured; below it the distance is closer to noise than to a profile. "
+        "Use voice_report() for the full picture.",
+        MIN_SAMPLE_WORDS,
+    )
+
+
 def voice_distance(sample: str, draft: str) -> float:
     """One number: how far ``draft`` sits from ``sample``'s voice, over the matchable features.
 
     Root-mean-square rather than a sum, so one badly-wrong feature is not hidden by two right ones,
     and the result stays on the same "between-author gaps" scale as the per-feature numbers.
     """
+    _warn_if_sample_is_thin(sample)
     gaps = voice_gaps(sample, draft)
     return round((sum(gaps[k] ** 2 for k in MATCHABLE) / len(MATCHABLE)) ** 0.5, 4)
 
