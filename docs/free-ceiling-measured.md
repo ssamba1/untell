@@ -6199,26 +6199,33 @@ share worsened, count did not rise      0
 the two agree                          32
 ```
 
-One row carries it: **share 70.0% → 53.8%, count 7 → 7.** A sixteen-point improvement on the
+~~One row carries it: **share 70.0% → 53.8%, count 7 → 7.** A sixteen-point improvement on the
 detector's own criterion, scored as no change at all. Nearly a third of the texts where this tell
-fires get no credit for a real improvement.
+fires get no credit for a real improvement.~~
 
-**The error is one-directional, and that is the whole reason it stays.** Fifteen cases hide an
+~~**The error is one-directional, and that is the whole reason it stays.** Fifteen cases hide an
 improvement; zero hide damage. The loop under-credits a good rewrite and is never fooled by a bad
-one — the safe side of the ledger.
+one — the safe side of the ledger.~~
+
+> **Correction ([Result 118](#result-118)):** there was no improvement to credit. On that row the
+> duplicate openers are 7 before and 7 after — the share fell only because the rewriter added three
+> sentences. Across the cases, 14 of 18 have identical repetition before and after and 4 got
+> genuinely worse while the share said better. The count was right and the share is the confounded
+> number. Everything below stands; the framing above does not.
 
 **The obvious fix was built, measured, and reverted.** Reporting the excess above the threshold
 (`dupes - ceil(0.40 * n)`) compresses the magnitude out of the signal:
 
-| variant | RAID AUROC | HC3 AUROC | hides improvement | hides DAMAGE |
-|---|---|---|---|---|
-| shipped, raw count | **0.9555** | 0.8696 | 15 | **0** |
-| excess, floored at 1 | 0.9381 | 0.8738 | 12 | 5 |
-| excess, unfloored | 0.9336 | 0.8756 | 6 | 1 |
+| variant | RAID AUROC | HC3 AUROC |
+|---|---|---|
+| shipped, raw count | **0.9555** | 0.8696 |
+| excess, floored at 1 | 0.9381 | 0.8738 |
+| excess, unfloored | 0.9336 | 0.8756 |
 
-Both variants buy a smaller blind spot with a worse one. The unfloored variant is worse than the
-table shows: a text can sit above the 40% bar and report 0, so the detector fires and contributes
-nothing — the same criterion-disagrees-with-value defect relocated.
+A residual above a threshold is nearly binary, and that is what costs the RAID AUROC. The unfloored
+variant has a second defect: a text can sit above the 40% bar and report 0, so the detector fires and
+contributes nothing — the criterion-disagrees-with-value defect relocated. (The share-based columns
+this table originally carried have been dropped; see the correction above.)
 
 **And the guard for it was vacuous on the first attempt.** The test meant to reject the excess
 variants compared a repetitive text against a sparse one — and the sparse one was under the 60-word
@@ -6228,5 +6235,57 @@ the duplicate count, which fails under both variants; verified by running the su
 
 Worth keeping: **the size of a gap says nothing about where the defect is.** Three categories at zero
 turned out to be one real gap, one detector false positive and two by-design. The category with the
-largest gap had no rewriter defect at all — the tell was being reduced and the number could not
-show it.
+largest gap had no rewriter defect at all — ~~the tell was being reduced and the number could not
+show it~~ **and no detector defect either; see the correction above.**
+
+
+## Result 118
+
+**I read the disagreement backwards. Density fell; repetition did not.**
+
+Result 117 found `repeated_sentence_openers` firing on a share and scoring a count, and called the
+gap between them a blind spot that hid real improvements. The next category checked is what showed
+that was wrong.
+
+`_repeated_trigrams` is built identically — fires at 5% of tokens, returns the repeat count — so the
+same three-way table should apply. It does, pointing the other way: over the 80 texts it fires on,
+the share worsened without the count rising **8** times against **2** the other way. Opening those 8
+settles it, because the repeat counts are printed beside the shares:
+
+```
+share 10.05 -> 10.34 | words 209 -> 203 | repeats 21 -> 21
+share 15.95 -> 16.25 | words 163 -> 160 | repeats 26 -> 26
+share 16.35 -> 16.61 | words 312 -> 307 | repeats 51 -> 51
+```
+
+**Identical repeats in every one.** The rewriter deleted filler; nothing repeated more than before.
+The share rose because the denominator shrank.
+
+Going back to Result 117's cases with the same column added:
+
+```
+duplicate openers IDENTICAL before and after    14
+duplicate openers actually ROSE                  4
+```
+
+The row I quoted as the headline — share 70.0% → 53.8% — is **7 duplicate openers before and 7
+after.** Not one repetition removed. The rewriter added three sentences with fresh openers and
+diluted the ratio. And in 4 cases the share reported an improvement while the repetition got worse,
+the clearest being 14 sentences with 8 duplicate openers becoming 18 with 10.
+
+So the shipped count was never a defect. **A share measures density, a count measures incidents, and
+a rewriter changes the denominator of the first by construction** — it adds sentences and deletes
+words. The trigram docstring had already worked this out for its own metric, recording that roughly
+40% of that tell's raw AUROC was length rather than style. Both repetition detectors report counts
+for the same reason, and I spent a result treating that as a bug.
+
+**The trigram docstring did have a real defect, in its first line.** It described the return as
+*"a share of its tokens (percent, floored)"* while the code returns the raw count, and the line
+*"counted once per repeat"* four paragraphs down says so. A 150-word text with 143 repeats returns
+143, not 95. Three descriptions, two of them right, in one docstring. Fixed and pinned with an
+assertion that the value exceeds 100 on that text, which no percentage can.
+
+Worth keeping: **when two measurements of the same thing disagree, the reason to prefer one is not
+which moved in the direction you expected.** I had the per-item record available in Result 117 —
+sentence counts were right there in the output — and read the aggregate instead. One extra column,
+the raw incident count, inverts the conclusion.
