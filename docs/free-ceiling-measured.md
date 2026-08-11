@@ -6686,3 +6686,43 @@ Worth keeping: **a parity test can be exhaustive about the wrong axis.** Six tes
 parameters and defaults across three surfaces, in a file whose docstring says "the same operation
 must mean the same thing on the CLI, the REST API and the MCP server". Every one of them started from
 a hard-coded list of two operations. The question they never asked was the cheaper one.
+
+## Result 128
+
+**The strongest caveat in the codebase was told to one caller per process.**
+
+Chasing whether `targeted`'s `min_score` gate discriminates, the per-sentence score distribution
+turned out to be the story. Over 100 HC3 sentences:
+
+| tier | distinct values / 100 sentences | most common | sentence-level AUROC |
+|---|---|---|---|
+| lite (stdlib) | 6 | **0.250 × 91** | 0.515 |
+| full | 39 | 0.9992 × 50 | 0.965 |
+
+The repo already knew the direction — `score_sentences` records AUROC 0.493 in its docstring and
+logs *"the 'flagged' sentences are close to arbitrary"*. What the count adds is that this is not a
+weak ranking. **Ninety-one of a hundred sentences return the identical number.** It is a constant
+with a few exceptions, sorted, and then the worst third of that ordering is handed to the user as
+"rewrite these first".
+
+It also explains the `min_score` behaviour that started this: 0 of 64 sentences clear the absolute
+0.30 bar on the stdlib path and 64 of 64 clear it at the full tier, because the stdlib path never
+leaves 0.250. The existing note calls that a scale mismatch between sentence and document scores.
+It is narrower than that — there is no scale to mismatch.
+
+**And the warning fires once per process.** `_WARNED_UNINFORMATIVE` is a module global, which is
+right for a terminal and wrong for a server: a long-running API process tells its first request and
+is silent for every caller afterwards, and no HTTP client reads the server's log in any case. So the
+one caveat that says *the output you are holding is a coin flip* was the least likely to reach the
+person holding it.
+
+Split the two: the log line stays once-per-process, the **result carries the caveat on every call**,
+and `/sentences` declares it in the schema — Result 126's lesson applied on the way in rather than
+after the fact. `note`, which is always present and is about per-sentence noise in general, stays
+separate; folding this into it would bury "these results are arbitrary" inside a sentence that is
+true of every tier.
+
+Worth keeping: **rate-limiting is a property of the channel, not of the fact.** Once-per-process is
+the correct policy for a log line and was inherited by the caveat itself, because the caveat had no
+other channel. Everything else about this was already measured, documented and warned about, three
+years of care upstream of a `global` that made it invisible.
