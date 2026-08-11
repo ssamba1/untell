@@ -113,14 +113,30 @@ _RTL_CHARS = re.compile(
 _VARIATION_SELECTORS = re.compile("[︀-️\U000e0100-\U000e01ef]")
 
 
+_KEYCAP = "⃣"  # COMBINING ENCLOSING KEYCAP
+
+
 def _strip_orphan_variation_selectors(text: str) -> str:
-    """Drop variation selectors that are not attached to an emoji base."""
+    """Drop variation selectors that are not attached to an emoji base.
+
+    Attachment is judged on BOTH neighbours. Looking only backwards mangles the one emoji whose
+    base is ASCII: a keycap is `[0-9#*]` + U+FE0F + U+20E3, so the selector sits after a plain
+    digit, fails an emoji test applied to the preceding character, and is dropped —
+
+        "press 1️⃣ to continue"  ->  "press 1⃣ to continue"
+
+    which is a rendering change to legitimate content, from a function whose docstring promises
+    variation selectors and emoji survive. Found by testing that promise rather than reading it.
+    """
     if not _VARIATION_SELECTORS.search(text):
         return text
     out = []
     for i, ch in enumerate(text):
-        if _VARIATION_SELECTORS.fullmatch(ch) and not _is_emoji_adjacent(text[i - 1] if i else ""):
-            continue
+        if _VARIATION_SELECTORS.fullmatch(ch):
+            prev = text[i - 1] if i else ""
+            nxt = text[i + 1] if i + 1 < len(text) else ""
+            if not _is_emoji_adjacent(prev) and nxt != _KEYCAP:
+                continue
         out.append(ch)
     return "".join(out)
 
@@ -202,15 +218,28 @@ def _strip_mark_stacks(text: str, keep: int = _MAX_MARK_STACK) -> str:
     while the payload rode through. That is the same failure this module already recorded twice, in
     a codepoint class it had not swept.
 
+    Mn AND Me. Enclosing marks are the same construct with a different category, and testing only
+    "Mn" left all 13 of them (U+0488 COMBINING CYRILLIC HUNDRED THOUSANDS SIGN and friends) stacking
+    without limit. Depth 4 keeps the one legitimate use — an emoji keycap is base + VS16 + U+20E3,
+    a stack of one.
+
     KNOWN RESIDUAL, stated rather than papered over: an attacker who spreads marks at or below the
     cutoff across many base characters is, at that point, writing something a diacritic-bearing
     script would also write. Distinguishing those needs language context this function does not
     have. This closes stacking, which is the form that is unambiguous.
+
+    OUT OF SCOPE, deliberately, and measured: unassigned codepoints (category Cn, 825314 of them)
+    and private-use codepoints (Co, 137468) also survive this module untouched. Neither is stripped
+    and neither should be. Both render as tofu rather than as nothing, so they are visible carriers
+    rather than invisible ones; private use is load-bearing for icon fonts; and `unicodedata` is
+    pinned to one Unicode version, so today's "unassigned" is tomorrow's ordinary letter and
+    stripping it would corrupt text this library never saw. The rule this module follows — remove
+    what cannot be doing work — does not reach them.
     """
     out: list[str] = []
     run = 0
     for ch in text:
-        if unicodedata.category(ch) == "Mn":
+        if unicodedata.category(ch) in ("Mn", "Me"):
             run += 1
             if run > keep:
                 continue

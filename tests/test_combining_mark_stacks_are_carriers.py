@@ -88,3 +88,25 @@ def test_marks_on_separate_bases_are_not_a_stack():
     spread = "".join(f"{ch}́" if ch.isalpha() else ch for ch in "abc def ghi")
     assert count_hidden(spread) == 0
     assert _marks(scrub_hidden(spread)) == _marks(unicodedata.normalize("NFC", spread))
+
+
+def test_enclosing_marks_stack_too():
+    """Category Me is the same construct as Mn; testing only "Mn" left all 13 unlimited."""
+    payload = BASE[:10] + "҈" * 20 + BASE[10:]
+    scrubbed = scrub_hidden(payload)
+    assert scrubbed.count("҈") <= _MAX_MARK_STACK
+    assert count_hidden(payload) == 20 - _MAX_MARK_STACK
+
+
+def test_an_emoji_keycap_survives():
+    """The one legitimate enclosing mark: base + VS16 + U+20E3 is a stack of one."""
+    for keycap in ("1️⃣", "7️⃣", "#️⃣"):
+        text = f"press {keycap} to continue"
+        assert keycap in scrub_hidden(text), f"{keycap!r} was mangled"
+
+
+def test_private_use_and_unassigned_are_left_alone_on_purpose():
+    """Documented scope limit: tofu-rendering, font-load-bearing, and Unicode-version dependent."""
+    for ch in ("", "", "͸"):
+        text = f"icon {ch} here"
+        assert ch in scrub_hidden(text)
