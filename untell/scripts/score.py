@@ -281,10 +281,30 @@ def _homoglyph_warning(text: str) -> str | None:
 
 
 def _short_text_warning(text: str) -> str | None:
-    """Warn when the text is too short for the flag to mean anything, with the measured rate."""
+    """Warn when the text is too short for the flag to mean anything, with the measured rate.
+
+    "Too short" and "not English" are different problems with the same symptom here, and saying
+    the wrong one sends the reader at the wrong fix. `str.split()` counts whitespace-delimited
+    runs, so a 46-character Chinese paragraph is **one word** by that measure and was reported as
+    "1 word: too short for a reliable verdict ... Score longer text" — advice that cannot help,
+    for a limit that is not length. `humanness` already draws this distinction; this is the same
+    branch, on the same flag, so the two cannot say different things about one input.
+    """
     words = len(text.split())
     if words >= _MIN_WORDS_FOR_A_VERDICT:
         return None
+    if text.strip():
+        try:
+            from untell.scripts.tells import score_tells
+
+            if not score_tells(text).get("language_supported", True):
+                return (
+                    "this text is not in a script these detectors were trained on. The score is "
+                    "not a verdict about it — the models are English-only, and the tell catalogue "
+                    "abstains. Length is not the limit here, so writing more will not help."
+                )
+        except Exception:
+            pass  # a diagnostic must never break the scoring it describes
     rate = next(pct for bound, pct in _SHORT_TEXT_BANDS if words <= bound)
     return (
         f"{words} word{'' if words == 1 else 's'}: too short for a reliable verdict. MEASURED on 40 HC3 pairs at this "
