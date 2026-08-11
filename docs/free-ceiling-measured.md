@@ -6115,3 +6115,66 @@ Worth keeping: **a detector and its remedy are a pair, and only counting them to
 gap.** Everything in this repo measures whether a tell is *found*. Nothing measured whether the
 matching transform can *act* on what was found, and the two vocabularies had drifted apart with no
 test able to notice — each is correct in isolation.
+
+## Result 116
+
+**Every tell category, asked whether anything can act on it.**
+
+Result 115 found one detector without a working remedy by checking three categories. The same
+question asked of all of them, over 120 corpus texts — flagged, and does the rule-based rewriter
+reduce the count:
+
+```
+repeated_phrasing            80 flagged   52 reduced
+ai_vocab                     60           60
+formulaic_transition         57           52
+repeated_sentence_openers    47           17
+cliche                       17           17
+hedge_stacking                6            5
+participial_trailer           4            4
+false_range                   2            0   <- never reduced
+meta_closer                   1            0   <- never reduced
+challenges_section            1            0   <- never reduced
+vague_attribution             1            1   <- fixed one result ago
+```
+
+Three categories the catalogue counts and no transform touches — confirmed by name: nothing in
+`untell/rewriter/` mentions any of the three.
+
+`meta_closer` is the one with an obvious safe action. "I hope this helps!" carries no content, so
+removing it is a deletion of scaffolding rather than a rewrite, and every gate agrees: tell 1 → 0,
+similarity 0.981–0.997, `passes` True, `contradicts` False, numerals kept.
+
+**Then the transform deleted a paragraph's conclusion.** The corpus's one real instance is
+
+> *"I hope this helps to explain why we might not have high resolution color cameras on some space
+> probes and satellites."*
+
+— substance wearing a sign-off as a prefix. Deleting a trailing sentence because the pattern matched
+it would have removed the answer to the question the paragraph was answering. **A tell fix that
+deletes the user's last sentence is a far worse defect than the tell.**
+
+The remainder is what separates them. Measured over seven sign-offs and three content sentences
+beginning with the same phrases:
+
+```
+scaffolding remainders   0, 0, 3, 4, 5, 5, 5
+content remainders       10, 11, 17
+```
+
+Six sits between the groups with margin. The evidence is thin — one of those content sentences is
+real and the rest are constructed — so the constant is documented as something to re-measure if a
+document ever loses a sentence it should have kept, not as a fitted value.
+
+**And the sweep still reports `meta_closer` 1 flagged, 0 reduced — correctly.** That instance should
+not be reduced. What looked like a missing transform turned out to be, for the only case the corpus
+actually contains, a **detector false positive**. The gap was real and the evidence for it was not
+evidence of what it appeared to be.
+
+Built on `tells._META_CLOSER_RE` rather than a second pattern, because the defect one result earlier
+was exactly two vocabularies drifting apart.
+
+Worth keeping: **"the rewriter cannot fix this tell" and "this tell should not be fixed here" produce
+the same number.** The sweep column that found a real gap in Result 115 pointed at a false positive
+in Result 116, and only opening the actual text distinguishes them. A count of unfixed detections is
+a place to look, never a verdict.
