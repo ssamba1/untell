@@ -185,6 +185,31 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 #        40             28%         100%
 #        80             17%         100%
 #
+# RE-DERIVED, same command and corpus, and the human column is now far worse:
+#
+#     words   human flagged (then -> now)
+#         5      98% -> 100%
+#        10      62% ->  88%
+#        20      40% ->  80%
+#        40      28% ->  98%
+#        80      17% ->  78%
+#
+# One detector accounts for essentially all of it. At 80 words, per detector on the human half:
+#
+#     mage 70%   perplexity_burstiness 15%   roberta_openai 8%   fast_detectgpt 2%   hc3_roberta 2%
+#
+# The ensemble takes `max`, so mage alone sets the ensemble's false-positive rate. And mage is not
+# uniformly bad — it is bad on SHORT text specifically, non-monotonically so:
+#
+#     mage on human text   20w 57%   40w 100%   80w 63%   160w 27%   200w 17%   full 27%
+#
+# 100% at 40 words against 17% at 200. So the short-text warning below is right and understates its
+# own cause: the problem is not that short text is hard for the ensemble in general, it is that the
+# strongest member of the ensemble is worst exactly where the ensemble is weakest, and `max`
+# propagates it. Left as a measurement rather than a change — excluding mage below some length is a
+# tier-composition decision with its own trade, and the abstention this comment introduced already
+# tells a caller not to trust the number.
+#
 # At five words a human paragraph and an AI paragraph are indistinguishable, and the API answers
 # "a" with P(AI) = 0.9987 and flagged=True. `humanness()` already refuses to answer below five
 # words; the primary scoring path did not, and it is the one behind /score, /tells and the CLI.
