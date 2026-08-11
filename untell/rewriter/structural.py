@@ -1483,6 +1483,12 @@ _ASIDE_RE = re.compile(
 )
 _HUMAN_PARENTHESES_PER_100W = 0.80
 
+# More list items and then a coordinator: "hair, and eyes their color". Anchored at the character
+# after the aside's closing comma. A real aside end is followed by the sentence resuming — "and by
+# the way that the iris scatters light" — where the first word IS the coordinator and no item list
+# precedes it, so that shape does not match and stays convertible.
+_LIST_CONTINUES_RE = re.compile(r"\s+[a-z][\w-]*(?:,\s*[a-z][\w-]*)*,?\s+(?:and|or)\s")
+
 # Words whose meaning is carried partly by the preposition that follows them. Substituting the
 # word alone leaves the preposition stranded on a synonym that does not take it: "an approach to
 # segmentation" is idiomatic English and "a method to segmentation" is not.
@@ -1548,6 +1554,25 @@ def _parenthesise_asides(text: str) -> str:
     def _swap(m: re.Match) -> str:
         nonlocal remaining
         if remaining <= 0:
+            return m.group(0)
+        # The aside body excludes commas, so when the real aside CONTAINS one the pattern matches a
+        # prefix of it and closes the bracket on an internal comma. FOUND by reading loop output on
+        # HC3:
+        #
+        #   one called melanin, which gives your skin, hair, and eyes their color, and another...
+        #     -> one called melanin (which gives your skin) hair, and eyes their color, and...
+        #
+        # "gives your skin" then a dangling "hair, and eyes their color". That is not the
+        # punctuation-only change this transform is documented to make and the meaning gates cannot
+        # see it — no word was added, removed or reordered, so cosine, NLI and roles all pass a
+        # sentence that has been cut in half.
+        #
+        # The tell is what FOLLOWS the closing comma: a serial list continues with more items and a
+        # coordinator ("hair, and eyes"), where a genuine aside end is followed by the sentence
+        # resuming ("...of your eye, and by the way that..."). Checked on the text after the match
+        # rather than by widening the body, because a body that allowed commas would swallow the
+        # coordinate clause after a real aside instead.
+        if _LIST_CONTINUES_RE.match(m.string, m.end()):
             return m.group(0)
         remaining -= 1
         return f" ({m.group(1)})"
