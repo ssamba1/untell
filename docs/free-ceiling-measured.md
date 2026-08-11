@@ -3813,3 +3813,50 @@ than optimise across it.
 Worth keeping: **"the line count is right" is not "the layout is right".** The first fix passed the
 obvious check and produced output that renders differently from its input. Only asking what the
 *characters* were, rather than how many lines there were, showed it.
+
+## Result 72
+
+**A meaning-inverting rewrite that passed all five gates, and the one that still does.**
+
+The repo's central differentiator is five meaning gates. Nobody had tried to defeat them. Seven
+adversarial edits to one clinical sentence, with NLI and the role parser both available:
+
+| edit | contradiction | entailment | roles | verdict |
+|---|---|---|---|---|
+| change the number | — | — | — | blocked (numerals) |
+| drop the hedge | — | — | — | blocked (certainty) |
+| **negate the finding** | 0.066 | 0.929 | False | **PASSED** |
+| **swap the comparison arms** | 0.004 | 0.991 | False | **PASSED** |
+| **invert who did what** | 0.004 | 0.991 | False | **PASSED** |
+| faithful paraphrase | 0.010 | 0.963 | False | passed (correct) |
+
+**The negation result did not generalise, and saying so is the finding.** Isolating it showed the
+trailing hedge was responsible — contradiction fell 0.99 → 0.19 the moment "though the effect may
+not hold" was present. Four fresh hedge+negation pairs were then built to confirm: **all four stayed
+blocked** (0.604–0.998). So "a hedge masks a negation" is not true as a general claim, and one
+example would have published it.
+
+**The role swap is real and fixable.** `_triples` falls back to a prepositional object only when
+there is no direct object. "The drug reduced mortality compared with placebo" has one, so `placebo`
+was never captured and swapping the arms left every triple identical. In clinical and academic
+prose "A compared with B" is the commonest structure whose inversion changes the finding, and that
+register is the one this repo targets.
+
+Comparison prepositions now produce a triple of their own, collected **per sentence** rather than
+per verb — "compared with" hangs off the participle and "than" off the adjective, so a per-verb scan
+finds neither. Rule 1 then sees both entities in one triple and the exchange fires.
+
+| | before | after |
+|---|---|---|
+| comparison-arm swaps caught | 0 of 3 | **3 of 3** |
+| natural-phrasing swaps | — | 4 of 5 |
+| false alarms on faithful rewrites | 0 of 5 | **0 of 5** |
+
+The fifth case is a parser limit, not a logic gap: spaCy yields a `than` triple for
+"Ibuprofen performed better than aspirin" and not for the same sentence with the arms exchanged, so
+detection depends on which side is the source. Pinned as a test that will fail if a spaCy upgrade
+fixes it, rather than worked around — forcing the triple would misfire on genuine rephrasing.
+
+Worth keeping: **the gate that exists for a failure mode is not evidence the failure mode is
+covered.** `roles.py` was written to catch exactly this class, catches the textbook version
+("The dog bit the man"), and missed the form the target register actually uses.
