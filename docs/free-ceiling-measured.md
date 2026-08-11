@@ -6333,3 +6333,47 @@ Worth keeping: **a separation number means nothing without the dumbest baseline 
 This module was built precisely so the catalogue's AUROC could not go stale in a comment, and it
 reported 0.9555 for months. The number was correct. What it measured was mostly that RAID's machine
 half is longer.
+
+## Result 120
+
+**The headline score depends on how much you paste, and its "cannot tell" answer is also a real
+answer.**
+
+Result 119 found the tell rate climbing with length. `humanness` weights that rate at 0.30, so the
+next question is whether the user-facing number inherits it. Measured by truncating 24 corpus texts
+of 220+ words to a series of windows and comparing each against its own 220-word score:
+
+```
+window            60w    100w   140w   180w
+mean |delta|      8.9     7.3    5.1    2.5
+max  |delta|     21.1    23.4   22.8    9.4
+```
+
+**Fifteen of the twenty-four change band somewhere across that range.** If it were only evidence
+accumulating, the drift would run one way; it does not. One human text reads *human* at 100 words and
+*mixed* at 220 (79.7 → 56.3); another reads *mixed* at 60 and *mostly human* at 220. Two documents of
+different lengths cannot be ranked by this number, and a long document cannot be spot-checked on an
+excerpt.
+
+The docstring already warns the score is not comparable across *tiers*, with a measurement. The same
+caveat one axis over was missing, and it is the axis a user moves without noticing — pasting more.
+
+**And the length sweep turned up something else.** One 100-word answer came back at exactly 50.0
+while the detector ensemble read **P(AI) = 0.9992**. Nothing abstained; the terms summed there —
+0.50 × 0.9992 of detector against near-zero tells and healthy burstiness.
+
+50.0 is the value `humanness` returns for empty text, for text under `_MIN_WORDS_FOR_SIGNAL`, and for
+scripts the catalogue cannot read. The docstring calls it *"the same 'cannot tell' answer empty text
+gets"*. **It is also a score the function can compute, at the loudest AI reading a detector can
+produce.**
+
+Checked before writing it up: nothing in `untell/` or `eval/` branches on `== 50.0`, so this is an
+ambiguity rather than a live defect. Only tests mention the value, and they assert that abstention
+*returns* 50.0 rather than reading 50.0 *as* abstention — the safe direction. Pinned with a test that
+solves for the detector reading which lands on the tie for a given text, asserts it sits above the
+shipped verdict bar, and greps the tree for anyone who starts branching on it.
+
+Worth keeping: **a sentinel that shares a type with real values is a bug waiting for its first
+caller.** This one has none yet, and it was found by accident while measuring something else — the
+`[44.0, 50.0, 50.0, 50.0, 50.0]` row stood out only because four identical values in a row do not
+look computed.
