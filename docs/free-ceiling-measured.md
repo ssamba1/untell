@@ -5144,3 +5144,107 @@ Worth keeping: **each output path is its own reading.** The library API, the CLI
 field and the REST response are four renderings of the same run, and the defect had been in every
 one of them for as long as the table has existed. It surfaced when I looked at a different one,
 which is the only variable that changed.
+
+## Result 98
+
+**Four surfaces, one question asked of all four at once.**
+
+Result 97 ended on "each output path is its own reading". The stronger version is to ask whether the
+paths *agree*, and that is mechanically checkable — they take the same arguments and return the same
+shape.
+
+**Scoring agrees exactly.** Library `score_text` against `POST /score`, same text, defaults:
+
+```
+field              library    REST
+tier               full       full
+max                0.7253     0.7253
+mean               0.3524     0.3524
+flagged            True       True
+verdict_threshold  0.3        0.3
+detectors          same four names
+warning            same string
+```
+
+MCP's `score` declares the same defaults in its own signature. Nothing to fix — earlier work on that
+surface holds.
+
+**Humanizing did not.** Comparing declared defaults across the three:
+
+| param | library | MCP | REST |
+|---|---|---|---|
+| `rewriter` | **None** | `"composite"` | `"composite"` |
+
+`get_rewriter()` with no preference returns `None` unless a key or a local policy is configured, so:
+
+```
+untell humanize        composite   works
+MCP untell()           composite   works
+POST /humanize         composite   works
+untell_text(text)      None        {"error": "no rewriter configured"}
+```
+
+The library entry point is the one a Python user reaches for first, and it was the only one that
+refused on a fresh install. MCP and REST were each changed to default to `composite` earlier, and
+their own comments record the reason in almost these words — *"the flagship tool failed out of the
+box while the identical CLI invocation worked"*. The argument had simply never been carried back to
+the library.
+
+**The fix is in the caller, not in `get_rewriter`.** That function answers "is a HOSTED or
+local-policy rewriter configured", and `None` is the correct answer to that question — the test
+pinning it stays. What was wrong is `run.py` reading that as "no rewriter exists" when `composite`
+is always available, free, and the documented zero-dependency path. It now falls back, and says so
+once on stderr: a caller who set a key and expected the hosted rewriter needs to know it was not
+reached, which is the failure mode this log keeps finding on other surfaces.
+
+**And a second divergence one layer up.** `--rewriter auto` is in the CLI's advertised choice list
+and the CLI translates it to `None` before calling the loop. Nothing else did, so a caller who read
+the CLI help and passed `rewriter="auto"` to `untell_text` got
+
+> *rewriter 'auto' is not available — check the name*
+
+about the one value the documentation calls the default. Accepted as a synonym now, with a
+guard-the-guard test that an unknown name still fails — the fallback is for "choose for me", not for
+a backend that is not there.
+
+Worth keeping: **a default is part of an interface, and four interfaces to one function means four
+places for it to drift.** Both defects here are the same shape as the MCP ones fixed earlier, found
+by putting the four signatures side by side rather than by reading any one of them.
+
+## Result 99
+
+**Removing an error path exposed three things that had been leaning on it.**
+
+Result 98 made `untell_text` fall back to `composite` instead of returning `{"error": "no rewriter
+configured"}`. That error was load-bearing in ways nothing recorded, and the failures that followed
+were all more interesting than the change itself.
+
+**One: an eval baseline that measured the machine, not the corpus.** `test_baseline_without_rewriter`
+asked for `rewriter=None` and asserted `rewriter_available is False` — which held only because the
+loop refused when nothing was configured. So the same command produced a baseline-only report on a
+developer box and a full before/after report in CI, and the difference was an environment variable.
+A baseline is now requested with `max_iters=0`, which says what it means and answers the same
+everywhere.
+
+**Two: `rewriter_available` never measured what it says.** It is `rewrote > 0`, and `rewrote` was
+incremented on every result that carried a `post` — which is every result that did not error. It
+counted **loop invocations**, and was accidentally correct only because the one error path it cared
+about returned no `post` at all. The moment that path became a fallback, a `max_iters=0` baseline
+started reporting `rewriter_available: True`. It now counts a result that reports rewrites or whose
+text actually changed.
+
+**Three: `post_flagged_rate is None` was an artefact of the same error.** A baseline run now reports
+post == pre, which is strictly more useful — it shows the loop ran and changed nothing — and is the
+same shape as every other run, so a caller does not special-case it.
+
+**And a fourth, from a change another session made in parallel.** Warnings are now merged into one
+field, so two tests asserting `result.get("warning") is None` began failing on a caveat that has
+nothing to do with what they test. `is None` had meant "nothing to report about scrubbing" and
+silently became "nothing to report about anything" — a much stronger claim than either test makes.
+Both now assert the absence of the specific caveat.
+
+Worth keeping: **an error path is an interface, and things lean on it.** Four separate assertions
+here were reading "this run errored" as a proxy for something else — no rewriter configured, no
+rewrite performed, a baseline was requested, no caveats apply. None of them said so, and each was
+correct until the day the error stopped happening. When an error becomes a fallback, the search is
+not for callers of the error but for **tests that were quietly using it as a signal**.
