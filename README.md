@@ -414,10 +414,17 @@ Three further findings, all measured, and one of them overturned this project's 
   you actually score on**, it drops to **0.04**. The lever was never a cleverer rewriter — it was
   choosing among several drafts against the real signal.
   **Scope correction:** that holds on the built-in sample. On real HC3 answers the same selection
-  leaves `hc3_roberta` at **1.00 → 0.81**, which is what the original claim described — while
-  `roberta_openai` still falls to 0.09, so selection is a real lever and content is still the wall.
+  leaves `hc3_roberta` at **1.00 → 0.999 — it does not move at all**, and `roberta_openai` at
+  0.99 → 0.64. So selection is a real lever on easy text and content is still the wall on real text.
   Both results, and the caveat that `hc3_roberta` is *trained on* HC3, are in
   [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md) (Results 10–11).
+  <br>**These figures used to read 0.81 and 0.09 here, contradicting the corrected row above in
+  this same file.** The row was re-measured on 2026-08-08 and this bullet was missed. Re-measured
+  again 2026-08-11 over 6 HC3 answers: `hc3_roberta` lands at 0.9992 and never leaves 0.999 on any
+  of them, which is what the corrected row says. Three of the five default detectors saturate on
+  this corpus — `mage` 1.0000 on 6/6, `hc3_roberta` 0.9992–0.9993 on 6/6, `roberta_openai` ≥0.999
+  on 5/6 — so no rewriter can move `max` here, and the ceiling figures in the linked document are
+  historical rather than current.
 - **The one "immovable" detector turned out to be broken — and once fixed, it moves.**
   `fast_detectgpt` never budged in any configuration (0.31 → 0.28) because its calibration constants
   assumed a curvature range the model never produces, pinning **every** input to ~0.30 regardless of
