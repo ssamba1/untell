@@ -107,10 +107,29 @@ first 130 words of a document and nothing in this project would have noticed.
 
 **Why this is the example worth giving.** It was found by probing a property no test suite naturally
 checks — *does the answer depend on where in the input the change is?* — not by a failing test, a
-bug report, or reading the code. The fix is in, the invariant is now pinned for all five gates
+bug report, or reading the code. The fix is in, the invariant is pinned
 (`tests/test_gates_read_the_whole_document.py`), and the write-up includes the version of the fix
 that was **wrong**: aligning chunks proportionally drifts once the rewriter merges sentences, which
 produced false vetoes on faithful rewrites until the cut points came from `difflib` instead.
+
+**And the first fix only closed half of it, which is the more useful part of the story.** Chunking
+was applied to the contradiction check and deliberately *not* to entailment — the proportional
+version had caused false vetoes there, so it was reverted and left whole-text. Contradiction catches
+meaning INVERSION; entailment catches meaning LOSS, because deleting content contradicts nothing.
+So the same measurement, re-run for deletion instead of inversion, still failed:
+
+| most of a sentence deleted | entailment | verdict |
+|---|---|---|
+| after 10 words | 0.0017 | caught |
+| after 140 words | **0.9800** | **missed** |
+| after 280 words | **0.9800** | **missed** |
+
+with contradiction innocent at 0.003, similarity 0.965 and the numeral, certainty and polarity
+guards all clean — the whole gate passed it. Entailment is now chunked as well; the revert's reason
+had expired when the aligner moved to `difflib`, and re-measured against the current one it newly
+vetoes 0 of 25 candidates the gate accepts. The lesson is not about NLI: a fix aimed at one symptom
+of a shared cause leaves the other symptoms, and reporting the fix as complete is what stops anyone
+looking.
 
 **What it does not let us claim.** This page notes that
 `Advancing-Machine-Human-Reasoning-Lab/apt` uses the same bidirectional-NLI entailment gate. The
