@@ -105,6 +105,20 @@ def _segments(text: str):
             yield from flush()
             yield ("layout", "", line)
             continue
+        # A markdown HARD BREAK — two or more trailing spaces — is not a soft wrap. It is the
+        # author saying "render a line break here", and gathering it into the surrounding block
+        # lets a sentence-level transform merge straight across it. MEASURED: two lines joined by a
+        # hard break came back as one sentence, "The system taps into a strong method here, but it
+        # delivers outcomes at scale today." The break survives when nothing else changes, which is
+        # what made it easy to miss — it only disappears once the merge transform fires.
+        #
+        # Ending the block here costs the transform some context (the next line is rewritten on its
+        # own), and that is the right trade: the author asked for a boundary, so this module's job
+        # is to honour it rather than to optimise across it.
+        if line.endswith("  "):
+            buffer.append(line)
+            yield from flush()
+            continue
         marker = _LINE_MARKER_RE.match(line)
         if marker:
             yield from flush()
@@ -120,7 +134,11 @@ def _walk(text: str, transform: Callable[[str], str]) -> str:
         if kind == "layout":
             out.append(body)
         elif body.strip():
-            out.append(prefix + transform(body))
+            # A hard break lives in trailing whitespace, and every transform strips it — so the
+            # block came back one line but rendering as a soft wrap, which is the same loss by a
+            # different route. Hold the marker aside and re-attach it.
+            hard_break = "  " if body.endswith("  ") else ""
+            out.append(prefix + transform(body.rstrip() if hard_break else body) + hard_break)
         else:
             out.append(prefix + body)
     return "\n".join(out)
