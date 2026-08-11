@@ -271,11 +271,36 @@ class PerplexityBurstinessDetector:
     _model = None
     _tokenizer = None
 
+    # Which path the LAST `score()` actually took, as opposed to which one `_torch_ready()` predicts.
+    # Per-instance, not class-level: two detectors in one process must not overwrite each other's
+    # record. `None` until a score has run, which is when `mode()` falls back to the prediction.
+    _last_path: str | None = None
+
     def available(self) -> bool:  # always — the lite path needs nothing
         return True
 
     def mode(self) -> str:
-        """Which of this detector's two scoring paths would run: ``"gpt2"`` or ``"stdlib"``.
+        """Which of this detector's two scoring paths ran: ``"gpt2"`` or ``"stdlib"``.
+
+        Reports the path actually taken once a score exists, and the predicted one before that.
+        It used to report only the prediction — ``"gpt2" if torch is importable`` — which is a
+        different question, and the two answers separate on exactly the failure the warning in
+        ``score()`` announces: torch imports, the model raises at scoring time (OOM, a corrupted
+        cache, a transformers version bump), and the stdlib heuristic produces the number while the
+        field says the model did.
+
+        That is not only a mislabel, because ``score._verdict_threshold`` reads this field. It
+        raises the cut from 0.30 to 0.45 when the stdlib path is the whole verdict, for the reason
+        in the table below. Reporting the prediction turned that guard OFF for the fallback — the
+        one case where the guard is most needed. MEASURED on a human paragraph at ``--tier lite``
+        with the full path forced to raise:
+
+            healthy   gpt2 path     max 0.1502   verdict cut 0.30   not flagged
+            fallback  stdlib path   max 0.4044   verdict cut 0.30   FLAGGED
+
+        With the mode reported honestly the cut becomes 0.45 and 0.4044 passes. The error landed on
+        the accusing side: a human told their own writing reads as AI, because a GPU ran out of
+        memory.
 
         The two are not interchangeable and the name ``perplexity_burstiness`` hides which one
         produced a score. MEASURED on the same 100 held-out HC3 pairs at the shipped 0.30
@@ -290,7 +315,7 @@ class PerplexityBurstinessDetector:
         above the 0.30 threshold — so at ``--tier lite`` on a clean install "flagged" is close to
         "flagged everything". Callers that report a verdict should report this alongside it.
         """
-        return "gpt2" if self._torch_ready() else "stdlib"
+        return self._last_path or ("gpt2" if self._torch_ready() else "stdlib")
 
     def _torch_ready(self) -> bool:
         # UNTELL_LITE_NO_TORCH=1 forces the stdlib heuristic even when torch is importable.
@@ -484,10 +509,15 @@ class PerplexityBurstinessDetector:
                 full = self._full_score(text)
                 # None propagates as "no signal" — clamp01(None) would raise, and clamping a
                 # fabricated substitute is exactly what this detector's history warns against.
+                # Recorded before the return so `mode()` reports the path that produced THIS score;
+                # `_verdict_threshold` reads it, and the number and its label have to describe the
+                # same run.
+                self._last_path = "gpt2"
                 return None if full is None else clamp01(full)
             except Exception as exc:  # model/load failure -> heuristic, but say so (don't fail silently)
                 logger.warning(
                     "perplexity_burstiness full path failed (%s: %s); falling back to lite heuristic.",
                     type(exc).__name__, str(exc)[:120],
                 )
+        self._last_path = "stdlib"
         return lite_score(text)
