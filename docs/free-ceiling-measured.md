@@ -6726,3 +6726,44 @@ Worth keeping: **rate-limiting is a property of the channel, not of the fact.** 
 the correct policy for a log line and was inherited by the caveat itself, because the caveat had no
 other channel. Everything else about this was already measured, documented and warned about, three
 years of care upstream of a `global` that made it invisible.
+
+## Result 129
+
+**The argument was already in the file, twelve lines below the branch that ignored it.**
+
+Result 128 fixed one warn-once caveat with no other channel. The obvious question is how many there
+are, so: every module-global warn-once flag in `untell/`, asked whether the fact reaches the caller
+any other way.
+
+Ten flags. Nine are fine — the detector adapters' `_warned` guards a load failure that `score_text`
+already reports through `scored`, `detector_modes` and `failed_detectors`. One was not.
+
+`untell_text` falls back to `composite` when no hosted or local-policy rewriter is configured, and
+its comment says:
+
+> *"Said once, on stderr, because a caller with a key who expected the hosted rewriter should know
+> the free path ran instead — silently substituting a weaker backend is the failure this repo keeps
+> finding on other surfaces."*
+
+Twelve lines below, the voice-sample block makes the same argument and finishes it:
+
+> *"`untell humanize --voice-sample` warns about exactly this on stderr; REST and MCP take the
+> sample as TEXT and said nothing, so the two network surfaces silently used a sample the CLI would
+> have flagged."*
+
+— and sets `voice_warning` on the result. Same function, same failure named in both comments, one
+of them acted on.
+
+`_WARNED_FREE_FALLBACK` is a module global, so the practical behaviour on a server is: the first
+request logs a line nobody reads, and every request after that gets `composite` with nothing on the
+result and nothing in the log. A caller who set `ANTHROPIC_API_KEY`, expecting the hosted rewriter,
+has no way to discover it was never reached.
+
+`rewriter_warning` now mirrors `voice_warning` — same shape, same placement, kept separate from
+`warning` because it says which BACKEND ran rather than how to read the numbers. Log line and field
+read one constant, so the two cannot drift.
+
+Worth keeping: **a comment that names a failure is not a fix for it, and the two can sit in the same
+function.** Both blocks were written by someone who had the principle exactly right. What separated
+them was that one had a `voice_warning` key already in the return dict and the other had a `logger`
+in scope.
