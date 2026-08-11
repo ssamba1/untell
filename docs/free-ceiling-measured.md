@@ -4775,3 +4775,58 @@ suspicion was my own change, and the way to settle it was to run the failing tes
 other session's edits present — not to read the diff and reason about it. Reading the diff would have
 pointed at the opener rework, which is right, but "the diff looks responsible" and "the diff is
 responsible" are different claims, and only one of them is cheap to check.
+
+## Result 91
+
+**The `However,` fix closed a category, and the way to know that is to scan for the category.**
+
+Result 89 fixed one substitution. The question that matters afterwards is whether it was one
+instance or one of many, and the table is small enough to ask directly. Every `"<substitute>,"`
+sentence opener `_SYN` can emit, against its frequency in 240 HC3 and RAID texts:
+
+```
+headword          n   substitute+,        corpus  human
+however          95   but,                     0      0
+however          95   though,                  0      0
+overall          66   all told,                0      0
+additionally     32   plus,                    0      0
+furthermore      15   and,                     0      0
+moreover         14   what is more,            0      0
+therefore         7   that is why,             0      0
+...
+therefore         7   so,                     18      1
+consequently      1   as a result,             3      1
+```
+
+Twenty forms at zero. **And a zero-frequency rule would have been wrong.** `still,`, `yet,` and
+`even so,` are ordinary English openers that a 240-text corpus simply does not happen to contain —
+sparsity is not evidence of a fingerprint. Building the obvious check here would have produced a
+guard that fires on correct output, which is how a damage check gets its fixture edited instead of
+its bug fixed.
+
+What separates the real cases is grammatical, not statistical: **a coordinating conjunction cannot
+take that comma at all.** Filtering the scan to bare single-word conjunctions, and then to headwords
+that are not already protected, the whole table yields:
+
+| headword | conjunction substitutes | protected? |
+|---|---|---|
+| `however` | `but`, `though` | yes — `_COMMA_UNSAFE`, added in Result 89 |
+| `strengths` | `plus points` | not a conjunction — a noun phrase, and a phrase before a comma is fine |
+
+The category is closed. Every other headword with a conjunction substitute is already deleted at a
+sentence start by `_TRANSITIONS_RE` rather than substituted.
+
+That is now a standing test rather than a fact about today. It reads `_SYN`, `_TRANSITIONS_RE` and
+`_COMMA_UNSAFE` and requires every conjunction-substitute headword to have one protection or the
+other — so a new table entry, or a headword leaving `_TRANSITIONS_RE`, fails instead of quietly
+reopening the hole. Confirmed non-vacuous by clearing `_COMMA_UNSAFE` and watching it name
+`however` and both substitutes.
+
+The test also records why the two mechanisms are not interchangeable, because they look it. Deleting
+`Moreover,` drops a join and nothing else; deleting `However,` drops a contrast the sentence is
+making. One is right for `_TRANSITIONS_RE`, the other needs the filter. Without that written down, a
+later tidy-up collapsing them into one list is the obvious next move.
+
+Worth keeping: **after fixing an instance, scan for the category — and expect the obvious rule to be
+wrong.** The scan took one query and turned a single fix into a closed set. The rule the scan first
+suggested, "never emit a form the corpus has zero of", would have been a new bug.
