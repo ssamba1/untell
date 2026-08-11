@@ -108,6 +108,28 @@ logger = logging.getLogger(__name__)
 #     `formulaic_transition`'s own 43-of-150 human hits, which is the evidence that was always
 #     doing the work.
 #
+#     WHICH CATEGORIES EARN THOSE NUMBERS — measured over 60 pairs per corpus, counting how many
+#     of the 20 categories fire at all on the AI half:
+#
+#         RAID   9/20    ai_vocab cliche false_range formulaic_transition hedge_stacking
+#                        challenges_section inflated_copula negated_contrast participial_trailer
+#         HC3    7/20    ai_vocab cliche false_range formulaic_transition hedge_stacking
+#                        meta_closer vague_attribution
+#         MAGE   3/20    ai_vocab cliche false_range
+#
+#     Union 11 of 20, and only `ai_vocab`, `cliche` and `false_range` fire on all three. The other
+#     NINE — sycophancy, chatbot_artifact, markdown_artifact, cutoff_disclaimer, rhetorical_opener,
+#     steering_opener, aphorism, notability_padding, filler_phrase — score zero on 360 AI documents
+#     across all three corpora, and are exercised only by the constructed positives in
+#     `test_every_tell_category_can_fire.py`.
+#
+#     They are not broken: every one of the 20 matches a known positive, and that suite passes. They
+#     are artifacts of a register these corpora do not contain — chat-interface scaffolding,
+#     markdown headers, refusal boilerplate — where HC3 is 2022 forum answers, RAID is news and
+#     reviews, MAGE is domain-matched prose. So the honest reading of "AUROC 0.9555 on RAID" is that
+#     nine categories produced it and nine others were never tested against real text at all. A
+#     corpus of modern chat output would be the thing that validates them; none is in this repo.
+#
 #     Layout was checked at the same time, since RAID separates its own halves at AUROC 1.0000 on
 #     newline density alone and `eval/detector_audit.py` collapses layout for exactly that reason.
 #     It does not affect this metric: collapsing whitespace moves the AUROC by +0.0000 on RAID, HC3
