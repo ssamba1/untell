@@ -3985,6 +3985,12 @@ checks measure drift between a document and the code. One asked "are these equal
 "is the document claiming more than exists" — and only the second question survives a repository
 that more than one person is writing to.
 
+**A second multi-session hazard, learned twice.** The git index is shared. Staging a file and not
+committing it immediately means the next `git commit -a` from the other session absorbs it — which
+happened to `run.py` and then to `test_the_loop_is_reproducible.py`, both landing under commit
+messages describing something else. Nothing is lost and the author is the same either way, but the
+history stops explaining itself. Stage and commit in one step; never leave work staged.
+
 ## Result 76
 
 **The first rewrite in a process is not reproducible with the ones after it.**
