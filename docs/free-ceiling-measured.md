@@ -3899,3 +3899,47 @@ Worth keeping: **the outlier was the design.** One text in thirty disagreed, and
 between an asymmetric veto that would miss half the attack surface and a symmetric one that seemed
 to cost 3%. Reading what that single text actually did showed the 3% was not a cost at all — it was
 a marker that should never have been counted.
+
+## Result 74
+
+**Three quantity changes the numerals gate lets through, and only one of them is its job.**
+
+Ten probes at the mechanical quantity gate. It correctly blocks 240 → 420, "three years" → "five
+years" and "9 of 10" → "9 of 12", and correctly allows the formatting variants that a rewriter
+actually produces: 12% → "12 percent", $1,200 → $1200, "2.5 mg" → "2.5mg".
+
+Three quantity changes pass:
+
+| | |
+|---|---|
+| "half the cohort" → "most of the cohort" | not its job |
+| "a third of patients" → "two thirds" | not its job |
+| "the rate doubled" → "tripled" | not its job |
+
+The module docstring is explicit — *"it asserts only that each numeral in the source is still
+findable in the rewrite… It makes no judgement about meaning, which is what the NLI gate is for."*
+None of those three contains a numeral. The gate is honest about its scope and the scope is
+defensible: a fraction-and-multiplier vocabulary is a meaning judgement, and the NLI gate owns
+those.
+
+**The fourth case was its job and it failed.** The same docstring promises a numeral counts "as a
+numeral **or as its English word**", and 240 → "two hundred and forty" was vetoed. `_spelled_value`
+summed the parts, reading it as 2 + 40 = 42. That 5, 12, 20 and 100 all round-tripped is what hid
+it: the small values are covered by exact word forms and 100 by a loose-synonym map, so everything
+compound fell through both and nothing pointed at the gap.
+
+Multipliers now scale what precedes them. 240, 100, 999 and twenty-four all read correctly; the 23
+existing tests still pass and a changed spelled quantity ("two hundred and **fifty**") is still
+caught — widening what counts as a number must not widen what counts as equal.
+
+Unreachable from the free path: no in-repo rewriter spells numbers out. The LLM rewriter writes
+prose and can spell whatever it likes, which is where this bites.
+
+"one thousand two hundred and forty" still reads as two numbers, pinned as a known limit — one
+multiplier per match, no observed instance, and the alternative is a materially more complex regex.
+The same call as the spaCy parse asymmetry in [Result 72](free-ceiling-measured.md).
+
+Worth keeping: **a gate that is honest about its scope is not thereby correct within it.** Three of
+the four misses were out of scope and documented as such; the fourth was squarely inside a promise
+the docstring makes in the same paragraph, and the passing cases either side of it made the gap
+invisible.
