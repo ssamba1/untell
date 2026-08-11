@@ -240,6 +240,10 @@ class TellsRequest(_Request):
     include_matches: bool = False
 
 
+class ScrubRequest(_Request):
+    text: str = _TEXT
+
+
 class SentencesRequest(_Request):
     text: str = _TEXT
     tier: _TIER = "lite"
@@ -509,6 +513,19 @@ _TELLS_RESPONSES = _obj(
     required=["words", "tells", "tells_per_100w", "by_category", "language_supported"],
 )
 
+_SCRUB_RESPONSES = _obj(
+    "Text with hidden watermark characters removed, and how many there were.",
+    {
+        "clean": {**_STR, "description": "the text with the hidden characters stripped"},
+        "hidden_chars_removed": {
+            **_INT,
+            "description": "how many were found in the SUBMITTED text; 0 means it was already "
+                           "clean, which is itself worth knowing",
+        },
+    },
+    required=["clean", "hidden_chars_removed"],
+)
+
 _SENTENCES_RESPONSES = _obj(
     "Per-sentence scores and the sentences worth rewriting.",
     {
@@ -726,6 +743,21 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
 async def tells(body: TellsRequest) -> dict:
     """Count AI writing tells. Returns total count, rate per 100 words, and per-category breakdown."""
     return score_tells(body.text, include_matches=body.include_matches)
+
+
+@app.post("/scrub", responses=_SCRUB_RESPONSES)
+async def scrub(body: ScrubRequest) -> dict:
+    """Strip hidden watermark, zero-width and homoglyph characters. Returns the cleaned text.
+
+    The CLI has `untell-scrub` and the MCP server has a `scrub` tool; this surface had neither, so
+    a REST caller holding untrusted text had no way to clean it. That is the one asymmetry in the
+    surface matrix that costs a caller something they cannot work around: the characters do not move
+    THIS ensemble's score — normalised, verified at 0.0000 on both tiers — but the same text took an
+    external detector from 0.0002 to 0.7900 on those bytes alone.
+    """
+    from untell.attacks import count_hidden, scrub_hidden
+
+    return {"clean": scrub_hidden(body.text), "hidden_chars_removed": count_hidden(body.text)}
 
 
 @app.post("/sentences", responses=_SENTENCES_RESPONSES)

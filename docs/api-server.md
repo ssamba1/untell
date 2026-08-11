@@ -93,6 +93,22 @@ Count AI writing tells in text.
 }
 ```
 
+### `POST /scrub`
+
+Strip hidden watermark, zero-width and homoglyph characters. Returns `clean` and
+`hidden_chars_removed`.
+
+```json
+{
+  "text": "Your text here"
+}
+```
+
+The CLI has `untell-scrub` and the MCP server has a `scrub` tool; this surface had neither, so a
+REST caller holding untrusted text had no way to clean it. The characters do not move *this*
+ensemble — normalised, verified at 0.0000 on both tiers — but the same text took an external
+detector from 0.0002 to 0.7900 on those bytes alone.
+
 ### `POST /sentences`
 
 Per-sentence AI scoring.
