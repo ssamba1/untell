@@ -90,3 +90,53 @@ def test_a_non_retryable_error_raises_immediately(monkeypatch: pytest.MonkeyPatc
     with pytest.raises(ValueError):
         retry(bad_arg, max_attempts=5)
     assert calls["n"] == 1, "a permanent error must not be retried"
+
+
+# A status code has to look like a STATUS, not merely be a three-digit number. The first version of
+# `_STATUS_RE` was `\b([1-5]\d{2})\b`, which matched one anywhere in the message — so a permanent
+# configuration error was retried three times with backoff because its text happened to mention a
+# number. These are the messages that escaped the tests above: every case there put the code in a
+# status-like position, so none of them could catch it.
+NUMBER_BUT_NOT_A_STATUS = [
+    "invalid_request_error: max_tokens must be <= 500",
+    "context length 502 tokens exceeds the 500 token limit",
+    "ValueError: expected 429 items in the batch, got 12",
+    "model supports 503 tokens of context, got 900",
+]
+
+
+@pytest.mark.parametrize("message", NUMBER_BUT_NOT_A_STATUS)
+def test_a_three_digit_number_in_prose_is_not_a_status_code(message: str):
+    """Each of these fails identically on every attempt; retrying spends the caller's budget."""
+    assert not _is_retryable(RuntimeError(message)), message
+
+
+STATUS_LIKE_POSITIONS = [
+    "500 internal server error",
+    "HTTP 503 service unavailable",
+    "status: 502",
+    "status=504",
+    "error 429 too many requests",
+    "code 500",
+]
+
+
+@pytest.mark.parametrize("message", STATUS_LIKE_POSITIONS)
+def test_a_code_in_a_status_position_is_still_retried(message: str):
+    """Guards the guard: narrowing the pattern must not stop real 5xx being retried."""
+    assert _is_retryable(RuntimeError(message)), message
+
+
+def test_a_parameter_named_timeout_is_not_a_timeout():
+    """`timeout` on its own matched "timeout must be a positive number" — a parameter being named,
+    not a request timing out. That is a bug in our own call, and a retry masks it."""
+    assert not _is_retryable(RuntimeError("invalid parameter: timeout must be a positive number"))
+    assert not _is_retryable(ValueError("timeout must be numeric"))
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["the request timed out", "read timeout after 30s", "connection timeout", "timeout exceeded"],
+)
+def test_an_actual_timeout_is_still_retried(message: str):
+    assert _is_retryable(RuntimeError(message)), message
