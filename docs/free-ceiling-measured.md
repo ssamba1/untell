@@ -4934,3 +4934,40 @@ sentence differently.** The battery strips markers before judging; the splitter 
 defect in Results 87–93 is one pass disagreeing with another about what a sentence is — where it
 ends, what opens it, what counts as a word in it — and none of them is visible from inside either
 pass alone.
+
+## Result 94
+
+**The collision from Result 93, turned into a check that costs one AST pass.**
+
+Python keeps the last definition of a name, silently, and hands every caller of the first one the
+second. That is what turned `_drop_restatements` into
+
+```
+TypeError: object of type 'int' has no len()
+```
+
+without anyone editing it. No test caught it — the suite reaches that function through the rewriter,
+and the rewriter crashed only on a corpus sweep that happened to run before the suite did.
+
+`check_no_shadowed_definitions` scans `untell/`, `eval/` and `tests/` for a module-level name defined
+twice. **1708 definitions, none shadowed** — so it is clean now and would have named my bug the
+moment it existed, with the shadowing line and the shadowed one.
+
+Verified by planting a duplicate rather than by trusting the pass:
+
+```
+PASS  no module defines the same top-level name twice  (1708 definitions, none shadowed)
+FAIL  no module defines the same top-level name twice  (_thing redefined at line 2, shadowing line 1)
+```
+
+Module level only, deliberately. A method redefined inside a class is the same defect, but nested
+scopes carry legitimate redefinition — a `try`/`except ImportError` pair defining a fallback is the
+common shape in this repo — and a check that has to be argued with is a check that gets suppressed.
+
+Worth keeping: **a defect that no test can see is a candidate for a check rather than a test.** The
+distinction is whether the failure is a property of *behaviour* — which a test can exercise — or a
+property of the *source*, which only something reading the source can see. This one is the second
+kind: the code was correct, each function was correct, and the file was wrong. That is the same
+family as `check_no_control_characters` (Result 44) and `check_no_dead_functions`, and it is now the
+third time a session-inflicted mistake has been converted into a standing check instead of a note
+saying "be careful".
