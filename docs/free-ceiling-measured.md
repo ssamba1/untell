@@ -5713,3 +5713,52 @@ Worth keeping: **two of three reports reconciled, and finding that out cost one 
 value of reading them all is not the hit rate; it is that "this report is fine" stops being an
 assumption. `tells` reconciling three different ways is now a fact rather than a hope, and that is
 the same kind of result as the defect.
+
+## Result 108
+
+**The Verdict row was labelling P(AI) with a calibration fitted to a different metric.**
+
+Continuing to read reports. The humanize table is otherwise sound — the arithmetic reconciles
+(`0.49 → 0.15`, delta `-0.34`), the header's iteration count matches the row, the Original and
+Humanized panels match the diff, and a run that changes nothing says so. One row does not.
+
+```
+│ P(AI) max  │ 0.49    │ 0.15   │ -0.34 │
+│ Verdict    │ mixed   │ human  │       │
+```
+
+`0.49` is above the `0.45` verdict threshold, so `flagged` is **true** for that number — while the
+row beside it says *mixed*.
+
+The cause is a scale borrowed from elsewhere. The row called `classification((1 - p_ai) * 100)`, and
+`classification`'s boundaries are fitted to `humanness()` scores specifically. Its own docstring
+gives the fit: *"lowest HUMAN score 75.6, highest AI score 72.0 ... a boundary at 75 misclassifies 0
+of 80."* Those numbers describe `humanness()`. `(1 - P(AI)) * 100` is a different quantity.
+
+MEASURED on 60 HC3 and RAID texts, comparing `classification(humanness(t))` against
+`classification((1 - max) * 100)`:
+
+```
+labels agree on 18 of 60 — 30%
+```
+
+**`untell humanize` and `untell humanness` disagreed about the same paragraph seven times in ten**,
+through the same labelling function, because they fed it different quantities.
+
+The row sits directly under `P(AI) max` and glosses it, so it is now labelled against
+`verdict_threshold` — the cut that decides `flagged`, and the only calibrated decision this repo
+makes about that number. The two can no longer disagree.
+
+**The comment above the old code was recording a real earlier fix**, and that is the part worth
+keeping in view. Passing P(AI) in raw put every value under the bottom band, so the row printed
+"AI" → "AI" for every input, including a run that took 0.86 down to 0.02 — *"not merely wrong, it was
+constant"*. The repair rescaled the input into a calibration that did not apply, which replaced a
+constant with a mislabel. The test therefore asserts both properties: the label follows the
+threshold, **and** the row discriminates at all, because a regression to any constant would satisfy
+whichever equality case happened to match it.
+
+Worth keeping: **a fix that removes the symptom can install a subtler version of the same fault.**
+"The row is constant" and "the row uses the wrong scale" are both failures of the same thing — the
+label not being derived from the number beside it — and the first repair addressed the appearance
+rather than the derivation. The question that separates them is not "does this look right now" but
+"what is this value computed from, and is that the quantity being displayed".
