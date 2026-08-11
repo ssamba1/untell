@@ -4830,3 +4830,57 @@ later tidy-up collapsing them into one list is the obvious next move.
 Worth keeping: **after fixing an instance, scan for the category — and expect the obvious rule to be
 wrong.** The scan took one query and turned a single fix into a closed set. The rule the scan first
 suggested, "never emit a form the corpus has zero of", would have been a new bug.
+
+## Result 92
+
+**The end-state sweep, and the check it caught being wrong was mine.**
+
+With the substitution and splitting work done, the state of the rewriter over 40 texts from each
+corpus, `composite`, seed-per-text:
+
+| | HC3 | RAID |
+|---|---|---|
+| 13-check damage battery introduced | nothing | `stub_sentence: 2` |
+| orphaned subordinate clauses | 0 | 0 |
+| `But,` / `Though,` openers | 0 | 0 |
+| `needs`/`takes` before a gerund | 0 | 0 |
+| stacked determiners | 0 | 0 |
+| determiner + adverb phrase | 0 | 0 |
+
+That is the version after one correction. The first run of this sweep reported
+**`determiner_then_phrase: 8`** on RAID — my own check, added in Result 86, firing on output I had
+just finished fixing. Two distinct spans behind those eight:
+
+```
+mixes the plus points of global and local contrastive learning
+with a focus on semi-supervised learning and ...
+```
+
+**`a focus on` was in the untouched input.** `focus on` is a substitute for `prioritize`, so the
+check matched a phrase the rewriter had never touched, in text it had not written. Correct English,
+flagged as damage.
+
+The error is the same one as the `that leans on` false positive in Result 86, one level up. There I
+narrowed the *determiner* set and left the *phrase* set as "every phrasal substitute in the table" —
+but most phrasal substitutes are noun or verb phrases and follow a determiner perfectly well: `the
+plus points of`, `a focus on`. Only an **adverb** phrase cannot, and that was the whole defect being
+modelled. The set is now derived from the headwords already known to be adverb-slot-only, which is
+both narrower and self-maintaining.
+
+Result 86 recorded that the four hand-written fixtures caught what a 60-text sweep missed. This is
+the converse in the same file: the 40-text RAID sweep caught what the fixtures could not, because
+none of them contains `a focus on`. Neither method dominates. The reason the check survived a
+session with a false positive in it is that nothing ran it over a corpus until now.
+
+**One observation deliberately not acted on.** `strengths → plus points` produced those eight, and
+`plus points` occurs **0 times in the human half and 0 in the AI half** of 240 texts, against
+`advantages` at 3 and 9. That is the same signature as `But,` in Result 89. But Result 91's lesson
+was written one result ago: a 240-text corpus at zero is not evidence when the phrase is ordinary
+English elsewhere, and `plus points` is ordinary if informal. Removing it would be acting on
+sparsity, and the register argument — informal British in an academic abstract — is real but is not
+what the measurement shows. Recorded, not fixed.
+
+Worth keeping: **a damage check is code, and it gets the same treatment as code.** This one was
+added with a measurement, a probe, and an explicit narrowing after a false positive — and still
+shipped with a second false positive that only a corpus sweep would find. The instrument needs the
+same auditing as the thing it measures, and "it found real bugs" is not evidence that it is right.
