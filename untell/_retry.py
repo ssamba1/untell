@@ -15,11 +15,17 @@ Usage::
 from __future__ import annotations
 
 import random
+import re
 import time
 from collections.abc import Callable
 from typing import TypeVar
 
 T = TypeVar("T")
+
+# A private stream. `random.random()` draws from the PROCESS-GLOBAL generator, so a retry — which
+# fires on someone else's failure, at an unpredictable moment — would silently advance a caller's
+# reproducible sequence. `structural_rewrite` already carries the same fix for the same reason.
+_JITTER = random.Random()
 
 _RETRYABLE_HTTP = frozenset({429, 500, 502, 503, 504})
 _RETRYABLE_ERRS = frozenset({
@@ -28,14 +34,25 @@ _RETRYABLE_ERRS = frozenset({
 })
 
 
+# Read the status codes out of the message and test them against `_RETRYABLE_HTTP`, rather than
+# listing them again as strings. They WERE listed again, and the two copies had already drifted:
+# the set says 500 is retryable, the string list contained "503", "502", "504", "429" and not
+# "500", and `_RETRYABLE_HTTP` was referenced exactly once in the module — its own definition. So a
+# provider raising a plain exception carrying "HTTP 500" was not retried while 502/503/504 were,
+# and the set that documented the intent had no effect on anything.
+_STATUS_RE = re.compile(r"\b([1-5]\d{2})\b")
+
+
 def _is_retryable(exc: Exception) -> bool:
     """Heuristic: is this a transient failure worth retrying?"""
     name = type(exc).__name__
     if name in _RETRYABLE_ERRS:
         return True
     msg = str(exc).lower()
+    if any(int(code) in _RETRYABLE_HTTP for code in _STATUS_RE.findall(msg)):
+        return True
     for keyword in ("rate limit", "too many requests", "try again", "temporarily",
-                    "503", "502", "504", "429", "service unavailable", "timeout",
+                    "service unavailable", "timeout",
                     "connection reset", "connection refused", "broken pipe"):
         if keyword in msg:
             return True
@@ -65,7 +82,10 @@ def retry(
             last_exc = exc
             if attempt >= max_attempts or not _is_retryable(exc):
                 raise
-            delay = min(base_delay * (2 ** (attempt - 1)), max_delay) + random.random()
+            # Cap AFTER the jitter, not before. Adding it afterwards put the real ceiling at
+            # `max_delay + 1` (measured 30.784 against a documented 30.0), so the one number this
+            # function promises a caller was the one number it did not honour.
+            delay = min(base_delay * (2 ** (attempt - 1)) + _JITTER.random(), max_delay)
             time.sleep(delay)
     # Unreachable unless max_attempts == 0; satisfy type checker.
     raise RuntimeError("retry exhausted") from last_exc
