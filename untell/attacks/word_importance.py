@@ -122,7 +122,10 @@ _SYN: dict[str, list[str]] = {
     "innovative": ["new", "fresh", "original"],
     "boasts": ["has", "offers", "can claim"],
     "nestled": ["set", "situated", "tucked"],
-    "profound": ["deep", "far-reaching", "major"],
+    # "major" dropped: `hedges.certainty_kept` reads it as an intensifier, so every candidate
+    # carrying this swap is vetoed by the meaning gate before it can be scored. "deep" and
+    # "far-reaching" pass.
+    "profound": ["deep", "far-reaching"],
     "holistic": ["whole-picture", "full-spectrum", "broad"],
     "actionable": ["usable", "practical", "concrete"],
     "impactful": ["powerful", "striking", "meaningful"],
@@ -176,7 +179,11 @@ _SYN: dict[str, list[str]] = {
     "next-level": ["higher", "better", "step up"],
     "turnkey": ["ready-made", "pre-built", "ready to use"],
     "supercharge": ["boost", "turbocharge", "ramp up"],
-    "unparalleled": ["unmatched", "peerless", "second-to-none"],
+    # "second-to-none" dropped: it contains the token "none", so `hedges.polarity_kept` reads the
+    # swap as introducing a negation and vetoes the candidate. The idiom is positive and the
+    # checker is looking at words, not idioms — but a substitute that can never be adopted is
+    # worth less than the checker is worth changing for.
+    "unparalleled": ["unmatched", "peerless"],
     "trailblazing": ["pioneering", "path-breaking", "trendsetting"],
     # --- Academic / paper boilerplate -----------------------------------------------------------
     # Added 2026-08-07 to give the repetition tell something it can act on. MEASURED across 60 RAID
@@ -278,7 +285,10 @@ _SYN: dict[str, list[str]] = {
     "nevertheless": ["still", "even so", "yet"],
     "nonetheless": ["still", "even so", "yet"],
     "notably": ["especially", "in particular", "most notably"],
-    "importantly": ["mostly", "above all", "significantly"],
+    # "significantly" dropped for the same reason as "major" under `profound` — an intensifier
+    # the gate refuses. It was also a lateral move: "significantly" is itself in `_SYN` as a
+    # headword to flatten.
+    "importantly": ["mostly", "above all"],
     "ultimately": ["in the end", "finally", "eventually"],
     "overall": ["in the end", "all told", "on the whole"],
     "essentially": ["basically", "at bottom", "put simply"],
@@ -287,7 +297,11 @@ _SYN: dict[str, list[str]] = {
     # an in-place adverb substitution, so it produced "This is one could say the strongest
     # result." One survivor is correct here: "arguably" has no close single-word synonym, and
     # inventing one to pad the list is how the other three got in.
-    "arguably": ["debatably"],
+    # `arguably` is GONE, not emptied. "debatably" was its only substitute and `certainty_kept`
+    # reads the swap as a MODALITY change — "arguably" is a recognised hedge, "debatably" is not,
+    # so dropping the hedge strengthens the claim and the gate vetoes the candidate. With nothing
+    # left, the entry is dead weight, and an entry with no usable substitute looks exactly like a
+    # live one, which is what `test_substitutes_are_single_tokens_or_short_phrases` exists to stop.
     # --- High-signal verbs to flatten ---
     "numerous": ["many", "plenty of", "lots of"],
     "significant": ["real", "major", "big"],
@@ -297,7 +311,10 @@ _SYN: dict[str, list[str]] = {
     # "applied to all sorts of tasks" says every kind. Found by the chunked contradiction
     # gate scoring a real rewrite at 0.606 — I had seen this entry in the epistemic scan
     # and waved it through as a register shift, and the gate was right where I was not.
-    "various": ["different", "assorted"],
+    # `various` is GONE for the same reason: `certainty_kept` reads it as a QUANTIFIER and neither
+    # "different" nor "assorted" as one, so the swap firms up a vague quantity and the gate vetoes
+    # the candidate. That is the same judgement the comment above records for "all sorts of",
+    # reached by the same gate from the other direction.
     "essential": ["needed", "key", "necessary"],
     "facilitate": ["help", "ease", "aid"],
     "facilitates": ["helps", "eases", "aids"],
