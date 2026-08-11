@@ -5435,3 +5435,63 @@ Worth keeping: **a tool that ships an attack owes its own detector the same cove
 not in the attack or in the scrubber — both handle the fully converted case correctly — but in the
 warning that tells a user the text still contains one. Three components, and only the one nobody
 tested against the attack's own output had the hole.
+
+## Result 103
+
+**The report a user reads claimed 61% of words changed. The real figure was 2.9%.**
+
+`rich_output` renders the before/after view of every `untell humanize` run — the single most-read
+output this tool has, and the one that answers *"did it rewrite my paragraph or edit it?"*
+
+`_diff_words` was not a diff. It compared word *i* of the original against word *i* of the rewrite:
+
+```python
+for w in a_words:
+    if b_idx < len(b_words) and w == b_words[b_idx]:   # same position, same word -> unchanged
+    else:                                              # anything else -> mark it changed
+```
+
+That is correct only when the rewrite preserves word count exactly. One insertion shifts every
+following word out of alignment, and each one is then compared against its neighbour and painted.
+MEASURED on a seven-word sentence:
+
+| edit | words marked changed |
+|---|---|
+| one word inserted at the front | **7 of 8** |
+| one word inserted mid-sentence | 6 of 8 |
+| one word deleted | 5 of 6 |
+| one word substituted | 1 of 7 — the only shape it got right |
+
+And the shape it got right is the one the rewriter almost never produces. `composite` inserts
+openers, deletes transitions and splits sentences on nearly every run. MEASURED over **17 real
+rewrites** of HC3 paragraphs:
+
+```
+words the report marked as changed
+   positional zip   61.2%
+   difflib           2.9%
+```
+
+**A 21x overstatement, arguing against the thing the tool exists to demonstrate.** The whole claim of
+a detector-feedback loop with meaning gates is that it makes small, targeted edits. The report was
+telling every user it had rewritten two thirds of their paragraph.
+
+A second defect in the same function: a deleted word appended a bare space. So a dropped clause left
+**no trace at all** in the report — and "did the rewriter drop my content?" is one of the questions
+that view exists to answer. Deletions now render struck through, showing what was cut.
+
+`difflib.SequenceMatcher` is stdlib, so the fix costs nothing on the zero-dependency tier.
+
+Two notes on the tests, both cases of my own bookkeeping being wrong rather than the code:
+
+- Two assertions failed because `difflib` emits contiguous **runs** — a four-word replacement is one
+  span, not four — so a set built per span held `"epsilon zeta eta theta"` as a single element. That
+  is better output; the classifier was counting the wrong unit.
+- The guard-the-guard matters more than usual here. A diff that marked *nothing* would pass every
+  accuracy test in the file, and "the report is now silent" is a worse failure than the one being
+  fixed. An unrelated rewrite must still come back mostly marked.
+
+Worth keeping: **the code that displays a result is as capable of being wrong as the code that
+computes it, and nobody tests it.** Every measurement in this log has been about what the loop does.
+This one was about what the loop *says* it does, and it was off by a factor of twenty in the only
+place a user looks.
