@@ -218,6 +218,31 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 # and compare it; silently zeroing or withholding it would break them for a reason they cannot see.
 # What was missing is the thing the lite-tier stdlib path already does — say, with the measured
 # number, that this configuration is not one to trust.
+# RE-MEASURED 2026-08-11 BY NATURAL LENGTH, and the two bands a user is most likely to hit are
+# understated by roughly 3x. Bucketing 120 HC3 human texts by their OWN word count rather than
+# truncating longer ones:
+#
+#     10-20 words   86% flagged        (this table says <=20 -> 40%)
+#     20-40 words   90% flagged        (this table says <=40 -> 28%)
+#     40-80 words   70%
+#     80-160 words  52%
+#     160+ words    23%
+#
+# The bands are cumulative, so the <=40 band spans the two rows at 86% and 90% — it should read
+# near 88%, not 28%. The direction is the one that matters: this string exists to tell a caller
+# their verdict is unreliable, and it is currently reassuring them at three times the rate it
+# should.
+#
+# NOT rewritten here, for a methodological reason that has to be settled first. These figures come
+# from naturally-short texts — complete short answers — while the originals were taken over "40 HC3
+# pairs at this threshold" and may have been TRUNCATED longer ones. A truncated 20-word excerpt is a
+# fragment and a naturally 20-word answer is not, and the detectors do not treat them alike (see the
+# whole-sentence padding note in roles.py for the same trap). Replacing measured numbers with
+# differently-measured numbers would swap one unstated method for another.
+#
+# Corpus-scoped as well, like every other false-positive figure in this repo: the same sweep over
+# RAID human text gives 5% at 80-160 words and 4% above 160, against HC3's 52% and 23%. Whatever
+# replaces these bands has to say which corpus it describes.
 _SHORT_TEXT_BANDS = ((5, "98%"), (10, "62%"), (20, "40%"), (40, "28%"))
 _MIN_WORDS_FOR_A_VERDICT = 40
 
