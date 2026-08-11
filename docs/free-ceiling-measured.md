@@ -5386,3 +5386,52 @@ Worth keeping: **the failures that reach users live between the declaration and 
 test in this repo imports the package the way a developer does; nobody was checking the way a
 `pip install` does. The check costs one import per entry point and covers the entire gap between
 "the repo works" and "the install works".
+
+## Result 102
+
+**The attack this repo ships can produce a word its own warning cannot see.**
+
+`untell.attacks` was the last unread module. Two probes:
+
+**Invisible characters — nothing to fix.** Nineteen distinct zero-width, directional, and exotic
+space characters, one at a time: zero-width space/joiner/non-joiner, word joiner, soft hyphen, BOM,
+LTR and RTL marks, directional overrides, non-breaking and narrow and hair spaces, en quad,
+ideographic space, Mongolian vowel separator, invisible times, function application, and a Unicode
+tag character. **All nineteen counted by `count_hidden` and removed by `scrub_hidden`.**
+
+**Homoglyphs — a gap, and it took a second look to see it.** `homoglyph_substitute` on a 90-character
+sentence replaced 34 characters, and `score_text`'s warning appeared not to mention it. That reading
+was wrong: warnings are merged into one field and I had truncated the display at 100 characters. The
+homoglyph caveat was there, at the end.
+
+What *is* real is what the caveat counts. It flags words containing **both** Latin and Cyrillic/Greek
+letters — the signature of a partial substitution. A word where every letter was replaced mixes
+nothing:
+
+```
+"саре"   c, a, p, e all Cyrillic, renders as "cape"   ->   no warning
+```
+
+That word carries exactly the risk the warning exists for. The score is unaffected — the detectors
+normalise confusables, measured at 0.0000 movement — but the substitution is still in the text and
+another tool may not normalise it.
+
+**The rule has to be confusability, not script.** Flagging any non-Latin word would fire on a
+Russian quotation inside an English document, which is ordinary multilingual text, and would tell
+someone to `untell scrub` their own quotation. A converted word is one whose every letter has an
+ASCII lookalike — tested against `unicode_tricks._UNHOMOGLYPH`, the scrubber's own map, so the
+detector and the remedy cannot drift apart. Verified in both directions: `саре` and a partly
+converted `cаpe` both warn; plain English, Russian `привет`, Greek `λογος` and Bulgarian `читалище`
+do not.
+
+**And the test taught me the invariant.** The first version asserted that every convertible word
+converts fully, and failed on three of five — correctly. `space` cannot be fully converted, because
+`s` has no homoglyph in the emit map, so it comes out mixed, which is what the original branch was
+for. The invariant worth asserting is not that words convert fully; it is that **nothing the attack
+emits escapes both branches**. A further test asserts every value in the emit map appears in the
+scrub map, so an attack this repo performs cannot become invisible to this repo.
+
+Worth keeping: **a tool that ships an attack owes its own detector the same coverage.** The gap was
+not in the attack or in the scrubber — both handle the fully converted case correctly — but in the
+warning that tells a user the text still contains one. Three components, and only the one nobody
+tested against the attack's own output had the hole.
