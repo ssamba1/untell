@@ -3943,3 +3943,44 @@ Worth keeping: **a gate that is honest about its scope is not thereby correct wi
 the four misses were out of scope and documented as such; the fourth was squarely inside a promise
 the docstring makes in the same paragraph, and the passing cases either side of it made the gap
 invisible.
+
+## Result 75
+
+**A check that fired ten times and was right none of them.**
+
+`check_test_inventory` requires the documented module count to equal the count on disk, exactly. In
+a single-session repository that is correct and cheap. With two sessions committing it fired **ten
+times**, every time because a module landed between one session reading the count and writing it,
+and **not once** on a document that was actually stale.
+
+The cost is not the noise. It is that a red gate carrying no information trains everyone to look
+past it — and this one sat red across several commits while both sessions treated it as background.
+
+The test-count check next to it never had this problem, because its contract is asymmetric:
+
+```
+assert claimed <= actual                 # overstating is always a defect
+assert actual - claimed < 200            # understating a little is just concurrency
+```
+
+Overstating claims coverage that does not exist. Understating by a few is what a moving repository
+looks like. The module check now uses the same shape with a five-module window, verified against
+all three cases:
+
+| doc claims | actual | verdict |
+|---|---|---|
+| 120 | 100 | **FAIL** — claims coverage that does not exist |
+| 75 | 100 | **FAIL** — stale by more than 5 |
+| 98 | 100 | pass — two behind, which is concurrency |
+
+The failure the check exists for is a document abandoned at 75 while the suite grows past 100, and
+a five-module window does not hide that.
+
+**One of the ten was mine and self-inflicted**: I read the module count, then committed a new test
+file, then wrote the count I had read — one behind, by my own hand, in the same sequence I had been
+attributing to the other session.
+
+Worth keeping: **decide which direction of an error is the defect before choosing equality.** Both
+checks measure drift between a document and the code. One asked "are these equal", the other asked
+"is the document claiming more than exists" — and only the second question survives a repository
+that more than one person is writing to.
