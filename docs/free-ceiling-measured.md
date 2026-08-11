@@ -5953,3 +5953,55 @@ of damage that nothing here asks for.
 Worth keeping: **a rule written for the LLM rewriter is a rule the free rewriters are silently held
 to as well.** `prompt-rubric.md` reads as instructions for a model, so nothing thought to check the
 deterministic path against it — and that path is the default.
+
+## Result 113
+
+**The settings a user actually runs surface defects one iteration does not.**
+
+Every read so far has been `max_iters=1`, `best_of=1` — the cheapest configuration. The default CLI
+is `best_of=3`, and a real run goes to five iterations. Fifteen rewrites per document instead of
+one, each transform seeing the output of the last. Read at those settings:
+
+> ...condone the assassination of any individual, **regardless of their actions or beliefs.**
+>   →  ...condone the assassination of any individual.
+>      **Regardless of their actions or beliefs.**
+
+A fronted adverbial severed into its own sentence.
+
+**Neither existing guard was wrong.** `_orphans_a_subordinate_clause(left)` correctly returned
+False — the left half *is* a complete sentence. `_cannot_start_a_sentence(right, left)` returned
+False, and that is the one that should have fired: `_CANNOT_OPEN_A_CLAUSE` holds seventeen
+prepositions including **`regarding`**, and `regardless` was simply missed.
+
+**But it cannot just be added to that set**, and the reason is the interesting part. That set is
+unconditional, and these leads are the one family where the same word opens a fragment *and* a
+sentence:
+
+```
+Regardless of their actions or beliefs.        fragment
+Regardless of the cost, we proceed.            sentence
+```
+
+Adding `regardless` there would have blocked the second — trading a fragment for a refused
+legitimate split, which is how a guard set accumulates until the transform stops working. What
+separates the two readings is whether a **main clause** follows, and a fronted adverbial that has one
+is separated from it by a comma. Checked on ten pairs — a fragment and a sentence for each of five
+leads — the comma rule splits all ten correctly.
+
+So it is a second set with a condition, and a test asserts the two sets **do not overlap**: an entry
+in both is unconditionally blocked, which silently undoes the comma rule while every fragment test
+still passes.
+
+Three further defects were visible in the same read and are not fixed here, recorded so they are not
+lost: `"Now, when it's used in pairing with other ways, by contrast, salt is..."` stacks two
+discourse markers and inserts a contrastive where no contrast exists; `"By contrast, despite these
+potential downsides, ..."` stacks a contrastive on a concessive; and `"...for many communities,
+especially."` strands a modifier whose complement was moved to another sentence. All three are
+compounding artefacts — one transform acting on another's output — which is exactly what more
+iterations buys.
+
+Worth keeping: **the cheap configuration is a different program.** Every probe in this log until now
+ran one iteration of one draw, because that is fast and deterministic enough to reason about. The
+shipped default runs fifteen rewrites per document, and the defects that only appear there are
+compounding ones — a transform mangling what another transform produced — which is precisely the
+class a single pass cannot exhibit.
