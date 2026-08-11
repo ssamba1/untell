@@ -4997,3 +4997,64 @@ kind: the code was correct, each function was correct, and the file was wrong. T
 family as `check_no_control_characters` (Result 44) and `check_no_dead_functions`, and it is now the
 third time a session-inflicted mistake has been converted into a standing check instead of a note
 saying "be careful".
+
+## Result 95
+
+**Layout protection was a property of one rewriter, not of the pipeline.**
+
+Every defect in Results 85–93 came from prose. The obvious next question is what the loop does to
+text that is not only prose — a README, a paper draft, anything with a table or a code block.
+
+Three constructs were rewritten as if they were sentences, all at every seed:
+
+```
+| Method | Score |               ->  | Way | Score |  /  | Approach | ... |  /  | Technique | ... |
+title: Moreover the framework    ->  title: What is more the system
+    def f():                         def f():
+        return utilize(x)        ->          return use(x)
+```
+
+The table heading is a label the surrounding text refers to and often a term of art. The YAML title
+is document metadata. The third is the worst: the identifier was renamed **and the first line lost
+its indent**, so what is left does not render as code at all — it renders as prose.
+
+`layout` had no notion of a table row, indented code, or front matter. A table row carries no line
+marker, so it was gathered into the surrounding block like any wrapped paragraph.
+
+**And the deeper finding is where the protection lived.** `apply_per_block` was called by
+`structural` and `mt_pivot` — nothing else. So:
+
+```
+--rewriter structural   code block INTACT
+--rewriter surgical     code block DAMAGED
+--rewriter composite    code block DAMAGED     <- the default
+```
+
+The same document was safe or corrupted depending on a flag, and the safe one was not the default.
+
+**The first fix was wrong in an instructive way.** Making `surgical` run per block protects the
+layout and costs quality, because this rewriter ranks its swaps by a detector score and a short
+block scores badly. MEASURED over 50 HC3 and RAID texts:
+
+| | max P(AI) | tells/100w |
+|---|---|---|
+| whole document (unsafe) | 0.5621 / 0.3962 | 5.612 / 9.576 |
+| per block (safe) | 0.5662 / 0.3962 | 5.825 / **10.616** |
+| whole + restore (shipped) | 0.5621 / 0.3962 | **5.612 / 9.576** |
+
+11% worse tell removal on RAID — the corpus this repo claims a niche in — for protection that was
+available for free. `surgical` substitutes words in place and never reflows: line count was
+identical on all 50 texts and both structured fixtures. So run it on the whole document, then put
+the non-prose lines back **by line index**. Same output as the unsafe version, byte for byte, with
+the layout guaranteed.
+
+Five further constructs — setext headings, thematic breaks, HTML blocks, footnote definitions, link
+reference definitions — reach the transform as prose and come back intact. They are now pinned
+anyway. Reaching the transform is exposure, and the only reason they are not damage today is that
+no transform happens to touch them; that is a fact about the transform list, not a property of the
+document.
+
+Worth keeping: **"is it protected?" is a question about the pipeline, not about a function.** The
+protection existed, was well written, had its own tests, and covered one of four backends. Nothing
+in a per-function view of the code shows that — it took running the same document through every
+rewriter in the registry, which is four lines of probe.
