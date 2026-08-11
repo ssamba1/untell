@@ -79,6 +79,13 @@ _CONTRACTION = re.compile(r"\b\w+['’](?:s|t|re|ve|ll|d|m)\b", re.IGNORECASE)
 # missed on HC3 and 50% on RAID, whose abstracts open sentence after sentence with "We".
 # "I" is unaffected, being capitalised either way, which is what let this survive — the pronoun
 # most people check with is the one case cannot break.
+#
+# SWEPT for siblings, over every compiled pattern in the package rather than by grep: patterns that
+# lack IGNORECASE, list three or more lowercase words, and alternate between them. Six turned up and
+# all six are correct. `browser_check`'s `_AI_LABEL`/`_HUMAN_LABEL` match against text that is
+# `.lower()`ed first; `latex`'s `_NON_PROSE_ENV`/`_KEEP_ARG` match LaTeX commands, where case IS
+# meaningful; `audit`'s `_ATTRIBUTION` spells its variants out by hand; `structural`'s `_ASIDE_RE`
+# only ever matches after a comma. This was the only one.
 _FIRST_PERSON = re.compile(r"\b(?:I|we|my|our|me|us)\b", re.IGNORECASE)
 
 # Feature spread across 150 real human HC3 texts. One unit = one typical between-author gap.
