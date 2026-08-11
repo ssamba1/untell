@@ -6526,3 +6526,47 @@ Worth keeping: **turning a one-off search into a standing check is cheap, and th
 immediately after it finds something.** The AST pass is thirty lines. It would have caught the
 `targeted` defect the day `_selection_key` was written, and the reason it did not exist is that
 nobody had yet been burned twice.
+
+## Result 124
+
+**I measured my own fix at the wrong layer, and the pipeline says something the rewriter could not.**
+
+Result 122 shipped a selector change on a rewriter-level measurement: `targeted` alone, 3/8 documents
+changed → 7/8. The obvious next question is what `untell_text` does with it, and the first answer was
+that nothing happens at all:
+
+```
+lite tier, 6 texts    changed 4/6, adopted 7, post-max 0.5227, tells/100w 3.66, sim 0.962
+                      — IDENTICAL in both arms
+```
+
+Byte-identical. Two reasons, and both were already written down in the module I changed. The lite
+detector does not saturate — its max sits near 0.52, so `after < before` separates candidates
+perfectly well and the tie-break never fires. And `min_score` is an absolute 0.30 that no single
+sentence clears on the stdlib path, which `targeted`'s own docstring records as 0 of 64 sentences, so
+the per-sentence loop never runs and the whole-text fallback takes over.
+
+**The saturation this selector exists for is a full-tier condition.** At `tier="full"`:
+
+```
+BEFORE (max only)    changed 3/4   adopted 3   tells/100w 3.80   sim min 0.992   post-max 0.9997
+AFTER  (max, mean)   changed 4/4   adopted 4   tells/100w 2.98   sim min 0.971   post-max 0.9997
+```
+
+A 22% cut in tell density, similarity still far above the 0.76 bar — and **`post-max` does not move.**
+It sits at 0.9997 in both arms.
+
+That last line is the finding. The number the pipeline reports to the user is the same saturated
+maximum that could not see the improvement in the first place, so a real gain in the output is
+invisible in the verdict beside it. Result 122 fixed the selector; the reporting surface has the
+identical blind spot and reports 0.9997 either way.
+
+Result 122's claim needed this qualification and did not have it: *"7/8 texts changed"* is true of the
+rewriter called directly, at the default tier of a bare `score_text` call, and says nothing about the
+lite path a user gets without `.[full]` installed. One layer up, on one tier, the same change does
+exactly nothing.
+
+Worth keeping: **a fix measured at the layer you edited is measured at the layer least able to
+contradict you.** The rewriter-level number was correct and the conclusion drawn from it was too
+broad — the pipeline has a `min_score` gate, a fallback path and a tier that each decide whether the
+edited line is reached at all, and none of them is visible from inside the function.
