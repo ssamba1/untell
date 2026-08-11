@@ -1,4 +1,4 @@
-"""Separation of the tells catalogue on paired human/AI text, with layout controlled.
+"""Separation of the tells catalogue on paired human/AI text, against layout and length baselines.
 
 The detector ensemble has `eval/detector_audit.py`. The tells catalogue had nothing: its headline
 figures lived only in a comment, were computed by hand, and went stale the moment a category was
@@ -16,6 +16,13 @@ would not remove a bias, it would silence the tells those categories exist to ca
 pairs, collapsing layout moves the AUROC by +0.0000 on RAID, HC3 and MAGE alike: the three
 categories fire on 0, 1 and 1 documents out of 200, so on these corpora there is nothing to remove.
 ``layout_delta`` is emitted every run so a corpus where that stops being true is visible.
+
+The LENGTH baseline is the one that bites. ``tells_per_100w`` divides by words, which looks like
+length control and is not, so every run also reports the AUROC of counting words with no catalogue
+at all. MEASURED at 200 pairs: RAID 0.9555 against 0.9303 for the word counter -- a margin of
++0.025, on a corpus whose AI halves average 285.9 words to 194.6 human -- while HC3, at 190.1 to
+184.9, keeps +0.177. The same catalogue looks excellent on one corpus and barely better than
+``len(text.split())`` on the other, and only the baseline says which you are looking at.
 """
 
 from __future__ import annotations
@@ -35,6 +42,12 @@ LAYOUT_CATEGORIES = frozenset({"markdown_artifact", "title_case_heading", "diff_
 # precision 0.000 from a single firing, whose interval is [0.00, 0.79] -- consistent with the
 # category being useless AND with it being one of the better ones.
 UNINFORMATIVE_CI_WIDTH = 0.5
+
+# Below this margin over the word-count baseline, the headline AUROC is reporting the corpus's
+# length asymmetry more than the catalogue. Set at 0.10 because the two measured corpora sit either
+# side of it by a wide margin — RAID +0.025, HC3 +0.177 — so no corpus this repo uses lands near the
+# line and the threshold is not doing fine discrimination it cannot support.
+LENGTH_MARGIN_FLOOR = 0.10
 
 _WHITESPACE_RUN = re.compile(r"\s+")
 
@@ -150,6 +163,26 @@ def measure(pairs: list[tuple[str, str]]) -> dict:
         1 for t in human + ai if LAYOUT_CATEGORIES & set(score_tells(t)["by_category"])
     )
 
+    # The length baseline: how well does WORD COUNT ALONE separate this corpus, with no catalogue
+    # at all? Every rate this module reports divides by words, which looks like length control and
+    # is not — the two repetition categories only fire above thresholds a longer text crosses more
+    # easily, so tells/100w itself climbs with length (MEASURED, RAID+HC3 AI text: 3.68 per 100w
+    # under 150 words against 12.33 above 250). When a corpus's AI half is also the longer half,
+    # the separation reported here is partly that asymmetry.
+    #
+    # MEASURED at 200 pairs, and it is the reason this baseline is now printed on every run:
+    #
+    #     RAID   catalogue 0.9555   word count alone 0.9303   margin +0.025
+    #     HC3    catalogue 0.8696   word count alone 0.6922   margin +0.177
+    #
+    # RAID's AI halves run 285.9 words against 194.6 human, a 47% asymmetry, and on that corpus the
+    # entire fifteen-category catalogue beats counting words by 0.025. HC3's halves are 190.1
+    # against 184.9 and the catalogue earns its margin there. Same catalogue, same code, opposite
+    # readings — so the baseline belongs next to the headline rather than in a docstring.
+    hw = [len(t.split()) for t in human]
+    aw = [len(t.split()) for t in ai]
+    length_only = auroc(aw, hw)
+
     hm, am = sum(hr) / len(hr), sum(ar) / len(ar)
     return {
         "n_pairs": len(pairs),
@@ -157,6 +190,10 @@ def measure(pairs: list[tuple[str, str]]) -> dict:
         "human_mean": round(hm, 3),
         "ai_mean": round(am, 3),
         "gap": round(am - hm, 3),
+        "auroc_length_baseline": round(length_only, 4),
+        "margin_over_length": round(full - length_only, 4),
+        "human_words_mean": round(sum(hw) / len(hw), 1),
+        "ai_words_mean": round(sum(aw) / len(aw), 1),
         "auroc_layout_collapsed": round(collapsed, 4),
         "layout_delta": round(collapsed - full, 4),
         "auroc_without_layout_categories": round(prose_only, 4),
@@ -172,10 +209,22 @@ def render(dataset: str, m: dict) -> str:
         f"  AUROC                      {m['auroc']:.4f}",
         f"  tells/100w  human {m['human_mean']:.3f}   ai {m['ai_mean']:.3f}   gap {m['gap']:+.3f}",
         "",
+        f"  word count alone           {m['auroc_length_baseline']:.4f}  "
+        f"(margin {m['margin_over_length']:+.4f})",
+        f"  words       human {m['human_words_mean']:.1f}   ai {m['ai_words_mean']:.1f}",
+        "",
         f"  layout collapsed           {m['auroc_layout_collapsed']:.4f}  ({m['layout_delta']:+.4f})",
         f"  without layout categories  {m['auroc_without_layout_categories']:.4f}",
         f"  layout categories fire on  {m['layout_categories_fire_on']}/{m['documents']} documents",
     ]
+    if m["margin_over_length"] < LENGTH_MARGIN_FLOOR:
+        lines.append("")
+        lines.append(
+            f"  NOTE: the catalogue beats counting words by only "
+            f"{m['margin_over_length']:+.4f} on this corpus, whose AI halves average "
+            f"{m['ai_words_mean']:.0f} words against {m['human_words_mean']:.0f} human. Read the "
+            f"headline AUROC as mostly that asymmetry, not as catalogue quality."
+        )
     if abs(m["layout_delta"]) >= 0.01:
         lines.append("")
         lines.append(
