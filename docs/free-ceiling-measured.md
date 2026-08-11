@@ -6648,3 +6648,41 @@ Worth keeping: **naming something in a test does not mean the test checks it.** 
 comment about a previous exclusion that had been guessed rather than measured. It was still the field
 that slipped through, because an exclusion list makes a field *look* considered from either side
 while only one side is actually running.
+
+## Result 127
+
+**The parity file checked that shared operations agree. Nothing checked which operations were
+shared.**
+
+`test_surface_parity.py` is thorough about the operations it knows: same parameters, same defaults,
+same tier and style vocabularies, on CLI, REST and MCP. It takes the operation list as given, and the
+list had drifted:
+
+```
+REST only   health
+MCP only    compare, scrub
+both        ceiling, score, sentences, tells, humanize/untell, verify/verify_commercial
+```
+
+`health` is a liveness probe with nothing to mirror. `compare` runs every technique over a corpus and
+takes minutes, which is why `/ceiling` caps `n` and why this one is deliberately not an endpoint.
+
+**`scrub` was the one that cost a caller something they could not work around.** The CLI has
+`untell-scrub`, the MCP server has a `scrub` tool, and a REST client holding untrusted text had no
+way to strip hidden characters at all. The repo's own measurement is why that matters: those
+characters do not move *this* ensemble — normalised, verified at 0.0000 on both tiers — but the same
+text took an external detector from 0.0002 to 0.7900 on those bytes alone. A caller cleaning text
+before submitting it elsewhere is the exact use, and REST was the surface without it.
+
+`POST /scrub` closes it, returning the same `{clean, hidden_chars_removed}` the MCP tool does, with a
+test asserting the two agree rather than merely both existing.
+
+What remains is declared with a reason, and checked **both ways**: an operation added to one surface
+fails until it is mirrored or listed, and a listed asymmetry that no longer exists fails too.
+Verified by deleting the endpoint again — three tests fail, including the one that would catch a
+future divergence rather than only this one.
+
+Worth keeping: **a parity test can be exhaustive about the wrong axis.** Six tests compared
+parameters and defaults across three surfaces, in a file whose docstring says "the same operation
+must mean the same thing on the CLI, the REST API and the MCP server". Every one of them started from
+a hard-coded list of two operations. The question they never asked was the cheaper one.
