@@ -45,6 +45,10 @@ from untell.scripts.tells import score_tells
 # evasion. Detectors anti-correlate with human-ness on some text, so tells are the better tie-breaker.
 _TELLS_EPS = 0.02
 
+# Exception type names already reported for the polish stage. Process-wide so a persistent failure
+# warns once instead of on every call — same pattern as `_MEMBER_FAILED` in rewriter/ensemble.py.
+_POLISH_FAILED: set[str] = set()
+
 
 # A style profile needs enough words to mean anything. Matches the floor the rest of the codebase
 # uses for "too short to measure" (humanness._MIN_WORDS_FOR_SIGNAL, the detectors' own abstention),
@@ -620,8 +624,20 @@ def untell_text(
                     and similarity(text, polished) >= sim_bar:
                 final, best_score = polished, polished_score
                 polished_applied = True
-        except Exception:
-            pass
+        except Exception as exc:
+            # Say it once. Swallowing this silently is correct for a transient failure — polish is
+            # optional and the unpolished text is a valid answer — and wrong for a persistent one:
+            # a missing similarity model or a broken substitution table disables the whole polish
+            # stage on every call, output quality drops, and nothing anywhere says so. That is the
+            # same silent-no-op shape as the composite selector that shipped disabled, so it gets
+            # the same treatment as a failing ensemble member: one warning, then quiet.
+            if not _POLISH_FAILED:
+                _POLISH_FAILED.add(type(exc).__name__)
+                logging.getLogger(__name__).warning(
+                    "polish stage failed and is being skipped (%s: %s); output is the unpolished "
+                    "candidate. This is logged once per process.",
+                    type(exc).__name__, str(exc)[:120],
+                )
 
     return {
         **({"voice_warning": voice_warning} if voice_warning else {}),
