@@ -483,6 +483,22 @@ def untell_text(
             min_score = min(v[1]["max"] for v in pool)
             # Among candidates within the detector noise band of the best, prefer the fewest AI tells
             # (then lowest score as the final deterministic tiebreak).
+            #
+            # This is a FLAT count, and in practice it is close to a single-category comparison.
+            # MEASURED over 80 documents per corpus: `repeated_phrasing` fires on 48 of 80 (HC3) and
+            # 61 of 80 (RAID), and where it fires it is 94% (HC3) and 83% (RAID) of the total on
+            # average — above 90% in 36 of those 48 HC3 documents. So the tie-break mostly ranks
+            # candidates by how much duplicated phrasing they removed, and a draw that cleared three
+            # clichés and a chatbot artifact loses to one that removed four repeated trigrams, even
+            # though `meta_closer` and `sycophancy` carry precision 1.00 against its 0.925.
+            #
+            # Evidence-weighting is the obvious repair and it does nothing: scoring candidates by
+            # `_EVIDENCE` (strong 4 / moderate 2 / weak 1) instead of the flat count picks a
+            # DIFFERENT candidate in 0 of 80 documents on either corpus. `repeated_phrasing` is
+            # itself classed `strong`, so weighting multiplies the category that already dominates.
+            # Left alone on that evidence — changing it would need per-category normalisation (a cap
+            # on any one category's contribution), which is a different proposal with its own
+            # measurement, not a weight table.
             near = [v for v in pool if v[1]["max"] <= min_score + _TELLS_EPS]
             # Never trade a PASS for a lower tell count. The band is +/- _TELLS_EPS (0.02), so when
             # the best candidate sits just under the threshold the band straddles it and a
