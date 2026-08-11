@@ -6377,3 +6377,50 @@ Worth keeping: **a sentinel that shares a type with real values is a bug waiting
 caller.** This one has none yet, and it was found by accident while measuring something else — the
 `[44.0, 50.0, 50.0, 50.0, 50.0]` row stood out only because four identical values in a row do not
 look computed.
+
+## Result 121
+
+**Two clean halves make a flagged document, and that is the whole of Result 120's drift.**
+
+Result 120 measured `humanness` moving up to 23 points with paste length and left the cause open.
+Decomposing the same 24 texts between their 60-word and 220-word windows, in points of the final
+score:
+
+```
+                 tells   burstiness   detector
+AI text          -5.4       -0.7        0.0
+human text       -0.9       +0.3        0.0
+```
+
+**The detector contributes nothing.** It is saturated at P(AI) = 1.000 on every AI window — 13 texts,
+five windows each — and flat near 0.38 on the human ones. That is worth stating on its own: the
+component carrying half the weight is the one that does *not* move with length, so the drift belongs
+entirely to the mechanical half.
+
+The tells term rises 0.036 → 0.215 on identical prose. The mechanism is Result 119's, arriving at the
+user-facing surface: both repetition categories fire on a SHARE, and a longer text crosses that bar
+on writing every part of which sat under it.
+
+**Constructed to remove all doubt.** Two halves, 66 and 67 words, six sentences each, three opening
+with *"The"* — 33% duplicate openers, under the 40% bar:
+
+```
+first half    words  66   tells 0   /100w 0.00
+second half   words  67   tells 0   /100w 0.00
+both          words 133   tells 5   /100w 3.76
+```
+
+Each half clears the 60-word repetition floor and the four-sentence opener floor, so those zeros are
+verdicts rather than abstentions. Nothing is added between the second line and the third. **A rate
+that rises when you concatenate two texts is not a rate.**
+
+Not fixed, and the reason is specific rather than general caution: the two repetition categories are
+the strongest in the catalogue, and the threshold is what makes them precise — Result 117 already
+measured what removing a threshold does to one of them (RAID AUROC 0.9555 → 0.9381). The scale
+dependence is the price of the precision, and what was missing was the caveat, which now sits on
+`humanness` next to the tier caveat it mirrors.
+
+Worth keeping: **the term that carries half the weight was not the term that moved.** Three results
+of length findings all pointed at the detector by association — it is the strongest signal, so it
+must be the one doing this — and it turned out to be perfectly flat. Decomposition took one probe;
+the assumption would have survived indefinitely without it.
