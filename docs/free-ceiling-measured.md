@@ -3860,3 +3860,42 @@ fixes it, rather than worked around — forcing the triple would misfire on genu
 Worth keeping: **the gate that exists for a failure mode is not evidence the failure mode is
 covered.** `roles.py` was written to catch exactly this class, catches the textbook version
 ("The dog bit the man"), and missed the form the target register actually uses.
+
+## Result 73
+
+**A sixth gate, and it cost nothing because the rewriter never touches polarity.**
+
+[Result 72](free-ceiling-measured.md) left one attack unfixed: negating the main clause of a 24-word
+clinical sentence scored contradiction 0.066 and entailment 0.929 and passed every gate. A polarity
+flip is the cheapest possible meaning inversion, so the question was whether a mechanical check
+could close it without vetoing real work.
+
+**It can, and the cost is zero.** Negation-marker counts across real loop output:
+
+| corpus | increased | unchanged | decreased | false alarms |
+|---|---|---|---|---|
+| HC3 (n=30) | 0 | 30 | 0 | **0%** |
+| RAID (n=30) | 0 | 30 | 0 | **0%** |
+
+The rewriter's transforms are substitutions, merges and splits. None of them touches polarity, and
+contractions keep the marker — so a symmetric "the negation count must not change" veto never fires
+on legitimate output. Symmetric on purpose: removing a negation inverts the claim exactly as badly
+as adding one, and `certainty_kept` covers hedges rather than polarity.
+
+**Two measurement bugs on the way, both in the instrument rather than the code.**
+
+The first pattern used `\bn't\b`. In "aren't" the apostrophe-t is preceded by a word character, so
+the boundary never matches and every contraction read as a lost negation — a phantom "decreased on
+4 of 25". That is the [Result 44](free-ceiling-measured.md) failure exactly, committed while
+measuring, in the tool doing the measuring.
+
+The second was real and taught the design. With the regex fixed, RAID still showed 1 loss in 30.
+Inspecting it: `"not only"` → `""`, the structural rewriter turning "not only X but also Y" into
+"X and Y". That is a correlative conjunction, not a polarity marker — the claim is that BOTH hold —
+and the transform preserves the meaning exactly. Excluded with a lookahead, and RAID went to 0/30.
+Excluding a marker can only remove mismatches, never create one, so HC3's 0/30 stands unrecomputed.
+
+Worth keeping: **the outlier was the design.** One text in thirty disagreed, and the choice was
+between an asymmetric veto that would miss half the attack surface and a symmetric one that seemed
+to cost 3%. Reading what that single text actually did showed the 3% was not a cost at all — it was
+a marker that should never have been counted.
