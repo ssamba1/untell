@@ -6052,3 +6052,66 @@ Result 113 were wrong about where the text came from, and the tool that would ha
 the source too, blame only the delta — was already in the repository, written for this exact failure.
 The real defect surfaced only when I stopped reading the loop's output and started diffing a single
 transform against its own input.
+
+## Result 115
+
+**Every transform diffed against its own input, and the one gap that matters is a tell nothing could
+remove.**
+
+Result 114 ended on the method: stop reading loop output, diff a single transform against its own
+input. Applied to all eight text-in/text-out transforms in `structural.py`, over 50 HC3 and RAID
+documents, scoring damage on the OUTPUT and the SOURCE and counting only the delta:
+
+```
+_flatten_cliches                 changed 10/50   stub_sentence: 1
+_flatten_copula                  changed  4/50   clean
+_flatten_negated_contrast        changed  3/50   clean
+_flatten_participial_trailers    changed  1/50   clean
+_flatten_vague_attribution       changed  0/50   clean
+_parenthesise_asides             changed 18/50   clean
+_semicolons_to_periods           changed  0/50   clean
+_strip_filler_openers            changed  0/50   clean
+```
+
+The one stub is `"In conclusion, TAN represents"` → `"TAN represents"` — the already-documented
+truncated-source artefact, not damage.
+
+**The interesting column is `changed 0/50`.** A transform that never fires is not necessarily broken,
+so the question is whether the tell it exists to fix is being *detected*. Counting detections against
+fixes over 120 texts:
+
+```
+vague_attribution    detected in 1 text, flattener acts on 0
+semicolon_crutch     detected in 1 text, flattener acts on 1
+filler_phrase        detected in 0 texts, flattener acts on 0
+```
+
+`vague_attribution` is **flagged and unfixable**. The phrase is *"it is generally accepted"*: the
+detector covers `it is (widely|often|generally) (believed|said|understood|accepted)`, the flattener
+had only `it is (widely )?believed`. The loop counts the tell, spends a draw trying to remove it,
+fails, and scores the result as no better — every iteration.
+
+**The rest of the detector's vocabulary stays out, and that is the measured part.** It also flags
+attributed subjects — reports, surveys, analysts, observers, critics, sources — and rewriting
+*"Critics argue that X"* into *"Evidence suggests that X"* changes **who said it**. Asked whether the
+gates would catch that:
+
+| pair | similarity | contradicts | role_swap |
+|---|---|---|---|
+| `Critics argue` → `Evidence suggests` | 0.905 | False | False |
+| `Analysts say` → `Evidence suggests` | 0.928 | False | False |
+
+**No gate catches an attribution change.** A wider flattener would ship one past every guard this
+repository has. The impersonal forms have no attributor to lose, which is precisely why they are the
+safe ones to add — and that is a distinction the gates cannot make for you.
+
+**And the widening exposed a defect it would otherwise have shipped.** The substitution was a flat
+lowercase string, so a sentence-initial match produced `". evidence suggests"` — caught by the
+battery's own `lowercase_after_full_stop` check, firing on the output and not the source. It had gone
+unnoticed for the reason the whole result turns on: the transform never fired on real text, so its
+one bug was unreachable. Making it reachable and fixing the case belong in the same change.
+
+Worth keeping: **a detector and its remedy are a pair, and only counting them together shows the
+gap.** Everything in this repo measures whether a tell is *found*. Nothing measured whether the
+matching transform can *act* on what was found, and the two vocabularies had drifted apart with no
+test able to notice — each is correct in isolation.
