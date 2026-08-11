@@ -702,6 +702,17 @@ def _duplicate_sentence_starts(text: str) -> int:
 
     This is the mechanical form of a documented tell: machine prose cycles through a small set of
     openers ("Additionally", "The", "This"), where a person varies them without trying.
+
+    It FIRES on a share and REPORTS a count, and the two can disagree. A rewrite that adds sentences
+    grows the denominator, so the share falls while the raw count does not. MEASURED over the 47
+    corpus texts that fire (sentence count changed on 34 of them): the share improved without the
+    count falling 15 times, the reverse 0 times — one example is share 70.0% -> 53.8% scored as no
+    change at all. The error only ever hides an improvement, never damage, which is why it stays.
+
+    Reporting the excess above the threshold instead was measured and is worse on both counts: RAID
+    AUROC 0.9555 -> 0.9381 floored at 1 / 0.9336 unfloored, and it introduces cases where the share
+    worsens and the value does not rise. See
+    `tests/test_opener_repetition_fires_on_a_share_and_scores_a_count.py`.
     """
     words = _WORD.findall(text)
     if len(words) < _MIN_WORDS_FOR_REPETITION:
