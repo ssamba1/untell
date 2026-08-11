@@ -127,6 +127,21 @@ def humanness(text: str, tier: str = "full") -> float:
         different lengths cannot be ranked against each other by this number, and the same document
         cannot be spot-checked on an excerpt.
 
+        WHICH TERM, decomposed over the same texts between the 60-word and 220-word windows, in
+        points of the final score:
+
+                             tells   burstiness   detector
+            AI text          -5.4       -0.7        0.0
+            human text       -0.9       +0.3        0.0
+
+        The detector contributes nothing: it is saturated at P(AI) = 1.000 on every AI window and
+        flat near 0.38 on the human ones. The tells term is the whole effect, rising 0.036 -> 0.215
+        on identical prose, because both repetition categories fire on a SHARE and a longer text
+        crosses that bar on writing every part of which sat under it. Two 66-word halves that each
+        score 0.00 tells/100w become 3.76 when pasted together — see
+        `tests/test_the_tell_rate_is_not_length_invariant.py`. Not fixable by reweighting: those two
+        categories are the strongest in the catalogue and the threshold is what makes them precise.
+
         **50.0 is returned by abstention AND reachable by computation.** Empty text, text under
         ``_MIN_WORDS_FOR_SIGNAL`` and unreadable scripts all return a literal 50.0, and so does a
         text whose three terms happen to sum there — MEASURED on a 100-word HC3 answer with the
