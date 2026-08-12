@@ -178,6 +178,31 @@ def _truncate(text: str) -> str:
 # included, while `sentences.py` already splits with `layout.blocks()` first because scaffolding is
 # not prose. Scoring the prose blocks restores every flag.
 #
+# THE MARKDOWN IS NOT THE MECHANISM, which the first version of this note implied. Separating the
+# two, same 8 documents:
+#
+#     flat                          0.5804   8/8 flagged
+#     scaffolding + blank lines     0.3039   4/8
+#     scaffolding, no blank lines   0.3039   4/8      <- identical, so blank lines are not it
+#     blank lines only              0.3128   2/8      <- and scaffolding is not it either
+#
+# Either transform alone produces nearly the whole drop and they do not compound. What they share
+# is SHORT SEGMENTS: a heading, a list item and a one-sentence paragraph are all short, and half of
+# this path's score is burstiness — the variation in sentence length — so re-segmenting the text
+# re-computes the spread it is scored on.
+#
+# The DIRECTION is a property of the document, not of the transform, which a mean hides. On 12 HC3
+# documents paragraph splitting moved the score down 12 times out of 12 (mean -0.2616, largest
+# -0.3912) — but a short hand-written fixture of five long, uniform sentences moved the other way,
+# 0.5331 -> 0.6627. Splitting raises the spread when the sentences were uniform and lowers it when
+# they were already varied. "Structure makes text look more human" is therefore the corpus
+# behaviour and not a rule, and a test asserting the direction on a synthetic fixture fails.
+#
+# Checked against the alternatives rather than assumed: hard wrapping at 60 columns, double spaces
+# after full stops, leading indentation, tab indentation, CRLF endings, trailing spaces and
+# collapsing to one long line all move the mean by EXACTLY 0.0000 over the same documents.
+# Whitespace normalisation absorbs them. Segment structure is the one axis that moves this score.
+#
 # NOT changed here. Switching to block-scoring moves every stdlib figure in this repository — the
 # 64%/30% above, the per-corpus table, and the perplexity midpoints, which were fitted against
 # raw-document distributions — so it needs its own measurement pass rather than a drive-by edit.
