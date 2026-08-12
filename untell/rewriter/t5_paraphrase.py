@@ -30,7 +30,6 @@ class T5ParaphraseRewriter:
     """Free CPU/GPU neural paraphraser. ``available()`` only when torch+transformers import."""
 
     name = "t5_paraphrase"
-    deterministic = False  # sampled generation varies run to run
 
     # class-level model cache so the ~850MB model loads once per process
     _tok = None
@@ -54,6 +53,33 @@ class T5ParaphraseRewriter:
         self.sample = sample
         self.top_p = top_p
         self.temperature = temperature
+
+    @property
+    def deterministic(self) -> bool:
+        """Whether repeated calls return byte-identical output — which depends on ``sample``.
+
+        This was a class attribute pinned to ``False`` with the note "sampled generation varies run
+        to run". Sampled generation does; the DEFAULT construction does not sample. ``sample=False``
+        takes the beam-search branch below, and three consecutive draws on the same input were
+        measured byte-identical.
+
+        The loop reads this to decide how many candidates to draw::
+
+            draws = 1 if getattr(rw, "deterministic", False) else max(1, best_of)
+
+        so at the default ``best_of=3`` it took three draws of one answer, paying a full detector
+        pass for each — and run.py's own comment calls that out: "extra draws are pure waste, and
+        the waste is the EXPENSIVE part". At ``--tier full`` that is two redundant five-detector
+        passes per iteration on the slowest rewriter in the repo.
+
+        The second reader, the stalled-iteration early exit, was disabled by the same mistake: a
+        rewriter that cannot produce anything new kept iterating to ``max_iters``.
+
+        A property rather than an attribute because the answer is per-instance. Both readers use
+        ``getattr(rw, ...)`` on an instance, so this resolves; reading it off the CLASS would get
+        the property object, which is truthy — checked, and nothing does that.
+        """
+        return not self.sample
 
     def available(self) -> bool:
         try:

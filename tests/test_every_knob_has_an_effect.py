@@ -20,8 +20,6 @@ responds to, and says which one.
 
 from __future__ import annotations
 
-import random
-
 import pytest
 
 from untell.scripts.run import untell_text
