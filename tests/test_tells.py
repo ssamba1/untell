@@ -388,8 +388,14 @@ class TestNonEnglishIsNotReportedAsClean:
 
     @pytest.mark.parametrize("lang", sorted(NON_LATIN))
     def test_cli_does_not_say_no_tells_found(self, lang, capsys):
-        """"no catalogued tells found" reads as a verdict on the text, not on the catalogue."""
-        assert main([self.NON_LATIN[lang]]) == 0
+        """"no catalogued tells found" reads as a verdict on the text, not on the catalogue.
+
+        The exit code was `== 0` here, asserted on the same line as a warning that says the count
+        "means the patterns did not apply, NOT that the text reads as human". The two halves of this
+        test contradicted each other: the printed text said "no verdict" and the one-byte channel a
+        script reads said "clean run". 2 is `untell-verify`'s established code for nothing ran.
+        """
+        assert main([self.NON_LATIN[lang]]) == 2
         out = capsys.readouterr().out
         assert "no catalogued tells found" not in out
         assert "WARNING" in out

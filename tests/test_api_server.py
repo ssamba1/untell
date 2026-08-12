@@ -1089,7 +1089,9 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         # Only fields PROVEN to be conditional belong here. `results` was in this set and it
         # was not conditional — it did not exist. The exclusion was written from the same
         # guess as the schema, so the test confirmed the guess instead of checking it.
-        conditional = {"warning", "failed_detectors", "detector_errors"}
+        # `matches` is returned only when `include_matches` is true, which defaults to false — the
+        # same shape as the three above, and it arrived in a concurrent commit without an entry.
+        conditional = {"warning", "failed_detectors", "detector_errors", "matches"}
         client = self._client()
         response = client.get(path) if method == "get" else client.post(path, json=body)
         payload = response.json()

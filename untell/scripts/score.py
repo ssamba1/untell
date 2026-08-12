@@ -673,7 +673,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[untell-score] tier requested={args.tier} ran={result['tier']}", file=sys.stderr)
     # ensure_ascii=True: detector error strings may carry non-ASCII; never crash a Windows stdout.
     print(json.dumps(result, ensure_ascii=True, indent=2))
-    return 0
+    # 2 when NOTHING produced a score, the same code and the same reasoning `untell-verify` uses:
+    # nothing ran is a configuration problem, not a verdict about the text, and 1 is reserved for a
+    # verdict a caller might act on by rewriting.
+    #
+    # MEASURED with every detector broken on purpose: this command printed `"scored": false`,
+    # `"max": 0.0`, `"flagged": false` and exited **0**. The JSON carries the diagnosis and a shell
+    # branching on the exit code sees success — a score of 0.0 reads as "not AI". That is the defect
+    # `untell-verify` fixed one commit earlier, in the sibling command, and its comment applies
+    # verbatim: "Exit 0 means PASS to everything that reads it."
+    #
+    # `flagged` deliberately does NOT change the exit code. This command is a report, not a gate:
+    # `untell-verify` is the gate and returns 1 for a failing verdict. Two commands disagreeing
+    # about what exit 1 means would be worse than the silence this replaces.
+    return 2 if result.get("scored") is False else 0
 
 
 if __name__ == "__main__":

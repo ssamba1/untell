@@ -1112,7 +1112,19 @@ def main(argv: list[str] | None = None) -> int:
 
     result = score_tells(text, include_matches=args.matches)
     print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
-    return 0
+    # 2 when the catalogue could not read the text at all, the same code and reasoning
+    # `untell-verify` and `untell-score` use: nothing ran is a configuration problem with the input,
+    # not a verdict about it.
+    #
+    # The result already says so — `language_supported: false`, and the warning spells out that "a
+    # score of 0 tells means the patterns did not apply, NOT that the text reads as human". The exit
+    # code said the opposite. MEASURED on a Chinese paragraph: `tells: 0`, `words: 0`, exit **0**, so
+    # a CI job reading the status of `untell-tells` was told the cleanest possible result on text
+    # this catalogue cannot match a single pattern against.
+    #
+    # The tell COUNT never changes the exit code — a document with forty tells is a report, not a
+    # failure. `untell-verify` is the only command here that returns a verdict.
+    return 2 if result.get("language_supported") is False else 0
 
 
 if __name__ == "__main__":
