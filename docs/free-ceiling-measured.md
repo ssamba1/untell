@@ -7010,3 +7010,63 @@ needed that.
 Worth keeping: **an exit code is an API with exactly three consumers and no schema.** Every one of
 these commands already reported its abstention correctly in the payload — the JSON was right, the
 prose was right, and the one-byte channel that CI actually reads said the opposite.
+
+## Result 137
+
+**Sixteen of the audit's eighteen checks have never been shown able to fail.**
+
+The audit is what makes this repository's correctness argument checkable: eighteen checks, eighteen
+PASS lines, exit 0. So the obvious question is whether a PASS means anything. Cross-referencing every
+`check_*` against the test suite for a known-negative — a test that constructs a failing input and
+asserts the check reports FAIL:
+
+```
+has a known-negative test          2 of 18
+referenced from tests at all       6 of 18
+```
+
+Twelve of the eighteen are not mentioned anywhere in 4949 tests. This is the shape of the defect that
+once left three regexes matching nothing across 2526 tests: **a check nobody has watched fail is a
+check nobody has watched.** Recorded as a measured, open gap rather than closed in one loop.
+
+**One of them was measurable immediately, and the first measurement was wrong.** A harness that
+deleted each document and re-ran every check reported `README.md` disappearing *silently* — findings
+dropped, no failure. Running the real command instead: a `FileNotFoundError` traceback and exit 1.
+The swallow was `except Exception: pass` in my own harness. **A probe that hides the failure mode it
+is looking for will find the opposite of the truth**, and this one nearly went into a result.
+
+What survived the correction is real, and it is two answers to one question living in the same file:
+
+```
+checks doing `if not doc.exists(): continue`   findings vanish, run still reports success
+checks calling read_text bare                  FileNotFoundError traceback, exit 1
+```
+
+Neither is a report. The audit's own contract is to say what it could *not* check — it publishes
+checked / attributed / unattributed totals precisely so it never claims coverage it lacks — and a
+stack trace says nothing while a silent skip says the wrong thing. Both now route through one reader
+that records a named failure and lets the run continue.
+
+**The guard against a third answer found one while being written.** A test asserting no `LIVE_DOCS`
+entry is read outside the shared reader failed immediately on
+`(REPO / "README.md").read_text(encoding="utf-8", errors="replace")` — a fourth call site I had not
+patched, differing from the one I had by an argument. Two more turned up in loops over explicit
+document tuples.
+
+**And it exposed which documents nothing was watching.** Deleting each `LIVE_DOCS` entry in turn and
+recording who reported it:
+
+```
+README.md                                   check_derivable, check_dynamic_env_vars, check_named_repo_stars
+ROADMAP.md                                  check_derivable, check_named_repo_stars
+docs/why-best-open-repo.md                  check_derivable, check_largest_repo_claims, check_named_repo_stars
+docs/index.md                               check_derivable
+docs/what-would-make-this-the-top-repo.md   check_derivable
+```
+
+Two of the five live documents rest on a single check. That is not a defect today, but it is the
+number to know before trusting any one of them.
+
+Worth keeping: **a green audit is evidence about the code only to the extent its checks have been
+seen to go red.** Eighteen PASS lines and two demonstrated failure paths are not eighteen results;
+they are two results and sixteen assumptions.
