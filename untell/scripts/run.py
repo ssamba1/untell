@@ -1106,6 +1106,21 @@ def _render(result: dict) -> str:
             "admits inversions (measured 0.983 for \"runs faster\" -> \"runs slower\" against a "
             "0.76 bar). Install torch + transformers for the full fidelity gate."
         )
+    # AI tells and the result's own warning, which this renderer dropped.
+    #
+    # `rich` is an EXTRA, so this is what `pip install untell` prints — and it showed the number
+    # with none of the caveats attached to it. MEASURED on the stdlib path: the rich table shows an
+    # "AI tells" row and the score's warning, and this path showed neither, so the install with
+    # fewer dependencies was also the one told less about how far to trust the answer.
+    #
+    # The tells pair matters most where `max` cannot move: on a saturating corpus it is the only
+    # before/after that changes at all.
+    before, after = result.get("tells_before"), result.get("tells_after")
+    if isinstance(before, int) and isinstance(after, int):
+        lines.append(f"AI tells: {before} -> {after}  ({after - before:+d})")
+    if result.get("warning"):
+        lines.append(f"\nNOTE: {result['warning']}")
+
     lines.append("\nper-detector (pre -> post):")
     for name in pre.get("detectors", {}):
         if "__error" in name:
