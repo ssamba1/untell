@@ -7278,3 +7278,46 @@ the gate learning about it — the anti-drift check that Results 115 and 140 bot
 Worth keeping: **re-measure the number the fix was supposed to move, not a number near it.** Every
 other signal said this change was correct — tests green, review clean, reasoning sound. The one
 question that caught it was "did the thing I was trying to change, change?"
+
+## Result 142
+
+**Twice is a class. Every pattern in the package now has to prove it can match.**
+
+The 0x08-backspace-for-`\b` defect has shipped here twice: three dead patterns behind 2526 green
+tests the first time, and one more last result, caught only by re-running the number the fix was
+supposed to move. Waiting to trip over a third is not a plan.
+
+So: enumerate every module-level compiled pattern in `untell` and require each to match *something*.
+
+**The first sweep was wrong, and its own output said so.** Whole documents as the haystack reported
+8 dead patterns — but five of them are `^`-anchored and only ever see a single sentence or line.
+Feeding the harness lines and sentences as well dropped it to 5, and every one of those five fired
+on a constructed positive. **No dead pattern remained.** The honest answer to the question was "none",
+and the value is in what that took: a harness matched to how each pattern is actually called.
+
+What the sweep did find is that **none of those five is named in any test**. If one regressed to the
+backspace form tomorrow, all 5066 tests would stay green — the exact conditions of both previous
+incidents.
+
+The standing guard: 127 patterns, of which 123 match something in the repository's own prose and
+source, and 4 cannot by their nature — internal `⟦HZ…⟧` sentinels, invisible Unicode, trailing
+horizontal whitespace. Those four carry an explicit positive, so a break stops matching its own
+registry entry and the failure names the pattern.
+
+Verified the only way this kind of test can be verified: **reintroduced the real defect.** With the
+backspace byte back in `STANCE_FRAME_RE`, two assertions fail — the behavioural one, and the one that
+names the byte:
+
+```
+FAILED test_the_pattern_matches_something[scripts.tells.STANCE_FRAME_RE]
+FAILED test_no_pattern_contains_a_control_character
+```
+
+Both, deliberately. A pattern can be alive and still carry a stray byte, and a non-match with no
+explanation is a mystery to whoever hits it next.
+
+Two seconds for 129 assertions, so it costs nothing to keep.
+
+Worth keeping: **a defect that has happened twice deserves a mechanical check, not a third lesson.**
+Both earlier instances were found by luck — a passing suite, a clean review and correct-looking
+reasoning surrounded them both. The check is cheap; the noticing was not.
