@@ -236,6 +236,23 @@ def _truncate(text: str) -> str:
 # difference because both terms are document-wide aggregates. The full tier flags it wherever it
 # sits, which is what `windowed_max` is for.
 #
+# THE TWO TIERS THEN FAIL IN OPPOSITE DIRECTIONS on that document, which is worth knowing before
+# recommending either. Running the loop on it:
+#
+#     tier      what happens
+#     stdlib    rewrites=0, changed=False — the diluted 0.2657 is under the 0.30 threshold, so the
+#               loop declares "passed" and the AI section stays exactly as it was
+#     full      changed=True, 6 draws — and it edits BOTH halves at similar rates: 10 of 13 human
+#               sentences survive verbatim (77%) against 5 of 7 AI sentences (71%)
+#
+# The full tier's behaviour follows from sentence-level targeting precision of 0.444 (see
+# `sentences.py`): half the flagged spans are human writing, so half the edits land there. Meaning
+# is still held — the human half measured 0.9929 similarity before and after — so what a user loses
+# is their own phrasing, not their content.
+#
+# Neither is a defect with a local fix. The first is dilution, the second is the detectors not
+# separating sentences on this corpus; both are measured limits rather than mistakes.
+#
 # This is the shape a real user brings: a mostly-human document with a generated paragraph in it.
 # NOT a bug to fix by windowing this path — that was measured and rejected, and the note in
 # `perplexity_burstiness.score` records why: windowing took FPR from 30% to 90% on 3-paragraph
