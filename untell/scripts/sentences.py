@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import sys
 
 # Run-as-file support (zero-dep lite tier): when this file is executed directly
 # rather than imported as part of the `untell` package, put the directory that

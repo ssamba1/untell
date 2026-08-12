@@ -28,7 +28,6 @@ import argparse
 import json
 import logging
 import re
-import sys
 from collections import Counter
 
 # RUN DIRECTLY (`python .../untell/scripts/tells.py`), put the directory that *contains* the package

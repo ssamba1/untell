@@ -581,7 +581,6 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     import argparse
     import json
-    import sys
 
     from untell.scripts.io_utils import configure_utf8_io
 
