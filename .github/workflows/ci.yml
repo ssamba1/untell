@@ -28,7 +28,22 @@ jobs:
       - name: Lint
         run: ruff check .
 
-      - name: Test (lite tier, zero ML)
+      # This job and `full` below are not the same suite run twice: they are the two SCORING PATHS.
+      #
+      # `perplexity_burstiness` is a stdlib heuristic here and silently upgrades to GPT-2 wherever
+      # torch is importable, and the two rate the same text very differently — one fixture scores
+      # 0.0802 on the model path and above 0.30 on the heuristic, which is the difference between
+      # "already passes, leave it alone" and "rewrite this". A test that scores at `tier="lite"`
+      # without pinning the path is therefore green in one job and red in the other.
+      #
+      # That has happened twice: tests/test_one_sentence_has_no_burstiness.py asserted stdlib-shaped
+      # values and failed once torch was present, and test_the_rewriter_obeys_its_own_rubric.py
+      # failed for `surgical` in the FULL job because its fixture already passed on the model path.
+      # Both looked like rewriter or detector bugs and were neither.
+      #
+      # So: no torch installed here, on purpose. Losing that means losing the only check that the
+      # zero-dependency path — the one the README leads with — still works.
+      - name: Test (lite tier, zero ML — the stdlib scoring path)
         run: pytest -q
 
       # Every documented claim that CAN be re-checked, re-checked. The derivable ones — registry
