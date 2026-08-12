@@ -113,9 +113,11 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    python scripts/quality.py "<ORIG masked>" "<current masked text>"
    ```
    This returns `similarity`, `method`, `confidence`, `bar`, and `passes` (the bar is
-   metric-aware — `0.88` for BERTScore, `0.76` for semantic embeddings, `0.50` for the lite
-   token-overlap fallback; each metric lives on its own scale, so compare `similarity` to the
-   returned `bar`, never to a bar you remember).
+   metric-aware — `0.76` for semantic embeddings, `0.50` for the lite token-overlap fallback; each
+   metric lives on its own scale, so compare `similarity` to the returned `bar`, never to a bar you
+   remember). BERTScore was a third method with a `0.88` bar and is **gone**: it rejected 19 of 20
+   real rewrites, so `method()` now answers only `embedding` or `token_overlap` and `0.88` is never
+   emitted. Do not branch on `method == "bertscore"` — that condition can no longer be true.
 
    **Which similarity bar applies depends on whether the meaning gate below is available**, and
    this mirrors what the headless loop does in `meaning_preserved()`:
@@ -185,13 +187,26 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    quantity quietly becoming vague, hedges catches a claim quietly becoming stronger. Run all five.
 
    Stop when **all** hold:
-   - `max < threshold` (not flagged), **and**
+   - `max < threshold` — **and note this is no longer the same as `flagged: false`**, **and**
    - similarity clears the bar that applies (drift floor `0.30` when the meaning gate ran, else
      the strict `passes` from `quality.py`), **and**
    - the meaning gate exits `0` (or is unavailable), **and**
    - the predicate-argument check exits `0` (or is unavailable), **and**
    - the quantity check exits `0`., **and**
    - the certainty check exits `0`.
+
+   **`flagged` and `max < threshold` are two different questions now.** `flagged` compares against
+   `verdict_threshold`, which the score reports as its own field and which is raised to `0.45` on
+   the stdlib perplexity path — the default on a clean install with no `.[full]` extra. `threshold`
+   stays at `0.30` because that is what the rewrite loop optimises against; the split exists so a
+   kinder verdict is not bought by weaker rewriting. Between the two there is a band, and at
+   `max = 0.35` on that path you get `flagged: false` **and** `max >= threshold`:
+
+   - **Drive the loop on `max < threshold`.** That is the stop condition above, and the one the
+     rewriter is actually working toward.
+   - **Report `flagged` to the user.** That is the calibrated verdict about their text.
+   - In the band, keep rewriting if you have budget, but do not tell the user their text is
+     flagged — it is not. Saying so is the false accusation `verdict_threshold` exists to prevent.
 
    **Confidence matters:** when `confidence` is `high` (full tier, semantic metric) **and the
    meaning gate did not run**, enforce the quality gate strictly — never accept a rewrite where
@@ -250,9 +265,9 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    ```bash
    python scripts/voice.py --sample their-writing.txt --draft candidate.txt
    ```
-   This scores three habits a rewrite can actually change — mean sentence length, rhythm
-   (burstiness) and comma rate. It reports contraction rate, word length and first-person use as
-   well, but does **not** score them: measured across 8 draws of the same text, the free rewriters
+   This scores four habits a rewrite can actually change — mean sentence length, rhythm
+   (burstiness), comma rate and mean word length. It reports contraction rate and first-person use
+   as well, but does **not** score them: measured across 8 draws of the same text, the free rewriters
    vary sentence length and rhythm more than different texts differ from each other, while moving
    contractions by 3% and first person by 1% of that spread. Those three are yours to fix by hand,
    and worth mentioning to the user when the gap is large — a draft that matches someone's sentence
