@@ -8013,3 +8013,43 @@ which fails exactly the assertion written for it.
 Worth keeping: **the code that admits a limit is the least-exercised code in any honest project.** It
 runs only when something is wrong, so the tests that would catch it broken are the ones nobody writes
 — and this repository's entire argument rests on those sentences arriving.
+
+## Result 159
+
+**A caveat on a result is not a caveat a person reads, so I traced one to every surface — and my
+test asserted a contract the design does not make.**
+
+Result 154 put a false-positive note on `score_text`: what a flagged verdict is worth, measured at 5
+of 30 genuine human answers flagged at `tier=full`. Result 158's lesson was that caveat code is the
+least-exercised code there is. So: does it arrive? Traced on a flagged human answer at `tier=full`:
+
+```
+score_text result          carries it
+untell_text result         carries it
+untell-score terminal      prints it
+untell humanize terminal   prints it   (in a Warning panel)
+REST /score                carries it
+REST /humanize             carries it, and on `pre` as well
+```
+
+All six. **No defect** — the merge chain was built correctly before this note existed, so a fix to one
+function propagated everywhere without anyone arranging it.
+
+**Then the test failed at the lite tier, and it was right to.** Three assertions went red. Not a
+propagation bug: on that run `pre` was flagged at **0.7429** and `post` came back **0.3772** —
+cleared. The loop merges the caveat from the score it *reports*, which is `post`, and a document with
+no flagged verdict has nothing to qualify. The note had survived at `tier=full` only because the text
+stayed flagged there.
+
+So the contract is narrower than the six green rows suggested: **the caveat follows the verdict, not
+the input.** `pre` keeps its own copy, so a caller showing the before-number still has the
+qualification beside it. Nothing is lost; it is attached to the right thing.
+
+The tests now say that — present exactly when `post` is flagged, and on `pre` whenever `pre` is —
+rather than the stronger claim that happened to hold on one tier. **A test written from a single
+tier's observation is a test that encodes a coincidence**, and this one would have failed the moment
+the loop got better at clearing text.
+
+Worth keeping: **a passing trace across six surfaces told me less than one failure did.** The green
+rows confirmed plumbing I already believed in; the red one taught me what the plumbing actually
+promises.
