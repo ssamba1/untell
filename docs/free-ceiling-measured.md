@@ -7117,3 +7117,64 @@ Three of the five misses were my mutations misunderstanding the check's scope, a
 misunderstanding is exactly what a reader of a green PASS line would have had too. The eight `assert
 that it passes cleanly first` lines are half the value of the file: without them, a check broken for
 any reason at all would make its own mutation test pass.
+
+## Result 139
+
+**The gate with no column in the table was the only one that caught deletion — and my first fix for
+it broke the loop.**
+
+Result 138's lesson applied to the meaning gates: has each been *seen* to reject? Mostly yes, and
+that is the honest first half — `test_the_gates_are_complementary.py` already pins a rejecting case
+for numbers, polarity, certainty, roles, contradiction and similarity, as a table. **Not every
+question yields a defect.**
+
+But the table has six columns and the conjunction has seven terms. The entailment floor has no row,
+and `run.py` records it vetoing **0** of 49 real rewrites. A term that never fires is either
+insurance or decoration, and only making it fire tells you which.
+
+It fires — and on one case it fires *alone*:
+
+```
+candidate         sim     entailment   contradiction   NLI verdict   similarity-only
+drop 1 of 3     0.949        0.0015         0.007        rejected       ADMITTED
+drop 2 of 3     0.897        0.0014         0.009        rejected       ADMITTED
+half a clause   0.761        0.0012         0.021        rejected       ADMITTED
+unrelated       0.000        0.0012         0.177        rejected       rejected  (similarity)
+negated         0.973        0.0017         0.997        rejected       rejected  (contradiction)
+```
+
+**Deleting a third of a document scores similarity 0.949 against a 0.76 bar and contradicts
+nothing** — a truncation asserts nothing to contradict. Every gate but entailment passes it, and that
+floor needs the NLI stack, so on the advertised zero-dependency default it was admitted. The
+`token_overlap` docstring documents the analogous hole for *substitution*; nobody had asked about
+deletion. Not hypothetical: Result 116 added a transform to this pipeline that removes sentences.
+
+**Then the fix broke the loop, and the reason is a lesson this repository has already written down.**
+A ratio floor at 0.80 looked clean — 445 corpus-length rewrites bottoming out at 0.902 against 0.721
+for the mildest deletion, a wide gap. The full suite disagreed:
+`test_the_rewrite_actually_did_something` failed, every candidate rejected, the loop returning its
+input unchanged. On the 24-word paragraph that test uses, removing *"Moreover,"* and *"it is
+important to note that"* — **the actual job** — costs a quarter of the document. Filler is roughly
+constant in words; documents are not. The ratio was a property of the corpus I measured it on.
+
+Re-measured in words lost, short probes and corpus documents together:
+
+```
+source length     n     max lost   median lost
+    0-40 words    18        5           1
+  120-400 words  205        9           0
+```
+
+against 12, 26 and 36 for the three deletions. The allowance is now the larger of 10 words and 10%
+of the document: the fixed part covers short input, the share covers long input where filler scales.
+
+**The margin is one word — 9 lost legitimately, 12 for the mildest deletion — and that is a limit
+rather than a number to tune.** A dropped sentence of ten words or fewer is not separable from
+aggressive filler removal by length alone, because the two populations genuinely touch there. What
+this buys is sentence-scale deletion on the path with no model; anything smaller still needs NLI.
+
+Worth keeping: **the row missing from a comparison table is the one to go looking at** — six gates
+had a column and a rejecting case, the seventh had neither and was the only defence for a class the
+default install is blind to. And the sharper half: **the full suite caught a corpus-scope error that
+445 measurements did not.** The number was real, the population was wrong, and only an input outside
+that population could show it.
