@@ -7846,3 +7846,41 @@ Worth keeping: **the honest-limits discipline was applied to the weak path and s
 one.** The lite tier gets a paragraph about its false positives because it is obviously weak. The
 full tier is the one people trust, flags 17% of conversational human writing, and had no note at all
 — the caveat is needed most exactly where the number looks most authoritative.
+
+## Result 155
+
+**Eight sentences, one distinct score, and the tool named "the worst third" of them.**
+
+Result 154 found an honest-limits caveat applied to the weak path and skipped on the strong one, so:
+which others are conditioned on the tier rather than on the risk? Sweeping for it left two sites. One
+was 154's. The other is `_targeting_is_uninformative`, which suppresses the near-chance warning as
+soon as any model-backed detector is present.
+
+That function asks whether the DETECTOR is any good. The question a caller needs answered is whether
+**this document's** sentences can be ordered at all — and the two come apart completely. MEASURED at
+`tier=full`, spread of per-sentence `max` within one AI document, 10 documents per corpus:
+
+```
+corpus   mean spread   median   below 0.05   distinct values / sentences
+HC3        0.0088      0.0022      9 / 10            0.36
+RAID       0.6595      0.6855      0 / 10            0.99
+```
+
+Same tier, same detectors, opposite answers. **Two HC3 documents in eight returned one distinct value
+across eight sentences** — every sentence exactly 0.9992, so "the worst third to rewrite first" was
+whichever order the sort produced. On RAID the ranking is almost perfect.
+
+The cause is the one Result 143 named: `hc3_roberta` is fine-tuned on HC3 and sits at its ceiling on
+every sentence of it. Which makes **tier the wrong condition in both directions** — silent where the
+ranking is arbitrary, and it would be noisy on RAID where the same tier ranks well.
+
+So the caveat now reads the document's own spread. Corpus-independent, needing no knowledge of what
+any detector was trained on, and firing exactly when the order cannot be trusted. 0.05 sits in the
+empty gap: HC3's worst document reaches 0.0610, every RAID document exceeds 0.5. Verified after
+wiring — fires on **7/8 HC3** documents and **0/8 RAID**, which is the measurement, reproduced through
+the shipped path.
+
+Worth keeping: **a proxy for a property is not the property, and the gap shows up as silence.** "Is
+the detector weak" was a serviceable stand-in for "can these scores be ranked" right up until a
+strong detector met text it was trained on. The fix was not a better proxy; it was measuring the
+thing itself, which turned out to be one subtraction.
