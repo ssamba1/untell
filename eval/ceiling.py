@@ -303,6 +303,59 @@ def measure_ceiling(
     }
 
 
+# A detector that does not move drags the headline with it, because the headline is a MAX.
+#
+# MEASURED on HC3, composite, best-of 3, 3 repeats:
+#
+#     hc3_roberta              0.9992 -> 0.9992      moved by nothing
+#     roberta_openai           0.9986 -> 0.6228      moved by 0.376
+#     fast_detectgpt           0.6563 -> 0.4782
+#     perplexity_burstiness    0.6059 -> 0.5679
+#
+#     headline: post flagged rate 1.0, mean max P(AI) 0.9997 -> 0.9994
+#
+# Three detectors improved substantially and the report said the tool achieved nothing, because
+# `max` is whichever detector is highest and that one never budged. `hc3_roberta` is fine-tuned ON
+# HC3, so against HC3 it is in-distribution: human mean 0.0796, AI mean 0.9992, and the ENTIRE
+# spread across 15 AI documents is 1.2e-05. It discriminates perfectly and has no dynamic range
+# left to give — on RAID, which it never trained on, the same detector runs 0.0018 human against
+# 0.6953 AI and moves freely.
+#
+# Not literally constant, which matters: read at four decimals it looks pinned at exactly 0.9992
+# and the first reading here said "constant". Full precision shows 14 distinct values in 15. The
+# practical consequence is the same, since the loop threshold is 0.30 and the spread is a
+# hundred-thousandth, but "effectively saturated" and "returns a constant" are different claims and
+# only one of them is true.
+#
+# So the report says it. A reader comparing 0.9997 to 0.9994 should not have to derive from the
+# per-detector table that the number is pinned by one member.
+_PINNED_DELTA = 0.01
+
+
+def _pinned_note(r: dict) -> list[str]:
+    """Name any detector that held the max still while others moved."""
+    pre, post = r.get("per_detector_pre") or {}, r.get("per_detector_post") or {}
+    if not post:
+        return []
+    deltas = {k: pre[k] - post[k] for k in pre if isinstance(post.get(k), (int, float))}
+    if not deltas:
+        return []
+    top = max(pre, key=lambda k: pre[k])
+    if deltas.get(top, 0.0) >= _PINNED_DELTA:
+        return []
+    movers = [k for k, d in deltas.items() if d >= _PINNED_DELTA]
+    if not movers:
+        return []
+    best = max(movers, key=lambda k: deltas[k])
+    return [
+        "",
+        f"  NOTE: the max is pinned by {top} ({pre[top]} -> {post[top]}), which barely moved, while "
+        f"{len(movers)} detector(s) did — {best} by {deltas[best]:.3f}.",
+        "        A headline built on max cannot show that. Read the per-detector rows above before "
+        "concluding the loop achieved nothing.",
+    ]
+
+
 def _render(r: dict) -> str:
     lines = [
         f"untell inference-only ceiling — tier={r['tier']} threshold={r['threshold']} "
@@ -352,6 +405,7 @@ def _render(r: dict) -> str:
         for k, before in sorted(r["per_detector_pre"].items()):
             after = (r["per_detector_post"] or {}).get(k)
             lines.append(f"    {k:24} {before} -> {after}")
+        lines.extend(_pinned_note(r))
     else:
         lines.append("")
         lines.append(
