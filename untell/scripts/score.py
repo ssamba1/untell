@@ -719,12 +719,48 @@ def _score_with_detectors(
     # one happened to be checked first and hidden the other.
     for extra in (ensemble_warning, _short_text_warning(text),
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
-                  _homoglyph_warning(text)):
+                  _homoglyph_warning(text), _human_false_positive_warning(result)):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
             )
     return result
+
+
+
+# A person checking their OWN writing is the input this tool is most likely to be handed by mistake,
+# and a flagged verdict on it should not arrive bare.
+#
+# The lite path already says so loudly — "64% of HUMAN text scores above the 0.30 loop threshold".
+# The FULL path, the one the README tells people to install, said nothing at all. MEASURED on 30
+# genuine human texts per corpus at tier=full:
+#
+#     corpus   flagged (>=0.45)   above the loop bar (>=0.30)   mean max   carrying a warning
+#     HC3        5 / 30  (17%)          5 / 30                    0.259           0
+#     RAID       0 / 30  ( 0%)          0 / 30                    0.141           0
+#
+# Two of those HC3 answers scored **0.9922 and 0.9862** — reported as `ai_percent` 99.2 and 98.6 with
+# `warning: None`. Genuine human writing, told it is 99% machine, with nothing beside it.
+#
+# The corpus split is the substance rather than a caveat on it. HC3 human answers are casual forum
+# Q&A, which is the register someone pastes when checking their own prose; RAID's are paper
+# abstracts. So the rate a user should expect is the higher one, and quoting a single pooled number
+# would understate exactly the case that matters.
+#
+# Only when `flagged` is true. An unflagged verdict needs no false-positive note, and a warning on
+# every call is a warning nobody reads — the same reasoning the pinned-max note in `rich_output`
+# records for staying silent when nothing is pinned.
+_HUMAN_FP_NOTE = (
+    "a flagged verdict is not proof of AI authorship. MEASURED on genuine human text at this tier: "
+    "5 of 30 HC3 forum answers were flagged (17%), two of them at 0.9922 and 0.9862, against 0 of "
+    "30 RAID abstracts. Conversational writing is the register that false-positives, so if this is "
+    "your own prose the number may be telling you about the detector rather than about the text."
+)
+
+
+def _human_false_positive_warning(result: dict) -> str | None:
+    """Say what a flagged verdict is worth, on the tier that was previously silent."""
+    return _HUMAN_FP_NOTE if result.get("flagged") else None
 
 
 def _read_input(args: argparse.Namespace) -> str:
