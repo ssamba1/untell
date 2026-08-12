@@ -68,6 +68,26 @@ _CLASSES: dict[str, tuple[str, ...]] = {
         "accused", "claims", "claim", "claimed", "argues", "argue", "argued", "estimates",
         "estimated", "believed", "thought", "considered", "according to", "evidence",
         "suspected", "purported", "supposedly", "said to",
+        # The same hole as `allege` above, in four more verbs. The class held only the PAST forms
+        # of believe/think/consider and only the -s/-ed forms of estimate, so the present tense —
+        # which is how attribution is usually written — went undetected. MEASURED, each of these
+        # cleared the whole gate before:
+        #     "We believe the mechanism is oxidative." -> "It is established the mechanism is
+        #      oxidative."
+        #     "Researchers think the effect is real."  -> "The effect is real."
+        #     "We consider this the likely cause."     -> "This is the cause."
+        #     "We estimate the loss at 40%."           -> "The loss is 40%."
+        # Removing an attribution does not contradict the source, so NLI, roles, quantities and
+        # similarity all pass it — this class is the only gate that can see it.
+        "believe", "believes", "believing", "think", "thinks", "thinking",
+        "consider", "considers", "considering", "estimate", "estimating",
+        # `suspected` and `purported` had the same hole, and it bit in the OTHER direction —
+        # the false-veto one. "We believe the effect is real." -> "We suspect the effect is real."
+        # keeps an attribution and merely moves sideways between two weak hedges, but with only
+        # the past form listed the rewrite read as having dropped the class entirely. That is the
+        # same failure the `hint` note above records, found while checking that widening this
+        # class did not cost anything.
+        "suspect", "suspects", "suspecting", "purport", "purports", "purporting",
         # "hint" is an evidential hedge — weaker than "suggests", not stronger. Its absence made
         # "the results suggest ..." -> "the results hint ..." read as a dropped class, which is the
         # documented 1-of-13 false veto in the README: the check could not tell a lateral move
