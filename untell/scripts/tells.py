@@ -765,6 +765,32 @@ def _duplicate_sentence_starts(text: str) -> int:
     a handful of sentences cannot repeat much; the direction is the same on both. Threshold 40%
     keeps the false-positive rate at 8% (RAID) and 7% (HC3).
 
+    "The direction is the same on both" is true of the RANKING and not of the raw counts, which is
+    worth spelling out because the counts look damning. Over 60 paired texts per corpus:
+
+        corpus    human   ai    ratio
+        HC3          40    28    0.70   <- fires MORE on human prose
+        MAGE         57    89    1.56
+        RAID         22   248   11.27
+
+    On HC3 this category supplies 37% of all human tells while firing less on the machine side, and
+    HC3 is the corpus most of this repository's numbers are taken on. That reads as a category to
+    drop. It is not — CHECKED before assuming, as AUROC of tells-per-100-words with the category
+    and without it:
+
+        corpus    with    without   delta
+        HC3       0.898    0.904    +0.007   removing it helps, barely
+        MAGE      0.800    0.764    -0.036
+        RAID      0.934    0.881    -0.053
+
+    So the inversion is real and dropping the category would still be wrong: it buys 0.007 on one
+    corpus and costs five to seven times that on the other two. HC3's human side is forum answers,
+    where people genuinely do open sentence after sentence with "I" and "It" — the tell is
+    measuring something true about machine prose that this particular human corpus also does.
+
+    Recorded because the fix that suggests itself here is a regression, and the evidence for it
+    (40 against 28) is visible in one command while the evidence against it is not.
+
     This is the mechanical form of a documented tell: machine prose cycles through a small set of
     openers ("Additionally", "The", "This"), where a person varies them without trying.
 
