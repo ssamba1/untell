@@ -34,6 +34,11 @@ FLOORS: dict[str, dict[str, tuple[float, str]]] = {
     "untell/humanness.py": {
         "_MIN_WORDS_FOR_SIGNAL": (5, "matches the detector's own abstention, deliberately — "
                                      "humanness must not claim a score where its input abstained"),
+        "_MIN_WORDS_FOR_A_BAND": (40, "the same bar `score_text` uses, deliberately: measured on 30 "
+                                      "HC3 pairs truncated to 40 words, AUROC 0.694 against 0.978 "
+                                      "at full length and 0 of 30 genuine HUMAN texts reaching the "
+                                      "'human' bands, so the number is returned and the BAND is "
+                                      "caveated rather than withheld"),
     },
     "untell/scripts/run.py": {
         "_MIN_VOICE_SAMPLE_WORDS": (20, "below this the style profile is near-flat and the "

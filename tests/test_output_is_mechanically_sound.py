@@ -81,6 +81,19 @@ _CHECKS: dict[str, re.Pattern[str]] = {
         + r")\b",
         re.IGNORECASE,
     ),
+    # --- shapes a merge or split could produce, added after a sweep found none of them ----------
+    # MEASURED over 40 HC3+RAID documents through `structural` and `composite`: each of these is 0
+    # in the source AND 0 in the output. They are here as a floor, not because they fired — the
+    # transform set is merges, splits, substitutions and deletions, and every one of these is a
+    # shape one of those could plausibly emit. Each has a known-positive probe below, because a
+    # check that has never matched anything and cannot be shown to match is indistinguishable from
+    # a broken regex — this repo has shipped three of those, with a literal 0x08 where \b was meant.
+    "no_space_after_stop": re.compile(r"[a-z]{2}[.!?][A-Z][a-z]"),
+    "sentence_starts_with_comma": re.compile(r"(?:^|[.!?]\s+),"),
+    "space_before_apostrophe": re.compile(r"\s'(?:s|t|re|ve|ll|d)\b"),
+    "orphan_trailing_preposition": re.compile(
+        r"\b(?:of|with|for|from|into|onto|upon|than)\s*[.!?]"
+    ),
 }
 
 # MEASURED over 60 real HC3 AI paragraphs rewritten by `composite`: the eleven checks above
@@ -155,6 +168,15 @@ def _damage(text: str) -> dict[str, int]:
     # Brackets, checked because `_parenthesise_asides` creates them. A transform that can OPEN a
     # bracket can leave one open, and an unbalanced bracket is the loudest possible artefact.
     found["unbalanced_parens"] = abs(text.count("(") - text.count(")"))
+    # The other two bracket kinds, for symmetry rather than because a transform opens them: layout
+    # protection keeps code and citations intact, so an imbalance here would mean that protection
+    # failed, which is the interesting case.
+    found["unbalanced_square"] = abs(text.count("[") - text.count("]"))
+    found["unbalanced_curly"] = abs(text.count("{") - text.count("}"))
+    # A sentence repeated verbatim. `_drop_restatements` exists to REMOVE near-duplicates, so a
+    # merge or split leaving two copies is the same machinery failing the other way.
+    bodies = [s.strip().lower() for s in split_sentences(text) if len(s.split()) >= 5]
+    found["duplicate_sentence"] = len(bodies) - len(set(bodies))
     # A sentence under four words is a stranded opener or a list item, not a sentence. Counted
     # here rather than only in the corpus sweep, where it is the one check still showing a
     # positive delta (+1 across 60 texts, down from +4). The fixtures below must not add any.
@@ -211,10 +233,42 @@ def test_every_check_can_actually_fire():
         # Both probes are real rewriter output, not invented shapes.
         "stacked_determiners": "There was an a lot longer wait than expected.",
         "determiner_then_phrase": "This adds to the all told cost of the project.",
+        # The zero-delta additions. Invented shapes, and labelled as such: none has been seen in
+        # real output, so the probe proves the regex works — not that the defect exists.
+        "no_space_after_stop": "The cat sat.The dog ran.",
+        "sentence_starts_with_comma": ", and then the cat sat down again.",
+        "space_before_apostrophe": "It is the cat 's turn to sit down.",
+        "orphan_trailing_preposition": "That is the chair the cat sat with.",
     }
     assert set(probes) == set(_CHECKS), "a check has no probe, or a probe has no check"
     for name, probe in probes.items():
         assert _CHECKS[name].search(probe), f"{name} cannot match its own example"
+
+
+def test_every_derived_check_can_actually_fire() -> None:
+    """The same guarantee for the checks `_damage` computes itself rather than by regex.
+
+    `test_every_check_can_actually_fire` iterates `_CHECKS`, so the counted-in-Python keys —
+    fragments, quotes, brackets, stubs, duplicates — had no known-positive at all. That is the gap
+    this repo has been bitten by: a counter that cannot reach a non-zero value reads exactly like a
+    clean codebase. Driven off `_damage`'s own output so a new key cannot be added without one.
+    """
+    probes = {
+        "fragment_lead": "The cat sat down. Which the dog did not like at all today.",
+        "unbalanced_quotes": 'He said "the result is robust and it replicates every time.',
+        "unbalanced_parens": "The cat (who was asleep sat down on the mat again today.",
+        "unbalanced_square": "The cat [who was asleep sat down on the mat again today.",
+        "unbalanced_curly": "The cat {who was asleep sat down on the mat again today.",
+        "stub_sentence": "The cat sat down on the mat again today. It did.",
+        "duplicate_sentence": (
+            "The cat sat down on the mat again today. The dog watched it from the door. "
+            "The cat sat down on the mat again today."
+        ),
+    }
+    derived = set(_damage("A clean sentence sits here quietly.")) - set(_CHECKS)
+    assert set(probes) == derived, "a derived check has no probe, or a probe has no check"
+    for name, probe in probes.items():
+        assert _damage(probe)[name] > 0, f"{name} cannot reach a non-zero value on its own example"
 
 
 # ---------------------------------------------------------------------------
