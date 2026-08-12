@@ -921,8 +921,45 @@ def _untell_text(
         "meaning_gate": _meaning_gate_mode(veto_contradictions),
         "flagged": best_score["flagged"],
         "stopped": stopped,
+        # AI tells before and after, because on a hard corpus they are the only thing that moves.
+        #
+        # MEASURED on 4 HC3 documents at full tier: `max` gained +0.0000 on 4 of 4 — three of five
+        # detectors saturate there, with or without `mage` — while tells fell 4->0, 1->0 and 1->0.
+        # The result reported the flat number and not the fall, so a user on real AI text saw
+        # "P(AI) 1.00 -> 1.00, delta 0" and concluded the run did nothing, when the machine-writing
+        # markers the catalogue exists to find had been removed.
+        #
+        # This repository already treats tells as a first-class signal: `untell tells` is a
+        # command, the loop uses them to break ties between candidates within the detector noise
+        # band, and `humanness` is built from them. They were reported by every surface except the
+        # one that does the rewriting.
+        #
+        # stdlib-only and cheap, so this costs the same on every tier and cannot fail the run: a
+        # broken counter must not take the humanized text down with it.
+        **_tells_delta(text, final),
         **_stronger_rewriter_hint(rw, best_score["flagged"], best_score.get("tier", tier)),
     }
+
+
+def _tells_delta(source: str, final: str) -> dict:
+    """AI-tell counts before and after, for the result dict.
+
+    On a saturating corpus this is the only thing that moves: MEASURED on 4 HC3 documents at full
+    tier, `max` gained +0.0000 on 4 of 4 while tells fell 4->0, 1->0 and 1->0. `_saturated_max_caveat`
+    already WARNS about that case in prose; this puts the numbers on the result so a JSON, MCP or
+    REST caller can read them rather than parse a sentence.
+
+    Never raises. A broken counter must not take the humanized text down with it, so a failure
+    returns no keys at all rather than zeros — zeros would read as "no tells", which is a claim.
+    """
+    try:
+        from untell.scripts.tells import score_tells
+
+        before = int(score_tells(source).get("tells", 0))
+        after = int(score_tells(final).get("tells", 0))
+    except Exception:  # noqa: BLE001 — a diagnostic must never break the run
+        return {}
+    return {"tells_before": before, "tells_after": after}
 
 
 def _meaning_gate_mode(veto_contradictions: bool) -> str:
@@ -1467,6 +1504,8 @@ def main(argv: list[str] | None = None) -> int:
                 iterations=result.get("iterations", 0),
                 stopped=result.get("stopped", "unknown"),
                 warning=result.get("warning"),
+                tells_before=result.get("tells_before"),
+                tells_after=result.get("tells_after"),
             )
         except ImportError:
             # Narrowed from `except Exception`. The fallback exists for a missing `rich`, which is
