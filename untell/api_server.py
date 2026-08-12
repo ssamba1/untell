@@ -662,6 +662,25 @@ _HUMANIZE_RESPONSES = _obj(
                            "pinned so the before/after P(AI) comparison cannot move. Several are "
                            "joined with 'Also:'",
         },
+        # `seed` and the tell counts. The loop grew all three and this schema did not, which is
+        # the drift docs/result-shapes.md had in the same week — a documented surface enumerating
+        # fields cannot be left to catch up on its own, because nothing complains.
+        #
+        # The tell counts pair directly with the `warning` above: when the hardest detector is
+        # pinned, "P(AI) 1.00 -> 1.00" is the whole before/after story a client can see, and these
+        # are the numbers that did move. MEASURED on 4 HC3 documents at full tier, max gained
+        # +0.0000 on 4 of 4 while tells fell 4->0, 1->0 and 1->0.
+        "seed": {
+            **_INT,
+            "description": "the random stream this run used. Unset in the request, it is derived "
+                           "from the text; send it back to reproduce the run exactly",
+        },
+        "tells_before": {**_INT, "description": "AI writing tells counted in the input"},
+        "tells_after": {
+            **_INT,
+            "description": "AI writing tells counted in the output. On a corpus where the "
+                           "detectors saturate this is the only before/after pair that moves",
+        },
         "voice_warning": {
             **_STR,
             "description": "present when a voice sample was supplied but could not be used",
