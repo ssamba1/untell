@@ -137,6 +137,11 @@
   }
 
   .error { color: var(--red); font-size: 0.9rem; margin-top: 8px; }
+  /* The API returns a `warning` on every score whose number needs one — the lite tier's
+     stdlib path is weak in BOTH directions, and this page always scores at lite. Without
+     this line the most public surface showed a bare percentage and a 'Human' badge with
+     no caveat at all, while the CLI printed the same caveat in full. */
+  .caveat { color: var(--muted, #888); font-size: 0.8rem; margin: 8px 0; line-height: 1.4; }
 
   .badge {
     display: inline-block;
@@ -215,6 +220,7 @@
           <div style="margin-top:8px"><span class="badge" id="afterBadge">—</span></div>
         </div>
       </div>
+      <div class="caveat" id="scoreCaveat" style="display:none;"></div>
       <div class="diff-box" id="diffOutput">Results will appear here...</div>
     </div>
   </div>
@@ -307,6 +313,18 @@ async function humanize() {
     document.getElementById('beforeBadge').className = `badge ${bc.cls}`;
     document.getElementById('afterBadge').textContent = ac.text;
     document.getElementById('afterBadge').className = `badge ${ac.cls}`;
+
+    // Surface the caveat the API already returns. `pre` and `post` are scores of the same tier,
+    // so their warnings are usually identical; showing the "after" one keeps it next to the number
+    // a user acts on, and falling back to "before" covers a run where only the input warranted one.
+    const caveat = document.getElementById('scoreCaveat');
+    const note = post.warning || pre.warning || h.warning;
+    if (note) {
+      caveat.textContent = note;
+      caveat.style.display = 'block';
+    } else {
+      caveat.style.display = 'none';
+    }
 
     const final = h.final || h.text || h.result || input;
     document.getElementById('diffOutput').innerHTML = simpleDiff(input, final);
