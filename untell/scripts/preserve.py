@@ -307,6 +307,30 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         "dotted",
         re.compile(r"\b\d+(?:\.\d+){2,}\b"),
     ),
+    # Hex identifiers: git short shas (4f2a91c), full shas, MD5/SHA digests. One altered character
+    # makes them point at nothing, and no rule above covered them.
+    #
+    # The obvious pattern is a bare hex class, and the obvious objection is that English is full of
+    # hex-shaped words. MEASURED over 240 real texts (120 HC3 + 120 RAID pairs) plus a set of prose
+    # traps:
+    #
+    #     [0-9a-f]{7,40}                     0 corpus locks, but locks "defaced"
+    #     + at least one digit               0 corpus locks, 0 traps, 4/4 shas
+    #     + at least one digit AND letter    0 corpus locks, 0 traps, 4/4 shas
+    #
+    # The last is used. Requiring a digit rules out "defaced", "deadbeef" and "facade"; requiring a
+    # letter keeps a run of plain digits out of this rule, where the 4-or-more-digits number rule
+    # already handles it and would otherwise be shadowed.
+    #
+    # LOWERCASE ONLY, and it costs nothing. Git writes shas in lower case; the UPPERCASE forms are
+    # already locked by the `identifier` rule below, which takes letter-and-digit tokens whole —
+    # CHECKED, not assumed: "A3F5B2C9D8E14F6072B3C4D5E6F70819" and "Model ABCDEF1" both mask as one
+    # span without this entry. Admitting A-F here would add nothing and would put ordinary part
+    # numbers in range of a hex rule, so the two rules split the space by case.
+    (
+        "hexid",
+        re.compile(r"\b(?=[0-9a-f]{7,40}\b)(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b"),
+    ),
     # Ratios and scales expressed in words — "1 in 5", "4 out of 5", "3 per 100", "2 to 1". Both
     # numbers and the connective must move together or the ratio inverts while looking protected.
     (
