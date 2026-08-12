@@ -7321,3 +7321,53 @@ Two seconds for 129 assertions, so it costs nothing to keep.
 Worth keeping: **a defect that has happened twice deserves a mechanical check, not a third lesson.**
 Both earlier instances were found by luck — a passing suite, a clean review and correct-looking
 reasoning surrounded them both. The check is cheap; the noticing was not.
+
+## Result 143
+
+**Three loops of gate changes, and I had not once measured the product.** So: run the end-to-end
+ceiling. The answer was not about my changes at all.
+
+The first run measured the wrong corpus, and the tool said so on its own output — `corpus=builtin`,
+three hand-written paragraphs the docstring already calls "measurably easier than real AI text". Rerun
+against HC3:
+
+```
+pre  flagged rate 1.0   mean max P(AI) 0.9997
+post flagged rate 1.0   mean max P(AI) 0.9994   (rewrote 18/18)
+stdev 0.0001            mean similarity 0.9844
+```
+
+A tool that achieves nothing. Except the per-detector rows say something else entirely:
+
+```
+hc3_roberta              0.9992 -> 0.9992      moved by nothing
+roberta_openai           0.9986 -> 0.6228      moved by 0.376
+fast_detectgpt           0.6563 -> 0.4782
+perplexity_burstiness    0.6059 -> 0.5679
+```
+
+**Three of four detectors improved substantially and the headline could not show it, because the
+headline is a `max` and the highest member never budged.**
+
+`hc3_roberta` is fine-tuned **on HC3**, so against HC3 it is in-distribution — human mean 0.0796, AI
+mean 0.9992, and the entire spread across 15 AI documents is **1.2e-05**. It discriminates perfectly
+and has no dynamic range left to give. On RAID, which it never trained on, the same detector runs
+0.0018 human against 0.6953 AI and moves freely. Nothing is broken; the detector and the corpus are
+the same distribution.
+
+**And my first reading of it was wrong in a way worth recording.** At four decimals every AI document
+scored exactly 0.9992 — `min == median == mean` across 25 — and I wrote "that is not confidence, that
+is a constant". Full precision: 14 distinct values in 15, spread 1.2e-05. *Effectively pinned* and
+*returns a constant* are different claims, they imply different bugs, and only one of them is true.
+The four-decimal display was the whole basis for the stronger one.
+
+The fix is reporting, not scoring. `hc3_roberta` is right to be certain, and dropping it would be
+tuning the ruler. What was wrong is a report that says "0.9997 -> 0.9994, still flagged" and leaves
+the reader to derive from a table underneath it that one member is holding the number still. The
+ceiling now names the pinning detector, the count that moved, and the largest mover with its delta —
+and stays silent when everything moved, when nothing moved, and on baseline-only runs.
+
+Worth keeping: **the corpus and the detector can be the same distribution, and then the metric stops
+being about the tool.** The number was not measuring untell's ceiling on HC3; it was measuring how
+well an HC3-trained classifier knows HC3. Both of the session's earlier corpus lessons said to vary
+the corpus. This one says to check what the *detector* was trained on before quoting what it reports.
