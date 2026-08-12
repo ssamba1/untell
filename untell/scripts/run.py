@@ -13,8 +13,10 @@ without one this returns a clear error rather than silently no-op'ing (use the C
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import random
 import sys
 from collections import Counter
 
@@ -291,6 +293,12 @@ def untell_text(
     # Print a line per iteration. Default False so every programmatic caller — library, MCP, REST —
     # behaves exactly as before; the CLI opts in for its human-facing (non-JSON) path.
     progress: bool = False,
+    # None derives the seed from the input text (see the block at the top of the body). Pass an int
+    # to sweep seeds: several tests and harnesses vary the seed deliberately to show a knob is not
+    # inert at one lucky draw, and text-derived seeding alone would have turned those sweeps into
+    # the same run repeated. Setting `random.seed()` before the call no longer reaches the loop, so
+    # this is the supported way to ask for a specific stream.
+    seed: int | None = None,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -308,6 +316,66 @@ def untell_text(
     """
     if sim_bar is None:
         sim_bar = recommended_bar()
+
+    # Seed the RNG from the INPUT, so a run depends on its text and not on what the process
+    # rewrote earlier.
+    #
+    # `structural.py` draws from the global `random` module in 27 places and nothing seeded it, so
+    # the stream carried over between calls. MEASURED, one process, stdlib path, same document,
+    # same tier, same max_iters, same rewriter:
+    #
+    #     scored first                       post 0.4003, 778 chars
+    #     scored after two other documents   post 0.4325, 770 chars
+    #
+    # Same input, different answer, because two other texts had advanced the RNG in between. Every
+    # batch number in eval/ therefore depended on iteration order, and no reported figure could be
+    # reproduced without replaying the whole sequence that preceded it.
+    #
+    # Seeded HERE and not inside the rewriter, which matters: best-of-N calls `rw.rewrite()` N
+    # times with byte-identical arguments and relies on the stream advancing to get N different
+    # candidates. Seeding per rewrite would collapse all N into one draw and silently undo best-of
+    # (measured at 33% -> 0% still-flagged). Seeding once per run keeps the draws different from
+    # each other while making the whole sequence a function of the input.
+    #
+    # blake2b rather than `hash()`: string hashing is salted per process by default, which would
+    # have reproduced the exact bug this fixes while looking like a fix.
+    #
+    # The previous state is restored on the way out. A library caller who seeded their own RNG
+    # before calling should not find it moved afterwards.
+    _rng_state = random.getstate()
+    random.seed(
+        seed if seed is not None
+        else int.from_bytes(hashlib.blake2b(text.encode("utf-8"), digest_size=8).digest(), "big")
+    )
+    try:
+        return _untell_text(
+            text, tier, threshold, max_iters, sim_bar, rewriter, browser, margin, confirm, scrub,
+            polish, style, best_of, detector_thresholds, veto_contradictions, voice_sample, progress,
+        )
+    finally:
+        random.setstate(_rng_state)
+
+
+def _untell_text(
+    text: str,
+    tier: str,
+    threshold: float,
+    max_iters: int,
+    sim_bar: float,
+    rewriter,
+    browser: str | list[str] | None,
+    margin: float,
+    confirm: int,
+    scrub: bool,
+    polish: bool,
+    style: str | None,
+    best_of: int,
+    detector_thresholds: dict[str, float] | None,
+    veto_contradictions: bool,
+    voice_sample: str | None,
+    progress: bool,
+) -> dict:
+    """The loop body. Split out only so ``untell_text`` can own the seeding above."""
 
     # Scrub BEFORE the rewriter is resolved, so the early error returns below cannot ship the
     # payload back. They used to: both of them answer `"final": text` from before this ran, and

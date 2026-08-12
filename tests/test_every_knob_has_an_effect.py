@@ -39,9 +39,15 @@ HUMAN = (
 
 
 def _run(text: str = AI, seed: int = 0, **kw):
-    base = dict(tier="lite", max_iters=1, rewriter="composite", threshold=0.0)
+    """`seed=` on the call, not `random.seed()` around it.
+
+    `untell_text` seeds the global RNG from its own input, so a run depends on its text rather than
+    on whatever the process rewrote beforehand. That made seeding from out here a no-op — every
+    "sweep" below would have been the same draw repeated, and a knob that only shows up at some
+    seeds would have looked inert. The parameter is the supported way to ask for a stream.
+    """
+    base = dict(tier="lite", max_iters=1, rewriter="composite", threshold=0.0, seed=seed)
     base.update(kw)
-    random.seed(seed)
     return untell_text(text, **base)
 
 

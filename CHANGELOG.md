@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **A run depended on what the process had rewritten before it.** `structural.py` draws from the
+  global `random` module in 27 places and nothing seeded it, so the stream carried between calls.
+  Measured on one document in one process, identical arguments, differing only in position: scored
+  first it returned 0.4003 and 778 characters; scored after two other documents, 0.4325 and 770.
+  Every batch figure was therefore order-dependent, and no reported number could be reproduced
+  without replaying the sequence before it. `untell_text` now seeds from a digest of its input and
+  restores the caller's RNG state afterwards. **This changes output text for a given input** —
+  same quality, different draw. Seeding is per run, not per rewrite, so best-of-N still gets
+  distinct candidates. `random.seed()` around the call no longer reaches the loop; pass the new
+  `seed=` argument to select a stream.
 - **`untell-verify` exited 0 when no checker ran.** On a machine with no API keys,
   `--tier commercial` printed "No checkers ran." and returned 0 — which means *pass* to CI, so a
   gating job was told the text had passed every major AI checker when none was consulted. Now
