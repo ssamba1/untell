@@ -7226,3 +7226,55 @@ sentence, negating a claim, and content wearing a sign-off as a prefix are all s
 Worth keeping: **verifying against a helper that is not the one production calls proves nothing, and
 it looks exactly like proof.** `passes` and `meaning_preserved` differ by six gates. The Result 116
 entry reported real numbers, honestly obtained, from a function the pipeline never invokes.
+
+## Result 141
+
+**A fix that changed nothing, and looked exactly like a fix that worked.**
+
+Result 140 found one transform the gate silently rejected. The general question: how many others fire
+and are then thrown away? Every text-in/text-out transform in `structural.py`, over 120 corpus texts,
+scored against `meaning_preserved` rather than against `passes`:
+
+```
+_parenthesise_asides             fired 18   rejected 0
+_flatten_cliches                 fired 22   rejected 4    <- all four from role_swap
+_flatten_copula                  fired  4   rejected 0
+_flatten_negated_contrast        fired  3   rejected 1    <- a TRUE catch
+_flatten_participial_trailers    fired  1   rejected 0
+```
+
+No second always-dead transform, which is the honest first half. But `_flatten_cliches` — the one
+that fires most on real text — loses 18% of its output to the same shape as the sign-off case:
+deleting *"It's important to note that"* removes the predicate **note**, and the role checker reads a
+vanished predicate as a changed role. Every other gate passed it: contradiction 0.002, entailment
+0.856, numbers, certainty, polarity, length all clear.
+
+**The cost was not a wasted draw. One document in twenty lost its entire structural rewrite to it.**
+
+The other rejection is the gate doing its job and is left alone: `_flatten_negated_contrast` dropped
+54 words including a negation, numbers False, polarity False. Real damage.
+
+**Then the fix measured as a perfect no-op.** After exempting the deleted stance frames, the rate was
+`fired 22, rejected 4` — *identical*, to the case. The pattern contained a literal **0x08 backspace
+byte** where the word-boundary escape was meant, produced by a shell heredoc, so it matched nothing:
+
+```
+STANCE_FRAME_RE.pattern[:12]  ->  '\x08(?:[Ii]t('
+```
+
+This repository already carries that exact defect in its history — three patterns dead, 2526 tests
+blind, and the lesson written down as *assert every pattern against a known positive*. I wrote a new
+one anyway, and the only reason it did not ship is that I re-ran the measurement the fix was supposed
+to move and found it unmoved. **A broken pattern and a correct no-op produce the same table.**
+
+With a working boundary: `fired 22, rejected 0`, and all four leak directions still shut — plain role
+swap, role swap *inside* a stance frame, negation, and real deletion.
+
+The exemption is exactly the nine frames `_CLICHE_FLATTEN` deletes outright, never the whole cliché
+catalogue: a genuine role swap could hide inside a broader match, and these nine carry no argument
+structure about the subject at all. A count assertion fails the build if that set ever grows without
+the gate learning about it — the anti-drift check that Results 115 and 140 both needed and lacked.
+
+Worth keeping: **re-measure the number the fix was supposed to move, not a number near it.** Every
+other signal said this change was correct — tests green, review clean, reasoning sound. The one
+question that caught it was "did the thing I was trying to change, change?"
