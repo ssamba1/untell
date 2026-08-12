@@ -803,6 +803,22 @@ def _meaning_gate_mode(veto_contradictions: bool) -> str:
     "runs faster" -> "runs slower" scores similarity 0.983 against a 0.76 bar and is admitted here,
     rejected under ``"nli"``. The name says "similarity-only" because similarity is the only thing
     still judging the *semantics* — not because it is the only check running.
+
+    **What that costs on real output, rather than on a probe.** 49 genuine rewrites from
+    `structural`, `surgical` and `composite` over 20 HC3 and RAID documents, every gate evaluated
+    separately:
+
+        numerals 0    certainty 0    polarity 0    similarity 0
+        contradiction 1    role_swap 2    entailment 0
+
+    Two gates did all the vetoing, and both are the model-backed ones. The other six are insurance
+    against a rewriter that does not exist on the free path — the polarity note above says the same
+    thing about its own zero.
+
+    All three vetoed candidates scored similarity **0.969, 0.981, 0.981** against a 0.76 bar, so a
+    lean install admits **3 of 3** — not "most", and not at a similarity a reader would find
+    suspicious. Under ``"similarity-only"`` this conjunction has never rejected anything on measured
+    corpus output.
     """
     from untell.scripts.entailment import available as _nli_available
 
