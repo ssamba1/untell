@@ -55,6 +55,26 @@ _WORD = re.compile(r"[A-Za-z']+")
 # classes just as well before, it was reporting them on a scale that put ordinary human writing
 # over the line. Scales are unchanged; only the midpoints moved.
 #
+# WHAT IT COST, which "TPR unchanged" hides. The shift moved the whole curve down, AI side
+# included. Driving this function at the range endpoints quoted above (see
+# tests/test_the_perplexity_midpoints_stay_where_they_were_fitted.py, which feeds synthetic
+# surprisals through the real path so this needs no GPT-2):
+#
+#     point               old 3.036/0.625   new 2.680/0.400
+#     human median              0.196             0.094
+#     human low tail            0.625             0.416
+#     ai median                 0.799             0.633
+#     ai high tail              0.550             0.357
+#
+# TPR held at 100% because the AI side stayed above the 0.30 threshold, not because it was
+# unaffected: at the AI upper corner the margin above that threshold went from 0.250 to 0.057.
+# The refit is still right — a 37% false-positive rate made the whole ensemble unusable, since it
+# takes `max` — but the AI side has little room left, and a further downward refit would start
+# clearing AI text inside its own fitted range. The last test in that file fails first if so.
+#
+# Both corners are worst-case conjunctions (range maximum on BOTH axes at once), so neither is a
+# rate. They bound the curve, they do not describe typical text.
+#
 # Tokens of preceding text carried into each scoring window past the first, so that a long document
 # is scored with context throughout instead of being cut off at GPT-2's 1024-token limit.
 _CONTEXT = 256
