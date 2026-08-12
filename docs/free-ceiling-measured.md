@@ -7763,3 +7763,48 @@ one assertion written for it.
 Worth keeping: **a green check is only evidence about the question it asks.** The detector audit was
 right every time it ran. Reading it as "the detectors are fine, so the loop should be making
 progress" was the error, and it was mine, not the tool's.
+
+## Result 153
+
+**The comparison harness already had the control it needed, and nothing checked that the control was
+controlling.**
+
+Third and last of the eval tools that publish numbers. `baselines.noop` and the `none (raw AI)` row
+in `compare_humanizers` exist to show what an untouched document scores; every other row is read as a
+delta against them.
+
+```
+noop        text unchanged True, iterations 0, pre max == post max (0.8667), similarity 1.0
+
+compare(), 2 texts, lite tier:
+    none (raw AI)          ai_max 0.5703   tells/100w 28.68   sim 1.000   flagged 0.5
+    synonym_swap           ai_max 0.5198   tells/100w 23.55   sim 0.947   flagged 0.5
+    back_translation       ai_max 0.4434   tells/100w 19.16   sim 0.807   flagged 0.5
+    ours_loop (surgical)   ai_max 0.5023   tells/100w 16.94   sim 0.815   flagged 0.5
+    ours_loop (composite)  ai_max 0.2619   tells/100w 15.21   sim 0.833   flagged 0.0
+```
+
+Both behave. **No defect** — the third eval tool in a row where the honest answer is that it works,
+and the third where nothing had ever demonstrated it could fail.
+
+The control's **sim 1.000** is the load-bearing number. Against 0.807–0.947 for the strategies, it is
+the only row proving the harness reports an untouched document as untouched. `noop`'s own docstring
+records what happens when a control drifts from its strategies: `tier` used to be swallowed by
+`**_kw` and hardcoded to lite, so at `--tier full` the control row and the strategy rows came from
+different detectors — noop pre_max 0.5323 against single_pass pre_max 1.0000 on the same text. A
+comparison between two different measurements.
+
+Verified by making `noop` delegate to a real strategy — a control arm that quietly rewrites, which
+would make every delta in the published table meaningless. Three of the five assertions fail. The
+first attempt at that mutation was malformed and died at import with a `NameError`, which is not a
+demonstration of anything; a collection error and a caught defect look equally red and mean opposite
+things.
+
+`compare` itself is asserted structurally rather than run: `back_translation` pulls a Marian model,
+and a test that downloads 300MB to confirm a table has a header is a test nobody keeps. The
+behavioural evidence was taken once by hand and lives in the file's docstring.
+
+Worth keeping: **a control is a claim, and an unchecked claim is decoration.** Three eval tools, three
+clean answers, three demonstrated failure paths that did not exist before — and the reason to write
+them is that two of this repository's published figures had already stopped reproducing without
+anything noticing.
