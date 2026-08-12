@@ -110,6 +110,23 @@ ensemble that untell can actually put in its loop.**
 > newlines still moves `roberta_openai` by up to 0.59 on its own. The most likely reading is that
 > these numbers were true when taken and measured evasion of artifacts that have since been removed.
 >
+> **Re-measured 2026-08-12, and the pinning holds.** Four HC3 documents through the full loop
+> (`composite`, `max_iters=2`, `best_of=3`, seed 7), scoring the loop's own before/after:
+>
+> | run | mean gain in max P(AI) |
+> |---|---|
+> | full tier, `mage` enabled | **+0.0000** on 4 of 4 |
+> | full tier, `UNTELL_DISABLE_MAGE=1` | **+0.0000** on 3 of 4, +0.0002 on the fourth |
+>
+> So disabling `mage` changes nothing here, which is the sentence above stated as a measurement
+> rather than an inference: the other saturating members hold `max` at the ceiling on their own.
+> The rewriter was working in every run — tells fell 4→0, 1→0, 1→0 on three of the four documents —
+> and `max` did not move, which is the distinction this section exists to draw.
+>
+> The README's 0.86 → 0.15 table is not in tension with this. It names its corpus (`untell-ceiling`'s
+> three built-in paragraphs, mean 36 words) and its command disables `mage`; HC3 is the harder
+> corpus, and the difference between them is the point of the caveat under that table.
+>
 > That does not weaken this document's *conclusions* — "some real AI text is unclearable by
 > meaning-preserving rewriting" is, if anything, stronger at 0.9995 than at 0.860. It does mean
 > **every composite figure below is a historical record, not a current measurement.** The `neural`
