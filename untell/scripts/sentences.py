@@ -52,6 +52,31 @@ def _targeting_is_uninformative(tier: str, modes: dict | None = None) -> bool:
     **6 distinct values across 100 sentences, 91 of them exactly 0.250**, for an AUROC of 0.515.
     The full tier returns 39 distinct values at 0.965. It is not a weak ranking, it is a constant
     with a few exceptions.
+
+    THE 0.886-1.000 RANGE DOES NOT REPRODUCE ON HC3 SENTENCES, and this function's whole purpose is
+    to decide when the ranking can be trusted. Re-measured 2026-08-12 over 40 human and 40 AI HC3
+    sentences of 8+ words, scoring each one on its own:
+
+        detector                AUROC    human mean    ai mean
+        hc3_roberta             0.944       0.400        0.997
+        perplexity_burstiness   0.831       0.083        0.275
+        mage                    0.815       0.618        1.000
+        roberta_openai          0.813       0.376        0.746
+        fast_detectgpt          0.806       0.260        0.614
+        ENSEMBLE max            0.813
+
+    Only `hc3_roberta` clears 0.886, and it is the one trained on HC3 — home-field advantage this
+    repository already documents. The other four sit near 0.81.
+
+    What that costs in practice, at the shipped 0.30 cut: 36 of 40 HUMAN sentences flag, 25 of 40
+    score at or above 0.99. Targeting a deliberately mixed document — a 7-sentence AI block inside
+    19 human sentences — gave precision 0.444 and recall 0.571, so five of the nine spans handed to
+    the rewriter were human writing.
+
+    Stated as a re-measurement rather than a correction: the original range may have been taken on
+    a different labelled sentence set, and this is one corpus at n=40 per class. What it does show
+    is that "model-backed targeting is reliable" is not safe to assume for the ensemble `max` this
+    module actually ranks on.
     """
     # `modes` comes off the scoring result and reports the path TAKEN. `_torch_ready()` — what
     # this used to ask — reports the path PREDICTED, and those separate on the failure that matters:

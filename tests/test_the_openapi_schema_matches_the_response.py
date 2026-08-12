@@ -52,10 +52,15 @@ REQUESTS = {
 }
 
 # Documented but present only when their condition holds.
+#
+# `unrankable` is the newest: /sentences sets it when its own per-sentence scores span less than
+# 0.05, which happens when a detector is at its ceiling on every sentence. Like the rest, it is
+# absent on ordinary input, so demanding it on every response would assert that every document has
+# an unrankable ranking.
 CONDITIONAL = {
     "warning", "voice_warning", "rewriter_warning", "error",
     "detector_errors", "failed_detectors", "matches", "suggestion",
-    "out_of_range_detectors", "out_of_range_raw",
+    "out_of_range_detectors", "out_of_range_raw", "unrankable",
 }
 
 
