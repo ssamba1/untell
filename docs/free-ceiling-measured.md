@@ -7070,3 +7070,50 @@ number to know before trusting any one of them.
 Worth keeping: **a green audit is evidence about the code only to the extent its checks have been
 seen to go red.** Eighteen PASS lines and two demonstrated failure paths are not eighteen results;
 they are two results and sixteen assumptions.
+
+## Result 138
+
+**Every audit check made to fail on purpose, and five of the first ten mutations were the story.**
+
+Result 137 measured the gap and left it open: 2 of 18 checks had a known-negative, 12 were not
+mentioned anywhere in 4949 tests. Closing it means one mutation per check — break the thing it
+guards, on a real copy of the repository, and require a FAIL. **A mutation that does not trip its
+check is the finding.**
+
+Ten written, five did not trip. Every one was informative, and only two were the audit's fault.
+
+**1. `check_no_control_characters` reported "clean" over zero files.** The copy has no `.git`;
+`_tracked_text_files` returns `[]` when `git ls-files` fails; the loop ran zero times and the check
+passed with detail `"clean"`. A BEL byte sat in `docs/index.md` unseen. **Zero files inspected is an
+unperformed check, not a clean repository** — the same absence-read-as-success this session has now
+fixed on four CLI exit codes, two REST surfaces and the audit's document reader. Now a named failure.
+
+**2. `check_test_inventory` was right and the repository was stale.** 173 claimed against 180 on
+disk — drift that arrived between loops. Resynced.
+
+**3. The dead-function probe put its own subject into the haystack.** A function named
+`_never_called_anywhere` added to `untell/layout.py` was reported as *referenced*, correctly: the
+check searches `tests/` too, and the name was written out in the test file asserting it was dead. The
+name is now assembled at runtime from three fragments.
+
+**4 and 5. Two mutations aimed at patterns that were not there.** `check_dynamic_env_vars` covers
+only the family `config.py` BUILDS as `f"UNTELL_{key.upper()}"`, so an arbitrary `os.environ.get`
+literal is out of scope. `check_test_count_claims` matches `(\d{3,5})\s+tests`, and the document
+carried no such phrase at all — the mutation rewrote nothing and `mutate()` caught it only because it
+asserts the text actually changed.
+
+Three more surfaced while finishing the set: `check_test_inventory`'s real pattern spans a line break
+where a literal space fails; `check_attribution` only sees **bold** numbers, by design, because those
+are the ones a reader takes away; `check_unreleased_changelog_is_current` compares the shipped
+caveat's own values and only once the section mentions "corpus means", so an invented `0.123` is not
+its subject.
+
+**All 18 checks now have a demonstrated failure path** — 15 mutations here plus the missing-document
+tests, each paired with a `assert_passes` on the unmutated copy so a check that failed for an
+unrelated reason cannot masquerade as a caught mutation.
+
+Worth keeping: **writing the known-negative is where you learn what the check actually checks.**
+Three of the five misses were my mutations misunderstanding the check's scope, and that
+misunderstanding is exactly what a reader of a green PASS line would have had too. The eight `assert
+that it passes cleanly first` lines are half the value of the file: without them, a check broken for
+any reason at all would make its own mutation test pass.
