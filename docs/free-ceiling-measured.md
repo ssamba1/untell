@@ -6811,3 +6811,49 @@ the internal convention and in-repo consumers filter on the suffix.
 Worth keeping: **verifying an old claim is worth doing even when the claim turns out to be true.**
 The answer here was "yes, Result 129 was right" — and the probe built to confirm it is what surfaced
 a live defect two surfaces wide, which no amount of re-reading the assertion would have.
+
+## Result 131
+
+**Question: is the lite detector's near-constant output a property of the detector, or of the
+question it was asked?**
+
+Result 128 found `score_sentences` on the stdlib path returning 6 distinct values across 100
+sentences, 91 of them exactly 0.250, at AUROC 0.515. That reads as a weak detector. Asked the same
+question one granularity up, over 120 documents per corpus:
+
+```
+hc3    119 distinct scores of 120 documents    AUROC 0.864
+raid   119 distinct scores of 120 documents    AUROC 0.791
+```
+
+**The same detector, on the same corpus, is fine.** The constancy is a property of the input length,
+not of the heuristic.
+
+The mechanism is in the detector's name. It is perplexity *and burstiness*, and burstiness is the
+variation in sentence length — undefined on one sentence. Measured over 60 real HC3 sentences,
+scoring the first sentence alone against the first two together:
+
+```
+single-sentence scores      8 distinct values of 60, and 82% are exactly 0.2500
+|delta| from one more       median 0.406, mean 0.367, range 0.000-0.672
+share moving by >0.30       67%
+```
+
+0.2500 is what falls out when half the detector has no input. It is a placeholder wearing the shape
+of a score, and the existing short-text guard does not catch it: that guard counts WORDS, and a
+71-word single sentence clears its 40-word bar and scored exactly 0.2500 with nothing said. Length
+and sentence count are different limits, and a long run-on has only the second one.
+
+`score_text` now says so, scoped to the case where the stdlib heuristic is the only detector — a
+transformer scores a lone sentence perfectly well, and warning on the full tier would train readers
+to skip the sentence.
+
+**The first version of the caveat quoted 0.68, from one hand-picked pair.** The pair I then used in
+the test moves 0.063, the assertion failed, and that failure is the only reason the distribution
+above exists. The caveat now quotes the median and the range.
+
+Worth keeping: **"weak signal" and "no signal" look identical in an AUROC and are different bugs.**
+The first invites re-tuning a threshold; the second means the question is wrong. One extra
+measurement at a different granularity separated them, and the answer changed what the fix should be
+— from "warn that lite is weak" to "warn that this specific input has nothing for half the detector
+to read".
