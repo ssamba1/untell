@@ -78,6 +78,28 @@ ensemble that untell can actually put in its loop.**
 > `hc3_roberta` under the composite rewriter on MAGE, where 0 of 3 completed samples were rewritten
 > at all. Direction and mobility only.
 >
+> **Why the MAGE row settles nothing is sharper than "it starts near the floor"** (measured later,
+> 2026-08-12). `load_samples` filters at `> 30` words and MAGE is a short-form corpus, so what comes
+> back is far below the thresholds untell itself enforces:
+>
+> | corpus | median words | under 60 words |
+> |---|---|---|
+> | HC3 | 207 | 0% |
+> | RAID | 281 | 0% |
+> | MAGE | 37 | **90%** |
+>
+> `score._MIN_WORDS_FOR_A_VERDICT` is 40 and `tells._MIN_WORDS_FOR_REPETITION` is 60, so on most of
+> these documents untell would decline to give a reliable verdict at all and the two strongest tell
+> categories cannot fire. The same shape shows in the tell totals through a full loop over 16
+> documents each: 169 → 149 on HC3, 377 → 298 on RAID, **36 → 35** on MAGE — not a coverage hole in
+> the loop, which changed 9 of those 16 and moved the detector 0.450 → 0.381, but a corpus with
+> almost nothing in it to move.
+>
+> `load_samples` now warns when a quarter or more of what it returns is under the verdict minimum.
+> Anyone re-running a MAGE comparison should pass a `min_words` floor — `load_pairs` already
+> defaults to 60 — or the number will be dominated by length rather than by whatever was being
+> measured.
+>
 > The rewriter is not the cause — it rewrote 6 of 6, and the opener-dose change made the same day
 > was ruled out directly (0.9996 current against 0.9994 old). The detectors are **pinned** on this
 > corpus: `mage` 1.0000 on 6/6, `hc3_roberta` 0.9992–0.9993 on 6/6, `roberta_openai` ≥0.999 on 5/6.
