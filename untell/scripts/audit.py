@@ -917,7 +917,7 @@ SELECTION_ON_BARE_MAX_ALLOWED = {
     # module::function -> why comparing the bare max is right here
     "untell/scripts/run.py::_passed": "acceptance against the shipped threshold, not a choice "
     "between candidates",
-    "untell/scripts/run.py::untell_text": "candidate selection, but with the measured tells "
+    "untell/scripts/run.py::_untell_text": "candidate selection, but with the measured tells "
     "tie-break inside _TELLS_EPS — a documented secondary objective, not a blind max",
     "untell/scripts/verify.py::verify": "reports the verdict a caller asked for",
     "untell/rich_output.py::print_humanize_result": "tests whether the max is PINNED so the report "

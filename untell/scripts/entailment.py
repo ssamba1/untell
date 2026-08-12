@@ -24,6 +24,7 @@ missing veto must never turn into a *silent* veto that rejects every candidate.
 from __future__ import annotations
 
 import logging
+import re
 from functools import lru_cache
 
 from untell.text_split import aligned_chunks
@@ -324,6 +325,55 @@ DEFAULT_ENTAILMENT_FLOOR = 0.005
 # drift that NLI might rate as merely "neutral", not to judge fidelity — NLI does that far better.
 RELAXED_SIM_BAR = 0.30
 
+# Deletion is the one defect class the zero-dependency path cannot see, and it is not hypothetical:
+# this pipeline now contains a transform that removes whole sentences.
+#
+# MEASURED. Dropping one of three sentences from a paragraph scores cosine similarity **0.949** —
+# above the strict 0.76 bar, so the similarity-only path ADMITS it — with contradiction 0.007, also
+# clear. Only the entailment floor rejects it, at 0.0015, and that floor needs the NLI stack:
+#
+#     candidate         sim     entailment   contradiction   NLI verdict   similarity-only
+#     drop 1 of 3     0.949        0.0015         0.007        rejected       ADMITTED
+#     drop 2 of 3     0.897        0.0014         0.009        rejected       ADMITTED
+#     half a clause   0.761        0.0012         0.021        rejected       ADMITTED
+#
+# **Counted in WORDS, not as a ratio, and that correction is the whole design.** A ratio floor of
+# 0.80 looked clean against 445 corpus-length rewrites (min 0.902) and broke the loop on a 24-word
+# input, where removing "Moreover," and "it is important to note that" — the actual job — costs 25%
+# of the document. Filler is roughly constant in words and the documents are not, so the ratio was a
+# property of the corpus it was measured on rather than of the rewriters.
+#
+# Re-measured as words lost, over 223 genuine rewrites from structural, surgical and composite,
+# short probes and HC3/RAID together:
+#
+#     source length     n     max lost   median lost
+#         0-40 words    18        5           1
+#       120-400 words  205        9           0
+#
+# against 12, 26 and 36 words for the three deletions above. So a rewrite may lose the LARGER of a
+# fixed slack and a share of the document — the fixed part covers short input where a few filler
+# words are a large fraction, the share covers long input where filler scales with length.
+_LENGTH_SLACK_WORDS = 10
+_LENGTH_SLACK_SHARE = 0.10
+
+# **The margin is one word, and that is a real limit rather than a number to tune.** The largest
+# observed legitimate loss is 9 words; the smallest deletion this catches is 12. A dropped sentence
+# of ten words or fewer is not separable from aggressive filler removal by length alone — no choice
+# of constants fixes that, because the two populations genuinely touch there. What this buys is
+# sentence-scale deletion on the path that has no model to catch it; smaller losses still need NLI.
+
+_LENGTH_WORD = re.compile(r"[A-Za-z0-9']+")
+
+
+def words_lost(source: str, candidate: str) -> int:
+    """How many words ``candidate`` drops relative to ``source``. Negative when it grew."""
+    return len(_LENGTH_WORD.findall(source)) - len(_LENGTH_WORD.findall(candidate))
+
+
+def deletion_allowance(source: str) -> float:
+    """The most a faithful rewrite of ``source`` may drop. See the measurement above."""
+    return max(_LENGTH_SLACK_WORDS, _LENGTH_SLACK_SHARE * len(_LENGTH_WORD.findall(source)))
+
 
 def meaning_preserved(
     source: str,
@@ -393,6 +443,12 @@ def meaning_preserved(
     # 0 of 30 HC3 and 0 of 30 RAID loop results change their negation count, because the
     # rewriter's transforms are substitutions, merges and splits — none of which touches polarity.
     if not polarity_kept(source, candidate):
+        return False
+    # Deletion, which is the ONE defect class the zero-dependency path cannot otherwise see: a
+    # dropped sentence scores similarity 0.949 against a 0.76 bar and contradicts nothing, so only
+    # the entailment floor rejects it and that floor needs the NLI stack. See the measurement at
+    # `_LENGTH_SLACK_WORDS`. Mechanical, so it runs on every path — which is the whole point.
+    if words_lost(source, candidate) > deletion_allowance(source):
         return False
 
     if not available():
