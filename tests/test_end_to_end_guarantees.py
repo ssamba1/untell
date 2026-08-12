@@ -223,6 +223,16 @@ class TestFactsSurviveAtScaleOnRealProse:
         "Revenue reached $1,234,567.89 in Q4 2023.",
         "Contact hello@example.com or call +1 (555) 010-9999.",
         "The ratio was 3.5:1 across 12,000 samples (p < 0.001).",
+        # The identifier classes `preserve.py` learned later. This list is what the end-to-end
+        # guarantee is measured against, and it predated both rules — so the two most recent lock
+        # fixes were covered only by their own unit tests, and nothing checked them through mask,
+        # best-of-N rewriting, gating, restore, scrub and polish.
+        #
+        # Both were partial-lock or no-lock defects, which are the kind that survive a round-trip
+        # test and fail in the pipeline: "1.26.4" masked as "⟦HZ0000⟧.4", leaving the tail free
+        # while the sentinel check reported success.
+        "Requires numpy 1.26.4 on host 192.168.1.24.",
+        "Fixed in 4f2a91c; digest a3f5b2c9d8e14f6072b3c4d5e6f70819.",
     ]
 
     def _corpus(self):
@@ -230,6 +240,18 @@ class TestFactsSurviveAtScaleOnRealProse:
         from eval.datasets import _BUILTIN
 
         return list(_BUILTIN) + list(_SAMPLE)
+
+    def test_every_fact_is_actually_exercised(self):
+        """`FACTS[i % len(FACTS)]` silently drops the tail if the corpus is shorter than the list.
+
+        The corpus is 8 items and the list is 8 entries, so the last two — added with the dotted
+        and hex lock rules — are used exactly once each. One sample removed from the corpus and
+        they would stop being tested, with every assertion still green.
+        """
+        assert len(self._corpus()) >= len(self.FACTS), (
+            f"{len(self.FACTS)} facts but only {len(self._corpus())} corpus items, so "
+            f"{self.FACTS[len(self._corpus()):]} are never used"
+        )
 
     @pytest.mark.parametrize("seed", [0, 1, 2])
     def test_no_locked_span_is_lost_altered_or_duplicated(self, seed):
