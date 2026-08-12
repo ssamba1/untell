@@ -33,6 +33,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+LEDGER = ROOT / ".claude" / "survivors.md"
 PY = sys.executable
 
 # Word-boundary swaps only, and only ones that keep the file parseable. A mutation that fails
@@ -138,6 +139,30 @@ def candidates(path: Path) -> list[tuple[int, str, str, str]]:
     return found
 
 
+def record_survivors(module: str, survivors: list[tuple[int, str, str]]) -> int:
+    """Append survivors to the ledger, skipping ones already listed.
+
+    Without this, `--max 15` on a module with 200 mutable lines re-finds the same easy
+    survivors every visit and never reaches the rest. The ledger is what makes a lane over
+    sixteen modules converge instead of circling.
+    """
+    if not LEDGER.exists():
+        LEDGER.write_text(
+            "# Mutation survivors\n\n"
+            "Lines no test pins, each found by breaking it and watching the suite stay green.\n"
+            "Append-only; a human deletes a row once it has a killing test, or marks it\n"
+            "unkillable with the reason. Written by `mutate.py --record`.\n\n"
+            "| module | line | mutation | source |\n| --- | --- | --- | --- |\n",
+            encoding="utf-8",
+        )
+    seen = LEDGER.read_text(encoding="utf-8")
+    fresh = [s for s in survivors if f"| {module} | {s[0]} | {s[1]} |" not in seen]
+    with LEDGER.open("a", encoding="utf-8") as f:
+        for n, label, src in fresh:
+            f.write(f"| {module} | {n} | {label} | `{src[:80].replace('|', '/')}` |\n")
+    return len(fresh)
+
+
 def pick_tests(path: Path, explicit: list[str]) -> list[str]:
     """Test files that import this module, not merely ones that mention its name.
 
@@ -168,7 +193,12 @@ def run_tests(tests: list[str], timeout: int) -> tuple[bool, str]:
             [PY, "-m", "pytest", "-x", "-q", "-p", "no:cacheprovider", *tests],
             cwd=ROOT,
             capture_output=True,
-            text=True,
+            # Explicit, not `text=True`: that decodes with the console codepage, and a single
+            # byte cp1252 cannot map kills the reader thread, leaving `.stdout` None with a
+            # return code of 0. Here that would read as "tests passed" for every mutant - the
+            # harness would report a clean sweep having verified nothing.
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
         )
     except subprocess.TimeoutExpired:
@@ -191,6 +221,7 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0, help="sampling seed; same seed = same run")
     ap.add_argument("--timeout", type=int, default=900)
     ap.add_argument("--list", action="store_true", help="show candidates and exit")
+    ap.add_argument("--record", action="store_true", help="append survivors to the ledger")
     a = ap.parse_args()
 
     path = (ROOT / a.module).resolve()
@@ -263,6 +294,9 @@ def main() -> int:
         if survivors:
             print("\nEach survivor is a line the suite does not pin. Write ONE test that fails "
                   "against the mutation and passes against the original.")
+            if a.record:
+                print(f"recorded {record_survivors(a.module, survivors)} new survivor(s) in "
+                      f"{LEDGER.relative_to(ROOT)}")
         return 0
     finally:
         path.write_text(original, encoding="utf-8")
