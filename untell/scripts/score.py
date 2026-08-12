@@ -163,6 +163,26 @@ def _truncate(text: str) -> str:
 # At n=40 the HC3 figures came out 52%/18% rather than 64%/30%. Same corpus, same code, first 40
 # pairs instead of first 100 — a reminder that these percentages carry a sampling error wide enough
 # to swallow the gap that prompted the whole re-measurement.
+#
+# MARKDOWN SCAFFOLDING LOWERS THIS PATH FURTHER, systematically rather than by corpus luck. The
+# same prose wrapped in a heading, three list items and a fenced code block — prose untouched, only
+# structure added — over 10 HC3 documents:
+#
+#     scoring             mean max   flagged at 0.30   cleared at the 0.45 verdict cut
+#     flat                  0.5747        10/10                    —
+#     wrapped               0.3101         6/10                   9 of 9
+#     prose blocks only     0.4624        10/10                    —
+#
+# A technical writer working in markdown is therefore under-flagged on the path a clean install
+# runs, and the last row names the cause: this module scores the RAW document, scaffolding
+# included, while `sentences.py` already splits with `layout.blocks()` first because scaffolding is
+# not prose. Scoring the prose blocks restores every flag.
+#
+# NOT changed here. Switching to block-scoring moves every stdlib figure in this repository — the
+# 64%/30% above, the per-corpus table, and the perplexity midpoints, which were fitted against
+# raw-document distributions — so it needs its own measurement pass rather than a drive-by edit.
+# The full tier is unaffected: 6 of 6 documents stayed at exactly 1.0000 when wrapped, so the
+# model-backed detectors see straight through the scaffolding.
 _STDLIB_PERPLEXITY_VERDICT_THRESHOLD = 0.45
 
 
