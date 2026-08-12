@@ -184,6 +184,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[{mark}{row['ai']:.2f}] {row['text']}")
         print(f"\n{len(result['flagged'])}/{len(result['sentences'])} sentences flagged to rewrite first.")
         print(f"note: {result['note']}")
+    # 2 when the catalogue and detectors cannot read this script at all — the same code and reasoning
+    # `untell-verify`, `untell-score`, `untell-tells` and `untell-humanness` use. MEASURED on a
+    # Chinese paragraph, this command printed `[ok 0.00]` beside the text and exited 0: a per-sentence
+    # score of 0.00 labelled "ok", on input no pattern in the catalogue can match.
+    #
+    # The near-chance stdlib path deliberately does NOT return 2. Something did run there, the result
+    # carries `warning` saying how little it is worth, and returning 2 on every default lite install
+    # would make the code mean "this tier is weak" rather than "nothing ran".
+    from untell.scripts.tells import score_tells
+
+    if score_tells(text).get("language_supported") is False:
+        return 2
     return 0
 
 

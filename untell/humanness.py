@@ -142,6 +142,24 @@ def _warn_about_invisibles(warning: str | None) -> None:
     )
 
 
+def undetermined_reason(text: str) -> str | None:
+    """Why `humanness` cannot judge this input, or None if it can.
+
+    The three conditions `humanness` itself abstains on, in one place so the CLI's exit code and the
+    function's early returns cannot drift apart. **Deliberately not "is the score 50.0"**: 50.0 is
+    also a score this function computes — measured on a 100-word HC3 answer with the detector
+    ensemble at P(AI) = 0.9992, where the three weighted terms summed exactly there. A caller
+    branching on the value would report a confident AI verdict as "cannot tell".
+    """
+    if not text or not text.strip():
+        return "empty"
+    if len(_WORD_RE.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
+        return f"shorter than {_MIN_WORDS_FOR_SIGNAL} words"
+    if not score_tells(text).get("language_supported", True):
+        return "not in a script this English-only catalogue can read"
+    return None
+
+
 def humanness(text: str, tier: str = "full") -> float:
     """Return a humanness score in [0, 100] — higher = more human-like.
 
@@ -575,7 +593,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Humanness: {score}/100  ({cls})  [tier={args.tier}]")
         if driver:
             print(f"  {driver}")
-    return 0
+    # 2 when the score is not a verdict, the same code and reasoning `untell-verify`, `untell-score`
+    # and `untell-tells` use: nothing ran is a configuration problem with the input, not a judgement
+    # of it. This command printed "reported as 50 (undetermined) rather than as a verdict" and then
+    # exited 0, so the one channel a script reads said the opposite of the sentence above it.
+    #
+    # Read from `undetermined_reason(text)`, never from `score == 50.0` — that value is also a real
+    # computed score, and branching on it would report a P(AI)=0.9992 verdict as "cannot tell".
+    return 2 if undetermined_reason(text) else 0
 
 
 if __name__ == "__main__":

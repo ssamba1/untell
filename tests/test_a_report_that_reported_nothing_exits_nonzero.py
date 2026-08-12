@@ -25,7 +25,9 @@ import logging
 
 import pytest
 
+import untell.humanness as humanness_module
 import untell.scripts.score as score_module
+import untell.scripts.sentences as sentences_module
 import untell.scripts.tells as tells_module
 
 ENGLISH = "The cat sat on the mat and then it went outside to look at the birds in the garden today."
@@ -97,12 +99,58 @@ def test_a_tell_heavy_document_is_still_exit_zero(capsys) -> None:
     assert code == 0
 
 
-def test_the_three_commands_agree_on_what_two_means() -> None:
-    """One vocabulary. `untell-verify` established it and its reasoning is quoted at both new call
-    sites; a fourth meaning for 2 would make the code unreadable to a script."""
+def test_humanness_exits_two_when_it_cannot_judge(capsys) -> None:
+    """The same defect two commands over, found one loop after "fixing the class". This command
+    printed "reported as 50 (undetermined) rather than as a verdict" and exited 0."""
+    for text in (CHINESE, "Hi there"):
+        code = humanness_module.main([text, "--tier", "lite"])
+        capsys.readouterr()
+        assert code == 2, text[:20]
+
+
+def test_humanness_exits_zero_on_judgeable_text(capsys) -> None:
+    code = humanness_module.main([ENGLISH, "--tier", "lite"])
+    capsys.readouterr()
+    assert code == 0
+
+
+def test_the_undetermined_test_is_not_the_number_fifty() -> None:
+    """The trap this had to avoid. 50.0 is ALSO a score humanness computes — measured on a 100-word
+    HC3 answer with the detector at P(AI) = 0.9992 — so branching on the value would report the
+    loudest possible AI verdict as "cannot tell". The reason function reads the INPUT."""
     import inspect
 
-    for module in (score_module, tells_module):
+    source = inspect.getsource(humanness_module.main)
+    assert "undetermined_reason" in source
+    # Comments stripped first: the call site EXPLAINS the trap in prose, and a naive search for
+    # "50.0" flagged the warning against it. A check that cannot tell code from the comment
+    # describing it fires on the fix.
+    code = "\n".join(line.split("#", 1)[0] for line in source.splitlines())
+    assert "50.0" not in code and "== 50" not in code, code
+
+
+def test_sentences_exits_two_on_an_unreadable_script(capsys) -> None:
+    code = sentences_module.main([CHINESE])
+    capsys.readouterr()
+    assert code == 2
+
+
+def test_a_weak_but_working_tier_is_still_exit_zero(capsys) -> None:
+    """The line. The stdlib per-sentence path is near-chance and says so on the result, but
+    something ran — returning 2 there would make the code mean "this tier is weak"."""
+    code = sentences_module.main([ENGLISH])
+    capsys.readouterr()
+    assert code == 0
+
+
+def test_all_four_commands_agree_on_what_two_means() -> None:
+    """One vocabulary. `untell-verify` established it; a fifth meaning for 2 would make the code
+    unreadable to a script."""
+    import inspect
+
+    for module in (score_module, tells_module, humanness_module, sentences_module):
         source = inspect.getsource(module.main)
         assert "return 2" in source, module.__name__
-        assert "nothing ran" in source or "could not read" in source, module.__name__
+        assert (
+            "nothing ran" in source or "could not read" in source or "not a verdict" in source
+        ), module.__name__
