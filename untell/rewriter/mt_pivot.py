@@ -39,7 +39,19 @@ class MTPivotRewriter:
     """Round-trip-MT rewriter that is safe inside the sentinel-locked loop."""
 
     name = "mt_pivot"
-    deterministic = False  # beam search output is stable per model but not guaranteed no-op
+    # Beam search with no sampling: `model.generate(..., num_beams=4)` in back_translation.py, no
+    # `do_sample`, no RNG on the path. Same input, same output.
+    #
+    # This said False, on the reasoning that stable output is "not guaranteed no-op" — which is a
+    # statement about a DIFFERENT property. The flag answers "does an identical input give an
+    # identical output", and run.py uses that answer twice: to collapse best-of-N draws that would
+    # be identical, and to stop once a round leaves the text unchanged. Both are right here.
+    #
+    # MEASURED on one document at the default best_of=3, max_iters=4, output byte-identical and
+    # score identical either way: 6 rewrite calls -> 2, and 12.9s -> 4.6s in steady state. (First
+    # measurement said 4.5x; the fast run had gone second and was reading a warm cache. Repeating
+    # with the order reversed gave 2.8x. The call count is the order-independent number.)
+    deterministic = True
 
     def __init__(self, pivots: tuple[str, ...] = ("fr",)):
         self.pivots = pivots
