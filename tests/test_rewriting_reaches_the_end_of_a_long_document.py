@@ -98,3 +98,73 @@ def test_no_paragraph_is_skipped(rewritten: dict) -> None:
     assert len(out) == len(PARAS), f"paragraph count changed: {len(PARAS)} -> {len(out)}"
     untouched = [i for i, (a, b) in enumerate(zip(out, PARAS)) if a.strip() == b.strip()]
     assert not untouched, f"paragraphs returned verbatim: {untouched}"
+
+
+# The overall clearance rate falls steeply with length, and the reason is composition, not reach.
+# MEASURED on prefixes of this document, `max_iters=3`:
+#
+#     paras  words  tells cleared   repetition share of source tells
+#         1     44    6->0   100%    0%
+#         2     88   35->11   69%   63%
+#         4    178  100->52   48%   72%
+#         8    357 258->143   45%   78%
+#        20    892 769->422   45%   82%
+#
+# Every non-repetition category clears completely at every length; repetition clears about a third.
+# So the aggregate slides toward the repetition rate as repetition takes over the source, and the
+# model reproduces the totals — at 20 paragraphs, 140 non-repetition cleared fully plus 629 * 0.34
+# predicts 354 against 347 observed. The meaning gate is not involved: 0 refusals out of 9 draws at
+# every length measured.
+#
+# That repetition is the largest untreated tell is already recorded (see composite.py). What is
+# recorded here is the document-level consequence: a headline clearance rate is largely a statement
+# about how repetitive the input is, so quoting one without its composition says little.
+#
+# This fixture is TEMPLATED — 20 paragraphs from one skeleton — which inflates repetition by
+# construction and makes it a floor for the effect, not an estimate of it on real prose.
+#
+# The iteration budget is not what limits it either. On this document the loop converges in the
+# FIRST iteration and the rest is spent for nothing:
+#
+#     max_iters   1     3     5     8
+#     tells     422   422   422   422        (byte-identical output at every setting, seed 21)
+#     rewrites    3     9    15    24
+#
+# Across three seeds at max_iters 1 vs 5, two give byte-identical output for 5x the rewrites and
+# the third gains 2 tells of 769. The stall check that would stop this only applies to rewriters
+# declaring `deterministic`, and composite is stochastic, so a non-improving round is not proof
+# that the next one fails. A patience rule (stop after K rounds adopting nothing) would clearly pay
+# here, but one templated document at three seeds is not enough to set K or to know what it costs
+# on short, low-repetition input where iteration does still earn its keep — so it is recorded, not
+# shipped.
+REPETITION_CATEGORIES = ("repeated_phrasing", "repeated_sentence_openers")
+
+
+def test_every_non_repetition_category_is_cleared_completely(rewritten: dict) -> None:
+    """The reach guard. If the rewriter ever stops reaching the vocabulary, cliche, transition or
+    opener tells in a long document, that is a regression the aggregate rate would hide — it would
+    move a few points and stay in the same band as the repetition residue."""
+    before = score_tells(DOC)["by_category"]
+    after = score_tells(rewritten["final"])["by_category"]
+
+    checked = {c: n for c, n in before.items() if c not in REPETITION_CATEGORIES}
+    assert len(checked) >= 3, f"too few non-repetition categories to be a real check: {checked}"
+
+    survivors = {c: (checked[c], after.get(c, 0)) for c in checked if after.get(c, 0)}
+    assert not survivors, f"non-repetition tells survived a long-document run: {survivors}"
+
+
+def test_repetition_is_the_residue_and_is_still_reduced(rewritten: dict) -> None:
+    """Names the known limit without excusing it. Repetition must still fall — a rewriter that
+    stopped touching it entirely would otherwise pass the test above and look healthy."""
+    before = score_tells(DOC)["by_category"]
+    after = score_tells(rewritten["final"])["by_category"]
+
+    b = sum(before.get(c, 0) for c in REPETITION_CATEGORIES)
+    a = sum(after.get(c, 0) for c in REPETITION_CATEGORIES)
+    assert b > 0, "fixture carries no repetition tells; this asserts nothing"
+    assert a < b, f"repetition did not fall at all: {b} -> {a}"
+    assert a > 0, (
+        f"repetition cleared completely ({b} -> {a}) — that would be a real improvement, and the "
+        f"composition finding recorded above needs re-measuring rather than this test relaxing"
+    )
