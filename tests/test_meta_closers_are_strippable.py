@@ -177,3 +177,23 @@ def test_the_ordinary_sign_offs_still_go() -> None:
     for closer in SCAFFOLDING:
         text = f"{BODY} {closer}"
         assert _strip_meta_closers(text) != text, closer
+
+
+def test_the_locked_form_is_protected_too() -> None:
+    """The production path never sees a raw citation.
+
+    The loop locks preserved spans into `⟦HZ…⟧` sentinels BEFORE any transform runs, which is how
+    `_drop_restatements` protects references — its docstring keys on "a sentence carrying a
+    preserve-lock sentinel". So a fix verified only against raw `[3]` could still delete every
+    citation in production. MEASURED on the locked form of all three, it does not:
+
+        I hope this helps ⟦HZ0000⟧!                        kept
+        Let me know if you need the data ⟦HZ0000⟧.         kept
+        I hope this helps ⟦HZ0000⟧                         kept
+    """
+    from untell.scripts.preserve import lock
+
+    for closer in CARRIES_A_REFERENCE[:3]:
+        locked, _ = lock(f"{BODY} {closer}")
+        assert "⟦HZ" in locked, "premise: the reference must actually have been locked"
+        assert _strip_meta_closers(locked) == locked
