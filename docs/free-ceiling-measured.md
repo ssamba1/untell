@@ -6971,3 +6971,42 @@ Worth keeping: **a battery of thirteen checks and a probe test for eleven of the
 from either end.** The probe test asserts `set(probes) == set(_CHECKS)` and passes; the four
 Python-counted checks are simply not in `_CHECKS` and so were never in scope for the completeness
 assertion that exists.
+
+## Result 135
+
+**A command that printed "the patterns did not apply, NOT that the text reads as human" exited 0.**
+
+`untell-verify` had just been fixed for returning 0 when no checker ran — *"a CI job gating on this
+command was told the text passed every major AI checker when not one had been consulted"* — and its
+comment settles a vocabulary worth reusing: **2 means nothing ran**, deliberately not 1, because 1 is
+a verdict a caller may act on by rewriting and a configuration problem is not.
+
+So: does any sibling command have the same hole? Measured across the report entry points, on inputs
+where each is known to abstain:
+
+```
+untell-score, every detector broken   "scored": false, "max": 0.0, "flagged": false   exit 0
+untell-tells, Chinese paragraph       "language_supported": false, tells 0, words 0   exit 0
+```
+
+Both carry the diagnosis in their JSON, and `tells` prints the sentence in the heading of this
+result — then exits 0, which says the opposite to anything reading the status. A shell branching on
+`untell-score` saw success and a max of 0.0, which reads as *not AI*.
+
+Both now return 2 on those paths, quoting `verify`'s reasoning at the call site.
+
+**What deliberately did NOT change is the interesting half.** A flagged score still exits 0. A
+document with forty tells still exits 0. These are reports; `untell-verify` is the gate and owns
+exit 1. Two commands in one toolchain disagreeing about what exit 1 means would be worse than the
+silence being replaced — so the rule is one sentence: *the count never becomes a verdict, and only
+the gate returns one.*
+
+**And the first probe of this was wrong.** I measured exit codes through a pipe — `cmd | tail;
+echo $?` reports `tail`'s status, not the command's — and read back `humanness normal=1`, a defect
+that does not exist. Re-run without the pipe, every entry point returned 0 on normal input. The
+harness has to be checked before its output is, which is the third time in this session a probe has
+needed that.
+
+Worth keeping: **an exit code is an API with exactly three consumers and no schema.** Every one of
+these commands already reported its abstention correctly in the payload — the JSON was right, the
+prose was right, and the one-byte channel that CI actually reads said the opposite.
