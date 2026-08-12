@@ -23,8 +23,11 @@ def test_sim_floor_adapts_to_the_active_similarity_metric(monkeypatch):
     orig = "Furthermore, the program runs in a consistent and predictable fashion throughout."
     cand = "Furthermore, the system operates in a predictable and uniform manner throughout."
 
+    # `method` alone, deliberately. Stubbing `recommended_bar` as well used to short-circuit the
+    # very adaptation this test is named for: `recommended_bar()` reads `method()`, so pinning both
+    # meant the `method` stub was never called and the chain under test never ran. FOUND by counting
+    # monkeypatch stubs that are never invoked — 404 installed across the suite, 52 never called.
     monkeypatch.setattr(q, "method", lambda: "token_overlap")
-    monkeypatch.setattr(r, "recommended_bar", lambda: q.TOKEN_BAR)
     monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 0.1)
 
     # The old hard-coded floor would have gated this faithful paraphrase.
@@ -40,7 +43,6 @@ def test_off_topic_rewrite_is_still_hard_gated(monkeypatch):
     import untell.scripts.quality as q
 
     monkeypatch.setattr(q, "method", lambda: "token_overlap")
-    monkeypatch.setattr(r, "recommended_bar", lambda: q.TOKEN_BAR)
     monkeypatch.setattr(r, "target_ai_score", lambda text, tier="full": 0.0)
 
     orig = "Furthermore, the program runs in a consistent and predictable fashion throughout."
