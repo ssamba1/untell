@@ -43,8 +43,8 @@ UNINFORMATIVE_TARGETING_WARNING = (
 )
 
 
-def _targeting_is_uninformative(tier: str) -> bool:
-    """Whether the only detector that will score these sentences cannot rank them.
+def _targeting_is_uninformative(tier: str, modes: dict | None = None) -> bool:
+    """Whether the only detector that scored these sentences could not rank them.
 
     Measured per-sentence AUROC on real labelled data: 0.493 for the stdlib heuristic against
     0.886-1.000 for every model-backed detector. Re-measured at 100 HC3 sentences while adding the
@@ -53,10 +53,29 @@ def _targeting_is_uninformative(tier: str) -> bool:
     The full tier returns 39 distinct values at 0.965. It is not a weak ranking, it is a constant
     with a few exceptions.
     """
-    from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
+    # `modes` comes off the scoring result and reports the path TAKEN. `_torch_ready()` — what
+    # this used to ask — reports the path PREDICTED, and those separate on the failure that matters:
+    # torch imports, the model raises at scoring time (OOM, a corrupted cache, a transformers
+    # version bump), the stdlib heuristic silently produces the numbers, and this function says the
+    # ranking is fine. The caveat would be suppressed in precisely the run that needed it, and here
+    # that is not cosmetic — these scores decide which spans the rewriter attacks, so a coin-flip
+    # ranking aims it at whichever sentences read most human.
+    #
+    # Same correction `mode()` was added for, and the same one `_verdict_threshold` and the
+    # single-sentence caveat in score.py already apply.
+    if modes is not None:
+        if modes.get("perplexity_burstiness") == "gpt2":
+            return False  # GPT-2 perplexity ranks sentences at AUROC 0.968
+        if modes.get("perplexity_burstiness") != "stdlib":
+            return False  # some other detector produced these scores
+    else:
+        from untell.detectors.perplexity_burstiness import PerplexityBurstinessDetector
 
-    if PerplexityBurstinessDetector()._torch_ready():
-        return False  # lite auto-upgrades to GPT-2 perplexity, which ranks sentences at AUROC 0.968
+        # No scoring result to consult (the pre-scoring log path). Predicting is all that is
+        # available here, and it errs toward staying quiet — the result field below is the one a
+        # caller reads, and it gets the measured answer.
+        if PerplexityBurstinessDetector()._torch_ready():
+            return False
     from untell.detectors.base import load_detectors
 
     # Some model-backed detector is present and will do the ranking.
@@ -138,7 +157,13 @@ def score_sentences(
         "sentences to rewrite first, not an absolute verdict",
         # The caveat that matters most is the one a machine client could not see: the log line
         # above fires once per PROCESS, so an API server tells its first caller and nobody else.
-        **({"warning": UNINFORMATIVE_TARGETING_WARNING} if _targeting_is_uninformative(tier) else {}),
+        **(
+            {"warning": UNINFORMATIVE_TARGETING_WARNING}
+            # From the results that were actually produced, not from what was predicted before
+            # they were. `results` is non-empty whenever `sents` is.
+            if _targeting_is_uninformative(tier, (results[0].get("detector_modes") if results else None))
+            else {}
+        ),
     }
 
 
