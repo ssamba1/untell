@@ -1,0 +1,224 @@
+"""Score the loop's output with a detector the loop was never allowed to see.
+
+Every evasion figure this project publishes is measured with the same detector ensemble the loop
+minimises. That is in-sample by construction, and ``best_of`` — documented throughout as the single
+biggest lever — is exactly the mechanism that would exploit a scorer's quirks rather than the
+property the scorer stands for. Nothing here had ever checked the difference.
+
+``RadarDetector`` is the control this repository already owned without using it as one. RADAR is
+adversarially trained against a paraphraser, and it is gated behind ``UNTELL_ENABLE_RADAR=1``, so it
+has never appeared in a selection set or in a published number. That gate is what makes it a
+holdout, and it is why this module refuses to run when the gate is open: with RADAR inside the tier
+the loop optimises against it and the arm measures nothing. ``eval/benchmark.py --enable-radar``
+does precisely that, deliberately — it asks "can we beat RADAR when we try", which is a different
+question from the one here.
+
+    python -m eval.holdout --dataset raid --n 10 --seed 0
+
+Read the ``by_conviction`` table, not the means. MEASURED at n=10 on RAID, shipped configuration:
+the aggregate reads ``RADAR 0.7222 -> 0.5035, improved on 7/10`` — a modest transfer. Split by what
+the holdout thought BEFORE the rewrite, the four documents it was already confident about (>=0.90)
+moved ``-0.0129`` while their in-sample max moved ``-0.5262``, and all four stayed flagged. The whole
+aggregate gain comes from documents the unseen detector had no conviction about. Two documents that
+cleared the local bar were still caught at 0.9996 and 0.8655.
+
+The premise check runs every time. A control that cannot separate human from AI text on this corpus
+measures nothing, and reporting a transfer number computed through a dead detector would be worse
+than reporting none — so ``separates`` is part of the result and a caller that ignores it is
+quoting an unvalidated number.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import statistics
+
+from eval.datasets import load_pairs
+from untell.scripts.run import untell_text
+from untell.scripts.score import DEFAULT_THRESHOLD
+
+# The verdict bar, not the loop's 0.30 target. "Still flagged" is the question a user asks, and it
+# is the one number that means the same thing in-sample and out.
+FLAG_BAR = 0.45
+
+# Above this, the holdout had already made up its mind about the document before anything was
+# rewritten. 0.90 is not tuned: it is the gap in the measured distribution — the confident group ran
+# 0.9387-0.9996 and the unsure group topped out at 0.8323, with nothing in between.
+CONVICTION = 0.90
+
+
+def _holdout_detector():
+    """The control, with the gate that keeps it out of the tier checked rather than assumed."""
+    if os.environ.get("UNTELL_ENABLE_RADAR") == "1":
+        raise RuntimeError(
+            "UNTELL_ENABLE_RADAR=1 puts RADAR inside the tier the loop selects against, so it is "
+            "no longer held out and this measurement has no subject. Unset it."
+        )
+    from untell.detectors.radar import RadarDetector
+
+    return RadarDetector()
+
+
+def run(
+    dataset: str = "raid",
+    n: int = 10,
+    tier: str = "full",
+    rewriter: str = "composite",
+    threshold: float = DEFAULT_THRESHOLD,
+    best_of: int = 3,
+    max_iters: int = 5,
+    seed: int = 0,
+) -> dict:
+    """Run the loop, then score its frozen outputs with the held-out detector."""
+    detector = _holdout_detector()
+    pairs = load_pairs(dataset, n=n, min_words=60)
+    if not pairs:
+        return {"error": f"no paired data for {dataset!r}"}
+
+    rows = []
+    for i, (human, ai) in enumerate(pairs):
+        result = untell_text(
+            ai, tier=tier, threshold=threshold, max_iters=max_iters,
+            best_of=best_of, rewriter=rewriter, seed=seed,
+        )
+        rows.append({
+            "i": i,
+            "pre_max": result["pre"]["max"],
+            "post_max": result["post"]["max"],
+            "similarity": result["similarity"],
+            "final": result["final"],
+            "source": ai,
+            "human": human,
+        })
+
+    # Scored only now, on text the loop can no longer influence. Doing this inside the loop would
+    # leak the control into selection through nothing more than an ordering mistake.
+    for row in rows:
+        row["holdout_pre"] = detector.score(row["source"])
+        row["holdout_post"] = detector.score(row["final"])
+        row["holdout_human"] = detector.score(row["human"])
+
+    scored = [r for r in rows if isinstance(r.get("holdout_post"), float)]
+    if not scored:
+        return {"error": f"{detector.name} returned no scores; nothing to compare against"}
+
+    # The in-sample column can be pinned by one saturated member, and then "did clearing the tier
+    # transfer" has no subject because nothing cleared. MEASURED: the first run of this experiment
+    # reported 1.0000 -> 1.0000 on every document, because `mage` scores ordinary AI prose at
+    # 0.99998736-0.99998772 — a dynamic range of 3.6e-06 across ten texts — and it is in the default
+    # full tier. Every published evasion figure is taken with UNTELL_DISABLE_MAGE=1; a run of this
+    # harness that forgets it produces a vacuous table that looks like a finding.
+    pinned = all(r["pre_max"] >= 0.99 and r["post_max"] >= 0.99 for r in scored)
+
+    ai_side = statistics.fmean(r["holdout_pre"] for r in scored)
+    human_side = statistics.fmean(r["holdout_human"] for r in scored)
+    paired_wins = sum(r["holdout_pre"] > r["holdout_human"] for r in scored)
+
+    by_conviction = {}
+    for label, group in (
+        ("confident", [r for r in scored if r["holdout_pre"] >= CONVICTION]),
+        ("unsure", [r for r in scored if r["holdout_pre"] < CONVICTION]),
+    ):
+        if not group:
+            continue
+        by_conviction[label] = {
+            "n": len(group),
+            "mean_delta_tier": statistics.fmean(r["post_max"] - r["pre_max"] for r in group),
+            "mean_delta_holdout": statistics.fmean(
+                r["holdout_post"] - r["holdout_pre"] for r in group
+            ),
+            "still_flagged": sum(r["holdout_post"] >= FLAG_BAR for r in group),
+        }
+
+    return {
+        "config": {"dataset": dataset, "n": len(rows), "tier": tier, "rewriter": rewriter,
+                   "best_of": best_of, "max_iters": max_iters, "seed": seed,
+                   "holdout": detector.name},
+        # The premise. `separates` false means every number below is uninterpretable, not bad.
+        "control": {
+            "holdout_mean_ai": ai_side,
+            "holdout_mean_human": human_side,
+            "paired_ai_above_human": f"{paired_wins}/{len(scored)}",
+            "separates": paired_wins >= 0.75 * len(scored),
+        },
+        "in_sample": {
+            "pinned": pinned,
+            "mean_pre": statistics.fmean(r["pre_max"] for r in scored),
+            "mean_post": statistics.fmean(r["post_max"] for r in scored),
+            "flagged_pre": sum(r["pre_max"] >= FLAG_BAR for r in scored),
+            "flagged_post": sum(r["post_max"] >= FLAG_BAR for r in scored),
+        },
+        "out_of_sample": {
+            "mean_pre": statistics.fmean(r["holdout_pre"] for r in scored),
+            "mean_post": statistics.fmean(r["holdout_post"] for r in scored),
+            "flagged_pre": sum(r["holdout_pre"] >= FLAG_BAR for r in scored),
+            "flagged_post": sum(r["holdout_post"] >= FLAG_BAR for r in scored),
+            "improved_on": sum(r["holdout_post"] < r["holdout_pre"] for r in scored),
+        },
+        "by_conviction": by_conviction,
+        "mean_similarity": statistics.fmean(r["similarity"] for r in scored),
+        "rows": [{k: v for k, v in r.items() if k not in ("final", "source", "human")}
+                 for r in scored],
+    }
+
+
+def render(result: dict) -> str:
+    if "error" in result:
+        return f"error: {result['error']}"
+    cfg, ctl = result["config"], result["control"]
+    ins, out = result["in_sample"], result["out_of_sample"]
+    n = cfg["n"]
+    lines = [
+        f"{cfg['dataset']} n={n} tier={cfg['tier']} rewriter={cfg['rewriter']} "
+        f"best_of={cfg['best_of']} seed={cfg['seed']}  holdout={cfg['holdout']}",
+        "",
+        f"control: {cfg['holdout']} separates AI {ctl['holdout_mean_ai']:.4f} from human "
+        f"{ctl['holdout_mean_human']:.4f}, paired {ctl['paired_ai_above_human']}"
+        + ("" if ctl["separates"] else "   <- DOES NOT SEPARATE; the numbers below mean nothing"),
+        "",
+        f"in sample      {ins['mean_pre']:.4f} -> {ins['mean_post']:.4f}   "
+        f"flagged {ins['flagged_pre']}/{n} -> {ins['flagged_post']}/{n}"
+        + ("\n  every document is pinned above 0.99 in and out, so nothing cleared the tier and the"
+           "\n  transfer question has no subject — rerun with UNTELL_DISABLE_MAGE=1" if ins["pinned"]
+           else ""),
+        f"held out       {out['mean_pre']:.4f} -> {out['mean_post']:.4f}   "
+        f"flagged {out['flagged_pre']}/{n} -> {out['flagged_post']}/{n}   "
+        f"improved on {out['improved_on']}/{n}",
+        "",
+        "by what the holdout thought BEFORE the rewrite:",
+    ]
+    for label, row in result["by_conviction"].items():
+        lines.append(
+            f"  {label:<10} n={row['n']}  d in-sample {row['mean_delta_tier']:+.4f}  "
+            f"d held-out {row['mean_delta_holdout']:+.4f}  "
+            f"still flagged {row['still_flagged']}/{row['n']}"
+        )
+    lines += ["", f"mean similarity {result['mean_similarity']:.4f}"]
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--dataset", default="raid", choices=["hc3", "raid", "mage"])
+    parser.add_argument("--n", type=int, default=10)
+    parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy"])
+    parser.add_argument("--rewriter", default="composite")
+    parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
+    parser.add_argument("--best-of", type=int, default=3)
+    parser.add_argument("--max-iters", type=int, default=5)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args(argv)
+
+    result = run(
+        dataset=args.dataset, n=args.n, tier=args.tier, rewriter=args.rewriter,
+        threshold=args.threshold, best_of=args.best_of, max_iters=args.max_iters, seed=args.seed,
+    )
+    print(json.dumps(result, indent=2) if args.json else render(result))
+    return 1 if "error" in result else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
