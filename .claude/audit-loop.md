@@ -9,8 +9,17 @@ a different plan. Do not read large files. One run of this file = one pass.
 .venv/Scripts/python.exe .claude/audit_next.py
 ```
 
-It prints your pass number, your ONE target, and that target's full recipe. Audit that target
-and nothing else. Do not pick a different one.
+It prints your pass number, your LANE, your ONE target, and the full recipe for both. Work
+that target and nothing else. Do not pick a different one, and do not work two.
+
+Seven lanes, described in `.claude/audit-lanes.md`: L1 audit a component, L2 hunt tests that
+prove nothing, L3 find the slow test, L4 prove every pattern is alive, L5 hygiene, L6 check a
+documented claim against what runs, L7 check this harness itself.
+
+**Before you change anything, read `.claude/audit-envelope.md`.** It says what you may do
+alone, what you may do but must write down, and what you must never do without a human. When
+something is not obviously allowed, it is not allowed — write it to `.claude/human-queue.md`
+and carry on. Recording `queued` is a complete pass.
 
 ## Step 1 — baseline
 
@@ -74,9 +83,10 @@ Then record the pass. This command validates you and refuses malformed records:
 .venv/Scripts/python.exe .claude/audit_next.py record --verdict clean --tests-before 5736 --tests-after 5736 --note "one line: what you probed and what the numbers were"
 ```
 
-Verdicts: `clean` | `defect-fixed` | `coverage-closed` | `red-fixed`.
+Verdicts: `clean` | `defect-fixed` | `coverage-closed` | `red-fixed` | `queued`.
 `defect-fixed` and `coverage-closed` require `--commit <sha>` and `--tests-after` greater
-than `--tests-before`.
+than `--tests-before`. Use `queued` when the finding was outside your envelope and you wrote
+it to `.claude/human-queue.md` instead of acting on it.
 
 Then push:
 
