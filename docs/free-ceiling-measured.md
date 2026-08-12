@@ -6857,3 +6857,39 @@ The first invites re-tuning a threshold; the second means the question is wrong.
 measurement at a different granularity separated them, and the answer changed what the fix should be
 — from "warn that lite is weak" to "warn that this specific input has nothing for half the detector
 to read".
+
+## Result 132
+
+**Question: six meaning gates guard every rewrite. Which of them has ever vetoed real output?**
+
+Evaluated separately rather than as a conjunction, over 49 genuine rewrites from `structural`,
+`surgical` and `composite` across 20 HC3 and RAID documents:
+
+```
+numerals        0        contradiction   1
+certainty       0        role_swap       2
+polarity        0        entailment      0
+similarity      0
+```
+
+**Two gates did all the vetoing, and both are the model-backed ones.** The six zeros are not dead
+code and this is not an argument to remove them — `meaning_preserved` already records the same
+result for polarity in its own comment, with the reason: the free rewriter's transforms are
+substitutions, merges and splits, none of which touches negation. They are insurance against a
+rewriter this path does not have.
+
+**The part that matters is what the two live gates cost when they are absent.** All three vetoed
+candidates scored similarity **0.969, 0.981, 0.981** against a 0.76 bar. So on an install without
+NLI and spaCy the conjunction admits **3 of 3** — not "most of them", and not at a similarity a
+reader would find suspicious.
+
+The pipeline already reports `meaning_gate: "nli"` or `"similarity-only (...)"`, and its docstring
+already carries a constructed example — *"runs faster" → "runs slower"*, similarity 0.983, admitted.
+What it did not have is the rate on real output, and the rate is total: **under `similarity-only`
+this conjunction has never rejected anything on measured corpus output.** That is a different claim
+from "weaker", and it is the one a user deciding whether to install the extra needs.
+
+Worth keeping: **a conjunction of eight checks can have its entire behaviour supplied by two of
+them, and the count of checks tells you nothing about which.** Six gates reporting zero is the
+expected, correct outcome for the rewriter in use — and it means the guarantee the product actually
+delivers rests on two optional dependencies, which is not visible from the list.
