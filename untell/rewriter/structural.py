@@ -194,6 +194,9 @@ _OPENERS = (
     "Actually,", "In practice,", "In short,", "Put simply,",
     "Also,", "Now,", "Basically,", "Well,", "Of course,",
 )
+# The three whose meaning depends on something having been said already — see `_opener` for the
+# measurement. Not removed from the pool: they are fine anywhere but the top of a block.
+_NEEDS_PRIOR_DISCOURSE = frozenset({"In short,", "Put simply,", "Also,"})
 _ANY_LEADING_MARKER_RE = re.compile(
     r"^(?:"
     + "|".join(re.escape(o.rstrip(",")) for o in _OPENERS)
@@ -2111,11 +2114,33 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     # a text with more than 8 varied openers cycles rather than stops varying.
     spent: set[str] = set()
 
-    def _opener() -> str:
+    def _opener(*, opening_the_block: bool = False) -> str:
         fresh = [o for o in openers if o not in spent]
         if not fresh:
             spent.clear()
             fresh = list(openers)
+        # Some of these assert a relation to text that has not been written yet. "In short," and
+        # "Put simply," announce a compression of what came before, and "Also," adds to it; at the
+        # top of a block there is nothing to compress or add to, and the result reads as though a
+        # paragraph went missing above it. FOUND on human input at default settings:
+        #
+        #     In short, my grandmother kept every birthday card anyone ever sent her, in a shoebox
+        #
+        # — the first sentence of the document. MEASURED over 100 rewrites of 4 documents, 4 open
+        # a document this way, and the tell catalogue scores every one of them 0, so nothing
+        # downstream sees it. This is the same class as the openers declined above for asserting
+        # recency or sequence ("recently", "then", "so"); those were screened out of the pool
+        # entirely, and these three only misfire in one position, so they are screened by position.
+        #
+        # The guard is over-broad by exactly one case: a LATER paragraph opening with "In short,"
+        # is legitimate — there is prior discourse — and `apply_per_block` hands the transform a
+        # bare string with no block index, so first-of-block is the finest distinction available
+        # without threading position through every rewriter. The remaining six openers still cover
+        # a block's first sentence, so the transform is never blocked, only steered.
+        if opening_the_block:
+            fresh = [o for o in fresh if o not in _NEEDS_PRIOR_DISCOURSE] or [
+                o for o in openers if o not in _NEEDS_PRIOR_DISCOURSE
+            ]
         pick = random.choice(fresh)
         spent.add(pick)
         return pick
@@ -2212,9 +2237,9 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
                 # results" — the abbreviation destroyed by the very transform meant to vary rhythm.
                 # "In short, Dr. Smith published ..." is correct English; nothing needs demoting.
                 if _safe_to_lowercase(first_word, context):
-                    s = f"{_opener()} {s[0].lower() + s[1:]}"
+                    s = f"{_opener(opening_the_block=_i == 0)} {s[0].lower() + s[1:]}"
                 elif _proper_noun_evidence(first_word, context):
-                    s = f"{_opener()} {s}"
+                    s = f"{_opener(opening_the_block=_i == 0)} {s}"
                 # Otherwise: leave the sentence alone. The old fallback prepended anyway and kept
                 # the capital, which is correct English only for a real name — "Actually, Smith
                 # published ..." — and visibly broken for an ordinary word the evidence check
