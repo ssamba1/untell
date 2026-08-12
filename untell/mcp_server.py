@@ -139,6 +139,9 @@ def _server():
         polish: bool = False,
         # The CLI takes a FILE path; over MCP the sample travels as text. Tie-break only.
         voice_sample: str | None = None,
+        # Same reason `best_of` and `polish` above are here: a knob that reaches the loop from one
+        # surface and not another means the same request answers differently by protocol.
+        seed: int | None = None,
     ) -> dict:
         """Run the closed untell loop: score -> rewrite -> re-score until the hardest
         detector passes or max_iters is hit. Needs an LLM rewriter key, or pass
@@ -160,6 +163,8 @@ def _server():
             margin: Safety margin below threshold for a comfortable pass.
             polish: Run a final word-level substitution pass over the result, adopted only if it
                 lowers the score without un-passing it. Matches /humanize on the REST API.
+            seed: Fix the random stream. Unset derives it from the text, so the same input
+                already reproduces; pass an int to compare two settings on one stream.
             voice_sample: A sample of the user's own writing (150+ words). Among candidate rewrites
                 already tied on AI tells, prefer the one whose sentence length, rhythm and comma
                 rate sit closest to it. A tie-break only, so it never costs evasion or
@@ -223,6 +228,7 @@ def _server():
             margin=margin,
             polish=polish,
             voice_sample=voice_sample,
+            seed=seed,
         ))
 
     # Put the real style list into the tool's advertised description. Generated, not restated, so

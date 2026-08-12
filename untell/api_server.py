@@ -270,6 +270,10 @@ class HumanizeRequest(_Request):
     # closest to this wins — a tie-break only, so it can never cost evasion. See scripts/voice.py
     # for what it does and does not claim to measure.
     voice_sample: str | None = Field(default=None, max_length=MAX_INPUT_CHARS)
+    # Unset derives the stream from the text, so an identical request already returns an identical
+    # result. Sent as an int it fixes the stream, which is what makes two requests that differ by
+    # one field comparable — otherwise the difference between them includes the draw.
+    seed: int | None = None
 
 
 class TellsRequest(_Request):
@@ -785,6 +789,7 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
         confirm=body.confirm,
         detector_thresholds=body.detector_thresholds,
         voice_sample=body.voice_sample,
+        seed=body.seed,
     )
     return _safe(_numeric_detectors(result))
 

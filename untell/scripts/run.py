@@ -342,18 +342,26 @@ def untell_text(
     #
     # The previous state is restored on the way out. A library caller who seeded their own RNG
     # before calling should not find it moved afterwards.
-    _rng_state = random.getstate()
-    random.seed(
+    effective_seed = (
         seed if seed is not None
         else int.from_bytes(hashlib.blake2b(text.encode("utf-8"), digest_size=8).digest(), "big")
     )
+    _rng_state = random.getstate()
+    random.seed(effective_seed)
     try:
-        return _untell_text(
+        result = _untell_text(
             text, tier, threshold, max_iters, sim_bar, rewriter, browser, margin, confirm, scrub,
             polish, style, best_of, detector_thresholds, veto_contradictions, voice_sample, progress,
         )
     finally:
         random.setstate(_rng_state)
+    # Report the stream that produced this result, the way `tier` and `detector_modes` report the
+    # other hidden variables a number depends on. Without it a caller holding an output has no way
+    # to ask for that output again — the derived seed is not something they can work out, and
+    # `--seed` would be a knob you can set but never read back.
+    if isinstance(result, dict):
+        result.setdefault("seed", effective_seed)
+    return result
 
 
 def _untell_text(
@@ -1314,6 +1322,15 @@ def build_parser() -> argparse.ArgumentParser:
         "free rewriters are randomized, so extra draws are pure upside: measured, best-of-3 selection "
         "took roberta 0.523->0.080 mean where a single draw reached only ~0.30. Use 1 for speed.",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="fix the random stream for this run. Unset derives it from the text, so the same "
+        "input already gives the same output regardless of what was rewritten before it. Pass an "
+        "int to compare two settings on ONE stream — the honest way to ask whether a flag changed "
+        "anything, since two runs that differ only by chance look exactly like a flag that works.",
+    )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     return parser
 
@@ -1415,6 +1432,7 @@ def main(argv: list[str] | None = None) -> int:
         best_of=args.best_of,
         detector_thresholds=detector_thresholds,
         voice_sample=voice_sample,
+        seed=args.seed,
         # Only on the human-facing path: --json must stay parseable, so a progress line printed to
         # stdout ahead of the payload would corrupt it for every scripted caller.
         progress=not args.json,
