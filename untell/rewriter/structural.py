@@ -1654,7 +1654,32 @@ _CLICHE_FLATTEN: list[tuple[re.Pattern, str]] = [
 # Invisible to every gate: no word changed, so similarity, NLI and the role check all pass, and a
 # fragment is clean to a tell catalogue. `[!?]` is deliberately still allowed after a dot-free
 # terminator, so "What?! yes ..." keeps its capital.
-_AFTER_SENTENCE_START = re.compile(r"(^|(?<!\.)[.!?]\s+)([a-z])")
+_AFTER_SENTENCE_START = re.compile(r"(^|(?<!\.)[.!?]\s+)([a-z])(\S*)")
+
+# A token that is not a WORD does not get a sentence capital. The restore pass upcases the first
+# letter after any terminator, which is right for prose and wrong for the things technical text puts
+# at the start of a sentence. MEASURED:
+#
+#     "Call untell.score. untell.tells also works."   -> "... Untell.tells also works."
+#     "Install untell==0.2.0. pip handles the rest."  -> "... Pip handles the rest."
+#
+# An identifier, a module path, a package name or a shell command is lowercase because that is its
+# spelling, not because a capital went missing. Broken capitalisation is itself a catalogued tell,
+# so the transform that exists to remove tells was adding one — the same sentence the opener
+# transform already carries about "Actually, Issue #4821 tracks ...".
+#
+# Scoped by SHAPE, not by a word list: a dotted path, an assignment or comparison, a call, a flag,
+# a path separator, or a digit. Ordinary prose words contain none of these, so the correction that
+# makes this function useful — "The result was clear. it was also cheap." -> "It" — is untouched.
+_NOT_A_PROSE_WORD = re.compile(r"[.=/\\(){}\[\]<>@:_\d-]|^-{1,2}[a-z]")
+
+
+def _capitalise_sentence_start(match: re.Match) -> str:
+    """Upcase the first letter of a sentence, unless the token is not prose."""
+    lead, first, rest = match.group(1), match.group(2), match.group(3)
+    if _NOT_A_PROSE_WORD.search(rest):
+        return match.group(0)
+    return lead + first.upper() + rest
 
 
 def _flatten_cliches(text: str) -> str:
@@ -1668,7 +1693,7 @@ def _flatten_cliches(text: str) -> str:
         return text
     for pattern, replacement in _CLICHE_FLATTEN:
         text = pattern.sub(replacement, text)
-    return _AFTER_SENTENCE_START.sub(lambda m: m.group(1) + m.group(2).upper(), text)
+    return _AFTER_SENTENCE_START.sub(_capitalise_sentence_start, text)
 
 
 def _flatten_copula(text: str) -> str:

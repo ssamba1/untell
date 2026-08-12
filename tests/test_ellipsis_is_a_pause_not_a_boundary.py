@@ -72,3 +72,47 @@ def test_a_terminator_that_is_not_a_dot_still_capitalises():
 
 def test_an_ordinary_sentence_boundary_still_capitalises():
     assert _flatten_cliches("it works. it really does.") == "It works. It really does."
+
+
+# --- sentence-start capitalisation must not rewrite non-prose tokens -----------------------------
+# The restore pass upcases the first letter after any terminator. That is right for prose and wrong
+# for what technical text puts at a sentence start. MEASURED before the shape guard:
+#
+#     "Call untell.score. untell.tells also works."  -> "... Untell.tells also works."
+#
+# An identifier, module path, flag or file path is lowercase because that is its spelling, not
+# because a capital went missing — and broken capitalisation is itself a catalogued tell.
+
+NOT_PROSE = [
+    ("dotted identifier", "Call untell.score. untell.tells also works.", "untell.tells"),
+    ("long flag", "Run the tool. --tier full is the default.", "--tier"),
+    ("posix path", "See the file. src/main.py has it.", "src/main.py"),
+    # Raw string: written through a shell heredoc this collapsed to a real carriage return, so the
+    # fixture tested CR handling rather than backslashes and `\S*` stopped at the whitespace.
+    ("windows path", r"Open it. docs\readme.md explains why.", r"docs\readme.md"),
+    ("call", "Check it. score_text(x) returns a dict.", "score_text(x)"),
+    ("comparison", "Pin it. untell==0.2.0 is the version.", "untell==0.2.0"),
+]
+
+
+@pytest.mark.parametrize(("label", "text", "token"), NOT_PROSE, ids=[c[0] for c in NOT_PROSE])
+def test_a_non_prose_token_keeps_its_own_spelling(label, text, token):
+    out = _flatten_cliches(text)
+    assert token in out, f"{label}: {out!r}"
+
+
+PROSE = [
+    ("lowercase pronoun", "The result was clear. it was also cheap.", "It was"),
+    ("after interrobang", "What?! yes it does.", "Yes it"),
+    ("start of text", "it works well enough.", "It works"),
+]
+
+
+@pytest.mark.parametrize(("label", "text", "expected"), PROSE, ids=[c[0] for c in PROSE])
+def test_an_ordinary_word_still_gets_its_capital(label, text, expected):
+    """Guards the guard: the shape check must not disable the correction this function exists for."""
+    assert expected in _flatten_cliches(text), label
+
+
+def test_a_cliche_deletion_still_restores_the_capital():
+    assert _flatten_cliches("It is important to note that the system works.").startswith("The ")
