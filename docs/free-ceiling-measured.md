@@ -7705,3 +7705,44 @@ Worth keeping: **a measurement tool needs the same known-positive discipline as 
 measures.** The audit's eighteen checks got demonstrated failure paths thirteen results ago; the
 tools producing the repository's headline numbers had none, and one of them has already published two
 figures that no longer reproduce.
+
+## Result 152
+
+**Separation is not headroom, and that is why a clean detector audit never surfaced the pinning.**
+
+Result 151 gave one eval tool a known-positive and named the rest as uncovered — which is the "fix for
+one occurrence" defect from two results earlier, so: the same treatment for `detector_audit`, driven
+with synthetic detectors whose correct verdict is known and no models to download.
+
+```
+perfect    (1.0 on AI, 0.0 on human)   OK_SEPARATED   auroc 1.0
+inverted   (0.0 on AI, 1.0 on human)   INVERTED       auroc 0.0    <- not mistaken for good
+constant   (0.5 always)                DEAD           range 0.0
+saturated  (1.0 always)                DEAD           range 0.0
+no available()                         AVAIL_ERR      — not guessed at
+```
+
+All correct. The middle two are the failure modes this repository has actually shipped — a detector
+returning exactly 1.0 disabled candidate selection in the default rewriter — and the tool names both.
+**No defect.**
+
+**The fifth shape is the finding.** A detector fine-tuned on the corpus it scores separates perfectly
+and has nothing left to give: `hc3_roberta` on HC3 runs human 0.08 against AI 0.9992, the whole AI
+spread across 15 documents measuring 1.2e-05. Audited:
+
+```
+verdict OK_SEPARATED   auroc 1.0   gap 0.9192   range 0.9192
+```
+
+Healthy, and rightly so. **Separation and improvement headroom are different quantities.** This tool
+measures the first; the loop needs the second; a detector can be flawless at one while offering none
+of the other. That is the whole reason four results went by with a green detector audit while the
+headline number was pinned — nothing was broken, and nothing was measuring the thing that mattered.
+
+Verified by breaking the tool: collapsing `INVERTED` into `OK_SEPARATED` — perfect separation in the
+wrong direction, which an audit reading only `|AUROC − 0.5|` would call excellent — fails exactly the
+one assertion written for it.
+
+Worth keeping: **a green check is only evidence about the question it asks.** The detector audit was
+right every time it ran. Reading it as "the detectors are fine, so the loop should be making
+progress" was the error, and it was mine, not the tool's.
