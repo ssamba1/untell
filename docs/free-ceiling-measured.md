@@ -7449,3 +7449,53 @@ Worth keeping: **the suspect you already have your hands on is the one to test f
 most likely to be innocent.** I had changed the meaning gate three results running, so a gate
 explanation felt obvious. It cost one experiment to refute and would have cost a wrong entry in this
 log to assume.
+
+## Result 146
+
+**A stub that is never called, in a test named for the thing it stubs.**
+
+The previous loop fixed a monkeypatch whose signature had stopped matching the function it replaced.
+That one failed loudly — `TypeError: takes 1 positional argument but 2 were given`. The dangerous
+version is the stub that keeps passing, so: instrument `monkeypatch.setattr` to count invocations and
+run the suite.
+
+```
+404 stubs installed, 52 never called
+```
+
+Most are correct and one is exemplary: `test_importance_accepts_a_precomputed_base` installs a stub
+that **raises** — *"importance recomputed the baseline despite being given one"* — so never-called IS
+the assertion, and a regression names itself. `test_empty_text_is_neutral` and
+`test_veto_can_be_disabled` are the same idea more quietly: their stubs return values that would fail
+the assertion if the call happened.
+
+One is not.
+
+```python
+def test_sim_floor_adapts_to_the_active_similarity_metric(monkeypatch):
+    monkeypatch.setattr(q, "method", lambda: "token_overlap")
+    monkeypatch.setattr(r, "recommended_bar", lambda: q.TOKEN_BAR)   # <- short-circuits the chain
+```
+
+`recommended_bar()` reads `method()` — that is the adaptation, and it is the entire subject of the
+test's name and docstring. Pinning `recommended_bar` as well bypasses it, which is exactly why the
+`method` stub was never called: **the test asserted the reward given a bar, not that the bar adapts
+to the backend.** The dead stub was the evidence, and nothing else would have shown it: the test
+passed, its assertion was true, and its name was wrong.
+
+Removing the redundant stub makes the chain real. Verified by breaking the adaptation —
+`recommended_bar` returning `DEFAULT_BAR` unconditionally:
+
+```
+before the fix    would pass  (recommended_bar was pinned, so the broken function never ran)
+after the fix     FAILED tests/test_reward.py::test_sim_floor_adapts_to_the_active_similarity_metric
+```
+
+The stakes are in the docstring the test already carried: with token overlap active, a 0.76 bar
+hard-gated faithful paraphrases to −1.0, the same reward as an off-topic rewrite, and GRPO learned to
+make trivially small edits while the loss curve looked plausible. The test written to stop that
+recurring could not have seen it recur.
+
+Worth keeping: **an unused stub is a question, not a defect — and the question is what the test is
+actually asserting.** Fifty-two of them, and fifty-one were fine. The one that mattered had a name
+describing a behaviour that a second stub had switched off.
