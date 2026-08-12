@@ -283,6 +283,30 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             re.IGNORECASE,
         ),
     ),
+    # Dotted numeric identifiers: bare semantic versions (1.26.4), IPv4 addresses (192.168.1.24),
+    # section and clause numbers (2.3.1). Three or more components, so an ordinary decimal is
+    # untouched.
+    #
+    # Ordered BEFORE every numeric rule below, because the decimal pattern stops at the SECOND
+    # component and leaves the rest of the token in open text. MEASURED, the state before this
+    # entry existed:
+    #
+    #     "Requires numpy 1.26.4 or newer."       ->  "Requires numpy ⟦HZ0000⟧.4 or newer."
+    #     "The host was 192.168.1.24 yesterday."  ->  "The host was ⟦HZ0000⟧.⟦HZ0001⟧ yesterday."
+    #
+    # The sentinel survives and the tail does not: a rewrite can turn 1.26.4 into 1.26.7 with every
+    # lock intact. `v2.10.3` masked whole only because the leading `v` makes it an identifier, so
+    # the protection depended on notation rather than on what the token means. This is the same
+    # failure shape as the CD4+ note below — locking the stem and leaving the part that carries the
+    # distinction.
+    #
+    # Components are unbounded in length. A first attempt capped each at four digits, and a real
+    # Windows build number — 10.0.19045.3803 — split at the 5-digit component into "10.0" and
+    # "19045.3803", reproducing the exact defect this entry fixes.
+    (
+        "dotted",
+        re.compile(r"\b\d+(?:\.\d+){2,}\b"),
+    ),
     # Ratios and scales expressed in words — "1 in 5", "4 out of 5", "3 per 100", "2 to 1". Both
     # numbers and the connective must move together or the ratio inverts while looking protected.
     (
