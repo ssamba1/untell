@@ -21,7 +21,7 @@ Generated from live calls, not from reading the source.
 |---|---|---|
 | `untell.scripts.run.untell_text` | `dict` | **`final`** — the rewritten text. There is no `text` key. |
 | `untell.scripts.score.score_text` | `dict` | **`max`** — highest P(AI) across detectors. Per-detector values are under **`detectors`**, not `scores`. |
-| `untell.scripts.sentences.score_sentences` | `dict` | **`sentences`**, each entry `{text, ai, flagged}`. The probability is **`ai`**, not `score`. |
+| `untell.scripts.sentences.score_sentences` | `dict` | **`sentences`**, each entry `{text, ai, flagged}`. The probability is **`ai`**, not `score`. `warning` and `unrankable` appear only when the ranking cannot be trusted — `unrankable` when this document's own per-sentence scores span less than 0.05, which happens when a detector is at its ceiling on every sentence. |
 | `untell.scripts.tells.score_tells` | `dict` | **`tells_per_100w`**, with the breakdown under `by_category` |
 | `untell.scripts.verify.verify` | `dict` | **`passes_all`**, per-detector detail under `results` |
 | `untell.humanness.humanness` | `float` | the score itself, 0–100 |
@@ -37,7 +37,9 @@ score_text        ai_percent, detector_modes, detectors, flagged, max, mean, thr
 score_tells       burstiness_cv, by_category, by_evidence, language_supported,
                   low_burstiness, tells, tells_per_100w, words, warning (only when a caveat applies)
 
-score_sentences   flagged, note, sentences, threshold, tier
+score_sentences   flagged, note, sentences, threshold, tier,
+                  unrankable (only when the per-sentence scores cannot be ranked),
+                  warning (only when a caveat applies)
 
 untell_text       adopted, changed, final, flagged, iterations, meaning_gate, post, pre,
                   quality_metric, rewrites, seed, sim_bar, similarity, stopped,

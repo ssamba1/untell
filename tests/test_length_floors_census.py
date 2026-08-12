@@ -49,6 +49,16 @@ FLOORS: dict[str, dict[str, tuple[float, str]]] = {
         "_MIN_WORDS_FOR_A_VERDICT": (40, "the detectors' scores separate at length; under 40 words "
                                          "the verdict is a coin flip dressed as a probability"),
     },
+    "untell/scripts/sentences.py": {
+        "_MIN_SENTENCES_FOR_SPREAD": (3, "the caveat this gates says the per-sentence scores are "
+                                         "too close together to ORDER, and two points are always "
+                                         "orderable — calling a two-sentence document rankable or "
+                                         "not is noise either way. Distinct from the word-count "
+                                         "floors above: those ask whether one text is long enough "
+                                         "to score, this asks whether several scores can be "
+                                         "compared, so it counts sentences and does not contradict "
+                                         "a words-per-text bar"),
+    },
     "untell/scripts/tells.py": {
         "_MIN_WORDS_FOR_REPETITION": (60, "a repetition rate needs enough text for a repeat to be "
                                           "evidence rather than coincidence"),
