@@ -91,3 +91,38 @@ def test_the_bar_still_sits_below_the_pinned_value(detectors) -> None:
 
     worst = max(detectors["hc3_roberta"].score(s) for s in HC3_AI_SENTENCES)
     assert worst >= _SATURATED_MAX, worst
+
+
+def test_no_source_file_still_credits_the_wrong_detector() -> None:
+    """The correction was applied to one site and the phrase existed in three.
+
+    FOUND by sweeping every comment in `untell/` that names a detector alongside a number: the same
+    sentence sat in `rich_output.py`, `rewriter/targeted.py` and this suite's
+    `test_targeted_selects_when_max_saturates.py`. Fixing the one I happened to be reading left two
+    behind, which is the defect this session has hit most often — a fix applied to the surface in
+    front of me rather than to the class.
+
+    Scoped to code and tests. `docs/free-ceiling-measured.md` is a dated log and quotes the wrong
+    sentence deliberately, in the entry that refutes it; correcting a record would destroy it.
+    """
+    from pathlib import Path
+
+    import untell
+
+    # Assembled at runtime, and this file skipped. Written out literally the marker appears HERE,
+    # so the scan reported itself — the third time in two loops that a check could not tell the
+    # defect from the text describing it. Same fix as the dead-function probe that named its own
+    # subject in the haystack.
+    marker = "roberta" + "_openai` returns 0.9" + "992"
+    root = Path(untell.__file__).resolve().parent.parent
+    offenders = []
+    for directory in ("untell", "tests"):
+        for path in (root / directory).rglob("*.py"):
+            if path.name == Path(__file__).name:
+                continue
+            if marker in path.read_text(encoding="utf-8", errors="replace"):
+                offenders.append(path.relative_to(root).as_posix())
+    assert not offenders, (
+        "these claim roberta_openai is the pinned detector; measured, it clears 0.99 on 2 of 60 "
+        f"HC3 sentences and hc3_roberta on 58: {offenders}"
+    )

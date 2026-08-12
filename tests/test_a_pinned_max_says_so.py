@@ -5,8 +5,10 @@ rewritten, tells/100w 3.80 -> 2.98, similarity 0.971 — and `max` sat at **0.99
 The Delta column printed "—". A 22% cut in tell density, reported as nothing happening.
 
 That is not a rounding artefact. Over 80 corpus texts the ensemble max reaches >=0.999 on 100% of
-HC3 AI text and 30% of RAID's, against 0% of human text, because `roberta_openai` returns 0.9992 on
-nearly every sentence of that genre. `composite` and `targeted` both rank candidates on `(max, mean)`
+HC3 AI text and 30% of RAID's, against 0% of human text. The member doing it is `hc3_roberta`, at
+>=0.99 on 58 of 60 sentences of that genre; `roberta_openai` manages 2 of 60 (mean 0.7405) and drops
+0.9986 -> 0.6228 under rewriting, so it is the one detector that does yield. The attribution sat in
+five places before it was measured. `composite` and `targeted` both rank candidates on `(max, mean)`
 for exactly this reason; the surface that reports the outcome was still showing the max alone.
 
 The mean is already in both score dicts. Withholding it leaves the reader with the one number that

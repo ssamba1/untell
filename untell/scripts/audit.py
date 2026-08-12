@@ -932,7 +932,9 @@ def check_selection_does_not_read_a_bare_max(report: Report) -> None:
 
     `max` is one detector's number, and a saturating member pins it. MEASURED over 80 corpus texts:
     the ensemble max reaches >=0.999 on 100% of HC3 AI text and 30% of RAID's, against 0% of human
-    text; `roberta_openai` returns 0.9992 on nearly every HC3 sentence. Five seeded candidates per
+    text; `hc3_roberta` returns >=0.99 on 58 of 60 HC3 sentences (`roberta_openai` on 2 of them, mean
+    0.7405 — the pinning was attributed to it in five places before anyone measured). Five seeded
+    candidates per
     text gave ONE distinct max on 4 of 6 documents and one distinct mean on 1 of 6 — so a selector
     reading `max` alone is choosing among candidates it cannot tell apart.
 

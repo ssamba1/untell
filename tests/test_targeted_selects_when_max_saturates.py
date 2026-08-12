@@ -1,9 +1,14 @@
 """`targeted` compared candidates on `max` alone, and threw away 15 of 19 real improvements.
 
 This is the defect `composite._selection_key` was written for, still live one module over. `max` is a
-single detector's number and `roberta_openai` returns 0.9992 on nearly every sentence of HC3's
-genre, so `after < before` is false on text that genuinely improved. MEASURED over 8 HC3 AI answers,
-per sentence:
+single detector's number and `hc3_roberta` returns >=0.99 on 58 of 60 sentences of HC3's genre, so
+`after < before` is false on text that genuinely improved. MEASURED over 8 HC3 AI answers, per
+sentence:
+
+(The pinning was attributed to `roberta_openai` here and in two other places until it was measured:
+that detector clears 0.99 on 2 of those 60 sentences, mean 0.7405, and moves 0.9986 -> 0.6228 under
+rewriting. `hc3_roberta` is fine-tuned ON HC3 and does not move at all. The counts below are
+unaffected — only the reason for them named the wrong member.)
 
     max improved (adopted)        4
     max worse (rejected)          0

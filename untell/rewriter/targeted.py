@@ -141,7 +141,7 @@ class TargetedRewriter(Rewriter):
             #     max TIED, mean improved      15   <- every one of these was discarded
             #     max TIED, mean not improved   0
             #
-            # `roberta_openai` returns 0.9992 on nearly every sentence of that genre, so `max` is
+            # `hc3_roberta` returns >=0.99 on 58 of 60 sentences of that genre, so `max` is
             # a constant and `after < before` is false on text that genuinely improved: mean
             # 0.6839 -> 0.5821, 0.7663 -> 0.6978, 0.7504 -> 0.6792. Fifteen of nineteen real
             # improvements thrown away, and not one tie that was neutral or worse.
