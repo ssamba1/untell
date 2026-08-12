@@ -7971,3 +7971,45 @@ for the next person to rediscover.
 
 Worth keeping: **a check's coverage is a measurement, not a property of its name.** "The schema
 matches the response" sounds total. It was two elevenths, and nothing in a green run said so.
+
+## Result 158
+
+**Eight caveats nothing had ever seen appear.**
+
+Result 157 measured how much of the API's conditional surface its schema check observes: 2 of 11. The
+same question one layer over — this repository's honesty argument is carried by its *caveats*, the
+sentence beside a number saying what the number is worth. Listing every function whose name says it
+produces one:
+
+```
+17 caveat-producing functions, 8 never named in any test
+    humanness    _warn_too_short, _warn_band_unreliable, _warn_unsupported_language,
+                 _warn_about_the_weak_path
+    preserve     _warn_no_ner
+    run          _warn_voice_sample_too_short
+    sentences    _warn_if_targeting_is_uninformative
+    voice        _warn_if_sample_is_thin
+```
+
+Named-in-a-test is a weak proxy, so each was driven with an input that should trigger it. **All eight
+fire.** No dead caveat — the honest answer, and worth having rather than assuming, because a caveat is
+exactly the code the happy path never touches and whose absence nobody notices. The half of the
+repository that says "this number is weak evidence" had less coverage than the half that produces the
+number.
+
+**The one that needed two attempts is the lesson.** `voice._warn_if_sample_is_thin` first reported
+`AttributeError` — my probe called a function that does not exist. A probe failing and the subject
+failing look identical from outside, and only reading the error told them apart. Fifth time this
+session.
+
+Now a permanent battery, one known-positive per caveat, each resetting the warn-once flag first —
+without that, the second test to touch a module finds the flag already spent and reads silence as a
+defect. Plus one known-negative: a 200-word voice sample must produce nothing, because a caveat that
+fires on everything says nothing.
+
+Verified by silencing one — the classic warn-once defect, an early `return` before the flag check —
+which fails exactly the assertion written for it.
+
+Worth keeping: **the code that admits a limit is the least-exercised code in any honest project.** It
+runs only when something is wrong, so the tests that would catch it broken are the ones nobody writes
+— and this repository's entire argument rests on those sentences arriving.
