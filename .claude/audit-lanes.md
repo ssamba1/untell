@@ -1,8 +1,11 @@
 # Lanes
 
-`audit_next.py` assigns the lane. Seven kinds of pass, on a fixed schedule weighted toward
-auditing, because auditing is the lane that has actually found things here. Each lane has a
-mechanical exit condition — you never decide "is this good enough".
+`audit_next.py` assigns the lane. Nine kinds of pass on a fixed schedule: seven that make the
+repo harder to break, and two (L8, L9) that measure whether it still works — a different
+question, with a different answer every run, because the free rewriters are randomised.
+
+Weighted toward auditing, because auditing is the lane that has actually found things here.
+Each lane has a mechanical exit condition — you never decide "is this good enough".
 
 ---
 
@@ -19,7 +22,7 @@ EXIT the probe's output either satisfies the invariant or it does not.
 ## L2 — hunt tests that prove nothing
 
 ```bash
-.venv/Scripts/python.exe .claude/mutate.py <module> --max 15
+.venv/Scripts/python.exe .claude/mutate.py <module> --max 15 --record
 ```
 
 It breaks one line at a time and runs the tests that name that module. A mutation no test
@@ -121,3 +124,55 @@ run it, then `git diff --stat` must be empty.
 
 EXIT all four refusals fire and `mutate.py` restores cleanly. If any does not, that is a
 defect in the harness — fix it, and treat every earlier record it let through as suspect.
+
+---
+
+## L8 — measure, and change nothing
+
+```bash
+.venv/Scripts/python.exe .claude/research.py list
+.venv/Scripts/python.exe .claude/research.py run <recipe>
+```
+
+The recipe is chosen for you. It runs at fixed settings, refuses to record a result whose
+rewriter never loaded or which rewrote nothing, appends the numbers to
+`.claude/measurements.jsonl`, and compares against the last run of the same recipe using the
+spread each run reports.
+
+**This lane edits no source and no document.** Its output is evidence, not a decision. If
+something MOVED beyond the noise band, write it to `.claude/human-queue.md` with the command
+and the output. If everything is inside the band, that is the result: record it and say so.
+
+EXIT one recipe run to completion and recorded, or a refusal explained in the log. A run that
+timed out is not a measurement — record it as `clean` with a note, do not report partial
+numbers.
+
+WHY it needs its own lane: one run cannot tell a regression from noise. The free rewriters are
+randomised — about +/-0.02 on the score and +/-0.08 on the flagged rate, wider than most real
+changes, and neural is four times as variable as composite. Every recipe here carries its
+repeats, its corpus and its tier, because a number without those three is a number about
+nothing.
+
+---
+
+## L9 — ask what a knob actually does, then put it back
+
+```bash
+.venv/Scripts/python.exe .claude/experiment.py list
+.venv/Scripts/python.exe .claude/experiment.py run <knob> --recipe lite-hc3
+```
+
+Applies one candidate value to one tuning constant, measures before and after at identical
+settings, **restores the file unconditionally**, and appends both sides to
+`.claude/experiments.jsonl`.
+
+Nothing RED is ever staged, so the guard needs no exception and no branch is left carrying a
+forbidden change. The knob is chosen for you; do not invent one, and do not adopt a value —
+adoption is a human decision made from several runs, not from this one.
+
+EXIT the ledger has a new row and the working tree is clean (`git status` empty for that
+file). A delta inside the noise band is a real finding: it means the knob does not do what it
+looks like it does at this corpus and tier. Say that plainly.
+
+WHY it is safe: the loop learns the slope of a constant without ever owning it. Measuring is
+reversible; shipping is not.

@@ -12,7 +12,12 @@ bands. When something does not obviously fall in GREEN, it is not GREEN.
   known positive zero times, a mutant nothing kills three passes running.
 - Fix a broken import, entry point, or lint error.
 - Fix a docstring or comment that describes code that no longer exists.
-- Write to `.claude/audit-log.md` and `.claude/human-queue.md`.
+- Write to `.claude/audit-log.md`, `.claude/human-queue.md`, `.claude/survivors.md`,
+  `.claude/measurements.jsonl`, and `.claude/experiments.jsonl`. Those are the loop's own
+  records; the documents that *quote* numbers are RED, the ledgers that *produce* them are not.
+- Run a measurement (L8) or a knob experiment (L9). Both are reversible by construction:
+  L8 changes nothing at all, and L9 restores the file it touched before it exits. Measuring a
+  RED constant is green; keeping the change is not.
 - Commit to `main` and push.
 
 ## AMBER — do it, and write the entry in `human-queue.md` in the same pass

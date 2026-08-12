@@ -29,8 +29,9 @@ RECORDS = ROOT / "records"
 # toward L2 because a suite this large is mostly unverified until something breaks it. The
 # cycle is fixed rather than random so a pass is reproducible from its number alone.
 SCHEDULE = [
-    "L1", "L1", "L2", "L1", "L3", "L1", "L2", "L1",
-    "L4", "L1", "L2", "L5", "L1", "L6", "L2", "L7",
+    "L1", "L1", "L2", "L1", "L3", "L1", "L2", "L8",
+    "L4", "L1", "L2", "L5", "L1", "L8", "L2", "L6",
+    "L1", "L9", "L2", "L7",
 ]
 
 # Small enough to mutate in an hour, and each one is pure logic where a flipped comparison is
@@ -66,6 +67,20 @@ ROW = re.compile(
     r"\s*(?P<verdict>[a-z-]+)\s*\|\s*(?P<before>\d+)\s*\|\s*(?P<after>\d+)\s*\|"
     r"\s*(?P<commit>\S+)\s*\|\s*(?P<note>.*?)\s*\|$"
 )
+
+
+def sibling(module: str, attr: str) -> list[str]:
+    """Names defined in a sibling script, read at call time.
+
+    Duplicating the recipe and knob lists here would let them drift from the scripts that own
+    them, and a dispatcher handing out a knob that no longer exists wastes a whole pass.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(module, ROOT / f"{module}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return sorted(getattr(mod, attr))
 
 
 def target_ids() -> list[str]:
@@ -115,6 +130,10 @@ def assign(history: list[dict[str, str]], offset: int = 0) -> tuple[int, str, st
             target = least_used(target_ids(), history)
         elif lane == "L2":
             target = least_used(MUTATION_MODULES, history)
+        elif lane == "L8":
+            target = least_used(sibling("research", "RECIPES"), history)
+        elif lane == "L9":
+            target = least_used(sibling("experiment", "KNOBS"), history)
         else:
             target = lane
         history.append({"n": str(n), "lane": lane, "target": target, "verdict": "pending",
@@ -141,7 +160,12 @@ def cmd_next(offset: int = 0) -> int:
     if lane == "L1":
         print(section(TARGETS, target))
     elif lane == "L2":
-        print(f"Run: .venv/Scripts/python.exe .claude/mutate.py {target} --max 15")
+        print(f"Run: .venv/Scripts/python.exe .claude/mutate.py {target} --max 15 --record")
+    elif lane == "L8":
+        print(f"Run: .venv/Scripts/python.exe .claude/research.py run {target}")
+    elif lane == "L9":
+        print(f"Run: .venv/Scripts/python.exe .claude/experiment.py run {target} "
+              "--recipe lite-hc3")
     print()
     print("Read .claude/audit-envelope.md before changing anything. Follow "
           ".claude/audit-loop.md. Work this target only.")
