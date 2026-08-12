@@ -57,6 +57,13 @@ def _bad_args(**checks) -> dict | None:
                              "probabilities, so a value above 1 can never be reached."}
         if kind == "count" and not (1 <= int(value) <= 100):
             return {"error": f"{name}={value!r} is outside 1..100."}
+        # Zero is a MEANING for some counts, not an out-of-range value. `confirm=0` is the default
+        # and says "do not re-confirm"; validating it as a "count" rejected the default, so the
+        # flagship tool answered {"error": "confirm=0 is outside 1..100."} to every ordinary call.
+        # Caught by testing the boundary rather than the middle. REST models the same field as
+        # ge=0, le=32.
+        if kind == "count_or_zero" and not (0 <= int(value) <= 32):
+            return {"error": f"{name}={value!r} is outside 0..32."}
     return None
 
 
@@ -142,6 +149,19 @@ def _server():
         # Same reason `best_of` and `polish` above are here: a knob that reaches the loop from one
         # surface and not another means the same request answers differently by protocol.
         seed: int | None = None,
+        # The last two the REST /humanize body models and this tool did not. Enumerated rather than
+        # guessed: comparing the three surfaces knob by knob, MCP was missing exactly `confirm` and
+        # `detector_thresholds`, and the five others absent here (browser, progress, scrub, sim_bar,
+        # veto_contradictions) are absent from REST too — a deliberate line, since those drive
+        # Playwright, write to stdout, or are internals.
+        #
+        # Both change the VERDICT, which is why the REST comment calls dropping them quietly worse
+        # than refusing them: `confirm` re-scores a pass N more times and keeps "passed" only if
+        # every re-scan clears — the guard against a noisy detector re-flagging — and
+        # `detector_thresholds` holds named detectors to their own stricter gates on top of the
+        # global threshold. An MCP client could ask for neither.
+        confirm: int = 0,
+        detector_thresholds: dict[str, float] | None = None,
     ) -> dict:
         """Run the closed untell loop: score -> rewrite -> re-score until the hardest
         detector passes or max_iters is hit. Needs an LLM rewriter key, or pass
@@ -180,6 +200,7 @@ def _server():
             margin=(margin, "probability"),
             max_iters=(max_iters, "count"),
             best_of=(best_of, "count"),
+            confirm=(confirm, "count_or_zero"),
         )
         if bad:
             return bad
@@ -230,6 +251,8 @@ def _server():
             polish=polish,
             voice_sample=voice_sample,
             seed=seed,
+            confirm=confirm,
+            detector_thresholds=detector_thresholds,
         ))
 
     # Put the real style list into the tool's advertised description. Generated, not restated, so
