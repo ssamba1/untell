@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parent
 TARGETS = ROOT / "audit-targets.md"
 LANES = ROOT / "audit-lanes.md"
 LOG = ROOT / "audit-log.md"
+RECORDS = ROOT / "records"
 
 # Weighted toward L1 because auditing is the lane that has actually found things here, and
 # toward L2 because a suite this large is mostly unverified until something breaks it. The
@@ -98,21 +99,32 @@ def least_used(options: list[str], history: list[dict[str, str]]) -> str:
     return min(options, key=lambda o: (counts[o], options.index(o)))
 
 
-def assign(history: list[dict[str, str]]) -> tuple[int, str, str]:
-    n = len(history) + 1
-    lane = SCHEDULE[(n - 1) % len(SCHEDULE)]
-    if lane == "L1":
-        target = least_used(target_ids(), history)
-    elif lane == "L2":
-        target = least_used(MUTATION_MODULES, history)
-    else:
-        target = lane
+def assign(history: list[dict[str, str]], offset: int = 0) -> tuple[int, str, str]:
+    """The (offset+1)-th pass from here.
+
+    Offset exists for the fleet: N workers starting at once all read the same log, so without
+    it they would all be handed pass 1 on target T01 and do the same work N times. Each
+    simulated step is appended to a local copy of the history, so worker 3's target accounts
+    for what workers 1 and 2 are about to take.
+    """
+    history = list(history)
+    for _ in range(offset + 1):
+        n = len(history) + 1
+        lane = SCHEDULE[(n - 1) % len(SCHEDULE)]
+        if lane == "L1":
+            target = least_used(target_ids(), history)
+        elif lane == "L2":
+            target = least_used(MUTATION_MODULES, history)
+        else:
+            target = lane
+        history.append({"n": str(n), "lane": lane, "target": target, "verdict": "pending",
+                        "before": "0", "after": "0", "commit": "-", "note": "in flight"})
     return n, lane, target
 
 
-def cmd_next() -> int:
+def cmd_next(offset: int = 0) -> int:
     history = rows()
-    n, lane, target = assign(history)
+    n, lane, target = assign(history, offset)
     prior = [r for r in history if r["target"] == target]
 
     print(f"PASS {n}")
@@ -138,7 +150,7 @@ def cmd_next() -> int:
 
 def cmd_record(a: argparse.Namespace) -> int:
     history = rows()
-    n, lane, target = assign(history)
+    n, lane, target = assign(history, a.offset)
     lane, target = a.lane or lane, a.target or target
 
     if a.verdict in NEEDS_EVIDENCE:
@@ -158,6 +170,21 @@ def cmd_record(a: argparse.Namespace) -> int:
     if len(note) < 20:
         sys.exit("REFUSED: --note must actually say what was probed and what the numbers were.")
 
+    row = (
+        f"| {n} | {lane} | {target} | {a.verdict} | {a.tests_before} | {a.tests_after} "
+        f"| {a.commit or '-'} | {note} |\n"
+    )
+
+    if a.worker:
+        # Parallel passes run in separate worktrees, and every one of them appending to the
+        # same table at EOF is a guaranteed merge conflict on work that never actually
+        # disagreed. Workers drop a row on disk instead; the fleet runner, which is one
+        # process, collects them into the log.
+        RECORDS.mkdir(parents=True, exist_ok=True)
+        (RECORDS / f"{a.worker}-{n}.row").write_text(row, encoding="utf-8")
+        print(f"queued row for worker {a.worker}: {lane} on {target} -> {a.verdict}")
+        return 0
+
     if not LOG.exists():
         LOG.write_text(
             "# Audit log\n\n"
@@ -166,10 +193,7 @@ def cmd_record(a: argparse.Namespace) -> int:
             encoding="utf-8",
         )
     with LOG.open("a", encoding="utf-8") as f:
-        f.write(
-            f"| {n} | {lane} | {target} | {a.verdict} | {a.tests_before} | {a.tests_after} "
-            f"| {a.commit or '-'} | {note} |\n"
-        )
+        f.write(row)
     print(f"recorded pass {n}: {lane} on {target} -> {a.verdict}")
     return 0
 
@@ -181,6 +205,9 @@ def main() -> int:
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--offset", type=int, default=0,
+                   help="assign the pass this many ahead; the fleet gives each worker "
+                        "a different one so they do not collide")
     sub = p.add_subparsers(dest="cmd")
     r = sub.add_parser("record", help="append this pass to the audit log")
     r.add_argument("--verdict", required=True, choices=VERDICTS)
@@ -189,9 +216,12 @@ def main() -> int:
     r.add_argument("--commit", default="")
     r.add_argument("--lane", default="")
     r.add_argument("--target", default="")
+    r.add_argument("--offset", type=int, default=0)
+    r.add_argument("--worker", default="", help="parallel worker id; queues the row "
+                   "instead of appending, so worktrees never conflict on the log")
     r.add_argument("--note", required=True)
     a = p.parse_args()
-    return cmd_record(a) if a.cmd == "record" else cmd_next()
+    return cmd_record(a) if a.cmd == "record" else cmd_next(a.offset)
 
 
 if __name__ == "__main__":
