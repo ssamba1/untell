@@ -8133,3 +8133,41 @@ Worth keeping: **before adding a guard, look for the one already there.** The tr
 results ago lacked a check that a neighbouring function documents in its own docstring. Nothing
 pointed from one to the other, and the sentinel detail — the thing that makes the guard work in
 production rather than only in a test — lived only in the prose of the function that got it right.
+
+## Result 162
+
+**A constructed pair said the meaning gate was reading garbled text. Real text said otherwise.**
+
+Result 161 established that production runs on *locked* text — every citation replaced by a `⟦HZ…⟧`
+sentinel before any transform sees it. So: what do the meaning gates see? The loop calls
+`similarity(masked, candidate)` and `meaning_preserved(masked, candidate, …)`. An embedding model
+comparing opaque tokens is not comparing the document.
+
+Constructed evidence looked damning — three locked spans across two sentences moved similarity
+**0.8974 → 0.9304**, inflated, the direction that admits a bad rewrite. And the asymmetry was real:
+the *targeting* path one screen above carries a careful masked-vs-restored analysis with its own
+measurement, while the gate's comment discussed similarity-versus-NLI at length and never mentioned
+which text it reads.
+
+Measured on real rewrites — 38 of 50 corpus texts lock a span, so this is the ordinary case:
+
+```
+similarity masked - restored   mean -0.0014   max +0.0091   min -0.0218
+verdict disagreements          1 of 38, and it runs the SAFE way:
+                               masked rejected what restored would have admitted
+```
+
+**No defect.** My probe generalised from a citation density real documents do not have — three locked
+spans in two sentences against a corpus mean nearer one span per paragraph.
+
+And masking turns out to be principled rather than merely harmless: the sentinel-integrity check
+immediately above the gate has already rejected any candidate whose sentinels differ, so the locked
+spans are provably identical on both sides. Comparing them again adds no information; what is left is
+exactly the prose the rewriter changed.
+
+The measurement now sits at the gate, and a test pins the **direction** rather than the number — if
+masking ever starts admitting what the restored comparison rejects, the trade stops holding.
+
+Worth keeping: **a hypothesis built from a constructed example inherits the example's shape.** Density
+was the hidden variable. The number I measured was real, the pair was legitimate, and it described a
+document this corpus never produces.
