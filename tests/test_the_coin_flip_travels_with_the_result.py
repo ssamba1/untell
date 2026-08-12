@@ -56,7 +56,7 @@ def test_every_call_carries_it_not_just_the_first(monkeypatch) -> None:
     the field must not inherit that."""
     import untell.scripts.sentences as mod
 
-    monkeypatch.setattr(mod, "_targeting_is_uninformative", lambda tier: True)
+    monkeypatch.setattr(mod, "_targeting_is_uninformative", lambda tier, modes=None: True)
     monkeypatch.setattr(mod, "_WARNED_UNINFORMATIVE", True)  # as if a previous call already logged
     for _ in range(3):
         assert "warning" in score_sentences(TEXT, tier="lite")
@@ -66,7 +66,7 @@ def test_a_ranking_tier_carries_no_caveat(monkeypatch) -> None:
     """Guards the guard. A caveat on every result is a caveat nobody reads."""
     import untell.scripts.sentences as mod
 
-    monkeypatch.setattr(mod, "_targeting_is_uninformative", lambda tier: False)
+    monkeypatch.setattr(mod, "_targeting_is_uninformative", lambda tier, modes=None: False)
     assert "warning" not in score_sentences(TEXT, tier="lite")
 
 
