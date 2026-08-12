@@ -1041,6 +1041,21 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
     ``detector_errors`` when a detector dies, ``warning`` on a tier downgrade — so a strict model
     would delete exactly the diagnostics a caller most needs. Describing without constraining is the
     right trade, but it means nothing enforces that the description is true. These tests do.
+
+    **How much of it they enforce is measured, not assumed.** A payload -> schema check only inspects
+    the fields its payloads actually produce, and a conditional field is by definition absent from an
+    ordinary call. MEASURED by replaying ``CALLS`` and collecting every response key:
+
+        conditional fields produced by this table    4 of 11
+        never produced here                          detector_errors, error, failed_detectors,
+                                                     out_of_range_detectors, out_of_range_raw,
+                                                     rewriter_warning, suggestion
+
+    `unrankable` shipped undocumented through exactly that gap: the check ran the right direction and
+    never saw the key. The seven above need a broken detector, an out-of-range score or a missing
+    rewriter, which a static table of request bodies cannot express — they are exercised by
+    monkeypatching tests elsewhere, but NOT by this check, and a reader should not take a green run
+    here as covering them.
     """
 
     @staticmethod
@@ -1082,6 +1097,16 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
                   "seamless solutions today. Additionally, the holistic methodology empowers teams.",
           "tier": "lite"}),
         ("/verify", "post", {"text": TEXT}),
+        # /humanize was absent from this table entirely — the busiest endpoint, 19 response keys,
+        # and the payload -> schema check had never looked at it. The voice sample is two words on
+        # purpose: under the 20-word floor it produces `voice_warning`, one of the eleven
+        # conditional fields, of which this table produced TWO before these entries.
+        ("/humanize", "post",
+         {"text": TEXT, "tier": "lite", "rewriter": "structural", "max_iters": 1, "best_of": 1,
+          "voice_sample": "tiny sample"}),
+        # include_matches is false by default, so `matches` — documented, conditional — had never
+        # appeared in a response this check inspected.
+        ("/tells", "post", {"text": TEXT, "include_matches": True}),
         ("/ceiling", "post", {"n": 2, "tier": "lite", "rewriter": "structural"}),
     ]
 
@@ -1106,13 +1131,14 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         # guess as the schema, so the test confirmed the guess instead of checking it.
         # `matches` is returned only when `include_matches` is true, which defaults to false — the
         # same shape as the three above, and it arrived in a concurrent commit without an entry.
-        # `unrankable` is conditional on the DOCUMENT rather than on the request: it appears only
-        # when this text's per-sentence scores span less than 0.05 and there are at least three
-        # sentences to spread. Proven, not assumed — MEASURED at tier=full it fires on 7 of 8 HC3
-        # documents and 0 of 8 RAID ones, so both branches are reachable and neither is the default.
-        conditional = {
-            "warning", "failed_detectors", "detector_errors", "matches", "unrankable",
-        }
+        # Imported rather than restated. This set and the one in
+        # `test_the_openapi_schema_matches_the_response.py` are the same claim about the same API,
+        # and they had already drifted: that file lists `rewriter_warning`, `voice_warning`,
+        # `suggestion`, `out_of_range_detectors`, `out_of_range_raw` and `error`, this one did not,
+        # so adding a /humanize payload here reported `rewriter_warning` as stale documentation when
+        # it is conditional and correctly absent. Two vocabularies for one API is the defect this
+        # repository has now hit at four different layers.
+        from tests.test_the_openapi_schema_matches_the_response import CONDITIONAL as conditional
         client = self._client()
         response = client.get(path) if method == "get" else client.post(path, json=body)
         payload = response.json()
