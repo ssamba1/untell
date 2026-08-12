@@ -520,8 +520,16 @@ class TestWordsThatCarryTheirPreposition:
         "approach" everywhere would cost a common substitution to fix a narrow case.
 
         Asserted against `_plain_register`, which owns the substitution, rather than through the
-        composite rewriter. Composite is deterministic on a sentence this short — 40 seeds give one
-        output — so a test at that level would pass or fail for reasons unrelated to the guard.
+        composite rewriter, which returns this sentence untouched — so a test at that level would
+        pass or fail for reasons unrelated to the guard.
+
+        This used to read "composite is deterministic on a sentence this short — 40 seeds give one
+        output". Re-measured: those 40 draws are 40/40 UNCHANGED, which is a no-op, not convergence.
+        The difference matters because a no-op looks identical to perfect determinism from outside,
+        and reading it as determinism is how the claim spread to four other files. Composite gives
+        8/8 distinct draws once there is something to fix — on a tell-heavy sentence of the same
+        length it is 7/8 distinct with tells 3 -> 0. What holds this sentence still is that it
+        carries 0 catalogued tells, so every draw scores worse than leaving it alone.
         """
         import random
 

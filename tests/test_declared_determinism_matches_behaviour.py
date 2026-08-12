@@ -87,9 +87,55 @@ def test_the_declared_flag_matches_what_the_draws_do(name, module_path, cls_name
         f"results from {DRAWS} consecutive draws. "
         + ("The loop will collapse best_of to 1 and may stop early on a round that would still "
            "improve." if declared else
-           f"The loop will draw best_of times per round for identical candidates, paying a "
-           f"full-tier detector pass and the meaning gate on each.")
+           "The loop will draw best_of times per round for identical candidates, paying a "
+           "full-tier detector pass and the meaning gate on each.")
     )
+
+
+CLEAN_SENTENCE = "An unsupervised segmentation approach was used throughout the study."
+TELLY_SENTENCE = (
+    "Moreover, the framework leverages robust methodologies to deliver transformative outcomes."
+)
+
+
+def test_composite_stillness_on_a_clean_sentence_is_a_no_op_not_determinism(monkeypatch):
+    """The distinction that let a false claim spread to four files.
+
+    A test measured 40 draws of composite on this sentence, got one output, and wrote it down as
+    "composite is deterministic on a sentence this short". Those 40 draws are 40/40 UNCHANGED — the
+    rewriter declined to touch it, which looks exactly like perfect determinism from outside. Three
+    other files then repeated "deterministic composite member" as though it were a property of the
+    rewriter rather than of that input.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    from untell.rewriter.composite import CompositeRewriter
+    from untell.scripts.tells import score_tells
+
+    assert score_tells(CLEAN_SENTENCE)["tells"] == 0, "fixture no longer clean; premise gone"
+
+    rw = CompositeRewriter()
+    drawn = [rw.rewrite(CLEAN_SENTENCE, {"max": 0.9}, 0.30) for _ in range(8)]
+    assert all(d.strip() == CLEAN_SENTENCE.strip() for d in drawn), (
+        "expected an untouched input; if this ever varies the no-op explanation is wrong and the "
+        "four docstrings citing it need re-measuring"
+    )
+
+
+def test_composite_varies_as_soon_as_there_is_something_to_fix(monkeypatch):
+    """Same length, same single sentence — only the tell content differs."""
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    from untell.rewriter.composite import CompositeRewriter
+    from untell.scripts.tells import score_tells
+
+    assert score_tells(TELLY_SENTENCE)["tells"] > 0, "fixture carries no tells; premise gone"
+
+    rw = CompositeRewriter()
+    drawn = [rw.rewrite(TELLY_SENTENCE, {"max": 0.9}, 0.30) for _ in range(8)]
+    assert len(set(drawn)) > 1, (
+        f"composite gave one output from 8 draws on tell-bearing input; that WOULD make it "
+        f"deterministic and the flag it declares (absent, i.e. stochastic) wrong: {drawn[0]!r}"
+    )
+    assert not all(d.strip() == TELLY_SENTENCE.strip() for d in drawn)
 
 
 def test_at_least_one_rewriter_of_each_kind_was_actually_checked():

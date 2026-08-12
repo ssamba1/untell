@@ -31,19 +31,34 @@ return something worse than any single member would have on that same draw.
 
 **That guarantee does not survive `--best-of N`, and this docstring used to imply it did.** Under an
 outer best-of loop the two paths spend their N draws differently: standalone `neural` spends all N
-on independent stochastic T5 samples, while the ensemble spends each draw on an internal contest
-that its *deterministic* composite member can win — and when it does, that draw contributes a
-convergent composite output instead of a fresh neural one. So N ensemble draws can be markedly less
+on independent stochastic T5 samples, while the ensemble spends each draw on an internal contest a
+composite output can win — and a composite output is drawn from a narrower distribution, so that
+draw adds less to the spread the outer selector gets to choose from. So N ensemble draws are less
 diverse than N neural draws, and a lucky T5 sample that standalone neural catches in three tries
 may never reach the outer selector at all. "The ensemble is >= any single method" is therefore a
 per-call statement, not a promise that `--rewriter ensemble --best-of 3` beats
 `--rewriter neural --best-of 3`.
 
+This paragraph used to say the composite member was *deterministic*, which is false — composite's
+own docstring has it drawing `best_of` candidates under different random seeds, and 4 consecutive
+draws give 4 distinct results. The conclusion survives the correction, and is now measured rather
+than argued. Mean PAIRWISE similarity among 4 consecutive draws, two documents (lower = more
+diverse):
+
+    structural   0.847 / 0.984      distinct 4/4
+    composite    0.917 / 0.975      distinct 4/4
+    ensemble     0.858 / 0.859      distinct 4/4
+    neural       0.569 / 0.808      distinct 4/4
+
+Neural is the more diverse of the two on both, which is the direction the paragraph claims. The
+mechanism is narrowing, not convergence to a point: an internal best-of-3 selector concentrates the
+output distribution while every draw still differs.
+
 Note also that ``max`` is an alias for this class, not a second technique (see
 ``rewriter/base.py``), so a benchmark listing both is listing one method twice.
 
 Members (all free, all sentinel-safe):
-- ``composite``  — structural + surgical (always available, deterministic $0)
+- ``composite``  — structural + surgical (always available, $0; stochastic — it draws internally)
 - ``neural``     — T5 best-of-N paraphrase + structural + surgical (only if .[full] deps present)
 - ``mt_pivot``   — round-trip machine translation (only if .[full] + sentencepiece present)
 

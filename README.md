@@ -649,8 +649,10 @@ composite + mt_pivot + neural and keeps the per-input detector-lowest — `>=` a
 **on a single call**). `max` is an alias for `ensemble`, not a second technique. And the `>=`
 guarantee is per call, not per `--best-of N` run: under an outer best-of loop, `neural` spends every
 draw on an independent stochastic T5 sample while `ensemble` spends each draw on an internal contest
-its deterministic composite member can win, so `ensemble --best-of 3` is **not** guaranteed to beat
-`neural --best-of 3`.
+a composite output can win — and composite draws from a narrower distribution, so `ensemble
+--best-of 3` is **not** guaranteed to beat `neural --best-of 3`. Measured as mean pairwise
+similarity among 4 consecutive draws on two documents (lower is more diverse): ensemble
+0.858/0.859, neural 0.569/0.808.
 T5-base paraphrase is high-variance on its own (a single draw can *raise* a detector score), so the
 neural path samples several and keeps the best, and the ensemble only ever adopts a rewrite that beats
 the original — see [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md).

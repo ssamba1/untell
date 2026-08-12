@@ -75,7 +75,9 @@ class CompositeRewriter(Rewriter):
         # more than any rule-based transform (DIPPER-class paraphrasing drove DetectGPT 70%->4.6%),
         # but T5-base is heavy (CPU, per-sentence generation) and HIGH-VARIANCE — one draw can crush a
         # detector (0.97->0.07) while another backfires (0.02->0.99). So it is OFF by default (the
-        # plain composite stays the always-available, deterministic $0 path), and when ON it is used
+        # plain composite stays the always-available, rule-based $0 path — rule-based, not
+        # deterministic: it draws `best_of` candidates under different seeds, see the class
+        # docstring), and when ON it is used
         # as a best-of-N SAMPLER: draw ``t5_best_of`` diverse paraphrases and keep the lowest-scoring
         # one that also beats the original — turning the variance into an advantage. Sentinel-safe:
         # the paraphraser restores every locked span or falls back per sentence.

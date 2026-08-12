@@ -167,8 +167,12 @@ def get_rewriter(prefer: str | None = None) -> Rewriter | None:
         # result cannot be worse than any single member on that draw. It does NOT extend to a
         # best_of>1 loop run. There the outer loop draws N times from each rewriter, and standalone
         # neural spends all N draws on independent stochastic T5 samples while the ensemble spends
-        # each draw on an internal contest its deterministic composite member can win — so the
-        # ensemble's N candidates can be far less diverse. Do not read "the ensemble is >= any
+        # each draw on an internal contest a composite output can win — and composite draws from a
+        # narrower distribution (it runs its own best-of-3 first), so the ensemble's N candidates are
+        # less diverse. MEASURED as mean pairwise similarity among 4 consecutive draws on two
+        # documents, lower being more diverse: ensemble 0.858/0.859, neural 0.569/0.808. This said
+        # "deterministic composite member", which is false — see ensemble.py for the correction.
+        # Do not read "the ensemble is >= any
         # single method" as "ensemble beats neural at --best-of 3"; that is unproven, and at n=3
         # the same-code variance above swamps it.
         from .ensemble import EnsembleRewriter
