@@ -6893,3 +6893,37 @@ Worth keeping: **a conjunction of eight checks can have its entire behaviour sup
 them, and the count of checks tells you nothing about which.** Six gates reporting zero is the
 expected, correct outcome for the rewriter in use — and it means the guarantee the product actually
 delivers rests on two optional dependencies, which is not visible from the list.
+
+## Result 133
+
+**The field that reports which guarantees are in force did not know about the larger one.**
+
+Result 132 ended on the guarantee resting on two optional dependencies. `meaning_gate` exists
+precisely to say which are present, and `"nli"` is documented as *"the full conjunction ... plus the
+predicate-argument role check"*. It was computed from the NLI import alone:
+
+```
+full install                 nli
+NLI present, no spaCy model  nli          <- role check silently absent
+veto disabled                similarity-only (veto disabled)
+```
+
+With the parser gone `role_swap` returns None — correct, an unavailable check must never become a
+veto — and nothing anywhere said the check had stopped running.
+
+**It is the larger half.** From Result 132's per-gate table over 49 real rewrites: contradiction 1,
+role_swap 2, everything else 0. Two of the three vetoes the whole conjunction produced came from the
+check the mode string did not mention.
+
+`"nli (no role check)"` is its own value rather than folded into either neighbour, because it is
+strictly stronger than `similarity-only` — contradiction and entailment still run — and strictly
+weaker than `nli`. A caller comparing runs across two installs needs to see which.
+
+`parser_available()` is a separate function rather than "call `role_swap` and check for None",
+because None is also what an empty pair returns. *"This pair had no roles to compare"* and *"this
+install cannot compare roles"* are different facts and only the second is a missing guarantee — the
+same distinction `score_text` draws between a detector that abstained and one that failed.
+
+Worth keeping: **a field that reports degradation is itself a place degradation can hide.** This one
+was added for exactly the right reason, names the role check in its own docstring, and had no code
+path that could observe it. The check it forgot is the one doing most of the work.
