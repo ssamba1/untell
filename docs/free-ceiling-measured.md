@@ -8092,3 +8092,44 @@ Worth keeping: **an unchanged output is not evidence of preservation.** Five of 
 placements passed at the loop level, two of them because the loop did nothing at all — and the
 transform underneath was destroying references in every case I then tested directly. The end-to-end
 test looked like the stronger evidence and was the weaker one.
+
+## Result 161
+
+**Eight transforms delete text and keep citations. Two delete whole sentences, and only one had the
+guard.**
+
+Result 160 fixed a sign-off stripper that was deleting references. The sibling question: does anything
+else do it? Every phrase-deleting transform, with a citation adjacent to the deleted span:
+
+```
+_flatten_cliches (stance frame / in conclusion / bottom line)   kept
+_strip_filler_openers                                           kept
+_flatten_vague_attribution                                      kept
+_semicolons_to_periods                                          kept
+_parenthesise_asides                                            kept
+_flatten_participial_trailers                                   kept
+```
+
+All safe, and the reason is structural rather than lucky: they delete a **phrase**, and a citation
+beside a deleted phrase is not inside it. Sentence-level deletion is the dangerous class, and the
+codebase has exactly two.
+
+The other one, `_drop_restatements`, was **already** correct — and by design. Its docstring: *"never a
+sentence carrying a preserve-lock sentinel, which by definition holds a citation."* So the guard I
+added last result was not a new idea; it was bringing an outlier into line with a precedent sitting
+one function away in the same file.
+
+**And that precedent showed the fix was verified against the wrong text.** It keys on the *sentinel*,
+because the loop locks preserved spans into `⟦HZ…⟧` before any transform runs — the production path
+never sees a raw `[3]`. A fix tested only on raw citations could have deleted every reference in real
+use. Measured on the locked form: all three kept. Correct on both paths, now asserted on both.
+
+**Establishing the premise took three corrections.** `_drop_restatements` returned early under four
+sentences, then dropped nothing at all, then needed the restatement out of the excluded first and last
+positions. Each intermediate run "passed" and proved nothing — the same shape as Result 160's
+unchanged-output-is-not-preservation, met twice in two results, in my own probes both times.
+
+Worth keeping: **before adding a guard, look for the one already there.** The transform written five
+results ago lacked a check that a neighbouring function documents in its own docstring. Nothing
+pointed from one to the other, and the sentinel detail — the thing that makes the guard work in
+production rather than only in a test — lived only in the prose of the function that got it right.
