@@ -131,6 +131,30 @@ def _truncate(text: str) -> str:
 # writing reads as AI. 0.45 is taken from the plateau's cautious end: this number decides whether a
 # human is accused, and the cost of a miss (under-flagging AI) is borne by the loop, which still
 # optimises against the low `threshold` and is unaffected by anything here.
+#
+# THE 17% ABOVE IS A POOLED NUMBER, and the lite warning further down this file quotes 30% for what
+# looks like the same quantity. Both are right; they differ because they are measured on different
+# corpora, which is not something a reader can work out from two figures 200 lines apart.
+# Re-measured per corpus, n=100 paired texts each, stdlib path forced:
+#
+#     corpus    FP > 0.30   FP > 0.45   TP > 0.45
+#     HC3          64%         30%         83%
+#     RAID         59%         10%         54%
+#     MAGE         46%          6%         46%
+#
+# HC3 at n=100 reproduces the warning's 64%/30% exactly, and pooling HC3 with RAID lands near the
+# 17% recorded above. Nothing is stale; "the" false-positive rate of this cut simply does not exist
+# independently of the corpus.
+#
+# What the table does show, and the FP-only view hid: the cautious cut costs most of the AI side
+# away from HC3. TP falls from 83% to about half, so on RAID or MAGE this path clears roughly one
+# AI text in two — the same failure the lite warning now reports from the other end. That is still
+# the right trade here (a false accusation is the worse error, and the loop optimises against the
+# low threshold regardless) but it is a trade, not a free win.
+#
+# At n=40 the HC3 figures came out 52%/18% rather than 64%/30%. Same corpus, same code, first 40
+# pairs instead of first 100 — a reminder that these percentages carry a sampling error wide enough
+# to swallow the gap that prompted the whole re-measurement.
 _STDLIB_PERPLEXITY_VERDICT_THRESHOLD = 0.45
 
 
