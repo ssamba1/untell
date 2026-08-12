@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from pathlib import Path
 
 # Run-as-file support: put the package parent on sys.path when executed directly.
 if __package__ in (None, ""):
@@ -356,11 +357,49 @@ def _pinned_note(r: dict) -> list[str]:
     ]
 
 
+def _code_state() -> str:
+    """The commit this run measured, for the header.
+
+    A published number from this script carried the COMMAND that produced it and nothing about the
+    code that ran. That was enough until it wasn't: the README's composite column
+    (0.778, hc3_roberta 0.710) stopped reproducing when `structural.py`'s draws were seeded, and the
+    command in the docs beside it still reads exactly the same. Nothing in the figure said which
+    build it came from, so the drift was invisible until someone re-ran it by hand.
+
+    The audit already enforces that every measured number states a source, and accepts "MEASURED",
+    "n=6" or "Result 12" — none of which pins a build. A randomized rewriter's output number needs
+    one. Cheaper to stamp it here, on every run, than to police the prose afterwards.
+
+    Degrades to "unknown" outside a checkout: a number from a pip install is still a number, and a
+    report that crashed for want of git would be a worse trade than a missing field.
+    """
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=Path(__file__).resolve().parent.parent,
+            capture_output=True, text=True, timeout=10,
+        )
+        if out.returncode == 0 and out.stdout.strip():
+            dirty = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=Path(__file__).resolve().parent.parent,
+                capture_output=True, text=True, timeout=10,
+            )
+            suffix = "+dirty" if dirty.returncode == 0 and dirty.stdout.strip() else ""
+            return out.stdout.strip() + suffix
+    except Exception:  # a provenance stamp must never break the measurement it labels
+        pass
+    return "unknown"
+
+
 def _render(r: dict) -> str:
     lines = [
         f"untell inference-only ceiling — tier={r['tier']} threshold={r['threshold']} "
         f"best_of={r['best_of']} n={r['n']} rewriter={r.get('rewriter') or 'unknown'} "
-        f"corpus={r.get('corpus', 'builtin')} ({r.get('corpus_mean_words')} words avg)",
+        f"corpus={r.get('corpus', 'builtin')} ({r.get('corpus_mean_words')} words avg) "
+        f"commit={r.get('commit') or _code_state()}",
         "",
         f"  pre  flagged rate: {r['pre_flagged_rate']}   mean max P(AI): {r['pre_mean_max']}",
     ]
