@@ -7620,3 +7620,47 @@ Worth keeping: **a fix that does not come with a search is a fix for one occurre
 sites by grepping a phrase I happened to remember, and the mechanical guard immediately found two
 more. The difference between those two numbers is the whole argument for writing the check instead of
 the patch.
+
+## Result 150
+
+**A check I wrote, ran, and deleted — because it examined nothing.**
+
+Result 149's lesson was that a number copied into five files can go stale in four of them. The
+obvious next question: which *constants* are quoted in prose, and do the copies agree?
+
+The first sweep found 9 apparent mismatches across all documents. Every one is a historical value in
+a dated entry — `free-ceiling-measured.md` states `_CAL_MID = 1.0` and `_CAL_MID = -0.03` in the
+entries recording why each was replaced, which is a record, not drift. Scoped to the documents that
+describe the current build: **0 mismatches.**
+
+So I wrote the audit check anyway, to hold the line. It passed, and its detail line read:
+
+```
+PASS  every constant a live document quotes matches the code  (0 quoted value(s) agree (58 scanned))
+```
+
+**Zero.** No live document names a single one of the 58 module-level constants — they are documented
+in code comments beside themselves, which is the right place. The check had no subjects and could
+never fail. Shipping it would have added a nineteenth green line meaning nothing, to an audit whose
+other eighteen were given demonstrated failure paths twelve results ago. Reverted.
+
+**The version with real subjects turned up one hit, and the hit was my harness.**
+
+```
+detectors/binoculars.py says _CAL_MID = 0.9, but detectors/fast_detectgpt.py has 0.2
+```
+
+`binoculars.py` defines its *own* `_CAL_MID = 0.9`. The scan keyed constants by name alone, so two
+modules legitimately sharing a name collided and one overwrote the other. 5 cross-file quotes
+checked, **0 real disagreements** — and this repository's own `check_no_shadowed_definitions` already
+draws exactly the distinction I dropped: a name defined twice *in one module* is a defect, the same
+name in two modules is not.
+
+Fourth time this session that a probe's own flaw produced a false finding, after the harness that
+swallowed a traceback, the dead-function name written into its own haystack, and the marker string
+the scanner found in itself.
+
+Worth keeping: **declining to ship a green check is a result.** The pressure runs the other way —
+the check was written, it worked, it passed, and adding it would have looked like progress on the
+audit's coverage. A check with no subjects is worse than no check, because the next person reads the
+PASS as evidence.
