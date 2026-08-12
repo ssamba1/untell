@@ -595,6 +595,17 @@ _SENTENCES_RESPONSES = _obj(
             "description": "present when the configured tier's per-sentence ranking is near-chance "
                            "(the pure-stdlib path). The `flagged` list is then close to arbitrary",
         },
+        # A different question from `warning`, and the reason both exist: `warning` says the
+        # DETECTOR cannot rank, this says THIS DOCUMENT's scores are too close together to order,
+        # whichever detector produced them. MEASURED at tier=full, within-document spread of
+        # per-sentence max: 0.0088 mean on HC3 against 0.6595 on RAID, with two HC3 documents in
+        # eight scoring every sentence at exactly 0.9992.
+        "unrankable": {
+            "type": "boolean",
+            "description": "present and true when this document's per-sentence scores span less "
+                           "than 0.05, so `flagged` is close to whichever order the sort produced. "
+                           "Rewrite the whole passage rather than the flagged spans",
+        },
     },
     required=["tier", "sentences", "flagged"],
 )

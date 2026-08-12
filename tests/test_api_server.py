@@ -1066,6 +1066,21 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         ("/score", "post", {"text": TEXT, "tier": "lite"}),
         ("/tells", "post", {"text": TEXT}),
         ("/sentences", "post", {"text": TEXT + " It works well enough.", "tier": "lite"}),
+        # A body whose sentences CANNOT be ranked, deliberately. The one above spreads 0.7577 and
+        # is correctly rankable, so it never produces `unrankable` — and the payload -> schema check
+        # below passed while that key shipped undocumented. A one-directional check was the last gap
+        # here; this is the same hole from another side: a directional check is only as good as the
+        # payloads it exercises. MEASURED through the endpoint — this text scores every sentence
+        # identically, spread 0.0.
+        #
+        # The first attempt at this entry simply added a third sentence, on the theory that three
+        # was the minimum. It spread 0.7577 too, and the guard-the-guard caught it: with the schema
+        # entry deleted the check still passed.
+        ("/sentences", "post",
+         {"text": "Moreover, the framework leverages a robust approach. Furthermore, it underscores "
+                  "the pivotal integration. In conclusion, organizations must harness these "
+                  "seamless solutions today. Additionally, the holistic methodology empowers teams.",
+          "tier": "lite"}),
         ("/verify", "post", {"text": TEXT}),
         ("/ceiling", "post", {"n": 2, "tier": "lite", "rewriter": "structural"}),
     ]
@@ -1091,7 +1106,13 @@ class TestTheOpenApiSchemaDescribesTheRealResponse:
         # guess as the schema, so the test confirmed the guess instead of checking it.
         # `matches` is returned only when `include_matches` is true, which defaults to false — the
         # same shape as the three above, and it arrived in a concurrent commit without an entry.
-        conditional = {"warning", "failed_detectors", "detector_errors", "matches"}
+        # `unrankable` is conditional on the DOCUMENT rather than on the request: it appears only
+        # when this text's per-sentence scores span less than 0.05 and there are at least three
+        # sentences to spread. Proven, not assumed — MEASURED at tier=full it fires on 7 of 8 HC3
+        # documents and 0 of 8 RAID ones, so both branches are reachable and neither is the default.
+        conditional = {
+            "warning", "failed_detectors", "detector_errors", "matches", "unrankable",
+        }
         client = self._client()
         response = client.get(path) if method == "get" else client.post(path, json=body)
         payload = response.json()
