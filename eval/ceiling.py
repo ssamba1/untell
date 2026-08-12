@@ -97,7 +97,7 @@ def _score_one(args: tuple) -> tuple:
     The rewriter is passed by NAME, not as an object: rewriter instances hold loaded models and are
     not picklable, and each worker has to build its own anyway.
     """
-    text, tier, threshold, max_iters, rewriter_name, best_of = args
+    text, tier, threshold, max_iters, rewriter_name, best_of, seed = args
     import os
 
     # Each worker gets its own torch. Without capping threads, N workers each spawn a full thread
@@ -116,12 +116,13 @@ def _score_one(args: tuple) -> tuple:
     rw = get_rewriter(prefer=rewriter_name) if rewriter_name else None
     pre = score_text(text, tier=tier, threshold=threshold)
     res = untell_text(
-        text, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rw, best_of=best_of
+        text, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rw, best_of=best_of,
+        seed=seed,
     )
     return text, pre, res
 
 
-def _each_text(texts, tier, threshold, max_iters, rewriter, best_of, workers):
+def _each_text(texts, tier, threshold, max_iters, rewriter, best_of, workers, seed=None):
     """Yield (text, pre_score, loop_result) per text, in parallel when asked and possible.
 
     MEASURED, and the answer depends entirely on how expensive one text is. Each worker re-imports
@@ -148,7 +149,7 @@ def _each_text(texts, tier, threshold, max_iters, rewriter, best_of, workers):
         try:
             from concurrent.futures import ProcessPoolExecutor
 
-            payload = [(t, tier, threshold, max_iters, name, best_of) for t in texts]
+            payload = [(t, tier, threshold, max_iters, name, best_of, seed) for t in texts]
             with ProcessPoolExecutor(max_workers=min(workers, len(texts))) as pool:
                 # `map` preserves input order, so aggregation stays deterministic.
                 yield from pool.map(_score_one, payload)
@@ -163,7 +164,7 @@ def _each_text(texts, tier, threshold, max_iters, rewriter, best_of, workers):
         pre = score_text(t, tier=tier, threshold=threshold)
         res = untell_text(
             t, tier=tier, threshold=threshold, max_iters=max_iters, rewriter=rewriter,
-            best_of=best_of,
+            best_of=best_of, seed=seed,
         )
         yield t, pre, res
 
@@ -209,8 +210,18 @@ def measure_ceiling(
     # deliberately conservative and the env var exists to tune it per machine.
     for _run in range(max(1, repeats)):
         run_posts: list[float] = []
+        # A DIFFERENT seed per repeat, or `repeats` measures nothing.
+        #
+        # `untell_text` seeds its RNG from the input text, so every repeat of the same corpus was
+        # byte-identical and `post_mean_max_stdev` came back 0.0 — MEASURED at repeats=3: means
+        # [0.2458, 0.2458, 0.2458]. That zero reads as "this number has no uncertainty", which is
+        # the opposite of what this option exists to report, and it would have hidden the very
+        # spread the docstring above quotes (0.080 vs 0.144 across two runs).
+        #
+        # `_run` as the seed keeps both properties at once: repeat i differs from repeat j, and
+        # repeat i is the same on every invocation, so a published figure can be re-derived.
         for _source, pre, res in _each_text(
-            texts, tier, threshold, max_iters, rewriter, best_of, workers
+            texts, tier, threshold, max_iters, rewriter, best_of, workers, seed=_run
         ):
             # An unscored result carries max: 0.0 as a placeholder, and flagged_rate below counts
             # `s >= threshold` — so a dead detector stack would report a 0% post-flagged rate, i.e.
