@@ -1,21 +1,29 @@
-"""The advertised response schema must match what the endpoint actually returns.
+"""Every endpoint's advertised response schema must match what it actually returns.
 
-`/humanize` publishes a response schema in the OpenAPI document, and a client generating types from
-it gets exactly the fields listed there. The loop grew three fields — `seed`, `tells_before`,
-`tells_after` — and the schema did not, so a generated client could not see them at all.
+A client generating types from the OpenAPI document sees exactly the fields listed there. `/humanize`
+grew `seed`, `tells_before` and `tells_after` and its schema did not, so a generated client could
+not see them at all — the same drift `docs/result-shapes.md` had in the same week, and for the same
+reason: a surface that enumerates fields cannot be left to catch up on its own, because nothing
+complains.
 
-That is the same drift `docs/result-shapes.md` had in the same week, for the same reason: a
-surface that enumerates fields cannot be left to catch up on its own, because nothing complains.
-The prose reference had a test checking one direction; this one had no test at all.
+Swept all seven endpoints after fixing that one. MEASURED — the drift was confined to `/humanize`:
 
-Checked both ways here:
+    endpoint     schema   returned   undocumented
+    /score          13       11           0
+    /tells          10        8           0
+    /sentences       6        6           0
+    /scrub           2        2           0
+    /verify          7        6           0
+    /ceiling        22       22           0
+    /humanize       20       18           0   (after the fix; 3 before)
 
-  * every field the schema promises is really returned — otherwise the document lies
-  * every field returned is in the schema — otherwise callers cannot use it
+The gaps in the middle column are all CONDITIONAL fields — `detector_errors` when a detector
+fails, `matches` when the caller asks for them, the three `*_warning` fields when their condition
+holds. Those are exempt from the "must be returned" direction only: demanding them on every
+response would assert that every run has something wrong with it.
 
-Conditional fields are exempt from the first direction only. `warning`, `voice_warning` and
-`rewriter_warning` appear when their condition holds, and demanding them on every response would
-mean asserting that every run has something wrong with it.
+Both directions are checked for every endpoint, so the next field added anywhere fails here rather
+than reaching a client that cannot see it.
 """
 from __future__ import annotations
 
@@ -32,9 +40,23 @@ TEXT = (
     "Furthermore, it significantly improves overall efficiency across the evaluated corpus."
 )
 
-# Present only when their condition holds.
-CONDITIONAL = {"warning", "voice_warning", "rewriter_warning", "error", "detector_errors",
-               "suggestion"}
+# Cheapest valid request per endpoint.
+REQUESTS = {
+    "/score": {"text": TEXT, "tier": "lite"},
+    "/tells": {"text": TEXT},
+    "/sentences": {"text": TEXT, "tier": "lite"},
+    "/scrub": {"text": TEXT},
+    "/verify": {"text": TEXT, "tier": "lite"},
+    "/ceiling": {"tier": "lite", "n": 1, "max_iters": 1, "best_of": 1},
+    "/humanize": {"text": TEXT, "tier": "lite", "max_iters": 1, "best_of": 1},
+}
+
+# Documented but present only when their condition holds.
+CONDITIONAL = {
+    "warning", "voice_warning", "rewriter_warning", "error",
+    "detector_errors", "failed_detectors", "matches", "suggestion",
+    "out_of_range_detectors", "out_of_range_raw",
+}
 
 
 @pytest.fixture(scope="module")
@@ -46,47 +68,58 @@ def client():
 
 
 @pytest.fixture(scope="module")
-def humanize_schema(client) -> dict:
-    spec = client.get("/openapi.json").json()
-    responses = spec["paths"]["/humanize"]["post"]["responses"]
-    ok = responses["200"]["content"]["application/json"]["schema"]
-    if "$ref" in ok:
-        name = ok["$ref"].rsplit("/", 1)[-1]
-        ok = spec["components"]["schemas"][name]
-    return ok.get("properties", {})
+def spec(client) -> dict:
+    return client.get("/openapi.json").json()
 
 
-@pytest.fixture(scope="module")
-def humanize_response(client) -> dict:
-    response = client.post(
-        "/humanize",
-        json={"text": TEXT, "tier": "lite", "max_iters": 1, "best_of": 1},
-    )
-    assert response.status_code == 200, response.text
-    return response.json()
+def _schema_properties(spec: dict, path: str) -> dict:
+    node = spec["paths"].get(path, {}).get("post", {})
+    content = node.get("responses", {}).get("200", {}).get("content", {}).get("application/json", {})
+    schema = content.get("schema", {})
+    if "$ref" in schema:
+        schema = spec["components"]["schemas"][schema["$ref"].rsplit("/", 1)[-1]]
+    return schema.get("properties", {})
 
 
-def test_the_schema_has_properties(humanize_schema):
-    """Guards the guard: an empty schema would make both directions pass trivially."""
-    assert len(humanize_schema) >= 8, sorted(humanize_schema)
+def _response(client, path: str) -> dict:
+    result = client.post(path, json=REQUESTS[path])
+    assert result.status_code == 200, f"{path} -> {result.status_code}: {result.text[:200]}"
+    return result.json()
 
 
-def test_every_promised_field_is_returned(humanize_schema, humanize_response):
-    promised = set(humanize_schema) - CONDITIONAL
-    missing = sorted(promised - set(humanize_response))
-    assert not missing, f"the schema advertises fields /humanize does not return: {missing}"
+def test_every_post_endpoint_is_covered(spec):
+    """The guard. An endpoint added without an entry is one nobody checks the schema of."""
+    posts = {
+        path for path, node in spec["paths"].items()
+        if "post" in node and not path.startswith(("/docs", "/openapi", "/redoc"))
+    }
+    assert not posts - set(REQUESTS), f"no request here for {sorted(posts - set(REQUESTS))}"
 
 
-def test_every_returned_field_is_in_the_schema(humanize_schema, humanize_response):
+@pytest.mark.parametrize("path", sorted(REQUESTS))
+def test_the_schema_enumerates_fields(spec, path: str):
+    """Guards the guard: an empty schema passes both directions trivially."""
+    assert len(_schema_properties(spec, path)) >= 2, path
+
+
+@pytest.mark.parametrize("path", sorted(REQUESTS))
+def test_every_promised_field_is_returned(client, spec, path: str):
+    promised = set(_schema_properties(spec, path)) - CONDITIONAL
+    missing = sorted(promised - set(_response(client, path)))
+    assert not missing, f"{path} advertises fields it does not return: {missing}"
+
+
+@pytest.mark.parametrize("path", sorted(REQUESTS))
+def test_every_returned_field_is_in_the_schema(client, spec, path: str):
     """The direction that drifted. A generated client cannot use a field it was never told about."""
-    undocumented = sorted(set(humanize_response) - set(humanize_schema))
+    undocumented = sorted(set(_response(client, path)) - set(_schema_properties(spec, path)))
     assert not undocumented, (
-        f"/humanize returns fields the schema does not list: {undocumented}. Add them to "
-        "_HUMANIZE_RESPONSES rather than deleting this assertion."
+        f"{path} returns fields the schema does not list: {undocumented}. Add them to the "
+        "endpoint's response schema rather than deleting this assertion."
     )
 
 
 @pytest.mark.parametrize("field", ["seed", "tells_before", "tells_after"])
-def test_the_recently_added_fields_are_advertised(field: str, humanize_schema):
+def test_the_recently_added_humanize_fields_are_advertised(spec, field: str):
     """Named individually because these are the three that were missing when this was written."""
-    assert field in humanize_schema, sorted(humanize_schema)
+    assert field in _schema_properties(spec, "/humanize")
