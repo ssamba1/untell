@@ -315,11 +315,27 @@ def _server():
     @server.tool()
     def compare(tier: str = "lite") -> dict:
         """Head-to-head comparison of humanizer techniques: synonym-swap vs back-translation
-        vs blind paraphrase vs the closed loop. Returns per-technique scores and AI-tell counts.
+        vs blind paraphrase vs the closed loop. Returns per-technique scores and AI-tell counts,
+        over the built-in sample corpus (named in the result's `corpus` field).
         """
-        from eval.compare_humanizers import compare
+        # `texts` and `corpus`, because the underlying function requires both and this tool passed
+        # neither. It called `compare(tier=tier)` against a signature of
+        # `compare(texts, tier=..., threshold=..., corpus=...)`, so EVERY invocation raised
+        # TypeError: compare() missing 1 required positional argument: 'texts'. The tool was dead
+        # on a shipped surface, and an MCP client got a traceback rather than a refusal it could
+        # act on — the same class of gap `_bad_args` exists to close for the other tools.
+        #
+        # The corpus label is not decorative. `_render` reads `result["corpus"]` and the function's
+        # own docstring records that calling it directly produced a report headed "corpus=unknown";
+        # nine results in this repository once generalised from a demo corpus, so a comparison that
+        # cannot name its own is unquotable. The CLI passes "built-in sample" for this corpus and
+        # this tool now says the same thing rather than inventing a second name for it.
+        from eval.compare_humanizers import _SAMPLE, compare
 
-        return compare(tier=tier)
+        bad = _bad_args(tier=(tier, "tier"))
+        if bad:
+            return bad
+        return compare(list(_SAMPLE), tier=tier, corpus="built-in sample")
 
     @server.tool()
     def scrub(text: str) -> dict:
