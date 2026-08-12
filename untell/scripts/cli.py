@@ -188,13 +188,28 @@ def _run_demo(text: str | None = None) -> int:
     print()
 
     # Step 3: Instructions (instant — no loop)
+    #
+    # The count below used to be the constant 15 — the size of the detector REGISTRY, not of what
+    # runs. `all_detectors()` does return 15 classes, but `load_detectors` gives 5 at full tier and
+    # 1 at lite, so a reader on a clean stdlib install was told fifteen detectors had judged their
+    # text when one had. Two ways to get the honest number were rejected before this one:
+    # `available()` reports 5 even under UNTELL_LITE_NO_TORCH=1 (it tests whether torch imports,
+    # not whether this run will use it) and costs ~9s on the path whose whole selling point is
+    # being instant. `pre["detectors"]` is the set that literally just answered in step 1 — free,
+    # and it cannot disagree with the score printed two screens up.
+    #
+    # `--tier` is pinned in the suggested command for the same reason: `untell humanize` defaults
+    # to full, so without it the demo would measure one tier and hand over a command that runs
+    # another, and the count would be wrong again for anyone who pasted it.
+    ran = len(pre.get("detectors", {})) or 1
     print(
         "[3/3] Ready to humanize!\n"
         f"\n"
-        f"  untell humanize \"{sample_text[:60]}...\" --rewriter composite\n"
+        f"  untell humanize \"{sample_text[:60]}...\" --rewriter composite --tier {demo_tier}\n"
         f"\n"
         f"The closed loop will:\n"
-        f"  1. Score your text against 15 detectors\n"
+        f"  1. Score your text against the {ran} detector{'' if ran == 1 else 's'} this install "
+        f"loads at tier {demo_tier} (untell knows 15; the rest need heavier deps or API keys)\n"
         f"  2. Rewrite flagged sentences using composite rewriter\n"
         f"  3. Re-score and repeat until the hardest detector passes\n"
         f"\n"
