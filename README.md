@@ -341,6 +341,26 @@ it is another chance to contain a text the loop cannot clear.
 > | **`hc3_roberta`** | 1.00 → **0.710** | 1.00 → **0.248** |
 > | meaning similarity | 0.978 / 0.921 worst | 0.932 / 0.831 worst |
 >
+> **What DOES reproduce, measured 2026-08-12 at commit `9545d62`.** Same rewriter, same settings,
+> the other corpus — RAID paper abstracts, which no detector in the ensemble was trained on:
+>
+> | RAID, n=6, `--repeats 3`, `composite` | before | after |
+> |---|---|---|
+> | flagged rate | 0.83 | **0.28** |
+> | mean max P(AI) | 0.629 | **0.287 ± 0.003** |
+> | `roberta_openai` | 0.333 | **0.0005** |
+> | `hc3_roberta` | 0.350 | **0.105** |
+> | meaning similarity | — | 0.979 mean / 0.939 worst |
+>
+> Every detector moves, the three runs agree to ±0.003, and 72% of documents end unflagged.
+>
+> **Read the two corpora together or neither is honest.** RAID starts easier — 0.83 flagged at mean
+> max 0.629, against HC3's 1.00 at 0.9997 — so this is not "the loop does better", it is a different
+> starting point. And HC3 is the harder case for a specific, nameable reason: `hc3_roberta` is
+> fine-tuned on HC3, so on that corpus the ensemble contains a detector for which the text is
+> in-distribution and the max cannot move. Quoting RAID alone would be the same error this file
+> already documents about the built-in sample.
+>
 > **RE-MEASURED 2026-08-12 and the composite column no longer reproduces.** The same command on the
 > same six answers now returns mean max **0.9994**, flagged **1.00**, with `hc3_roberta`
 > **0.9992 → 0.9992** — unmoved, where this table has it dropping to 0.710. The figures above were
