@@ -7884,3 +7884,45 @@ Worth keeping: **a proxy for a property is not the property, and the gap shows u
 the detector weak" was a serviceable stand-in for "can these scores be ranked" right up until a
 strong detector met text it was trained on. The fix was not a better proxy; it was measuring the
 thing itself, which turned out to be one subtraction.
+
+## Result 156
+
+**The two-directional check was there. It was starved of inputs.**
+
+The key added one result ago reaches `/sentences` — and the published schema does not mention it:
+
+```
+returned:   flagged, note, sentences, threshold, tier, unrankable, warning
+documented: flagged, note, sentences, threshold, tier, warning
+```
+
+The adjacent-surface defect again, on my own change, one loop later. But the interesting part is why
+nothing caught it. `test_no_returned_field_is_undocumented` exists and runs payload → schema. It was
+written precisely because the check used to run one way only, and its docstring says so:
+
+> *A one-directional check on a two-directional invariant is the same shape as an allowlist that only
+> fails on additions: it holds while the drift runs the way it happens to be looking.*
+
+It passed anyway. Its `/sentences` body is two sentences, and `unrankable` needs at least three to
+have a spread worth judging. **A directional check is only as good as the payloads it exercises**, and
+a key that appears only under a particular input shape is invisible to one that never produces that
+shape. Same hole, reached from the other side.
+
+**My first fix for that was itself starved, and the guard-the-guard caught it.** I added a third
+sentence, on the theory that three was the minimum. Measured through the endpoint, that body spreads
+**0.7577** — genuinely rankable, correctly no key. Deleting the schema entry to check the test would
+notice: it still passed. The payload that works scores every sentence identically, spread **0.0**,
+and is now the one in the table.
+
+Also: `git checkout --` on an uncommitted fix threw the fix away mid-verification, so the "restored"
+run was measuring a file with no fix in it. Backed up to a temp copy instead. Two mistakes in one
+verification, both of the same kind — checking that a guard fires without checking what it was
+looking at.
+
+`unrankable` is now documented, and listed as conditional in the staleness check with the proof that
+set demands: it fires on 7 of 8 HC3 documents and 0 of 8 RAID, so both branches are reachable and
+neither is the default.
+
+Worth keeping: **"we check both directions" is a weaker claim than it sounds.** Direction was the
+last gap in this test and it was fixed. Coverage of the conditional branches is a second gap in the
+same test, invisible from the first, and a green two-directional check gave no hint of it.
