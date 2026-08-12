@@ -111,3 +111,35 @@ def test_the_threshold_sits_between_the_two_measured_groups() -> None:
     """Scaffolding remainders measured at 0-5, content at 10-17. A threshold outside that gap
     silently reverts this file to one of the two failures it documents."""
     assert 5 < _CLOSER_REMAINDER_WORDS < 10
+
+
+def test_the_stripped_output_survives_the_real_meaning_gate() -> None:
+    """The gate this transform actually faces, which Result 116 never asked.
+
+    That result verified the strip with `passes()` — the similarity-only helper — and shipped. The
+    loop calls `meaning_preserved`, and MEASURED against it the transform was rejected every time,
+    by three different gates for three different reasons:
+
+        certainty   "hope" is a hedge word, so deleting a sign-off drops a hedge CLASS
+        length      two stacked closers are 13 words, over the 10-word deletion allowance
+        roles       "I hope ...", "Let me know ..." are predicates that vanished
+
+    The transform ran, produced correct output, and every candidate was thrown away. All three now
+    read scaffolding-stripped text, normalised once in `entailment.strip_scaffolding`.
+    """
+    from untell.scripts.entailment import meaning_preserved
+
+    for closer in ("I hope this helps!", "I hope this helps! Let me know if you have questions."):
+        text = f"{BODY} {closer}"
+        out = _strip_meta_closers(text)
+        assert out != text, "premise: the transform must have fired"
+        assert meaning_preserved(text, out, similarity(text, out), 0.76), closer
+
+
+def test_a_real_deletion_is_still_rejected() -> None:
+    """Guards the guard. The exemption must not become a hole: text that is not a sign-off still
+    counts in full, so dropping a real sentence is still a veto."""
+    from untell.scripts.entailment import meaning_preserved
+
+    truncated = " ".join(BODY.split(". ")[:1]) + "."
+    assert meaning_preserved(BODY, truncated, similarity(BODY, truncated), 0.76) is False

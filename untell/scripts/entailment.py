@@ -365,6 +365,36 @@ _LENGTH_SLACK_SHARE = 0.10
 _LENGTH_WORD = re.compile(r"[A-Za-z0-9']+")
 
 
+def strip_scaffolding(text: str) -> str:
+    """Text with reader-directed sign-offs removed, for gate comparison only.
+
+    "I hope this helps!" hedges no claim, asserts no predicate, and carries no content — it is
+    addressed to the reader rather than to the subject. Removing one is therefore invisible to
+    meaning, and `structural._strip_meta_closers` exists to do exactly that.
+
+    Every gate disagreed. MEASURED on that transform's own output, one gate at a time:
+
+        gate         verdict on a stripped sign-off
+        certainty    FALSE — "hope" is a hedge word, and deleting it drops a hedge CLASS
+        length       FALSE — two stacked closers are 13 words, over the 10-word allowance
+        roles        TRUE (veto) — "I hope ...", "Let me know ..." are predicates that vanished
+
+    Three gates, three different reasons, all of them right about the text and wrong about the
+    meaning. The transform ran, produced correct output, and the loop threw away every candidate.
+
+    Normalising ONCE here rather than teaching each gate about sign-offs: three scattered exemptions
+    would be three places to drift apart, and the first two were written that way before this
+    replaced them. Applied to BOTH sides and limited to what `tells._META_CLOSER_RE` already names,
+    so deleting, hedging or re-attributing anything else is still caught in full.
+    """
+    from untell.scripts.tells import is_pure_scaffolding
+    from untell.text_split import split_sentences
+
+    sentences = split_sentences(text)
+    kept = [s for s in sentences if not is_pure_scaffolding(s)]
+    return " ".join(kept).strip() if kept else text
+
+
 def words_lost(source: str, candidate: str) -> int:
     """How many words ``candidate`` drops relative to ``source``. Negative when it grew."""
     return len(_LENGTH_WORD.findall(source)) - len(_LENGTH_WORD.findall(candidate))
@@ -432,6 +462,10 @@ def meaning_preserved(
     # verdict, only the cost of reaching it.
     from untell.scripts.hedges import certainty_kept, polarity_kept
     from untell.scripts.numerals import numbers_kept
+
+    # Reader-directed sign-offs are not meaning, and every gate below reads them as if they were.
+    # See `strip_scaffolding` for the three separate vetoes that measured on.
+    source, candidate = strip_scaffolding(source), strip_scaffolding(candidate)
 
     if not numbers_kept(source, candidate):
         return False

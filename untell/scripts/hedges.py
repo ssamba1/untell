@@ -237,6 +237,9 @@ def dropped_hedges(source: str, candidate: str) -> list[str]:
     A dropped class means the rewrite states more firmly than the source did. ``causal_upgrade``
     is reported alongside them: it is the same failure (claiming more than the source) reached by
     adding a causal claim rather than by removing a hedge.
+
+    Reader-directed sign-offs are stripped from both sides before this runs — see
+    `entailment.strip_scaffolding` — because a hedge addressed to the reader hedges no claim.
     """
     found = sorted(_classes_present(source) - _classes_present(candidate))
     if _causal_upgrade(source, candidate):

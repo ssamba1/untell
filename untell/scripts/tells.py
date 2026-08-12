@@ -699,6 +699,32 @@ def _repeated_trigrams(text: str) -> int:
     return repeats if (repeats / len(words) * 100) >= 5.0 else 0
 
 
+# How much text may sit around a matched sign-off and still count as pure scaffolding. MEASURED over
+# seven sign-offs and three content sentences opening with the same phrases:
+#
+#     scaffolding remainders   0, 0, 3, 4, 5, 5, 5
+#     content remainders       10, 11, 17
+#
+# Six sits between the groups. The evidence is thin — one content sentence is real, the rest
+# constructed — so re-measure this if a document ever loses a sentence it should have kept.
+CLOSER_REMAINDER_WORDS = 6
+
+
+def is_pure_scaffolding(sentence: str) -> bool:
+    """True when ``sentence`` is a chatbot sign-off and nothing else.
+
+    Lives here because TWO callers need the same answer and they were built with two: the rewriter
+    deletes whole sentences that satisfy this, while the meaning gate exempted only the matched
+    SPAN. The remainder — "if you need more detail" — then read as deleted content and the gate
+    vetoed the very transform this predicate defines. One definition, one unit, both sides.
+    """
+    match = _META_CLOSER_RE.search(sentence)
+    if not match:
+        return False
+    remainder = (sentence[: match.start()] + sentence[match.end() :]).strip(" .!?,;:")
+    return len(remainder.split()) <= CLOSER_REMAINDER_WORDS
+
+
 def _duplicate_sentence_starts(text: str) -> int:
     """Sentences opening with a word already used to open another sentence, as a percent.
 

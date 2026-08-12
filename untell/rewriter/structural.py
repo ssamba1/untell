@@ -20,6 +20,10 @@ import re
 
 from untell.layout import apply_per_block
 from untell.rewriter.base import Rewriter
+from untell.scripts.tells import (
+    CLOSER_REMAINDER_WORDS as _TELLS_CLOSER_REMAINDER_WORDS,
+)
+from untell.scripts.tells import is_pure_scaffolding
 from untell.text_split import split_sentences
 
 # ---------------------------------------------------------------------------
@@ -1245,7 +1249,10 @@ def _inject_contractions(text: str, rate: float = 1.0) -> str:
 # Six sits between them with margin on both sides. The evidence is thin — ONE of those content
 # sentences is a real corpus instance and the rest are constructed — so this is a threshold to
 # re-measure if a document ever loses a sentence it should have kept, not a fitted constant.
-_CLOSER_REMAINDER_WORDS = 6
+# The remainder bound and the predicate that uses it moved to `untell.scripts.tells` when the
+# meaning gate needed the same answer — see `tells.is_pure_scaffolding`. Aliased here so existing
+# readers and tests still find the name where the transform lives.
+_CLOSER_REMAINDER_WORDS = _TELLS_CLOSER_REMAINDER_WORDS
 
 
 def _strip_meta_closers(text: str) -> str:
@@ -1280,18 +1287,9 @@ def _strip_meta_closers(text: str) -> str:
     **17 words** there against **0** for "I hope this helps!", so the remainder is the test. A tell
     fix that deletes the user's last sentence is a far worse defect than the tell.
     """
-    from untell.scripts.tells import _META_CLOSER_RE
-
-    def _is_pure_scaffolding(sentence: str) -> bool:
-        match = _META_CLOSER_RE.search(sentence)
-        if not match:
-            return False
-        remainder = (sentence[: match.start()] + sentence[match.end() :]).strip(" .!?,;:")
-        return len(remainder.split()) <= _CLOSER_REMAINDER_WORDS
-
     sentences = _split_sentences(text)
     kept_sentences = list(sentences)
-    while len(kept_sentences) > 1 and _is_pure_scaffolding(kept_sentences[-1]):
+    while len(kept_sentences) > 1 and is_pure_scaffolding(kept_sentences[-1]):
         kept_sentences.pop()
     if len(kept_sentences) == len(sentences):
         return text
