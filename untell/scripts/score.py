@@ -539,12 +539,28 @@ def _score_with_detectors(
     # 69% of HUMAN text flags, against 6% when torch is importable and the same detector uses GPT-2
     # instead. Only warn when that path is the whole verdict — with other detectors live, the max
     # is not its to decide.
+    #
+    # BOTH DIRECTIONS, because the warning used to cover only one. "Treat a flag as a prompt to
+    # re-run" describes the harmless error: a false flag costs a re-run. The error that costs
+    # something is the reverse — this path calling AI text clean, after which nobody re-runs
+    # anything. MEASURED on the AI side, lite verdict against full verdict, each at its own
+    # published verdict_threshold:
+    #
+    #     corpus        full flags   lite clears it anyway
+    #     HC3 (n=30)      30/30           3  = 10%
+    #     RAID (n=30)     30/30          21  = 70%
+    #
+    # Every one of those 24 misses is against a full-tier score of 1.000 — not borderline text,
+    # the ensemble's maximum confidence. The 7x spread between corpora is why the sentence names
+    # both: a single figure here would be a property of whichever corpus produced it.
     elif effective == "lite" and modes.get("perplexity_burstiness") == "stdlib" and len(numeric) == 1:
         result["warning"] = (
             "lite tier on the stdlib path. Re-measured on 100 HC3 pairs: 64% of HUMAN text scores "
             "above the 0.30 loop threshold, and 30% is FLAGGED — `flagged` uses the 0.45 verdict "
-            "threshold, not the loop one, so the two numbers answer different questions. Either "
-            "way this path is weak evidence: treat a flag as a prompt to re-run at --tier full."
+            "threshold, not the loop one, so the two numbers answer different questions. It misses "
+            "the other way too: of AI text the full ensemble flags, this path clears 10% (HC3, "
+            "n=30) and 70% (RAID, n=30), every miss against a full-tier score of 1.000. Weak "
+            "evidence in both directions — re-run at --tier full before trusting a flag OR a clear."
         )
     # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
     elif _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
