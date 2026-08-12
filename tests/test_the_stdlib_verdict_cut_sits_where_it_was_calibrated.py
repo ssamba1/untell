@@ -18,8 +18,8 @@ has to come with a change to the record.
 from __future__ import annotations
 
 from untell.scripts.score import (
-    DEFAULT_THRESHOLD,
     _STDLIB_PERPLEXITY_VERDICT_THRESHOLD,
+    DEFAULT_THRESHOLD,
     _verdict_threshold,
 )
 

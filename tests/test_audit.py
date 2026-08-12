@@ -159,11 +159,42 @@ def test_an_undocumented_env_var_is_caught(tmp_path, monkeypatch):
     (tmp_path / "README.md").write_text("# nothing documented here\n", encoding="utf-8")
     monkeypatch.setattr(audit, "REPO", tmp_path)
 
+    # audit.ENV_VAR_RE, not a copy of it. This test used to re-implement the pattern, so the real
+    # one could stop matching and the test would go on passing against its own private regex —
+    # which is how three patterns once sat dead behind 2526 tests.
     read = set()
     for path in (tmp_path / "untell").rglob("*.py"):
-        read |= set(re.findall(r"\b(UNTELL_[A-Z0-9_]+)\b", path.read_text(encoding="utf-8")))
+        read |= set(audit.ENV_VAR_RE.findall(path.read_text(encoding="utf-8")))
     undocumented = [v for v in read if v not in (tmp_path / "README.md").read_text(encoding="utf-8")]
     assert undocumented == ["UNTELL_SECRET_KNOB"]
+
+
+def test_the_legacy_prefix_is_scanned_too(tmp_path):
+    """`HUMANIZE_*` is the pre-rename spelling and two switches still honour it.
+
+    The scanner matched `UNTELL_` only, so those two were undocumented AND invisible to the check
+    written to catch undocumented config. A user setting `HUMANIZE_ENABLE_RADAR` is using a
+    supported switch that no document mentions.
+    """
+    pkg = tmp_path / "untell"
+    pkg.mkdir()
+    (pkg / "thing.py").write_text(
+        "import os\nos.getenv('HUMANIZE_OLD_KNOB')\n_HUMANIZE_RESPONSES = {}\n", encoding="utf-8"
+    )
+
+    found = set(audit.ENV_VAR_RE.findall((pkg / "thing.py").read_text(encoding="utf-8")))
+    assert "HUMANIZE_OLD_KNOB" in found, "the legacy prefix is still invisible to the scanner"
+    assert "HUMANIZE_RESPONSES" not in found, (
+        "the pattern matched inside the identifier `_HUMANIZE_RESPONSES`; the check would then "
+        "demand a README row for a Python variable"
+    )
+
+
+def test_the_legacy_aliases_the_code_honours_are_documented():
+    """The two that exist today. Both are read at runtime, so both are user-facing config."""
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    for var in ("HUMANIZE_BROWSER_SITES", "HUMANIZE_ENABLE_RADAR"):
+        assert var in readme, f"{var} is honoured by the code and documented nowhere"
 
 
 def test_the_meaning_gate_kill_switches_are_documented_as_such():

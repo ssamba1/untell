@@ -47,6 +47,19 @@ LIVE_DOCS = (
 )
 
 
+# Environment variables the code reads, for the "every variable is documented" check below.
+#
+# BOTH PREFIXES. `HUMANIZE_*` is the pre-rename spelling and two switches still honour it, so a
+# user setting one of those is using a supported knob the check could not see — and being
+# undiscoverable is the exact defect this check exists to prevent.
+#
+# The leading `\b` is load-bearing: without it the pattern matches inside ordinary identifiers such
+# as `_HUMANIZE_RESPONSES` in api_server.py, and the check would demand a README row for a Python
+# variable. Module-level so the test can assert against THIS pattern instead of a copy of it — the
+# test used to re-implement the regex, which meant a regression in the real one changed nothing.
+ENV_VAR_RE = re.compile(r"\b((?:UNTELL|HUMANIZE)_[A-Z0-9_]+)\b")
+
+
 def audited_doc(report: Report, rel: str) -> str | None:
     """Read a document the audit makes claims about, or record that it could not.
 
@@ -277,10 +290,10 @@ def check_derivable(report: Report) -> None:
         if not base.exists():
             continue
         for path in base.rglob("*.py"):
-            read_vars |= set(re.findall(r"\b(UNTELL_[A-Z0-9_]+)\b", path.read_text(encoding="utf-8")))
+            read_vars |= set(ENV_VAR_RE.findall(path.read_text(encoding="utf-8")))
     undocumented = sorted(v for v in read_vars if v not in readme)
     report.check(
-        "every UNTELL_* variable the code reads is documented",
+        "every UNTELL_*/HUMANIZE_* variable the code reads is documented",
         not undocumented,
         f"undocumented: {undocumented[:6]}" if undocumented else f"{len(read_vars)} documented",
     )
