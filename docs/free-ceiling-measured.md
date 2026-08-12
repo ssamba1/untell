@@ -7926,3 +7926,48 @@ neither is the default.
 Worth keeping: **"we check both directions" is a weaker claim than it sounds.** Direction was the
 last gap in this test and it was fixed. Coverage of the conditional branches is a second gap in the
 same test, invisible from the first, and a green two-directional check gave no hint of it.
+
+## Result 157
+
+**The schema check verified two of eleven conditional fields, and its busiest endpoint was not in the
+table at all.**
+
+Result 156 found `unrankable` shipping undocumented past a payload → schema check that ran the right
+direction and never saw the key. The obvious next question: how many of the API's conditional fields
+does that check ever actually observe? Replaying its own `CALLS` table and collecting every response
+key:
+
+```
+conditional fields produced   2 / 11
+never produced                detector_errors, error, failed_detectors, matches,
+                              out_of_range_detectors, out_of_range_raw, rewriter_warning,
+                              suggestion, voice_warning
+```
+
+Two — and both only because last result added the payload for one of them. Nine documented fields
+could each be typo'd, mistyped, or unreachable, and the check that exists to catch exactly that would
+pass.
+
+**`/humanize` was absent from the table entirely.** Nineteen response keys, the endpoint the whole
+project is for, never inspected by the check that verifies its documentation.
+
+Two payloads reachable without failure injection now cover two more: `/tells` with
+`include_matches` (false by default, so `matches` had never appeared in a response this check read)
+and `/humanize` with a two-word voice sample, under the 20-word floor, which produces
+`voice_warning`. **2 of 11 → 4 of 11.**
+
+**Adding `/humanize` immediately failed the other direction**, and the reason is a defect rather than
+a nuisance: `rewriter_warning` is documented, conditional, and correctly absent — but this file kept
+its own conditional list, which had drifted from the one in
+`test_the_openapi_schema_matches_the_response.py`. Six fields in that set, none in this one. Two
+vocabularies for one API, now imported from one definition, at the **fourth** layer this session where
+the same shape appeared — detector and remedy vocabularies, sign-off pattern and unit, the pinned
+detector's name in five files, and now two conditional-key sets.
+
+The seven still uncovered need a broken detector, an out-of-range score or a missing rewriter, which a
+static table of request bodies cannot express. They are exercised by monkeypatching tests elsewhere
+and **not** by this check, and that number is now written into the class docstring rather than left
+for the next person to rediscover.
+
+Worth keeping: **a check's coverage is a measurement, not a property of its name.** "The schema
+matches the response" sounds total. It was two elevenths, and nothing in a green run said so.
