@@ -95,10 +95,27 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=APP_TITLE, version=APP_VERSION, description=APP_DESC, lifespan=lifespan)
 
+# CORS. `allow_origins=["*"]` WITH `allow_credentials=True` is the combination the CORS spec
+# forbids, and Starlette implements the forbidden case by REFLECTING the request's Origin header
+# instead of sending `*` — because `*` is invalid alongside credentials. Reflecting it means any
+# page the user happens to be visiting can call this server cross-origin with credentials attached
+# and READ the response. On a server that ships an `UNTELL_API_KEY` auth path and runs on
+# localhost by default, that is a browser tab away from someone else's text and settings.
+#
+# Secure by default, configurable when a caller genuinely needs cross-origin credentials:
+#
+#   unset            -> any origin may call, credentials NOT allowed (the spec-legal wildcard)
+#   UNTELL_CORS_ORIGINS="https://a.example,https://b.example"
+#                    -> exactly those origins, credentials allowed
+#
+# The default keeps the server usable from a scratch HTML page or another localhost port, which is
+# what the wildcard was for, without also handing that page the user's credentialed session.
+_CORS_ORIGINS = [o.strip() for o in os.environ.get("UNTELL_CORS_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_CORS_ORIGINS or ["*"],
+    # Only ever True alongside an explicit origin list. Never with the wildcard.
+    allow_credentials=bool(_CORS_ORIGINS),
     allow_methods=["*"],
     allow_headers=["*"],
 )
