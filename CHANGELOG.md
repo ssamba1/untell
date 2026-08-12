@@ -5,6 +5,40 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **`untell-verify` exited 0 when no checker ran.** On a machine with no API keys,
+  `--tier commercial` printed "No checkers ran." and returned 0 — which means *pass* to CI, so a
+  gating job was told the text had passed every major AI checker when none was consulted. Now
+  exit 2, kept distinct from 1 (checkers ran and failed) because nothing running is a
+  configuration problem, not a verdict about the text.
+- **A missing API key was reported as a bad rewriter name.** `rewriter="anthropic"` with the SDK
+  present and `ANTHROPIC_API_KEY` unset answered "check the name" — advice to fix something that
+  was not broken. The four cases (no key, no SDK, neither, unknown name) now give four messages,
+  each naming the specific thing missing.
+- **`untell-server` crashed with a bare `ModuleNotFoundError` on a base install.** The console
+  script imports the module before `main` can print anything, so nothing said which extra supplies
+  FastAPI. Now a named `ImportError` giving `pip install 'untell[server]'` — deliberately not a
+  `SystemExit`, so a library caller importing the module gets the exception their `try` expects.
+- **`humanness` answered confidently at lengths where it cannot separate the classes.** At 12 words
+  it returned 99.7 and called it "human" while `score_text` on the same text warned the verdict was
+  unreliable. Measured on 30 HC3 pairs truncated to 40 words: AUROC 0.694 against 0.978 at full
+  length, and 0 of 30 genuine human texts scored in a human band. The number is still returned; the
+  caveat now reaches the caller, and the bar is `score_text`'s own so the two cannot drift apart.
+- **The short-text warning understated its own measurement.** The bands quoted 98/62/40/28% of
+  human text flagging at 5/10/20/40 words. Re-measured by the same method — truncation to the first
+  N words — they are 100/85/85/100%. Now ranges spanning both truncated and naturally-short text.
+- **The sentence-start capital rewrote identifiers and paths.** `_flatten_cliches` upcased the first
+  letter after any terminator, so "Call untell.score. untell.tells also works." became
+  "... Untell.tells ...", and the same for `src/main.py` and `--tier`. Scoped by shape, so ordinary
+  prose still gets its capital.
+- **`/tells` returned a `matches` key its published schema never declared**, so a client generated
+  from the spec dropped the field showing which phrases were counted. A conformance test now checks
+  both directions across five endpoints.
+- **`SKILL.md` described behaviour the code had changed.** Voice matching scores four features, not
+  three; BERTScore and its 0.88 bar are gone; and `flagged` no longer means `max < threshold` —
+  they diverge in a band reachable on the default clean install, where the documented procedure had
+  no stated action.
+
 ### Changed
 - **Released the accumulated notes as 0.3.0.** 0.2.0 and 0.3.0 both shipped without a
   changelog heading: the entries stayed under `[Unreleased]` while `pyproject`,
