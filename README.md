@@ -341,6 +341,15 @@ it is another chance to contain a text the loop cannot clear.
 > | **`hc3_roberta`** | 1.00 → **0.710** | 1.00 → **0.248** |
 > | meaning similarity | 0.978 / 0.921 worst | 0.932 / 0.831 worst |
 >
+> **RE-MEASURED 2026-08-12 and the composite column no longer reproduces.** The same command on the
+> same six answers now returns mean max **0.9994**, flagged **1.00**, with `hc3_roberta`
+> **0.9992 → 0.9992** — unmoved, where this table has it dropping to 0.710. The figures above were
+> produced before `structural.py`'s draws were seeded; that commit's own message records outputs
+> depending on what the process had rewritten earlier, so the old numbers came from a stream that no
+> longer exists. One alternative was tested and **refuted**: disabling the deletion guard added the
+> same week changes nothing, byte for byte (0.9995 / 1.00 / 0.9992 both arms). Treat the composite
+> column as unreproduced pending a re-derivation; the `neural` column has not been re-run.
+>
 > **72% of real AI paragraphs clear** where composite cleared almost none, and the gap (0.398)
 > is twice the worst within-rewriter spread (0.191), so it is a finding rather than a draw.
 > `neural` is **4× as variable** as composite, though — a single run of it can land at 0.485,
