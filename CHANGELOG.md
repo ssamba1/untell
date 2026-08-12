@@ -6,6 +6,45 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **The zero-dependency path could not import untell.** Six scripts had their run-as-file
+  `sys.path` bootstrap BELOW their package imports, where it is unreachable — the import raises
+  `ModuleNotFoundError` first. `python .../untell/scripts/score.py` on a machine without the
+  package installed died immediately, which is exactly the path the skill installer creates and
+  the README leads with. An editable install hides it, so it only ever appeared on CI's Linux and
+  Windows installer jobs. `score`, `tells`, `verify`, `preserve`, `quality` and `entailment` all
+  fixed and verified running from an unrelated cwd on a bare interpreter.
+- **`untell verify --threshold 5` certified any text as passing.** Detector scores are
+  probabilities, so a threshold above 1 cannot be reached: text this same command rates 0.826 was
+  marked `[PASS]`, printed "PASSES ALL 1 CHECKERS" and exited 0. On the command whose job is
+  gating, a slipped decimal point green-lights everything. `score --threshold`,
+  `sentences --threshold` and `humanize --confirm` had the same gap and are now bounded by the
+  same validator the REST and MCP surfaces already used.
+- **`untell prove` returned 1 whether the text failed or nothing had run.** With no API keys it
+  printed "cannot prove 'passes all'" and exited 1, so a gating job could not tell "rewrite more"
+  from "set ORIGINALITY_API_KEY". Now exit 2, matching `untell-verify`.
+- **The MCP `compare` tool raised `TypeError` on every call.** It passed no `texts` to a function
+  that requires them, so the tool was dead while registered, advertised and documented. It also
+  validated no arguments; both fixed, and it now names its corpus in the result.
+- **MCP could not ask for `confirm` or `detector_thresholds`.** Both change the verdict and both
+  were modelled on the REST body, so the same request answered differently by protocol — the
+  fourth instance of that drift in this file.
+- **A version number was locked as far as its second dot.** `preserve` masked `1.26.4` as
+  `⟦HZ0000⟧.4`, leaving the tail rewritable while every sentinel check reported success. Dotted
+  identifiers (semantic versions, IPv4, section numbers) and hex identifiers (git shas, digests)
+  now lock whole; the hex rule was chosen after measuring 0 false locks against 240 real texts.
+- **A magnitude word was part of the number when spelled and thrown away when not.**
+  `"Losses hit five million." -> "five billion"` was caught and `"5 million" -> "5 billion"` was
+  not, because the digit path dropped the word; `billion` and `trillion` were unknown entirely.
+  Both paths now share one scale table, so `5 million` and `5,000,000` compare equal.
+- **Four attribution verbs were hedges only in the past tense.** The evidential class held
+  `believed`, `thought`, `considered` and `estimated` but not their present forms, so
+  `"We believe the mechanism is oxidative." -> "It is established ..."` cleared every gate.
+  `suspect` and `purport` were missing in the other direction and caused false vetoes.
+- **Caveats reached the result and stopped short of the reader.** `humanness` answered with a bare
+  number on the weakest detector path; the web demo showed a percentage and a "Human" badge with
+  no caveat at all; the plain-text renderer (what `pip install untell` prints without the `rich`
+  extra) dropped both the score warning and the tell counts; and `untell tells` printed its
+  warning only when no tell had fired. All four now carry what they were handed.
 - **A run depended on what the process had rewritten before it.** `structural.py` draws from the
   global `random` module in 27 places and nothing seeded it, so the stream carried between calls.
   Measured on one document in one process, identical arguments, differing only in position: scored
@@ -63,6 +102,14 @@ All notable changes to this project are documented here. The format is based on
 ## [0.3.0]
 
 ### Added
+- **The loop reports the AI tells it removed.** `tells_before` and `tells_after` on the result,
+  an "AI tells" row in the table, and both in the OpenAPI schema. On a corpus where the detectors
+  saturate this is the only before/after pair that moves: measured on 4 HC3 documents at full
+  tier, `max` gained +0.0000 on 4 of 4 while tells fell 4->0, 1->0 and 1->0.
+- **`seed` on every surface, and reported back.** `--seed` on the CLI, `seed` on the MCP tool and
+  the REST body, and the effective seed on the result — without it the derived value is a digest
+  of the input and a caller holding an output has no way to ask for it again.
+
 - **Described OpenAPI responses for all seven endpoints.** Every handler returns a bare `dict`, so
   FastAPI had generated `{"type": "object", "additionalProperties": true}` for each — the docs page
   the README advertises told a client nothing about what comes back. Now documented with field
