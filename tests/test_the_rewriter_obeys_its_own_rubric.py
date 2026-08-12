@@ -50,6 +50,37 @@ def _quiet(caplog):
     caplog.set_level(logging.CRITICAL)
 
 
+@pytest.fixture(autouse=True)
+def _stdlib_path(monkeypatch):
+    """Pin the lite tier to its stdlib heuristic, or the fixture stops needing a rewrite.
+
+    `score_text(CLEAN_AI, tier="lite")` is handed to the rewriter as the score to beat. On a
+    machine where torch is importable the lite tier silently upgrades to GPT-2, which rates this
+    fixture 0.0802 against the 0.3 threshold — the text already passes, so `surgical` correctly
+    declines to touch it and `test_the_rewriter_actually_rewrote[surgical]` failed. On the stdlib
+    path the same text scores above the threshold and there is something to do.
+
+    So the test was environment-dependent: green without torch, red with it, and red on exactly
+    the installs the project documents as the better-supported ones. `surgical` is deterministic,
+    so the seed sweep could not rescue it either.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+
+
+def test_the_fixture_still_needs_rewriting() -> None:
+    """The premise, asserted rather than assumed.
+
+    A rewriter declining to change text that already passes is correct behaviour, so if this
+    fixture ever scores below the threshold the sweep below is testing nothing and should fail
+    here instead of somewhere confusing.
+    """
+    score = score_text(CLEAN_AI, tier="lite")
+    assert score["max"] >= 0.3, (
+        f"CLEAN_AI scores {score['max']} against a 0.3 threshold, so every rewriter is entitled "
+        f"to leave it alone (modes: {score.get('detector_modes')})"
+    )
+
+
 def _rewrite(name: str, text: str, seed: int) -> str:
     rewriter = get_rewriter(name)
     random.seed(seed)
