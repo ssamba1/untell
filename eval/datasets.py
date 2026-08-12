@@ -260,6 +260,48 @@ class DatasetUnavailable(RuntimeError):
 _KNOWN_DATASETS = frozenset({"hc3", "raid", "mage"})
 
 
+def _warn_if_mostly_too_short(dataset: str, texts: list[str]) -> list[str]:
+    """Say so when a corpus comes back below the thresholds the tool itself enforces.
+
+    Every loader here filters at `> 30` words. Two of untell's own guards sit above that:
+    `score._MIN_WORDS_FOR_A_VERDICT` is 40, and `tells._MIN_WORDS_FOR_REPETITION` is 60, which
+    gates the two strongest tell categories. A corpus of 35-word texts therefore produces numbers
+    the tool would refuse to stand behind if asked about any single document.
+
+    MEASURED over 40 samples per corpus, word counts:
+
+        corpus   median   under 60 words
+        HC3         207      0%
+        RAID        281      0%
+        MAGE         37     90%
+
+    So this is not hypothetical, and it explains a result that looked like a coverage hole: the
+    loop moves tells 169 -> 149 on HC3 and 377 -> 298 on RAID, but 36 -> 35 on MAGE. The repetition
+    categories are silent on 90% of MAGE by construction, because those documents are shorter than
+    the guard. Nothing was wrong with the loop.
+
+    A warning rather than a filter: raising the floor would silently change every MAGE figure ever
+    recorded, and `load_pairs` already takes `min_words` for callers who want one. What was missing
+    was any signal at all.
+    """
+    if not texts:
+        return texts
+    try:
+        from untell.scripts.score import _MIN_WORDS_FOR_A_VERDICT as floor
+    except Exception:
+        floor = 40
+    counts = sorted(len(t.split()) for t in texts)
+    short = sum(1 for c in counts if c < floor)
+    if short * 4 >= len(counts):  # a quarter or more
+        logger.warning(
+            "%d of %d %r samples are under %d words (median %d) — below untell's own minimum for "
+            "a reliable verdict, and the repetition tells need 60. Numbers from this corpus are "
+            "dominated by length, not by the property being measured.",
+            short, len(counts), dataset, floor, counts[len(counts) // 2],
+        )
+    return texts
+
+
 def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> list[str]:
     """Return up to ``n`` AI-generated text samples for the named dataset.
 
@@ -310,7 +352,9 @@ def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> 
                         break
                 if len(texts) >= n:
                     break
-            return texts[:n] or _fallback("the load returned no usable samples")
+            return _warn_if_mostly_too_short(name, texts[:n]) or _fallback(
+                "the load returned no usable samples"
+            )
 
         if name == "raid":
             ds = load_dataset("liamdugan/raid", split="train", streaming=True)
@@ -321,7 +365,9 @@ def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> 
                     texts.append(gen.strip())
                 if len(texts) >= n:
                     break
-            return texts[:n] or _fallback("the load returned no usable samples")
+            return _warn_if_mostly_too_short(name, texts[:n]) or _fallback(
+                "the load returned no usable samples"
+            )
 
         if name == "mage":
             ds = load_dataset("yaful/MAGE", split="test", streaming=True)
@@ -333,7 +379,9 @@ def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> 
                     texts.append(txt.strip())
                 if len(texts) >= n:
                     break
-            return texts[:n] or _fallback("the load returned no usable samples")
+            return _warn_if_mostly_too_short(name, texts[:n]) or _fallback(
+                "the load returned no usable samples"
+            )
     except Exception as exc:
         return _fallback(f"{type(exc).__name__}: {exc}")
 
