@@ -73,20 +73,36 @@ def test_the_two_sets_do_not_overlap() -> None:
 
 
 def test_the_reported_sentence_no_longer_splits_into_a_fragment() -> None:
-    """End to end on the sentence that produced it."""
+    """End to end on the sentence that produced it.
+
+    This asserted the fragment shape behind `if halves is None: continue`, and `_split_one`
+    declines this source on every seed — so the assertion never ran and the test could not fail.
+    Proven vacuous by mutation: replacing the assert with `assert False` still passed.
+
+    Declining IS the protection. The guard exists so a comma-boundary split that would strand
+    "regardless of their actions or beliefs" as its own sentence is refused, and refusing is what
+    that looks like from outside. So the refusal is what gets asserted, and the fragment shape is
+    kept as a second assertion for the day the splitter starts accepting this source again.
+    """
     source = (
         "It is generally not acceptable or ethical to advocate for or condone the assassination "
         "of any individual, regardless of their actions or beliefs."
     )
+    accepted = 0
     for seed in range(20):
         random.seed(seed)
         halves = _split_one(source)
         if halves is None:
             continue
+        accepted += 1
         right = halves[1].strip()
         assert not (right.lower().startswith("regardless") and "," not in right), (
             f"seed {seed}: {right!r}"
         )
+    assert accepted == 0, (
+        "the splitter now accepts this source; the assertion above became live, which is fine — "
+        "but this line documents that the behaviour changed and should be re-read"
+    )
 
 
 def test_a_clean_boundary_still_splits() -> None:

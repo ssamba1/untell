@@ -1779,15 +1779,42 @@ class TestNeitherSplitterStrandsACoordinator:
 
     def test_dropping_the_coordinator_cannot_shrink_the_half_below_the_minimum(self):
         """Stripping the coordinator makes the left half shorter, so the minimum-side rule has to
-        be re-checked afterwards rather than only before."""
+        be re-checked afterwards rather than only before.
+
+        The original fixture is kept as the first case, but it is DECLINED — `_split_one` returns
+        None for it, so the assertion behind `if out is not None:` never ran and the test could not
+        fail. Proven vacuous by mutation: `assert False` in that branch still passed.
+
+        The invariant is real and worth pinning, so it is exercised on sources the splitter
+        actually accepts. Each of these returns two halves, and the left one is what the
+        coordinator strip shortens.
+        """
         from untell.rewriter.structural import _MIN_SPLIT_SIDE, _split_one
 
-        out = _split_one(
+        # Declined — kept so a change that starts accepting it is visible here.
+        assert _split_one(
             "The team tried and, the second approach worked far better than anyone had expected"
             " it to work in practice."
-        )
-        if out is not None:
+        ) is None
+
+        accepted = [
+            "The committee reviewed the proposal carefully and the board approved the revised "
+            "budget without any further discussion at all.",
+            "The encoder is small and it runs considerably faster than the baseline model on "
+            "every benchmark that we measured.",
+            "Salt melts the ice on the roads but it also corrodes the metal on cars and harms "
+            "plants growing near the roadside.",
+            "The trial enrolled two hundred patients and the treatment reduced mortality by "
+            "eighteen percent across the whole cohort.",
+        ]
+        exercised = 0
+        for source in accepted:
+            out = _split_one(source)
+            assert out is not None, f"fixture no longer splits, so it pins nothing: {source[:60]!r}"
+            exercised += 1
             assert len(out[0].split()) >= _MIN_SPLIT_SIDE, out
+            assert len(out[1].split()) >= _MIN_SPLIT_SIDE, out
+        assert exercised == len(accepted)
 
 
 class TestFrontingDoesNotStrandACoordinator:
