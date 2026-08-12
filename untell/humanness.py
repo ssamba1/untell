@@ -62,6 +62,49 @@ def _warn_too_short() -> None:
     )
 
 
+# Long enough for the score to mean what the bands say. Deliberately the SAME bar `score_text` uses
+# (`_MIN_WORDS_FOR_A_VERDICT`), because the two disagreeing about whether an answer is possible is
+# the defect this closes: at 12 words `humanness` returned 99.7 and called it "human" while
+# `score_text` on the identical text warned "too short for a reliable verdict". One tool, one text,
+# two answers about whether it can be judged.
+#
+# MEASURED on 30 HC3 pairs, truncated to N words, full tier:
+#
+#     words   human mean   AI mean   AUROC   human texts called human
+#        10      60.3        49.8    0.792         10/30
+#        20      56.8        48.6    0.732          7/30
+#        30      51.8        46.4    0.732          3/30
+#        40      47.3        45.3    0.694          0/30
+#       220      75.7        37.4    0.978         20/30
+#
+# Two things go wrong at once, and the second is worse. Separation collapses (0.978 -> 0.69-0.79),
+# AND the whole distribution slides down: at 40 words NOT ONE of thirty genuine human texts is
+# called "human" or "mostly human", against 20 of 30 at full length. So the score in this band is
+# not merely noisy, it is biased against the human writer — which is the direction that costs
+# someone an accusation.
+#
+# The number is still returned. Callers store and compare it, and withholding it silently would
+# break them for a reason they cannot see — the same reasoning `score_text` records for leaving
+# `max` alone. What changes is that the caveat now reaches them.
+_MIN_WORDS_FOR_A_BAND = 40
+_WARNED_SHORT_BAND = False
+
+
+def _warn_band_unreliable(words: int) -> None:
+    """Say once that the score is in the band where it does not separate the classes."""
+    global _WARNED_SHORT_BAND
+    if _WARNED_SHORT_BAND:
+        return
+    _WARNED_SHORT_BAND = True
+    logger.warning(
+        "%d words: humanness is reported, but at this length it does not separate the classes. "
+        "MEASURED on 30 HC3 pairs truncated to 40 words: AUROC 0.694 against 0.978 at full "
+        "length, and 0 of 30 genuine HUMAN texts scored in the 'human' or 'mostly human' bands. "
+        "Treat the number as no evidence either way, not as a verdict.",
+        words,
+    )
+
+
 _WARNED_UNSUPPORTED_LANGUAGE = False
 
 
@@ -182,6 +225,12 @@ def humanness(text: str, tier: str = "full") -> float:
         else:
             _warn_too_short()
         return 50.0
+
+    # Long enough for the three signals to exist, short enough that they do not separate the
+    # classes. See `_MIN_WORDS_FOR_A_BAND` for the measurement. The score is still returned.
+    _words = len(_WORD_RE.findall(text))
+    if _words < _MIN_WORDS_FOR_A_BAND:
+        _warn_band_unreliable(_words)
 
     # 1. AI-tells signal
     tells_result = score_tells(text)
