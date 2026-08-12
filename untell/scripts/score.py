@@ -221,6 +221,27 @@ def _truncate(text: str) -> str:
 # Limits, since this is a correlation: n=16, one corpus, one seed, one rewriter. It says where to
 # look, not what to conclude.
 #
+# THE MIXED DOCUMENT IS THE CASE THIS PATH CANNOT SEE. A 207-word AI section inside 567 words of
+# human writing, scored whole:
+#
+#     position of the AI block      stdlib      full tier
+#     alone, no filler              0.6239        1.0000
+#     at the start                  0.2657        1.0000
+#     in the middle                 0.2657        1.0000
+#     at the end                    0.2657        0.9999
+#     (human filler alone)          0.2586        0.0936
+#
+# On the stdlib path the AI section is invisible — 0.2657 is below both the 0.30 loop threshold and
+# the 0.45 verdict cut, and it barely moves off the human filler's own 0.2586. Position makes no
+# difference because both terms are document-wide aggregates. The full tier flags it wherever it
+# sits, which is what `windowed_max` is for.
+#
+# This is the shape a real user brings: a mostly-human document with a generated paragraph in it.
+# NOT a bug to fix by windowing this path — that was measured and rejected, and the note in
+# `perplexity_burstiness.score` records why: windowing took FPR from 30% to 90% on 3-paragraph
+# documents while buying no true positives, because burstiness across a document is exactly the
+# quantity windows destroy. The honest answer is the tier, not the window.
+#
 # NOT changed here. Switching to block-scoring moves every stdlib figure in this repository — the
 # 64%/30% above, the per-corpus table, and the perplexity midpoints, which were fitted against
 # raw-document distributions — so it needs its own measurement pass rather than a drive-by edit.
