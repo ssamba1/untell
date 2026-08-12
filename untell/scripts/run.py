@@ -49,6 +49,55 @@ _TELLS_EPS = 0.02
 # warns once instead of on every call — same pattern as `_MEMBER_FAILED` in rewriter/ensemble.py.
 _POLISH_FAILED: set[str] = set()
 
+# The hosted backends, and the two separate things each one needs. `available()` answers False for
+# either, and an unknown NAME also arrives here as None — so all three produced the same message,
+# "check the name (see `untell --check`) or install its extra". For a correctly-spelled backend
+# whose only problem is an unset key, that is advice to fix something that is not broken.
+#
+# The bar this repo already holds itself to is in io_utils: name the package AND the extra
+# ("reading it needs python-docx: pip install 'untell[docs]'"). Same here — say which of the two
+# is missing, and give the command.
+_HOSTED_REQUIREMENTS = {
+    "anthropic": ("ANTHROPIC_API_KEY", "anthropic", "untell[api]"),
+    "openai": ("OPENAI_API_KEY", "openai", "untell[api]"),
+}
+
+
+def _unavailable_reason(name: str) -> str:
+    """Why this rewriter cannot run, and what to do about it."""
+    import importlib.util
+    import os
+
+    requirement = _HOSTED_REQUIREMENTS.get(name.lower())
+    if requirement is not None:
+        env_var, module, extra = requirement
+        missing_key = not os.environ.get(env_var)
+        missing_sdk = importlib.util.find_spec(module) is None
+        if missing_key and missing_sdk:
+            return (
+                f"rewriter {name!r} needs two things and has neither: the {module} SDK "
+                f"(pip install '{extra}') and the {env_var} environment variable."
+            )
+        if missing_key:
+            return (
+                f"rewriter {name!r} is installed but {env_var} is not set. Export it, or use a "
+                f"free rewriter that needs no key (--rewriter composite)."
+            )
+        if missing_sdk:
+            return (
+                f"rewriter {name!r} has its key set but the {module} SDK is not installed: "
+                f"pip install '{extra}'."
+            )
+        # Both present and still unavailable — say so rather than guessing at a cause.
+        return (
+            f"rewriter {name!r} reports itself unavailable even though {env_var} is set and "
+            f"{module} is importable. Run `untell --check` for the installed list."
+        )
+    return (
+        f"rewriter {name!r} is not available — check the name (see `untell --check` for the "
+        "installed list) or install its extra"
+    )
+
 
 # At or above this the ensemble max cannot show an improvement, so `pre` and `post` being equal is
 # not evidence that nothing changed. Same constant and same measurement as `rich_output`.
@@ -316,11 +365,7 @@ def untell_text(
             # Do NOT fall back to auto-selection here. A caller who names a rewriter wants that one,
             # and silently substituting another produces results attributed to the wrong technique.
             if rewriter is None or not rewriter.available():
-                return {
-                    "error": f"rewriter {name!r} is not available — check the name (see "
-                    "`untell --check` for the installed list) or install its extra",
-                    "final": text,
-                }
+                return {"error": _unavailable_reason(name), "final": text}
     rewriter_warning: str | None = None
     rw = rewriter if rewriter is not None else get_rewriter()
     if rw is None:

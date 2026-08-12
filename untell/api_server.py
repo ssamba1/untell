@@ -36,8 +36,23 @@ from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
+# Named import failure. `untell-server` is a console script pointing at `main` in this module, so
+# the module is imported before `main` can print anything — on a base (zero-dependency) install
+# that surfaced as a bare `ModuleNotFoundError: No module named 'fastapi'` with a traceback, and
+# nothing said which extra supplies it. `io_utils` already sets the standard here: name the package
+# AND the extra ("reading it needs python-docx: pip install 'untell[docs]'").
+#
+# Still an ImportError, deliberately. A library caller that imports this module without the extra
+# should get the exception its `try` expects, not a `SystemExit` that takes their process down.
+try:
+    from fastapi import FastAPI, Request
+    from fastapi.middleware.cors import CORSMiddleware
+except ModuleNotFoundError as _exc:  # pragma: no cover - exercised only on a base install
+    raise ImportError(
+        "the REST server needs FastAPI, which the base install does not ship: "
+        "pip install 'untell[server]'. Everything else — the CLI, the MCP server and the Python "
+        "API — works without it."
+    ) from _exc
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
