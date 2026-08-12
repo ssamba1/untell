@@ -759,6 +759,19 @@ def is_pure_scaffolding(sentence: str) -> bool:
     match = _META_CLOSER_RE.search(sentence)
     if not match:
         return False
+    # Anything the preserve layer locks is content, whatever the word count says. A remainder rule
+    # counts WORDS, and a citation is worth more than its length: MEASURED, "I hope this helps [3]!",
+    # "Let me know if you need the data (Smith 2020)." and "I hope this helps
+    # https://example.org/paper." were all deleted as pure scaffolding, taking the reference with
+    # them — against a README that promises citations are kept intact.
+    #
+    # `preserve._collect_spans` rather than a second citation pattern here: it already covers both
+    # citation forms, URLs, DOIs, emails, identifiers, dates and quantities, and a private copy of
+    # any of that is the two-vocabularies defect this file has been on both sides of.
+    from untell.scripts.preserve import _collect_spans
+
+    if _collect_spans(sentence):
+        return False
     remainder = (sentence[: match.start()] + sentence[match.end() :]).strip(" .!?,;:")
     return len(remainder.split()) <= CLOSER_REMAINDER_WORDS
 

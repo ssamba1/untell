@@ -143,3 +143,37 @@ def test_a_real_deletion_is_still_rejected() -> None:
 
     truncated = " ".join(BODY.split(". ")[:1]) + "."
     assert meaning_preserved(BODY, truncated, similarity(BODY, truncated), 0.76) is False
+
+
+CARRIES_A_REFERENCE = [
+    "I hope this helps [3]!",
+    "I hope this helps, see [3] for the derivation.",
+    "Let me know if you need the data (Smith 2020).",
+    "I hope this helps https://example.org/paper.",
+    "Let me know if you want the preprint, doi:10.1234/abcd.5678.",
+]
+
+
+@pytest.mark.parametrize("closer", CARRIES_A_REFERENCE, ids=lambda c: c[:26])
+def test_a_sign_off_carrying_a_reference_is_kept(closer: str) -> None:
+    """A remainder rule counts WORDS, and a citation is worth more than its length.
+
+    FOUND by testing the README's promise that citations are kept intact. Every one of these was
+    deleted as pure scaffolding, taking the reference with it — a numeric marker, an author-year
+    citation, a URL and a DOI, each short enough to pass the six-word remainder test.
+
+    The fix defers to `preserve._collect_spans` rather than adding a citation pattern here: that
+    layer already covers both citation forms, URLs, DOIs, emails, identifiers, dates and
+    quantities, and a private copy of any of it is the two-vocabularies defect this module has been
+    on both sides of.
+    """
+    text = f"{BODY} {closer}"
+    assert _strip_meta_closers(text) == text
+
+
+def test_the_ordinary_sign_offs_still_go() -> None:
+    """Guards the guard. Deferring to a preservation layer is only safe if it does not swallow the
+    transform: a rule that kept every closer would make this file's whole subject a no-op."""
+    for closer in SCAFFOLDING:
+        text = f"{BODY} {closer}"
+        assert _strip_meta_closers(text) != text, closer
