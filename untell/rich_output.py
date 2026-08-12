@@ -15,9 +15,29 @@ _VERDICT_BAND = 0.10
 
 # At or above this, the ensemble max cannot show an improvement, so a flat delta beside it is not
 # evidence that nothing happened. MEASURED over 80 corpus texts: the max reaches >=0.999 on 100% of
-# HC3 AI text and 30% of RAID's, against 0% of human text, because `roberta_openai` returns 0.9992
-# on nearly every sentence of that genre. Set at 0.99 rather than 0.999 so a detector pinned just
-# below the rounding edge is caught too; the human side of both corpora is nowhere near it.
+# HC3 AI text and 30% of RAID's, against 0% of human text. Set at 0.99 rather than 0.999 so a
+# detector pinned just below the rounding edge is caught too; the human side of both corpora is
+# nowhere near it.
+#
+# The detector doing it is `hc3_roberta`, not `roberta_openai` as this comment used to say. Re-measured
+# on 60 HC3 AI sentences and the 12 documents they came from:
+#
+#     detector           sentences >=0.99   sentence mean   documents >=0.99   document mean
+#     hc3_roberta            58 / 60           0.9977          12 / 12            0.9992
+#     roberta_openai          2 / 60           0.7405          11 / 12            0.9962
+#     fast_detectgpt          0 / 60           0.6451           0 / 12            0.6183
+#
+# "0.9992 on nearly every sentence" was hc3_roberta's number attributed to its neighbour, and the
+# distinction is not pedantic: under rewriting `roberta_openai` drops 0.9986 -> 0.6228 while
+# hc3_roberta does not move at all, because it is fine-tuned ON HC3 and the corpus is in-distribution
+# for it. A reader trusting the old attribution would go looking for the pin in the one detector that
+# demonstrably yields.
+#
+# A LEVEL test rather than a movement test, and that is measured too. A detector stuck at, say, 0.85
+# pins the delta just as effectively and sits below this bar, so the criterion could in principle
+# miss one. Over 30 real composite rewrites of HC3 and RAID text: 16 fired this note, and **0** had a
+# max that moved less than 0.01 while the mean moved more than 0.05. The simpler test loses nothing
+# that has been observed.
 _SATURATED_MAX = 0.99
 try:
     from rich.console import Console as _Console
