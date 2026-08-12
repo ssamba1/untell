@@ -7583,3 +7583,40 @@ It now asserts the attribution (`because \`roberta_openai\` returns`) rather tha
 Worth keeping: **a wrong explanation is worse than no explanation, because it gets acted on.** The
 constant was right, the note it gates was right, the behaviour was right — and the one sentence
 telling a maintainer *why* pointed at the wrong component.
+
+## Result 149
+
+**The wrong attribution was in five places. I fixed one and wrote the result as though that were the
+class.**
+
+Result 148 corrected a comment crediting `roberta_openai` with pinning the ensemble max. The obvious
+follow-up: sweep every comment in `untell/` that names a detector alongside a number — 36 lines
+across 5 detectors. The very first scan found the same sentence in `rewriter/targeted.py`, and its
+own test file carried it too.
+
+So a grep-once fix is not a fix. The guard was written to make the phrase impossible, and **the guard
+found two more nobody had grepped for**:
+
+```
+untell/scripts/audit.py               check_selection_does_not_read_a_bare_max
+tests/test_a_pinned_max_says_so.py    the docstring justifying the whole file
+```
+
+Five sites. Every one of them explains a *different* correct mechanism — a saturating member pins
+`max`, so a selector reading it alone cannot rank candidates — and every one names the wrong member
+as the cause. `roberta_openai` clears 0.99 on **2 of 60** HC3 sentences (mean 0.7405) and drops
+0.9986 → 0.6228 under rewriting. `hc3_roberta` clears it on **58 of 60** and does not move at all.
+The five findings survive the correction untouched; only their explanation changes hands.
+
+**The guard reported itself, and that is now three times in two loops.** Written literally, the marker
+string appears in the file doing the scanning, so the first run listed its own path. Same shape as
+the guard that forbade `50.0` inside a function whose comment warns against comparing to `50.0`, and
+as the dead-function probe that spelled its subject into the haystack it searched. The fix is the one
+already established here: assemble the marker at runtime and skip the scanning file.
+
+Verified by putting the phrase back into `targeted.py` — the guard fails; removed — it passes.
+
+Worth keeping: **a fix that does not come with a search is a fix for one occurrence.** I found three
+sites by grepping a phrase I happened to remember, and the mechanical guard immediately found two
+more. The difference between those two numbers is the whole argument for writing the check instead of
+the patch.
