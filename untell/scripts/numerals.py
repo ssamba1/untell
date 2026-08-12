@@ -107,6 +107,29 @@ _SPELLED_RE = re.compile(
 )
 
 
+# Magnitude words, and the reason they are shared by both extraction paths below.
+#
+# The spelled path already multiplied by "thousand" and "million"; the DIGIT path ignored the word
+# entirely, so the same semantic change was caught in one notation and missed in the other:
+#
+#     "Losses hit five million." -> "Losses hit five billion."   caught
+#     "Losses hit 5 million."    -> "Losses hit 5 billion."      MISSED
+#
+# and digit-plus-magnitude is the far more common way to write it. `billion` and `trillion` were
+# not known at all, so "five billion" read as 5. Folding the magnitude into the value also makes
+# the two notations agree — "5 million" and "5,000,000" both normalise to 5000000, so a rewrite
+# that expands the notation is not flagged as dropping a number.
+_SCALES: dict[str, int] = {
+    "thousand": 1_000,
+    "million": 1_000_000,
+    "billion": 1_000_000_000,
+    "trillion": 1_000_000_000_000,
+}
+_DIGIT_MAGNITUDE_RE = re.compile(
+    r"(\d[\d,]*(?:\.\d+)?)\s+(" + "|".join(_SCALES) + r")\b", re.IGNORECASE
+)
+
+
 def _spelled_value(match: str) -> str:
     """The integer a spelled-out number names, including hundreds and thousands.
 
@@ -126,9 +149,8 @@ def _spelled_value(match: str) -> str:
         if part == "hundred":
             chunk = (chunk or 1) * 100
             continue
-        if part in ("thousand", "million"):
-            scale = 1000 if part == "thousand" else 1_000_000
-            total += (chunk or 1) * scale
+        if part in _SCALES:
+            total += (chunk or 1) * _SCALES[part]
             chunk = 0
             continue
         value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
@@ -139,6 +161,16 @@ def _spelled_value(match: str) -> str:
 def _numbers(text: str) -> list[str]:
     """Every number in ``text`` as a normalised digit string — digits and spelled-out alike."""
     without_structure = _LIST_MARKER_RE.sub(" ", SENTINEL_RE.sub(" ", text))
+
+    # Fold "5 million" into 5000000 BEFORE the plain digit scan, so the magnitude word cannot be
+    # dropped on the floor and the value matches however it is written.
+    def _fold(match: re.Match) -> str:
+        digits = match.group(1).replace(",", "")
+        scaled = float(digits) * _SCALES[match.group(2).lower()]
+        return f" {int(scaled) if scaled.is_integer() else scaled} "
+
+    without_structure = _DIGIT_MAGNITUDE_RE.sub(_fold, without_structure)
+
     out = [n.replace(",", "") for n in _NUMBER_RE.findall(without_structure)]
     out += [_spelled_value(m.group(0)) for m in _SPELLED_RE.finditer(without_structure)]
     return out
