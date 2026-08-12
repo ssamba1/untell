@@ -29,13 +29,16 @@ import logging
 import re
 import sys
 
-from untell.detectors.base import _TIER_RANK, load_detectors, resolved_tier
-from untell.text_split import fold_unicode_spaces
-
-logger = logging.getLogger(__name__)
-# (`python scripts/score.py`) rather than imported as part of the `untell` package,
-# put the directory that *contains* the package on sys.path so `import untell`
-# resolves regardless of the current working directory.
+# RUN DIRECTLY (`python .../untell/scripts/score.py`) rather than imported as part of the package,
+# put the directory that *contains* the package on sys.path so `import untell` resolves regardless
+# of the current working directory.
+#
+# This block sat BELOW the `from untell...` imports, where it could never run: the import raised
+# `ModuleNotFoundError: No module named 'untell'` first, so the bootstrap was unreachable code.
+# Every developer machine hides it, because an editable install puts `untell` on sys.path anyway —
+# it only appears on a bare interpreter, which is exactly the zero-dependency path the skill
+# installer creates and the README leads with. CI caught it on both the Linux and Windows installer
+# jobs; running the same command inside a venv with the package installed passes.
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
@@ -44,6 +47,11 @@ if __package__ in (None, ""):
         if (_p / "untell" / "__init__.py").exists():
             _sys.path.insert(0, str(_p))
             break
+
+from untell.detectors.base import _TIER_RANK, load_detectors, resolved_tier  # noqa: E402
+from untell.text_split import fold_unicode_spaces  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_THRESHOLD = 0.30

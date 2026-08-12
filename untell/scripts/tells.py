@@ -31,8 +31,11 @@ import re
 import sys
 from collections import Counter
 
-from untell.text_split import fold_unicode_spaces
-
+# RUN DIRECTLY (`python .../untell/scripts/tells.py`), put the directory that *contains* the package
+# on sys.path so `import untell` resolves from any cwd. Must come BEFORE any `from untell...`
+# import: below them it is unreachable, because the import raises ModuleNotFoundError first. An
+# editable install hides that on every developer machine — it only shows on a bare interpreter,
+# which is the zero-dependency skill path the README leads with.
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
@@ -41,6 +44,8 @@ if __package__ in (None, ""):
         if (_p / "untell" / "__init__.py").exists():
             _sys.path.insert(0, str(_p))
             break
+
+from untell.text_split import fold_unicode_spaces  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

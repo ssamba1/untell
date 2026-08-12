@@ -18,11 +18,11 @@ import json
 import logging
 import sys
 
-from untell._env import load_env
-
-# Run-as-file support
-# rather than imported as part of the `untell` package, put the directory that
-# *contains* the package on sys.path so `import untell` resolves from any cwd.
+# RUN DIRECTLY (`python .../untell/scripts/verify.py`), put the directory that *contains* the package
+# on sys.path so `import untell` resolves from any cwd. Must come BEFORE any `from untell...`
+# import: below them it is unreachable, because the import raises ModuleNotFoundError first. An
+# editable install hides that on every developer machine — it only shows on a bare interpreter,
+# which is the zero-dependency skill path the README leads with.
 if __package__ in (None, ""):
     import sys as _sys
     from pathlib import Path as _Path
@@ -31,6 +31,8 @@ if __package__ in (None, ""):
         if (_p / "untell" / "__init__.py").exists():
             _sys.path.insert(0, str(_p))
             break
+
+from untell._env import load_env  # noqa: E402
 
 from untell.detectors.base import clamp01
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
