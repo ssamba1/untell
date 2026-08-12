@@ -7371,3 +7371,59 @@ Worth keeping: **the corpus and the detector can be the same distribution, and t
 being about the tool.** The number was not measuring untell's ceiling on HC3; it was measuring how
 well an HC3-trained classifier knows HC3. Both of the session's earlier corpus lessons said to vary
 the corpus. This one says to check what the *detector* was trained on before quoting what it reports.
+
+## Result 144
+
+**A headline README number that no longer reproduces, and the obvious culprit was mine and was
+innocent.**
+
+Result 143 left a number I noticed and did not chase: the README publishes composite at mean max
+**0.778 ± 0.020**, flagged **0.94**, `hc3_roberta` **0.710**. I had just measured 0.9994 on the same
+corpus. Two numbers for one claim is a defect whichever is right.
+
+Reproduced with the documented command and no environment overrides —
+`--dataset hc3 --n 6 --rewriter composite --best-of 3 --repeats 3 --tier full`:
+
+```
+                       published        measured 2026-08-12
+mean max P(AI)         0.778 ± 0.020    0.9994
+flagged rate           0.94             1.00
+hc3_roberta            0.710            0.9992 -> 0.9992  (unmoved)
+meaning similarity     0.978            0.9843
+```
+
+`pre` matches exactly, so it is the same corpus and the same detectors. **The composite column does
+not reproduce.**
+
+**Two hypotheses, both mine, both wrong.**
+
+*The environment.* `UNTELL_LITE_NO_TORCH=1` was set on my first run and could have swapped the
+similarity backend under the meaning gate. Checked: `method()` returns `embedding` either way, and
+`--max-iters` already defaults to the documented 5.
+
+*My own deletion guard*, added three results earlier — a plausible story, since a stricter gate
+rejects the aggressive candidates that move a detector furthest. Tested by running the ceiling with
+`deletion_allowance` patched to infinity:
+
+```
+guard ON (shipped)    post mean max 0.9995   flagged 1.0   hc3_roberta 0.9992   sim 0.982
+guard OFF             post mean max 0.9995   flagged 1.0   hc3_roberta 0.9992   sim 0.982
+```
+
+Byte for byte identical. **Refuted**, and consistent with Result 139's own numbers: real rewrites lose
+at most 9 words against an allowance of 10, so the guard almost never binds.
+
+What remains is dated rather than proven. The claim was published 2026-08-11; on 2026-08-12
+`structural.py`'s draws were seeded, and *that commit's own message* records output depending on what
+the process had rewritten before it. The published figures came from an unseeded stream that no
+longer exists — the strongest remaining explanation, and I am recording it as such rather than as a
+conclusion.
+
+The README now carries the re-measurement beside the table, with the command, the date, and the
+refuted alternative. **Not deleted**: a number that was true of a build is a record, and erasing it
+would destroy the evidence that the seeding fix changed results.
+
+Worth keeping: **the suspect you already have your hands on is the one to test first and the one
+most likely to be innocent.** I had changed the meaning gate three results running, so a gate
+explanation felt obvious. It cost one experiment to refute and would have cost a wrong entry in this
+log to assume.
