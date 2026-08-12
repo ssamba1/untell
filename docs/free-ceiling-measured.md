@@ -7538,3 +7538,48 @@ Worth keeping: **a diagnosis is worth more than a measurement, because it predic
 pinned because one detector is in-distribution" is not a description of HC3; it says what a different
 corpus must show. Checking that turned a broken headline into a reproducible one, and would have
 falsified the diagnosis if RAID had been pinned too.
+
+## Result 148
+
+**The comment explaining a constant named the wrong detector, and the explanation was the point.**
+
+Result 147's diagnosis — the max is pinned because one detector is in-distribution — should apply to
+the user-facing report too, not just the eval tool. It already does: `rich_output` warns that a flat
+P(AI) delta proves nothing once the max is saturated. **No gap.** That is the honest first half.
+
+The comment justifying its bar is another matter:
+
+> *"...because `roberta_openai` returns 0.9992 on nearly every sentence of that genre."*
+
+Re-measured on 60 HC3 AI sentences and the 12 documents they came from:
+
+```
+detector           sentences >=0.99   sentence mean   documents >=0.99   document mean
+hc3_roberta            58 / 60           0.9977          12 / 12            0.9992
+roberta_openai          2 / 60           0.7405          11 / 12            0.9962
+fast_detectgpt          0 / 60           0.6451           0 / 12            0.6183
+```
+
+**2 of 60, not "nearly every".** 0.9992 is `hc3_roberta`'s number, attributed to its neighbour.
+
+Not pedantry, because the comment is *reasoning*, not decoration. Under rewriting `roberta_openai`
+drops **0.9986 → 0.6228** while `hc3_roberta` does not move at all — it is fine-tuned on HC3, so the
+corpus is in-distribution for it. Anyone acting on the old attribution would hunt the pin in the one
+detector that demonstrably yields.
+
+**A second question, asked and answered against my own hypothesis.** The bar is a LEVEL test
+(`max ≥ 0.99` on both sides) where the eval tool's equivalent is a MOVEMENT test. A detector stuck at
+0.85 pins the delta just as hard and sits below the bar, so the level test could in principle miss
+one. Over 30 real composite rewrites of HC3 and RAID text: 16 fired the note, and **0** had a max
+moving less than 0.01 while the mean moved more than 0.05. The simpler criterion loses nothing that
+has been observed, and that measurement now sits beside the constant instead of the wrong sentence.
+
+**The guard for the correction failed on the correction.** The test forbade the old wording outright,
+and the new comment quotes that wording in order to refute it. Identical to the earlier guard that
+forbade `50.0` inside a function whose comment warns against comparing to `50.0` — twice in one
+session, so: **a check that cannot tell the mistake from the text describing it fires on the fix.**
+It now asserts the attribution (`because \`roberta_openai\` returns`) rather than the phrase.
+
+Worth keeping: **a wrong explanation is worse than no explanation, because it gets acted on.** The
+constant was right, the note it gates was right, the behaviour was right — and the one sentence
+telling a maintainer *why* pointed at the wrong component.
