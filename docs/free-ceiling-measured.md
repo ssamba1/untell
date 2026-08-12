@@ -7664,3 +7664,44 @@ Worth keeping: **declining to ship a green check is a result.** The pressure run
 the check was written, it worked, it passed, and adding it would have looked like progress on the
 audit's coverage. A check with no subjects is worse than no check, because the next person reads the
 PASS as evidence.
+
+## Result 151
+
+**Four bad probes in one session, and the permanent ones had never been asked the same question.**
+
+Every one of those four was a throwaway script — a harness that swallowed a traceback, a
+dead-function scan that wrote its subject into its own haystack, a marker scanner that matched
+itself, a constant sweep that ignored module scope. `eval/tells_auroc.py` is not throwaway. Its
+output is quoted throughout the catalogue as the evidence that a tell separates the classes, and
+nothing had ever checked that it *can* be wrong.
+
+Three known-answers, run against the real tool on 30 HC3 pairs:
+
+```
+real pairs         AUROC 0.8906
+identical halves   AUROC 0.5000     <- must be chance; there is nothing to find
+swapped labels     AUROC 0.1094     <- inverts to four decimals
+precision_table on identical halves: 8 rows, 0 claiming a direction
+```
+
+**All three hold.** No defect — that is the honest answer, and the middle row is why it was worth
+asking: a tool reporting separation on identical inputs is not measuring the corpus, and every number
+it has published would be an artefact of its own plumbing.
+
+Made permanent, on synthetic text so it needs no download and runs in 0.4s. Verified the only way
+this kind of test can be — by breaking the tool. Swapping the argument order inside `measure()`,
+which is exactly the defect that would publish inverted numbers:
+
+```
+FAILED test_the_probe_finds_a_difference_that_is_there
+```
+
+**Only one of the five caught it, and that one is the premise test.** A symmetric swap still inverts
+symmetrically, so the invert check passes and the identical-halves check passes — 0.5 is 0.5 either
+way. The assertion that the tool finds a difference that genuinely exists is the only one that sees a
+global inversion. Written as a premise, doing the real work.
+
+Worth keeping: **a measurement tool needs the same known-positive discipline as the code it
+measures.** The audit's eighteen checks got demonstrated failure paths thirteen results ago; the
+tools producing the repository's headline numbers had none, and one of them has already published two
+figures that no longer reproduce.
