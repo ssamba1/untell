@@ -24,6 +24,16 @@ question; it is a detector being asked a question one of its two halves cannot a
 
 The caveat is scoped to the case where the stdlib heuristic is the ONLY detector. A model-backed
 detector does not need sentence variation, so on the full tier a single sentence is fine.
+
+EVERY FIGURE ABOVE IS A PROPERTY OF THE STDLIB PATH, and this file did not say so. Two tests
+asserted them against whatever path the machine happened to take, so on any install with torch
+importable — where `perplexity_burstiness` silently upgrades to GPT-2 — they failed: the shape
+claim ("a handful of distinct values") got a continuum, 0.0/0.0003/0.006, and the caveat fired
+with stdlib wording about a run GPT-2 had done. The path is pinned below rather than tolerated,
+because a test that only holds on half the installs was never testing the thing it describes.
+
+The GPT-2 path gets its own test. It ranks lone sentences at AUROC ~0.97, so the caveat must NOT
+fire there; that it did is the bug this file's fix addresses.
 """
 
 from __future__ import annotations
@@ -58,6 +68,23 @@ def _quiet(caplog):
     caplog.set_level(logging.CRITICAL)
 
 
+@pytest.fixture(autouse=True)
+def _force_stdlib_path(monkeypatch):
+    """Every measurement in this file is a stdlib-path measurement, so pin the path.
+
+    Without this the detector upgrades to GPT-2 wherever torch is importable and the assertions
+    silently change subject — which is how two of them came to fail on exactly the installs the
+    project documents as the better-supported ones. The GPT-2 path is covered separately below.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+
+
+def _stdlib_detector() -> PerplexityBurstinessDetector:
+    detector = PerplexityBurstinessDetector()
+    assert detector.mode() == "stdlib", "the env guard no longer forces the heuristic path"
+    return detector
+
+
 def test_the_sentence_is_long_enough_to_clear_the_word_guard() -> None:
     """The premise. If this were short the existing warning would cover it and there would be
     nothing here to fix."""
@@ -79,7 +106,7 @@ SINGLES = [
 def test_most_single_sentences_return_the_same_number() -> None:
     """82% of 60 corpus sentences score exactly 0.2500. The constructed set is smaller, so this
     asserts the shape — a handful of distinct values — rather than the corpus percentage."""
-    detector = PerplexityBurstinessDetector()
+    detector = _stdlib_detector()
     scores = {round(detector.score(s), 4) for s in SINGLES}
     assert len(scores) <= 2, scores
 
@@ -118,10 +145,35 @@ def test_it_does_not_fire_when_a_model_detector_is_present() -> None:
 
 def test_the_caveat_reaches_the_score_result() -> None:
     result = score_text(ONE_LONG_SENTENCE, tier="lite")
-    if any(m == "stdlib" for m in (result.get("detector_modes") or {}).values()):
-        assert "one sentence:" in str(result.get("warning"))
-    else:  # torch present: lite auto-upgrades and the limit does not apply
-        assert "one sentence:" not in str(result.get("warning"))
+    assert result.get("detector_modes", {}).get("perplexity_burstiness") == "stdlib"
+    assert "one sentence:" in str(result.get("warning"))
+
+
+def test_the_caveat_stays_quiet_when_gpt2_scored_the_sentence(monkeypatch) -> None:
+    """The bug the mode check fixes: stdlib wording attached to a run GPT-2 had done.
+
+    Everything the caveat says — half burstiness, 82% landing on 0.2500 — is a fact about the
+    heuristic. GPT-2 ranks lone sentences at AUROC ~0.97 by this detector's own measurement, so
+    firing there both scares the reader off a usable number and credits it to code that did not
+    run. `_verdict_threshold` had already stopped trusting the detector NAME for the same reason.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+    detector = PerplexityBurstinessDetector()
+    if detector.mode() != "gpt2":
+        pytest.skip("torch is not importable here, so there is no GPT-2 path to check")
+
+    assert _single_sentence_warning(ONE_LONG_SENTENCE, [detector]) is None, (
+        "the caveat fired on the GPT-2 path, describing a heuristic that did not score this text"
+    )
+    assert _single_sentence_warning(
+        ONE_LONG_SENTENCE, [detector], {"perplexity_burstiness": "gpt2"}
+    ) is None
+
+    # And it must still fire when the modes dict says the fallback ran, even though torch imports —
+    # that is the case `mode()` exists to distinguish.
+    assert _single_sentence_warning(
+        ONE_LONG_SENTENCE, [detector], {"perplexity_burstiness": "stdlib"}
+    )
 
 
 def test_it_composes_with_the_other_caveats() -> None:

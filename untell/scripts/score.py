@@ -388,7 +388,7 @@ def _short_text_warning(text: str) -> str | None:
     )
 
 
-def _single_sentence_warning(text: str, detectors: list) -> str | None:
+def _single_sentence_warning(text: str, detectors: list, modes: dict | None = None) -> str | None:
     """Warn when the only detector scoring this text needs sentences it does not have.
 
     The stdlib heuristic is half perplexity and half BURSTINESS, and burstiness is the variation in
@@ -414,6 +414,24 @@ def _single_sentence_warning(text: str, detectors: list) -> str | None:
     """
     if any(getattr(d, "name", "") != "perplexity_burstiness" for d in detectors):
         return None  # a model-backed detector is scoring this and does not need sentence variation
+    # The name is not enough, for the same reason `_verdict_threshold` above stopped trusting it:
+    # `perplexity_burstiness` is TWO scoring paths under one label. Everything this warning says —
+    # half burstiness, 82% landing on exactly 0.2500 — is a fact about the stdlib heuristic. On the
+    # GPT-2 path the detector ranks lone sentences at AUROC ~0.97 (measured, see
+    # `_single_sentence_signal`), so the warning was announcing a limitation that did not apply and
+    # crediting it to a heuristic that had not run. Same source of truth as the verdict cut: the
+    # detector's own `mode()`, which reports the path TAKEN rather than the one predicted.
+    if (modes or {}).get("perplexity_burstiness") == "gpt2":
+        return None
+    if modes is None:
+        for d in detectors:
+            get_mode = getattr(d, "mode", None)
+            if callable(get_mode):
+                try:
+                    if get_mode() == "gpt2":
+                        return None
+                except Exception:  # a diagnostic must never break scoring
+                    pass
     from untell.text_split import split_sentences
 
     if len([s for s in split_sentences(text) if s.strip()]) >= 2:
@@ -605,7 +623,7 @@ def _score_with_detectors(
     # and a short text scored on a downgraded tier has both. An elif would have reported whichever
     # one happened to be checked first and hidden the other.
     for extra in (ensemble_warning, _short_text_warning(text),
-                  _single_sentence_warning(text, detectors), _invisible_char_warning(text),
+                  _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
                   _homoglyph_warning(text)):
         if extra:
             result["warning"] = (
