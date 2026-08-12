@@ -1216,7 +1216,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.text:
         text = args.text
     else:
-        text = sys.stdin.read()
+        # None means stdin is a terminal. Reading it would block until the user sent EOF, with no
+        # prompt and no output — the command looks hung when what they wanted was the usage line.
+        from untell.scripts.io_utils import read_stdin_or_none
+
+        piped = read_stdin_or_none()
+        if piped is None:
+            print(json.dumps({"error": "no input: pass text, --file PATH, or pipe to stdin"}))
+            return 2
+        text = piped
     if not text.strip():
         print(json.dumps({"error": "empty input"}))
         return 2

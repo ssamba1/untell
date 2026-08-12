@@ -801,7 +801,7 @@ def _human_false_positive_warning(result: dict) -> str | None:
     return _HUMAN_FP_NOTE if result.get("flagged") else None
 
 
-def _read_input(args: argparse.Namespace) -> str:
+def _read_input(args: argparse.Namespace) -> str | None:
     if args.file:
         # read_file(): BOM-aware, sniffs UTF-16/cp1252, handles docx/pdf, rejects binaries.
         # A naive open(encoding="utf-8", errors="replace") turns a UTF-16 document into mojibake
@@ -812,7 +812,11 @@ def _read_input(args: argparse.Namespace) -> str:
         return read_file_or_exit(args.file)
     if args.text:
         return args.text
-    return sys.stdin.read()
+    # None means stdin is a terminal; reading it would block with no prompt and no output. The
+    # caller's own empty-input branch turns that into the usage message and exit 2.
+    from untell.scripts.io_utils import read_stdin_or_none
+
+    return read_stdin_or_none()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -862,6 +866,9 @@ def main(argv: list[str] | None = None) -> int:
     load_env()  # pick up commercial keys from a .env file if present (for --tier commercial)
 
     text = _read_input(args)
+    if text is None:
+        print(json.dumps({"error": "no input: pass text, --file PATH, or pipe to stdin"}))
+        return 2
     if not text.strip():
         print(json.dumps({"error": "empty input"}))
         return 2

@@ -195,6 +195,30 @@ def read_file_or_exit(path: str) -> str:
         raise SystemExit(2) from None
 
 
+def read_stdin_or_none() -> str | None:
+    """Read piped stdin, or return None when stdin is an interactive terminal.
+
+    `sys.stdin.read()` on a TTY blocks until the user sends EOF, and none of these commands prints
+    a prompt first — so `untell tells` typed with no argument produced no output and no error and
+    looked hung, when the answer the user wanted was the usage line. MEASURED by modelling a
+    terminal (isatty True, read() raising instead of blocking): 6 of the 7 stdin-reading commands
+    blocked; `scrub` alone guarded and returned 2.
+
+    This is that guard, hoisted so the seventh copy is a call rather than a copy. Returning None
+    rather than raising keeps the caller's own "no input" message and exit code, which the tests in
+    this repo assert per command.
+    """
+    import sys
+
+    try:
+        interactive = sys.stdin.isatty()
+    except Exception:
+        # A replaced or closed stream in a test harness has no isatty; treat it as non-interactive
+        # so piped and captured input still reaches the command.
+        interactive = False
+    return None if interactive else sys.stdin.read()
+
+
 def configure_utf8_io() -> None:
     """Force UTF-8 on stdin/stdout/stderr so non-ASCII text never crashes a Windows console.
 

@@ -594,7 +594,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mapping-file", help="path to a JSON mapping file for --restore")
     args = parser.parse_args(argv)
 
-    text = args.text if args.text is not None else sys.stdin.read()
+    if args.text is not None:
+        text = args.text
+    else:
+        # None means stdin is a terminal; reading it would block with no prompt and no output.
+        from untell.scripts.io_utils import read_stdin_or_none
+
+        piped = read_stdin_or_none()
+        if piped is None:
+            print(json.dumps({"error": "no input: pass text, --file PATH, or pipe to stdin"}))
+            return 2
+        text = piped
 
     if args.restore:
         mapping: dict[str, str] = {}

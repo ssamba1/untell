@@ -679,6 +679,25 @@ def _untell_text(
             # With NLI available, contradiction + bidirectional entailment do the fidelity judging
             # and similarity is demoted to a gross-drift floor; without it, the strict bar stands.
             # Measured on a fixed probe set: 7/8 faithful admitted and 0/11 bad, vs 2/8 and 4/11.
+            # On the MASKED text, deliberately, and the cost of that is measured. The gate compares
+            # strings still carrying `⟦HZ…⟧` sentinels, so an embedding model is reading opaque
+            # tokens where a citation used to be — and the targeting path one screen up documents a
+            # careful masked-vs-restored analysis for exactly this reason, while this comment used
+            # to say nothing about it.
+            #
+            # A constructed citation-dense pair suggested it mattered: three locked spans in two
+            # sentences moved similarity 0.8974 -> 0.9304, inflating it, which is the unsafe
+            # direction. Real text is not that dense. MEASURED over 38 genuine rewrites of corpus
+            # texts that DO lock a span (38 of 50 do, so this is the common case):
+            #
+            #     similarity masked - restored   mean -0.0014   max +0.0091   min -0.0218
+            #     verdict disagreements          1 of 38, and it runs the SAFE way:
+            #                                    masked rejected what restored would have admitted
+            #
+            # So the synthetic probe generalised from a density real documents do not have. Masking
+            # is also principled here rather than merely harmless: the sentinel-integrity check
+            # above has already proven every locked span appears identically on both sides, so
+            # comparing them again adds nothing, and what is left is the prose the rewriter changed.
             sim = similarity(masked, candidate)
             if veto_contradictions:
                 if not meaning_preserved(masked, candidate, sim, sim_bar):
@@ -1419,7 +1438,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.text:
         text = args.text
     else:
-        text = sys.stdin.read()
+        # None means stdin is a terminal. Reading it would block until the user sent EOF, with no
+        # prompt and no output — the command looks hung when what they wanted was the usage line.
+        from untell.scripts.io_utils import read_stdin_or_none
+
+        piped = read_stdin_or_none()
+        if piped is None:
+            print(json.dumps({"error": "no input: pass text, --file PATH, or pipe to stdin"}))
+            return 2
+        text = piped
     if not text.strip():
         print(json.dumps({"error": "empty input"}))
         return 2
