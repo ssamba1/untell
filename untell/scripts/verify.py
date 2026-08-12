@@ -33,7 +33,6 @@ if __package__ in (None, ""):
             break
 
 from untell._env import load_env  # noqa: E402
-
 from untell.detectors.base import clamp01
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 
@@ -223,7 +222,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="untell-verify", description="Verify text against AI detectors (local ensemble + commercial checkers).")
     parser.add_argument("text", nargs="?", help="text to verify (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
-    parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
+    # Range-checked, not a bare float. `--threshold 5` was accepted, and since detector scores live
+    # in [0, 1] nothing can ever reach it: text scoring 0.826 was marked [PASS], the command printed
+    # "PASSES ALL 1 CHECKERS" and exited 0. On the command whose entire job is gating, a slip of the
+    # decimal point certifies anything.
+    #
+    # Every other surface already refuses it — `untell humanize` through this same validator, the
+    # REST API with 422, the MCP tools with "a value above 1 can never be reached" — so this was the
+    # fourth surface and the one where it mattered most.
+    #
+    # Imported rather than re-declared, and imported HERE rather than at module scope: one
+    # definition of the bound, and `verify --help` does not pay for loading the loop.
+    from untell.scripts.run import _PROBABILITY
+
+    parser.add_argument("--threshold", "-t", type=_PROBABILITY, default=DEFAULT_THRESHOLD)
     parser.add_argument("--json", action="store_true")
     parser.add_argument(
         "--tier",
