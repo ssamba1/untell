@@ -514,6 +514,17 @@ _TELLS_RESPONSES = _obj(
             "description": "present when the counts should not be read at face value — text with "
                            "no letters at all, or mostly in a script this catalogue cannot match",
         },
+        # The same omission as `warning` above, one field over: `include_matches=true` has always
+        # returned this and the schema never mentioned it, so a client generated from the spec
+        # would drop the only field that says WHICH phrases were counted. Absent when the flag is
+        # not set, which is why it is not in `required`.
+        "matches": {
+            "type": "object",
+            "additionalProperties": {"type": "array", "items": _STR},
+            "description": "present only when include_matches=true: category -> the exact phrases "
+                           "counted under it, so a caller can see what drove the number rather "
+                           "than trusting it",
+        },
     },
     required=["words", "tells", "tells_per_100w", "by_category", "language_supported"],
 )
