@@ -56,10 +56,26 @@ def test_the_marked_rows_reconcile_the_denominator() -> None:
     assert len(rows) - len(marked) == result["n_configured"], out
 
 
-def test_the_verdict_is_unchanged_by_the_marking() -> None:
+def test_the_verdict_is_unchanged_by_the_marking(monkeypatch: pytest.MonkeyPatch) -> None:
     """`passes_all` is computed over every row including the aggregate, and must stay that way —
-    the max is below threshold exactly when every local detector is, so it cannot disagree."""
+    the max is below threshold exactly when every local detector is, so it cannot disagree.
+
+    Pin the stdlib detector path. `tier="lite"` silently upgrades to GPT-2 whenever torch is
+    importable, and the two disagree about this fixture: stdlib scores it 0.6848 (fails, which is
+    what this test asserts) while the torch path scores 0.2824 and correctly PASSES. The product is
+    right on both; the test was reading an unpinned configuration and failed on any machine with
+    torch installed. Third occurrence of this trap in this suite — see the same note in
+    tests/test_run.py and tests/test_layout_protects_every_rewriter.py.
+
+    The premise is asserted rather than assumed, so a future drift in either scoring path fails on
+    the premise line and names the number that moved.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
     result = verify(AI, tier="lite", threshold=0.30)
+    max_row = next(v for k, v in result["results"].items() if k.startswith("local:max"))
+    assert max_row["ai"] >= 0.30, (
+        f"premise: the fixture must be flagged for this test to mean anything (got {max_row['ai']})"
+    )
     assert result["passes_all"] is False
     assert result["n_passing"] == 0
     assert "FAILS" in render(result)

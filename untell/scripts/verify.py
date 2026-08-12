@@ -289,9 +289,23 @@ def main(argv: list[str] | None = None) -> int:
     print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))
     # exit  0 if all configured checkers pass
     #       1 if any checker fails (reported)
-    #       0 if nothing ran (the user just got the empty report)
+    #       2 if NOTHING ran — not 0
+    #
+    # This returned 0 when no checker ran, with the comment "the user just got the empty report".
+    # Exit 0 means PASS to everything that reads it. `untell-verify --tier commercial` on a machine
+    # with no API keys printed "No checkers ran." and exited 0, so a CI job gating on this command
+    # was told the text passed every major AI checker when not one had been consulted.
+    #
+    # The module docstring already promised the opposite — "with no commercial keys set it reports
+    # that no checkers are configured (and exits non-zero), because 'passes all major checkers'
+    # cannot be asserted without running against them". The code and the promise disagreed, and the
+    # code was wrong.
+    #
+    # 2 rather than 1, deliberately: 1 means "checkers ran and something failed", which a caller may
+    # reasonably act on by rewriting. Nothing ran is a configuration problem, not a verdict about
+    # the text, and conflating them would send someone to rewrite text that was never checked.
     if not v["results"]:
-        return 0
+        return 2
     return 0 if v["passes_all"] else 1
 
 
