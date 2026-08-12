@@ -6927,3 +6927,47 @@ same distinction `score_text` draws between a detector that abstained and one th
 Worth keeping: **a field that reports degradation is itself a place degradation can hide.** This one
 was added for exactly the right reason, names the role check in its own docstring, and had no code
 path that could observe it. The check it forgot is the one doing most of the work.
+
+## Result 134
+
+**Nine new ways the rewriter could break a sentence. Seven of them: zero, on both sides.**
+
+The output battery has thirteen checks and the metrics cannot see grammar, so the question is what
+it still misses. Nine candidate breakages the transform set could plausibly emit — merges,
+splits, substitutions and deletions — scored on the OUTPUT and the SOURCE over 40 HC3+RAID documents
+through `structural` and `composite`:
+
+```
+check                       source  output  DELTA
+comma_splice                    34      20      5
+repeated_connective             41      38      1
+no_space_after_stop              0       0      0
+unbalanced_square                0       0      0
+unbalanced_curly                 0       0      0
+orphan_trailing_prep             0       0      0
+duplicate_sentence               0       0      0
+sentence_starts_with_comma       0       0      0
+space_before_apostrophe          0       0      0
+```
+
+**The two that fire are not damage checks.** `comma_splice` matches 34 times on untouched corpus
+prose and `repeated_connective` 41 times; both fall on the output. A check that fires thirty-four
+times on text the rewriter never touched is detecting a shape of English, not a defect, and the
+battery's own rule covers this: *"a damage check that cries wolf gets its fixture edited instead of
+the bug fixed."* Rejected, with the numbers recorded so the idea is not re-proposed.
+
+The seven zeros are the useful answer. They say the transform set genuinely cannot produce those
+shapes on this corpus, which narrows where future breakage can come from — so they are added as a
+floor rather than as a discovery, each with a known-positive probe. A check that has never matched
+anything and cannot be shown to match is indistinguishable from a broken regex, and this repo has
+shipped three of those, with a literal `0x08` where `\b` was meant.
+
+**And adding them exposed an older gap.** `test_every_check_can_actually_fire` iterates `_CHECKS`,
+the regex table. The checks `_damage` computes in Python — fragment leads, unbalanced quotes,
+unbalanced parens, stub sentences — were never in it and had no known-positive at all. Now driven
+off `_damage`'s own key set, so a new derived counter cannot be added without one.
+
+Worth keeping: **a battery of thirteen checks and a probe test for eleven of them looks complete
+from either end.** The probe test asserts `set(probes) == set(_CHECKS)` and passes; the four
+Python-counted checks are simply not in `_CHECKS` and so were never in scope for the completeness
+assertion that exists.
