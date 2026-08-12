@@ -46,6 +46,41 @@ LIVE_DOCS = (
     "docs/what-would-make-this-the-top-repo.md",
 )
 
+
+def audited_doc(report: Report, rel: str) -> str | None:
+    """Read a document the audit makes claims about, or record that it could not.
+
+    This file had two incompatible answers for "the document is not there". Some checks did
+    ``if not doc.exists(): continue`` and lost their findings without a word; others called
+    ``read_text`` bare and died. MEASURED by deleting each `LIVE_DOCS` entry from a copy of the
+    repository: `README.md` produced a `FileNotFoundError` traceback, and the checks that skip
+    dropped their findings with the run still reporting success.
+
+    Neither is acceptable for a command whose contract is to report what it could NOT check. The
+    audit exists because "a correctness argument decays the moment a number in a document stops
+    matching the code", and deleting the document is the largest drift there is. So absence is a
+    named failure, and the run continues so the remaining checks still report.
+    """
+    path = REPO / rel
+    if not path.exists():
+        report.check(
+            f"{rel}: present to be audited",
+            False,
+            "the document is missing, so every claim it carries went unchecked",
+        )
+        return None
+    return path.read_text(encoding="utf-8")
+
+
+def _optional_doc(rel: str) -> str | None:
+    """A document that is not part of `LIVE_DOCS`, so its absence is not a claim going unchecked.
+
+    Only the census page today. It is generated rather than written, and a repository without one
+    has nothing to be stale.
+    """
+    path = REPO / rel
+    return path.read_text(encoding="utf-8") if path.exists() else None
+
 # A measured number is attributed when its section says how to reproduce it. These are the phrases
 # the documents actually use.
 _ATTRIBUTION = re.compile(
@@ -119,10 +154,9 @@ def check_derivable(report: Report) -> None:
     )
     # Every document that states the ensemble size must agree with the registry.
     for rel in LIVE_DOCS:
-        doc = REPO / rel
-        if not doc.exists():
+        body = audited_doc(report, rel)
+        if body is None:
             continue
-        body = doc.read_text(encoding="utf-8")
         for pattern, expected, kind in (
             (r"(\d+)\s+local\b", local, "local"),
             (r"(\d+)\s+commercial\b", commercial, "commercial"),
@@ -154,7 +188,9 @@ def check_derivable(report: Report) -> None:
     pyproject = (REPO / "pyproject.toml").read_text(encoding="utf-8")
     scripts_table = pyproject.split("[project.scripts]", 1)[-1].split("\n[", 1)[0]
     declared = set(re.findall(r"^([\w-]+)\s*=", scripts_table, re.MULTILINE))
-    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    readme = audited_doc(report, "README.md")
+    if readme is None:
+        return
     promised = set(re.findall(r"`(untell-[\w-]+)`", readme))
     absent = sorted(promised - declared)
     report.check(
@@ -614,10 +650,10 @@ def check_named_repo_stars(report: Report) -> None:
     wrong: list[str] = []
     checked = 0
     for rel in ("docs/why-best-open-repo.md", "docs/humanizer-census.md", "ROADMAP.md", "README.md"):
-        path = REPO / rel
-        if not path.exists():
+        text = audited_doc(report, rel) if rel in LIVE_DOCS else _optional_doc(rel)
+        if text is None:
             continue
-        for name, value in _STAR_CLAIM.findall(path.read_text(encoding="utf-8")):
+        for name, value in _STAR_CLAIM.findall(text):
             matches = [r for r in records if name.lower() in _census_keys(r)]
             if len(matches) != 1:
                 wrong.append(f"{rel}: `{name}` matches {len(matches)} census records")
@@ -652,10 +688,9 @@ def check_largest_repo_claims(report: Report) -> None:
     wrong: list[str] = []
     checked = 0
     for rel in ("docs/why-best-open-repo.md", "docs/humanizer-census.md"):
-        path = REPO / rel
-        if not path.exists():
+        text = audited_doc(report, rel) if rel in LIVE_DOCS else _optional_doc(rel)
+        if text is None:
             continue
-        text = path.read_text(encoding="utf-8")
         for match in re.finditer(r"of the (\w+) largest", text):
             word = match.group(1).lower()
             size = {"three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
@@ -1209,7 +1244,9 @@ def check_dynamic_env_vars(report: Report) -> None:
         report.check("the config key table is importable", False, f"{type(exc).__name__}: {exc}")
         return
 
-    readme = (REPO / "README.md").read_text(encoding="utf-8", errors="replace")
+    readme = audited_doc(report, "README.md")
+    if readme is None:
+        return
     undocumented = [
         f"UNTELL_{key.upper()}" for key in _CLI_DEFAULTS
         if f"UNTELL_{key.upper()}" not in readme

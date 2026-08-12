@@ -748,6 +748,7 @@ without a row here.
 | `UNTELL_API_KEY` | bearer token the REST server requires; unset means no auth |
 | `UNTELL_HOST` / `UNTELL_PORT` | bind address for `untell-server` (default `127.0.0.1:8000`) |
 | `UNTELL_RATE_LIMIT` | requests per minute per client for the REST server |
+| `UNTELL_CORS_ORIGINS` | comma-separated origins the REST server allows; unset means no cross-origin access |
 | `UNTELL_BROWSER_SITES` | comma-separated free web detectors for `--browser` |
 | `UNTELL_LITE_NO_TORCH` | force the pure-stdlib lite path even when torch is installed. The two paths differ by 11.5x in false positives, so this is how you pin which one you are measuring |
 | `UNTELL_DISABLE_MAGE` | skip the MAGE detector (large download) |
