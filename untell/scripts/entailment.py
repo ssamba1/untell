@@ -27,7 +27,20 @@ import logging
 import re
 from functools import lru_cache
 
-from untell.text_split import aligned_chunks
+# RUN DIRECTLY (`python .../untell/scripts/entailment.py`), put the directory that *contains* the
+# package on sys.path so `import untell` resolves from any cwd. SKILL.md tells Claude to run this
+# file by path on the zero-dependency tier, where nothing is installed — without this it dies on
+# its first `from untell...` line. Must sit BEFORE those imports: below them it is unreachable.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    for _p in _Path(__file__).resolve().parents:
+        if (_p / "untell" / "__init__.py").exists():
+            _sys.path.insert(0, str(_p))
+            break
+
+from untell.text_split import aligned_chunks  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
