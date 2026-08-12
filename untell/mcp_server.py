@@ -167,9 +167,10 @@ def _server():
                 already reproduces; pass an int to compare two settings on one stream.
             voice_sample: A sample of the user's own writing (150+ words). Among candidate rewrites
                 already tied on AI tells, prefer the one whose sentence length, rhythm and comma
-                rate sit closest to it. A tie-break only, so it never costs evasion or
-                naturalness — and it scores only those three habits, because those are the ones a
-                free rewriter measurably moves.
+                rate sit closest to it. A tie-break within the 0.02 detector noise band: it
+                never costs AI tells, and can cost up to 0.02 of detector score (measured 0.009 at
+                worst, on 3 of 12 texts). It scores only those three habits, because those are the
+                ones a free rewriter measurably moves.
         """
         from untell.rewriter import get_rewriter
 

@@ -267,7 +267,8 @@ class HumanizeRequest(_Request):
     detector_thresholds: dict[str, float] | None = None
     # The CLI takes a FILE path here; over HTTP the sample travels as text. Among candidate
     # rewrites already tied on AI tells, the one whose sentence length, rhythm and comma rate sit
-    # closest to this wins — a tie-break only, so it can never cost evasion. See scripts/voice.py
+    # closest to this wins — a tie-break inside the 0.02 detector noise band: no cost in AI tells,
+    # and up to 0.02 of detector score (measured 0.009 at worst, on 3 of 12). See scripts/voice.py
     # for what it does and does not claim to measure.
     voice_sample: str | None = Field(default=None, max_length=MAX_INPUT_CHARS)
     # Unset derives the stream from the text, so an identical request already returns an identical

@@ -760,6 +760,19 @@ def _untell_text(
             # 0.718 -> 0.474 at best_of=8, helping 11 and 14 of 20 texts respectively, for a total
             # tells cost of ZERO in both cases. With no sample the key is a constant and selection
             # is byte-identical to before.
+            #
+            # "Tie" means WITHIN `_TELLS_EPS`, not equal, and the difference is user-visible. `near`
+            # holds every candidate whose detector max is within 0.02 of the best, so voice can
+            # promote one that scores slightly worse on the detector. MEASURED, same seed on both
+            # arms so only the tie-break differs, 12 HC3 texts:
+            #
+            #     voice distance   4 closer, 0 farther, 8 unchanged
+            #     detector max     3 worse: +0.0019, +0.0063, +0.0094 — all inside the band
+            #
+            # That is the design working, not leaking: the band is defined as detector noise. It is
+            # recorded because three user-facing surfaces described this as a tie-break that "never
+            # costs evasion", which is true of tells and not of the detector number a caller reads.
+            # Those now say what the band costs.
             cand_best, cand_best_score, _ = min(
                 near,
                 key=lambda v: (
@@ -1311,7 +1324,7 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="file of YOUR writing (150+ words). Among candidate rewrites that already tie on AI "
         "tells, prefer the one whose sentence length, rhythm and comma rate sit closest to it. "
-        "Only ever breaks a tie, so it never costs evasion or naturalness. See untell-voice.",
+        "Breaks a tie among candidates whose detector max is within the 0.02 noise band, so it never costs TELLS and can cost up to 0.02 of detector score — measured 0.009 at worst over 12 texts, on 3 of them. See untell-voice.",
     )
     parser.add_argument(
         "--best-of",
