@@ -7178,3 +7178,51 @@ had a column and a rejecting case, the seventh had neither and was the only defe
 default install is blind to. And the sharper half: **the full suite caught a corpus-scope error that
 445 measurements did not.** The number was real, the population was wrong, and only an input outside
 that population could show it.
+
+## Result 140
+
+**The transform shipped in Result 116 has never survived the loop. I verified it against the wrong
+gate.**
+
+Result 139 added a deletion guard, so the obvious next question is whether it blocks the
+sentence-removing transform added in Result 116. It does — and finding that out showed the transform
+had been dead since the day it shipped, for a different reason entirely.
+
+Result 116 verified `_strip_meta_closers` with `passes()` — the **similarity-only** helper — and
+recorded "similarity 0.981–0.997, `passes` True, `contradicts` False". The loop does not call
+`passes()`. It calls `meaning_preserved`, and measured against *that*:
+
+```
+candidate            sim     lost   numbers  polarity  certainty  roles   meaning_preserved
+one sign-off       0.994      4       True     True      FALSE    ok           False
+two stacked        0.991     13       True     True      FALSE    VETO         False
+three stacked      0.989     23       True     True      FALSE    VETO         False
+```
+
+**Three gates, three different reasons, every one of them right about the text and wrong about the
+meaning.** `certainty` sees "hope" and reads a dropped hedge class. The length guard sees 13 words
+gone. `roles` sees the predicates *"I hope …"* and *"Let me know …"* vanish. Seventeen tests passed
+and the transform produced correct output that the loop threw away every time.
+
+`certainty_kept`'s docstring justifies its two known false vetoes with **"0 candidates vetoed over 80
+runs"** — true when written, and stale the moment a transform existed that removes a sign-off. A
+measurement that licenses a trade-off has to be re-run when the thing it measured changes.
+
+**The first two fixes were the wrong shape.** I exempted sign-offs inside `certainty_kept`, then
+again inside `words_lost` — two scattered exemptions, and `roles` still vetoed, which would have made
+three. Replaced with one normalisation in `meaning_preserved`: strip scaffolding from both sides
+once, and every gate sees like for like.
+
+**And then the two halves disagreed about the unit.** `_strip_meta_closers` deletes a whole
+*sentence*; the exemption removed only the matched *span*, so the remainder — *"if you need more
+detail"* — read as deleted content and the gate still vetoed. `is_pure_scaffolding` and its
+remainder bound now live in `tells`, beside the pattern, with the rewriter and the gate both calling
+it. Same defect as Result 115's two vocabularies, one layer up: not two patterns this time, but two
+*units* for one pattern.
+
+Verified in both directions: the strip passes at one, two and three stacked closers; dropping a real
+sentence, negating a claim, and content wearing a sign-off as a prefix are all still rejected.
+
+Worth keeping: **verifying against a helper that is not the one production calls proves nothing, and
+it looks exactly like proof.** `passes` and `meaning_preserved` differ by six gates. The Result 116
+entry reported real numbers, honestly obtained, from a function the pipeline never invokes.
