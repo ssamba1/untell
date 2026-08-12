@@ -461,8 +461,21 @@ def check_no_control_characters(report: Report) -> None:
     CRLF is not the target: it is the normal Windows line ending and git converts it on the way in.
     Only a CR that is not part of a line ending, and other C0 controls, are reported.
     """
+    tracked = sorted(_tracked_text_files())
+    if not tracked:
+        # `_tracked_text_files` returns [] when git is unavailable or the directory is not a
+        # checkout, and this check then scanned nothing and reported "clean". MEASURED by copying
+        # the repository without its `.git` and adding a BEL byte to `docs/index.md`: PASS, detail
+        # "clean". Zero files inspected is not a clean repository, it is an unperformed check, and
+        # this audit's whole contract is to say which claims it could not verify.
+        report.check(
+            "no tracked text file carries a stray control character",
+            False,
+            "git listed no tracked files, so nothing was scanned",
+        )
+        return
     offenders: list[str] = []
-    for rel in sorted(_tracked_text_files()):
+    for rel in tracked:
         path = REPO / rel
         try:
             text = path.read_bytes().decode("utf-8")
