@@ -797,6 +797,10 @@ def _meaning_gate_mode(veto_contradictions: bool) -> str:
     ``"nli"`` — the full conjunction: retained quantities and claim strength (mechanical, always
     on), plus the similarity floor, contradiction veto, bidirectional entailment and the
     predicate-argument role check.
+    ``"nli (no role check)"`` — everything above except the role check, because spaCy's model is not
+    installed. Worth its own value rather than being folded into ``"nli"``: over 49 real rewrites
+    the role check supplied 2 of the 3 vetoes the conjunction produced, so this is the larger of the
+    two model-backed halves going missing, and it went missing silently.
     ``"similarity-only (...)"`` — the model-backed half is absent, because NLI could not be
     imported or the veto was switched off. The mechanical checks still run; what is missing is
     every check that needs the model, and those are the ones that catch an INVERSION. Measured:
@@ -825,7 +829,17 @@ def _meaning_gate_mode(veto_contradictions: bool) -> str:
     if not veto_contradictions:
         return "similarity-only (veto disabled)"
     try:
-        return "nli" if _nli_available() else "similarity-only (NLI unavailable)"
+        if not _nli_available():
+            return "similarity-only (NLI unavailable)"
+        # The role check is the OTHER optional dependency, and this field used to ignore it: with
+        # spaCy's model absent `role_swap` returns None — correctly, since an unavailable check must
+        # not become a veto — and the mode still said "nli", the value documented above as "the full
+        # conjunction ... plus the predicate-argument role check". MEASURED over 49 real rewrites,
+        # role_swap supplied 2 of the 3 vetoes the whole conjunction produced, so the missing half
+        # is the larger half.
+        from untell.scripts.roles import parser_available
+
+        return "nli" if parser_available() else "nli (no role check)"
     except Exception:  # a diagnostic must never break the run it describes
         return "unknown"
 

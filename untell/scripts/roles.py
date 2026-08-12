@@ -254,6 +254,17 @@ def _analyse(text: str) -> tuple[tuple[tuple[str, str, str | None], ...], frozen
     return tuple(_triples(doc)), frozenset(_connectives(doc))
 
 
+def parser_available() -> bool:
+    """Whether the role check can run at all.
+
+    Separate from calling `role_swap` and reading None, because None is also what a caller gets for
+    empty input. The pipeline reports which fidelity checks were in force and needs to distinguish
+    "this pair had no roles to compare" from "this install cannot compare roles at all" — the
+    second is a missing guarantee, the first is an ordinary answer.
+    """
+    return _load() is not None
+
+
 def role_swap(a: str, b: str) -> bool | None:
     """True when ``b`` permutes ``a``'s predicate-argument structure. None if unavailable.
 

@@ -595,8 +595,12 @@ _HUMANIZE_RESPONSES = _obj(
         "sim_bar": _NUM, "quality_metric": _STR,
         "meaning_gate": {
             **_STR,
-            "description": "which gate produced the verdict: 'nli', or a similarity-only fallback "
-                           "when the NLI stack is unavailable or disabled",
+            "description": "which fidelity checks were in force: 'nli' (all of them), 'nli (no "
+                           "role check)' when spaCy's model is missing, or a 'similarity-only' "
+                           "fallback when the NLI stack is unavailable or the veto is disabled. "
+                           "MEASURED over 49 real rewrites, the role check supplied 2 of the 3 "
+                           "vetoes the full conjunction produced, so the middle value is not a "
+                           "detail",
         },
         "tier": _STR, "flagged": _BOOL,
         "stopped": {**_STR, "description": "why the loop stopped"},
