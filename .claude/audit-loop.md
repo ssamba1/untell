@@ -54,14 +54,13 @@ printed output. If your probe crashes, fix your probe, not the repo.
 
 1. Make the smallest fix that makes the probe satisfy the invariant. Re-run the probe.
 2. Add ONE regression test in `tests/`, named after the behaviour.
-3. **Mutation-verify it.** This is mandatory and mechanical:
+3. **Prove the test catches the defect.** One command, and it is not optional:
    ```bash
-   git stash push -- <the file you fixed>
-   .venv/Scripts/python.exe -m pytest -q tests/<your_new_test>.py 2>&1 | tail -3   # MUST be red
-   git stash pop
-   .venv/Scripts/python.exe -m pytest -q tests/<your_new_test>.py 2>&1 | tail -3   # MUST be green
+   .venv/Scripts/python.exe .claude/verify.py tests/<your_new_test>.py --fix <the file you fixed>
    ```
-   If it is green both times, the test proves nothing. Delete it and write a different one.
+   It runs the test with your fix, takes the fix away, runs it again, and puts the fix back.
+   Red-without then green-with, or it exits non-zero and the test proves nothing — delete it
+   and write one that fails.
 4. Full suite must be green before you commit:
    ```bash
    .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -3
@@ -70,10 +69,21 @@ printed output. If your probe crashes, fix your probe, not the repo.
 
 ## Step 4 — record and commit
 
-Commit separately, in this order, only what applies:
+Stage, then let the guard read what you staged. It exits non-zero on anything the envelope
+forbids, and its answer is final — do not work around it, do not edit it:
 
 ```bash
-git add <fix files>   && git commit -m "fix(<area>): <what was wrong>"
+git add <fix files>
+.venv/Scripts/python.exe .claude/guard.py
+```
+
+If it BLOCKS: unstage, write the finding to `.claude/human-queue.md`, record the pass as
+`queued`, and stop. That is a complete, successful pass.
+
+If it is clean, commit separately, in this order, only what applies:
+
+```bash
+git commit -m "fix(<area>): <what was wrong>"
 git add tests/<file>  && git commit -m "test(<area>): <what it pins>"
 ```
 

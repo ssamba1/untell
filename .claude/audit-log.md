@@ -11,4 +11,3 @@ permanently.
 
 | # | lane | target | verdict | before | after | commit | note |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | L1 | T01 | clean | 5736 | 5736 | - | fleet collection test, probe ran and held |
