@@ -7808,3 +7808,41 @@ Worth keeping: **a control is a claim, and an unchecked claim is decoration.** T
 clean answers, three demonstrated failure paths that did not exist before — and the reason to write
 them is that two of this repository's published figures had already stopped reproducing without
 anything noticing.
+
+## Result 154
+
+**Genuine human writing, reported as 99.2% AI, with `warning: None`.**
+
+A question about the product rather than the machinery: what does the loop do to text that is already
+human? Mostly the right thing. Of 8 real HC3 answers at `tier=full`, **6 came back byte-identical**,
+similarity 1.000 — the loop only rewrites what the detectors flag, so text nobody flags is text
+nobody touches.
+
+The other two were rewritten, and the loop was not at fault: they were flagged at **0.9922** and
+**0.9862**. The detectors were wrong, and the loop did exactly what it is told to do with a flagged
+document.
+
+So: how often, and is anyone told? MEASURED on 30 genuine human texts per corpus at `tier=full`:
+
+```
+corpus   flagged (>=0.45)   above the loop bar (>=0.30)   mean max   carrying a warning
+HC3        5 / 30  (17%)          5 / 30                    0.259           0
+RAID       0 / 30  ( 0%)          0 / 30                    0.141           0
+```
+
+**Nobody is told.** The lite path already carries a loud false-positive caveat — *"64% of HUMAN text
+scores above the 0.30 loop threshold"* — and the FULL path, the one the README tells people to
+install, said nothing at all. `ai_percent` 99.2 on prose a person wrote themselves, arriving bare.
+
+**The corpus split is the substance, not a footnote.** HC3 human answers are casual forum Q&A, which
+is the register someone actually pastes when checking their own writing; RAID's are paper abstracts.
+A single pooled rate would understate exactly the case that matters, so the note quotes both.
+
+The wording had to survive being read by someone whose text really is AI, so it makes a claim about
+what a flag *proves* rather than about which way this verdict went — and it appears only when
+`flagged` is true, because a caveat on every call is a caveat nobody reads.
+
+Worth keeping: **the honest-limits discipline was applied to the weak path and skipped on the strong
+one.** The lite tier gets a paragraph about its false positives because it is obviously weak. The
+full tier is the one people trust, flags 17% of conversational human writing, and had no note at all
+— the caveat is needed most exactly where the number looks most authoritative.
