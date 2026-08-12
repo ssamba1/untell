@@ -4,10 +4,20 @@ The document exists because three result dicts were misread in one session, each
 plausible wrong answer rather than a KeyError. A reference that drifts would reintroduce exactly
 that failure with an authoritative tone, so every key it lists is checked against a live call.
 
-Deliberately checks the direction that matters: a key the doc names must exist. Extra keys in the
-result are fine — a function may grow a field before the doc catches up, and failing on that would
-make the test a chore rather than a guard. What must not happen is the doc naming something that
-is not there.
+This file used to check one direction only, on the reasoning that "a function may grow a field
+before the doc catches up, and failing on that would make the test a chore rather than a guard".
+That judgement was reasonable and the evidence went against it: the doc did not catch up. By the
+time the reverse check was added, `untell_text` was returning three keys the document did not
+list — `seed`, `tells_before`, `tells_after` — added across three separate commits, none of which
+updated the list, and nothing anywhere surfaced the drift.
+
+A result shape nobody can look up is the same defect as one that is wrong: a caller writing
+against `.get()` receives None either way and finds out in production. So both directions are
+checked now, with conditional keys — the ones the document annotates "(only when ...)" — held in
+their own set, since asserting `warning` is always present fails on any text without a caveat.
+
+`untell_text` was also documented and never called here, so its list could have said anything. It
+is the longest of the five and the one that changes most often.
 """
 
 from __future__ import annotations
@@ -29,6 +39,7 @@ def _documented_keys() -> dict[str, set[str]]:
     body = DOC.read_text(encoding="utf-8")
     block = body.split("## Full key lists", 1)[1].split("```", 2)[1]
     out: dict[str, set[str]] = {}
+    conditional: dict[str, set[str]] = {}
     current = None
     for line in block.splitlines():
         if not line.strip():
@@ -36,7 +47,8 @@ def _documented_keys() -> dict[str, set[str]]:
         head = re.match(r"^(\w+)\s+(.*)$", line)
         if head and not line.startswith(" "):
             current = head.group(1)
-            out[current] = set()
+            out.setdefault(current, set())
+            conditional.setdefault(current, set())
             rest = head.group(2)
         else:
             rest = line
@@ -44,11 +56,20 @@ def _documented_keys() -> dict[str, set[str]]:
             continue
         if rest.strip().startswith("+"):  # conditional keys, noted separately
             continue
-        out[current].update(k.strip() for k in rest.split(",") if k.strip() and " " not in k.strip())
-    return out
+        # Conditional keys carry a "(only when ...)" note. They are DOCUMENTED but not always
+        # RETURNED, so they belong in a separate set: asserting `warning` is always present fails
+        # on any text without a caveat, and leaving it unparsed — tokens containing a space are
+        # skipped as prose — made it count as undocumented wherever it did appear.
+        for chunk in re.split(r",(?![^(]*\))", rest):
+            note = re.search(r"\(([^)]*)\)", chunk)
+            name = re.sub(r"\([^)]*\)", "", chunk).strip()
+            if not name or " " in name:
+                continue
+            (conditional if note else out)[current].add(name)
+    return out, conditional
 
 
-DOCUMENTED = _documented_keys()
+DOCUMENTED, CONDITIONAL = _documented_keys()
 
 
 def test_the_document_lists_every_function():
@@ -62,22 +83,56 @@ def test_no_function_block_is_empty():
         assert len(keys) >= 4, f"{name} parsed only {keys}"
 
 
-@pytest.mark.parametrize("func", ["score_text", "score_tells", "score_sentences", "verify"])
-def test_documented_keys_exist(func):
+def _call(func: str):
+    from untell.scripts.run import untell_text
     from untell.scripts.score import score_text
     from untell.scripts.sentences import score_sentences
     from untell.scripts.tells import score_tells
     from untell.scripts.verify import verify
 
-    calls = {
+    return {
         "score_text": lambda: score_text(TEXT, tier="lite"),
         "score_tells": lambda: score_tells(TEXT),
         "score_sentences": lambda: score_sentences(TEXT, tier="lite"),
         "verify": lambda: verify(TEXT),
-    }
-    result = calls[func]()
+        # `untell_text` was documented and never called here, so its key list could say anything.
+        # It is the longest list of the five and the one that changes most often.
+        "untell_text": lambda: untell_text(
+            TEXT, tier="lite", max_iters=1, best_of=1, rewriter="composite"
+        ),
+    }[func]()
+
+
+ALL_FUNCS = ["score_text", "score_tells", "score_sentences", "verify", "untell_text"]
+
+
+@pytest.mark.parametrize("func", ALL_FUNCS)
+def test_documented_keys_exist(func):
+    result = _call(func)
     missing = sorted(DOCUMENTED[func] - set(result))
     assert not missing, f"{func} does not return documented keys: {missing}"
+
+
+@pytest.mark.parametrize("func", ALL_FUNCS)
+def test_returned_keys_are_documented(func):
+    """The other direction, which nothing checked.
+
+    `test_documented_keys_exist` asks whether the doc promises anything the code does not deliver.
+    It cannot see the reverse — a key ADDED to a result and not written down — so the document
+    drifted silently in the direction it was most likely to drift. MEASURED when this was added:
+    `untell_text` returned `seed`, `tells_before` and `tells_after` beyond its documented list, two
+    of which had been added in this session and one earlier.
+
+    A result shape nobody can look up is the same defect as one that is wrong; a caller writing
+    against `.get()` gets None either way and finds out in production.
+    """
+    result = _call(func)
+    undocumented = sorted(set(result) - DOCUMENTED[func] - CONDITIONAL[func])
+    assert not undocumented, (
+        f"{func} returns keys the document does not list: {undocumented}. Add them to the "
+        "'Full key lists' block rather than deleting this assertion — a caller cannot use a key "
+        "they cannot find."
+    )
 
 
 def test_untell_text_documented_keys_exist():

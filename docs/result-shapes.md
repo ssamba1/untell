@@ -40,7 +40,8 @@ score_tells       burstiness_cv, by_category, by_evidence, language_supported,
 score_sentences   flagged, note, sentences, threshold, tier
 
 untell_text       adopted, changed, final, flagged, iterations, meaning_gate, post, pre,
-                  quality_metric, rewrites, sim_bar, similarity, stopped, tier
+                  quality_metric, rewrites, seed, sim_bar, similarity, stopped,
+                  tells_after, tells_before, tier, warning (only when a caveat applies)
 
 verify            configured, n_configured, n_passing, passes_all, results, threshold
 ```
