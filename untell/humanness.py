@@ -121,6 +121,48 @@ def _warn_unsupported_language() -> None:
     )
 
 
+_WARNED_WEAK_PATH = False
+
+
+def _warn_about_the_weak_path(warning: str | None) -> None:
+    """Forward the stdlib-path caveat, which is the one that changes how to read the number.
+
+    `_warn_about_invisibles` below passes through the invisible-character caveat "and drops the
+    rest". That was fine when invisibles were the only pass-through worth making, and it silently
+    dropped the caveat that matters most: on the pure-stdlib lite path `score_text` reports that
+    64% of HUMAN text scores above the loop threshold and that 10-70% of AI text (corpus-dependent)
+    is cleared, so the number is weak evidence in BOTH directions.
+
+    MEASURED, one paragraph carrying 8.3 AI tells per 100 words — "Moreover", "leverages",
+    "transformative", "underscores the importance" — on that path:
+
+        untell humanness --tier lite   ->  "79.8/100 (human)"        and no caveat at all
+        untell score     --tier lite   ->  the full both-directions warning
+
+    Same signal, same weak detector, and the command that answers with a single reassuring word was
+    the one saying nothing. 25 paired HC3 documents put 16 of 18 "mostly human" bands on text the
+    same path FLAGS; at full tier the disagreement disappears entirely (0 of 20), which is what
+    makes this a property of the path rather than of the bands.
+
+    This surface returns a bare float, so a log line is the only channel it has — the same
+    constraint the invisibles note records.
+    """
+    global _WARNED_WEAK_PATH
+    if not warning or _WARNED_WEAK_PATH:
+        return
+    if "stdlib path" not in warning:
+        return
+    _WARNED_WEAK_PATH = True
+    logger.warning(
+        # Single %, not %%. `logging` interpolates only when args are supplied, and there are none
+        # here — the first version printed "64%% of HUMAN text" to the user.
+        "this number comes from the pure-stdlib lite path, which is weak evidence in both "
+        "directions: 64% of HUMAN text scores above the loop threshold, and it clears 10-70% of "
+        "AI text depending on the corpus. A 'human' band here is not a pass. Re-run at --tier "
+        "full, or `untell score` for the full caveat."
+    )
+
+
 _WARNED_INVISIBLE = False
 
 
@@ -276,6 +318,7 @@ def humanness(text: str, tier: str = "full") -> float:
     # still reads them — the same text took an external detector from 0.0002 to 0.7900 on those
     # bytes alone. This surface returns a bare float, so a log line is the only channel it has.
     _warn_about_invisibles(detector_result.get("warning"))
+    _warn_about_the_weak_path(detector_result.get("warning"))
     detector_scored = detector_result.get("scored") is not False
     detector_max = float(detector_result.get("max", 0.0)) if detector_scored else None
     if not detector_scored:
