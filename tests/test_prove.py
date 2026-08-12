@@ -70,8 +70,13 @@ def test_prove_fails_when_checker_high(monkeypatch):
 
 
 def test_prove_cli_exit_codes(monkeypatch, capsys):
-    rc = main(["some text"])  # no keys -> non-zero
-    assert rc == 1
+    # 2, not 1: no keys means NOTHING RAN, which is a configuration problem rather than a verdict
+    # about the text. `untell-verify` already draws that line — its CHANGELOG entry keeps 2 "distinct
+    # from 1 (checkers ran and failed)" — and `prove` returned 1 for both, so a gating job could not
+    # tell "rewrite more" from "set ORIGINALITY_API_KEY". This assertion read `== 1` while its own
+    # comment said "non-zero", so the intent survives the change.
+    rc = main(["some text"])  # no keys -> nothing ran
+    assert rc == 2
     capsys.readouterr()  # flush the first (non-JSON) output before the JSON run
     monkeypatch.setenv("SAPLING_API_KEY", "k")
     monkeypatch.setattr(C, "_post_json", lambda *a, **k: {"score": 0.02})

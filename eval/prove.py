@@ -138,6 +138,20 @@ def main(argv: list[str] | None = None) -> int:
         best_of=args.best_of, rewriter=args.rewriter,
     )
     print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))
+
+    # Exit 2 when NOTHING RAN, kept distinct from 1 (checkers ran and the text failed them).
+    #
+    # `untell-verify` already draws this line — its CHANGELOG entry says "nothing running is a
+    # configuration problem, not a verdict about the text" — and this command did not. With no API
+    # keys it printed "cannot prove 'passes all' without running the real checkers" and returned 1,
+    # so a CI job gating on it could not tell "your text failed the checkers" from "you forgot the
+    # keys". Both mean stop, and they need opposite fixes.
+    #
+    # `passes_all` is False in both cases, which is correct — nothing was proved — so the count is
+    # what separates them.
+    after = (v.get("after") or {}) if isinstance(v, dict) else {}
+    if "error" in (v or {}) or not after.get("configured"):
+        return 2
     return 0 if v.get("passes_all") else 1
 
 
