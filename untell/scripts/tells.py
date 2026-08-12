@@ -1164,12 +1164,20 @@ def _render(r: dict) -> str:
         lines.append("by category:")
         for k, v in sorted(r["by_category"].items(), key=lambda kv: -kv[1]):
             lines.append(f"  {k:22} {v}")
-    elif r.get("warning"):
-        # NOT "no catalogued tells found" — that sentence reads as a clean bill of health, and on
-        # non-Latin input it would be reporting the catalogue's blindness as the text's virtue.
-        lines.append(f"WARNING: {r['warning']}")
-    else:
+    elif not r.get("warning"):
+        # NOT "no catalogued tells found" when a warning applies — that sentence reads as a clean
+        # bill of health, and on non-Latin input it would be reporting the catalogue's blindness as
+        # the text's virtue.
         lines.append("no catalogued tells found.")
+
+    # Its own branch, not an `elif` on the category list. The warning used to print ONLY when no
+    # tell fired, so any text that both matched a pattern and warranted a caveat showed the
+    # categories and swallowed the caveat. MEASURED on a 9-word input: `tells: 2`,
+    # `tells_per_100w: 22.22`, and the warning that says a rate from 9 words is quantised — "one
+    # tell alone reports 11" — never reached the reader, who saw a rate 3x the AI corpus mean of
+    # 7.320 presented without qualification.
+    if r.get("warning"):
+        lines.append(f"WARNING: {r['warning']}")
     return "\n".join(lines)
 
 
