@@ -203,6 +203,24 @@ def _truncate(text: str) -> str:
 # collapsing to one long line all move the mean by EXACTLY 0.0000 over the same documents.
 # Whitespace normalisation absorbs them. Segment structure is the one axis that moves this score.
 #
+# WHICH MEANS THE LOOP'S OWN GAIN ON THIS PATH RIDES LARGELY ON SEGMENTATION. The rewriter splits
+# and merges sentences as part of its job, and that is the same axis. Over 16 HC3 documents at one
+# seed, correlating the score improvement against what changed:
+#
+#     corr(gain, sentences added)   +0.79
+#     corr(gain, tells removed)     +0.30
+#     corr(tells removed, added)    -0.18      <- the two are nearly independent
+#
+# Tells do fall — 19->15, 30->26, 4->0 on individual documents — so the rewriter is doing real
+# work. But on this path the number that MOVES is mostly tracking how the text was cut into
+# sentences, not how much machine phrasing was removed.
+#
+# The full tier cannot arbitrate. Its gain is exactly 0.0000 on 4 of 4 documents because three of
+# five detectors saturate at 1.0000, so there is no movement there to attribute either way.
+#
+# Limits, since this is a correlation: n=16, one corpus, one seed, one rewriter. It says where to
+# look, not what to conclude.
+#
 # NOT changed here. Switching to block-scoring moves every stdlib figure in this repository — the
 # 64%/30% above, the per-corpus table, and the perplexity midpoints, which were fitted against
 # raw-document distributions — so it needs its own measurement pass rather than a drive-by edit.
