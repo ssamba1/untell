@@ -2140,7 +2140,26 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     # So spend a budget instead: cap total pool-openers near the human share, and spend what is
     # available on the sentences that actually need it. The job this transform exists for is
     # `repeated_sentence_openers`, so a sentence whose first word repeats another sentence's first
-    # word is served before an already-distinct one. Same work, a twelfth of the noise.
+    # word is served before an already-distinct one.
+    #
+    # WHAT THE CUT COSTS, measured afterwards rather than assumed. The line above used to end "same
+    # work, a twelfth of the noise", and that was too clean. Stripping a transition leaves
+    # "Overall, The paper ..." as "The paper ...", which CREATES a duplicate opener — the note
+    # further down records duplicates rising 18 -> 58 over 60 texts when this transform declined to
+    # act. Offsetting that is half its job, and a smaller budget offsets less of it. Over 12 HC3
+    # documents through the structural rewriter:
+    #
+    #     dose            duplicate openers/sentence      tells
+    #     0.42 (old)          0.231 -> 0.214  (falls)      98 -> 84
+    #     ~0.10 (now)         0.231 -> 0.238  (rises)      98 -> 84
+    #
+    # So duplicates now rise slightly where they used to fall. The tell catalogue does not move
+    # either way — 98 -> 84 on both, 1 of 12 documents worse on both — so nothing downstream sees
+    # it, which is exactly why it needed measuring rather than noticing.
+    #
+    # The trade is still right: 0.024 duplicates per sentence against a pool-opener rate 12x human,
+    # which is a fingerprint built entirely out of human-attested words. Recorded because the
+    # earlier version of this comment claimed only the benefit.
     #
     # Fractional, like the fronting and parentheses budgets above, and for a reason this transform
     # specifically needs. `round()` collapses the rate into an integer, and the style knobs are
