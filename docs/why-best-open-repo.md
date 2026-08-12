@@ -151,7 +151,7 @@ in this repo: move one edit to the end of a long document and see whether the ve
 | Quality/meaning verifier (not just a claim) | ✅ semantic gate + lock | ✅ BERTScore | ✅ rollback | ✅ keyword recall | ◑ | claim only | heuristic |
 | Per-sentence targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
 | Packaged install (pip / skill) | ✅ both | ❌ (research) | ✅ | ✅ | ❌ (GPU) | ✅ | ✅ (skill) |
-| Automated tests | ✅ **4991** tests, 180 modules (reproduce with `UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
+| Automated tests | ✅ **5047** tests, 188 modules (reproduce with `UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q`) | ◑ sanity | ✅ | ✅ | ❌ | ❌ | ◑ manual |
 | CI (lite + full-tier, real models) | ✅ 4 jobs | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs without a GPU | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | License | MIT | MIT | MIT | MIT | Apache | MIT | MIT |
