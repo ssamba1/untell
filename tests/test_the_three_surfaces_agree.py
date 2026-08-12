@@ -19,7 +19,6 @@ internals — so the gap really was those two, both of which change the verdict.
 from __future__ import annotations
 
 import inspect
-import os
 import sys
 from unittest.mock import MagicMock
 
