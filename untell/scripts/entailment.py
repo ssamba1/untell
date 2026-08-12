@@ -368,9 +368,10 @@ _LENGTH_WORD = re.compile(r"[A-Za-z0-9']+")
 def strip_scaffolding(text: str) -> str:
     """Text with reader-directed sign-offs removed, for gate comparison only.
 
-    "I hope this helps!" hedges no claim, asserts no predicate, and carries no content — it is
-    addressed to the reader rather than to the subject. Removing one is therefore invisible to
-    meaning, and `structural._strip_meta_closers` exists to do exactly that.
+    Two vocabularies, both contentless and both containing a PREDICATE whose disappearance the role
+    checker reads as a meaning change: reader-directed sign-offs ("I hope this helps!") and stance
+    frames ("It is important to note that X"). Neither asserts anything about the subject — X already
+    says whatever X says — and the rewriter deletes both on purpose.
 
     Every gate disagreed. MEASURED on that transform's own output, one gate at a time:
 
@@ -387,12 +388,13 @@ def strip_scaffolding(text: str) -> str:
     replaced them. Applied to BOTH sides and limited to what `tells._META_CLOSER_RE` already names,
     so deleting, hedging or re-attributing anything else is still caught in full.
     """
-    from untell.scripts.tells import is_pure_scaffolding
+    from untell.scripts.tells import STANCE_FRAME_RE, is_pure_scaffolding
     from untell.text_split import split_sentences
 
     sentences = split_sentences(text)
     kept = [s for s in sentences if not is_pure_scaffolding(s)]
-    return " ".join(kept).strip() if kept else text
+    stripped = " ".join(kept).strip() if kept else text
+    return STANCE_FRAME_RE.sub(" ", stripped)
 
 
 def words_lost(source: str, candidate: str) -> int:

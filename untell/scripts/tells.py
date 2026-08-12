@@ -710,6 +710,39 @@ def _repeated_trigrams(text: str) -> int:
 CLOSER_REMAINDER_WORDS = 6
 
 
+# Contentless stance frames: "It is important to note that X" says nothing about X that X does not
+# already say. The rewriter deletes these outright (`structural._CLICHE_FLATTEN`, the entries whose
+# replacement is empty), and the meaning gate has to know the same set, because each one contains a
+# PREDICATE — "note", "should be noted" — whose disappearance the role checker reads as a role change.
+#
+# MEASURED before this existed, over 120 corpus texts: `_flatten_cliches` fired 22 times and was
+# vetoed 4, every rejection from `role_swap` and every one a false veto — an 18% loss on the
+# transform, and 1 in 20 documents losing its ENTIRE structural rewrite to it.
+#
+# Exactly the deleted set and nothing wider. Exempting every catalogued cliché would let a genuine
+# role swap hide inside a cliché match, which is the leak direction; these nine frames carry no
+# argument structure about the subject at all.
+STANCE_FRAME_RE = re.compile(
+    # The boundary is a lookbehind, not an escape. The first version of this constant was
+    # generated through a shell heredoc and landed as a literal 0x08 BACKSPACE byte where the
+    # escape was meant, so it matched nothing and the exemption below silently did nothing —
+    # the same defect already recorded for three other patterns in this file. Only re-measuring
+    # the fix and finding it changed NOTHING surfaced it.
+    r"(?<![A-Za-z0-9_])(?:"
+    r"[Ii]t(?:'s| is| was)\s+(?:also\s+)?(?:important|worth|essential|necessary|crucial)\s+"
+    r"(?:to note|noting|to mention|mentioning|to remember|remembering)(?:\s+that)?\s*,?\s*"
+    r"|it\s+should\s+be\s+noted\s+that\s+"
+    r"|it'?s\s+no\s+secret\s+that\s+"
+    r"|the\s+bottom\s+line\s+is\s+that\s+"
+    r"|in\s+conclusion,?\s*"
+    r"|(?:in\s+summary|to\s+summari[sz]e),?\s*"
+    r"|at\s+its\s+core,?\s*"
+    r"|as\s+technology\s+continues\s+to\s+evolve,?\s*"
+    r")",
+    re.IGNORECASE,
+)
+
+
 def is_pure_scaffolding(sentence: str) -> bool:
     """True when ``sentence`` is a chatbot sign-off and nothing else.
 
