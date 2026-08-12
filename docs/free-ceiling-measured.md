@@ -8053,3 +8053,42 @@ the loop got better at clearing text.
 Worth keeping: **a passing trace across six surfaces told me less than one failure did.** The green
 rows confirmed plumbing I already believed in; the red one taught me what the plumbing actually
 promises.
+
+## Result 160
+
+**The transform that deletes sign-offs was deleting citations, against a promise on the front page.**
+
+A product question rather than a machinery one: the README says untell keeps *"your meaning,
+citations, and facts intact."* Six citation forms through the loop — numeric `[1]`, author-year,
+DOI, URL, bracket range, footnote marker — all survive, and the text genuinely changed in five of
+six, so it is preservation rather than inaction.
+
+Five adversarial placements — a citation inside a deleted stance frame, inside `In conclusion,`,
+inside a stripped sign-off, inside a parenthesised aside, at a merge boundary — also all survive.
+**But two of those five did not change at all**, and an unchanged document proves nothing. Isolating
+the transform instead of the loop:
+
+```
+REMOVED   I hope this helps!
+REMOVED   I hope this helps [3]!
+REMOVED   I hope this helps, see [3] for the derivation.
+REMOVED   Let me know if you need the data (Smith 2020).
+REMOVED   I hope this helps https://example.org/paper.
+```
+
+**Every reference deleted.** A numeric marker, a citation with context, an author-year form and a URL,
+each short enough to pass the six-word remainder test that decides what counts as pure scaffolding.
+
+The rule counts WORDS, and a citation is worth more than its length. That is my own transform and my
+own remainder constant, and the loop-level test missed it precisely because the runs that would have
+shown it were the ones where nothing changed.
+
+The fix defers to `preserve._collect_spans` rather than adding a citation pattern beside the
+scaffolding test. That layer already covers both citation forms, URLs, DOIs, emails, identifiers,
+dates and quantities — and a private copy of any of it would be the two-vocabularies defect this
+session has now found at five layers. Pure sign-offs still go; anything carrying a reference stays.
+
+Worth keeping: **an unchanged output is not evidence of preservation.** Five of five adversarial
+placements passed at the loop level, two of them because the loop did nothing at all — and the
+transform underneath was destroying references in every case I then tested directly. The end-to-end
+test looked like the stronger evidence and was the weaker one.
