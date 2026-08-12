@@ -348,7 +348,14 @@ it is another chance to contain a text the loop cannot clear.
 > depending on what the process had rewritten earlier, so the old numbers came from a stream that no
 > longer exists. One alternative was tested and **refuted**: disabling the deletion guard added the
 > same week changes nothing, byte for byte (0.9995 / 1.00 / 0.9992 both arms). Treat the composite
-> column as unreproduced pending a re-derivation; the `neural` column has not been re-run.
+> column as unreproduced pending a re-derivation.
+>
+> The `neural` column does not reproduce either. A full n=6 `--repeats 3` run exceeded a
+> 90-minute budget without finishing (~950s per text by this script's own figures, 18 runs),
+> so this is **n=2, `--repeats 1`** and is quoted as a direction rather than a rate: mean max
+> **0.9958**, flagged **1.00**, `hc3_roberta` **0.9992 → 0.9955**, similarity 0.884 mean /
+> 0.767 worst — against a published 0.380 and flagged 0.28. Two detectors do move well
+> (`fast_detectgpt` 0.646 → 0.300, `perplexity_burstiness` 0.605 → 0.420); the max does not.
 >
 > **72% of real AI paragraphs clear** where composite cleared almost none, and the gap (0.398)
 > is twice the worst within-rewriter spread (0.191), so it is a finding rather than a draw.
