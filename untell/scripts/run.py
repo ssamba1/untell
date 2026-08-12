@@ -1267,6 +1267,11 @@ _PROBABILITY = _ranged("threshold", float, "_Probability", (0.0, 1.0))
 _ITERS = _ranged("max-iters", int, "_Iters", (1, 100))
 _BEST_OF = _ranged("best-of", int, "_BestOf", (1, 32))
 _MARGIN = _ranged("margin", float, "_Probability", (0.0, 1.0))
+# 0 is a MEANING here — "do not re-confirm" — so the low bound is 0, not 1. The MCP
+# surface bounds this to 0..32 and the REST body models it as ge=0/le=32; the CLI took a
+# bare int, so `--confirm -5` was accepted and `range(-5)` simply never ran, silently
+# turning the guard off. Derived from the same API type as the others.
+_CONFIRM = _ranged("confirm", int, "_Confirm", (0, 32))
 
 # The same bounds, keyed by config name, for values that arrive as argparse DEFAULTS rather
 # than as typed arguments — a config file or a UNTELL_* variable. Derived from the API types
@@ -1325,7 +1330,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--confirm",
-        type=int,
+        type=_CONFIRM,
         default=0,
         help="after a pass, re-score the result N more times; keep 'passed' only if every re-scan "
         "still clears (guards against a noisy detector re-flagging). Default 0.",

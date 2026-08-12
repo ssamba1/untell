@@ -51,11 +51,17 @@ DOCS = {"/docs", "/docs/oauth2-redirect", "/openapi.json", "/redoc"}
 
 
 @pytest.fixture(scope="module")
-def client(monkeypatch_session=None):
-    import os
-
-    os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
-    return TestClient(app, raise_server_exceptions=False)
+def client():
+    # A module-scoped MonkeyPatch, undone in teardown — NOT os.environ.setdefault, which leaves the
+    # variable set for the rest of the PROCESS. That leak made every later test in a combined run
+    # score on the stdlib path: score_sentences began returning its targeting `warning` when run
+    # together and not alone, and the failure surfaced three files away from its cause.
+    patch = pytest.MonkeyPatch()
+    patch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    try:
+        yield TestClient(app, raise_server_exceptions=False)
+    finally:
+        patch.undo()
 
 
 def _routes() -> set[str]:

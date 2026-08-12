@@ -801,10 +801,19 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="suppress the stderr progress/tier notices (stdout JSON is unaffected)",
     )
+        # Range-checked, like `untell humanize` and `untell verify`. A threshold outside [0, 1]
+        # cannot be reached by a probability, so `--threshold 5` reported `flagged: false` on text
+        # this same command rates 0.826 — a verdict that cannot ever be true, delivered without
+        # complaint. The REST and MCP surfaces already refuse it.
+        #
+        # Imported inside the parser rather than at module scope: one definition of the bound, and
+        # `--help` does not pay for loading the loop.
+    from untell.scripts.run import _PROBABILITY
+
     parser.add_argument(
         "--threshold",
         "-t",
-        type=float,
+        type=_PROBABILITY,
         default=DEFAULT_THRESHOLD,
         help=f"Max-proxy P(AI) below which text is considered human-passing (default: {DEFAULT_THRESHOLD}).",
     )

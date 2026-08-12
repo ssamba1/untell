@@ -97,6 +97,50 @@ def _warn_if_targeting_is_uninformative(tier: str) -> None:
     logger.warning(UNINFORMATIVE_TARGETING_WARNING)
 
 
+
+# Whether THIS document's sentence scores can be ranked at all, which is a different question from
+# whether the detector that produced them is any good.
+#
+# `_targeting_is_uninformative` above asks the second: it fires when the only scorer is the stdlib
+# heuristic. On the full tier it stays silent, and MEASURED at tier=full on 10 AI documents per
+# corpus, spread of per-sentence `max` WITHIN one document:
+#
+#     corpus   mean spread   median   below 0.05   distinct values / sentences
+#     HC3        0.0088      0.0022      9 / 10            0.36
+#     RAID       0.6595      0.6855      0 / 10            0.99
+#
+# On HC3 two documents in eight scored **every sentence at exactly 0.9992** — one distinct value
+# across eight sentences, so "the worst third" is whichever order the sort happened to produce. On
+# RAID the same detectors on the same tier separate sentences almost perfectly.
+#
+# The difference is `hc3_roberta`, which is fine-tuned on HC3 and therefore pins every sentence of it
+# at the ceiling. So the TIER is the wrong thing to condition on in both directions, and the
+# document's own spread is the right one: it is corpus-independent, needs no knowledge of what any
+# detector was trained on, and fires exactly when the ranking cannot be trusted.
+#
+# 0.05 sits in the empty gap between the two populations — HC3's worst document reaches 0.0610 and
+# every RAID document exceeds 0.5.
+_TARGETING_SPREAD_BAR = 0.05
+_MIN_SENTENCES_FOR_SPREAD = 3
+
+UNRANKABLE_TARGETING_WARNING = (
+    "these sentences are not rankable: the highest and lowest per-sentence score in this document "
+    "differ by less than {bar}, so 'flagged' is close to whichever order the sort produced. This "
+    "happens when a detector is at its ceiling on every sentence — MEASURED at tier=full, mean "
+    "within-document spread 0.0088 on HC3 against 0.6595 on RAID, and two HC3 documents in eight "
+    "scored every sentence at exactly 0.9992. Rewrite the whole passage rather than the flagged "
+    "spans."
+)
+
+
+def _targeting_is_unrankable(rows: list[dict]) -> bool:
+    """True when this document's own sentence scores are too close together to order."""
+    scores = [r["ai"] for r in rows]
+    if len(scores) < _MIN_SENTENCES_FOR_SPREAD:
+        return False
+    return (max(scores) - min(scores)) < _TARGETING_SPREAD_BAR
+
+
 def score_sentences(
     text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, top: int | None = None
 ) -> dict:
@@ -158,11 +202,20 @@ def score_sentences(
         # The caveat that matters most is the one a machine client could not see: the log line
         # above fires once per PROCESS, so an API server tells its first caller and nobody else.
         **(
+            {"unrankable": True}
+            if _targeting_is_unrankable(rows)
+            else {}
+        ),
+        **(
             {"warning": UNINFORMATIVE_TARGETING_WARNING}
             # From the results that were actually produced, not from what was predicted before
             # they were. `results` is non-empty whenever `sents` is.
             if _targeting_is_uninformative(tier, (results[0].get("detector_modes") if results else None))
-            else {}
+            else (
+                {"warning": UNRANKABLE_TARGETING_WARNING.format(bar=_TARGETING_SPREAD_BAR)}
+                if _targeting_is_unrankable(rows)
+                else {}
+            )
         ),
     }
 
@@ -176,7 +229,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("text", nargs="?")
     parser.add_argument("--file", "-f")
     parser.add_argument("--tier", default="lite", choices=["lite", "full", "heavy", "commercial"])
-    parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
+    # Range-checked, like the other scoring commands. `--threshold 5` flagged 0 sentences of 1,
+    # because a probability cannot exceed 1 — an answer that looks like "nothing to rewrite".
+    from untell.scripts.run import _PROBABILITY
+
+    parser.add_argument("--threshold", "-t", type=_PROBABILITY, default=DEFAULT_THRESHOLD)
     parser.add_argument(
         "--top",
         type=int,

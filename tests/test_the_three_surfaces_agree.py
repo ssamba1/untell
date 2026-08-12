@@ -80,7 +80,6 @@ def mcp_tools() -> dict:
 
 
 def test_the_same_text_scores_the_same_on_every_surface(mcp_tools):
-    os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
     from fastapi.testclient import TestClient
 
     from untell.api_server import app
@@ -151,7 +150,6 @@ def test_confirm_accepts_zero_and_rejects_out_of_range(mcp_tools, confirm: int, 
     rejected and the flagship tool answered {"error": "confirm=0 is outside 1..100."} to every
     ordinary call. Found by testing the boundary rather than the middle.
     """
-    os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
     result = mcp_tools["untell"](
         text=TEXT, tier="lite", max_iters=1, best_of=1, confirm=confirm
     )
