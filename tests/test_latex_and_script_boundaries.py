@@ -71,17 +71,18 @@ def test_markup_survives_a_real_rewrite(token: str) -> None:
     The assertion on ``rewrites`` is the guard: if either condition regresses, this fails instead of
     quietly going hollow again.
     """
-    import random
 
     from untell.scripts.run import untell_text
 
     assert token in PAPER, "the fixture no longer contains the token under test"
     for seed in range(5):
-        # `untell_text` takes no seed; the rewriter draws from the global RNG, so seeding it here
-        # is what makes each iteration a distinct draw rather than five identical ones.
-        random.seed(seed)
+        # `seed=` on the call, which is what makes each iteration a distinct draw. This comment
+        # used to read "untell_text takes no seed; the rewriter draws from the global RNG, so
+        # seeding it here is what makes each iteration distinct" — true when written, false since
+        # the loop began seeding from its own input and restoring the caller's RNG. The five
+        # iterations had become five identical runs.
         result = untell_text(
-            PAPER, tier="lite", max_iters=1, rewriter="composite", threshold=0.0
+            PAPER, tier="lite", max_iters=1, rewriter="composite", threshold=0.0, seed=seed
         )
         assert result.get("rewrites"), (
             f"seed {seed}: the loop never rewrote, so nothing about survival was tested "

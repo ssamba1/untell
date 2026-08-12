@@ -61,8 +61,14 @@ def _documented_keys() -> dict[str, set[str]]:
         # on any text without a caveat, and leaving it unparsed — tokens containing a space are
         # skipped as prose — made it count as undocumented wherever it did appear.
         for chunk in re.split(r",(?![^(]*\))", rest):
+            # Two notations mark a conditional key and the document uses both: a trailing "?"
+            # (`unrankable?`) and a parenthetical (`warning (only when a caveat applies)`). Reading
+            # only the parenthetical form made `unrankable?` parse as a key literally named with a
+            # question mark, so it was demanded on every response and never found.
             note = re.search(r"\(([^)]*)\)", chunk)
             name = re.sub(r"\([^)]*\)", "", chunk).strip()
+            if name.endswith("?"):
+                name, note = name[:-1].strip(), note or "?"
             if not name or " " in name:
                 continue
             (conditional if note else out)[current].add(name)

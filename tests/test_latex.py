@@ -170,13 +170,13 @@ class TestALockedSpanEndsASentence:
     """
 
     def test_a_transition_after_a_heading_is_stripped_not_substituted(self):
-        import random
-
         from untell.scripts.run import untell_text
 
+        # `seed=` on the call. `untell_text` seeds the global RNG from its own input and restores
+        # the caller's state, so `random.seed(seed)` out here stopped reaching it — this sweep ran
+        # the identical computation six times.
         for seed in range(6):
-            random.seed(seed)
-            final = untell_text(PAPER, tier="lite", rewriter="composite")["final"]
+            final = untell_text(PAPER, tier="lite", rewriter="composite", seed=seed)["final"]
             assert "What is more" not in final, f"seed {seed}: transition substituted: {final}"
 
     def test_both_sentinel_forms_count_as_a_boundary(self):
