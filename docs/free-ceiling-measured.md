@@ -7499,3 +7499,42 @@ recurring could not have seen it recur.
 Worth keeping: **an unused stub is a question, not a defect — and the question is what the test is
 actually asserting.** Fifty-two of them, and fifty-one were fine. The one that mattered had a name
 describing a behaviour that a second stub had switched off.
+
+## Result 147
+
+**Both published ceiling columns are unreproduced, so the useful question is what this repository
+can honestly publish today.**
+
+Results 143–146 left the headline table with neither column reproducing and a clear reason for the
+HC3 half: `hc3_roberta` is fine-tuned on HC3, the max is pinned at 0.9992, and the loop's real effect
+is invisible behind it. That diagnosis has a testable consequence — on a corpus no detector was
+trained on, the max should move.
+
+RAID paper abstracts, same rewriter, same settings, commit stamped:
+
+```
+RAID, n=6, --repeats 3, composite, tier full, commit 9545d62
+
+  flagged rate      0.83  ->  0.28
+  mean max P(AI)    0.629 ->  0.287       per-run [0.2838, 0.2862, 0.2911]   stdev 0.003
+  roberta_openai    0.333 ->  0.0005
+  hc3_roberta       0.350 ->  0.105
+  fast_detectgpt    0.491 ->  0.196
+  perplexity        0.455 ->  0.274
+  similarity        0.979 mean / 0.939 worst
+```
+
+**Every detector moves, the three runs agree to ±0.003, and 72% of documents end unflagged.** The
+same `hc3_roberta` that would not shift by 0.0001 on HC3 drops by two thirds here. That is the
+prediction the diagnosis made, and it held.
+
+**And quoting this number alone would be the same error this repository already documents about its
+built-in sample.** RAID starts easier: 0.83 flagged at mean max 0.629, against HC3's 1.00 at 0.9997.
+The loop is not "doing better" on RAID; it is starting from a different place. Both belong in the
+README, with their starting points, or neither is honest — the temptation to publish the flattering
+corpus is exactly what produced the stale numbers being replaced.
+
+Worth keeping: **a diagnosis is worth more than a measurement, because it predicts.** "The max is
+pinned because one detector is in-distribution" is not a description of HC3; it says what a different
+corpus must show. Checking that turned a broken headline into a reproducible one, and would have
+falsified the diagnosis if RAID had been pinned too.
