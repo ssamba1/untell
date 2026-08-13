@@ -237,6 +237,49 @@ def _connectives(doc) -> set[str]:
 
 
 @lru_cache(maxsize=16)
+def _conditional_pair(text: str) -> tuple[str | None, str | None]:
+    """(antecedent verb, consequent verb) for a conditional, by PARSE not by word order.
+
+    "If A, B" and "B if A" mean the same thing and differ only in surface order, so position
+    cannot be the signal. What identifies the antecedent is the clause the conditional marker
+    attaches to: spaCy makes `if` a `mark` whose head is the antecedent's verb, and the consequent
+    is the sentence root. Both orderings therefore give the same pair, and only a genuine exchange
+    changes it.
+
+    Returns (None, None) when there is no conditional, so the caller can skip cheaply.
+    """
+    nlp = _load()
+    if nlp is None or not text.strip():
+        return (None, None)
+    try:
+        doc = nlp(text)
+    except Exception:
+        return (None, None)
+    for tok in doc:
+        if tok.dep_ != "mark":
+            continue
+        if _CONNECTIVES.get(tok.text.lower()) not in ("COND", "COND_NEG"):
+            continue
+        antecedent = tok.head
+        # `advcl` as well as a verb POS. The tagger is not reliable enough to gate on alone: in
+        # "If the server restarts, the data is lost." spaCy tags `restarts` as a NOUN, and a
+        # POS-only guard dropped that sentence entirely — one of the three swapped conditionals
+        # kept passing because of it. The DEPENDENCY is the sound signal: the head of a conditional
+        # `mark` is the antecedent clause whatever the tagger called its verb.
+        if antecedent.pos_ not in ("VERB", "AUX") and antecedent.dep_ != "advcl":
+            continue
+        consequent = antecedent
+        guard = 0
+        while consequent.head is not consequent and consequent.dep_ != "ROOT" and guard < 50:
+            consequent = consequent.head
+            guard += 1
+        if consequent is antecedent:
+            continue
+        return (_stem(antecedent.text.lower()), _stem(consequent.text.lower()))
+    return (None, None)
+
+
+@lru_cache(maxsize=16)
 def _analyse(text: str) -> tuple[tuple[tuple[str, str, str | None], ...], frozenset[str]]:
     """(predicate-argument triples, connective classes) for ``text``. Parsed once per string.
 
@@ -323,6 +366,28 @@ def role_swap(a: str, b: str) -> bool | None:
         # candidate it produced, leaving the loop unable to rewrite anything at all.
         if ca - cb:
             return True
+        # 4. A conditional whose antecedent and consequent have traded places.
+        #
+        # "If the sensor fails, the system shuts down." -> "If the system shuts down, the sensor
+        # fails." reverses the causation, and was invisible to all three rules above. Rule 1 needs
+        # transitive objects and both predicates here are intransitive (o=None). Rule 2 requires
+        # `pairs_a != pairs_b`, and a symmetric swap gives the SAME set on both sides. Rule 3 needs
+        # a connective class to disappear, and COND is present in both.
+        #
+        # MEASURED before this, full NLI path: contradiction 0.0065-0.0277, entailment 0.96-0.99,
+        # similarity 0.96-0.99. Three swapped conditionals passed every gate, on the NLI path and
+        # on the stdlib path alike. The claim that this veto "catches 9 of 9 role permutations" was
+        # true of the probe set it was measured on, whose only conditional case DROPS the "if" and
+        # so trips rule 3.
+        #
+        # Order-insensitive by construction: "B if A" yields the same (antecedent, consequent) pair
+        # as "If A, B", so a faithful reordering is not vetoed.
+        ant_a, cons_a = _conditional_pair(a)
+        ant_b, cons_b = _conditional_pair(b)
+        if ant_a and cons_a and ant_b and cons_b and ant_a != cons_a:
+            if ant_a == cons_b and cons_a == ant_b:
+                return True
+
         return False
     except Exception as exc:
         _NLP.dead = True
