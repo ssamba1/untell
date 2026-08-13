@@ -287,6 +287,62 @@ def compare(recipe: str, result: dict) -> list[str]:
 
 INSTRUMENTS = ROOT / ".claude" / "instruments.json"
 
+# Cheapest and most diagnostic first, so a program that is interrupted has still answered
+# something. The full-tier recipes are excluded by default: each is one to two hours, and a
+# chain of them would occupy the machine for a working day without being asked.
+PROGRAM_ORDER = [
+    "lite-hc3", "lite-hc3-surgical", "lite-hc3-structural", "lite-hc3-targeted",
+    "lite-hc3-ensemble", "length-short", "length-long", "human-false-positives",
+    "lite-raid", "lite-mage", "claims-audit", "detector-audit", "tells-auroc", "compare-hc3",
+]
+PROGRAM_FULL = ["full-hc3-composite", "full-hc3-max", "full-hc3-neural"]
+
+
+def cmd_program(include_full: bool, budget_multiplier: float) -> int:
+    """Run every unmeasured recipe in order, and keep going when one fails.
+
+    Measuring one recipe per pass is right for the loop; it is wrong for a machine that is
+    free for the next several hours. This is the same measurements in the same order, resumable
+    by construction — a recipe with a result is skipped, so an interrupted program continues
+    where it stopped rather than starting over.
+    """
+    queue = [n for n in PROGRAM_ORDER + (PROGRAM_FULL if include_full else []) if not load(n)]
+    if not queue:
+        print("every recipe in the program already has a result. `report` shows them.")
+        return 0
+
+    total = sum(RECIPES[n]["minutes"] for n in queue)
+    print(f"{len(queue)} recipe(s) to run, roughly {total} minutes if the estimates hold:")
+    for n in queue:
+        print(f"  {n:24} ~{RECIPES[n]['minutes']:>3}min")
+    print()
+
+    done, failed = [], []
+    for i, name in enumerate(queue, start=1):
+        print(f"\n{'=' * 70}\n[{i}/{len(queue)}] {name}\n{'=' * 70}")
+        budget = int(RECIPES[name]["minutes"] * budget_multiplier)
+        try:
+            cmd_run(name, budget)
+            done.append(name)
+        except SystemExit as exc:
+            # A refusal is information, not a reason to stop: the next recipe measures
+            # something else. Two in a row means the machine or the environment is the
+            # problem, and continuing would just produce more of the same failure.
+            print(f"[{i}/{len(queue)}] {name} did not record: {exc}")
+            failed.append(name)
+            if len(failed) >= 2 and failed[-2:] == [queue[i - 2], name]:
+                print("\nTwo consecutive failures - stopping. Fix the cause before burning "
+                      "hours on the rest.")
+                break
+
+    print(f"\n{'=' * 70}\nprogram finished: {len(done)} recorded, {len(failed)} refused")
+    for n in done:
+        print(f"  recorded  {n}  ({load(n)[-1]['seconds']:.0f}s)")
+    for n in failed:
+        print(f"  REFUSED   {n}")
+    print("\nCompare families with: research.py table rewriters | lengths | corpora")
+    return 0
+
 
 def cmd_calibrate(name: str) -> int:
     """Run a recipe twice unchanged and find out whether it can detect anything.
@@ -476,6 +532,11 @@ def main() -> int:
     k = sub.add_parser("calibrate", help="two identical runs: can this recipe detect anything?")
     k.add_argument("recipe", choices=sorted(RECIPES))
     sub.add_parser("report", help="every ledger, one screen")
+    g = sub.add_parser("program", help="run every unmeasured recipe, in order, resumably")
+    g.add_argument("--full", action="store_true", help="include the 1-2 hour full-tier recipes")
+    g.add_argument("--budget", type=float, default=3.0,
+                   help="multiple of a recipe's estimate before it is killed. The estimates "
+                        "were guesses until the first real runs; 3x leaves room for that.")
     a = ap.parse_args()
 
     if a.cmd == "run":
@@ -484,6 +545,8 @@ def main() -> int:
         return cmd_calibrate(a.recipe)
     if a.cmd == "report":
         return cmd_report()
+    if a.cmd == "program":
+        return cmd_program(a.full, a.budget)
     if a.cmd == "sweep":
         # One recipe per pass. A sweep that runs five measurements inside one pass outlives
         # its hour and records nothing; run the next missing one and stop.
