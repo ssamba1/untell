@@ -269,7 +269,9 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
     return _score
 
 
-def _nothing_adopted_warning(rewrites: int, adopted: int, changed: bool) -> str | None:
+def _nothing_adopted_warning(
+    rewrites: int, adopted: int, changed: bool, vetoed: int = 0
+) -> str | None:
     """Say when the loop drew candidates and kept none of them.
 
     `changed: false` alone reads as "the tool did nothing", and the caller cannot tell that apart
@@ -292,8 +294,27 @@ def _nothing_adopted_warning(rewrites: int, adopted: int, changed: bool) -> str 
     """
     if changed or not rewrites or adopted:
         return None
+    drafts = f"{rewrites} candidate{'s' if rewrites != 1 else ''}"
+    if vetoed >= rewrites:
+        # Every draft died at the meaning gate, which `continue`s BEFORE scoring — so none of them
+        # was ever compared on score, and saying they "scored worse" would describe a comparison
+        # that did not happen. The remedy is different too: more draws of a rewriter that keeps
+        # changing the meaning is not the answer.
+        return (
+            f"the rewriter produced {drafts} and the meaning gate refused every one, so your text "
+            "was returned unchanged. None of them was scored — the gate runs first. That is the "
+            "guard doing its job: on this text the rewriter's drafts did not say what the source "
+            "said. Try a different --rewriter; more draws of the same one will keep failing here."
+        )
+    if vetoed:
+        return (
+            f"the rewriter produced {drafts} and adopted none: {vetoed} changed the meaning and "
+            f"{rewrites - vetoed} scored worse than your text, so it was returned unchanged. This "
+            "is the loop refusing both a worse score and a changed meaning, not a failure to run. "
+            "Try --best-of 3 for more draws, a different --rewriter, or --tier full."
+        )
     return (
-        f"the rewriter produced {rewrites} candidate{'s' if rewrites != 1 else ''} and adopted "
+        f"the rewriter produced {drafts} and adopted "
         "none: every draft scored worse than your text, so it was returned unchanged. This is the "
         "loop refusing to make the score worse, not a failure to run. Try --best-of 3 for more "
         "draws, a different --rewriter, or --tier full, where the score has more to respond to."
@@ -768,6 +789,11 @@ def _untell_text(
     best_masked, best_score = masked, pre
     iters = 0
     rewrites = 0
+    # Drafts the MEANING gate refused. Counted separately because the gate `continue`s
+    # BEFORE scoring, so a vetoed draft never reaches the score comparison at all — and
+    # a caveat that says "every draft scored worse" would be describing a comparison
+    # that did not happen. Different cause, different remedy.
+    vetoed = 0
     # `rewrites` counts DRAWS, including every candidate the guards rejected — which is a fair
     # reading of "rewrites attempted" but not the question a caller is actually asking. MEASURED:
     # a text the loop could not improve came back byte-identical while the result said
@@ -888,8 +914,10 @@ def _untell_text(
             sim = similarity(masked, candidate)
             if veto_contradictions:
                 if not meaning_preserved(masked, candidate, sim, sim_bar):
+                    vetoed += 1
                     continue
             elif sim < sim_bar:
+                vetoed += 1
                 continue  # meaning drifted too far from the source
             cscore = score(candidate)
             # Count tells on the RESTORED candidate, for the same reason `score()` scores the
@@ -1133,11 +1161,11 @@ def _untell_text(
         **({"warning": _merge_warnings(
             language_warning, carried_payload, best_score.get("warning"),
             _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
-            _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip()),
+            _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed),
         )}
            if (language_warning or carried_payload or best_score.get("warning")
                or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)
-               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip()))
+               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed))
            else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),

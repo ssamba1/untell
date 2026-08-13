@@ -51,6 +51,31 @@ def test_it_fires_when_drafts_were_drawn_and_all_refused() -> None:
     assert note and "2 candidates" in note
 
 
+def test_a_gate_veto_is_not_reported_as_a_worse_score() -> None:
+    """The first version of this note said "every draft scored worse" unconditionally, and that is
+    false whenever the meaning gate refused them: the gate `continue`s BEFORE scoring, so a vetoed
+    draft is never compared on score at all. Two causes, two remedies — more draws of a rewriter
+    that keeps changing the meaning is not the answer."""
+    note = _nothing_adopted_warning(3, 0, False, 3) or ""
+    assert "meaning gate refused every one" in note
+    assert "None of them was scored" in note
+    assert "scored worse" not in note
+
+
+def test_a_mixed_run_reports_both_causes() -> None:
+    note = _nothing_adopted_warning(3, 0, False, 1) or ""
+    assert "1 changed the meaning" in note and "2 scored worse" in note
+
+
+def test_a_gate_veto_points_somewhere_different() -> None:
+    """The remedies have to diverge, or naming the cause was decoration. A score refusal suggests
+    more draws; a gate refusal suggests another rewriter."""
+    gate = _nothing_adopted_warning(3, 0, False, 3) or ""
+    score = _nothing_adopted_warning(3, 0, False, 0) or ""
+    assert "different --rewriter" in gate and "--best-of" not in gate
+    assert "--best-of" in score
+
+
 def test_it_says_nothing_when_a_draft_was_taken() -> None:
     assert _nothing_adopted_warning(2, 1, True) is None
 
