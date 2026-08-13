@@ -9603,3 +9603,45 @@ Worth keeping: **the prose version of a question finds one instance; the mechani
 class.** Reading comments turned up two false uniqueness claims in two loops, which is a good rate
 and does not scale. One `ast` walk over the package answered the same question for every constant in
 it, and the one that mattered was in neither comment.
+
+## Result 192
+
+**The audit skipped, in silence, any source file that would not parse — and the guard I wrote for it
+crashed the first time a test handed it an unusual path.**
+
+Result 191's lesson was that the mechanical form of a question finds the class. Applied to failure
+handling: which handlers swallow their exception? Sixteen do so with no comment nearby. Most are
+fine — narrow, typed, skipping something genuinely optional. Three are in `untell-audit` itself:
+
+    duplicate top-level definitions   except (SyntaxError, UnicodeDecodeError): continue
+    bare-max comparisons              except (SyntaxError, UnicodeDecodeError): continue
+    the decorator registry            except (SyntaxError, OSError): continue
+
+A file that stops parsing leaves those checks examining fewer files and still printing PASS. That is
+the failure this tool exists to catch everywhere except in itself, and it is precisely the defect
+`audited_doc` was written for one level up, where a missing document used to be `continue`d past
+without a word. The same hole, in the same file, at a different granularity — and the fix for the
+first did not prompt anyone to look for the second.
+
+VERIFIED by writing one unparseable file into the package:
+
+    FAIL  untell/_mutant_probe.py: parses, so the AST checks can read it
+          (SyntaxError: invalid syntax — every AST check skipped this file)
+
+It cannot fire on the repository as it stands. Every file parses, which is why the skip has been
+free — free exactly until it is not, and then silent.
+
+**The guard was itself broken, and its own test found it.** `path.relative_to(REPO)` raises for
+anything outside the repository, so reporting a failure about a `tmp_path` replaced the named finding
+with a `ValueError` traceback: the failure mode the helper exists to remove, reintroduced inside the
+helper. Then the reachability assertion — "no AST walk parses a path directly" — failed on
+`audited_tree`, which necessarily does exactly that. Two corrections before a guard about silence was
+itself quiet.
+
+The run also surfaced two standing FAILs, now fixed: the test-module count was stale by six after
+this session's new files, and `UNTELL_POLICY_WHOLE_DOC` was undocumented. **`untell-audit` is green —
+0 failures across 40 checks** — for the first time in many loops.
+
+Worth keeping: **`except: continue` inside a verifier is a different animal from `except: continue`
+anywhere else.** Sixteen silent handlers, thirteen of them defensible, and the three that mattered
+were the three inside the thing whose entire job is to notice.
