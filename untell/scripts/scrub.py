@@ -87,7 +87,20 @@ def main(argv: list[str] | None = None) -> int:
 
     text = _read_input(args)
     if text is None:
-        logger.error('no input: pass text, --file PATH, or pipe to stdin')
+        # `--json` has to hold on the ERROR path too. Every other JSON-emitting command answers
+        # `{"error": "no input: ..."}` here; this one logged to stderr and left stdout EMPTY, so a
+        # caller doing `json.loads(subprocess.check_output(...))` got a JSONDecodeError instead of
+        # the message that would have told them what to fix. MEASURED, no input, `--json`:
+        #
+        #     humanize   {"error": "no input: pass text, --file PATH, or pipe to stdin"}   exit 2
+        #     sentences  {"error": "no input: ..."}                                        exit 2
+        #     tells      {"error": "no input: ..."}                                        exit 2
+        #     scrub      (nothing on stdout)                                               exit 2
+        message = 'no input: pass text, --file PATH, or pipe to stdin'
+        if args.json:
+            print(json.dumps({"error": message}))
+        else:
+            logger.error(message)
         return 2
 
     before = count_hidden(text)
