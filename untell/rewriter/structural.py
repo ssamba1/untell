@@ -2160,6 +2160,7 @@ def _vary_openers(
     *,
     conversational: bool = True,
     spent: set[str] | None = None,
+    seen: dict[str, int] | None = None,
 ) -> list[str]:
     """Vary sentence openings by prepending transitional phrases or restructuring."""
     # Openers humans are MEASURED to use, not ones that merely sound casual. Sentence-opening
@@ -2304,6 +2305,16 @@ def _vary_openers(
     counts: dict[str, int] = {}
     for w in first_words:
         counts[w] = counts.get(w, 0) + 1
+    # A block of ONE sentence has no duplicate to find inside itself, and a paragraph of one is what
+    # a transcript, a bullet list and a changelog are made of. `seen` carries the document's opener
+    # counts across blocks so the repetition is visible where it actually lives. It accumulates as
+    # blocks are processed, so the earliest paragraphs are still blind — a duplicate is only a
+    # duplicate once it has occurred twice — which is a stated limit rather than an oversight.
+    if seen is not None:
+        for w in first_words:
+            seen[w] = seen.get(w, 0) + 1
+        for w in counts:
+            counts[w] = max(counts[w], seen.get(w, 0))
     # Duplicate-opening sentences first, then the rest; `random.random()` keeps the choice within
     # each group non-deterministic so the best-of-N sweep still explores different drafts.
     order = sorted(
@@ -2716,10 +2727,16 @@ def structural_rewrite(
     # paragraph a fresh one — see the measurements on `_plain_register` and `_vary_openers`.
     spent: set[str] = set()
     opener_spent: set[str] = set()
+    opener_counts: dict[str, int] = {}
     run = lambda: apply_per_block(  # noqa: E731 - one expression, used twice below
         text,
         lambda block: _rewrite_prose(
-            block, intensity=intensity, style=style, spent=spent, opener_spent=opener_spent
+            block,
+            intensity=intensity,
+            style=style,
+            spent=spent,
+            opener_spent=opener_spent,
+            opener_counts=opener_counts,
         ),
     )
     if seed is None:
@@ -2744,6 +2761,7 @@ def _rewrite_prose(
     style: str | None,
     spent: set[str] | None = None,
     opener_spent: set[str] | None = None,
+    opener_counts: dict[str, int] | None = None,
 ) -> str:
     """The transform pipeline itself, for one block of prose containing no layout to protect."""
     profile = style_profile(style)
@@ -2918,22 +2936,38 @@ def _rewrite_prose(
         split_rate = min(0.9, intensity * 0.5 * profile["sentences"])
         sents = _split_long_sentences(sents, rate=split_rate)
 
-        # Target SHARE of sentences carrying a leading marker, not a per-sentence probability.
-        # `intensity * 0.6` gave 0.42 at the default intensity, against a measured human share of
-        # 3.13% — see `_vary_openers`. The ceiling is 0.9 in name only when the floor of the
-        # comparison is 0.03. Scaled so the default lands a little above human rather than 12x it,
-        # leaving headroom at intensity 1.0 for the duplicate-opener work the transform exists for.
-        open_rate = min(0.20, intensity * 0.10 * profile["openers"])
-        sents = _vary_openers(
+        # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
+        # most reliable stylometric differentiator; only redistributes existing words (meaning-safe).
+        sents = _target_burstiness(sents, target_cv=profile["burstiness"])
+
+    # Target SHARE of sentences carrying a leading marker, not a per-sentence probability.
+    # `intensity * 0.6` gave 0.42 at the default intensity, against a measured human share of
+    # 3.13% — see `_vary_openers`. The ceiling is 0.9 in name only when the floor of the
+    # comparison is 0.03. Scaled so the default lands a little above human rather than 12x it,
+    # leaving headroom at intensity 1.0 for the duplicate-opener work the transform exists for.
+    #
+    # OUTSIDE the pair guard, for the reason the comment on that guard already gives: it lists the
+    # transforms that need a PAIR (merge, restatement-drop, burstiness), and prepending a marker to
+    # one sentence is not one of them. `_strip_transitions` was moved out of the same guard for the
+    # same reason; this is the other half of that fix, and without it the two halves disagreed.
+    #
+    # MEASURED on 18 sentences, repeated sentence openers in -> out, 40 seeds:
+    #
+    #     1 block of 18    12 -> 7.88
+    #     3 blocks of 6    12 -> 9.35
+    #     18 blocks of 1   12 -> 14.00     <- the rewriter ADDING the tell it exists to remove
+    #
+    # Stripping "Moreover," / "Furthermore," / "Additionally," from eighteen separate paragraphs
+    # leaves eighteen sentences opening "The", and `_vary_openers` — whose whole job is offsetting
+    # exactly that — was never called: a paragraph of one never reached it. Instrumented, 0 calls.
+    open_rate = min(0.20, intensity * 0.10 * profile["openers"])
+    sents = _vary_openers(
         sents,
         rate=open_rate,
         conversational=profile["conversational_openers"],
         spent=opener_spent,
+        seen=opener_counts,
     )
-
-        # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
-        # most reliable stylometric differentiator; only redistributes existing words (meaning-safe).
-        sents = _target_burstiness(sents, target_cv=profile["burstiness"])
 
     result = " ".join(sents)
 
