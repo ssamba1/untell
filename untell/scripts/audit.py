@@ -102,6 +102,36 @@ def audited_doc(report: Report, rel: str) -> str | None:
     return path.read_text(encoding="utf-8")
 
 
+def audited_tree(report: Report, path: Path) -> ast.Module | None:
+    """Parse a source file the audit walks, or record that it could not.
+
+    The same failure as `audited_doc`, one level down. Three checks here walk every ``.py`` in the
+    package and `continue` past anything that will not parse — duplicate top-level definitions,
+    bare-max comparisons, and the decorator registry. A file that stops parsing therefore leaves
+    those checks examining fewer files and still printing PASS, which is the shape this tool exists
+    to catch in everything except itself.
+
+    It cannot fire today: every file in the package parses, which is why the skip has been free. It
+    is exactly free until the moment it is not, and then it is silent.
+    """
+    try:
+        return ast.parse(path.read_text(encoding="utf-8"))
+    except (SyntaxError, UnicodeDecodeError, OSError) as exc:
+        # `relative_to` raises for anything outside the repository, and raising while REPORTING a
+        # failure would replace a named finding with a traceback — the failure mode this helper
+        # exists to remove. Found by a test passing a tmp_path.
+        try:
+            label = path.relative_to(REPO).as_posix()
+        except ValueError:
+            label = str(path)
+        report.check(
+            f"{label}: parses, so the AST checks can read it",
+            False,
+            f"{type(exc).__name__}: {str(exc)[:120]} — every AST check skipped this file",
+        )
+        return None
+
+
 def _optional_doc(rel: str) -> str | None:
     """A document that is not part of `LIVE_DOCS`, so its absence is not a claim going unchecked.
 
@@ -908,9 +938,8 @@ def check_no_shadowed_definitions(report: Report) -> None:
         [*(REPO / "untell").rglob("*.py"), *(REPO / "eval").glob("*.py"),
          *(REPO / "tests").glob("*.py")]
     ):
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (SyntaxError, UnicodeDecodeError):
+        tree = audited_tree(report, path)
+        if tree is None:
             continue
         seen: dict[str, int] = {}
         for node in tree.body:
@@ -993,9 +1022,8 @@ def check_selection_does_not_read_a_bare_max(report: Report) -> None:
     ordering = (ast.Lt, ast.Gt, ast.LtE, ast.GtE)
     found: set[str] = set()
     for path in sorted((REPO / "untell").rglob("*.py")):
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (SyntaxError, UnicodeDecodeError):
+        tree = audited_tree(report, path)
+        if tree is None:
             continue
         rel = path.relative_to(REPO).as_posix()
         for fn in ast.walk(tree):
@@ -1036,9 +1064,8 @@ def check_no_dead_functions(report: Report) -> None:
     decorated: set[str] = set()
     sources = [*(REPO / "untell").rglob("*.py"), *(REPO / "eval").rglob("*.py")]
     for path in sources:
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (SyntaxError, OSError):
+        tree = audited_tree(report, path)
+        if tree is None:
             continue
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):

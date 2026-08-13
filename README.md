@@ -796,6 +796,7 @@ without a row here.
 | `UNTELL_DISABLE_ROLES` | **turns off the predicate-argument veto.** "The company sued the regulator" may come back reversed |
 | `UNTELL_TIER` · `UNTELL_THRESHOLD` · `UNTELL_MAX_ITERS` · `UNTELL_REWRITER` · `UNTELL_STYLE` · `UNTELL_BEST_OF` | defaults for `untell humanize`, overriding the shipped ones. Same six keys `untell.yaml` and `[tool.untell]` accept, and the precedence is CLI flag → env → config file → shipped default. Out-of-range and unknown values are refused with a message naming the value and what was used instead — a silently clamped setting would be its own bug. |
 | `UNTELL_POLICY_DIR` / `UNTELL_POLICY_BASE` / `UNTELL_POLICY_4BIT` / `UNTELL_POLICY_MAXTOK` / `UNTELL_POLICY_NO_SYSTEM` | local trained-policy rewriter: adapter directory, base model, 4-bit loading, token cap, and whether to send a system prompt |
+| `UNTELL_POLICY_WHOLE_DOC` | send the local policy rewriter the whole document in one call instead of sentence by sentence. The trained adapter always works whole-document; this forces the same for the untuned base model, where per-sentence prompting is what keeps it from summarising |
 | `HUMANIZE_BROWSER_SITES` / `HUMANIZE_ENABLE_RADAR` | pre-rename spellings of the two `UNTELL_*` switches above, still honoured. Either name works; the `UNTELL_*` one is preferred and the `HUMANIZE_*` one is kept so existing setups do not break silently |
 | `UNTELL_REWARD_FAST` | model-free stdlib reward for training runs |
 | `UNTELL_SURROGATE_DIR` | distilled surrogate detector used as the training reward |
