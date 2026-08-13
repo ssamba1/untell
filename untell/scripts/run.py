@@ -41,7 +41,7 @@ from untell.scripts.latex import prose_only as latex_prose
 from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
-from untell.scripts.tells import score_tells
+from untell.scripts.tells import looks_non_english, score_tells
 
 # Serialises the seeded region of `untell_text`. Reentrant, so a nested call cannot deadlock on
 # itself. See the comment at its `with _RNG_LOCK` for what was measured without it.
@@ -269,6 +269,42 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
     return _score
 
 
+def _flagged_sentences_of(final: str, threshold: float) -> dict:
+    """Per-sentence flags for the text the caller actually received.
+
+    The loop computes ``flagged_sentences`` at the top of each iteration, on MASKED text, and that is
+    right for the two consumers that read it there — `rewriter/prompts.py` and the targeted rewriter
+    are editing masked text, and showing them a restored citation invites the model to rewrite the
+    one span that has to survive byte-for-byte.
+
+    It is wrong for the caller, in two independent ways.
+
+    **It names sentences that are not in the output.** MEASURED on the 7 HC3 documents (of 60) whose
+    per-sentence pass flags anything, each run plain and with a citation and URL welded in — 12 runs,
+    6 with a non-empty list: 4 sentences carried a ``⟦HZ…⟧`` sentinel and 4 were absent from
+    ``final``. It fires on plain input too, because `lock` masks entities, numbers and dates rather
+    than only citations::
+
+        'Overall, the controversy surrounding unions in ⟦HZ0001⟧ is complex and multifaceted ...'
+
+    **And it usually is not there at all.** ``best_score`` is replaced wholesale when a candidate is
+    adopted, when the result is rescored and when it is polished, so the key set at the top of the
+    iteration survives only when none of those happened afterwards. Instrumented on a document whose
+    per-sentence pass was forced to flag every sentence, the loop computed 5 flagged sentences twice
+    and the caller received an empty list: the value describes the text as it stood at the start of
+    some earlier iteration, never ``final``.
+
+    Scoring the final text costs one extra lite per-sentence pass per call and is the only way to
+    make the field mean what its name says.
+    """
+    try:
+        from untell.scripts.sentences import score_sentences
+
+        return score_sentences(final, tier="lite", threshold=threshold).get("flagged") or []
+    except Exception:  # a reporting field must never break the result it rides in
+        return []
+
+
 def untell_text(
     text: str,
     tier: str = "full",
@@ -446,6 +482,40 @@ def _untell_text(
             carried_payload = (
                 "scrub=False, so these are still in the output: " + " ".join(found)
             )
+
+    # The language gate belongs HERE, not only in the rewriter, and finding that out is the point.
+    #
+    # `structural_rewrite` declines Latin-script text that is not English, because every transform
+    # it applies is English and left to run it welds English words into German and French. That
+    # gate is correct and it does not fire through this loop, because the loop hands the rewriter
+    # SENTINEL-MASKED text: locking consumes real words and each `⟦HZxxxx⟧` contributes an "HZ"
+    # token to the word count. MEASURED on the same paragraphs, raw against masked:
+    #
+    #     german   20 words, other-share 0.300  ->  18 words, 0.278   (below the 20-word floor)
+    #     spanish  26 words, other-share 0.231  ->  20 words, 0.100   (below the 0.12 floor)
+    #     french   26 words, other-share 0.269  ->  unchanged, nothing locked
+    #
+    # So the fix shipped one commit earlier worked when called directly and was bypassed in
+    # production, and its end-to-end test passed for an unrelated reason — composite declining on
+    # score. `looks_non_english` now ignores sentinels, which fixes the rewriter-level gate; this
+    # one runs on the text as the user supplied it, before anything is masked, and is the
+    # authoritative one.
+    #
+    # It also puts the caveat where a READER can see it. The rewriter's version only logs, which
+    # on the REST and MCP surfaces means it reaches the server operator and not the caller — the
+    # exact defect this repo has now fixed on six surfaces. `result["warning"]` is already
+    # forwarded by all of them.
+    non_english = looks_non_english(text)
+    language_warning = None
+    if non_english:
+        language_warning = (
+            "this text reads as a Latin-script language other than English, so it was returned "
+            "unchanged. Every transform the rewriter applies is English — left to run it welds "
+            "English words into the text (measured: an opener prepended to a German sentence, and "
+            "'and' inserted as a clause joiner in German and French). The detectors and the tell "
+            "catalogue are English-only too, so any score here is not a verdict about this text."
+        )
+        logging.getLogger(__name__).warning(language_warning)
 
     # `rewriter` may be a rewriter object OR a name. Every caller in this repo — the CLI, the MCP
     # server, the REST API — resolves the name itself before calling, so the parameter was
@@ -924,7 +994,8 @@ def _untell_text(
         "adopted": adopted,
         "changed": final.strip() != text.strip(),
         "pre": pre,
-        "post": best_score,
+        # Recomputed against `final`, not carried out of the loop — see `_flagged_sentences_of`.
+        "post": {**best_score, "flagged_sentences": _flagged_sentences_of(final, threshold)},
         # Report meaning-preservation vs the true final output. Pre-polish, ``best_masked`` restores to
         # ``final`` so the locked-text similarity is exact; polish rewrites the restored text (sentinels
         # already gone), so compare the scrubbed original against the actual final instead of stale.
@@ -948,9 +1019,10 @@ def _untell_text(
         # of human text, so this is the ordinary case for the input this tool exists for, not an
         # edge. The CLI says it too; a JSON, MCP or REST caller reads only this field.
         **({"warning": _merge_warnings(
-            carried_payload, best_score.get("warning"), _saturated_max_caveat(pre, best_score)
+            language_warning, carried_payload, best_score.get("warning"),
+            _saturated_max_caveat(pre, best_score),
         )}
-           if (carried_payload or best_score.get("warning")
+           if (language_warning or carried_payload or best_score.get("warning")
                or _saturated_max_caveat(pre, best_score)) else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),

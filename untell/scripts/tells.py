@@ -981,6 +981,10 @@ het een van voor met zonder over tussen deze dit zijn worden niet ook al
 
 _WORD_RE = re.compile(r"[A-Za-zÀ-ÿ']+")
 
+# The sentinel shape `preserve.lock()` emits. Defined locally rather than imported: `preserve`
+# imports from this module, and the pattern is four characters of regex.
+_SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
+
 # Minimum words before the ratios mean anything, and the share of other-language function words
 # that counts as positive evidence. See `looks_non_english` for the measurement behind both.
 _LANG_MIN_WORDS = 20
@@ -1023,6 +1027,12 @@ def looks_non_english(text: str) -> bool:
     Conservative by construction. A false positive silences the rewriter on English, which is worse
     than the damage it prevents, so anything short of confident is treated as English.
     """
+    # Strip sentinels before counting. The loop hands the rewriter MASKED text, and a sentinel is
+    # not a word in any language — but `⟦HZ0000⟧` contributes "HZ" to `_WORD_RE`, so each locked
+    # span both removes real words from the count and adds a token that dilutes the ratio. MEASURED
+    # on the same Spanish paragraph before and after locking 5 spans: other-language share 0.231 ->
+    # 0.100, straight through the 0.12 floor. Removing them restores the raw ratio.
+    text = _SENTINEL_RE.sub(" ", text)
     words = [w.lower().strip("'") for w in _WORD_RE.findall(text)]
     words = [w for w in words if w]
     if len(words) < _LANG_MIN_WORDS:
