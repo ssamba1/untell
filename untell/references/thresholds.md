@@ -113,4 +113,9 @@ a consensus.
   Always report which tier ran.
 - `detectors` — per-detector P(AI); use these to decide *what* to change in the rewrite.
 - `max` / `mean` — aggregate proxies; the loop drives `max`.
-- `flagged` — `true` when `max >= threshold` (keep rewriting).
+- `verdict_threshold` — the calibrated bar `flagged` is decided on. Not always `threshold`: it is
+  raised to `0.45` on the stdlib perplexity path, the default on a clean install with no `.[full]`.
+- `flagged` — `true` when `max >= verdict_threshold`. **This is the verdict to report to the user,
+  not the loop's stop condition.** Drive the loop on `max < threshold`. Between the two there is a
+  band where `max >= threshold` and `flagged` is `false`; keep rewriting there if you have budget,
+  but do not tell the user their text is flagged, because it is not.

@@ -8,9 +8,16 @@ JSON the skill (Claude) reads as feedback:
       "detectors": {"perplexity_burstiness": 0.71, ...},
       "max": 0.71,          # the proxy the loop drives below threshold (multi-detector evasion)
       "mean": 0.71,
-      "threshold": 0.30,
-      "flagged": true       # max >= threshold => still looks AI, keep rewriting
+      "threshold": 0.30,          # what the rewrite LOOP drives toward
+      "verdict_threshold": 0.45,  # the calibrated bar `flagged` is decided on
+      "flagged": true       # max >= verdict_threshold => report this to the user
     }
+
+``flagged`` is NOT the loop's stop condition. It compares against ``verdict_threshold``, which is
+raised on the stdlib perplexity path, while ``threshold`` stays where the rewriter is optimising.
+Between the two there is a band where ``max >= threshold`` and ``flagged`` is still ``false``: keep
+rewriting there if there is budget, but do not tell the user their text is flagged, because it is
+not. Drive the loop on ``max < threshold`` and report ``flagged``.
 
 The ``max`` aggregation targets the hardest detector in the ensemble (report gap #3): a rewrite
 only "passes" when *every* detector is under threshold.
