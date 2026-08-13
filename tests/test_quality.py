@@ -8,7 +8,6 @@ import pytest
 
 from untell.scripts import quality
 from untell.scripts.quality import (
-    BERTSCORE_BAR,
     DEFAULT_BAR,
     TOKEN_BAR,
     confidence,
@@ -124,7 +123,11 @@ def test_quality_cli_is_ascii_safe(capsys):
     out = capsys.readouterr().out
     out.encode("ascii")  # must not raise — portable on a non-UTF-8 (Windows cp1252) stdout
     parsed = json.loads(out)
-    assert parsed["method"] in ("embedding", "token_overlap", "bertscore")
+    # NOT ("embedding", "token_overlap", "bertscore"). `method()` cannot return "bertscore" — its
+    # docstring says so — so admitting it made this assertion unable to notice the value coming
+    # back, which is the regression `test_bertscore_is_not_the_gate_even_when_installed` exists to
+    # catch. A permissive tuple is a check that has stopped checking.
+    assert parsed["method"] in ("embedding", "token_overlap")
     assert "confidence" in parsed and "bar" in parsed and "passes" in parsed
 
 
@@ -132,9 +135,12 @@ def test_bar_is_consistent_with_active_method():
     """recommended_bar() must match whichever backend method() reports — no scale mismatch."""
     m = method()
     bar = recommended_bar()
-    if m == "bertscore":
-        assert bar == BERTSCORE_BAR
-    elif m == "embedding":
+    # No bertscore branch. `recommended_bar` dropped its own one — "similarity no longer routes the
+    # gate through BERTScore" — and this branch outlived it, so it was dead code asserting a bar
+    # for a method that cannot be reported. Kept as an explicit refusal instead, so the pairing
+    # cannot quietly come back.
+    assert m in ("embedding", "token_overlap"), f"method() reported {m!r}"
+    if m == "embedding":
         assert bar == DEFAULT_BAR
     else:
         assert bar == TOKEN_BAR

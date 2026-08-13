@@ -276,7 +276,13 @@ def main(argv: list[str] | None = None) -> int:
     if any(a in ("-h", "--help") for a in args):
         print(
             'usage: quality.py "<original>" "<rewrite>"\n\n'
-            "Prints JSON: similarity, method (bertscore|embedding|token_overlap), confidence, bar,\n"
+            # `bertscore` was still advertised here long after `method()` stopped being able to return
+        # it — its docstring says so in as many words, and this line said otherwise. A user reading
+        # --help to learn the JSON schema saw an enum value that can never appear, and the history
+        # right above makes that worse than cosmetic: selecting BERTSCORE_BAR is what rejected 19
+        # of 20 real rewrites, so advertising the value invites someone to write a branch for a
+        # path the gate no longer takes.
+        "Prints JSON: similarity, method (embedding|token_overlap), confidence, bar,\n"
             "and whether the pair passes the bar for the ACTIVE metric (each lives on its own scale).",
         )
         return 0
