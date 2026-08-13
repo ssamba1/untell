@@ -449,6 +449,30 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 # more honestly than a false precision, which is the whole job of the sentence it appears in.
 # Truncated figures are the upper bound, natural the lower; the 5 and 10 rows carry the truncated
 # number alone because natural HC3 text does not go that short.
+# DID NOT REPRODUCE on 2026-08-13, and the numbers are left standing rather than replaced, because
+# this comment's own rule applies to the person re-measuring it: "replacing measured numbers with
+# differently-measured numbers would swap one unstated method for another."
+#
+# Re-run of the TRUNCATED arm, 40 HC3 human texts of mean 332 words (the settled run used mean 212),
+# counting `max >= 0.30`, on both lite paths — because the lite tier silently uses GPT-2 when torch
+# is importable and the stdlib heuristic otherwise, and nothing in the settled note says which ran:
+#
+#     band   shipped      stdlib path   gpt2 path
+#       5    ~100%             0%           0%
+#      10    ~85%             10%           8%
+#      20    71-85%           35%          10%
+#      40    86-100%          62%          22%
+#
+# Every band is lower, on both paths, and the 5-word row is not abstention: a five-word text returns
+# a real 0.0 rather than declining to score. Two of the three variables are known to differ (sample
+# length, scoring path) and one is not (which path the settled run used), so this is a failed
+# reproduction rather than a refutation — but it is large enough that the shipped figures should not
+# be quoted as settled until someone re-runs it with the path pinned.
+#
+# The sentence they appear in stays true either way: at 40 words 22-62% of HUMAN text is above the
+# loop threshold, which is ample reason to distrust a short verdict. What the re-run suggests is that
+# the direction may be the other one for the shortest inputs — a five-word text scoring 0.0 makes a
+# CLEAR verdict the uninformative one, not the flag.
 _SHORT_TEXT_BANDS = ((5, "~100%"), (10, "~85%"), (20, "71-85%"), (40, "86-100%"))
 _MIN_WORDS_FOR_A_VERDICT = 40
 
