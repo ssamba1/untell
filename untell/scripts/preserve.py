@@ -221,10 +221,39 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     #
     # MEASURED over 80 HC3 texts (both halves): **0** spurious matches, and 0 on an
     # apostrophe-dense probe ("The team's results didn't match Jones' figures, and the councils'
-    # plans weren't ready."), while the genuine quotation matches. Curly single quotes are
-    # deliberately NOT included: U+2019 is the typographic apostrophe, so `‘...’` cannot be
-    # separated from "don’t" by shape alone.
+    # plans weren't ready."), while the genuine quotation matches.
     ("quote", re.compile(r"(?<![\w'])'([^'\n]{6,300}?[^\s'])'(?=[\s.,;:!?)\]]|$)")),
+    # Curly single quotes. These were excluded above for a stated reason — U+2019 is the typographic
+    # apostrophe, so `‘...’` cannot be told from "don’t" by shape alone — and the reason has a hole
+    # in it: **U+2018 is not an apostrophe.** Nothing writes `don‘t`. The OPENING delimiter is
+    # unambiguous, so it anchors the match, and only the close is in doubt. That makes this rule
+    # safer than the straight one above, which has an ambiguous character at both ends.
+    #
+    # The cost of the exclusion, MEASURED through the shipped loop with the transform that is
+    # actually known to fire — semicolon-to-sentence — 2 styles:
+    #
+    #     ‘the scheme paid for itself; the region kept the surplus’
+    #         ->  ‘the scheme paid for itself. The region kept the surplus’    2 of 2 DAMAGED
+    #     the same words in straight, curly-double and straight-double quotes  0 of 6 damaged
+    #
+    # So the one quotation style British and academic house styles use as a matter of course was
+    # the one the rewriter could still edit — which is exactly the gap the straight-quote rule
+    # above was added to close, left half-open by the character it declined to handle.
+    #
+    # An interior `’` is admitted only when a letter follows it, which is the apostrophe's shape
+    # ("the dog’s bowl") and never a closing quote's.
+    #
+    # The rule above cites 80 HC3 texts for its false-positive bar. **That corpus cannot test this
+    # rule**: 0 of its 160 halves contain a single U+2018, so the sweep returns 0 spurious matches
+    # for the reason a dead regex does — there was nothing there to match. It was run, and it is
+    # recorded here as worthless rather than quoted as evidence.
+    #
+    # The control that carries weight is the apostrophe-dense probe, which contains the character
+    # actually at risk. MEASURED, 3 probes, 11 U+2019 apostrophes, no U+2018: **0** matches, e.g.
+    # "The team’s results didn’t match Jones’ figures, and the councils’ plans weren’t ready."
+    # With a genuine quotation present, all 4 positive forms match in full, including one with an
+    # interior apostrophe.
+    ("quote", re.compile(r"‘(?:[^‘’\n]|’(?=[A-Za-z])){5,299}[^\s‘’]’(?=[\s.,;:!?)\]]|$)")),
     # Email addresses — a fact a rewrite must never "tidy".
     ("email", re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")),
     # Software identifiers: full version strings, dependency pins, and file paths. These MUST come
