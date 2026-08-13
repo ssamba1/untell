@@ -11074,3 +11074,44 @@ concurrent session had been editing that file all session, and the failing case 
 splitting. The file was byte-identical to HEAD — a line-ending artifact. `rtk` returned empty output
 for `git diff` on it, which is the failure mode already recorded for `rtk`'s pytest summaries.
 Reading the bytes in Python settled it in one call.
+
+## Result 227
+
+**This document is cited by number, and two of its numbers pointed at two results each.**
+
+Nothing had ever parsed the record's own headings. Across 226 results and 103,000 words:
+
+    headings     226
+    duplicates   163, 212     two distinct results each sharing a number with an earlier one
+    gaps         7, 136, 145
+
+The duplicates matter because the citation style is `Result N` in prose — `untell/scripts/run.py`
+and a test both say "Result 163 measured that improving the tier `max` stops improving a detector
+the loop never sees", and both mean the earlier 163. They are suffixed to `163b` and `212b` rather
+than renumbered, so no existing citation is silently redirected. The gaps are left: a withdrawn or
+merged result is a fact about the history, not a defect in it.
+
+**The checker then produced two defects of its own, and the second is one this repository already
+has on record.**
+
+Its first pattern was anchored on a bare `## Result N` line and matched **183 of 226**. The first 39
+results are titled — `## Result 10 — the corpus was doing more work than anything measured above` —
+and four sit at H3. So 43 real results read as absent, and the citation check obligingly reported
+Results 10, 12, 15, 19, 32, 38 and 43 as *cited but never written*, each of them present and one
+heading style away. A confident list of seven phantom problems, from a parse that had quietly
+skipped a fifth of the document.
+
+Fixing that pattern through a shell heredoc wrote **a literal 0x08 where `\b` was meant, inside the
+raw string** — and the parse returned zero matches in silence. That is the same defect, from the
+same cause, as the one recorded earlier in this repository's history: three dead patterns, 2526
+tests blind, found only when someone asserted a known positive. It cost one tool call this time, and
+only because the fixture asserts the parse is non-empty before anything reads it.
+
+Sweeping the whole tree for that byte found one more, in `untell/scripts/numerals.py` — inside the
+comment explaining why a bare word boundary is the wrong anchor for a hyphenated numeral. The
+explanation had lost its own `\b`. Prose only, no pattern affected, and repaired.
+
+Worth keeping: **a parser that skips part of its input reports the skipped part as missing, with
+exactly the confidence of a real finding.** Both wrong answers here — 222 headings, seven phantom
+citations — were specific, plausible, and would have been actionable. The guard that caught them was
+not cleverness but the cheapest possible assertion: *did this parse match anything at all.*
