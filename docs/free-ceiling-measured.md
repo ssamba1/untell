@@ -10459,3 +10459,44 @@ and in both cases the first number would have been publishable and wrong.
 Worth keeping: **an over-broad detector makes a small problem look like a policy failure.** Thirty-
 seven files asserting unpinned numbers would be a finding about how this suite is written. Four files,
 none of them sensitive, is a finding about nothing — and the difference between them was one regex.
+
+## Result 213
+
+**Two characters fell between two classes: too wide for the invisible set, too narrow for the space
+set, and score-moving in the direction that reads AI as human.**
+
+This log records that U+00A0 alone took human text from 5 of 10 flagged to 9 of 10, so invisible
+characters move scores. The product question is whether `scrub` removes everything that does.
+MEASURED, each character inserted after every "e" in a two-sentence paragraph, lite/stdlib path:
+
+    baseline                  0.6735
+    U+200B, U+FEFF, U+00AD    0.6735   removed: yes   warned: yes
+    U+2028 line separator     0.5545   removed: NO    warned: NO
+    U+2029 paragraph sep      0.5545   removed: NO    warned: NO
+
+**The cause is a category boundary.** `_EXOTIC_SPACE` covers Unicode category Zs; `score.py`'s
+`_INVISIBLE_RE` covers Cf plus the soft hyphen. U+2028 is Zl and U+2029 is Zp — the only two
+whitespace-ish categories neither class names. Every other character of that kind in Unicode is
+caught by one or the other, which is why nothing had noticed: the coverage looks complete from either
+side.
+
+They are mapped to a newline rather than deleted. They ARE line breaks, and deleting one welds two
+lines together — the damage the layout work elsewhere in this repository exists to prevent.
+
+**Three self-inflicted errors on the way, and the third is the one worth recording.**
+
+The first probe replaced spaces with the injected character instead of inserting it, so scrubbing
+correctly returned a text with no word boundaries and every class scored 0.0000 — five families
+looked broken and none was.
+
+The second was an edit whose `\n` escape collapsed into a real newline and left an unterminated
+string; ruff reported 18 errors and the file would not parse.
+
+The third passed. A replacement was supposed to add two characters to a regex and prepend a comment
+explaining why; the comment landed, the regex edit silently matched nothing, and the assertion
+guarding it — `assert new != line` — was satisfied by the comment alone. The pattern was verified by
+compiling it and testing a match, which is the only reason it was caught.
+
+Worth keeping: **an assertion that a change happened is not an assertion that the change you meant
+happened.** Two edits in one string, one guard covering both, and the guard reported success for the
+half that did not matter.
