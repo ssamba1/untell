@@ -33,6 +33,23 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# RUN DIRECTLY (`python .../untell/scripts/audit.py`) rather than imported as part of the package,
+# put the directory that *contains* the package on sys.path so `import untell` resolves regardless
+# of the current working directory.
+#
+# The same block six other scripts in this directory already carry. This one was missed because its
+# untell imports are all LAZY — inside the check functions, not at module level — so nothing failed
+# at import time and the static shape looked different from the six that were fixed. It fails later
+# instead, when the first check runs, which is a worse place to find out.
+if __package__ in (None, ""):
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    for _p in _Path(__file__).resolve().parents:
+        if (_p / "untell" / "__init__.py").exists():
+            _sys.path.insert(0, str(_p))
+            break
+
 REPO = Path(__file__).resolve().parent.parent.parent
 
 # Documents that describe the CURRENT build. Dated artefacts are excluded on purpose: a changelog
