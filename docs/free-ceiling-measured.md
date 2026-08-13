@@ -10918,3 +10918,52 @@ had the largest corpus behind it and was refuted by a single short paragraph; th
 for immediately was refuted by the next table. What made the difference was that each one was
 written down as an assertion before being believed — the same lesson as Result 222, arriving twice
 in two loops because the first time did not make me apply it earlier.
+
+## Result 224
+
+**The rewriter refuses German. The two surfaces that report on it did not.**
+
+Non-English handling turned out to be mostly right: paste French, German, Spanish or Japanese and
+the loop returns the text unchanged with a caveat explaining that every transform is English. No
+mangling — the guard exists because English openers and an English "and" were once welded into
+German and French sentences, and it works.
+
+The reporting is where it fails. One paragraph of the same content in five languages:
+
+    language   score   flagged   rewritten   language caveat from score_text
+    english    0.7495  True      yes         n/a
+    german     0.4788  True      NO          NONE
+    spanish    0.2680  False     NO          NONE
+    french     0.2364  False     NO          NONE
+    japanese   0.0000  False     NO          present (non-Latin script)
+
+**German comes back flagged as AI, from English-only models, with caveats attached about its length
+and its tier and nothing about its language.** `untell_text` says the right thing — "any score here
+is not a verdict about this text" — but `score_text` is a different public surface, reached by the
+CLI's `score`, the MCP tool and the REST endpoint, and it never asked.
+
+The second surface was worse, because the module already contained both answers:
+
+    looks_non_english      German is not English      written for the rewriter
+    _language_supported    German is supported        script-based: Korean yes, German no
+
+and `score_tells` reported the second, so German returned `language_supported: true` with
+`tells_per_100w: 0.00`. That field exists **precisely** to stop a zero being read as a clean bill of
+health; the `languages` module says so in as many words, about Korean. It was doing that job for the
+rarer case and failing it for the commoner one.
+
+Worth keeping: **the tool knew. Two functions in one module, one file apart, disagreeing about the
+same paragraph, and the output reported the weaker one.** Nothing here needed a new capability — the
+detection was written, tested and correct. It just was not consulted by the surface that hands the
+user a verdict.
+
+### Lost to a reset
+
+All three source edits were made, verified against the five-language probe, and then **destroyed by
+a concurrent session running `git reset` while my test suite was running.** The working tree came
+back at HEAD with only my untracked test file surviving. No commits were lost — `reflog` shows
+`reset: moving to HEAD`, and the reset target was my own last commit.
+
+The edits were uncommitted for about ten minutes, which is how long the regression run took. That is
+the whole lesson: in this repository, a source edit that is not committed is a source edit that may
+not exist by the time the tests finish. Commit before the long run, not after it.
