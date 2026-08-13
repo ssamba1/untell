@@ -776,6 +776,25 @@ def _score_with_detectors(
             + f". The reported numbers reflect the '{effective}' tier only "
             "(commonly a NumPy 2.x / torch mismatch — see the README troubleshooting section)."
         )
+    else:
+        # The tier did NOT downgrade — and the roster can still be short. A detector that declines
+        # by configuration is simply not selected, so `effective == tier`, no branch above fires,
+        # and the verdict is drawn from fewer members with nothing saying so.
+        #
+        # MEASURED on one paragraph at `--tier full`, the only difference being an environment
+        # variable the README's own reproduce command sets:
+        #
+        #     complete ensemble        5 detectors    max 1.0000    flagged True
+        #     UNTELL_DISABLE_MAGE=1    4 detectors    max 0.1722    flagged False
+        #
+        # The same text, definitely-AI to clear. `max` over fewer members can only fall, so the
+        # whole error runs toward NOT flagged — the direction that tells someone their AI text
+        # reads as human, which is the failure `_bypass_rate` and the abstention note already guard
+        # for detectors that error. A detector that never loaded took neither path.
+        #
+        # Only for the tiers where a full roster is the point. On lite, "the others are absent" is
+        # the definition of the tier rather than news.
+        tier_note = _short_roster_note(tier, effective, scores)
     # A detector that loaded and then produced nothing shrinks the ensemble the verdict is drawn
     # from, and `max` over fewer members can only fall — so the whole error is toward NOT flagged,
     # which is telling someone their AI text reads as human. MEASURED with the strongest member of
@@ -1024,6 +1043,50 @@ _THRESHOLD_RANGE_NOTE_LOW = (
     "the threshold {value} is below 0.0, and detector scores are probabilities in [0, 1] — every "
     "text is above it, so this run flags everything and the rewrite loop can never stop."
 )
+
+
+# Detectors that are absent BY DEFAULT and arrive only when asked for. Their absence is the shipped
+# configuration, not a reduced ensemble, so naming them would put a caveat on every full-tier run —
+# which the first version of this note did, reporting "ran without radar" on a complete ensemble.
+#
+# The distinction is opt-IN versus opt-OUT. `mage` ships enabled and leaves via
+# `UNTELL_DISABLE_MAGE=1`; `radar` and the local judge arrive via `UNTELL_ENABLE_RADAR` and
+# `UNTELL_ENABLE_LOCAL_JUDGE`. Only the first kind is a member that went missing.
+_OPT_IN_DETECTORS = frozenset({"radar", "local_judge"})
+
+
+def _short_roster_note(tier: str, effective: str, scores: dict) -> str | None:
+    """Name detectors the requested tier expects that did not turn up.
+
+    Distinct from `failed_detectors` (loaded, then raised) and from the abstention note (loaded,
+    then returned None). This is the third way to be absent: never selected, because `available()`
+    said no — a missing model file, a missing key, or a documented opt-out like
+    `UNTELL_DISABLE_MAGE=1`.
+    """
+    if tier not in ("full", "heavy"):
+        return None
+    try:
+        from untell.detectors.base import _tier_at_most, all_detectors
+
+        missing = sorted(
+            d.name
+            for d in all_detectors()
+            if _tier_at_most(d.tier, tier)
+            and d.name not in scores
+            and d.name not in _OPT_IN_DETECTORS
+            and not d.available()
+        )
+    except Exception:  # a caveat must never break the score it qualifies
+        return None
+    if not missing:
+        return None
+    return (
+        f"the '{tier}' ensemble ran without {', '.join(missing)}: not installed, not configured, or "
+        "switched off. `max` is taken over the detectors that did run, and fewer members can only "
+        "lower it, so a short roster can only make text look MORE human than the complete "
+        "ensemble would. MEASURED on one paragraph: the same text scored 1.0000 with every "
+        "detector present and 0.1722 without one of them."
+    )
 
 
 def _threshold_range_warning(threshold: float | None) -> str | None:
