@@ -130,26 +130,27 @@ def test_it_reaches_verify_which_is_the_one_that_exits_zero(monkeypatch) -> None
     A reduced ensemble can only lower `max`, so it can only turn a fail into a pass. The one surface
     that turns a pass into an exit code was the one not saying it had happened.
     """
-    import untell.detectors.base as base
+    import untell.detectors.commercial as commercial
     import untell.scripts.verify as verify_mod
 
-    class _Absent:
-        name, tier = "mage", "full"
-
-        def available(self) -> bool:
-            return False
-
-    monkeypatch.setattr(base, "all_detectors", lambda: [_Absent()])
+    # `verify` FORWARDS the score's warning now rather than re-deriving selected caveats, so the
+    # stub carries one. The first version of this test stubbed a score with no `warning` key at all
+    # — realistic against the hand-picked implementation, and not against this one.
     monkeypatch.setattr(
-        verify_mod, "score_text",
-        lambda text, **kw: {"tier": "full", "max": 0.2, "detectors": {"perplexity_burstiness": 0.2},
-                            "verdict_threshold": 0.45},
+        verify_mod,
+        "score_text",
+        lambda text, **kw: {
+            "tier": "full",
+            "max": 0.2,
+            "detectors": {"perplexity_burstiness": 0.2},
+            "verdict_threshold": 0.45,
+            "warning": "the 'full' ensemble ran without mage: not installed, not configured.",
+        },
     )
-    import untell.detectors.commercial as commercial
-
     monkeypatch.setattr(commercial, "commercial_detectors", lambda: [])
     result = verify_mod.verify(TEXT, tier="full")
     assert "ran without" in (result.get("warning") or ""), result.get("warning")
+    assert result.get("passes_all") is True, "the premise: a reduced ensemble passing in silence"
 
 
 def test_a_broken_registry_does_not_break_scoring(monkeypatch) -> None:

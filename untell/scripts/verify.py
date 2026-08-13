@@ -36,7 +36,6 @@ from untell._env import load_env  # noqa: E402
 from untell.detectors.base import clamp01
 from untell.scripts.score import (
     DEFAULT_THRESHOLD,
-    _short_roster_note,
     _threshold_range_warning,
     score_text,
 )
@@ -205,19 +204,32 @@ def verify(
     #
     # A reduced ensemble can only lower `max`, so it can only turn a fail into a pass — and the one
     # surface that turns a pass into an exit code was the one not saying it had happened.
-    roster = None
+    # FORWARD the score's own warning rather than re-listing selected caveats by hand. Hand-picking
+    # is why this surface kept missing them: every caveat added to `score_text` had to be wired here
+    # separately, and three of the four added this session were not. MEASURED across the surfaces,
+    # one input per caveat:
+    #
+    #     caveat             score_text   untell_text   verify
+    #     no prose              yes          yes         NO
+    #     mostly locked         yes          yes         NO
+    #     one sentence/para     yes          yes         NO
+    #     threshold range       yes          yes         yes    <- wired by hand, one loop earlier
+    #
+    # `untell_text` never had the problem because it forwards `best_score["warning"]`. This does the
+    # same, which also retires the two caveats that had been wired here by hand — the threshold note
+    # and the short-roster note both travel inside the forwarded string now.
+    caveats: list[str] = []
     if tier is not None and isinstance(local, dict):
-        roster = _short_roster_note(tier, local.get("tier", tier), local.get("detectors") or {})
-    caveats = [
-        w
-        for w in (
-            _invisible_char_warning(text),
-            _homoglyph_warning(text),
-            _threshold_range_warning(threshold),
-            roster,
-        )
-        if w
-    ]
+        forwarded = local.get("warning")
+        if forwarded:
+            caveats.append(forwarded)
+    else:
+        # Commercial-only mode: no local score ran, so there is no warning to forward and the
+        # text-shape caveats are the only ones that can apply.
+        caveats = [w for w in (_invisible_char_warning(text), _homoglyph_warning(text)) if w]
+        threshold_note = _threshold_range_warning(threshold)
+        if threshold_note:
+            caveats.append(threshold_note)
 
     out = {
         "configured": names,
