@@ -10578,3 +10578,43 @@ Worth keeping: **a round-trip test cannot find a coverage gap, because it only e
 that were locked.** It is a total function on the wrong domain. The two questions look alike and one
 of them is much weaker; this repo has now been caught by that asymmetry twice, the other being
 Result 214's `restore` sweep, which was similarly incapable of reporting a character it never saw.
+
+## Result 216
+
+**A plausible trigger is not a trigger. The first sweep gave every one of these a clean bill of
+health.**
+
+Result 215 found the citation gap by asking which real-world variants fail to lock. Applying the same
+question to every other preserve category — url, quote, code, number, path, entity, version, 61
+variants in all — 19 failed to lock as one span. Then the end-to-end check said **0 of 20 damaged**,
+which would have closed the loop with nothing.
+
+The probe was wrong. It put a **comma** inside each span, because a comma is plausibly what a
+sentence-splitting rewriter reaches for. The transform that actually damaged citations in Result 215
+splits on a **semicolon**. Re-aimed with the trigger known to fire:
+
+    ‘the scheme paid for itself; the region kept the surplus’   (curly single quotes)
+        ->  ‘the scheme paid for itself. The region kept the surplus’      2 of 2 DAMAGED
+    <code>run a; then b</code>  ->  <code>run a. Then b</code>            12 of 12 DAMAGED
+
+Two real defects, both invisible one probe earlier.
+
+**Curly single quotes** were excluded from the quote rule deliberately and in writing: U+2019 is the
+typographic apostrophe, so `‘...’` cannot be told from "don’t" by shape alone. The reason has a hole
+in it — **U+2018 is not an apostrophe**, nothing writes `don‘t`, so the opening delimiter is
+unambiguous and anchors the match. Only the close is in doubt, which makes the curly rule *safer*
+than the straight-quote rule it was excluded next to, where both ends are ambiguous. The style
+British and academic house styles use as a matter of course was the one still rewritable.
+
+**HTML code tags** were a whole notation with no cover. Backticks lock, `<code>` did not, and every
+tag in the family failed identically — `<pre>`, `<kbd>`, `<samp>`, `<tt>`, `<var>`, 12 of 12.
+
+The false-positive bar exposed a second vacuity. The straight-quote rule cites 80 HC3 texts for its
+0-spurious-matches claim, and **that corpus cannot test the curly rule at all**: 0 of its 160 halves
+contain a single U+2018. Run anyway, it returns 0 the way a dead regex does. It is now recorded in
+the comment as worthless rather than quoted as evidence, with the apostrophe-dense probe — 11 U+2019
+apostrophes, no U+2018, 0 matches — carrying the claim instead.
+
+Worth keeping: **when a probe reports zero, check that the instrument is the one that broke the last
+thing.** Ten categories, twenty runs, a clean result, and the only difference between that and two
+real defects was one punctuation mark chosen by plausibility rather than by evidence.
