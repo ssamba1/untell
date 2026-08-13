@@ -10618,3 +10618,41 @@ apostrophes, no U+2018, 0 matches — carrying the claim instead.
 Worth keeping: **when a probe reports zero, check that the instrument is the one that broke the last
 thing.** Ten categories, twenty runs, a clean result, and the only difference between that and two
 real defects was one punctuation mark chosen by plausibility rather than by evidence.
+
+## Result 217
+
+**The fix two results ago was the right fix for the wrong reason.**
+
+Result 215 locked multi-work citations because `(Smith, 2019; Jones, 2020)` came back as
+`(Smith, 2019. Jones, 2020)`. The diagnosis was "the citation pattern has a coverage gap". The
+diagnosis was incomplete, and the evidence was already in the same output — `(--max-iters 3;
+--best-of 2)` was damaged too, and that is not a citation by any reading.
+
+The matrix that found it: 12 span types that fail to lock, against 6 carrier sentences. Four came
+back damaged — and damaged by **all six carriers**, which is the tell that the carrier is not doing
+it. A defect that fires under every condition is not conditional on any of them. The interior
+semicolon was the cause, and preservation had nothing to do with it.
+
+On ordinary prose with no citation, no code and nothing to preserve:
+
+    The council approved the plan (the vote was seven to two; two members abstained) at the meeting.
+        ->  (the vote was seven to two. Basically, two members abstained)
+
+    5 of 5 documents damaged. 0 of 5 after the fix.
+
+`_semicolons_to_periods` promotes "; " where the right side can stand alone, and had no notion of
+brackets — but **no clause inside a bracket can stand alone**, however well-formed, because the
+sentence continues after the closing bracket. The opener is the second half of it: once the break
+exists the later stages treat the fragment as a sentence and give it one, which is how "Basically,"
+ended up inside the parentheses.
+
+So Result 215 fixed citations and left every other parenthetical in the language broken. The lock is
+still worth keeping — it protects author names and years from transforms that have nothing to do
+with semicolons — but it was a keyhole view of a general defect, and the general defect is three
+lines of bracket depth.
+
+Worth keeping: **when a defect fires under every condition you varied, you varied the wrong thing.**
+Six carriers, twelve spans, and the uniformity of the damage was the whole message: the cause was in
+the part I held constant. This is the third result in a row where the finding was already sitting in
+an earlier output — Result 214's plain SPACE, Result 215's adjacent citations, and now this — and
+each time it looked like an uninteresting row rather than a refutation.
