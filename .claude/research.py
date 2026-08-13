@@ -86,6 +86,83 @@ RECIPES: dict[str, dict] = {
         "liveness": ["rewriter_available", "rewrote", "n"],
         "minutes": 120,
     },
+    "lite-raid": {
+        "why": "same settings, different corpus. Nine results in this project's history "
+               "generalised from one corpus before anyone varied it",
+        "argv": ["-m", "eval.ceiling", "--dataset", "raid", "--n", "10", "--rewriter",
+                 "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 25,
+    },
+    "lite-mage": {
+        "why": "a third corpus, so a claim can be checked against three rather than argued from one",
+        "argv": ["-m", "eval.ceiling", "--dataset", "mage", "--n", "10", "--rewriter",
+                 "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 25,
+    },
+    "lite-hc3-surgical": {
+        "why": "rewriter sweep: the cheapest backend, as the floor to measure the others against",
+        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "surgical",
+                 "--tier", "lite", "--repeats", "3", "--json"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 20,
+    },
+    "lite-hc3-structural": {
+        "why": "rewriter sweep: the one whose clause-joining once tripped the contradiction veto "
+               "on every candidate it produced",
+        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "structural",
+                 "--tier", "lite", "--repeats", "3", "--json"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 20,
+    },
+    "lite-hc3-targeted": {
+        "why": "rewriter sweep: detector-directed rewriting, the one whose leverage the tell "
+               "catalogue predicts but has never been measured against composite",
+        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "targeted",
+                 "--tier", "lite", "--repeats", "3", "--json"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 25,
+    },
+    "lite-hc3-ensemble": {
+        "why": "rewriter sweep: all free backends, selection included - the lane where a "
+               "saturating detector once made selection a no-op",
+        "argv": ["-m", "eval.ceiling", "--dataset", "hc3", "--n", "10", "--rewriter", "ensemble",
+                 "--tier", "lite", "--repeats", "3", "--json"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 30,
+    },
+    "compare-hc3": {
+        "why": "this pipeline against the other humanizers on the same text - the only "
+               "measurement that says whether the wall is ours or everyone's",
+        "argv": ["-m", "eval.compare_humanizers", "--dataset", "hc3", "--n", "10",
+                 "--tier", "lite", "--json"],
+        "metrics": [],
+        "spread": "",
+        "liveness": [],
+        "minutes": 30,
+    },
+    "claims-audit": {
+        "why": "re-checks every documented claim that CAN be re-checked, and reports how many "
+               "cannot - the drift lane, mechanised",
+        "argv": ["-m", "untell.scripts.audit", "--json"],
+        "metrics": [],
+        "spread": "",
+        "liveness": [],
+        "minutes": 15,
+    },
     "detector-audit": {
         "why": "detectors AT the shipped threshold, on labelled pairs - AUROC hides calibration, "
                "and a detector flagging most HUMAN text can still separate the classes",
@@ -104,6 +181,18 @@ RECIPES: dict[str, dict] = {
         "liveness": [],
         "minutes": 20,
     },
+}
+
+
+# A family is a set of recipes that differ in exactly one thing, so the comparison between
+# them means something. Sweeping one is the only way to answer "which rewriter is the wall"
+# or "does this number survive a change of corpus" — questions no single run can address.
+FAMILIES: dict[str, list[str]] = {
+    "rewriters": ["lite-hc3", "lite-hc3-surgical", "lite-hc3-structural",
+                  "lite-hc3-targeted", "lite-hc3-ensemble"],
+    "corpora": ["lite-hc3", "lite-raid", "lite-mage"],
+    "tiers": ["lite-hc3", "full-hc3-composite"],
+    "full-rewriters": ["full-hc3-composite", "full-hc3-neural", "full-hc3-max"],
 }
 
 
@@ -240,10 +329,39 @@ def main() -> int:
     r.add_argument("--timeout-minutes", type=int, default=None)
     s = sub.add_parser("show")
     s.add_argument("recipe", choices=sorted(RECIPES))
+    f = sub.add_parser("sweep", help="run every recipe in a family that has no result yet")
+    f.add_argument("family", choices=sorted(FAMILIES))
+    c = sub.add_parser("table", help="latest result per recipe in a family, side by side")
+    c.add_argument("family", choices=sorted(FAMILIES))
     a = ap.parse_args()
 
     if a.cmd == "run":
         return cmd_run(a.recipe, a.timeout_minutes)
+    if a.cmd == "sweep":
+        # One recipe per pass. A sweep that runs five measurements inside one pass outlives
+        # its hour and records nothing; run the next missing one and stop.
+        for name in FAMILIES[a.family]:
+            if not load(name):
+                print(f"family {a.family}: {name} has no result yet\n")
+                return cmd_run(name, None)
+        print(f"family {a.family} is complete - every recipe has at least one result.")
+        print("Compare them with: research.py table " + a.family)
+        return 0
+    if a.cmd == "table":
+        keys = ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"]
+        print(f"{'recipe':24} " + " ".join(f"{k[:12]:>12}" for k in keys) + "   runs")
+        for name in FAMILIES[a.family]:
+            history = load(name)
+            if not history:
+                print(f"{name:24} {'not measured yet':>54}")
+                continue
+            m = history[-1]["metrics"]
+            cells = " ".join(f"{(m.get(k) if m.get(k) is not None else float('nan')):>12.3f}"
+                             for k in keys)
+            print(f"{name:24} {cells}   {len(history)}")
+        print("\nOne run each is a sketch, not a finding. A difference is only real if it "
+              "clears both runs' spread.")
+        return 0
     if a.cmd == "show":
         for row in load(a.recipe):
             print(f"{row['seconds']:>7.0f}s  {row['metrics']}")
