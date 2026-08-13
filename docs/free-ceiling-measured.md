@@ -9266,3 +9266,37 @@ Worth keeping: **timing a whole pipeline to measure one component inside it is a
 The end-to-end arm produced a 25% regression, a 23x regression, and a 5% improvement from the same
 code on the same corpus, depending on ordering. The component took a tenth of the effort and gave a
 number that held still.
+
+## Result 184
+
+**A correct claim, correctly scoped, that does not apply to the path a clean install runs.**
+
+Result 183 established that pipeline timing is a losing instrument. The obvious follow-up is whether
+any wall-clock claim already in the tree was measured that way. `prefer_tells=True` "costs 2.3x less
+wall-clock" is the most re-measurable of them, and `api_server.py` already records the warm-up
+phenomenon elsewhere (9.34s then 0.0026s — 3,636x), so the repository knows the effect in one place
+and not others.
+
+MEASURED on the stdlib lite path, warm-up controlled, median of 3 runs over 4 HC3 documents:
+
+    the ranking pass alone   importance() / _tell_ranks()   8.2x   (5.8x - 9.0x)
+    the whole call           prefer_tells True vs False     0.92x, 0.95x
+
+**The claim is right and the code says so** — "the 2.3x speed-up at full tier". The mechanism is real
+and large: skipping the leave-one-out ranking is an order of magnitude cheaper. What no reader could
+work out is that the tells objective hands the saving straight back downstream, evaluating more
+candidates and recounting tells per adoption, so **on the default path the two modes cost the same**.
+`prefer_tells=True` earns its place on the tells it removes — 0.571 -> 0.233 against 0.571 -> 0.458 —
+not on speed a lite user will never see.
+
+**Two probe errors, both watching the wrong function, both on the same question.** Counting
+`score_text` calls gave 1 versus 1, which read as "the expensive pass does not exist". Counting
+`batch_score_texts` gave 3 versus 4 texts, which read the same way. The leave-one-out pass lives in
+`importance()` and routes through neither. Timing the two ranking functions directly — the component,
+not the pipeline — is what produced a number that held still, which is Result 183's lesson arriving
+one loop later than it should have.
+
+Worth keeping: **a scoped claim is only as useful as the reader's ability to tell whether they are in
+scope.** "2.3x less wall-clock at full tier" is a true sentence. The person most likely to read it is
+running the zero-dependency install, where the figure is 1.0x, and nothing in the sentence told them
+which side of it they were on.
