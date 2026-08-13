@@ -95,6 +95,20 @@ _WEEKDAY = r"Mon(?:day)?|Tue(?:s(?:day)?)?|Wed(?:nesday)?|Thu(?:rs(?:day)?)?|Fri
 _WEEKDAY_FULL = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
 _WEEKDAY_ABBR = r"Mon|Tues|Tue|Wed|Thurs|Thur|Thu|Fri|Sat|Sun"
 
+# One author-year entry, and the signal words that can introduce one. Split out because the
+# parenthetical rule below repeats the entry either side of a semicolon; see the measurement there.
+#
+# The prefix list is deliberately CLOSED. An open one — anything lowercase before the author —
+# would swallow ordinary parentheses that happen to end in a year, and over-locking is the more
+# expensive error here: a frozen span is prose the rewriter cannot improve, silently, forever.
+_CITE_PREFIX = (
+    r"(?:see\s+also|but\s+see|see|cf\.?|e\.g\.?|i\.e\.?|compare|reviewed\s+in|as\s+in|after)\s*,?"
+)
+_CITE_ENTRY = (
+    r"[A-Z][A-Za-z'’.-]+(?:\s+(?:&|and|et al\.?)\s*[A-Za-z'’.-]*)*"
+    r",?\s*\d{4}[a-z]?(?:,\s*pp?\.?\s*\d+(?:\s*[-–]\s*\d+)?)?"
+)
+
 # Ordered patterns. Every match from every pattern is collected and OVERLAPPING/ADJACENT spans are
 # merged into their union (see `_merge`), so a broad pattern and a narrow one covering part of the
 # same fact combine into one lock rather than competing — adding a pattern can only widen a lock.
@@ -163,8 +177,29 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     ("latex_cmd", re.compile(r"(?<![A-Za-z0-9:])\\[a-zA-Z@]+\*?")),
     # Bracketed numeric citations: [12], [3, 4], [1-5]
     ("citation", re.compile(r"\[\d+(?:\s*[-,]\s*\d+)*\]")),
-    # Parenthetical author-year (APA/MLA): (Smith, 2020), (Smith & Lee, 2019, p. 4)
-    ("citation", re.compile(r"\([A-Z][A-Za-z'’.-]+(?:\s+(?:&|and|et al\.?)\s*[A-Za-z'’.-]*)*,?\s*\d{4}[a-z]?(?:,\s*pp?\.?\s*\d+)?\)")),
+    # Parenthetical author-year (APA/MLA): (Smith, 2020), (Smith & Lee, 2019, p. 4),
+    # (see Smith, 2019), (Smith 2019; Jones 2020), (cf. Smith 2019; Jones 2020, p. 4).
+    #
+    # The prefix and the semicolon list were added after MEASURING the end rather than the means.
+    # The old pattern demanded a capitalised author immediately after `(` and closed at the first
+    # `)`, so a multi-work or prefixed citation matched nothing and the parenthesis stayed OPEN to
+    # the rewriter. Through the shipped loop, 8 of 16 form-by-style runs came back damaged:
+    #
+    #     (Smith, 2019; Jones, 2020)  ->  (Smith, 2019. Jones, 2020)
+    #     (see Smith, 2019)           ->  (see Smith. 2019)
+    #
+    # The semicolon-to-sentence transform was editing INSIDE the citation. Single-work forms were
+    # never damaged, which is why this was invisible: every example in the tests was one work.
+    #
+    # Written as a strict superset — one entry with no prefix is the old pattern — so the forms
+    # that already worked keep matching exactly as they did.
+    (
+        "citation",
+        re.compile(
+            r"\(\s*(?:" + _CITE_PREFIX + r"\s*)?" + _CITE_ENTRY
+            + r"(?:\s*;\s*(?:" + _CITE_PREFIX + r"\s*)?" + _CITE_ENTRY + r")*\s*\)"
+        ),
+    ),
     # Narrative author-year: Smith (2020), Smith et al. (2019)
     ("citation", re.compile(r"[A-Z][A-Za-z'’.-]+(?:\s+et al\.?)?\s+\(\d{4}[a-z]?\)")),
     # DOIs and URLs
