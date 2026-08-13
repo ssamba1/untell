@@ -10533,3 +10533,48 @@ result set the whole time, scoring identically to the characters being accused. 
 the ordinary member of each family answers "is this a defect or a property of my method" in the same
 table, without a second experiment — and here it converted a list of nineteen findings into two, both
 already known.
+
+## Result 215
+
+**The round-trip was never the problem. Coverage was — a span that is never locked cannot fail to
+restore.**
+
+The question was whether any transform can damage a preserved span, since a leaked sentinel is
+visible garbage and a mangled one silently loses a citation. The obvious probe says no, emphatically:
+
+    18 pipeline runs, citation/URL/quote/entity/code-dense documents, 3 styles
+        sentinel leaks          0
+        locked spans altered    0
+    input already containing a ⟦HZ0⟧ token                    round-trips exactly
+    a document with 84 locked spans                           round-trips exactly
+    citations adjacent, at sentence end, at string start      round-trip exactly
+
+That is a clean negative result and it would have been the whole loop. The finding came from one odd
+row: `(Smith et al., 2019)(Jones, 2020)` locked **one** span for two citations. It round-tripped, so
+the probe called it fine — but round-tripping is a property of what was locked, and it says nothing
+about what was not. Asking the other question instead:
+
+    (Smith, 2019)                one span
+    (Smith 2019; Jones 2020)     TWO spans -- '2019' and '2020', the parenthesis left OPEN
+    (see Smith, 2019)            TWO spans -- 'Smith' and '2019'
+    (e.g., Smith, 2019)          THREE spans
+
+The parenthetical rule required a capitalised author immediately after `(` and closed at the first
+`)`. Anything else fell through to the entity and numeral rules, which lock the pieces and leave the
+punctuation between them rewritable. MEASURED through the shipped loop, 8 forms x 2 styles:
+
+    (Smith, 2019; Jones, 2020)   ->  (Smith, 2019. Jones, 2020)     DAMAGED
+    (see Smith, 2019)            ->  (see Smith. 2019)              DAMAGED
+
+**8 of 16 damaged.** The semicolon-to-sentence transform was editing inside citations. After the fix,
+0 of 16, with 0 of 10 negative controls newly frozen.
+
+Why a suite with 405 passing preservation assertions never saw it: **every citation in every existing
+example is a single work.** The forms that break are the ones academic prose uses to cite a
+literature rather than a paper — and the academic domain is the most-named gap in the competitor
+census. The examples were all drawn from the same shape, and the shape was the bug.
+
+Worth keeping: **a round-trip test cannot find a coverage gap, because it only ever asks about spans
+that were locked.** It is a total function on the wrong domain. The two questions look alike and one
+of them is much weaker; this repo has now been caught by that asymmetry twice, the other being
+Result 214's `restore` sweep, which was similarly incapable of reporting a character it never saw.
