@@ -64,6 +64,14 @@ FLAG_BAR = 0.45
 CONVICTION = 0.90
 
 
+def _score_holdout(detector, rows) -> None:
+    """Score every frozen row with the control. Called only after the loop has finished."""
+    for row in rows:
+        row["holdout_pre"] = detector.score(row["source"])
+        row["holdout_post"] = detector.score(row["final"])
+        row["holdout_human"] = detector.score(row["human"])
+
+
 def _holdout_detector():
     """The control, with the gate that keeps it out of the tier checked rather than assumed."""
     if os.environ.get("UNTELL_ENABLE_RADAR") == "1":
@@ -125,10 +133,23 @@ def run(
 
     # Scored only now, on text the loop can no longer influence. Doing this inside the loop would
     # leak the control into selection through nothing more than an ordering mistake.
-    for row in rows:
-        row["holdout_pre"] = detector.score(row["source"])
-        row["holdout_post"] = detector.score(row["final"])
-        row["holdout_human"] = detector.score(row["human"])
+    #
+    # The gate has to be OPEN for scoring and SHUT for the loop, and those are the same environment
+    # variable. `RadarDetector.available()` returns False without it, so the first version of this
+    # harness — which kept it shut throughout, correctly for the loop — got `None` from every call
+    # and returned "radar returned no scores". It failed loudly because `if not scored` is checked;
+    # the eight tests missed it entirely because they inject a fake detector and never touch the
+    # real gate. Opened here, after every rewrite is frozen, and restored afterwards so a caller's
+    # environment is unchanged and a later `_holdout_detector()` in the same process still refuses.
+    previous = os.environ.get("UNTELL_ENABLE_RADAR")
+    os.environ["UNTELL_ENABLE_RADAR"] = "1"
+    try:
+        _score_holdout(detector, rows)
+    finally:
+        if previous is None:
+            os.environ.pop("UNTELL_ENABLE_RADAR", None)
+        else:
+            os.environ["UNTELL_ENABLE_RADAR"] = previous
 
     scored = [r for r in rows if isinstance(r.get("holdout_post"), float)]
     if not scored:

@@ -12,6 +12,8 @@ whether a number is publishable, not the detector.
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from eval import holdout
@@ -98,6 +100,31 @@ def test_the_holdout_never_scores_a_candidate_the_loop_could_still_change(monkey
 
     # Every call happens after the loop returned, on exactly three frozen strings per document.
     assert detector.seen == ["ai", "out", "human"]
+
+
+def test_the_gate_is_open_while_scoring_and_shut_again_afterwards(monkeypatch):
+    """The gate must be SHUT for the loop and OPEN for the control, and it is one env var.
+
+    Shipped defect: this harness kept it shut throughout — right for the loop — so
+    `RadarDetector.available()` was False, every score came back None, and the run died with
+    "radar returned no scores". Every other test here injects a fake detector, which does not
+    consult the gate, so all eight passed.
+    """
+    seen = []
+
+    class _GateReadingDetector(_FakeDetector):
+        def score(self, text):
+            seen.append(os.environ.get("UNTELL_ENABLE_RADAR"))
+            return super().score(text)
+
+    monkeypatch.delenv("UNTELL_ENABLE_RADAR", raising=False)
+    detector = _GateReadingDetector({"ai": 0.9, "out": 0.2, "human": 0.05})
+    _wire(monkeypatch, detector, pairs=[("human", "ai")], rewritten={"ai": (0.9, 0.2, "out")})
+
+    holdout.run(n=1)
+
+    assert seen and all(v == "1" for v in seen), f"control scored with the gate at {set(seen)}"
+    assert os.environ.get("UNTELL_ENABLE_RADAR") is None, "the caller's environment was left open"
 
 
 def test_a_control_that_cannot_separate_says_so(monkeypatch):
