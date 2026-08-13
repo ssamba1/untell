@@ -10500,3 +10500,36 @@ compiling it and testing a match, which is the only reason it was caught.
 Worth keeping: **an assertion that a change happened is not an assertion that the change you meant
 happened.** Two edits in one string, one guard covering both, and the guard reported success for the
 half that did not matter.
+
+## Result 214
+
+**Ninety-five characters swept. Seventeen "defects", none of them real, and the one that was real had
+already been fixed.**
+
+Result 213 found U+2028 and U+2029 by thinking of two characters. The mechanical version tests every
+BMP character whose category can hide one — Zs, Zl, Zp, Cf, Cc — inserted after every "e" in a
+two-sentence paragraph, scrubbed, and rescored against a baseline of 0.6735:
+
+    Cf and Cc (76 characters)    restored exactly
+    Zl and Zp (2 characters)     not restored, by design
+    Zs (17 characters)           not restored, and not a defect
+
+**The first sweep reported all 19 as failures**, which would have been a serious finding about the
+scrubber. It is a property of the probe. Inserting a real space into a word splits it, and plain
+U+0020 shows the same 0.0000 as every exotic space — the giveaway was in the output and easy to walk
+past, because SPACE sitting at the top of a defect list looks like a formatting artifact rather than
+the refutation of the whole list. Normalising an EM SPACE to a plain space is correct handling; the
+score change survives it because the text now genuinely says something else.
+
+The Zl/Zp rows are the previous loop's fix working. They are line breaks, so `scrub` converts them
+rather than deleting them, and the scrubbed text genuinely contains line breaks.
+
+So the coverage is complete: of the 78 non-space characters, **76 round-trip exactly and 2 are
+converted on purpose.** That is a stronger statement than Result 213 could make, and it cost one
+loop after the fix rather than being available before it.
+
+Worth keeping: **the control case belongs inside the sweep, not beside it.** Plain SPACE was in the
+result set the whole time, scoring identically to the characters being accused. A sweep that includes
+the ordinary member of each family answers "is this a defect or a property of my method" in the same
+table, without a second experiment — and here it converted a list of nineteen findings into two, both
+already known.
