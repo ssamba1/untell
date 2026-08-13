@@ -34,6 +34,7 @@ import functools
 import hmac
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Annotated, Literal
@@ -981,6 +982,51 @@ async def ceiling(body: CeilingRequest) -> dict:
 # ---------------------------------------------------------------------------
 
 
+_DEFAULT_PORT = 8000
+
+
+def _port_from_env() -> int:
+    """`UNTELL_PORT`, validated, with a message instead of a traceback.
+
+    This was `int(os.environ.get("UNTELL_PORT", "8000"))` evaluated while BUILDING the parser, so a
+    bad value crashed before argparse could do anything at all — including print `--help`:
+
+        $ UNTELL_PORT=abc untell-server --help
+        ValueError: invalid literal for int() with base 10: 'abc'
+
+    A raw traceback for a mistyped environment variable, and no way to discover the flag that would
+    have overridden it. Exit 2 with one line is this repo's convention for a configuration problem,
+    and it is what `--port` on the command line already gets from argparse.
+
+    The range is checked too. 0 and 70000 parse fine as integers and fail later inside uvicorn,
+    where the message is about sockets rather than about the variable the user set.
+
+    Exit code 2, printed explicitly. `raise SystemExit("message")` prints the string but exits 1,
+    which is the code this repo reserves for "ran and the verdict was no" — measured at 1 before
+    this was made explicit.
+    """
+    raw = os.environ.get("UNTELL_PORT")
+    if raw is None or raw.strip() == "":
+        return _DEFAULT_PORT
+    try:
+        port = int(raw)
+    except ValueError:
+        print(
+            f"error: UNTELL_PORT must be a whole number, got {raw!r}. "
+            f"Unset it or pass --port instead.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2) from None
+    if not 1 <= port <= 65535:
+        print(
+            f"error: UNTELL_PORT must be between 1 and 65535, got {port}. "
+            f"Unset it or pass --port instead.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    return port
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     import argparse
@@ -989,7 +1035,7 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(prog="untell-server")
     parser.add_argument("--host", default=os.environ.get("UNTELL_HOST", "0.0.0.0"))
-    parser.add_argument("--port", type=int, default=int(os.environ.get("UNTELL_PORT", "8000")))
+    parser.add_argument("--port", type=int, default=_port_from_env())
     parser.add_argument("--reload", action="store_true", help="auto-reload on file changes (dev)")
     args = parser.parse_args(argv)
     uvicorn.run("untell.api_server:app", host=args.host, port=args.port, reload=args.reload)
