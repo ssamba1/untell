@@ -213,10 +213,16 @@ def undetermined_reason(text: str) -> str | None:
     """
     if not text or not text.strip():
         return "empty"
+    # Language BEFORE length. `_WORD_RE` is [A-Za-z']+, so a Japanese paragraph counts zero words and
+    # the length test claimed it first — reporting "shorter than 5 words" about 40 characters of
+    # prose, which is true of the regex, absurd to the reader, and points at the wrong fix (write
+    # more) instead of the real limit (the catalogue is English-only). `humanness` already had this
+    # right in its own nested copy of the branch, so the two functions disagreed about the reason in
+    # opposite directions, each correct on the case the other got wrong.
+    if not score_tells(text).get("language_supported", True):
+        return "not text this English-only catalogue can read"
     if len(_WORD_RE.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
         return f"shorter than {_MIN_WORDS_FOR_SIGNAL} words"
-    if not score_tells(text).get("language_supported", True):
-        return "not in a script this English-only catalogue can read"
     return None
 
 
@@ -292,16 +298,24 @@ def humanness(text: str, tier: str = "full") -> float:
     #
     # 50.0 is the same "cannot tell" answer empty text gets, and lands in the `mixed` band. That is
     # the honest reading: a confident 100 on one word is noise reported as certainty.
-    if len(_WORD_RE.findall(text)) < _MIN_WORDS_FOR_SIGNAL:
-        # Distinguish "too short" from "not English". `_WORD_RE` is [A-Za-z']+, so a 40-character
-        # Chinese paragraph has zero words by this count and used to be reported as "shorter than 5
-        # words" — true of the regex, absurd to the reader, and it points them at the wrong fix
-        # (write more) instead of the real limit (the catalogue is English-only). Both answers are
-        # 50, which is correct either way; only the reason was wrong.
-        if not score_tells(text).get("language_supported", True):
-            _warn_unsupported_language()
-        else:
+    # Both abstentions, asked of the one function that owns them. This test used to be the LENGTH
+    # test alone, with the language check nested inside it — so the language branch was reachable
+    # only for text with fewer than five Latin words. Non-Latin scripts satisfy that by accident;
+    # **Latin-script non-English never does.** MEASURED, lite tier:
+    #
+    #     japanese   50.0  "mixed"    abstained, correct reason
+    #     german    100.0  "human"    scored, and 100.0 is the most confident answer available
+    #
+    # A perfect human verdict on text the catalogue cannot read a word of, produced *because* it
+    # found zero tells in it. The `languages` module names that exact failure — "a score of 0 tells
+    # means the patterns did not apply, NOT that the text reads as human" — and this was it, on the
+    # command that advertises "how human does it read".
+    reason = undetermined_reason(text)
+    if reason:
+        if reason.startswith("shorter"):
             _warn_too_short()
+        else:
+            _warn_unsupported_language()
         return 50.0
 
     # Long enough for the three signals to exist, short enough that they do not separate the
