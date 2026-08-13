@@ -39,6 +39,24 @@ FACT_TEXTS = [
         "Moreover, adoption increased 3.5% and the ratio held at 3:1 throughout.",
         ["v2.1.3", "2024-03-15", "3.5%", "3:1"],
     ),
+    # A price and an equation in one sentence. The inline-math rule paired the LEFTMOST two dollar
+    # signs, so `$500 while $` went into the lock and `E=mc^2$` was left in the text for the
+    # rewriter — the equation exposed by nothing worse than a price earlier in the sentence. The
+    # corpus above is rich in citations, versions and percentages and had no sentence that priced
+    # something and then stated a formula, which is the whole of why the loop never saw it.
+    (
+        "Moreover, the budget was $500 while $E=mc^2$ remains the governing relation here. "
+        "Furthermore, the team utilized robust methodologies throughout the whole study.",
+        ["$500", "$E=mc^2$"],
+    ),
+    # A setting locked its name and left its value rewritable, so `=false` could become `=true`
+    # with every sentinel intact. Numeric values were caught downstream by the numerals gate;
+    # boolean and word values were caught by nothing, and nothing here carried one.
+    (
+        "Moreover, it is important to note that ENABLE_CACHE=false must remain set throughout. "
+        "Furthermore, pass --tier=full and export LOG_LEVEL=warning before the run begins.",
+        ["ENABLE_CACHE=false", "--tier=full", "LOG_LEVEL=warning"],
+    ),
 ]
 
 
