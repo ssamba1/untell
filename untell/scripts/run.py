@@ -338,6 +338,22 @@ def _flagged_sentences_of(final: str, threshold: float) -> dict:
 
     Scoring the final text costs one extra lite per-sentence pass per call and is the only way to
     make the field mean what its name says.
+
+    COST, measured rather than assumed, because this repository has reverted two scoring changes on
+    cost grounds. Isolated, over 8 HC3 documents of 7-12 sentences, median of 3 runs each:
+
+        this pass                     0.076 - 0.120 s
+        one whole-document score_text 0.038 - 0.056 s
+        ratio                         2.30x  (median)
+
+    Against a full `untell_text` run of roughly 1.1 s that is about 9%. End to end it is not
+    separable from noise: with warm-up controlled and the two arms alternated, the median ratio over
+    6 documents was 0.95x with individual ratios from 0.68x to 2.53x — scatter in both directions,
+    larger than the effect being looked for.
+
+    Two earlier numbers for this were wrong and are recorded so they are not re-derived: a first
+    pass reported +25% median and a second reported 23.5x on one document. Both were warm-up landing
+    in whichever arm ran first.
     """
     try:
         from untell.scripts.sentences import score_sentences
