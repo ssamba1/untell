@@ -8960,3 +8960,47 @@ Worth keeping: **a field can be wrong in a way that no schema check sees.** Resu
 that `flagged_sentences` existed and was undocumented; documenting it would have been the whole job
 by any structural measure. The value in it was still wrong — stale by construction, and unreadable
 when it was not stale.
+
+## Result 177
+
+**Four of five reported numbers describe exactly what the caller received. The fifth was
+systematically flattering, and only on the documents that most needed it to be honest.**
+
+Result 176's lesson was that a field can be wrong in a way no schema check sees. Applied to the rest
+of the payload: MEASURED on 8 HC3 documents, 4 of which the loop changed, each figure against a fresh
+computation on the text it claims to describe:
+
+    post.max      vs score_text(final)["max"]     0/8 disagree
+    tells_after   vs score_tells(final)["tells"]  0/8 disagree
+    pre.max       vs score_text(input)["max"]     0/8 disagree
+    tells_before  vs score_tells(input)["tells"]  0/8 disagree
+
+`similarity` was the exception. Whenever polish had not run — the ordinary path — it compared
+`masked` against `best_masked`, masked text on both sides. The code gave its reason: `best_masked`
+restores to `final`, so the comparison is exact. **That is true of the text and false of the number.**
+A sentinel is a single token standing in for a multi-word span, so both sides get a free exact match
+in precisely the places where the real words would have had to be compared.
+
+MEASURED, reported value minus a fresh `similarity(input, final)`, over documents the loop changed:
+
+    plain             6 changed   mean +0.0013   worst +0.0040   reported higher 3/6
+    citation-dense    7 changed   mean +0.0040   worst +0.0155   reported higher 5/7
+
+Two things make this worth fixing rather than noting. It is **one-directional** — the reported figure
+was never below the real one — so it is a bias, not noise. And it **grows with how much of the
+document is locked**, which means the meaning number is least trustworthy on citation-heavy academic
+text: exactly the population the preserve layer exists to serve.
+
+After the change both arms report the caller's own figure exactly — mean and worst gap 0.000000, on
+the same 6 and 7 documents. `polished_applied` went with it; the branch this replaces was its only
+reader.
+
+The gate's own masked comparison is a separate decision, measured earlier and deliberately kept
+(mean −0.0014, and the single disagreement ran safe). The distinction matters: a gate may be
+conservative on purpose, but a reported number has one job, which is to be the number.
+
+Worth keeping: **the justification was correct and the conclusion did not follow.** "`best_masked`
+restores to `final`, so the similarity is exact" is a true sentence about text identity sitting on
+top of a false claim about a token-level metric. A comment that states its reasoning made this
+findable — the same property that made Result 171 findable — because the reasoning could be checked
+independently of the code.
