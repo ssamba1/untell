@@ -9727,3 +9727,46 @@ Worth keeping: **a caveat is a claim, and it inherits the burden of every other 
 document.** The previous result checked that the note fired in the right state, that it was
 actionable, and that it did not read as a malfunction. It did not check whether the sentence was
 true, and it was the only new sentence in the change.
+
+## Result 195
+
+**The caveat was true, and true for the wrong reason. Splitting had been sitting behind a guard for
+transforms that need a pair, and splitting needs one sentence.**
+
+Result 194 established that a caveat is a claim carrying the same burden as any other. Applied to the
+one this session added for per-line documents, which says the transforms needing two adjacent
+sentences "could not run". MEASURED by instrumenting a four-sentence document in two layouts,
+3 seeds each:
+
+                                 1 sentence/para   one block
+        _merge_sentences               0               3
+        _target_burstiness             0               3
+        _drop_restatements             0               3
+        _split_long_sentences          0               3
+
+The claim checks out. Then the fourth row stops looking like confirmation and starts looking like a
+defect: **splitting takes one long sentence and makes two.** It does not need a pair. The guard's own
+comment names the ones that do — merge, restatement-drop, burstiness — and splitting is not among
+them. It sat inside anyway, so a paragraph holding a single 40-word sentence could never be split,
+which is precisely the case splitting exists for: a transcript line, a bullet, a lone abstract
+sentence.
+
+`_strip_transitions` and `_vary_openers` were both moved out of this guard before, each time citing
+that same comment. This is the third, and the comment has now outlasted three of the transforms it
+was misapplied to.
+
+After: split runs **12** times on the per-line document against 0, still after the guarded block, so
+a multi-sentence block sees merge then split in the order it always did. The caveat is updated with
+it — it names merging, restatement removal and sentence-length variation now, and the test asserts
+those three are 0 while splitting is not.
+
+**Two things found while verifying, neither mine.** The wider structural run surfaced two stable
+failures in `test_sentence_targeting_is_weaker_than_the_docstring_claimed.py` — deterministic across
+two runs, in a file that makes zero reference to the rewriter, and whose own assertion messages say
+the docstring should be re-measured because separation IMPROVED. And `git push` has been rejected
+three times with a GitHub `Internal Server Error`; the commit is local and intact.
+
+Worth keeping: **verifying a claim is a different activity from trusting it, and it finds different
+things.** Checking whether the note was true produced a table where three rows confirmed it and the
+fourth, which also confirmed it, was the bug. A test that only asked "does the note fire in the right
+state" — which is what the previous loop wrote — would have passed on all four.
