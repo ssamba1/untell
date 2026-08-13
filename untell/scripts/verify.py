@@ -93,7 +93,15 @@ def verify(
             if isinstance(val, (int, float)) and "__" not in det_name:
                 key = f"local:{det_name}"
                 names.append(key)
-                results[key] = {"ai": round(val, 4), "passes": val < verdict_cut}
+                # Carries the cut that judged it, for the reason the `local:max` row already gives
+                # below: a pass at 0.38 must not read as a pass at 0.30. These rows moved onto
+                # `verdict_cut` when that fix landed and did not gain the field that explains it,
+                # so the only row in the report stating its own bar was the summary.
+                results[key] = {
+                    "ai": round(val, 4),
+                    "passes": val < verdict_cut,
+                    "verdict_threshold": verdict_cut,
+                }
         key = f"local:max ({local['tier']})"
         names.append(key)
         if local.get("scored") is False:
@@ -123,7 +131,16 @@ def verify(
                 results[d.name] = {"ai": None, "passes": False, "error": "no signal (empty/unavailable for this text)"}
                 continue
             ai = clamp01(float(raw))
-            results[d.name] = {"ai": round(ai, 4), "passes": ai < threshold}
+            # Judged at the caller's `threshold`, NOT at `verdict_cut`. That cut is swept for the
+            # local stdlib ensemble and published by `score_text` for it; a commercial detector
+            # returns its own probability on its own scale, and borrowing a calibration derived
+            # from a different scorer would be a guess wearing a measurement's clothes. The row
+            # says which bar answered so the two kinds are not read as one.
+            results[d.name] = {
+                "ai": round(ai, 4),
+                "passes": ai < threshold,
+                "verdict_threshold": threshold,
+            }
         except Exception as exc:  # surface per-checker failure rather than crashing the verdict
             results[d.name] = {"ai": None, "passes": False, "error": str(exc)[:160]}
 
@@ -142,7 +159,13 @@ def verify(
             continue
         try:
             ai = clamp01(float(chk.check(text)))
-            results[key] = {"ai": round(ai, 4), "passes": ai < threshold}
+            # Same reasoning as the commercial rows above: a site's own score, judged at the
+            # caller's bar, saying so.
+            results[key] = {
+                "ai": round(ai, 4),
+                "passes": ai < threshold,
+                "verdict_threshold": threshold,
+            }
         except Exception as exc:
             results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}
 
