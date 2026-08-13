@@ -9132,3 +9132,47 @@ Worth keeping: **the surfaces that guard a value are the ones whose author had t
 takes `choices=STYLE_NAMES` because argparse makes that easy; REST took it after a measured failure.
 The library path is the one nobody types by hand, and it was the one that let a typo through to a
 rewrite that silently did something else.
+
+## Result 181
+
+**A threshold of 45 passes everything on every surface, including the one that exits 0 in CI.**
+
+Result 180 ended on the observation that the library path is the one nobody types by hand. Sweeping
+it for values the CLI and REST would reject: `max_iters=0` returns the input untouched, `best_of=0`
+still draws a candidate, and both are defensible. The threshold is not.
+
+Detector scores are probabilities — every checker in the registry clamps to [0, 1] — so a threshold
+outside that range is not a strict setting, it is an unreachable one. MEASURED on the same AI
+paragraph:
+
+    threshold   score.flagged   untell.flagged   verify.passes_all
+        0.30          True             True            False
+        0.45          True             True            False
+        1.50          False            False           True
+       45.00          False            False           True
+       -1.00          True             True            False
+
+A caller who types `45` meaning 45 per cent gets a clean verdict from every surface, and `verify`
+exits 0. **Nothing said a word.** The only warning present was the generic lite caveat — byte-
+identical at 0.30 and at 45.00 — and it quotes "the 0.30 loop threshold", a number the caller did not
+use. So the surface was not merely silent about the mistake, it was confidently describing a
+different setting.
+
+This is the false-negative direction, and the one the rest of this document spends less time on. The
+`verdict_threshold` work exists to stop the tool calling human writing AI; this is the tool calling
+AI writing clean, in CI, with a green exit code.
+
+`verify` needed its own wiring: it already had a `caveats` list and emitted `warning` conditionally —
+undocumented in `result-shapes.md`, the same class as Result 174 — and the note now joins it there.
+Both endpoints stay silent, because a score can equal 0.0 or 1.0: those are extreme settings rather
+than impossible ones.
+
+**A probe error, and the second of this kind in three loops.** The first pass tested "does any
+warning mention the threshold" with a keyword match, got `True` for every value including 45.0, and
+would have reported the caveat as already present. The match was on the generic prose. Reading the
+warning text rather than searching it is what turned a clean bill into a finding — the same
+correction Result 179 required after measuring browser checkers against the wrong protocol.
+
+Worth keeping: **a warning that names a number the caller did not pass is worse than no warning.** It
+reads as confirmation. Whatever else this fix does, it stops the tool from quoting `0.30` back at
+someone who asked for `45`.
