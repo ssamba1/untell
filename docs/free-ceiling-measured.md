@@ -8898,3 +8898,65 @@ you which one you are still missing.** The prompt, the granularity and the senti
 defects with real evidence; the thing actually holding the output back was arithmetic between two
 guards that never referred to each other. Tracing one document's nine sentences answered in one run
 what three re-runs could not.
+
+## Result 176
+
+**The per-sentence flags handed to the caller described neither the output nor, usually, anything at
+all — the loop computed five and the caller received none.**
+
+Result 174 found `flagged_sentences` documented nowhere. The obvious follow-up is whether the field
+is *correct*: does `post.flagged_sentences` describe `final`? Two independent defects, and the second
+is the one that matters.
+
+**It named sentences that are not in the output.** The list is computed on MASKED text — the form the
+rewriter works in — so any sentence containing a locked span came back carrying a sentinel:
+
+    'Overall, the controversy surrounding unions in ⟦HZ0001⟧ is complex and multifaceted, ...'
+
+MEASURED on the 7 HC3 documents (of 60) whose per-sentence pass flags anything, each run plain and
+with a citation and URL welded in — 12 runs, 6 with a non-empty list: **4 sentences carried a
+sentinel and 4 were absent from `final`**. It fires on plain input too, because `lock` masks
+entities, numbers and dates rather than only citations, so this is the ordinary case.
+
+**And usually it was not there at all.** `best_score` is replaced wholesale when a candidate is
+adopted, when the result is rescored, and when it is polished, while the key is set at the TOP of
+each iteration. It therefore survived only when none of those three happened afterwards. Instrumented
+with the per-sentence pass forced to flag every sentence:
+
+    patched scorer calls: 2, returning 5 flagged sentences each
+    post flagged_sentences: 0
+
+The loop computed the list twice and the caller received an empty one. When it did arrive populated,
+it described the text as it stood at the start of some earlier iteration — never `final`.
+
+The fix scores `final` rather than translating what the loop carried out. The loop keeps its masked
+list, which is right for `rewriter/prompts.py` and the targeted rewriter: they are editing masked text
+and showing them a restored citation invites the model to rewrite the one span that must survive
+byte-for-byte. MEASURED after, same documents:
+
+    forced arm   n=4   sentinels 0   absent from final 0     (was: caller got 0 of 5 computed)
+    real arm     6 runs, 5 non-empty, sentinels 0, absent 0  (was: 6 non-empty, 4 and 4)
+
+One extra lite per-sentence pass per call; a full run measures 0.56s.
+
+**Three false starts, recorded because each looked like an answer.** The first probe ran four short
+documents and got four empty lists — no denominator, nothing proved. The second ran sixteen corpus
+documents and got sixteen empty lists, which looked like a strong negative result and was simply the
+base rate: at `tier=lite` only 7 of 60 documents flag any sentence, because that path is AUROC 0.493
+and says so in its own caveat. The third suspected a type mismatch — `s in scored` comparing strings
+against indices — and the elements turned out to be strings. The defect only appeared once the list
+was forced to be non-empty.
+
+The end-to-end assertion inherited that lesson: it patches the per-sentence pass instead of hoping a
+fixed document trips it, because the document it was written against flags zero sentences and the
+first version of the test passed over an empty list.
+
+**A note on where this landed.** The code hunk was swept into commit `47599c3`, whose subject is
+about the language gate: a concurrent session staged `run.py` while this change was in the working
+tree. Nothing was lost and the fix is on main, but the commit that carries it does not describe it.
+Recorded here rather than repaired by rewriting shared history.
+
+Worth keeping: **a field can be wrong in a way that no schema check sees.** Result 174 established
+that `flagged_sentences` existed and was undocumented; documenting it would have been the whole job
+by any structural measure. The value in it was still wrong — stale by construction, and unreadable
+when it was not stale.
