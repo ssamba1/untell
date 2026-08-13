@@ -9770,3 +9770,44 @@ Worth keeping: **verifying a claim is a different activity from trusting it, and
 things.** Checking whether the note was true produced a table where three rows confirmed it and the
 fourth, which also confirmed it, was the bug. A test that only asked "does the note fire in the right
 state" — which is what the previous loop wrote — would have passed on all four.
+
+## Result 196
+
+**I reported a red test on main last loop. It was my environment, and the correction is worth more
+than the report was.**
+
+`test_sentence_targeting_is_weaker_than_the_docstring_claimed.py` failed twice, deterministically,
+across two runs, in a file that makes no reference to the rewriter I had just changed. I checked that
+it was not mine, checked it was not flaky, and said so. What I did not check was the one variable I
+set on every command in this session.
+
+MEASURED, same file, same machine, the only difference being an environment variable the README's own
+reproduce command sets:
+
+    with mage        AUROC <= 0.886, 12+ of 40 human sentences at the ceiling      5 passed
+    without mage     AUROC 0.935,    11 of 40 at the ceiling                       2 failed
+
+Every number in that file is a property of the FULL ensemble, and it scores at `tier="full"` with no
+guard on what that ensemble contains. Removing a detector can only lower `max`, and here it lowers
+the HUMAN side further than the AI side, so separation IMPROVES and the two assertions pinning the
+file's finding both fire.
+
+**Their messages then name the wrong cause with complete confidence:**
+
+    "if that improved, the docstring's re-measurement is stale and should be redone"
+    "sentence-level separation now clears the documented floor — good news, and the docstring
+     re-measurement should be updated"
+
+Nothing about the measurement was stale. The ensemble was smaller. I read those two sentences and
+concluded that a concurrent session had committed broken work — which I then wrote down.
+
+`test_detectors_full.py` already carries this exact guard, and its comment records the identical
+lesson: "following the documentation and then running the suite produced two failures that were not
+bugs". The newer file did not inherit it. The same shape as Results 178 and 180 — a guard applied
+where its author stood.
+
+Worth keeping: **an assertion message is a hypothesis, and a confident one is worth less than a
+hedged one.** These two named a specific cause, and a reader with no reason to doubt them — me —
+adopted it and attributed a fault to someone else's work. A message reading "this file requires the
+complete full ensemble; check UNTELL_DISABLE_MAGE" would have cost the same characters and ended the
+investigation in one line.
