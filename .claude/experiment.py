@@ -86,6 +86,17 @@ KNOBS: dict[str, dict] = {
 }
 
 
+# A knob question needs an instrument that can move. `lite-builtin` is three hand-written
+# paragraphs and the harness seeds them, so it returns the same four numbers to four decimals
+# whatever you change — including a loosened similarity gate, which is how this list got
+# written. An unattended loop pointed at it would record every knob as "no effect" and be
+# wrong seven times.
+KNOB_UNSAFE = {
+    "lite-builtin": "3 seeded paragraphs: identical to 4dp run to run, so a knob's effect and "
+                    "no effect look the same",
+}
+
+
 def sh(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", *args], cwd=ROOT, capture_output=True, encoding="utf-8",
@@ -114,6 +125,9 @@ def measure(recipe: str, label: str) -> dict:
 
 
 def cmd_run(knob: str, recipe: str) -> int:
+    if recipe in KNOB_UNSAFE:
+        sys.exit(f"REFUSED: --recipe {recipe} cannot answer a knob question - "
+                 f"{KNOB_UNSAFE[recipe]}. Use lite-hc3 or a full-tier recipe.")
     spec = KNOBS[knob]
     path = (ROOT / spec["file"]).resolve()
     if sh("diff", "--quiet", "--", str(path)).returncode:
