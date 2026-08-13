@@ -10817,3 +10817,56 @@ document whose entire purpose is that its numbers can be trusted.
 This is the second correction of its kind in this session. Result 196 accused a concurrent session
 of leaving a test red on main; the cause was an environment variable in my own shell. Both were the
 same error: an observed difference attributed to the first plausible cause without varying it.
+
+## Result 222
+
+**Three wrong readings in one loop, each caught by the next measurement, none of them committed.**
+
+The loop began somewhere else entirely: does a markdown document survive the rewrite with its
+structure intact? Headings, bullets, numbered lists, blockquote, table, code fence — **every count
+identical, in and out.** A clean pass, and worthless: the output was byte-identical to the input.
+`stopped=passed, iterations=0`. The document scored 0.209 against a 0.30 loop threshold, so the loop
+declared it human and never ran. I was measuring the structural fidelity of a no-op. The change-rate
+guard built in Result 219 exists for exactly this and I did not apply it to my own probe.
+
+That misfire asked a better question. Text stuffed with the repository's own catalogued tells scores
+0.209 — **does the detector respond to the tells the catalogue is built on?** The whole product
+assumes so: it removes them to lower a score.
+
+**Reading 1, from the means, was that two detectors are inverted.** Over 10 documents at 0, 2 and 8
+injections, `roberta_openai` fell 0.100 → 0.084 → 0.013 and `fast_detectgpt` 0.091 → 0.081 → 0.074,
+both monotone. Two of five ensemble members apparently getting *less* suspicious as AI clichés were
+stacked in. That is a serious claim about the core assumption, and it is false. Per document:
+
+    detector                  up   down   flat
+    max (ensemble)            20      0      0
+    perplexity_burstiness     20      0      0
+    mage                      18      1      1
+    roberta_openai            11      2      7
+    fast_detectgpt            11      9      0
+    hc3_roberta               10      1      9
+
+Two large drops dragged an average that most documents moved the other way. The premise holds — the
+ensemble rises on 20 of 20 — and the real finding is smaller and duller: `fast_detectgpt` is a coin
+flip on this manipulation, `hc3_roberta` does not move at all on 9 of 20.
+
+**Reading 2 was that two tells raise the score.** The test asserting it failed on the first run:
+one tell lowers the salt text by 0.085, two lower the bridge text. Every document ends higher than it
+started; none gets there monotonically. A measurement at a full dose does not license a claim about a
+small one.
+
+**Reading 3 was that the lite tier saturates after three tells.** The scores are identical from n=3
+to n=8 — because the injector only targets sentences longer than six words, and those texts have
+three. n=3 and n=8 are the same document. A fact about the harness wearing the costume of a fact
+about the detector.
+
+Worth keeping: **every one of the three was caught by the next thing I ran, and none by re-reading
+the previous one.** The aggregate was refuted by the per-document record, the small-dose claim by
+writing it down as an assertion, and the saturation claim by printing the dose-response instead of
+its endpoints. Writing the claim into a test is not the last step after the measurement — it is
+another measurement, and here it was the one that fired.
+
+Also recorded, from the first misfire: a markdown document with three headings, two list types, a
+table and a fenced block passes through the loop with every structural count intact. Untested,
+because nothing was rewritten — the structural question is still open and now has a harness that
+knows to check.
