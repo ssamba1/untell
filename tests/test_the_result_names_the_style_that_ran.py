@@ -101,6 +101,24 @@ def test_every_declared_style_name_is_recognised() -> None:
     assert not unrecognised, unrecognised
 
 
+def test_the_two_style_lists_are_the_same_list() -> None:
+    """`STYLE_NAMES` and `_STYLE_PROFILES` are independent literals holding the same vocabulary, and
+    the comment on the first used to say it was the only copy.
+
+    Both directions matter and they fail differently. A name with no profile is accepted by every
+    surface and silently rewrites with the neutral one — the defect this file was opened for. A
+    profile with no name is a style nobody can select. The vocabulary has drifted here before: the
+    MCP docstring once carried six of the fourteen, so eight styles were invisible to every MCP
+    caller.
+    """
+    import untell.rewriter.structural as structural
+    from untell.rewriter.prompts import STYLE_NAMES
+
+    named, profiled = set(STYLE_NAMES), set(structural._STYLE_PROFILES)
+    assert named - profiled == set(), f"accepted but no profile: {sorted(named - profiled)}"
+    assert profiled - named == set(), f"profile but unselectable: {sorted(profiled - named)}"
+
+
 def test_a_broken_profile_table_does_not_break_the_result(monkeypatch) -> None:
     """A reporting field must never break the result it rides in."""
     import untell.rewriter.structural as structural

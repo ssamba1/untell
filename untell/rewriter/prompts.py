@@ -12,7 +12,16 @@ _SENTINEL_NOTE = (
     "never modify, translate, split, reorder the characters of, or drop one."
 )
 
-# The voices `--style` accepts, and the ONLY place the list is written down.
+# The voices `--style` accepts, and the only place the ACCEPTED LIST is written down: `run.py`
+# builds its argparse choices from this name, the REST field is built from it, and the MCP docstring
+# reads it rather than restating it.
+#
+# It is not the only place the vocabulary appears. `structural._STYLE_PROFILES` is keyed by the same
+# fourteen names and is an independent literal — a name here with no profile there is accepted by
+# every surface and silently rewrites with the neutral profile, and a profile there with no name
+# here is a style nobody can select. Both directions are asserted in
+# `tests/test_the_result_names_the_style_that_ran.py`; the comment used to claim there was only one
+# copy, which is the kind of statement nobody re-checks (see Result 189).
 #
 # It used to live inside build_rewrite_prompt() as a function-local dict, with the names duplicated
 # by hand in run.py's argparse choices and again in the MCP tool docstring. The MCP copy had drifted
