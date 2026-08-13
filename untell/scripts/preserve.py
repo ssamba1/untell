@@ -61,6 +61,30 @@ SENTINEL_RE = _SENTINEL_RE
 #
 # ORDER IS LOAD-BEARING *within* this alternation: it is first-match-wins, so every LONGER unit must
 # precede a shorter one that prefixes it, or "30 seconds" locks as "30 s" and leaves "econds" loose.
+# The `=VALUE` half of an assignment, appended to the flag and env-var rules below.
+#
+# Same shape as the two failures documented in this file already: "9:30 AM" locked only "9:30" and
+# left "AM" free, and a comparison locked "0.05" and left "<" free. Locking the NAME of a setting
+# and not its VALUE is the same trade — a sentinel appears, so the span looks protected, while the
+# thing that decides the behaviour stays mutable. MEASURED before the change:
+#
+#     Set ENABLE_CACHE=false when debugging.  ->  Set ⟦HZ0000⟧=false when debugging.
+#     Set UNTELL_LITE_NO_TORCH=1 to force it. ->  Set ⟦HZ0000⟧=1 to force it.
+#
+# `=false` could become `=true` with every sentinel intact. Numeric values happened to be caught
+# downstream by the numerals gate; boolean and word values are caught by nothing.
+#
+# Honest about the leverage: the free composite rewriter did NOT alter any of three assignments
+# across five seeds, so this closes a hole rather than fixing observed damage — the same argument
+# the AM/PM comment above makes for a case that was equally hypothetical until it was not.
+#
+# Optional, so a bare `--tier` or `UNTELL_ENABLE_RADAR` still locks exactly as before. No spaces
+# around `=`, which is how assignments are written, and the value must END on an alphanumeric or a
+# slash so a sentence-final "DEBUG_MODE=true." leaves its full stop outside the lock — otherwise the
+# masked text loses its terminator and sentence splitting downstream breaks, which is the mistake
+# the meridiem rule calls out by name.
+_ASSIGNED_VALUE = r"(?:=[A-Za-z0-9_.:/@%+-]*[A-Za-z0-9_/])?"
+
 _UNIT = (
     r"percent|per cent|%"
     # time (longest first)
@@ -577,10 +601,12 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # the full tier" has silently deleted the instruction. Only the `--x` form, because a
             # single `-x` collides with hyphenated prose and with "--" used as an em-dash.
             r"|(?<![\w-])--[A-Za-z][\w-]*"
+            + _ASSIGNED_VALUE
             # Environment variables and other SCREAMING_SNAKE identifiers: UNTELL_ENABLE_RADAR.
             # The underscore is required, so ordinary acronyms (AI, NASA, HTTP) are left rewritable
             # and are handled by the entity pass instead.
-            r"|\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b"
+            + r"|\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b"
+            + _ASSIGNED_VALUE
         ),
     ),
 ]
