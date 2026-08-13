@@ -10656,3 +10656,45 @@ Six carriers, twelve spans, and the uniformity of the damage was the whole messa
 the part I held constant. This is the third result in a row where the finding was already sitting in
 an earlier output — Result 214's plain SPACE, Result 215's adjacent citations, and now this — and
 each time it looked like an uninteresting row rather than a refutation.
+
+## Result 218
+
+**The corpus already contained the damage I was about to attribute to the rewriter.**
+
+Result 217 fixed one transform. The obvious next question is whether the others do it too, and the
+obvious way to answer it is to run real text through and count. On 40 HC3 halves containing a
+bracket, that count says:
+
+    sentence break inside a bracket   3
+    unbalanced brackets               2
+
+Both numbers are wrong as a measure of damage. HC3 is forum prose, and it arrives with 1 bracketed
+sentence break and 2 unbalanced brackets of its own. Counted against the source instead of against
+nothing:
+
+    NEW sentence break inside a bracket   2
+    NEW unbalanced bracket                0
+
+**The unbalanced-bracket finding disappears entirely** — every instance was already in the input.
+The other two are real, and they are commas rather than semicolons:
+
+    (BSE, also known as "mad cow disease")   ->  (BSE. Also known as "mad cow disease")
+
+So the previous loop's guard was on the wrong transform's punctuation. Both splitters choose the
+comma nearest the midpoint, and a comma inside a parenthesis is the commonest comma there is.
+`_split_one` already refused to split inside a **quotation** for the identical reason — the sentence
+continues after the close — so the island was a concept the code already had and simply had not
+extended to brackets. 2 → 0 after; 0 of 40 unbalanced throughout.
+
+The guard is targeted rather than blanket, which is checked rather than asserted: over 1177 long
+corpus sentences, 45.3% of bracket-free sentences still split and 36.1% of bracketed ones do, and a
+closed bracket early in a sentence does not block a split later in it.
+
+Worth keeping: **on real text, the baseline is not zero.** My own five constructed examples had a
+clean baseline by construction, so the count and the damage were the same number and the habit of
+subtracting never came up. The corpus is where a measurement gets its realism and also where it
+gets its background rate — and here the background rate was 100% of one of the two findings.
+
+Also worth noting what the earlier probe got wrong: two constructed sentences said the long splitter
+had no bracket hole. Forty corpus halves said it had two. n=2 on hand-written examples is not a
+measurement, and it was reported in Result 217 as though it were.
