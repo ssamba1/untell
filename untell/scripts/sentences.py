@@ -237,17 +237,44 @@ def score_sentences(
             else {}
         ),
         **(
-            {"warning": UNINFORMATIVE_TARGETING_WARNING}
-            # From the results that were actually produced, not from what was predicted before
-            # they were. `results` is non-empty whenever `sents` is.
-            if _targeting_is_uninformative(tier, (results[0].get("detector_modes") if results else None))
-            else (
-                {"warning": UNRANKABLE_TARGETING_WARNING.format(bar=_TARGETING_SPREAD_BAR)}
-                if _targeting_is_unrankable(rows)
-                else {}
-            )
+            {"warning": _warning_for(text, tier, results, rows)}
+            if _warning_for(text, tier, results, rows)
+            else {}
         ),
     }
+
+
+def _warning_for(text: str, tier: str, results: list, rows: list[dict]) -> str | None:
+    """The caveat this result carries, most-disqualifying first.
+
+    Language leads. A German paragraph came back with per-sentence AI flags and a caveat about the
+    TIER — true, and beside the point, because the detectors and the catalogue are English-only and
+    no tier makes them read German. The surface was in the matrix as "warned" purely because a
+    standing note happened to be present, which is the failure mode that made this worth checking on
+    every surface at once rather than one at a time:
+
+        input         score  tells  sentences  humanize  humanness
+        non-english     yes    yes        yes*      yes        yes      (* tier only, before this)
+
+    `score_text`, `score_tells` and `humanness` each had a version of the same gap, found and fixed
+    one at a time in the two preceding results. This is the fourth and it was found by the assertion
+    written after the third — not "did it warn" but "did it warn about the right thing".
+    """
+    from untell.scripts.tells import looks_non_english
+
+    if text.strip() and looks_non_english(text):
+        return (
+            "this text reads as a Latin-script language other than English. The detectors and the "
+            "tell catalogue are English-only, so these per-sentence scores are not verdicts about "
+            "these sentences — no tier changes that, and the rewriter returns such text unchanged."
+        )
+    # From the results that were actually produced, not from what was predicted before they were.
+    # `results` is non-empty whenever `sents` is.
+    if _targeting_is_uninformative(tier, (results[0].get("detector_modes") if results else None)):
+        return UNINFORMATIVE_TARGETING_WARNING
+    if _targeting_is_unrankable(rows):
+        return UNRANKABLE_TARGETING_WARNING.format(bar=_TARGETING_SPREAD_BAR)
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:
