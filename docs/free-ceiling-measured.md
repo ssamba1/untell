@@ -8171,3 +8171,74 @@ masking ever starts admitting what the restored comparison rejects, the trade st
 Worth keeping: **a hypothesis built from a constructed example inherits the example's shape.** Density
 was the hidden variable. The number I measured was real, the pair was legitimate, and it described a
 document this corpus never produces.
+
+## Result 163
+
+**Every evasion figure in this document was scored by the objective the loop optimises. Held out, the
+number stops moving.**
+
+158 results of tuning, and the arm nobody had run: the loop minimises `max` over the full tier and
+then reports `max` over the full tier. `best_of` — named throughout as the single biggest lever — is
+precisely the mechanism that exploits a scorer rather than the property it stands for.
+
+The control was already in the package. RADAR is adversarially trained against a paraphraser and
+gated behind `UNTELL_ENABLE_RADAR=1`, so it has never been in a selection set or in a published
+figure. That gate is what makes it a holdout; `eval/benchmark.py --enable-radar` puts it *inside* the
+tier, which asks the opposite question. Premise checked first — on RAID it separates AI 0.7978 from
+human 0.0909, paired 8/8.
+
+RAID, n=10, shipped configuration (`composite`, `best_of=3`, `max_iters=5`), three seeds, RADAR
+scored afterwards on frozen outputs:
+
+```
+in sample   0.9162 -> 0.4268 / 0.4063 / 0.4301    flagged 10/10 -> 4 / 2 / 3
+held out    0.7222 -> 0.4981-0.5035 / 0.4391      flagged  7/10 -> 4 / 4 / 4
+```
+
+**The in-sample flagged count varies and the held-out one does not.** Seed 1 drove the local ensemble
+to 2 of 10 — its best run by a wide margin — and finished at the same 4 of 10 out of sample as the
+seed that only reached 4. Per document, the two documents that never clear:
+
+```
+doc | RADAR pre | held out post s0/s1/s2 | tier post s0/s1/s2
+  0 |   0.9514  | 0.973 0.940 0.980      | 0.630 0.666 0.606
+  6 |   0.9996  | 1.000 1.000 1.000      | 0.345 0.382 0.607
+```
+
+Doc 6 is the result in one row: the loop reports **0.9928 -> 0.345**, a clean in-sample success, and
+the held-out detector reads **1.000 on all three seeds**. Rank correlation between the two post
+scores is **+0.394 / +0.782 / +0.333** — the local `max` does not order documents the way an unseen
+detector does, and how much it disagrees is itself unstable.
+
+**The first version of this result was wrong, from one seed, and it was the better story.** Seed 0
+split by what the holdout believed beforehand looked decisive: documents it was already confident
+about (>=0.90) moved **-0.0129** while their in-sample max moved -0.5262, against **-0.3560** for the
+unsure ones — "the entire gain comes from documents the control had no conviction about". The
+repeats gave `-0.2321 / -0.2189` and `-0.2745 / -0.2890`. **No split at all.** One document with a
+0.9991 prior fell to 0.288 on the second seed. Four documents, one draw of a stochastic rewriter, and
+a mechanism that does not exist. This document's own rule — `--repeats >= 3`, written after a config
+measured 0.080 and 0.144 on two runs — is the only reason it did not ship.
+
+Two premises were tripped while taking the measurement, both silent:
+
+- **`mage` pins the in-sample column.** The first run reported `1.0000 -> 1.0000` on every document.
+  At full precision `mage` scores ordinary AI prose at **0.99998736-0.99998772** — a range of
+  **3.6e-06** across ten texts — and it is in the *default* full tier, while every published figure
+  here is taken with `UNTELL_DISABLE_MAGE=1`. Nothing cleared, so the transfer question had no
+  subject. This is the Result 143 distinction again: *effectively pinned* is not *returns a constant*,
+  and only one of them is true.
+- **A control inside the tier it is controlling** is not a control. Guarded — the harness raises
+  rather than producing a number.
+
+`eval/holdout.py` makes the arm permanent, with the premise check inside the result (`separates`) so
+a caller cannot quote a transfer figure computed through a dead detector. Eight tests on fakes, 1.8s,
+no download; verified by breaking the pinned threshold, which fails exactly the one assertion written
+for it.
+
+What this does **not** say: RADAR is the hardest open detector by construction, so this is a lower
+bound on transfer rather than a typical one, and it is one holdout on one corpus at n=10.
+
+Worth keeping: **an objective you also report is not a measurement, and no amount of tuning it will
+say so.** Four detectors were recalibrated, a selector was fixed, a beam search was refuted and a
+corpus was rescoped — 158 results, all of them read through the quantity being optimised. The one
+number that answers "is any of this real" cost one afternoon and a detector that was already on disk.

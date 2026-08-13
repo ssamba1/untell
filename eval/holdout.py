@@ -15,12 +15,23 @@ question from the one here.
 
     python -m eval.holdout --dataset raid --n 10 --seed 0
 
-Read the ``by_conviction`` table, not the means. MEASURED at n=10 on RAID, shipped configuration:
-the aggregate reads ``RADAR 0.7222 -> 0.5035, improved on 7/10`` — a modest transfer. Split by what
-the holdout thought BEFORE the rewrite, the four documents it was already confident about (>=0.90)
-moved ``-0.0129`` while their in-sample max moved ``-0.5262``, and all four stayed flagged. The whole
-aggregate gain comes from documents the unseen detector had no conviction about. Two documents that
-cleared the local bar were still caught at 0.9996 and 0.8655.
+MEASURED at n=10 on RAID, shipped configuration, three seeds:
+
+    in sample   0.9162 -> 0.4268 / 0.4063 / 0.4301    flagged 10/10 -> 4 / 2 / 3
+    held out    0.7222 -> 0.5035 / 0.4981 / 0.4391    flagged  7/10 -> 4 / 4 / 4
+
+**The in-sample flagged count moves and the held-out one does not.** Seed 1 drove the local ensemble
+to 2 of 10 — its best run — and ended at the same 4 of 10 out of sample as the others. Two documents
+are never cleared out of sample in any seed while doing well in sample; on the sharpest of them the
+loop reports 0.9928 -> 0.345 and the holdout reads 1.000 all three times. Rank correlation between
+the two post-scores is +0.394 / +0.782 / +0.333, so the local ``max`` does not order documents the
+way an unseen detector does, and how strongly it disagrees is itself unstable.
+
+``by_conviction`` is a diagnostic, NOT the finding, and this is the one warning worth carrying: on
+seed 0 alone it read ``-0.0129`` for the confident group against ``-0.3560`` for the unsure one, and
+it was quoted as the result. The repeats gave ``-0.2321 / -0.2189`` and ``-0.2745 / -0.2890`` — no
+split at all. One document with a 0.9991 prior fell to 0.288 on the second seed. A group of four,
+from one draw of a stochastic rewriter, produced a clean story that does not exist.
 
 The premise check runs every time. A control that cannot separate human from AI text on this corpus
 measures nothing, and reporting a transfer number computed through a dead detector would be worse
@@ -44,8 +55,12 @@ from untell.scripts.score import DEFAULT_THRESHOLD
 FLAG_BAR = 0.45
 
 # Above this, the holdout had already made up its mind about the document before anything was
-# rewritten. 0.90 is not tuned: it is the gap in the measured distribution — the confident group ran
-# 0.9387-0.9996 and the unsure group topped out at 0.8323, with nothing in between.
+# rewritten. 0.90 sits in a real gap in the measured distribution — priors ran 0.9387-0.9996 above it
+# and topped out at 0.8323 below — but note that the gap is in the PRE scores, which are a property
+# of the corpus and identical across seeds. It is not evidence that the two groups behave
+# differently afterwards; measured over three seeds they do not. Kept because "what did the control
+# already think" is the right axis to slice a transfer number on, not because the slice found
+# anything.
 CONVICTION = 0.90
 
 
