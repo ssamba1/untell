@@ -93,26 +93,43 @@ def test_a_normal_result_is_still_processed(monkeypatch) -> None:
     assert result, "a well-formed result produced nothing"
 
 
-def test_the_parser_really_accepts_commercial() -> None:
-    """Behaviour, not just the source text the first test reads."""
-    import eval.holdout as holdout
+def _run_cli(*args: str) -> tuple[int, str]:
+    """Run holdout as a subprocess and return (exit code, combined output).
 
-    parser = getattr(holdout, "build_parser", None)
-    if parser is None:
-        pytest.skip("holdout builds its parser inside main(); the source check above covers it")
-    args = parser().parse_args(["--tier", "commercial"])
-    assert args.tier == "commercial"
+    Both of these were `pytest.skip`s that imported holdout and looked for a `build_parser`, which
+    it does not have — it constructs the parser inside `main()`, like most CLIs in this repo. A
+    skipped test verifies nothing, and two of them sat here claiming the source check "covers it"
+    while the BEHAVIOUR went unchecked. A subprocess needs no refactor of holdout and tests the
+    real thing.
+    """
+    import os
+    import subprocess
+    import sys
+
+    env = {**os.environ, "UNTELL_LITE_NO_TORCH": "1", "PYTHONIOENCODING": "utf-8"}
+    proc = subprocess.run(
+        [sys.executable, str(_HOLDOUT), *args],
+        capture_output=True, text=True, env=env, cwd=str(_HOLDOUT.parents[1]), timeout=300,
+    )
+    return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
 
 
-def test_argparse_rejects_a_tier_the_loader_does_not_have() -> None:
-    """The choices list must still constrain something."""
-    import eval.holdout as holdout
+def test_the_cli_really_accepts_commercial() -> None:
+    """Behaviour, not just the source text the first test reads. `--tier commercial` must get PAST
+    argparse; it may then fail for an unrelated reason (missing data extra), which is fine — what
+    matters is that the failure is not "invalid choice"."""
+    _code, output = _run_cli("--tier", "commercial", "--n", "0")
+    assert "invalid choice" not in output, (
+        f"argparse still rejects the commercial tier: {output[-200:]!r}"
+    )
 
-    parser = getattr(holdout, "build_parser", None)
-    if parser is None:
-        pytest.skip("holdout builds its parser inside main()")
-    with pytest.raises(SystemExit):
-        parser().parse_args(["--tier", "nonsense"])
+
+def test_the_cli_still_rejects_a_tier_the_loader_does_not_have() -> None:
+    """The choices list must keep constraining something, or widening it was just deleting it."""
+    code, output = _run_cli("--tier", "nonsense", "--n", "0")
+    assert code != 0
+    assert "invalid choice" in output, f"a bogus tier was accepted: {output[-200:]!r}"
+    assert "--tier" in output
 
 
 def test_the_scan_would_notice_a_missing_flag() -> None:
