@@ -117,6 +117,41 @@ def test_a_detector_that_scored_is_not_missing(monkeypatch) -> None:
     assert _short_roster_note("full", "full", {"mage": 0.9}) is None
 
 
+def test_it_reaches_verify_which_is_the_one_that_exits_zero(monkeypatch) -> None:
+    """`verify` builds its own caveat list rather than forwarding score_text's, so the note had to
+    be wired there separately — and that surface is where it matters most.
+
+    MEASURED at `--tier full` with `UNTELL_DISABLE_MAGE=1`, before the wiring:
+
+        score_text   roster note present
+        untell_text  roster note present
+        verify       roster note ABSENT, passes_all True
+
+    A reduced ensemble can only lower `max`, so it can only turn a fail into a pass. The one surface
+    that turns a pass into an exit code was the one not saying it had happened.
+    """
+    import untell.detectors.base as base
+    import untell.scripts.verify as verify_mod
+
+    class _Absent:
+        name, tier = "mage", "full"
+
+        def available(self) -> bool:
+            return False
+
+    monkeypatch.setattr(base, "all_detectors", lambda: [_Absent()])
+    monkeypatch.setattr(
+        verify_mod, "score_text",
+        lambda text, **kw: {"tier": "full", "max": 0.2, "detectors": {"perplexity_burstiness": 0.2},
+                            "verdict_threshold": 0.45},
+    )
+    import untell.detectors.commercial as commercial
+
+    monkeypatch.setattr(commercial, "commercial_detectors", lambda: [])
+    result = verify_mod.verify(TEXT, tier="full")
+    assert "ran without" in (result.get("warning") or ""), result.get("warning")
+
+
 def test_a_broken_registry_does_not_break_scoring(monkeypatch) -> None:
     """A caveat must never break the score it qualifies."""
     import untell.detectors.base as base

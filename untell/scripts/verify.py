@@ -34,7 +34,12 @@ if __package__ in (None, ""):
 
 from untell._env import load_env  # noqa: E402
 from untell.detectors.base import clamp01
-from untell.scripts.score import DEFAULT_THRESHOLD, _threshold_range_warning, score_text
+from untell.scripts.score import (
+    DEFAULT_THRESHOLD,
+    _short_roster_note,
+    _threshold_range_warning,
+    score_text,
+)
 
 
 def verify(
@@ -190,12 +195,26 @@ def verify(
     # caller meaning 45 per cent) `passes_all` is True on AI text, and before this the only warning
     # anywhere was the generic lite caveat, which quotes "the 0.30 loop threshold" the caller never
     # used.
+    # The roster note belongs here for the same reason the threshold one does, and more so: this is
+    # the command that exits 0 on a pass. MEASURED on one paragraph at `--tier full` with
+    # `UNTELL_DISABLE_MAGE=1`, before this line:
+    #
+    #     score_text   roster note present
+    #     untell_text  roster note present
+    #     verify       roster note ABSENT, passes_all True
+    #
+    # A reduced ensemble can only lower `max`, so it can only turn a fail into a pass — and the one
+    # surface that turns a pass into an exit code was the one not saying it had happened.
+    roster = None
+    if tier is not None and isinstance(local, dict):
+        roster = _short_roster_note(tier, local.get("tier", tier), local.get("detectors") or {})
     caveats = [
         w
         for w in (
             _invisible_char_warning(text),
             _homoglyph_warning(text),
             _threshold_range_warning(threshold),
+            roster,
         )
         if w
     ]
