@@ -39,7 +39,25 @@ _W_BURSTY = 0.20      # Burstiness / sentence-length variation
 
 # Calibration constants.
 _MAX_TELLS_PER_100W = 25.0  # Approximate ceiling for tells/100w
-_BURSTY_IDEAL = 0.70        # Ideal burstiness CV (high variation = human)
+# Divider between "too uniform" and "too erratic" for the ADVICE LABEL only. It has never been used
+# in the penalty arithmetic — that applies below 0.50 and above 1.0 — so any value inside the
+# unpenalised band labels identically, and this one is arbitrary rather than measured.
+_BURSTY_IDEAL = 0.70
+# Where human prose actually sits, and the reason the advice no longer quotes a single figure.
+# MEASURED, sentence-length coefficient of variation over 40 human texts per corpus, >=90 words:
+#
+#     corpus   human mean   human median   AI mean   texts reaching 0.70
+#     HC3        0.514        0.491         0.278       6 / 40
+#     RAID       0.350        0.326         0.262       1 / 40
+#
+# 7 of 80 human documents reach the 0.70 the advice used to name, so the number it told a user to
+# aim for was one that 91% of genuine human writing does not hit. The penalty cut at 0.50 is close
+# to the HC3 median and was never the problem; the sentence explaining it was.
+#
+# The two corpora differ by more than the gap between either and the old constant — forum answers
+# vary their sentence length far more than paper abstracts — so a single replacement figure would
+# repeat the same error in a new place. The advice names the range and the register instead.
+_BURSTY_HUMAN_MEDIAN = {"forum prose": 0.49, "academic abstracts": 0.33}
 _MAX_BURSTY_PENALTY = 0.30  # Max penalty from low burstiness
 
 # Below this word count none of the three signals carries information. Matches the detector's own
@@ -550,9 +568,10 @@ def _dominant_signal(text: str, tier: str) -> str | None:
             shape = "uniform" if cv < _BURSTY_IDEAL else "erratic"
             actionable.append((
                 penalty * _W_BURSTY,
-                f"driven by {shape} sentence rhythm (burstiness {cv:.2f}; human prose sits near "
-                f"{_BURSTY_IDEAL:.2f}) — varying sentence length changes this more than word "
-                f"choice does",
+                f"driven by {shape} sentence rhythm (burstiness {cv:.2f}; measured human medians "
+                f"are {_BURSTY_HUMAN_MEDIAN['forum prose']:.2f} for forum prose and "
+                f"{_BURSTY_HUMAN_MEDIAN['academic abstracts']:.2f} for academic abstracts) — "
+                f"varying sentence length changes this more than word choice does",
             ))
 
     if per_100w > 0:
