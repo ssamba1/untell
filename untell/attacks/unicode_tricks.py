@@ -25,6 +25,7 @@ Two sub-semantic operations several competitor repos have and we didn't:
 from __future__ import annotations
 
 import re
+import difflib
 import unicodedata
 
 # ASCII -> visually-identical homoglyph (Cyrillic/Greek). Conservative set that renders identically.
@@ -401,46 +402,45 @@ def homoglyph_substitute(text: str, rate: float = 0.15) -> str:
 
 
 def count_hidden(text: str) -> int:
-    """How many invisible/homoglyph chars are present — a quick 'is this watermarked?' check.
+    """How many characters ``scrub_hidden`` would remove or rewrite — the 'is this watermarked?' check.
 
-    MUST stay in sync with what ``scrub_hidden`` actually removes. Any carrier this misses but the
-    scrubber strips produces the worst possible report: the caller is told the text is clean while a
-    watermark is silently discarded (or, if they only counted, left in place). The MCP ``scrub`` tool
-    returns this as ``hidden_chars_removed``, so a mismatch is user-visible and wrong.
+    DERIVED FROM THE SCRUBBER, not from a second list of the same rules. That is the whole point of
+    this implementation, and it is the sixth attempt at the same function.
 
-    Orphan ZWJ is the subtle case: U+200D is deliberately absent from ``_WATERMARK_CHARS`` because it
-    is structural inside emoji sequences, so it can only be counted the same way it is scrubbed — by
-    diffing against ``_strip_orphan_zwj``.
+    It used to re-derive the answer: one counting term per carrier class, added by hand each time a
+    class was added to the scrubber. The comments in the previous version record the drift as it
+    happened — "this is the third carrier class to go missing from this function", then a fourth,
+    each found only after a user could have been misled. At the time this was rewritten there were
+    three MORE, and they had exactly the shape the docstring warned about. MEASURED, scrub against
+    count:
+
+        U+206A-206F deprecated format   scrub removes it   count said 0
+        U+0600, U+06DD Arabic marks     scrub removes it   count said 0
+        U+2028 line separator           scrub rewrites it  count said 0
+        Russian prose ("Это очень...")  scrub no-op        count said 9
+        Greek prose  ("Αυτό είναι...")  scrub no-op        count said 9
+
+    The first three are the dangerous direction and the docstring already named it: the caller is
+    told the text is clean while a watermark is silently discarded. The last two are the reverse —
+    `count_hidden` flagged every Cyrillic 'о' because it matched confusables CONTEXT-FREE, while
+    `_unhomoglyph` is context-aware and leaves genuine Cyrillic alone. A tool that says "9 hidden
+    characters removed" and returns the input verbatim is wrong in a way the user cannot check.
+
+    Counting the scrubber's own diff makes all six impossible by construction, and any future
+    carrier class is counted the day it is scrubbed rather than the day someone remembers.
+
+    Substitutions count, deletions count. `scrub_hidden` both removes characters (zero-width marks)
+    and rewrites them (exotic space -> ' ', U+2028 -> newline, homoglyph -> ASCII), and both are
+    "this character was not what it looked like". The unit is SOURCE characters affected, which is
+    what `hidden_chars_removed` means on the MCP and REST surfaces.
     """
-    invisible = len(_WATERMARK_CHARS.findall(text))
-    # Exotic spaces are SUBSTITUTED, not deleted, so they change nothing about the length — the same
-    # shape as a homoglyph. Counting them by length diff would report zero.
-    exotic_spaces = len(_EXOTIC_SPACE.findall(text))
-    homoglyphs = sum(1 for ch in text if ch in _UNHOMOGLYPH)
-    orphan_zwj = len(text) - len(_strip_orphan_zwj(text))
-    # Same treatment for the two other context-dependent classes: they can only be counted the way
-    # they are scrubbed, by diffing against the function that does the scrubbing.
-    orphan_vs = len(text) - len(_strip_orphan_variation_selectors(text))
-    orphan_bidi = len(text) - len(_strip_orphan_bidi(text))
-    # Fifth carrier class, counted the way it is scrubbed. A 24-mark stack on one base character
-    # survived the scrub AND was reported as 0 hidden characters before `_strip_mark_stacks`.
-    mark_stacks = len(text) - len(_strip_mark_stacks(text))
-    # C0/C1 controls are stripped by scrub_hidden too (everything in category Cc except tab, newline
-    # and carriage return), so they must be counted here or the same under-report recurs — this is
-    # the third carrier class to go missing from this function.
-    controls = sum(1 for ch in text if ch not in "\t\n\r" and unicodedata.category(ch) == "Cc")
-    # scrub_hidden ends with an NFC pass, and NFC itself rewrites a handful of SINGLETON codepoints
-    # that are confusables in their own right: U+037E GREEK QUESTION MARK -> ';', U+1FEF GREEK
-    # VARIA -> '`', U+212A KELVIN SIGN -> 'K'. Measured, each was scrubbed while this function
-    # reported 0, so the report said the text was clean and the text had changed. That is the
-    # fourth carrier class to go missing here, so it is counted the way it is applied — by asking
-    # NFC — rather than by listing the three codepoints and waiting for a fifth.
-    #
-    # Per CHARACTER, deliberately: composing "e" + combining acute is legitimate Unicode and
-    # normalising the pair changes it, but neither character changes alone, so this counts only the
-    # singletons and leaves real composition alone.
-    nfc_singletons = sum(1 for ch in text if unicodedata.normalize("NFC", ch) != ch)
-    return (
-        invisible + exotic_spaces + homoglyphs + orphan_zwj + orphan_vs + orphan_bidi
-        + controls + nfc_singletons + mark_stacks
+    cleaned = scrub_hidden(text)
+    if cleaned == text:
+        return 0
+
+    matcher = difflib.SequenceMatcher(None, text, cleaned, autojunk=False)
+    return sum(
+        i2 - i1
+        for tag, i1, i2, _j1, _j2 in matcher.get_opcodes()
+        if tag in ("replace", "delete")
     )
