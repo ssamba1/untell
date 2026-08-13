@@ -7,6 +7,7 @@ variables always win (we never override an already-set var), so this is safe to 
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from pathlib import Path
@@ -14,7 +15,7 @@ from pathlib import Path
 _COMMENT = re.compile(r"\s+#.*$")
 
 
-def _parse_value(raw: str) -> str:
+def _parse_value(raw: str) -> str | None:
     """Parse the right-hand side of a ``KEY=VALUE`` line the way python-dotenv does.
 
     Which parser runs depends only on whether an optional dependency is installed, so any
@@ -37,6 +38,20 @@ def _parse_value(raw: str) -> str:
         end = val.find(val[0], 1)
         if end != -1:
             return val[1:end]
+        # Opens a quote and never closes it. A NINTH line shape where the two parsers disagree,
+        # missed by the eight compared above. MEASURED with python-dotenv absent, so the fallback
+        # runs:
+        #
+        #     UNCLOSED="sk-broken   ->   os.environ["UNCLOSED"] == '"sk-broken'
+        #
+        # The leading quote is kept and travels into the value. python-dotenv, on the same file,
+        # sets the key not at all. Since `.env` is the documented place to put UNTELL_API_KEY and
+        # the provider keys, that quote reaches an auth header and the remote end answers about
+        # credentials rather than about quoting — with nothing naming the .env file as the cause.
+        #
+        # Returning None means "unparseable"; the caller skips the key and says so, which agrees
+        # with python-dotenv on the outcome and improves on it by explaining the omission.
+        return None
     return _COMMENT.sub("", val).strip()
 
 
@@ -72,9 +87,18 @@ def load_env(path: str | None = None) -> bool:
             key = key.strip()
             if key.startswith("export "):  # tolerate `export KEY=VALUE` shell syntax
                 key = key[len("export "):].strip()
-            val = _parse_value(val)
+            parsed = _parse_value(val)
+            if parsed is None:
+                # Unbalanced quotes. Skipped rather than stored, matching python-dotenv, and
+                # reported because a silently absent key is the thing that sends someone hunting
+                # through their provider dashboard instead of their .env file.
+                logging.getLogger(__name__).warning(
+                    "%s: %s opens a quote that is never closed, so it was skipped. "
+                    "Close the quote or remove it.", p, key,
+                )
+                continue
             if key and key not in os.environ:  # real env wins
-                os.environ[key] = val
+                os.environ[key] = parsed
     except Exception:
         return False
     return True
