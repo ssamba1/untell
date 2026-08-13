@@ -10870,3 +10870,51 @@ Also recorded, from the first misfire: a markdown document with three headings, 
 table and a fenced block passes through the loop with every structural count intact. Untested,
 because nothing was rewritten — the structural question is still open and now has a harness that
 knows to check.
+
+## Result 223
+
+**Three hypotheses about markdown, in descending order of confidence, all wrong.**
+
+Result 222 left a question open: a markdown document passed every structural check while the
+rewriter did nothing, so structure-through-a-real-rewrite was untested. Raising the tell count to
+force a rewrite did the opposite — the score fell from 0.209 to **0.144**. More AI clichés, less
+suspicion, on a document where Result 222 had just measured the ensemble rising on 20 of 20. The
+difference was the markdown, and that looked like a serious product finding: the tool never processes
+structured documents, which is most of what people paste.
+
+**Hypothesis 1: markdown lowers the score.** Crossed properly — the same 20 HC3 machine halves in
+four forms:
+
+    plain prose             0.5632   min 0.3667   20 of 20 over threshold
+    + headings              0.5608   min 0.3603   20 of 20
+    + bullet list           0.5632   min 0.3667   20 of 20
+    + table and code fence  0.4416   min 0.3001   20 of 20
+
+True but small, and it changes no verdict. Headings 0.002, lists 0.000, table and fence 0.122.
+
+**Hypothesis 2: headings are nearly free.** Written into a test as an assertion, it failed on the
+first run: on a single 70-word paragraph, headings cost **0.256**. The 0.002 came from long
+documents and never licensed a claim about short ones.
+
+**Hypothesis 3: the drop scales with the scaffolding's share.** The obvious repair. Fixed 30-word
+scaffold, prose truncated to a target length:
+
+    prose  40 words (43% scaffold)   +0.115
+    prose  80 words (27% scaffold)   -0.043     the scaffolding RAISED the score
+    prose 150 words (17% scaffold)   +0.031
+
+Non-monotone, and it changes sign. There is no dilution law.
+
+So the honest answer to the question I started with is **no finding** — markdown moves the lite score
+by up to 0.25 on individual documents, in both directions, with no structure I could find in three
+attempts. My own deployment guide at 0.144 is one document, and one document is what it took to make
+each of these hypotheses look obvious.
+
+One claim survived every attempt to break it and is the one now asserted: **no markdown form changed
+a verdict.** 20 of 20 stayed above the loop threshold in all four forms, the closest at 0.3001.
+
+Worth keeping: **the confidence ordering was exactly backwards.** The hypothesis I was most sure of
+had the largest corpus behind it and was refuted by a single short paragraph; the repair I reached
+for immediately was refuted by the next table. What made the difference was that each one was
+written down as an assertion before being believed — the same lesson as Result 222, arriving twice
+in two loops because the first time did not make me apply it earlier.
