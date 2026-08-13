@@ -122,6 +122,18 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # enough that every other pattern let them through untouched.
     ("code", re.compile(r"```.*?```|~~~.*?~~~", re.DOTALL)),
     ("code", re.compile(r"`[^`\n]{1,200}`")),
+    # The same thing in HTML. Markdown's backticks were covered and their exact equivalent was not,
+    # so any document written in HTML — a README rendered from it, a docs page, an issue body —
+    # had its code free for the rewriter. MEASURED through the shipped loop, 6 tags x 2 styles:
+    #
+    #     <code>run a; then b</code>  ->  <code>run a. Then b</code>      12 of 12 DAMAGED
+    #
+    # Every tag in the family, both styles, no exceptions. Bounded so a stray unclosed tag cannot
+    # swallow a document; the backreference keeps `<code>x</pre>` from matching at all.
+    (
+        "code",
+        re.compile(r"<(code|pre|kbd|samp|tt|var)\b[^>]{0,200}>.{0,2000}?</\1>", re.DOTALL | re.IGNORECASE),
+    ),
     # LaTeX. MEASURED before these entries existed: `lock()` protected **0 spans** of
     #     r"As \citep{smith2020} shows, see Eq.~\ref{eq:main}. We use $E = mc^2$ and \cite{jones}."
     # so every citation key, cross-reference and equation in a .tex file was free for the rewriter
