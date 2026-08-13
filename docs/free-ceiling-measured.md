@@ -8242,3 +8242,45 @@ Worth keeping: **an objective you also report is not a measurement, and no amoun
 say so.** Four detectors were recalibrated, a selector was fixed, a beam search was refuted and a
 corpus was rescoped — 158 results, all of them read through the quantity being optimised. The one
 number that answers "is any of this real" cost one afternoon and a detector that was already on disk.
+
+## Result 163
+
+**A defect I read out of a diff did not exist, and chasing it found a real gap in how the pipeline
+can be tested.**
+
+Reading real rewriter output — the discipline this log records as "metrics cannot see grammar" — a
+diff showed `"It's important to note that the"` becoming `"Additionally, the"`. `Additionally,` is a
+catalogued `formulaic_transition`, so this looked like a cliché traded for a tell: the
+fourteen-times defect this repository already carries a name for.
+
+**It was not.** `Additionally` was in the SOURCE and the rewriter removed it — `formulaic_transition`
+went **3 → 0** across those six documents. difflib had aligned a deletion in one place against
+unrelated text elsewhere. Reading a diff without the source beside it manufactured a defect, exactly
+as at Result 114.
+
+Measured properly instead — every category, 60 corpus texts, 60 real rewrites:
+
+```
+DECREASES   repeated_phrasing -134   ai_vocab -55   formulaic_transition -31
+            repeated_sentence_openers -28   cliche -11   hedge_stacking -4
+            participial_trailer -2   negated_contrast -1
+INCREASES   repeated_sentence_openers +13   repeated_phrasing +2
+```
+
+Net-negative on every category. Only `_vary_openers` emits at all — 13 against 28 removed, its known
+budgeted cost.
+
+**Then the guard-the-guard failed, and that was the real finding.** Making `_flatten_cliches`
+substitute `"Additionally, "` for every deletion — the precise defect being guarded — makes that
+function emit `"Additionally, the method scales well..."`, and the **full pipeline still scores
+`formulaic_transition` 0**, because a later transform strips catalogued transitions. Every
+output-level assertion stayed green.
+
+That is a property of the pipeline rather than a hole in it: a user gets clean text either way. But
+it means **the output contract cannot see a component regression** — a transform can rot while the
+end-to-end number stays perfect, and the number is what everyone checks. Each transform is now
+asserted directly, and with that in place the same mutation fails exactly one test.
+
+Worth keeping: **a pipeline that repairs its own components hides their decay.** The robustness that
+protects the user is the same property that blinds the test, and only a component-level assertion
+separates "nothing is broken" from "everything downstream is compensating".
