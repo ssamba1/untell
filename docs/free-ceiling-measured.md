@@ -8781,3 +8781,54 @@ that merely state it.** Every surface that DISCUSSED the distinction was updated
 made the change was thinking about it there. The two that were missed were a one-line field glossary
 and a module docstring — the surfaces most likely to be read by someone who has never heard of the
 distinction at all.
+
+## Result 174
+
+**Every top-level key is documented. Two fields one level down, inside `post`, appear in no document
+in the repository.**
+
+Result 173's lesson stated generally: a change reaches the places that argue about it and misses the
+places that merely state it. That is a mechanical question — does every key the code returns appear
+in the document that lists them? — so it was asked mechanically, against the "Full key lists" block
+of `docs/result-shapes.md` on real payloads:
+
+    score_text        emitted-not-listed  []
+    score_tells       emitted-not-listed  []
+    score_sentences   emitted-not-listed  []
+    untell_text       emitted-not-listed  []
+
+Nothing at the top level. The four entries that are listed-but-not-emitted — `unrankable`,
+`warning`, `failed_detectors`, `detector_errors` — are all documented as conditional, so their
+absence on ordinary input is the contract working rather than drift.
+
+The gap was one level down. `untell_text` returns `pre` and `post`, and a reader has every reason to
+take both for `score_text` payloads:
+
+    extra in pre :  []
+    extra in post:  ['flagged_sentences', 'style']
+
+`run.py` merges them in when it settles on the winning draft. `flagged_sentences` is the per-sentence
+flag list for the text actually returned — the most useful thing in the payload for deciding what to
+edit next — and `style` records which profile ran, without which the rest cannot be interpreted.
+Neither appeared in `result-shapes.md`, `SKILL.md` or any reference document. This repository has
+shipped exactly this before, with `unrankable`.
+
+The guard was verified against `git show HEAD:` of the real document: it names `flagged_sentences`
+and `style` in `post`, and nothing in `pre` or at the top level.
+
+**Three probe errors on the way, and they are the reason this result is worth reading.** Reading the
+document for backticked names reported **19 of 28** fields undocumented — the key lists are a fenced
+block of comma-separated names carrying no backticks at all. Adding a JSON-key pattern found zero,
+because there is no JSON in the file either. Then the parser's prose-filter list contained `final`,
+put there to absorb the phrase "for the FINAL text" in the sentence being added — and `final` is the
+key holding the rewritten document, so the check reported the payload's single most important field
+as undocumented.
+
+Each of those would have been published as a finding by a run that stopped at the first number. The
+first would have claimed two thirds of the schema was undocumented; the third would have "fixed" a
+field that was never broken. The real answer — two fields, both nested, both genuinely absent — only
+appeared after the third correction.
+
+Worth keeping: **a documentation check is a parser, and a parser is a place to be wrong.** The fix
+was to stop parsing prose: the fenced block now holds key lists only, and the explanation sits
+outside it where no extractor has to guess which words are field names.
