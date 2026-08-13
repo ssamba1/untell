@@ -269,6 +269,37 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
     return _score
 
 
+def _nothing_adopted_warning(rewrites: int, adopted: int, changed: bool) -> str | None:
+    """Say when the loop drew candidates and kept none of them.
+
+    `changed: false` alone reads as "the tool did nothing", and the caller cannot tell that apart
+    from "the tool tried and every draft was worse". They are different situations with different
+    remedies, and the fields that distinguish them — `rewrites` and `adopted` — are the two nobody
+    reads.
+
+    MEASURED on a 406-word HC3 document, `tier=lite`, `structural`, `best_of=1`, two seeds. The
+    rewriter produced a strictly better text by this tool's own tell catalogue and the loop was right
+    to refuse it:
+
+        tells          41 -> 34
+        detector max   0.5987 -> 0.6203   (worse, so not adopted)
+        meaning gate   passed
+        result         changed=False, rewrites=2, adopted=0, 41 tells left in place
+
+    The loop optimises the detector score, so discarding a draft that raises it is correct. What was
+    missing is any account of it: the user is handed their own text back with no indication that a
+    better-by-tells version existed and was rejected on score.
+    """
+    if changed or not rewrites or adopted:
+        return None
+    return (
+        f"the rewriter produced {rewrites} candidate{'s' if rewrites != 1 else ''} and adopted "
+        "none: every draft scored worse than your text, so it was returned unchanged. This is the "
+        "loop refusing to make the score worse, not a failure to run. Try --best-of 3 for more "
+        "draws, a different --rewriter, or --tier full, where the score has more to respond to."
+    )
+
+
 def _effective_style(style: str | None) -> str | None:
     """The style that actually ran, which is not always the one that was asked for.
 
@@ -1102,9 +1133,12 @@ def _untell_text(
         **({"warning": _merge_warnings(
             language_warning, carried_payload, best_score.get("warning"),
             _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
+            _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip()),
         )}
            if (language_warning or carried_payload or best_score.get("warning")
-               or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)) else {}),
+               or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)
+               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip()))
+           else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),
         # WHICH meaning gate ran. `quality_metric` names the similarity backend but says nothing
