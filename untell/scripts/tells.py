@@ -44,6 +44,15 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
+# The sentinel shape `preserve.lock()` emits. Imported rather than re-declared, which is what
+# `SENTINEL_RE` is exported for — one constant, two names, no second copy to drift.
+#
+# The local copy carried its own justification: "`preserve` imports from this module, and the
+# pattern is four characters of regex." The first half is not true — `preserve` imports from
+# `untell.scripts.latex` and from nothing else in this package — and the second is the argument
+# against every duplicated constant ever written. The repo has a test enforcing the rule, and it
+# was failing on main.
+from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_RE  # noqa: E402
 from untell.text_split import fold_unicode_spaces  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -981,9 +990,6 @@ het een van voor met zonder over tussen deze dit zijn worden niet ook al
 
 _WORD_RE = re.compile(r"[A-Za-zÀ-ÿ']+")
 
-# The sentinel shape `preserve.lock()` emits. Defined locally rather than imported: `preserve`
-# imports from this module, and the pattern is four characters of regex.
-_SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
 
 # Minimum words before the ratios mean anything, and the share of other-language function words
 # that counts as positive evidence. See `looks_non_english` for the measurement behind both.
