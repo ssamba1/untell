@@ -66,6 +66,22 @@ _TELLS_EPS = 0.02
 #            cannot be selected for exploiting a member that is absent from the subset it was judged
 #            on. This is the transfer hypothesis stated as a mechanism.
 #
+# MEASURED AND REFUTED. RAID n=10, three seeds each, held-out RADAR (`python -m eval.holdout`):
+#
+#     mode      held-out mean, per seed          held-out flagged
+#     max       0.5035  0.4981  0.4391           4 / 4 / 4
+#     mean      0.4982  0.5372  0.5121           4 / 5 / 6
+#     dropout   0.4799  0.5231  0.5023           4 / 5 / 6
+#
+# Neither alternative improves transfer; both are slightly WORSE on the mean and more variable on
+# the count. The shipped `max` holds 4 of 10 in every seed. At seed 0 alone `dropout` led (0.4799
+# against 0.5035) and that inverted on replication — the same single-seed shape that has now
+# produced four false findings in this project.
+#
+# The knob is kept because the question is worth being able to re-ask on a different corpus or a
+# larger n, and because a mode that measured as no better is a result other people should not have
+# to re-derive. It is not a tuning surface: `max` is the answer here.
+#
 # Selected with UNTELL_SELECT. Read per call rather than at import so a harness can sweep it without
 # reloading the module, and so a test can set it with monkeypatch.setenv.
 _SELECT_MODES = ("max", "mean", "dropout")

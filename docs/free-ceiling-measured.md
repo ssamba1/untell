@@ -11115,3 +11115,66 @@ Worth keeping: **a parser that skips part of its input reports the skipped part 
 exactly the confidence of a real finding.** Both wrong answers here — 222 headings, seven phantom
 citations — were specific, plausible, and would have been actionable. The guard that caught them was
 not cleverness but the cheapest possible assertion: *did this parse match anything at all.*
+
+## Result 228
+
+**Three objectives, two controls, five configurations: the in-sample number moves and the held-out
+one does not.**
+
+Result 163 left one hypothesis worth testing. The loop minimises `max` over five correlated proxies
+and reports `max` over the same five, so a candidate that exploits one member wins — and if that is
+what limits transfer, ranking on something a candidate cannot game should help. Two alternatives,
+behind `UNTELL_SELECT`, with the adoption guard deliberately left on `max` so neither can adopt a
+worse candidate and a negative result cannot be blamed on a loosened gate:
+
+- **`mean`** — rank on the ensemble mean, so lowering four detectors beats gaming one.
+- **`dropout`** — rank on the max over a random subset, resampled each iteration from the loop's
+  seeded RNG. A candidate is not judged on the member it may be exploiting.
+
+RAID n=10, three seeds each, held-out RADAR:
+
+```
+mode      held-out mean, per seed        held-out flagged   in-sample flagged
+max       0.5035  0.4981  0.4391         4 / 4 / 4          4 / 2 / 3
+mean      0.4982  0.5372  0.5121         4 / 5 / 6          3 / 4 / 3
+dropout   0.4799  0.5231  0.5023         4 / 5 / 6          3 / 5 / 2
+```
+
+**Refuted.** Neither alternative improves transfer; both are slightly worse on the mean and more
+variable on the count. The shipped `max` holds **4 of 10 in every seed** while its in-sample count
+ranges 2-4 — the same divergence Result 163 found, now surviving a deliberate attempt to remove it.
+
+**At seed 0, `dropout` led** — 0.4799 against 0.5035, which is exactly the size of win this project
+has twice published and once nearly published. It inverted on replication. Fourth single-seed
+artefact: the conviction split, doc 3, the unseeded torch stream, and now this.
+
+**A second control says something stronger than the first.** `mage` sits in the default full tier but
+every run in this work sets `UNTELL_DISABLE_MAGE=1`, so it was held out by configuration — which
+counts only because it is stated. Premise verified on the corpus: human 0.0000 against AI 1.0000,
+paired 10/10. Scored on the frozen outputs of both rewriters, 60 rewrites:
+
+```
+composite / mage    1.0000 -> 0.9992    flagged 30/30 -> 30/30
+base-model / mage   1.0000 -> 1.0000    flagged 30/30 -> 30/30
+```
+
+**Not one verdict flips.** Read with its own caveat: `mage`'s dynamic range on AI prose is 3.6e-06,
+so it is the hardest possible bar and a poor measure of degree. It is a real measure of verdict, and
+the verdict never moves.
+
+`binoculars` is the control this section should also have had, and it is genuinely unavailable — two
+Falcon-7B models and CUDA against a CPU box. Recorded rather than quietly skipped, because "we used
+the controls we had" and "we used the controls that suited us" look identical in a results table.
+
+**The harness failed first, and the tests could not see it.** `eval/holdout.py` keeps
+`UNTELL_ENABLE_RADAR` unset — correct for the loop, and the entire point of the arm — which also
+makes `RadarDetector.available()` false, so the control returned `None` for everything and the first
+screening run died. It failed loudly, because `if not scored` was already checked. It passed all
+eight tests, because every one injects a fake detector and a fake detector never reads the gate. The
+harness was verified for the property it was written to have, not the one that lets it run.
+
+Worth keeping: **the objective was the best remaining explanation for the transfer gap, and it is not
+the explanation.** Three ranking functions, two controls, three seeds, two rewriters, and one number
+that will not move. Whatever untell is doing to the detectors it optimises against, it is not doing
+the thing those detectors are supposed to stand for — and that is now a measurement rather than the
+caveat the README carries.
