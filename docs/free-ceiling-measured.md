@@ -8284,3 +8284,38 @@ asserted directly, and with that in place the same mutation fails exactly one te
 Worth keeping: **a pipeline that repairs its own components hides their decay.** The robustness that
 protects the user is the same property that blinds the test, and only a component-level assertion
 separates "nothing is broken" from "everything downstream is compensating".
+
+## Result 164
+
+**The other substitution table, asked the question the first one was fixed for.**
+
+Result 163 asserted per-component that no structural transform emits a catalogued tell. The sibling:
+this repository once shipped **fourteen replacements whose output was itself in the catalogue** — a
+swap that moves a word between flagged columns while the total sits still. That was fixed in one
+table. `_SYN` is the other, 226 source words and 615 replacement strings, hand-maintained, never
+asked.
+
+```
+226 source words, 615 replacement strings
+replacements that are themselves catalogued ai_vocab     0
+replacements that introduce ANY catalogued category      0
+source words that ARE catalogued tells                   121 / 226
+```
+
+**No defect** — and the last row is what makes the first two mean anything. The map is pointed the
+right way round: it takes `delve`, `leverage`, `utilize`, `robust`, `seamless` and 116 others *out*.
+A table that touched no tells at all would score zero emissions too, and be useless.
+
+**Two probe errors, both caught by controls I had written for exactly that.** The first sweep read
+`surgical._SCOREABLE` — a tier set, not a substitution table — and reported "0 emissions" from 4
+strings that were never replacements at all. And the carrier's positive control failed on `"delved
+into"`: the catalogue holds `delve`, matching is whole-word, and an inflection is a different token.
+**A positive control built from a near-miss proves nothing**, and that one caught its own author
+before the file could ship a vacuous zero.
+
+Verified by adding a replacement that is itself catalogued, which fails both assertions.
+
+Worth keeping: **"zero emissions" and "zero opportunities to emit" print the same number.** Every
+clean result this session has needed a second measurement establishing that the thing measured was
+capable of being dirty — the wrong table, the untouched document, the near-miss control. The zero is
+never the finding; the denominator is.
