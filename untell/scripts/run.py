@@ -932,7 +932,6 @@ def _untell_text(
                 break
 
     # Optional cheap CPU polish: surgical word-importance substitution to shave a bit more signal.
-    polished_applied = False
     if polish:
         try:
             from untell.attacks import surgical_substitute
@@ -963,7 +962,6 @@ def _untell_text(
             if (better_score or tie_but_more_human) and not un_passes \
                     and similarity(text, polished) >= sim_bar:
                 final, best_score = polished, polished_score
-                polished_applied = True
         except Exception as exc:
             # Say it once. Swallowing this silently is correct for a transient failure — polish is
             # optional and the unpolished text is a valid answer — and wrong for a persistent one:
@@ -996,10 +994,25 @@ def _untell_text(
         "pre": pre,
         # Recomputed against `final`, not carried out of the loop — see `_flagged_sentences_of`.
         "post": {**best_score, "flagged_sentences": _flagged_sentences_of(final, threshold)},
-        # Report meaning-preservation vs the true final output. Pre-polish, ``best_masked`` restores to
-        # ``final`` so the locked-text similarity is exact; polish rewrites the restored text (sentinels
-        # already gone), so compare the scrubbed original against the actual final instead of stale.
-        "similarity": similarity(text, final) if polished_applied else similarity(masked, best_masked),
+        # Report meaning-preservation vs the true final output, on the RESTORED text in both cases.
+        #
+        # This used to compare `masked` against `best_masked` whenever polish had not run, on the
+        # ground that `best_masked` restores to `final` so the comparison is exact. That is true of
+        # the TEXT and false of the NUMBER: a sentinel is a single token standing in for a
+        # multi-word span, so both sides share a cheap exact match where the real words would have
+        # to be compared, and the figure comes out flattering.
+        #
+        # MEASURED, reported value minus a fresh `similarity(input, final)`, over documents the loop
+        # actually changed:
+        #
+        #     plain              6 changed   mean +0.0013   worst +0.0040   reported higher 3/6
+        #     citation-dense    7 changed   mean +0.0040   worst +0.0155   reported higher 5/7
+        #
+        # One-directional — never below — and it grows with how much of the document is locked,
+        # which is exactly the population that most needs a trustworthy meaning number. The gate's
+        # own masked comparison is a separate decision, measured and deliberately kept; this is the
+        # figure a caller reads and can reproduce, so it is computed the way they would compute it.
+        "similarity": similarity(text, final),
         "tier": best_score.get("tier", tier),
         # The SCORE's own caveat travels with the verdict, not just inside `post`. `carried_payload`
         # covers hidden characters and was the only thing that ever reached this field, so a caller
