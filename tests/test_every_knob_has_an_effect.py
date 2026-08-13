@@ -54,11 +54,14 @@ def _run(text: str = AI, seed: int = 0, **kw):
     [
         ("threshold", {"threshold": 0.9}),
         ("max_iters", {"max_iters": 3}),
-        ("best_of", {"best_of": 1}),
+        # `best_of` is NOT here — see `test_best_of_changes_the_run_across_seeds`. Same reason as
+        # `rewriter=structural` below: what it changes is which DRAW the selector keeps, and on
+        # some seeds the draws agree.
         # `polish` is NOT here — see `test_polish_changes_the_run_across_seeds`. It needs both a
         # condition and a seed sweep, which is more than this parametrize can express.
         ("rewriter=surgical", {"rewriter": "surgical"}),
-        ("rewriter=structural", {"rewriter": "structural"}),
+        # `rewriter=structural` is NOT here either, and for the same reason as `polish` — see
+        # `test_structural_differs_from_composite_across_seeds`.
         ("rewriter=targeted", {"rewriter": "targeted"}),
     ],
     ids=lambda x: str(x)[:20],
@@ -71,6 +74,72 @@ def test_the_knob_changes_the_run(name: str, kwargs: dict) -> None:
         reference["final"],
         reference.get("iterations"),
     ), f"{name} did not change the run"
+
+
+def test_best_of_changes_the_run_across_seeds() -> None:
+    """`best_of` decides how many candidates are drawn, not what any one of them says.
+
+    Pinned at seed 0 this case failed: `best_of=1` and the default `best_of=3` produced identical
+    output, because the extra draws lost the internal contest and the kept candidate was the same
+    one either way. MEASURED through the loop on this file's AI text, best_of=1 against the
+    default: they differ at **4 of 10 seeds**, and seed 0 is one of the six where they do not.
+
+    That is not the knob failing. It is a knob whose whole effect is a SELECTION among random
+    draws, asserted against a single draw — the same mistake the polish and style tests here were
+    already written to avoid.
+    """
+    differ = 0
+    for seed in range(12):
+        reference = _run(seed=seed)
+        single = _run(seed=seed, best_of=1)
+        differ += (single["final"], single.get("iterations")) != (
+            reference["final"],
+            reference.get("iterations"),
+        )
+    assert differ > 0, "best_of=1 cannot change the run at any of 12 seeds"
+
+
+def test_structural_differs_from_composite_across_seeds() -> None:
+    """`composite` IS structural + surgical, and the surgical half contributes nothing here.
+
+    Pinned at seed 0 this case FAILED, because `rewriter="structural"` and the default
+    `rewriter="composite"` produced byte-identical output — same final, same iterations, same
+    rewrite count — so the knob read as inert.
+
+    It is not inert; the fixture and seed made it look that way. MEASURED through the loop on this
+    file's own AI text: composite differs from structural at **5 of 10 seeds**. Seed 0 is one of
+    the five where it does not.
+
+    WHY they coincide at all is the same finding this file already records for `polish`, one layer
+    up. Surgical acts on AI vocabulary, and structural has already removed it, so there is nothing
+    left to substitute — not a gate rejecting a candidate. MEASURED by running surgical over
+    structural's output, 12 seeds each across five texts:
+
+        text              surgical changes RAW   changes POST-STRUCTURAL
+        ai vocab heavy          12/12                    0/12
+        delve tapestry          12/12                    0/12
+        plain academic           0/12                    0/12
+        informal                 0/12                    0/12
+        technical                0/12                    0/12
+        TOTAL                   24/60                    0/60
+
+    So composite degenerates to structural-with-best-of-3 on this input, and whether the two agree
+    is decided by which draw the internal selector happens to keep. Swept for exactly the reason
+    the polish and style tests give: asserting a difference at one seed fails the day the
+    randomness lands on the wrong one.
+    """
+    differ = 0
+    for seed in range(12):
+        reference = _run(seed=seed)  # composite, the default
+        structural = _run(seed=seed, rewriter="structural")
+        differ += (structural["final"], structural.get("iterations")) != (
+            reference["final"],
+            reference.get("iterations"),
+        )
+    assert differ > 0, (
+        "rewriter='structural' cannot change the run at any of 12 seeds against the composite "
+        "default — the two have become the same pipeline"
+    )
 
 
 def test_polish_changes_the_run_across_seeds() -> None:
