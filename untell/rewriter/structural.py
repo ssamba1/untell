@@ -1331,7 +1331,9 @@ def _strip_filler_openers(text: str) -> str:
 from untell.scripts.preserve import SENTINEL_RE as _SENTINEL_SPAN_RE  # noqa: E402
 
 
-def _plain_register(text: str, intensity: float = 1.0) -> str:
+def _plain_register(
+    text: str, intensity: float = 1.0, *, spent: set[str] | None = None
+) -> str:
     """Swap formal / AI-inflected vocabulary for the words people actually use.
 
     A 180-entry formal->plain map already existed, but only the *surgical* rewriter used it, ranked
@@ -1394,7 +1396,22 @@ def _plain_register(text: str, intensity: float = 1.0) -> str:
     # time and at least two of them about 26%, manufacturing `repeated_phrasing` out of text that
     # had none. MEASURED after the register pass stopped being intensity-gated: ai_vocab fell 21->0
     # but repeated_phrasing rose 960->985 and repeated openers 44->52 on the same 60 texts.
-    spent: set[str] = set()
+    #
+    # `spent` is owned by the DOCUMENT, not by this call. `structural_rewrite` runs the pipeline
+    # through `apply_per_block`, so a local set is reset once per block and the guard sees only the
+    # paragraph in front of it. MEASURED on six sentences drawn from one cluster ('pivotal',
+    # 'crucial', 'vital', 'paramount', 'essential', 'salient'), 60 seeds, layout the only variable:
+    #
+    #     one paragraph   mean max-dup 1.00    0 / 60 documents repeat a replacement
+    #     six paragraphs  mean max-dup 2.37   53 / 60
+    #     six lines       mean max-dup 2.37   53 / 60
+    #     six bullets     mean max-dup 2.37   53 / 60
+    #
+    # Same sentences, same seeds. At seed 4 the single paragraph reads key / critical / essential /
+    # top / needed / standout, and the split one reads key / key / key / key / needed / key. The
+    # tell catalogue scores `repeated_phrasing` 0 for both, so nothing downstream ever saw it.
+    if spent is None:
+        spent = set()
 
     def _swap(m: re.Match) -> str:
         article, word, tail = m.group(1) or "", m.group(2), m.group(3) or ""
@@ -2138,7 +2155,11 @@ def _parenthesise_asides(text: str) -> str:
 
 
 def _vary_openers(
-    sentences: list[str], rate: float = 0.3, *, conversational: bool = True
+    sentences: list[str],
+    rate: float = 0.3,
+    *,
+    conversational: bool = True,
+    spent: set[str] | None = None,
 ) -> list[str]:
     """Vary sentence openings by prepending transitional phrases or restructuring."""
     # Openers humans are MEASURED to use, not ones that merely sound casual. Sentence-opening
@@ -2183,7 +2204,15 @@ def _vary_openers(
     # any other, and this transform exists to VARY openers. Same collision as the synonym map's
     # many-to-one entries (see `spent` in _plain_register). Cleared when the pool is exhausted, so
     # a text with more than 8 varied openers cycles rather than stops varying.
-    spent: set[str] = set()
+    #
+    # Owned by the DOCUMENT for the same reason as `_plain_register`'s: `apply_per_block` resets a
+    # local set once per paragraph, so the guard only ever sees the block in front of it. MEASURED
+    # on 18 sentences in 3 paragraphs, 60 seeds — 9 documents received two or more openers and 3 of
+    # those used the same one twice ("Put simply", "Actually", "Basically"). A much smaller
+    # denominator than the register map's 53/60, and reported as such: this transform inserts about
+    # one opener per document, so the opportunities to collide are rare rather than the risk small.
+    if spent is None:
+        spent = set()
 
     def _opener(*, opening_the_block: bool = False) -> str:
         fresh = [o for o in openers if o not in spent]
@@ -2682,8 +2711,16 @@ def structural_rewrite(
     Prose is therefore rewritten a line-block at a time and the original separators are restored
     verbatim.
     """
+    # One set per DOCUMENT, shared by every block. Both guards exist to stop a many-to-one map
+    # landing on the same replacement twice, and `apply_per_block` would otherwise hand each
+    # paragraph a fresh one — see the measurements on `_plain_register` and `_vary_openers`.
+    spent: set[str] = set()
+    opener_spent: set[str] = set()
     run = lambda: apply_per_block(  # noqa: E731 - one expression, used twice below
-        text, lambda block: _rewrite_prose(block, intensity=intensity, style=style)
+        text,
+        lambda block: _rewrite_prose(
+            block, intensity=intensity, style=style, spent=spent, opener_spent=opener_spent
+        ),
     )
     if seed is None:
         return run()
@@ -2700,7 +2737,14 @@ def structural_rewrite(
         random.setstate(state)
 
 
-def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
+def _rewrite_prose(
+    text: str,
+    *,
+    intensity: float,
+    style: str | None,
+    spent: set[str] | None = None,
+    opener_spent: set[str] | None = None,
+) -> str:
     """The transform pipeline itself, for one block of prose containing no layout to protect."""
     profile = style_profile(style)
 
@@ -2754,7 +2798,7 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
     #
     # Draw-level diversity is unaffected: CompositeRewriter sweeps `intensity` ACROSS draws
     # (rewriter/composite.py `_intensity_sweep`), which still varies every structural transform.
-    text = _plain_register(text, intensity=profile["register"])
+    text = _plain_register(text, intensity=profile["register"], spent=spent)
 
     # 5d. Parenthesise an aside that is already comma-bounded. Punctuation only — no word is added,
     # removed or reordered — and humans use parentheses 2-4x as often as AI in both corpora.
@@ -2881,7 +2925,10 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         # leaving headroom at intensity 1.0 for the duplicate-opener work the transform exists for.
         open_rate = min(0.20, intensity * 0.10 * profile["openers"])
         sents = _vary_openers(
-        sents, rate=open_rate, conversational=profile["conversational_openers"]
+        sents,
+        rate=open_rate,
+        conversational=profile["conversational_openers"],
+        spent=opener_spent,
     )
 
         # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
