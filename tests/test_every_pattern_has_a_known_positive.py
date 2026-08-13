@@ -44,6 +44,11 @@ KNOWN_POSITIVES: dict[str, str] = {
     "_TRAILING_HORIZONTAL": "a line with trailing spaces   \nnext line",
     # Rhetorical openers the corpora happen not to contain.
     "_RHETORICAL_OPENER_RE": "Here's the thing: it works.",
+    # Anchored at BOTH ends, and matched against the slice of a line that precedes a sentinel —
+    # never against prose. So no document in this repository can match it, however much ordered-list
+    # markup it contains, and the haystack sweep would report it dead. "1." is what `restore` hands
+    # it when a locked span opens a numbered list item.
+    "_LIST_MARKER_ONLY": "1. ",
 }
 
 
