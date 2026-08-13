@@ -88,7 +88,16 @@ def batch_score_texts(
     if not texts:
         return []
     detectors = load_detectors(tier)
-    return [_score_with_detectors(detectors, _truncate(t), tier, threshold) for t in texts]
+    out = []
+    for t in texts:
+        one = _score_with_detectors(detectors, _truncate(t), tier, threshold)
+        dropped = _truncation_warning(t)
+        if dropped:
+            one["warning"] = (
+                f'{dropped} Also: {one["warning"]}' if one.get("warning") else dropped
+            )
+        out.append(one)
+    return out
 
 
 _WS_RUN_RE = re.compile(r"[ \t]{2,}")
@@ -129,6 +138,35 @@ def _truncate(text: str) -> str:
     if len(text) > _MAX_INPUT_CHARS:
         return text[:_MAX_INPUT_CHARS]
     return text
+
+
+def _truncation_warning(text: str) -> str | None:
+    """Say when the verdict is about a PREFIX of what was handed in.
+
+    `_truncate` silently returns `text[:50_000]`, so a longer document gets a number about its
+    first 50,000 characters presented as a number about the document. MEASURED on a 67,200-char
+    input: `score_text` returns a max identical to the first 50,000 characters scored alone, to
+    machine precision — the last 26% contributes nothing and nothing said so.
+
+    Two things made it worth a caveat rather than a shrug. `score_tells` does NOT truncate, so the
+    same document reports 10,774 tells against the scorer's view of 8,010 — two surfaces of the
+    same tool describing different documents. And the rewrite loop rewrites the WHOLE text while
+    scoring the prefix, so `post` is a verdict on 74% of what it hands back.
+
+    The REST surface rejects oversized input with a 422 instead, which is the other reasonable
+    answer; the CLI and the Python API cannot refuse work a caller has already asked for, so they
+    say what they did.
+    """
+    normalised = _normalise_ws(text)
+    if len(normalised) <= _MAX_INPUT_CHARS:
+        return None
+    dropped = len(normalised) - _MAX_INPUT_CHARS
+    return (
+        f"scored the first {_MAX_INPUT_CHARS:,} characters only — {dropped:,} more "
+        f"({dropped / len(normalised):.0%} of the text) were not seen by any detector. The tell "
+        f"catalogue is NOT truncated, so a tells count for this text covers more of it than this "
+        f"score does."
+    )
 
 
 # Verdict thresholds for scoring paths whose distribution the shipped default does not fit.
@@ -311,7 +349,16 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
     number, so a full-tier run whose ML stack is broken honestly reports ``lite`` (plus a
     ``warning`` and a ``failed_detectors`` list), instead of looking like a real full-tier score.
     """
-    return _score_with_detectors(load_detectors(tier), _truncate(text), tier, threshold)
+    result = _score_with_detectors(load_detectors(tier), _truncate(text), tier, threshold)
+    # Prepended, not appended. The ordering note further down keeps rare and actionable caveats
+    # first and the standing ones last; "you got a number about a quarter less than you sent" is
+    # the rarest and most actionable of them.
+    dropped = _truncation_warning(text)
+    if dropped:
+        result["warning"] = (
+            f'{dropped} Also: {result["warning"]}' if result.get("warning") else dropped
+        )
+    return result
 
 
 # How badly the ensemble misreads SHORT text. MEASURED on 40 HC3 pairs at the 0.30 default, full
