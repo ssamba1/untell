@@ -18,6 +18,7 @@ import json
 import logging
 import random
 import sys
+import threading
 from collections import Counter
 
 # Run-as-file support (zero-dep lite tier): when this file is executed directly
@@ -41,6 +42,10 @@ from untell.scripts.preserve import _SENTINEL_RE, lock, restore
 from untell.scripts.quality import method, recommended_bar, similarity
 from untell.scripts.score import DEFAULT_THRESHOLD, score_text
 from untell.scripts.tells import score_tells
+
+# Serialises the seeded region of `untell_text`. Reentrant, so a nested call cannot deadlock on
+# itself. See the comment at its `with _RNG_LOCK` for what was measured without it.
+_RNG_LOCK = threading.RLock()
 
 # Detector-score noise band. Among best-of-N candidates whose detector max is within this of each
 # other, prefer the one with FEWER AI tells — a strictly more human-reading rewrite at no cost to
@@ -346,15 +351,38 @@ def untell_text(
         seed if seed is not None
         else int.from_bytes(hashlib.blake2b(text.encode("utf-8"), digest_size=8).digest(), "big")
     )
-    _rng_state = random.getstate()
-    random.seed(effective_seed)
-    try:
-        result = _untell_text(
-            text, tier, threshold, max_iters, sim_bar, rewriter, browser, margin, confirm, scrub,
-            polish, style, best_of, detector_thresholds, veto_contradictions, voice_sample, progress,
-        )
-    finally:
-        random.setstate(_rng_state)
+    # Held for the whole run, because the thing being protected is the GLOBAL `random` module.
+    # `structural.py` draws from it in 27 places, so seeding it is a process-wide side effect and
+    # save/seed/restore is only atomic if nothing else runs in between. MEASURED without the lock,
+    # three threads asking for the SAME seed they had just been given serially:
+    #
+    #     serial, same seed, same text        reproducible
+    #     3 threads, attempt 0 / 1 / 2        1/3, 0/3, 1/3 match their serial result
+    #     caller's own RNG stream afterwards  changed
+    #
+    # So `seed=` stopped meaning anything, and a library caller who seeded their own RNG found it
+    # moved — the two guarantees the seeding was added for, both lost the moment a second thread
+    # appeared. The REST server does not hit this today, but only because every endpoint is
+    # `async def` and calls this function directly, so a rewrite runs ON the event loop and blocks
+    # every other request; the blocking is what serialises the RNG. That is its own defect, and
+    # fixing it (offloading to a threadpool) would have exposed this one.
+    #
+    # A lock rather than a `random.Random(seed)` instance threaded through the call. The instance
+    # is the better answer and it is a 27-site change in structural.py plus its callers, which is
+    # not something to do blind — this makes the existing behaviour correct and explicit, and costs
+    # nothing today because the only concurrent caller already serialises. What it does cost is
+    # parallel rewrites INSIDE one process, which nothing currently asks for.
+    with _RNG_LOCK:
+        _rng_state = random.getstate()
+        random.seed(effective_seed)
+        try:
+            result = _untell_text(
+                text, tier, threshold, max_iters, sim_bar, rewriter, browser, margin, confirm,
+                scrub, polish, style, best_of, detector_thresholds, veto_contradictions,
+                voice_sample, progress,
+            )
+        finally:
+            random.setstate(_rng_state)
     # Report the stream that produced this result, the way `tier` and `detector_modes` report the
     # other hidden variables a number depends on. Without it a caller holding an output has no way
     # to ask for that output again — the derived seed is not something they can work out, and
