@@ -8565,3 +8565,60 @@ Worth keeping: **this was invisible to every metric the loop has.** No word chan
 NLI and the role check all pass; line counts were exact; and a lower-case sentence start is clean to
 a tell catalogue. It was found by reading the output — the same discipline that found the sentence
 fragments, and the second defect of that exact class this document records.
+
+## Result 170
+
+**Two anti-repetition guards were scoped to a paragraph. Splitting the same six sentences into six
+blocks took 0 of 60 documents to 53 of 60 — the tool manufacturing the tell it exists to remove.**
+
+Result 169's output had one more thing in it. Three consecutive lines opened `Also,` `Also,` `Also,`
+and two opened `And,` `And,`. The rewriter carries a `spent` set precisely to stop that: the
+formal->plain map is many-to-one in places — six source words offer "key", six offer "boost", five
+offer "so" — and its own comment records that choosing independently "manufactur[es]
+`repeated_phrasing` out of text that had none".
+
+The guard was real and the scope was wrong. `structural_rewrite` runs the pipeline through
+`apply_per_block`, and both `spent` sets are local to one call, so every paragraph got a fresh one
+and the guard only ever saw the block in front of it.
+
+MEASURED on six sentences drawn from one cluster ('pivotal', 'crucial', 'vital', 'paramount',
+'essential', 'salient'), 60 seeds, **layout the only variable**:
+
+    one paragraph (control)   mean max-dup 1.00    0 / 60 documents repeat a replacement
+    six paragraphs            mean max-dup 2.37   53 / 60
+    six lines                 mean max-dup 2.37   53 / 60
+    six bullets               mean max-dup 2.37   53 / 60
+
+Same sentences, same seeds. At seed 4:
+
+    one paragraph    key / critical / essential / top / needed / standout
+    six paragraphs   key / key / key / key / needed / key
+
+Words introduced two or more times, across the 60: `key` 87, `critical` 50, `central` 20,
+`needed` 12 — all of them replacements the map chose, none of them in the source.
+
+The control arm is what makes this readable. The single-block layout was clean on every seed, so the
+difference is layout and nothing else; without it the 53 would be a statement about the corpus.
+
+At component level, four blocks through `_plain_register` over 200 seeds:
+
+    four separate sets   140 / 200 documents repeat a replacement
+    one shared set         0 / 200
+
+Both sets are now owned by the document and threaded through `apply_per_block`. Called directly,
+each transform still owns its own, so every existing caller is unaffected. After the fix all four
+layouts sit at mean max-dup 1.00 and 0 / 60, and seed 4 reads key / central / essential / top /
+needed / main — the control's variety, restored.
+
+`_vary_openers` carries the same guard and the same defect, and its denominator is reported rather
+than borrowed: 18 sentences in 3 paragraphs over 60 seeds gave 9 documents with two or more openers,
+of which **3** reused one ("Put simply", "Actually", "Basically"). It inserts about one opener per
+document, so the opportunities to collide are rare — the risk is not small, the denominator is. The
+first attempt to assert it failed against correct behaviour: `_vary_openers` deliberately clears
+`spent` when its nine-item pool is exhausted, and asking for six openers twice exhausts it.
+
+Worth keeping: **a guard is only as wide as the thing that owns it.** The code knew about the
+collision, documented it, measured it, and fixed it — inside one call. Nothing in the repository
+stated the scope, and the tell catalogue scores `repeated_phrasing` 0 for both the clean and the
+duplicated output, so no gate, no detector and no test could see the difference. Both defects in this
+pair were found the same way: by reading the output on input that was not one paragraph.
