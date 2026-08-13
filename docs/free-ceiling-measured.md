@@ -8401,3 +8401,43 @@ innocent, so it survives being read by someone whose code really was machine-wri
 Worth keeping: **the same question asked of a different input type is a different question.** Nine
 results of asking "what does this tool say when it cannot answer" had covered short text, foreign
 script and dead detectors. Code was not a harder case — it was an unasked one.
+
+## Result 167
+
+**Ninety percent of a witness statement was locked, and the verdict was reported as if it were the
+user's writing.**
+
+Result 166 asked what the tool says when it cannot answer, and found code. The same question of a
+different input type: quotation. It lands in the same place by a different mechanism — there the
+rewriter had no prose lines, here it has prose it is **forbidden to alter**.
+
+```
+locked 321/357 characters (90%), 2 spans
+flagged: True    changed: False    stopped: max_iters
+```
+
+Every iteration ran, nothing was adopted, and the result said nothing about it. This is the worse of
+the two cases, because the detectors scored the quotations as well: **the number describes somebody
+else's words**, and the person reading it is being told something about their own writing.
+
+```
+120 corpus texts, locked character share
+median 0.023    p90 0.072    p99 0.137    max 0.177
+quote-heavy probe                          0.899
+```
+
+Nothing in the corpus passes 0.30, so a 0.50 bar sits in an enormous empty gap — this is one of the
+cleanest separations measured in this log, and it needed no tuning.
+
+Two wording decisions carry the honesty. **"Preserved material" rather than "quotations"**, because
+`lock` also holds citations, figures, dates and URLs, and a note naming only quotes would misdescribe
+a statistics-dense paragraph. And the claim is that the verdict is *largely about text this tool
+cannot change* — not that the text is innocent — so it survives a reader whose quoted matter is
+itself machine-written. A single quotation in a paragraph stays silent, or the note fires on every
+piece of journalism ever written.
+
+Worth keeping: **two mechanisms, one user-visible failure.** No-prose and mostly-locked have nothing
+in common in the code — one reads a line mask, the other a span table — and produce the identical
+experience: a confident verdict on a document the tool could not work on. Enumerating *mechanisms*
+would have found them separately and late; enumerating what a user might paste found the second one
+immediately after the first.
