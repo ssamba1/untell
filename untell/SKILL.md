@@ -244,7 +244,9 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    highest-leverage step in the whole loop — measured, it is worth more than any individual rewriting
    technique. Selecting among 3 drafts (instead of committing to the first) is most of what took the
    local ensemble's mean max P(AI) from 0.86 to **0.21**, and dropped the content/genre detector —
-   previously believed immovable — from 0.73 to **0.02** (`docs/free-ceiling-measured.md`).
+   previously believed immovable — from 0.73 to **0.02**
+   (https://github.com/ssamba1/untell/blob/main/docs/free-ceiling-measured.md — a URL rather than a
+   repo path, because the installer copies `untell/` and nothing else, so `docs/` is not there).
 
    Make the drafts *actually different* (different sentence order, different level of detail, a
    different opening move) rather than three near-copies; near-copies score near-identically and waste
