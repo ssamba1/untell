@@ -10141,3 +10141,46 @@ Worth keeping: **a constant that is never used in the arithmetic is not harmless
 user reads.** Every guard in this repository points at the code path; this one lived entirely in the
 explanation, was never wrong in any test of behaviour, and was the only number in the file a reader
 was ever asked to act on.
+
+## Result 206
+
+**Two of the three numbers users are shown reproduce exactly. The third does not, and it is left
+standing.**
+
+Result 205 found a figure in advice text that no corpus supported, so the class is worth sweeping:
+which runtime messages quote a number, and does the corpus still agree?
+
+    lite-tier caveat   "64% of HUMAN text above 0.30, and 30% is FLAGGED"
+                       -> 64/100 and 30/100, exactly, on 100 HC3 human texts
+    false-positive     "5 of 30 HC3 forum answers were flagged (17%)"
+                       -> 6/30 (20%), one document apart at n=30
+
+The lite caveat is the message this tool shows most — Result 182 measured it firing on 120 of 120
+corpus texts — and both of its figures land on the nose.
+
+The short-text bands did not. Re-running the TRUNCATED arm on 40 HC3 human texts of mean 332 words,
+counting `max >= 0.30`, on **both** lite paths:
+
+    band   shipped      stdlib path   gpt2 path
+      5    ~100%             0%           0%
+     10    ~85%             10%           8%
+     20    71-85%           35%          10%
+     40    86-100%          62%          22%
+
+Every band lower, on both paths, by a factor of two to infinity. The 5-word row is not abstention: a
+five-word text returns a real `0.0` rather than declining to score.
+
+**The figures are left standing, and that is the result.** The comment above them says, of the
+numbers it replaced: "replacing measured numbers with differently-measured numbers would swap one
+unstated method for another." That rule binds whoever re-measures next, including me. Two variables
+are known to differ — sample length 332 against 212 words — and one is unknown: the settled run does
+not record which lite path it used, and the tier silently uses GPT-2 when torch is importable. A
+disagreement with two known differences and one unknown is a failed reproduction, not a refutation.
+
+So the conditions are recorded next to the numbers rather than the conclusion, and the note says what
+would settle it: re-run with the path pinned.
+
+Worth keeping: **the discipline that produced a number has to survive the person disagreeing with
+it.** Everything in this session pushed toward replacing the table — I had four measurements, two
+paths, and a clean story about the direction inverting for short inputs. What stopped it was a
+sentence written by whoever measured it last, warning against exactly the move I was about to make.
