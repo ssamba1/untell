@@ -6,6 +6,62 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **A rewrite could weld English words into German and French.** Every transform in the structural
+  rewriter is English, and applied to Latin-script text that is not English they do not fail — they
+  produce fluent-looking damage: an opener prepended to a German sentence, and `and` inserted as a
+  clause joiner in German and French. The existing guard is script-based, so it separates Chinese
+  from German and German is Latin. Such text is now returned unchanged with a caveat on the result.
+  The test needs positive evidence of another language rather than absence of English, because the
+  two do not separate on short input — an English heading scores 0.000 and Italian 0.125 — and a
+  false positive would silence the rewriter on text it can read. Measured 0 false positives over 20
+  deliberately hostile English samples.
+- **`untell verify --threshold`, the server port, and a bad `--detector-thresholds` value all
+  crashed or lied instead of explaining.** `UNTELL_PORT=abc` raised a `ValueError` while building
+  the argument parser, so even `--help` — the route to the `--port` flag that would override it —
+  died with it. The port range is now checked too: 0 and 70000 parse as integers and fail later
+  inside uvicorn, where the message is about sockets rather than about the variable the user set.
+- **A broken `.docx` or `.pdf` printed a stack trace.** Both readers converted a missing dependency
+  into a clear message and neither converted the parsing libraries' own errors, which descend from
+  their own base classes rather than from `ValueError`. An empty, corrupt, or password-protected
+  file exited 1 with a traceback; `Package not found at '...'` was the misleading one, since the
+  file is present and readable and simply is not a .docx. All now exit 2 with one line, and the
+  three cases are told apart because they call for different actions.
+- **`--json` broke on two error paths.** `untell scrub --json` with no input left stdout EMPTY, so a
+  caller parsing it got a JSONDecodeError instead of the message saying what to fix, and a bad
+  `--detector-thresholds` value printed plain text regardless of the flag — the one case where the
+  caller most needs to read what was wrong with their own argument. Both now answer
+  `{"error": ...}` and keep exit 2; the human-readable form is kept for runs without the flag.
+- **A verdict about the first 50,000 characters was presented as a verdict about the document.**
+  Scoring truncates there and said nothing. Measured on a 67,200-character input, the reported max
+  is identical to the first 50,000 scored alone, to machine precision. The tell catalogue does NOT
+  truncate, so the same document reported 10,774 tells against the scorer's 8,010 — two surfaces
+  describing different documents. Both scoring paths now say what they dropped.
+- **A conditional with its clauses swapped passed the meaning gate.** "If the sensor fails, the
+  system shuts down." -> "If the system shuts down, the sensor fails." reverses the causation, and
+  measured on three such pairs the full NLI path gave contradiction 0.0065-0.0277 and entailment
+  0.96-0.99 — accepted on both the NLI and stdlib paths. The three predicate-argument rules were
+  blind to it by construction. The check keys on the PARSE rather than word order, so "B if A" is
+  still accepted as the same claim as "If A, B"; measured 0 false vetoes over 81 real rewrites.
+- **Seeding did not survive a second thread.** `untell_text` seeds the global `random` module, and
+  save/seed/restore is only atomic if nothing else runs in between. Measured with three threads
+  asking for the seed they had just been given serially: 1/3, 0/3 and 1/3 matched, and a caller who
+  had seeded their own RNG found it moved. Serialised now. The REST server never hit it, because
+  every endpoint blocked the event loop — which was masking it.
+- **`--style academic` opened a paper with "Basically,".** The formal profiles already decline
+  contractions and hold back the plain-word swap; the opener pool was never covered by that, so the
+  rate fell with the profile while the vocabulary did not change. Three spoken-register openers are
+  now withheld from the three formal styles; the other six are attested in formal writing and stay.
+- **An opener that summarises what came before could be the first sentence.** "In short," and "Put
+  simply," announce a compression of preceding text, and "Also," adds to it; at the top of a block
+  there is nothing to compress. Measured at 4 of 100 rewrites before, 0 after, with the pool
+  otherwise unchanged and the dose steady at 5.00% of sentences against a human 3.13%.
+- **`untell-audit` could not run as a file.** It had no `sys.path` bootstrap, and its untell imports
+  are all lazy — so nothing failed at import time and its shape did not resemble the six scripts
+  fixed earlier. It failed later instead, on the first check that needed the package.
+- **SKILL.md cited a file the installer does not ship.** Both installers copy `untell/` and nothing
+  else, so a repo-relative path into `docs/` is broken for everyone who installed the documented
+  way. Now a URL, which resolves from an installed skill and a checkout alike.
+
 - **The zero-dependency path could not import untell.** Six scripts had their run-as-file
   `sys.path` bootstrap BELOW their package imports, where it is unreachable — the import raises
   `ModuleNotFoundError` first. `python .../untell/scripts/score.py` on a machine without the
@@ -89,6 +145,18 @@ All notable changes to this project are documented here. The format is based on
   no stated action.
 
 ### Changed
+- **The server no longer blocks itself.** Every endpoint was `async def` calling a blocking worker
+  directly, so a rewrite ran on the event loop: measured against an 11.20s `/humanize` with
+  `/health` polled every 20ms, 0 health responses landed during it. Five workers are now offloaded
+  (324 responses during the same rewrite). `/health` itself resolved the detector list on first
+  call — 9.34s cold against 0.0026s warm — which is exactly the call an orchestrator makes before
+  restarting a container that never served a request; it is now resolved during startup, before
+  traffic is accepted. This does not make concurrent rewrites parallel: they still serialise, off
+  the event loop instead of on it.
+- **`mt_pivot` drew three identical candidates and paid for three.** Its decode is beam search with
+  no sampling, so `best_of` bought nothing. Declaring it deterministic collapsed 6 rewrite calls to
+  2 on one document, with byte-identical output and an identical score.
+
 - **Released the accumulated notes as 0.3.0.** 0.2.0 and 0.3.0 both shipped without a
   changelog heading: the entries stayed under `[Unreleased]` while `pyproject`,
   `untell.__version__`, `plugin.json`, `marketplace.json` and `CITATION.cff` all moved to
