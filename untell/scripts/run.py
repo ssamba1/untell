@@ -290,18 +290,27 @@ def _inert_budget_warning(max_iters: int, best_of: int) -> str | None:
     non-positive `best_of` is not respected at all: the caller asked for zero draws and got a
     rewrite, which is the worse of the two, because the result looks like a normal run.
     """
-    notes = []
+    # The two halves are not independent, and composing them naively produced a message that
+    # contradicted itself. FOUND by rendering every caveat in this repository side by side rather
+    # than one at a time: at `max_iters=0, best_of=0` it read
+    #
+    #     "max_iters=0 means no rewriting was attempted at all ... best_of=0 ... was ignored and
+    #      one draft was drawn."
+    #
+    # No draft was drawn — `rewrites=0` — so the second sentence was false whenever the first was
+    # true. A non-positive `max_iters` stops the loop before `best_of` means anything, so it is the
+    # only thing worth saying.
     if max_iters is not None and max_iters < 1:
-        notes.append(
+        return (
             f"max_iters={max_iters} means no rewriting was attempted at all, so your text came back "
             "exactly as you sent it. Pass 1 or more to run the loop."
         )
     if best_of is not None and best_of < 1:
-        notes.append(
+        return (
             f"best_of={best_of} is not a number of drafts, so it was ignored and one draft was "
             "drawn. Pass 1 or more to choose how many candidates the loop picks between."
         )
-    return " ".join(notes) if notes else None
+    return None
 
 
 def _nothing_adopted_warning(

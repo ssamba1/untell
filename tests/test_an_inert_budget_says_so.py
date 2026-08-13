@@ -60,9 +60,20 @@ def test_a_non_positive_draw_count_says_it_was_ignored(best_of: int) -> None:
     assert "was ignored" in note and "one draft was drawn" in note
 
 
-def test_both_can_fire_together() -> None:
+def test_a_dead_loop_does_not_also_claim_a_draft_was_drawn() -> None:
+    """The two halves are not independent, and the first version of this note composed them anyway.
+
+    At `max_iters=0, best_of=0` it read "no rewriting was attempted at all ... best_of=0 ... was
+    ignored and one draft was drawn". No draft was drawn — `rewrites=0` — so the second sentence
+    was false exactly when the first was true. A non-positive `max_iters` stops the loop before
+    `best_of` means anything.
+
+    FOUND by rendering every caveat in the repository side by side. Neither half is wrong alone,
+    which is why no single-caveat test saw it.
+    """
     note = _inert_budget_warning(0, 0) or ""
-    assert "no rewriting was attempted" in note and "was ignored" in note
+    assert "no rewriting was attempted" in note
+    assert "one draft was drawn" not in note
 
 
 @pytest.mark.parametrize("max_iters,best_of", [(1, 1), (2, 3), (100, 32)])
