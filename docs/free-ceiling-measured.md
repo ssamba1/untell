@@ -8728,3 +8728,56 @@ reached less of the text than it would have on the same words in ordinary paragr
 A note on the audit: `untell-audit` currently reports one FAIL, `UNTELL_POLICY_WHOLE_DOC`
 undocumented. That variable belongs to another session's in-flight `local_policy.py` work, is absent
 from HEAD, and is not part of this change.
+
+## Result 173
+
+**The code was consistent. Two documents were not — including the reference document about
+thresholds, which still told the reader to drive the loop on `flagged`.**
+
+The question was whether the two bars are compared the same way everywhere: `threshold` (0.30) is
+what the rewrite loop optimises toward, `verdict_threshold` (0.45 on the stdlib perplexity path) is
+what decides `flagged`. A `>` in one surface and a `>=` in another, or the wrong bar in one place,
+would give a document sitting between them two different verdicts depending on which entry point the
+caller used.
+
+MEASURED on 10 HC3 documents scoring inside the band, every user-visible surface:
+
+    score_text flagged        False
+    untell_text top level     False
+    untell_text pre.flagged   False   (verdict_threshold 0.45)
+    untell_text post.flagged  False   (verdict_threshold 0.45)
+
+**Refuted.** The code agrees with itself. `run.py`'s in-loop `_score` does compute `flagged` against
+the loop threshold, but its dict never reaches the caller — `iterations` and `rewrites` come back as
+integers, not score objects — so nothing user-facing is affected.
+
+The drift was in the writing. `flagged` used to mean `max >= threshold`; the CHANGELOG records the
+day it stopped, `SKILL.md` warns at length that the two are "two different questions now",
+`result-shapes.md` and the OpenAPI field description were both updated. Two surfaces were missed:
+
+    untell/references/thresholds.md:116   "`flagged` — `true` when `max >= threshold` (keep
+                                           rewriting)."
+    untell/scripts/score.py:12            '"flagged": true   # max >= threshold => still looks AI,
+                                           keep rewriting'
+
+Both state the rule `SKILL.md` exists to correct, and both instruct the reader to drive the loop on
+it. An agent following either stops rewriting at `max = 0.35` — inside the band where the loop should
+continue — or tells a user their text is flagged when the calibrated verdict says it is not. That is
+the false accusation `verdict_threshold` was introduced to prevent, and the document specifically
+about thresholds was the one recommending it.
+
+The machine check that was missing now exists, and it was verified the only way that means anything:
+run against `git show HEAD:` of both files it names **line 116 of thresholds.md and line 12 of
+score.py** — the real text that shipped, not an invented example.
+
+Its first version had a false positive worth recording. `SKILL.md` line 190 says "**and note this is
+no longer the same as `flagged: false`**" — which IS the correction — but names `verdict_threshold`
+eight lines further down, outside the window. Requiring the identifier nearby would have pushed the
+documents toward the jargon and away from the explanation, so the check accepts either: naming the
+field, or drawing the distinction in words.
+
+Worth keeping: **a semantic change propagates to the places that argue about it and misses the places
+that merely state it.** Every surface that DISCUSSED the distinction was updated, because whoever
+made the change was thinking about it there. The two that were missed were a one-line field glossary
+and a module docstring — the surfaces most likely to be read by someone who has never heard of the
+distinction at all.
