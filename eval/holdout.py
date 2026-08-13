@@ -98,6 +98,21 @@ def run(
             ai, tier=tier, threshold=threshold, max_iters=max_iters,
             best_of=best_of, rewriter=rewriter, seed=seed,
         )
+        # `untell_text` reports a refusal as {"error": ...} with no `pre`/`post`, and this indexed
+        # straight into `result["pre"]`. MEASURED with a typo'd backend name, `--rewriter compsite`:
+        #
+        #     KeyError: 'pre'
+        #
+        # a bare traceback for a message the loop had already written correctly ("rewriter
+        # 'compsite' is not available"). Every refusal took that path — an unset API key, an
+        # unavailable backend, a meaning gate that vetoed every draw — so the one thing a user
+        # needed to read was the one thing they could not see.
+        #
+        # `--rewriter` is deliberately left without an argparse `choices` list: hosted backends are
+        # valid names here, and `untell_text` resolves them against what is actually configured,
+        # which argparse cannot. The fix is to surface its answer, not to duplicate its knowledge.
+        if "error" in result:
+            raise SystemExit(f"untell_text refused sample {i}: {result['error']}")
         rows.append({
             "i": i,
             "pre_max": result["pre"]["max"],
@@ -218,7 +233,15 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dataset", default="raid", choices=["hc3", "raid", "mage"])
     parser.add_argument("--n", type=int, default=10)
-    parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy"])
+    # Every tier the loader supports, `commercial` included. It was missing, so this CLI rejected
+    # at parse time a value its own `score_text` call accepts — the exact divergence
+    # `test_surface_parity.py` exists to catch, and the reason that test has been red.
+    #
+    # Accepting it is right even without API keys configured: `score_text(tier="commercial")`
+    # returns normally and reports the tier that actually produced numbers ("full" here), so the
+    # honest answer comes from the loader, which knows what is configured, rather than from an
+    # argparse list that cannot.
+    parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])
     parser.add_argument("--rewriter", default="composite")
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--best-of", type=int, default=3)
