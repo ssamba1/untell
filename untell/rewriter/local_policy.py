@@ -163,6 +163,18 @@ def _unshield(text: str, back: dict[str, str]) -> str:
     return _SHIELD_RE.sub("", text)
 
 
+def _next_torch_seed() -> int:
+    """Draw the next generation seed from the module the loop already seeded.
+
+    Split out from the call site so the property can be tested without loading a 1.5B model: same
+    ``random.seed`` gives the same sequence, a different one gives a different sequence, and the
+    sequence advances so ``best_of=N`` samples N different candidates rather than one N times.
+    """
+    import random
+
+    return random.getrandbits(63)
+
+
 def _sentinels_intact(source: str, candidate: str) -> bool:
     """Same sentinels, same number of each — compared on the TEXT, never on the mapping.
 
@@ -365,6 +377,17 @@ class LocalPolicyRewriter:
             prompt = self._tok.apply_chat_template(messages, **tmpl_kw)
         # Use a real parameter's device, not self._model.device: when accelerate dispatches the model
         # across devices (device_map="auto" with >1 GPU or CPU offload) there is no single .device.
+        # `generate(do_sample=True)` draws from torch's global RNG, and nothing in this project seeds
+        # it: `untell_text` sets `random.seed(effective_seed)` (run.py) which torch never consults.
+        # MEASURED: the same document, same code, same `seed=0` gave 0.9591 -> 0.1925 on one run and
+        # a byte-identical no-op on the next — so a figure taken from this rewriter could not be
+        # reproduced even by re-running the command that produced it.
+        #
+        # Result 144 records this exact class of defect being fixed in `structural.py`, where an
+        # unseeded stream left published README figures that no commit reproduces. Deriving the torch
+        # seed from the already-seeded `random` module keeps one source of randomness: fixed for a
+        # given `seed=`, and still advancing between draws so `best_of=N` samples N different things.
+        torch.manual_seed(_next_torch_seed())
         device = next(self._model.parameters()).device
         inputs = self._tok(prompt, return_tensors="pt", truncation=True, max_length=2048).to(device)
         # A fixed 512-token cap and "one sentence out per sentence in" are in direct conflict on a

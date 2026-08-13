@@ -159,6 +159,32 @@ class TestTheTrainedPolicyIsUntouched:
         assert seen == [False]
 
 
+class TestGenerationIsReproducible:
+    """`generate(do_sample=True)` draws from torch's RNG, which `random.seed` never reaches.
+
+    MEASURED before this existed: the same document, same code and the same `seed=0` gave
+    0.9591 -> 0.1925 on one run and a byte-identical no-op on the next. A figure from this rewriter
+    could not be reproduced by re-running the command that produced it — the defect Result 144
+    records for `structural.py`, reintroduced one rewriter over.
+    """
+
+    def _draws(self, seed, n=3):
+        import random
+
+        random.seed(seed)
+        return [lp._next_torch_seed() for _ in range(n)]
+
+    def test_the_same_loop_seed_reproduces_the_same_generation_stream(self):
+        assert self._draws(0) == self._draws(0)
+
+    def test_a_different_loop_seed_gives_a_different_stream(self):
+        assert self._draws(0) != self._draws(1)
+
+    def test_the_stream_advances_so_best_of_n_samples_n_things(self):
+        """Seeding to a constant would make every draw identical and silently disable best-of-N."""
+        assert len(set(self._draws(0, n=5))) == 5
+
+
 class TestPreambleStripping:
     @pytest.mark.parametrize("raw,want", [
         ("Here is the rewritten text:\nReal content follows.", "Real content follows."),
