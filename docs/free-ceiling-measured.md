@@ -10023,3 +10023,46 @@ Worth keeping: **a cross-surface matrix finds the surfaces that are BETTER than 
 the ones that are worse.** Every previous result in this thread was about something missing. The same
 sweep, run once more, turned up a surface doing something the others do not — and the useful output
 was not a fix but a corrected expectation.
+
+## Result 203
+
+**`best_of=0` drew a draft anyway. The caller asked for zero and got a rewrite that looked like every
+other rewrite.**
+
+Result 202 found REST refusing an out-of-range threshold rather than warning about it. Read in
+reverse, that is a list: **every constraint REST enforces is a claim about valid input that the
+library does not make.**
+
+    max_iters   Ge1, Le100        best_of   Ge1, Le32
+    threshold   Ge0.0, Le1.0      margin    Ge0.0, Le1.0
+    text        MaxLen 50000      tier      Literal
+
+MEASURED against the library, one paragraph at `tier=lite`:
+
+    max_iters=1  best_of=1    changed=True   rewrites=1  adopted=1
+    max_iters=0               changed=False  rewrites=0  adopted=0   nothing said
+    max_iters=-3              changed=False  rewrites=0  adopted=0   nothing said
+    best_of=0                 changed=True   rewrites=1  adopted=1   value ignored
+    best_of=-2                changed=True   rewrites=1  adopted=1   value ignored
+
+**Two different failures, and the quieter one is worse.** A non-positive `max_iters` returns the
+input untouched and says nothing — Result 193's adoption caveat cannot cover it, because no draft was
+ever drawn to refuse. A non-positive `best_of` is not respected at all: one draft is drawn regardless,
+the text changes, every field reads normally, and nothing anywhere indicates that the setting was
+discarded. A silent no-op at least leaves the text as evidence; a silently ignored setting leaves
+nothing.
+
+Both now warn, matching how the library already treats an unknown tier, an unknown style and an
+unreachable threshold. REST keeps its 422 and a test pins that the two surfaces have not silently
+converged, because Result 202 established that both answers are honest and they are answers to
+different questions.
+
+**I swept these exact values in Result 181 and called them defensible.** The sweep was the right one
+and the conclusion was wrong: `max_iters=0` returning the input looked like a reasonable reading of a
+zero budget, and `best_of=0` drawing anyway looked like harmless clamping. What was missing was the
+comparison — REST's schema had already been a shipped claim that both are invalid, and I had looked
+at only one surface.
+
+Worth keeping: **a second implementation of the same contract is a free review of the first.** Two
+surfaces, one of them written by someone thinking about validation, and the disagreement between them
+is a list of defects that needs no judgement call to produce — only the discipline to read both.
