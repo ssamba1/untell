@@ -9528,3 +9528,38 @@ Worth keeping: **a duplicated constant that explains why it is duplicated is sti
 constant, and the explanation is the part most likely to be wrong.** Nobody re-checks a reason once
 it is written down. The rule had a test, the test was failing, and the comment was the reason it had
 survived long enough to fail.
+
+## Result 190
+
+**"The ONLY place the list is written down" — and the vocabulary is in two files.**
+
+Result 189 found a comment whose factual claim about the codebase was false, and which had kept a
+failing test alive because nobody re-checks a reason once it is written. That is a searchable class:
+comments asserting "the only caller", "nothing else uses this", "imports from this module". Sweeping
+them turned up `prompts.py` on `STYLE_NAMES`:
+
+    # The voices `--style` accepts, and the ONLY place the list is written down.
+
+`"storytelling"` appears in exactly two files. `structural._STYLE_PROFILES` is keyed by the same
+fourteen names and is an independent literal.
+
+MEASURED: both sets are 14 and identical, and `run.py` builds its argparse choices from `STYLE_NAMES`
+rather than restating them. **No live drift** — the claim is wrong about the code, not about the
+state.
+
+What made it worth a loop is that only one direction was guarded, and the two directions fail
+differently:
+
+    a name with no profile   accepted by every surface, silently rewrites with the neutral one
+    a profile with no name   a style nobody can select
+
+The first is exactly the defect Result 180 was opened for. And the vocabulary has drifted here
+before: the comment's own history records the MCP docstring carrying **six of the fourteen**, so
+eight styles were invisible to every MCP caller. The consolidation that followed removed the argparse
+and MCP copies and left the profile table, which is the copy nobody thinks of as a copy — it is a
+settings dict, and its keys happen to be the vocabulary.
+
+Worth keeping: **a comment claiming uniqueness is a claim about every other file, which is the
+hardest kind to keep true and the easiest kind to check.** "This is the only place X is written" was
+true of the two copies its author had just deleted and false of the one they had not looked at. The
+sweep that finds these costs one grep.
