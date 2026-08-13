@@ -10223,3 +10223,35 @@ Worth keeping: **a number and the sentence around it are one claim, and changing
 you get a caveat that reassures.** Two loops ago the figures were wrong and the sentence was right.
 Correcting the figures alone would have left the sentence wrong in the more dangerous direction, and
 the only reason that was caught is that the message was rendered and read rather than reasoned about.
+
+## Result 208
+
+**Eleven caveats rendered side by side. Ten read correctly and the eleventh contradicted itself.**
+
+Result 207's lesson was that a number and its sentence are one claim, caught only because the message
+was rendered and read. The obvious next step is to do that for all of them at once — this session
+added seven caveats and each was inspected alone, at the moment it was written.
+
+Printed together, the budget note from Result 203 read, at `max_iters=0, best_of=0`:
+
+    "max_iters=0 means no rewriting was attempted at all, so your text came back exactly as you
+     sent it. Pass 1 or more to run the loop. best_of=0 is not a number of drafts, so it was
+     ignored and one draft was drawn."
+
+**No draft was drawn.** `rewrites=0` at `max_iters=0`, measured in the same result that introduced
+the note. The second sentence was false exactly when the first was true.
+
+Neither half is wrong on its own, and that is why nothing caught it. The two conditions are
+independent in the code and not in the world: a non-positive `max_iters` stops the loop before
+`best_of` can mean anything. **The test covering this case asserted that both phrases were present**
+— it was written to check the composition and pinned the bug instead.
+
+The other ten hold up, including the ones this session rewrote after finding them wrong: the
+short-text bands now say the score collapses toward its floor rather than reassuring, and the roster
+note says a short ensemble makes text look more human rather than borrowing the abstention note's
+wording.
+
+Worth keeping: **a caveat is written once and read in combination.** Every one of these was correct
+in the situation it was written for. The one that failed did so only in the presence of another,
+which is a state no author is thinking about while writing either — and which costs one command to
+check for all of them at once.
