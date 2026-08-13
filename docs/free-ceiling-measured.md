@@ -9004,3 +9004,45 @@ restores to `final`, so the similarity is exact" is a true sentence about text i
 top of a false claim about a token-level metric. A comment that states its reasoning made this
 findable — the same property that made Result 171 findable — because the reasoning could be checked
 independently of the code.
+
+## Result 178
+
+**One report, two bars, and only the summary row said which one answered.**
+
+Result 173 asked whether the loop threshold and the verdict threshold are used consistently, and
+found the code agreed with itself across `score_text`, `untell_text`, `pre` and `post`. It did not
+cover `verify` — the command that exits non-zero, and the one that disagreed with itself.
+
+The history is already in the file. An earlier fix moved `verify`'s LOCAL rows off the loop threshold
+and onto the published `verdict_threshold`, recording the measurement that justified it:
+
+    raw max >= 0.30          21/40  (52%)
+    score_text "flagged"      7/40  (18%)   <- calibrated
+    verify "not passing"     21/40  (52%)   <- this surface, uncalibrated
+
+Two things survived that fix. Commercial and browser rows still judge at the loop threshold, so a
+report containing both kinds applies 0.45 to some rows and 0.30 to others. And the per-detector local
+rows moved onto the calibrated cut **without** gaining the field that says so, leaving the summary
+row as the only one in the report that explained its own bar.
+
+**The unification that looks obvious is wrong.** `verdict_threshold` is swept for the local stdlib
+ensemble and published by `score_text` for it. A commercial detector returns its own probability on
+its own scale, and applying a calibration derived from a different scorer to it would be a guess
+wearing a measurement's clothes. So the two kinds keep their own bars, and every row states which one
+judged it — which is precisely the reason the `local:max` row already carried the field, in a comment
+that reads "a pass at 0.38 is not read as a pass at 0.30".
+
+MEASURED after, over 6 in-band HC3 documents, 12 rows: **0** scored rows with no stated cut, **0**
+rows whose `passes` disagrees with its own stated cut, and an explicit `--threshold` still reported
+verbatim rather than silently replaced.
+
+**The first pass at this question saw nothing, and the reason is the denominator.** Running `verify`
+on in-band documents produced only `local:` rows — the half that was already fixed — because
+commercial and browser checkers are unavailable in this configuration. The disagreement is
+unreachable without one, so the battery injects a stub detector rather than reporting a clean sweep
+over the rows that were never at risk.
+
+Worth keeping: **a partial fix leaves the surface looking consistent from wherever the fixer stood.**
+The earlier change was correct, measured, and stopped at the rows its author could see running. What
+remained was invisible in the default configuration and would have shipped a contradictory report to
+exactly the users who pay for a commercial checker.
