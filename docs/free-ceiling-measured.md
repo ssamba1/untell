@@ -10285,3 +10285,40 @@ Worth keeping: **a property that holds by accident is worth pinning precisely be
 it.** The distinct wording that makes these eleven caveats non-redundant was the side effect of a
 test collision, and nothing recorded it as a requirement. It would have survived exactly until the
 next person wrote a caveat about a short ensemble.
+
+## Result 210
+
+**A measurement without a test is a fact about one afternoon.**
+
+Result 204 measured `score_text` and `batch_score_texts` agreeing to 0.000000 and moved on. Result
+209 then established why that is not finished work: the non-redundancy of eleven caveats turned out
+to rest on a wording change made three results earlier for an unrelated reason, recorded nowhere as
+a requirement, and it would have survived exactly until the next person wrote a caveat about a short
+ensemble. The same is true here, and the stakes are higher.
+
+`score_sentences` reaches the detectors through `batch_score_texts`. `untell_text` and every verdict
+surface reach them through `score_text`. **Nothing required the two to agree.** A drift between them
+puts the sentences the rewriter is told to fix on a different scale from the verdict it is judged by
+— targeting pointing at a document nobody is scoring — and it would be invisible, because each path
+is internally consistent and neither reports the other's numbers.
+
+Pinned as four properties rather than one, because `max` agreeing is the weakest of them:
+
+    the same keys              a field on one path and not the other is a KeyError a caller
+                               cannot predict from the documented shape
+    the same per-detector      `max` can match while the members behind it differ, which is a
+      values                   reordering nothing above would catch
+    a batch of several         the batch path exists to load detectors once for many texts, so
+      matching one at a time   state leaking between items is the risk it carries
+    the texts not all          three texts scoring identically would satisfy every assertion
+      scoring alike            above while proving nothing — the shape of the saturating
+                               detector this repository has shipped
+
+No specific value is asserted anywhere in it. The claim is that the two paths answer alike, whatever
+they answer, so it survives detector changes, threshold changes and corpus changes — which is the
+difference between a pin and a snapshot.
+
+Worth keeping: **the gap between measuring a property and pinning it is where the property goes to
+die.** Six results in this session measured something true and moved on; this one went back for the
+one where the consequence was worst. The measurement cost nothing to repeat, and the version that
+survives a year is the one with a test attached.
