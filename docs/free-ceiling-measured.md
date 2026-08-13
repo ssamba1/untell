@@ -11018,3 +11018,55 @@ Worth keeping: **a hand-written example is a fixture, not a sample.** It is fine
 branch fires; it cannot support a claim about how well something works, and the tell is that a
 second hand-written pair gives a wildly different number. The corpus assertion that replaced it —
 pair ordering rather than absolute gap — survives a change of text, which the original never could.
+
+## Result 226
+
+**A fourth surface, found by a sweep instead of by hand — and a red main I had left behind me.**
+
+Results 224 and 225 fixed three surfaces that issued verdicts on text the tool cannot read, each
+found one at a time. The mechanical version is a matrix: five public surfaces against seven inputs
+none of them can judge.
+
+    input         score  tells  sentences  humanize  humanness
+    non-english     yes    yes       yes*      yes        yes      (* tier caveat only)
+    very short      yes     --       yes       yes        yes
+    code only       yes     --       yes       yes         --
+    invisible       yes     --       yes       yes         --
+    per-line        yes     --       yes       yes         --
+    punct only      yes    yes       yes       yes        yes
+    ordinary        yes     --       yes       yes         --
+
+The first pass read every cell as `yes` or `--` and found nothing new. The finding came from
+asserting something stronger than "did it warn": **did it warn about the right thing.**
+`score_sentences` on a German paragraph returned per-sentence AI flags with a caveat explaining that
+per-sentence targeting is near-chance on the stdlib path — true, and beside the point, since no tier
+makes an English-only detector read German. Its cell said `yes` because a standing note happened to
+be present.
+
+Two blanks turned out to be correct and are recorded rather than closed:
+
+* **`tells` is silent on short text only when there are no tells**, and that gate is deliberate:
+  over 60 HC3 pairs truncated to five words the mean rate is 0.00, so caveating the common case
+  would be noise that teaches readers to skip warnings. My first pass called this a gap because the
+  probe text I chose happened to contain no tells — the blank was my sample, not the code.
+* **`humanness` blanks are abstentions only.** It has caveats for invisibles and the weak path;
+  they go to the log, because the function returns a float and has nowhere else to put them.
+
+### The part I should have caught earlier
+
+Running the wider suite afterwards surfaced `test_verify_carries_the_evasion_caveats` failing, and
+it fails at `HEAD~1` as well — **it has been red on main since I changed `verify` to forward
+`score_text`'s caveats rather than hand-pick two of them.** The test asserted
+`verify(_PROSE).get("warning") is None`; `_PROSE` is 37 words and now legitimately earns the
+short-text note. The code is right and the assertion was stale.
+
+Worth keeping: **an assertion that nothing was said cannot survive a codebase that is getting better
+at saying things.** `is None` was standing in for "no evasion caveat", and it broke on the first
+honest improvement to the surface it guards. The same shape as the `>= before - 0.01` bound in
+Result 222 — an assertion whose passing condition includes "the feature did nothing".
+
+Also worth noting how nearly I misattributed it: `git status` showed `untell/layout.py` modified, a
+concurrent session had been editing that file all session, and the failing case involved list
+splitting. The file was byte-identical to HEAD — a line-ending artifact. `rtk` returned empty output
+for `git diff` on it, which is the failure mode already recorded for `rtk`'s pytest summaries.
+Reading the bytes in Python settled it in one call.
