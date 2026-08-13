@@ -687,8 +687,9 @@ def _score_with_detectors(
     # typo produced a lite-tier answer labelled with no warning at all — quieter than a genuine
     # full->lite fallback, which does warn. Name it as a caller error rather than a downgrade,
     # and take the vocabulary from _TIER_RANK so it cannot drift from what load_detectors honours.
+    tier_note: str | None = None
     if tier not in _TIER_RANK:
-        result["warning"] = (
+        tier_note = (
             f"unknown tier '{tier}' — no tier matched, so only the always-on '{effective}' "
             f"detectors ran. Valid tiers: {', '.join(_TIER_RANK)}."
         )
@@ -712,7 +713,7 @@ def _score_with_detectors(
     # the ensemble's maximum confidence. The 7x spread between corpora is why the sentence names
     # both: a single figure here would be a property of whichever corpus produced it.
     elif effective == "lite" and modes.get("perplexity_burstiness") == "stdlib" and len(numeric) == 1:
-        result["warning"] = (
+        tier_note = (
             "lite tier on the stdlib path. Re-measured on 100 HC3 pairs: 64% of HUMAN text scores "
             "above the 0.30 loop threshold, and 30% is FLAGGED — `flagged` uses the 0.45 verdict "
             "threshold, not the loop one, so the two numbers answer different questions. It misses "
@@ -722,7 +723,7 @@ def _score_with_detectors(
         )
     # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
     elif _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
-        result["warning"] = (
+        tier_note = (
             f"requested tier '{tier}' but only '{effective}' produced scores"
             + (f"; failed to load: {', '.join(failed)}" if failed else "")
             + f". The reported numbers reflect the '{effective}' tier only "
@@ -762,11 +763,29 @@ def _score_with_detectors(
     # Appended rather than folded into the chain above: length and tier are independent problems,
     # and a short text scored on a downgraded tier has both. An elif would have reported whichever
     # one happened to be checked first and hidden the other.
-    for extra in (ensemble_warning, _short_text_warning(text),
+    # SITUATIONAL caveats first, the always-on tier caveat last.
+    #
+    # MEASURED over 120 corpus texts (HC3 and RAID, both halves) at `tier=lite`:
+    #
+    #     texts with an empty warning        0 / 120
+    #     warning length                     median 503, p90 882, max 882
+    #     `ensemble_warning` (tier caveat) 120 / 120
+    #     human-false-positive note         46 / 120
+    #     every other caveat                 0 / 120
+    #
+    # The tier caveat is right and it fires on every single run, which makes it wallpaper. With it
+    # in front, a reader who stops after the first sentence — which is what people do with a note
+    # they have seen a hundred times — never reaches the one that is specific to their input. The
+    # threshold caveat added alongside this is the worst case: it says the caller's setting passes
+    # everything, and it was arriving 500 characters in, behind "Also:".
+    #
+    # Ordering is the whole change. Nothing is dropped, shortened or conditioned; the rare and
+    # actionable note simply goes first and the standing one keeps the last word.
+    for extra in (_threshold_range_warning(threshold), _short_text_warning(text),
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
-                  _homoglyph_warning(text), _human_false_positive_warning(result),
-                  _no_prose_warning(text), _mostly_locked_warning(text),
-                  _line_per_sentence_warning(text), _threshold_range_warning(threshold)):
+                  _homoglyph_warning(text), _no_prose_warning(text),
+                  _mostly_locked_warning(text), _line_per_sentence_warning(text),
+                  _human_false_positive_warning(result), ensemble_warning, tier_note):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
