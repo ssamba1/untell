@@ -10103,3 +10103,41 @@ Worth keeping: **a null from a comparison is cheaper than a null from a sweep an
 texts through two functions answered a question that no amount of reading either function would have
 settled, and the answer — exact agreement — is the kind of fact that is only ever noticed when it
 stops being true.
+
+## Result 205
+
+**Three "ideal" burstiness values in one codebase. The one shown to users was the only one nothing
+supports.**
+
+`humanness` names 0.70, the rewriter's default profile targets 0.45, and Result 172 measured human
+prose near 0.48. At most two of those can be right.
+
+MEASURED, sentence-length coefficient of variation over 40 human texts per corpus, >=90 words:
+
+    corpus   human mean   human median   AI mean   texts reaching 0.70
+    HC3        0.514        0.491         0.278       6 / 40
+    RAID       0.350        0.326         0.262       1 / 40
+
+**7 of 80 human documents reach the figure the advice named.** The tool was telling users that human
+prose sits at a value 91% of human prose does not reach.
+
+**The score was never wrong, and that is the part worth reading.** `_BURSTY_IDEAL` has never appeared
+in the penalty arithmetic. The penalty applies below 0.50 and above 1.0, and 0.50 sits almost exactly
+on the measured HC3 human median — a well-calibrated cut, arrived at independently of the constant
+sitting twenty lines above it. `_BURSTY_IDEAL` is used in a shape label, where every value inside the
+unpenalised band behaves identically, and in the sentence shown to the user. The defect was one
+sentence attached to correct arithmetic.
+
+**The replacement is two numbers.** The corpora differ by more than either differs from the old
+constant — forum answers vary their sentence length far more than paper abstracts — so a single
+figure would put the same error in a new place. The advice names both and says which register each
+belongs to.
+
+A test pins that the penalty still does not reference the constant, so wiring it in later would be a
+scoring change rather than a quiet one, and another checks the quoted medians against the corpus
+rather than trusting them.
+
+Worth keeping: **a constant that is never used in the arithmetic is not harmless — it is the part a
+user reads.** Every guard in this repository points at the code path; this one lived entirely in the
+explanation, was never wrong in any test of behaviour, and was the only number in the file a reader
+was ever asked to act on.
