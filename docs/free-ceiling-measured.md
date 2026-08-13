@@ -8441,3 +8441,67 @@ in common in the code — one reads a line mask, the other a span table — and 
 experience: a confident verdict on a document the tool could not work on. Enumerating *mechanisms*
 would have found them separately and late; enumerating what a user might paste found the second one
 immediately after the first.
+
+## Result 168
+
+**The free ladder's top rung is a 220M paraphraser. A 1.5B instruct model is better at evading and
+worse at rewriting, and the meaning gates are what notice.**
+
+Result 163 established that in-sample gains stop transferring, so the question is what would move the
+held-out number. Not search — beam is refuted (Result 48) and width bought nothing. The untried axis
+is the proposer: rules plus T5-**base** is the whole free ladder, while
+`LocalPolicyRewriter(use_adapter=False)` has existed all along for base-model A/B, is unreachable
+from `get_rewriter()`, and had never been measured. Qwen2.5-1.5B-Instruct, CPU, no key.
+
+RAID n=5, `best_of=2`, `max_iters=2`, scored in sample and against the RADAR holdout:
+
+```
+doc | tier max pre -> post | RADAR pre -> post | sim
+  3 |   0.9591 -> 0.1587   |  0.9991 -> 0.0811 | 0.892
+  0 |   0.9998 -> 0.9998   |  0.9514 -> 0.9514 | 1.000
+  1 |   0.9983 -> 0.9983   |  0.8323 -> 0.8323 | 1.000
+  2 |   0.7555 -> 0.7555   |  0.7835 -> 0.7835 | 1.000
+  4 |   0.9998 -> 0.9998   |  0.4467 -> 0.4467 | 1.000
+```
+
+**Four of five came back byte-identical, and the fifth is the best held-out result this document has
+recorded from any rewriter.** Doc 3 is the document composite leaves RADAR-flagged on two of three
+seeds (0.999 / 0.288 / 0.457); here it lands at **0.0811**, against a genuine-human mean of 0.0829.
+
+`sim 1.000, stopped max_iters` is what a silent proposer and a fully-vetoed one both print, and they
+have opposite fixes. The proposer is not silent — it returns 92-98% length candidates every time.
+Running the seven vetoes individually on its output, in `meaning_preserved`'s own order:
+
+```
+doc | sim    | tier max        | numbers certainty polarity  words_lost      contra  entail  roles
+  0 | 0.9363 | 0.9998 -> 0.4446|  True    True     False     9 (allow 31)    0.0035  0.2294  False
+  1 | 0.8288 | 0.9983 -> 0.2318|  True    False    False    58 (allow 27) X  0.0213  0.0371  False
+  2 | 0.7286 | 0.7555 -> 0.9992|  True    False    False   -47 (allow 13)    0.0148  0.0555  False
+```
+
+**Every rejection is correct.** Entailment runs 0.037-0.229 against a floor, contradiction is near
+zero, and the candidates open *"In their paper titled ...,"* and *"This research introduces
+EdgeFlow"* — third-person reframings of an abstract, not rewrites of it. Doc 1 deletes 58 words
+against a 27-word allowance. Doc 2 **expands** by 47 and scores 0.7555 -> 0.9992, worse than the
+input: the model's own prose reads as AI, which is precisely the T5 finding one model-scale up
+(*"one draw crushed roberta 0.973 -> 0.066, another backfired 0.017 -> 0.999"*).
+
+So the blocker is not capability and not the gates. It is the **prompt**. `_TRAIN_PROMPT` —
+*"Rewrite the following text so it reads as natural human writing while preserving its exact
+meaning"* — is documented as the exact instruction the policy was RL-trained on, and re-using it on
+an **untuned** model is out of distribution in the other direction: with nothing holding it to the
+source, an instruct model summarises. Low entailment with near-zero contradiction is the signature of
+exactly that, and it is not a defect the gates should be relaxed to admit. Doc 1's candidate scores
+0.2318, a clean in-sample pass, and drops a fifth of the content to get there.
+
+What this buys, stated at its real size: one document in five, n=5, one seed, `best_of=2`. The
+direction is worth the entry only because of what that one document did to a detector nothing else
+has moved. The specific next step is a faithfulness-anchored prompt and sentence-at-a-time rewriting,
+which makes deletion and reframing structurally unavailable rather than caught afterwards — and then
+the only-ever-help selection T5 already has, at an N that CPU can afford (700s per document at 1.5B
+with `best_of=2` is the cost being budgeted against).
+
+Worth keeping: **a stronger proposer is not a better rewriter, and the gates are the only thing that
+knows the difference.** Every in-sample number in the failing arm looked like progress —
+0.9998 -> 0.4446, 0.9983 -> 0.2318 — and three of three candidates changed the meaning. Without the
+vetoes this would have published as the biggest jump in the document.
