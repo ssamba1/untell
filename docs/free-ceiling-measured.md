@@ -8360,3 +8360,44 @@ defect.
 Worth keeping: **a stability property is only as strong as the instability it was given a chance to
 show.** Idempotence measured on documents the tool declines to touch is a measurement of nothing, and
 it reads exactly like a clean result.
+
+## Result 166
+
+**A code block was reported as 99% AI-adjacent with nothing said about it being code.**
+
+An input type nobody had tested and everybody pastes: a README section, a config block, a table.
+MEASURED at `tier=lite` on a pure 272-word Python fence:
+
+```
+flagged: True    stopped: max_iters    changed: False
+```
+
+The loop ran every iteration, adopted nothing, returned an AI verdict — and the only caveat attached
+was the generic lite-path one. Nothing said the document contains no prose, that the rewriter had
+nothing it was permitted to touch, or that the detectors were scoring a kind of text they were never
+built for. Every other "this verdict is undefined" case in this repository has a note: text too
+short, script the catalogue cannot read, detectors that failed to load. Not this one.
+
+**The discriminator already existed**, which is the part worth remembering. `layout._prose_line_mask`
+marks the lines the rewriter is allowed to edit, and it is stdlib-only with no intra-package imports:
+
+```
+pure code fence     0 of 62 lines prose
+ordinary prose      1 of 1
+prose + a fence     1 of 64
+```
+
+Zero of 120 corpus texts have no prose line, so the note cannot fire on real writing. The work was a
+scan and a sentence; the missing piece was the question.
+
+Coverage is written down rather than implied. It fires on fenced code, tables and YAML front matter,
+and **not** on a bullet list or a bare URL list — `_prose_line_mask` counts list items as prose
+because the rewriter does rewrite them. Right for bullets, a miss for URLs, and a caveat firing on
+every list would be noise on the commonest markdown there is.
+
+The wording claims the verdict is **undefined** for this input rather than that the input is
+innocent, so it survives being read by someone whose code really was machine-written.
+
+Worth keeping: **the same question asked of a different input type is a different question.** Nine
+results of asking "what does this tool say when it cannot answer" had covered short text, foreign
+script and dead detectors. Code was not a harder case — it was an unasked one.
