@@ -66,7 +66,10 @@ class SurgicalRewriter:
         # accept a swap that removes a tell while leaving the score inside the loop's own 0.02 noise
         # band. Measured both ways on real HC3 AI text — tells/100w 0.571 -> 0.233 against
         # 0.571 -> 0.458 on the stdlib path, and 0.566 -> 0.196 against 0.566 -> 0.428 at full tier,
-        # with the detector score unchanged either way and 2.3x less wall-clock. NOT the default of
+        # with the detector score unchanged either way and 2.3x less wall-clock AT FULL TIER — on
+        # the stdlib lite path a clean install runs, the two modes cost the same (0.92x, 0.95x
+        # measured; the 8.2x cheaper ranking is handed back downstream — see `word_importance`).
+        # NOT the default of
         # `surgical_substitute` itself, because eval/compare_humanizers.py uses that function as the
         # `synonym_swap` row standing in for the QuillBot / TextFooler class, and that baseline has
         # to keep modelling their technique rather than inheriting ours.

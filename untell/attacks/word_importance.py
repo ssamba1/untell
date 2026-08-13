@@ -808,6 +808,19 @@ def surgical_substitute(
         # therefore still informative on the stdlib path where deletion-importance leads nowhere.
         # This also SKIPS the leave-one-out detector pass entirely, which is where the 2.3x
         # speed-up at full tier comes from.
+        #
+        # THE SPEED-UP IS FULL-TIER ONLY, and lite is what a clean install runs. Re-measured on the
+        # stdlib lite path, warm-up controlled, median of 3 runs over 4 HC3 documents:
+        #
+        #     the ranking pass alone   importance() / _tell_ranks()   8.2x   (5.8x - 9.0x)
+        #     the whole call           prefer_tells True vs False     0.92x, 0.95x
+        #
+        # The ranking really is an order of magnitude cheaper, and the tells objective hands the
+        # saving straight back downstream — it evaluates more candidates and recounts tells per
+        # adoption. At full tier the ranking dominates because each leave-one-out step is a real
+        # detector pass, so 2.3x stands there; on the default path the two modes cost the same.
+        # `prefer_tells=True` is chosen for the tells it removes (0.571 -> 0.233 against
+        # 0.571 -> 0.458), not for speed a lite user will not see.
         word_ranks = _tell_ranks(text)
     else:
         word_ranks = importance(text, tier=tier, only=substitutable, base=pre)  # `pre` IS its baseline
