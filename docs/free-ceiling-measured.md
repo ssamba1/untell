@@ -10322,3 +10322,39 @@ Worth keeping: **the gap between measuring a property and pinning it is where th
 die.** Six results in this session measured something true and moved on; this one went back for the
 one where the consequence was worst. The measurement cost nothing to repeat, and the version that
 survives a year is the one with a test attached.
+
+## Result 211
+
+**The most-shown sentence in the tool quotes two percentages. Nothing checked them, and pinning them
+took three corrections — all to the test.**
+
+Result 210 ended on a list: six results this session measured something true and moved on. This is
+the one with the widest reach. The lite-tier caveat fires on **120 of 120** corpus texts, so every
+run on a default install carries it, and it says "64% of HUMAN text scores above the 0.30 loop
+threshold, and 30% is FLAGGED".
+
+MEASURED at n=100, HC3 human halves, stdlib path: **64/100 and 30/100**, exactly. Pinned rather than
+corrected — which is the outcome this session has not often had for a number in prose. Result 205
+found `humanness` naming a burstiness 7 of 80 human documents reach; Result 207 found the short-text
+bands overstating by 20 to 100 points. Both were correct when written and unguarded afterwards.
+
+**Three corrections while writing the test, and all three were the test's fault.**
+
+The premise assertion did not pin the scoring path, so torch upgraded lite to GPT-2 and the stdlib
+caveat correctly did not fire — Result 196's mistake, repeated by the person who wrote Result 196.
+
+The module fixture then flipped the environment variable without clearing the score caches, serving
+results from the path it had just left: 52.5% and 17.5% against a claimed 64% and 30%. The repo's own
+`conftest.stdlib_lite` clears them and says why.
+
+And a cheaper n=40 run gave those same 52.5% and 17.5% honestly — **a twelve-point swing from sample
+size alone.** The claim is about 100 pairs, so pinning it at 40 would pin a different claim. The
+tolerance covers detector jitter, not a change of denominator.
+
+The inventory assertion is read off the sentence rather than written from memory, which is how it
+caught its own first version missing `1.000` and the two `n=30` denominators.
+
+Worth keeping: **a test that pins a measurement has to reproduce the measurement, and that is harder
+than making an assertion pass.** Every one of the three wrong versions produced a green-looking
+number. The one that made the test pass at n=40 was the most dangerous, because nothing about it
+looked like an error — it was simply a different experiment wearing the same assertion.
