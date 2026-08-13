@@ -10358,3 +10358,72 @@ Worth keeping: **a test that pins a measurement has to reproduce the measurement
 than making an assertion pass.** Every one of the three wrong versions produced a green-looking
 number. The one that made the test pass at n=40 was the most dangerous, because nothing about it
 looked like an error — it was simply a different experiment wearing the same assertion.
+
+## Result 212
+
+**Result 175 scaled from n=5 to n=10 x 3 seeds. The arm is worse than composite on every aggregate,
+one of its two headline documents does not replicate, and the other one does.**
+
+Same ten RAID documents `eval/holdout.py` measured composite on, three seeds each, 30 loop runs,
+held-out RADAR scored last on frozen text. Composite ran at `best_of=3, max_iters=5` and this arm at
+`2, 2` — a confound that favours composite, so it cannot manufacture a win here.
+
+```
+single-seed held-out mean (what a user gets)
+  composite    0.5035 (4/10)   0.4981 (4/10)   0.4391 (4/10)
+  base-model   0.5974 (6/10)   0.5434 (5/10)   0.6026 (6/10)
+
+in sample     composite 0.4268 / 0.4063 / 0.4301    base-model 0.8376 / 0.7722 / 0.7810
+base-model no-ops: 21 of 30 runs byte-identical
+```
+
+**Worse in sample, worse held out, worse flagged rate, and inert on 70% of runs.** Result 175 called
+this a lever; at n=5 and one draw it looked like one.
+
+Per document, held-out post by seed:
+
+```
+doc | RADAR pre | composite            | base-model           | better
+  0 |  0.9514   | 0.973 0.940 0.980    | 0.423 0.443 0.752    | base
+  1 |  0.8323   | 0.243 0.291 0.094    | 0.832 0.832 0.832    | composite
+  2 |  0.7835   | 0.163 0.123 0.319    | 0.784 0.784 0.784    | composite
+  3 |  0.9991   | 0.999 0.288 0.457    | 0.999 0.131 0.999    | base
+  4 |  0.4467   | 0.096 0.996 0.102    | 0.039 0.035 0.073    | base
+  5 |  0.4311   | 0.358 0.342 0.764    | 0.119 0.431 0.431    | base
+  6 |  0.9996   | 1.000 1.000 1.000    | 1.000 1.000 1.000    | tie
+  7 |  0.9387   | 0.865 0.733 0.355    | 0.939 0.939 0.939    | composite
+  8 |  0.1371   | 0.019 0.019 0.023    | 0.137 0.137 0.137    | composite
+  9 |  0.7029   | 0.320 0.250 0.299    | 0.703 0.703 0.080    | base
+```
+
+**Doc 0 replicates and is the one claim from 175 that survives.** Composite never takes it below
+0.940 in three seeds; the base model moves it in all three and clears the 0.45 bar in two. Result 163
+named doc 0 one of two documents composite cannot move, and it is movable — by a different proposer,
+not by more of the same one.
+
+**Doc 3 does not replicate.** 175 reported 0.0994 from a single draw; across three it reads
+0.999 / 0.131 / 0.999, and composite reaches 0.288 on a seed of its own. One draw in three, quoted as
+a result. Doc 6 remains immovable for both arms in all six runs.
+
+**The complementarity is real, and it is worth exactly one number.** Five documents favour the base
+model, four favour composite, one ties. Taking the better arm per document:
+
+```
+best-of-3-seeds, mean held-out          flagged
+  composite only     0.3504              2/10
+  base-model only    0.4479              4/10
+  either             0.2377              1/10
+```
+
+**But that selector cannot be built from anything the loop can see.** It picks using the holdout. The
+in-sample score would choose the opposite: doc 0's best base-model run reads **0.7604 in sample** —
+by the loop's own objective its worst kind of failure — while the holdout says 0.423. `ensemble`
+already exists and already selects per input; it ranks candidates on the quantity that misreads
+precisely these cases. That is Result 163 again, now costing something concrete rather than
+describing something.
+
+Worth keeping: **n=5 and one draw of a stochastic rewriter is enough to produce a table, a mechanism
+and a conclusion, and not enough for any of them to be true.** 175 had a real finding in it — doc 0 —
+sitting beside an artefact of the same size and shape, and nothing in that run distinguished them.
+Third time this session: the conviction split, doc 3, and the seeding defect that made even the same
+seed unreproducible.
