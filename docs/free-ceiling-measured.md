@@ -8832,3 +8832,69 @@ appeared after the third correction.
 Worth keeping: **a documentation check is a parser, and a parser is a place to be wrong.** The fix
 was to stop parsing prose: the fenced block now holds key lists only, and the explanation sits
 outside it where no extractor has to guess which words are field names.
+
+## Result 175
+
+**The untuned rewriter clears the two documents nothing else could, and its in-sample score calls
+that a failure.**
+
+Result 168 left the base-model path measured and unusable — 4 of 5 documents byte-identical, and the
+fifth the best held-out number in this log. Making it work took four fixes, and **the first three
+each shipped, were individually justified, and changed nothing observable.** Every one of these
+failures prints `sim 1.000, stopped max_iters`.
+
+1. **The prompt.** `_TRAIN_PROMPT` is what the policy was RL-trained on; an untuned model given it
+   summarises. Anchored replacement on the base path — and *not enough on its own*: with six explicit
+   rules Qwen2.5-1.5B still opened *"In the paper titled ..."*, ran to 108% on one document and
+   compressed another to **29%**. Instruction-following at 1.5B does not carry a constraint.
+2. **Granularity.** A model that cannot see the document cannot summarise it. Per sentence, entailment
+   went **0.037-0.229 → 0.967 / 0.989 / 0.973 / 0.960 / 0.287**.
+3. **Sentinels.** The loop rewrites LOCKED text. Doc 0 carries 12 locked spans across **all 9** of its
+   sentences, so nearly every unit handed to the model contained a `⟦HZ⟧` token it paraphrases away;
+   every sentence failed integrity and the rewriter returned its input. Shielded as `[REF0]` and
+   restored after.
+4. **The budget.** The per-sentence band and the document's deletion allowance were different
+   constraints, and satisfying only the first *guarantees* rejection: a 310-word document may lose 31
+   words, and a 0.6 sentence floor sheds about 112. One running budget now. The band then **loosened**
+   to 0.7 — traced over 9 sentences it was rejecting three at ratios 0.74-0.77 scoring entailment
+   0.935 and 0.951, faithful compressions thrown away by a band standing in for a budget that did not
+   yet exist.
+
+RAID n=5, `best_of=2`, `max_iters=2`, held-out RADAR scored on frozen output:
+
+```
+doc | tier max pre -> post | RADAR pre -> post | sim     | composite's RADAR, 3 seeds
+  0 |   0.9998 -> 0.9746   |  0.9514 -> 0.2564 | 0.969   | 0.973 / 0.940 / 0.980
+  1 |   0.9983 -> 0.9983   |  0.8323 -> 0.8323 | 1.000   | 0.243 / 0.291 / 0.094
+  2 |   0.7555 -> 0.7555   |  0.7835 -> 0.7835 | 1.000   | 0.163 / 0.123 / 0.319
+  3 |   0.9591 -> 0.1925   |  0.9991 -> 0.0994 | 0.977   | 0.999 / 0.288 / 0.457
+  4 |   0.9998 -> 0.3651   |  0.4467 -> 0.0269 | 0.953   | 0.096 / 0.996 / 0.102
+```
+
+**Doc 0 is the finding.** Result 163 named it one of the two documents composite never clears — 0.940,
+0.973, 0.980 on the holdout across three seeds — and here it reads **0.2564**. Doc 3, stuck at
+0.999 / 0.288 / 0.457, reads **0.0994**.
+
+**And doc 0 restates Result 163 in a single row: in sample 0.9746, held out 0.2564.** Judged by the
+objective the loop optimises, the rewrite that finally cracked an immovable document is its worst
+result of the five. Nothing in the shipped pipeline can see that.
+
+The two arms are **complementary, not ranked**. Where this one no-ops (docs 1, 2) composite reaches
+0.09-0.32; where composite is stuck (0.9, 3) this reaches 0.10-0.26. That is an argument for the
+per-input `ensemble` selector rather than for replacing a default — and the selector cannot currently
+make that choice, because it would rank these candidates on the in-sample score that calls doc 0 a
+failure.
+
+`_strip_preamble` was narrowed because its own known-negative caught it deleting a real first
+sentence: *"The committee reached the following conclusions after reviewing every dataset at
+length:"* is twelve words and ends in a colon.
+
+Scope: n=5, one seed, 2 of 5 still no-ops, one holdout, and roughly 700s per document on CPU. The
+in-sample mean is **worse** than composite's (0.6572 against ~0.43). Nothing here says this should be
+the default.
+
+Worth keeping: **three correct fixes in a row can each change nothing, and the aggregate cannot tell
+you which one you are still missing.** The prompt, the granularity and the sentinels were all real
+defects with real evidence; the thing actually holding the output back was arithmetic between two
+guards that never referred to each other. Tracing one document's nine sentences answered in one run
+what three re-runs could not.
