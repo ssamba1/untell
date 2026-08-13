@@ -269,6 +269,48 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
     return _score
 
 
+def _effective_style(style: str | None) -> str | None:
+    """The style that actually ran, which is not always the one that was asked for.
+
+    `style_profile` maps an unrecognised name to the neutral default by design. That is a reasonable
+    thing for a lookup to do and a bad thing for a report to repeat: echoing the request back would
+    tell a caller that `acadmic` ran.
+    """
+    try:
+        from untell.rewriter.structural import _STYLE_PROFILES
+
+        return style.strip().lower() if style and style.strip().lower() in _STYLE_PROFILES else None
+    except Exception:  # a reporting field must never break the result it rides in
+        return None
+
+
+def _unknown_style_warning(style: str | None) -> str | None:
+    """Say when a requested style was not recognised and the neutral profile ran instead.
+
+    `api_server.py` records this exact failure for the REST surface and fixed it there by
+    constraining the field to `STYLE_NAMES`: an unrecognised name "received a rewrite with no style
+    applied and nothing saying so". The CLI has `choices=STYLE_NAMES`. The library entry point — the
+    one the MCP server and every embedding caller use — had neither guard, so a typo silently bought
+    a neutral rewrite.
+
+    A warning rather than an exception: `style_profile`'s fallback is documented behaviour and
+    callers may be passing a name from a newer version, so refusing the whole run would be a harsher
+    answer than the mistake deserves.
+    """
+    if not style or _effective_style(style):
+        return None
+    try:
+        from untell.rewriter.prompts import STYLE_NAMES
+
+        known = ", ".join(sorted(STYLE_NAMES))
+    except Exception:
+        known = "see STYLE_NAMES"
+    return (
+        f"style {style!r} is not a known style, so the neutral profile ran instead and the output "
+        f"carries no style. Known styles: {known}."
+    )
+
+
 def _flagged_sentences_of(final: str, threshold: float) -> dict:
     """Per-sentence flags for the text the caller actually received.
 
@@ -993,7 +1035,17 @@ def _untell_text(
         "changed": final.strip() != text.strip(),
         "pre": pre,
         # Recomputed against `final`, not carried out of the loop — see `_flagged_sentences_of`.
-        "post": {**best_score, "flagged_sentences": _flagged_sentences_of(final, threshold)},
+        "post": {
+            **best_score,
+            "flagged_sentences": _flagged_sentences_of(final, threshold),
+            # Same defect as `flagged_sentences` above and fixed in the same place: the loop sets
+            # `style` at the top of an iteration and `best_score` is then replaced wholesale when a
+            # candidate is adopted, rescored or polished, so the caller was told `None` even when a
+            # style demonstrably ran. MEASURED at seed 5, `style="academic"` produced different text
+            # from `style=None` — the profile keeps the transitions the neutral one strips — and
+            # `post["style"]` was None in both cases, and in the `casual` case too.
+            "style": _effective_style(style),
+        },
         # Report meaning-preservation vs the true final output, on the RESTORED text in both cases.
         #
         # This used to compare `masked` against `best_masked` whenever polish had not run, on the
@@ -1033,10 +1085,10 @@ def _untell_text(
         # edge. The CLI says it too; a JSON, MCP or REST caller reads only this field.
         **({"warning": _merge_warnings(
             language_warning, carried_payload, best_score.get("warning"),
-            _saturated_max_caveat(pre, best_score),
+            _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
         )}
            if (language_warning or carried_payload or best_score.get("warning")
-               or _saturated_max_caveat(pre, best_score)) else {}),
+               or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)) else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),
         # WHICH meaning gate ran. `quality_metric` names the similarity backend but says nothing
