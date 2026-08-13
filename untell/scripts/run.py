@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import random
 import sys
 import threading
@@ -51,6 +52,66 @@ _RNG_LOCK = threading.RLock()
 # other, prefer the one with FEWER AI tells — a strictly more human-reading rewrite at no cost to
 # evasion. Detectors anti-correlate with human-ness on some text, so tells are the better tie-breaker.
 _TELLS_EPS = 0.02
+
+# What best-of-N ranks candidates ON. `max` over the whole tier is the shipped behaviour and stays
+# the default; the alternatives exist because Result 163 measured that improving this quantity stops
+# improving a detector the loop never sees. The loop optimises `max` over five correlated proxies and
+# then reports `max` over the same five, so a candidate that exploits one member's quirk wins — and
+# out of sample, the flagged count does not move at all (10/10 -> 4/2/3 in sample, 7/10 -> 4/4/4 held
+# out, across three seeds).
+#
+#   max      rank on the tier max. Shipped default; every published figure uses it.
+#   mean     rank on the ensemble mean, so lowering four detectors beats gaming one.
+#   dropout  rank on the max over a RANDOM SUBSET of the tier, resampled each iteration. A candidate
+#            cannot be selected for exploiting a member that is absent from the subset it was judged
+#            on. This is the transfer hypothesis stated as a mechanism.
+#
+# Selected with UNTELL_SELECT. Read per call rather than at import so a harness can sweep it without
+# reloading the module, and so a test can set it with monkeypatch.setenv.
+_SELECT_MODES = ("max", "mean", "dropout")
+# Fraction of the tier each dropout draw ranks on. 0.6 of five detectors is three — enough that the
+# objective is still an ensemble rather than a single member, few enough that no member is always
+# present. Not tuned; stated so the next person knows it was chosen, not measured.
+_DROPOUT_KEEP = 0.6
+
+
+def _selection_mode() -> str:
+    """The ranking objective for this call, defaulting to the shipped one."""
+    mode = os.environ.get("UNTELL_SELECT", "max").strip().lower()
+    return mode if mode in _SELECT_MODES else "max"
+
+
+def _live_detectors(score: dict) -> dict[str, float]:
+    """Detector name -> value, dropping error keys and non-numeric placeholders."""
+    return {
+        k: v for k, v in (score.get("detectors") or {}).items()
+        if isinstance(v, (int, float)) and not str(k).endswith("__error")
+    }
+
+
+def _selection_subset(score: dict, rng) -> frozenset[str] | None:
+    """The detector names this iteration ranks on; None means "all of them"."""
+    if _selection_mode() != "dropout":
+        return None
+    names = sorted(_live_detectors(score))
+    if len(names) < 3:  # nothing to drop out of; ranking on a subset of two is just noise
+        return None
+    keep = max(2, round(len(names) * _DROPOUT_KEEP))
+    return frozenset(rng.sample(names, keep))
+
+
+def _objective(score: dict, subset: frozenset[str] | None) -> float:
+    """The number best-of-N minimises. Falls back to `max` whenever the mode cannot apply."""
+    mode = _selection_mode()
+    if mode == "mean":
+        value = score.get("mean")
+        return float(value) if isinstance(value, (int, float)) else float(score["max"])
+    if subset:
+        live = _live_detectors(score)
+        chosen = [v for k, v in live.items() if k in subset]
+        if chosen:
+            return max(chosen)
+    return float(score["max"])
 
 # Exception type names already reported for the polish stage. Process-wide so a persistent failure
 # warns once instead of on every call — same pattern as `_MEMBER_FAILED` in rewriter/ensemble.py.
@@ -990,9 +1051,18 @@ def _untell_text(
             # Primary objective: lowest detector max. Restrict the tells tie-break to the ADOPTABLE
             # set (candidates that would pass the outer guard) so it can never cost a real adoption;
             # if none is adoptable, fall back to the whole set for progress/stall detection.
+            # The ADOPTION guard stays on `max` under every mode. A different objective is allowed to
+            # reorder the candidates that are already safe; it is not allowed to adopt one that
+            # worsens the number the caller is judged on. So `dropout` and `mean` can only ever pick
+            # differently among non-worsening drafts — a deliberately conservative test of the
+            # hypothesis, and the reason a negative result here would be informative rather than an
+            # artefact of a loosened guard.
             adoptable = [v for v in valid if v[1]["max"] <= best_score["max"]]
             pool = adoptable or valid
-            min_score = min(v[1]["max"] for v in pool)
+            # Resampled per iteration, from the loop's own seeded RNG, so a run is reproducible and
+            # successive iterations do not rank on the same subset.
+            subset = _selection_subset(best_score, random)
+            min_score = min(_objective(v[1], subset) for v in pool)
             # Among candidates within the detector noise band of the best, prefer the fewest AI tells
             # (then lowest score as the final deterministic tiebreak).
             #
@@ -1023,7 +1093,10 @@ def _untell_text(
             # improving it.
             #
             # Left as a flat count on that evidence. The thing to fix is not the ranking function.
-            near = [v for v in pool if v[1]["max"] <= min_score + _TELLS_EPS]
+            # Same objective as `min_score` above, or the band is drawn around a different quantity
+            # than the one that produced its centre — under `mean` that mismatch alone would decide
+            # which candidates are considered tied.
+            near = [v for v in pool if _objective(v[1], subset) <= min_score + _TELLS_EPS]
             # Never trade a PASS for a lower tell count. The band is +/- _TELLS_EPS (0.02), so when
             # the best candidate sits just under the threshold the band straddles it and a
             # fractionally worse, non-passing candidate with fewer tells wins the tie-break. The
