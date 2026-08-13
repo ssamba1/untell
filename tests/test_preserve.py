@@ -152,6 +152,9 @@ COVERAGE_CASES = [
     ("scientific", "Around 1.5e10 particles.", "1.5e10"),
     ("email", "Contact a@b.com for access.", "a@b.com"),
     ("p-value", "Significant at p<0.05 level.", "p<0.05"),
+    ("short hex", "The byte was set to 0xFF.", "0xFF"),
+    ("two-component dotted", "Requires np.float64 precision.", "np.float64"),
+    ("phone intl", "Call +1-555-123-4567 for support.", "+1-555-123-4567"),
 ]
 
 

@@ -307,6 +307,38 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         "dotted",
         re.compile(r"\b\d+(?:\.\d+){2,}\b"),
     ),
+    # Two-component dotted identifiers: `word.number` where the second component has a non-digit
+    # character (e.g. `np.float64`, `tensorflow v2`, `model.01`). The 3+ numeric-component pattern
+    # above misses these because the second component contains letters. Ordered after it so purely-
+    # numeric "1.2" still falls through to the number rules.
+    (
+        "dotted",
+        re.compile(r"\b[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"),
+    ),
+    # Phone numbers: international E.164, national formats, extensions. A rewrite that changes a
+    # phone number while the sentinel survives intact is the worst possible outcome.
+    # (?<! ) prevents the pattern from consuming a trailing space — without it, the match would
+    # include the space and the sentinel would restore with an extra trailing space.
+    (
+        "phone",
+        re.compile(
+            r"\+[0-9][0-9.-]{7,20}(?<! )"
+            r"|\b0[0-9]{2}[.\s-]?[0-9]{3}[.\s-]?[0-9]{4}\b"
+            r"|\b1[-.]?[0-9]{3}[-.]?[0-9]{3}[-.]?[0-9]{4}\b"
+            r"|\b[0-9]{3}[-.]?[0-9]{3}[-.]?[0-9]{4}\b"
+        ),
+    ),
+    # Short hex literals: C-style `0xFF`, `\x1B`, and URL percent-encoding `%2F`. These are facts
+    # (colour values, escape codes, URI components) that must not be altered. Ordered BEFORE the
+    # long-form hexid pattern, which requires 7+ chars and would not match these.
+    (
+        "hexid",
+        re.compile(
+            r"\b0[xX][0-9a-fA-F]{1,6}\b"  # 0xFF, 0x1A3
+            r"|\\x[0-9a-fA-F]{1,4}"  # \x1B escape sequences
+            r"|%[0-9a-fA-F]{2}"  # URL percent-encoding: %2F, %E2
+        ),
+    ),
     # Hex identifiers: git short shas (4f2a91c), full shas, MD5/SHA digests. One altered character
     # makes them point at nothing, and no rule above covered them.
     #
