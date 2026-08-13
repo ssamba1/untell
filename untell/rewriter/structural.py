@@ -1042,6 +1042,28 @@ def _cannot_start_a_sentence(second: str, first: str) -> bool:
     return False
 
 
+_BRACKET_PAIRS = (("(", ")"), ("[", "]"), ("{", "}"))
+
+
+def _inside_brackets(text: str, index: int) -> bool:
+    """Is ``index`` inside an open bracket that has not closed yet?
+
+    Counted rather than parsed, because prose brackets do not nest in practice and an unbalanced
+    one — a smiley, a lone "(see over" — must not make the whole rest of the text untouchable.
+    Depth is clamped at zero for that reason: a stray ")" resets rather than going negative.
+    """
+    for opener, closer in _BRACKET_PAIRS:
+        depth = 0
+        for char in text[:index]:
+            if char == opener:
+                depth += 1
+            elif char == closer:
+                depth = max(0, depth - 1)
+        if depth:
+            return True
+    return False
+
+
 def _semicolons_to_periods(text: str) -> str:
     """Promote each "; " to a sentence break, but only where the right side can stand alone.
 
@@ -1056,13 +1078,26 @@ def _semicolons_to_periods(text: str) -> str:
     common fragment in rewritten output, and every instance traced here. The sentence-level stages
     were innocent — attributing the fragments stage by stage found none until the text-level passes
     were included.
+
+    The third hole was a semicolon INSIDE A BRACKET, where no clause can stand alone however
+    well-formed it is, because the sentence continues after the closing bracket. MEASURED on five
+    ordinary sentences, 5 of 5 damaged:
+
+        (the vote was seven to two; two members abstained)
+            ->  (the vote was seven to two. Basically, two members abstained)
+
+    A full stop inside a parenthesis, mid-sentence, is a shape no human writes — and once the break
+    exists the later stages treat the fragment as a sentence and give it an opener, which is how
+    "Basically," ended up inside the brackets. Result 215's citation fix was the same bug seen
+    through one keyhole: `(Smith, 2019; Jones, 2020)` was damaged because it is a bracket, not
+    because it is a citation.
     """
     out: list[str] = []
     pos = 0
     for m in _SEMICOLON_RE.finditer(text):
         left = text[pos:m.start()]
         right = text[m.end():]
-        if _cannot_start_a_sentence(right, left):
+        if _inside_brackets(text, m.start()) or _cannot_start_a_sentence(right, left):
             out.append(text[pos:m.end()])   # leave the semicolon exactly as it was
         else:
             out.append(left + ". ")
