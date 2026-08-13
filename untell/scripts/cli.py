@@ -54,6 +54,14 @@ _COMMANDS: dict[str, str] = {
     "hedges": "untell.scripts.hedges:main",
 }
 
+# Console scripts this project ships that are NOT subcommands of `untell`. Typing one of these
+# means the user read the documentation, so treating it as prose to humanize is never what they
+# wanted — see the note in `main`. Derived by hand rather than from pyproject because the point is
+# the user-facing name, and a missing entry only costs the old behaviour rather than breaking one.
+_STANDALONE_ONLY = frozenset({
+    "voice", "latex", "audit", "mcp", "server", "distill", "surrogate", "eval-policy",
+})
+
 _ONE_LINER = {
     "humanize": "run the closed detector-feedback loop (alias: loop)",
     "score": "score text with the local AI-detector ensemble",
@@ -319,7 +327,31 @@ def main(argv: list[str] | None = None) -> int:
     if target is not None:
         return _resolve(target)(argv[1:])
 
-    # First arg is NOT a known command → treat as humanize shortcut
+    # First arg is NOT a known command → treat as humanize shortcut.
+    #
+    # That shortcut is documented and useful (`untell "some AI text"`), but it swallowed every
+    # mistyped or unavailable subcommand: the name became the TEXT. MEASURED:
+    #
+    #     untell notacommand --json   ->   {"final": "notacommand", ...}   exit 0
+    #
+    # The word was humanized and returned as the answer, with no error and a success exit. Same for
+    # `untell voice ...`, `untell server ...`, `untell mcp ...` — real entry points this project
+    # ships as `untell-voice`, `untell-server`, `untell-mcp`, which are NOT subcommands here.
+    #
+    # Guessing is not safe in general — a single word really can be the text someone wants rewritten
+    # — so this refuses only for names the PROJECT ITSELF ships as a console script. Those are words
+    # a user typed because they read the docs, not prose they want humanized, and the message points
+    # at the command that does exist.
+    if cmd in _STANDALONE_ONLY:
+        for line in (
+            f"error: {cmd!r} is not an `untell` subcommand — it is a separate command, "
+            f"`untell-{cmd}`.",
+            f"       Run `untell-{cmd} --help`, or `untell --help` for the subcommands.",
+            f"       (To humanize the literal word {cmd!r}, pass it after `untell humanize`.)",
+        ):
+            print(line, file=sys.stderr)
+        return 2
+
     from untell.scripts.run import main as humanize_main
 
     return humanize_main(argv)
