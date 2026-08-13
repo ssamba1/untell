@@ -153,6 +153,25 @@ def print_humanize_result(
             print(mean_note)
         if note:
             print(f"\n{note}")
+        # The tell counts, which this branch also dropped. The rich table has an "AI tells" row and
+        # this one printed nothing, so the before/after pair that is often the ONLY thing that moves
+        # — on a corpus where the detectors saturate, `max` can gain 0.0000 while tells fall 4 -> 0
+        # — was invisible to exactly the users who cannot see the table.
+        if tells_before is not None and tells_after is not None:
+            print(f"AI tells: {tells_before} -> {tells_after}")
+
+        # The caveat, which this branch used to drop entirely.
+        #
+        # The rich branch prints it; this one returned first. That makes it the seventh surface in
+        # this repo where a warning reached the RESULT and not the READER — and the worst placed of
+        # them, because it is what a `pip install untell` user sees: the `rich` extra is optional,
+        # and `run.py`'s `except ImportError` fallback to `_render` (which does print the caveat)
+        # is unreachable, since importing this module always succeeds and merely sets `_RICH` False.
+        #
+        # So a caller without the extra ran the loop, got a number, and was never told the number
+        # came from the path where 64% of human text scores above the threshold.
+        if warning:
+            print(f"\nNOTE: {warning}")
         print(f"\n--- Original ---\n{original}")
         print(f"\n--- Humanized ---\n{final}")
         return

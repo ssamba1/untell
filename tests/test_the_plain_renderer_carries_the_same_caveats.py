@@ -80,13 +80,65 @@ def test_the_meaning_gate_warning_still_appears():
     assert "did NOT run" in out
 
 
-def test_the_rich_path_shows_the_same_two_things():
-    """Parity, so the two renderers cannot drift apart again in either direction."""
+def _run_renderer(*, rich: bool, warning: str | None) -> str:
+    """Render through `print_humanize_result` with the rich path forced on or off."""
+    import contextlib
+    import io
+
+    import untell.rich_output as module
+
+    previous = module._RICH
+    module._RICH = rich and previous  # never claim rich is available when it is not installed
+    buffer = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buffer):
+            module.print_humanize_result(
+                original="Moreover, the framework leverages robust methodologies.",
+                final="The structure uses solid methods.",
+                pre_score={"max": 0.86, "detectors": {"perplexity_burstiness": 0.86}},
+                post_score={"max": 0.21, "detectors": {"perplexity_burstiness": 0.21}},
+                iterations=1,
+                stopped="passed",
+                warning=warning,
+                tells_before=5,
+                tells_after=0,
+            )
+    finally:
+        module._RICH = previous
+    return buffer.getvalue()
+
+
+def test_both_renderers_print_the_caveat_they_are_handed():
+    """Parity, asserted by RENDERING rather than by reading the source.
+
+    This used to be `assert "warning" in inspect.getsource(print_humanize_result)`, which passes as
+    long as EITHER branch mentions it — and only the rich branch did. The plain branch returned
+    before reaching the caveat, so it was dropped, and the check that existed to prevent exactly
+    that drift could not see it.
+
+    The omission mattered most on the path a plain `pip install untell` takes: `rich` is an optional
+    extra, and `run.py`'s `except ImportError` fallback to `_render` (which does print the caveat)
+    is unreachable, because importing `rich_output` always succeeds and merely sets `_RICH` False.
+    """
+    marker = "SENTINEL-CAVEAT-TEXT"
+    plain = _run_renderer(rich=False, warning=marker)
+    assert marker in plain, f"the plain renderer dropped the caveat it was given: {plain!r}"
+
     pytest.importorskip("rich")
-    import inspect
+    rich_out = _run_renderer(rich=True, warning=marker)
+    assert marker in rich_out, f"the rich renderer dropped the caveat it was given: {rich_out!r}"
 
-    from untell.rich_output import print_humanize_result
 
-    source = inspect.getsource(print_humanize_result)
-    assert "AI tells" in source
-    assert "warning" in source
+def test_neither_renderer_invents_a_caveat():
+    """Guards the guard. A renderer that always printed a NOTE line would satisfy the test above
+    while telling every user their number needs qualifying."""
+    plain = _run_renderer(rich=False, warning=None)
+    assert "NOTE:" not in plain, f"plain renderer printed a caveat it was not given: {plain!r}"
+
+
+def test_both_renderers_show_the_tell_counts():
+    """The other half of the parity claim, also by rendering."""
+    plain = _run_renderer(rich=False, warning=None)
+    assert "AI tells: 5 -> 0" in plain, (
+        f"the plain renderer shows no tell counts: {plain!r}"
+    )
