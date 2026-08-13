@@ -163,6 +163,41 @@ RECIPES: dict[str, dict] = {
         "liveness": [],
         "minutes": 15,
     },
+    "length-short": {
+        "why": "openings only. Detectors used to read the first few hundred words and nothing "
+               "else, so this is the length every old result was really about",
+        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-short.txt",
+                 "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "needs": [".claude/corpora/hc3-short.txt"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 20,
+    },
+    "length-long": {
+        "why": "past where detectors used to stop reading. If windowed scoring holds, this "
+               "should not be systematically easier than the short bucket - and nothing has "
+               "re-checked that by length since the fix",
+        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-long.txt",
+                 "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "needs": [".claude/corpora/hc3-long.txt"],
+        "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["rewriter_available", "rewrote", "n"],
+        "minutes": 25,
+    },
+    "human-false-positives": {
+        "why": "HUMAN text only, scored at the shipped threshold. An audit once reported AUROC "
+               "0.999 while that threshold flagged 95% of human writing - separation is not "
+               "calibration, and only this recipe can see the difference",
+        "argv": ["-m", "eval.ceiling", "--file", ".claude/corpora/hc3-human.txt",
+                 "--rewriter", "composite", "--tier", "lite", "--repeats", "3", "--json"],
+        "needs": [".claude/corpora/hc3-human.txt"],
+        "metrics": ["pre_flagged_rate", "pre_mean_max"],
+        "spread": "post_mean_max_stdev",
+        "liveness": ["n"],
+        "minutes": 25,
+    },
     "detector-audit": {
         "why": "detectors AT the shipped threshold, on labelled pairs - AUROC hides calibration, "
                "and a detector flagging most HUMAN text can still separate the classes",
@@ -192,6 +227,7 @@ FAMILIES: dict[str, list[str]] = {
                   "lite-hc3-targeted", "lite-hc3-ensemble"],
     "corpora": ["lite-hc3", "lite-raid", "lite-mage"],
     "tiers": ["lite-hc3", "full-hc3-composite"],
+    "lengths": ["length-short", "lite-hc3", "length-long"],
     "full-rewriters": ["full-hc3-composite", "full-hc3-neural", "full-hc3-max"],
 }
 
@@ -249,6 +285,100 @@ def compare(recipe: str, result: dict) -> list[str]:
     return lines
 
 
+INSTRUMENTS = ROOT / ".claude" / "instruments.json"
+
+
+def cmd_calibrate(name: str) -> int:
+    """Run a recipe twice unchanged and find out whether it can detect anything.
+
+    A measurement that returns the same numbers whatever you do is a liveness check, not an
+    instrument. That distinction cost a false finding here: a loosened similarity gate came
+    back identical to four decimals on a seeded three-paragraph corpus, and every knob would
+    have been recorded as "no effect" through it. Ask the question of the instrument before
+    asking it of the subject.
+    """
+    spec = RECIPES[name]
+    print(f"calibrating {name} - two identical runs, ~{spec['minutes'] * 2} minutes total\n")
+    before = len(load(name))
+    for i in (1, 2):
+        print(f"--- run {i} of 2 ---")
+        cmd_run(name, None)
+    runs = load(name)[before:]
+    if len(runs) < 2:
+        sys.exit("REFUSED: fewer than two runs completed; nothing to compare.")
+
+    a, b = runs[-2]["metrics"], runs[-1]["metrics"]
+    moved = {k: round(float(b[k]) - float(a[k]), 6)
+             for k in a if k in b and a[k] is not None and b[k] is not None}
+    deterministic = all(v == 0 for v in moved.values())
+    print("\nrun-to-run, nothing changed in between:")
+    for k, v in moved.items():
+        print(f"  {k:22} {v:+.6f}")
+
+    record = json.loads(INSTRUMENTS.read_text(encoding="utf-8")) if INSTRUMENTS.exists() else {}
+    record[name] = {"deterministic": deterministic, "run_to_run": moved,
+                    "reported_spread": runs[-1]["raw"].get(spec["spread"])}
+    INSTRUMENTS.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+
+    if deterministic:
+        print(f"\n{name} is DETERMINISTIC: identical output with nothing changed. Good for "
+              "liveness, useless for comparison - a real effect and no effect look the same "
+              "through it. Recorded, and the experiment lane will now refuse it.")
+    else:
+        print(f"\n{name} moves on its own. Any claimed effect must clear that, not just the "
+              "spread reported within a single run.")
+    return 0
+
+
+def cmd_report() -> int:
+    """Everything the loop knows, in one screen, so 24/7 work stays readable."""
+    def count(path: Path) -> int:
+        """Data rows in a markdown table. The header and the separator are not findings, and
+        a digest that counts them reports one more of everything than exists."""
+        if not path.exists():
+            return 0
+        rows = 0
+        for line in path.read_text(encoding="utf-8").splitlines():
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if line.strip().startswith("|") and len(cells) > 2 and "---" not in line:
+                first = cells[0]
+                rows += 1 if (first.isdigit() or "/" in first or "." in first) else 0
+        return rows
+
+    base = ROOT / ".claude"
+    print("MEASUREMENTS")
+    for name in RECIPES:
+        history = load(name)
+        if not history:
+            continue
+        m = history[-1]["metrics"]
+        cells = "  ".join(f"{k.split('_')[0]}/{k.split('_')[-1]}={v}" for k, v in m.items())
+        print(f"  {name:22} {len(history)} run(s)  {cells}")
+    unmeasured = [n for n in RECIPES if not load(n)]
+    if unmeasured:
+        print(f"  not measured yet ({len(unmeasured)}): {', '.join(unmeasured)}")
+
+    exp = base / "experiments.jsonl"
+    rows = [json.loads(x) for x in exp.read_text(encoding="utf-8").splitlines()
+            if x.strip()] if exp.exists() else []
+    print(f"\nEXPERIMENTS  {len(rows)} run(s)")
+    for r in rows:
+        real = [k for k, v in r["deltas"].items() if abs(v) > r["band"]]
+        print(f"  {r['knob']:24} {r['recipe']:14} "
+              f"{'MOVED: ' + ', '.join(real) if real else 'nothing beyond noise'}")
+
+    print(f"\nSURVIVORS    {count(base / 'survivors.md')} unpinned line(s)")
+    print(f"PASSES       {count(base / 'audit-log.md')} recorded")
+    queued = 0
+    if (base / "human-queue.md").exists():
+        # The file's own format example is a `## ` heading too; counting it would report a
+        # backlog of one on a queue that is empty.
+        queued = sum(1 for line in (base / "human-queue.md").read_text(encoding="utf-8").splitlines()
+                     if line.startswith("## ") and "<date>" not in line)
+    print(f"FOR A HUMAN  {queued} queue entr(y/ies)")
+    return 0
+
+
 def cmd_run(name: str, timeout_minutes: int | None) -> int:
     spec = RECIPES[name]
     budget = (timeout_minutes or spec["minutes"] * 2) * 60
@@ -256,6 +386,16 @@ def cmd_run(name: str, timeout_minutes: int | None) -> int:
     print(f"why      {spec['why']}")
     print(f"argv     python {' '.join(spec['argv'])}")
     print(f"expect   about {spec['minutes']} minutes; killing at {budget // 60}\n")
+
+    for needed in spec.get("needs", []):
+        if not (ROOT / needed).exists():
+            bucket = Path(needed).stem.split("-")[-1]
+            sys.exit(
+                f"REFUSED: {name} measures {needed}, which does not exist yet. Build it:\n"
+                f"  python .claude/corpus.py build --dataset hc3 --bucket {bucket} --n 10\n"
+                "A recipe that silently falls back to another corpus answers a different "
+                "question than the one on its label."
+            )
 
     start = time.monotonic()
     try:
@@ -333,10 +473,17 @@ def main() -> int:
     f.add_argument("family", choices=sorted(FAMILIES))
     c = sub.add_parser("table", help="latest result per recipe in a family, side by side")
     c.add_argument("family", choices=sorted(FAMILIES))
+    k = sub.add_parser("calibrate", help="two identical runs: can this recipe detect anything?")
+    k.add_argument("recipe", choices=sorted(RECIPES))
+    sub.add_parser("report", help="every ledger, one screen")
     a = ap.parse_args()
 
     if a.cmd == "run":
         return cmd_run(a.recipe, a.timeout_minutes)
+    if a.cmd == "calibrate":
+        return cmd_calibrate(a.recipe)
+    if a.cmd == "report":
+        return cmd_report()
     if a.cmd == "sweep":
         # One recipe per pass. A sweep that runs five measurements inside one pass outlives
         # its hour and records nothing; run the next missing one and stop.

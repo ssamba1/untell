@@ -125,6 +125,16 @@ def measure(recipe: str, label: str) -> dict:
 
 
 def cmd_run(knob: str, recipe: str) -> int:
+    # Measured evidence first, prior belief second. `research.py calibrate` runs a recipe twice
+    # with nothing changed; a recipe that came back identical cannot distinguish an effect from
+    # its absence, and that is a fact about the instrument, not an opinion about it.
+    instruments = ROOT / ".claude" / "instruments.json"
+    if instruments.exists():
+        known = json.loads(instruments.read_text(encoding="utf-8")).get(recipe)
+        if known and known.get("deterministic"):
+            sys.exit(f"REFUSED: --recipe {recipe} was calibrated and returns identical numbers "
+                     f"run to run ({known['run_to_run']}). Through it, a knob that works and a "
+                     "knob that does nothing look the same. Use a recipe that moves.")
     if recipe in KNOB_UNSAFE:
         sys.exit(f"REFUSED: --recipe {recipe} cannot answer a knob question - "
                  f"{KNOB_UNSAFE[recipe]}. Use lite-hc3 or a full-tier recipe.")
