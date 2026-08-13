@@ -9843,3 +9843,39 @@ Twelve files were ruled out by reading what they assert, not by running them —
 threshold in an assertion separated "cannot be affected" from "might be" in seconds, and left a
 fourteen-file problem instead of a twenty-six-file one. The remaining seven need the slow answer, and
 the useful thing to record is which seven.
+
+## Result 198
+
+**The variable that produced a wrong conclusion was set in every command and printed in none of the
+output.**
+
+Result 196 records reading two deterministic failures, checking they were not mine, checking they
+were not flaky, and concluding that someone else's committed work was broken. The cause was
+`UNTELL_DISABLE_MAGE=1`. Result 197 then found that 14 test files assert a numeric full-tier figure
+and only one guarded on the ensemble being complete — and left seven unverified because running them
+both ways costs more than the time budget allows.
+
+Guarding all fourteen is the expensive answer. The cheap one is to stop the fact being invisible:
+`pytest` now prints the ambient scoring settings at session start and again in the terminal summary.
+
+**Both, because the header alone would have been useless here.** `pytest_report_header` is suppressed
+by `-q`, which is what CI runs and what every command in this repository's documentation uses — a
+guard placed where the reader is not, which is Result 182's finding arriving in the tooling. The
+summary line prints after the failures, where someone reading them is already looking:
+
+    untell scoring env: UNTELL_DISABLE_MAGE=1, UNTELL_LITE_NO_TORCH=1
+      a reduced ensemble moves every numeric full-tier figure — check this before concluding a
+      measurement is stale
+
+Silent when nothing is set, so a clean run gains no noise, and the header still says "none set
+(complete ensemble)" under normal verbosity.
+
+The conftest already documented this exact class for the other variable: three tests were "reading
+that path out of the ambient environment instead of asking for it", fixed with an opt-in fixture that
+lets a test REQUEST the stdlib path. This is the other half — making the ambient state visible for
+the tests that read it anyway.
+
+Worth keeping: **the fix for a wrong conclusion is not always a better test.** Fourteen files could
+each gain a guard, and seven of them cannot be verified inside the time budget. One line of output
+that was missing costs nothing, applies to every file including the ones nobody has audited yet, and
+would have ended the original investigation before it produced a false accusation.
