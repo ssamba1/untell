@@ -9811,3 +9811,35 @@ hedged one.** These two named a specific cause, and a reader with no reason to d
 adopted it and attributed a fault to someone else's work. A message reading "this file requires the
 complete full ensemble; check UNTELL_DISABLE_MAGE" would have cost the same characters and ended the
 investigation in one line.
+
+## Result 197
+
+**One test in fourteen was ensemble-sensitive. Finding that out cost two full runs and the answer is
+still partial — which is the honest shape of it.**
+
+Result 196 found a file whose verdict flipped on `UNTELL_DISABLE_MAGE=1`. The mechanical follow-up:
+how many others? Over the test suite:
+
+    files scoring at tier full or heavy                     26
+      of those, asserting a NUMERIC score threshold         14
+      of those, guarding on ensemble completeness            2   (one of them added last loop)
+
+The twelve that assert only shapes, keys and exit codes cannot be sensitive to a missing detector,
+which is most of the surface and worth knowing.
+
+MEASURED, the same files run twice, the only difference being the variable:
+
+    six numeric files, both ways      41 passed / 41 passed     identical
+    three more, MAGE off              67 passed
+    three more, MAGE on               did not finish inside ten minutes
+
+So of the fourteen: **one sensitive and now guarded, six verified insensitive both ways, seven not
+yet verified.** The seven are named by the sweep rather than assumed away, and the reason they are
+unverified is cost — loading the full ensemble for the heavier files runs past the time budget, which
+is also why nobody had run this comparison before.
+
+Worth keeping: **the cheap half of this question answered itself and the expensive half did not.**
+Twelve files were ruled out by reading what they assert, not by running them — a grep for a numeric
+threshold in an assertion separated "cannot be affected" from "might be" in seconds, and left a
+fourteen-file problem instead of a twenty-six-file one. The remaining seven need the slow answer, and
+the useful thing to record is which seven.
