@@ -9689,3 +9689,41 @@ Worth keeping: **the most useful thing in the payload was the absence of an even
 no vocabulary for it.** Every caveat added this session describes something the input IS. This one
 describes something the loop DID and then undid, which is invisible in the output by construction —
 the whole evidence for it is two integers that agree with each other.
+
+## Result 194
+
+**The caveat added one loop earlier stated a reason the code could not have known, and I wrote it.**
+
+Result 193 added a note for the state where the loop draws candidates and keeps none. It said:
+
+    "every draft scored worse than your text"
+
+Checking that sentence against the code it describes: the meaning gate `continue`s **before** the
+score is computed.
+
+    if veto_contradictions:
+        if not meaning_preserved(masked, candidate, sim, sim_bar):
+            continue          <- never reaches score(candidate)
+
+So a draft refused by the gate is never compared on score at all. On any run where the gate did the
+refusing, the note asserted the outcome of a comparison that did not happen — and it would have said
+so with the same confidence as when it was true, because it took the same branch either way.
+
+Nothing in the loop recorded WHY a draft was dropped. `rewrites` and `adopted` were the only counters,
+and their difference is silent about cause. Both veto sites now increment one, and the note has three
+branches:
+
+    all drafts vetoed   the gate refused every one; none was scored; try a different rewriter
+    mixed               N changed the meaning and M scored worse
+    none vetoed         the original wording, now true whenever it appears
+
+**The remedies diverge, which is the whole point of naming the cause.** A score refusal means the
+drafts were safe and unhelpful: more draws might find a better one. A gate refusal means the drafts
+changed what the text said: more draws of the same rewriter will keep failing, and the honest advice
+is to change rewriter. The test asserts `--best-of` does not appear in the gate wording, because
+suggesting it there would be advice that cannot work.
+
+Worth keeping: **a caveat is a claim, and it inherits the burden of every other claim in this
+document.** The previous result checked that the note fired in the right state, that it was
+actionable, and that it did not read as a malfunction. It did not check whether the sentence was
+true, and it was the only new sentence in the change.
