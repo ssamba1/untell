@@ -27,9 +27,18 @@ Two of the four are worth naming precisely, because they are not the same kind o
   hedge REMOVED, and a hedge or booster ADDED is outside what it measures. The module's stated
   danger is "ships a strengthened claim", and a dropped hedge is one way to strengthen; adding a
   booster is another.
-* `role_swap` caught the drug/placebo swap in a 7-word sentence and missed it in the 26-word one
-  (entailment 0.984, contradiction 0.010, so nothing else objected either). The check is not
-  absent; it degrades with sentence complexity.
+* `role_swap` misses the drug/placebo swap, and the reason is not what it first looked like. A
+  crossed measurement — the same two swap shapes at 5 to 34 words — settles it:
+
+      subject <-> direct object   "The council fined the contractor"      detected at 5, 8, 13, 26
+      subject <-> noun in a PP    "reduced relapse in the placebo group"  missed at 8, 13, 20, 25, 34
+
+  Length is not the variable; the grammatical position of the swapped noun is. A swap into a
+  prepositional phrase is invisible to the check at every length tried, and the entailment floor
+  does not cover it either (entailment 0.984, contradiction 0.010 on the 26-word case).
+
+  Controls, so this is a gap and not a dead check: passive voice, by-phrase and a "issued a fine to"
+  paraphrase all return False, i.e. no false veto on faithful rewrites.
 
 The eight vetoes are asserted hard. The four gaps are `xfail(strict=False)`, so fixing one shows up
 as an XPASS rather than as a failure — the boundary is recorded, and moving it is visible.
@@ -137,6 +146,47 @@ def test_the_free_rewriters_do_not_produce_the_gap_shapes() -> None:
     final = untell_text(doc, tier="lite", max_iters=3)["final"]
     assert len(boosters.findall(final)) <= len(boosters.findall(doc)), final[:200]
     assert len(hedges.findall(final)) <= len(hedges.findall(doc)), final[:200]
+
+
+DIRECT_OBJECT_SWAPS = [
+    ("The council fined the contractor.", "The contractor fined the council."),
+    ("The council fined the contractor after the inspection.",
+     "The contractor fined the council after the inspection."),
+    ("The council fined the contractor after the inspection of the depot last spring, which the "
+     "borough had requested following a series of complaints from residents nearby.",
+     "The contractor fined the council after the inspection of the depot last spring, which the "
+     "borough had requested following a series of complaints from residents nearby."),
+]
+FAITHFUL_REORDERINGS = [
+    ("The drug reduced relapse in the placebo group.",
+     "Relapse was reduced by the drug in the placebo group."),
+    ("The council fined the contractor.", "The contractor was fined by the council."),
+    ("The council fined the contractor.", "The council issued a fine to the contractor."),
+]
+
+
+@pytest.mark.parametrize("source,candidate", DIRECT_OBJECT_SWAPS,
+                         ids=["5 words", "8 words", "26 words"])
+def test_a_direct_object_swap_is_detected_at_any_length(source: str, candidate: str) -> None:
+    """The half of `role_swap` that works, pinned — and it is what shows the miss above is about
+    grammatical position rather than sentence length. Detected at 26 words, where the drug/placebo
+    swap is missed at 8."""
+    from untell.scripts.roles import parser_available, role_swap
+
+    if not parser_available():
+        pytest.skip("spaCy model unavailable — role_swap returns None by design")
+    assert role_swap(source, candidate) is True
+
+
+@pytest.mark.parametrize("source,candidate", FAITHFUL_REORDERINGS,
+                         ids=["passive", "by-phrase", "paraphrase"])
+def test_a_faithful_reordering_is_not_called_a_swap(source: str, candidate: str) -> None:
+    """Guards the guard. Passivisation moves the subject into a by-phrase, which is exactly the
+    surface shape of a swap — a check that flagged it would veto the commonest faithful rewrite
+    there is."""
+    from untell.scripts.roles import role_swap
+
+    assert role_swap(source, candidate) is not True
 
 
 def test_the_gate_is_actually_running_its_model_checks() -> None:

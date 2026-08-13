@@ -10776,10 +10776,8 @@ Two of the four are different in kind, and worth naming:
   hedge REMOVED; a hedge or booster ADDED is outside what it measures at all. The module's stated
   danger is "ships a strengthened claim", and a dropped hedge is one way to strengthen. This is a
   definition narrower than the claim above it, not a bug in the definition.
-* **`role_swap` caught the drug/placebo swap in a 7-word sentence and missed it in the 26-word one**,
-  where entailment scored 0.984 and contradiction 0.010 — so nothing else objected either. The check
-  is not absent, it degrades with sentence complexity, and the entailment floor does not cover the
-  degradation.
+* **`role_swap` misses the drug/placebo swap**, and Result 221 records what that turned out to
+  mean — the first reading of it, "the check degrades with sentence complexity", was wrong.
 
 Worth keeping: **"we have a check for that" and "the check fires on that" are different claims, and
 only the second one is a measurement.** Eight of these had never been demonstrated to fire; four
@@ -10789,3 +10787,33 @@ repository, and its coverage was assumed by everything that referenced it.
 The eight vetoes are now asserted; the four gaps are `xfail(strict=False)`, so closing one shows as
 an XPASS rather than a failure. A separate assertion fails if any rewriter ever starts adding a
 booster — which is what makes recording an unreachable gap better than deleting it from the list.
+
+## Result 221
+
+**Correcting Result 220: length was a confound, and the second variable was sitting one probe away.**
+
+Result 220 recorded that `role_swap` "degrades with sentence complexity", on the evidence that it
+caught a subject/object swap in a 7-word sentence and missed one in a 26-word sentence. Two
+sentences, two differences, and I attributed the effect to the one I had been thinking about.
+
+The crossed version — the same two swap shapes, each at 5 to 34 words:
+
+    subject <-> direct object    "The council fined the contractor"        detected at 5, 8, 13, 26
+    subject <-> noun inside a PP "reduced relapse in the placebo group"    missed at 8, 13, 20, 25, 34
+
+**Length is not the variable at all.** The grammatical position of the swapped noun is. A swap into
+a prepositional phrase is invisible to the check at every length tried, and a direct-object swap is
+caught at every length tried, including one longer than the sentence the original miss came from.
+
+The check is a gap and not a dead check, which the controls settle: passivisation, a by-phrase, and
+a "issued a fine to" paraphrase all return False. It fires on the real thing and not on the
+faithful rewrite that most resembles it.
+
+Worth keeping: **two examples that differ in two ways measure neither.** The fix is the crossed
+design and it cost one probe — hold each variable while varying the other, and the answer changes
+from a plausible story to a fact. The plausible story was already written down as a finding, in a
+document whose entire purpose is that its numbers can be trusted.
+
+This is the second correction of its kind in this session. Result 196 accused a concurrent session
+of leaving a test red on main; the cause was an environment variable in my own shell. Both were the
+same error: an observed difference attributed to the first plausible cause without varying it.
