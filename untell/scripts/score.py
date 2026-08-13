@@ -617,7 +617,11 @@ def _short_text_warning(text: str) -> str | None:
     rate = next(pct for bound, pct in _SHORT_TEXT_BANDS if words <= bound)
     return (
         f"{words} word{'' if words == 1 else 's'}: too short for a reliable verdict. MEASURED on 40 "
-        f"HC3 human texts truncated to this length, {rate} score above the loop threshold "
+        # HUMAN in caps deliberately: the percentage is a false-positive rate, and a reader who
+        # misses what it is a percentage OF reads it as an accuracy figure. The Result 207 rewrite
+        # lowercased it and a test that asserts the emphasis caught it — the only word in the
+        # sentence carrying that distinction.
+        f"HC3 HUMAN texts truncated to this length, {rate} score above the loop threshold "
         f"(the range spans the two lite scoring paths). At this length the score collapses toward "
         f"its floor as the text gets shorter, so a CLEAR verdict carries as little information as a "
         f"flagged one. Score longer text, or treat this as no evidence either way."
