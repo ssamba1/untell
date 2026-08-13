@@ -8678,3 +8678,53 @@ established that per-sentence transforms do not belong behind a pair guard, list
 were the exception, and moved one of them out. The other half sat one screen further down and was
 never revisited. A fix that states its reasoning makes the next defect findable — and the corpus
 check is what kept the write-up honest once it was found.
+
+## Result 172
+
+**The same text, laid out one sentence per paragraph, got 2.7x less out of the loop — and one
+document crossed back over the verdict threshold on the strength of the layout alone.**
+
+Results 169–171 each found a per-block scope that should have been per-document, and each was
+fixable. This is the case where it is not. Merge, split, restatement-drop and burstiness targeting
+need a PAIR of adjacent sentences, and a paragraph of one has none. Merging across a paragraph
+boundary would weld two paragraphs together and destroy a transcript, a bullet list or a changelog —
+the line structure Result 169 confirmed the tool otherwise preserves exactly. The gating is right.
+
+What was missing is that nobody told the user. MEASURED on 8 HC3 documents at `tier=lite`,
+`structural`, `max_iters=2`, seed fixed, layout the only difference:
+
+    as written              0.5501 -> 0.5097   (-0.0404)    flagged 6/8    changed 4/8
+    one sentence per para   0.5501 -> 0.5349   (-0.0152)    flagged 7/8    changed 4/8
+
+The `pre` scores are identical to four decimals, because detectors do not read paragraph breaks. The
+entire difference is what the rewriter was able to do. One document:
+
+    as written    0.558 -> 0.434    clear
+    per line      0.558 -> 0.539    flagged
+
+Same words, same seed, same detectors. Sentence-length variance agrees — document CV against a
+measured human 0.484:
+
+    as written        0.304 -> 0.343
+    3 sentences/para  0.306 -> 0.374
+    1 sentence/para   0.328 -> 0.319      <- moves AWAY from human
+
+The last row is the transform being unavailable rather than unhelpful: with no pair in any block,
+burstiness targeting never runs, and what small movement remains comes from other transforms.
+
+**The bar was placed from the corpus rather than chosen.** Over 120 HC3 and RAID texts, both halves,
+the share of prose blocks holding exactly one sentence is median 0.000, p90 0.500, p99 0.667, max
+0.667. Restricted to the 61 texts with three or more prose blocks the max is the same 0.667 and
+**none** exceed 0.80, while six real documents re-laid out one sentence per line score 1.00 across 7
+to 10 blocks. The three-block floor keeps the note off short input, where a single lone block is 1.00
+by arithmetic and `_short_text_warning` is the note that actually applies.
+
+Worth keeping: **not every scope mismatch is a defect, and the honest response to the ones that are
+not is to say so.** The three preceding results moved code. This one moved nothing in the rewriter,
+because the alternative — merging sentences across a paragraph boundary — would damage the document
+to improve a number. The user gets the measurement instead: the score is real, the rewriter simply
+reached less of the text than it would have on the same words in ordinary paragraphs.
+
+A note on the audit: `untell-audit` currently reports one FAIL, `UNTELL_POLICY_WHOLE_DOC`
+undocumented. That variable belongs to another session's in-flight `local_policy.py` work, is absent
+from HEAD, and is not part of this change.
