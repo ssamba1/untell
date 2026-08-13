@@ -758,7 +758,7 @@ def _score_with_detectors(
     for extra in (ensemble_warning, _short_text_warning(text),
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
                   _homoglyph_warning(text), _human_false_positive_warning(result),
-                  _no_prose_warning(text)):
+                  _no_prose_warning(text), _mostly_locked_warning(text)):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
@@ -839,6 +839,53 @@ def _no_prose_warning(text: str) -> str | None:
     except Exception:  # a caveat must never break the score it qualifies
         return None
     return _NO_PROSE_NOTE if mask and not any(mask) else None
+
+
+
+# Most of a document can be material the rewriter is forbidden to touch, and the verdict then covers
+# text the user did not write. MEASURED at tier=lite on a two-quotation witness statement:
+#
+#     locked 321/357 characters (90%), 2 spans
+#     flagged: True   changed: False   stopped: max_iters
+#
+# The loop ran every iteration, adopted nothing — only a tenth of the document was editable — and
+# said nothing about it. This is the same shape as the no-prose note above reached by a completely
+# different mechanism: there the rewriter had no prose lines, here it has prose it may not alter.
+#
+# It is arguably the worse case of the two, because the detectors scored the quotations as well, so
+# the number describes somebody else's words.
+#
+# MEASURED over 120 corpus texts (HC3 and RAID, both halves), locked character share:
+#
+#     median 0.023    p90 0.072    p99 0.137    max 0.177
+#
+# against 0.899 for the probe. Nothing in the corpus passes 0.30, so 0.50 sits in a wide empty gap
+# and means what it says: more than half the document is off-limits.
+#
+# "Preserved material" rather than "quotations": `lock` also holds citations, figures, dates and
+# URLs, and a note that named only quotes would misdescribe a statistics-dense paragraph.
+_LOCKED_SHARE_BAR = 0.50
+
+_MOSTLY_LOCKED_NOTE = (
+    "more than half of this document is preserved material — quotations, citations, figures or "
+    "URLs — which the rewriter may not alter and the detectors scored anyway. The verdict is "
+    "largely about text this tool cannot change, and in the case of quoted matter about words "
+    "somebody else wrote."
+)
+
+
+def _mostly_locked_warning(text: str) -> str | None:
+    """Say when the rewriter is forbidden to touch most of the input."""
+    try:
+        from untell.scripts.preserve import lock
+
+        _, mapping = lock(text)
+    except Exception:  # a caveat must never break the score it qualifies
+        return None
+    if not mapping or not text:
+        return None
+    share = sum(len(v) for v in mapping.values()) / len(text)
+    return _MOSTLY_LOCKED_NOTE if share > _LOCKED_SHARE_BAR else None
 
 
 def _read_input(args: argparse.Namespace) -> str | None:
