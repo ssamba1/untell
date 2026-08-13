@@ -990,9 +990,9 @@ _LONE_BLOCK_SHARE_BAR = 0.80
 _MIN_BLOCKS_FOR_LONE_NOTE = 3
 _LINE_PER_SENTENCE_NOTE = (
     "this document is laid out roughly one sentence per paragraph, so the transforms that need two "
-    "adjacent sentences — merging, splitting and sentence-length variation — could not run. The "
-    "score is real, but the rewriter reached less of the text than it would have on the same words "
-    "in ordinary paragraphs."
+    "adjacent sentences — merging, restatement removal and sentence-length variation — could not "
+    "run. The score is real, but the rewriter reached less of the text than it would have on the "
+    "same words in ordinary paragraphs."
 )
 
 

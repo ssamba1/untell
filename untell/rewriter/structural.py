@@ -3058,9 +3058,6 @@ def _rewrite_prose(
         merge_rate = min(0.7, intensity * 0.6)
         sents = _merge_sentences(sents, rate=merge_rate, additive=additive)
 
-        split_rate = min(0.9, intensity * 0.5 * profile["sentences"])
-        sents = _split_long_sentences(sents, rate=split_rate)
-
         # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
         # most reliable stylometric differentiator; only redistributes existing words (meaning-safe).
         sents = _target_burstiness(sents, target_cv=profile["burstiness"])
@@ -3071,6 +3068,23 @@ def _rewrite_prose(
     # comparison is 0.03. Scaled so the default lands a little above human rather than 12x it,
     # leaving headroom at intensity 1.0 for the duplicate-opener work the transform exists for.
     #
+    # Splitting needs ONE sentence, not a pair: it takes a long one and makes two. It sat inside
+    # `len(sents) >= 2` anyway, so a paragraph holding a single 40-word sentence — a transcript
+    # line, a bullet, a lone abstract sentence — could never be split, which is the case splitting
+    # is for. The guard's own comment names the transforms that need a pair (merge,
+    # restatement-drop, burstiness) and splitting is not among them; `_strip_transitions` and
+    # `_vary_openers` were both moved out for exactly this reason, and this is the third.
+    #
+    # MEASURED by instrumenting a four-sentence document in two layouts, 3 seeds:
+    #
+    #                            1 sentence/para   one block
+    #     _split_long_sentences        0               3
+    #
+    # It runs after the guarded block, where it ran before, so a multi-sentence block sees merge
+    # then split in the same order as always.
+    split_rate = min(0.9, intensity * 0.5 * profile["sentences"])
+    sents = _split_long_sentences(sents, rate=split_rate)
+
     # OUTSIDE the pair guard, for the reason the comment on that guard already gives: it lists the
     # transforms that need a PAIR (merge, restatement-drop, burstiness), and prepending a marker to
     # one sentence is not one of them. `_strip_transitions` was moved out of the same guard for the

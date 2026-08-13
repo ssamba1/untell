@@ -106,6 +106,54 @@ def test_the_note_does_not_disown_the_score() -> None:
         assert overclaim not in _LINE_PER_SENTENCE_NOTE.lower()
 
 
+def test_the_note_names_only_transforms_that_really_cannot_run() -> None:
+    """The note is a claim about the code, so it is checked against the code.
+
+    MEASURED by instrumenting a four-sentence document in two layouts, 3 seeds each:
+
+                                 1 sentence/para   one block
+        _merge_sentences               0               3
+        _target_burstiness             0               3
+        _drop_restatements             0               3
+        _split_long_sentences         12               3      <- runs, since this loop moved it
+
+    Splitting needs ONE sentence — it takes a long one and makes two — and it sat inside the
+    `len(sents) >= 2` guard anyway, so a paragraph holding a single 40-word sentence could never be
+    split. That is the case splitting is for. It is out of the guard now, and the note no longer
+    claims it could not run.
+    """
+    import random
+
+    import untell.rewriter.structural as structural
+    from untell.scripts.score import _LINE_PER_SENTENCE_NOTE
+
+    names = ("_merge_sentences", "_target_burstiness", "_drop_restatements",
+             "_split_long_sentences")
+    seen: dict[str, int] = {}
+    originals = {n: getattr(structural, n) for n in names}
+
+    def wrap(name, fn):
+        def spy(arg, *a, **k):
+            seen[name] = seen.get(name, 0) + 1
+            return fn(arg, *a, **k)
+        return spy
+
+    for name, fn in originals.items():
+        setattr(structural, name, wrap(name, fn))
+    try:
+        for seed in (1, 3, 7):
+            random.seed(seed)
+            structural.structural_rewrite(PER_LINE)
+    finally:
+        for name, fn in originals.items():
+            setattr(structural, name, fn)
+
+    assert seen.get("_split_long_sentences"), "splitting no longer reaches a lone-sentence paragraph"
+    assert "splitting" not in _LINE_PER_SENTENCE_NOTE, "the note claims splitting cannot run, and it can"
+    for name in ("_merge_sentences", "_target_burstiness", "_drop_restatements"):
+        assert not seen.get(name), f"{name} runs here, so the note must stop naming it"
+
+
 def test_the_note_names_what_could_not_run() -> None:
     """A caveat the reader cannot act on is decoration. This one names the transforms and implies
     the remedy — the same words in ordinary paragraphs."""
