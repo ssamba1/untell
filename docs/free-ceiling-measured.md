@@ -9982,3 +9982,44 @@ problem.** Results 178, 200 and this one are the same defect at increasing resol
 where its author stood, then a second, then the realisation that the surface re-derives what it could
 inherit. The mechanical sweep cost one measurement and answered for all four at once, where three
 loops of asking one at a time had answered for two.
+
+## Result 202
+
+**All five surfaces now carry every caveat — and the one that looked like a gap turned out to be the
+strongest surface of the five.**
+
+Result 201 fixed `verify` and swept three surfaces. REST and MCP had never been checked. Completing
+it:
+
+    caveat             score_text  untell_text  verify  REST  MCP
+    no prose              yes         yes        yes    yes   yes
+    mostly locked         yes         yes        yes    yes   yes
+    one sentence/para     yes         yes        yes    yes   yes
+    threshold range       yes         yes        yes    422   yes
+
+REST forwards all three input-shape caveats. The MCP `score` tool does too: its only transformation
+is `split_detector_errors`, which preserves every key.
+
+**The threshold row is the finding, and it is good news.** REST does not warn about a threshold of
+45 — it REFUSES it, with a 422 and a message naming the field and the bound:
+
+    {"loc": ["body","threshold"], "msg": "Input should be less than or equal to 1"}
+
+That is stronger than any caveat, because the caller cannot read past it. The library and CLI accept
+the value and warn instead, on the ground that the fallback is documented behaviour. Both are honest;
+they are different answers to the same question and the schema is the better one where a schema
+exists.
+
+My first version of the matrix asserted 200-and-a-warning on every surface and failed on that row.
+**The assertion was wrong, not the surface** — which is the third time this session a test I wrote
+one loop earlier had to be corrected against the code it describes (Results 194 and 201 are the
+others).
+
+So the matrix asserts what actually matters: **no surface may accept a bad input in silence.** Either
+the caveat arrives, or the request is refused. It is the guard that would have caught all three
+`verify` gaps, and it fails in CI now rather than in someone's terminal.
+
+Worth keeping: **a cross-surface matrix finds the surfaces that are BETTER than the others, not only
+the ones that are worse.** Every previous result in this thread was about something missing. The same
+sweep, run once more, turned up a surface doing something the others do not — and the useful output
+was not a fix but a corrected expectation.
