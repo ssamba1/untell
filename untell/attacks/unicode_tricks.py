@@ -24,7 +24,6 @@ Two sub-semantic operations several competitor repos have and we didn't:
 
 from __future__ import annotations
 
-import difflib
 import re
 import unicodedata
 
