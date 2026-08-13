@@ -9563,3 +9563,43 @@ Worth keeping: **a comment claiming uniqueness is a claim about every other file
 hardest kind to keep true and the easiest kind to check.** "This is the only place X is written" was
 true of the two copies its author had just deleted and false of the one they had not looked at. The
 sweep that finds these costs one grep.
+
+## Result 191
+
+**Half the uniqueness claims were false, and the mechanical version of the question found the copy
+that matters.**
+
+Results 189 and 190 each found a comment asserting a fact about the codebase that was wrong. Finishing
+that sweep, the remaining checkable claims came out TRUE:
+
+    hedges.py:159   "Neither sentence locks anything in preserve.py"
+                    -> 0 locked spans on all four sentences quoted there
+    word_importance "floor ... Only used by the prefer_tells path"
+                    -> its read and its update both sit inside that branch
+
+So the class runs about half. Worth sweeping, not worth assuming — in either direction.
+
+Both false ones were about a **duplicated definition**, which has a mechanical form: which constants
+are declared with an identical literal in more than one module? Over the package, five:
+
+    _FREE_REWRITERS   api_server.py, mcp_server.py     nine rewriter names
+    _LATIN            languages.py, score.py           re.compile('[A-Za-z]')
+    _NUM              llm_judge.py, local_judge.py     digits
+    _WORD             tells.py, voice.py               word regex
+    _WORD_RE          humanness.py, structural.py      word regex
+
+Four are two-character regexes whose drift would be obvious. The fifth is a **vocabulary**,
+duplicated across the two surfaces a caller reaches without ever touching the CLI. MEASURED:
+byte-identical today, nine names each. No defect — and the failure it guards against is one this
+repository has already shipped, when the MCP docstring carried six of the fourteen style names and
+eight styles were invisible to every MCP caller.
+
+It is deliberately not consolidated into a shared import. CI installs the MCP path as `.[dev,mcp]`
+with no FastAPI, so reaching into the REST module for its constant would put a web framework on the
+MCP server's import path to save nine strings. The test reads both constants out of the source
+instead, which is also what lets it answer the question without either module being importable.
+
+Worth keeping: **the prose version of a question finds one instance; the mechanical version finds the
+class.** Reading comments turned up two false uniqueness claims in two loops, which is a good rate
+and does not scale. One `ast` walk over the package answered the same question for every constant in
+it, and the one that mattered was in neither comment.
