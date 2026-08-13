@@ -64,6 +64,10 @@ def _bad_args(**checks) -> dict | None:
         # ge=0, le=32.
         if kind == "count_or_zero" and not (0 <= int(value) <= 32):
             return {"error": f"{name}={value!r} is outside 0..32."}
+        # Optional, and 0 is a meaning ("flag none") rather than an out-of-range value.
+        if kind == "top" and value is not None and not (0 <= int(value) <= 10_000):
+            return {"error": f"{name}={value!r} is outside 0..10000. A negative value is not "
+                             "'fewer' — it slices from the end, so -1 flags all but one."}
         # A seed names a stream, so two seeds that differ must name different streams. CPython's
         # `random.seed()` takes the ABSOLUTE value of an int, so -1 and 1 are one stream: measured
         # byte-identical output for both where 0, 2, 7 and 12345 each differed. `None` is the
@@ -107,10 +111,23 @@ def _server():
         return bad or split_detector_errors(score_text(text, tier=tier, threshold=threshold))
 
     @server.tool()
-    def sentences(text: str, tier: str = "lite", threshold: float = 0.30) -> dict:
-        """Per-sentence AI scores and the list of sentences flagged as AI (the worst ~third)."""
-        bad = _bad_args(tier=(tier, "tier"), threshold=(threshold, "probability"))
-        return bad or score_sentences(text, tier=tier, threshold=threshold)
+    def sentences(
+        text: str,
+        tier: str = "lite",
+        threshold: float = 0.30,
+        # The CLI's `--top`, absent here and from REST. It decides WHICH sentences come back
+        # flagged — the whole output of this tool — so a client could not ask the question the
+        # CLI answers and always got the worst-third default. Unset keeps that default.
+        top: int | None = None,
+    ) -> dict:
+        """Per-sentence AI scores and the list of sentences flagged as AI (the worst ~third).
+
+        `top` caps how many come back flagged; unset means the worst ~third.
+        """
+        bad = _bad_args(
+            tier=(tier, "tier"), threshold=(threshold, "probability"), top=(top, "top")
+        )
+        return bad or score_sentences(text, tier=tier, threshold=threshold, top=top)
 
     @server.tool()
     def tells(text: str, include_matches: bool = False) -> dict:

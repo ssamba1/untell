@@ -254,6 +254,13 @@ _Confirm = Annotated[int, Field(ge=0, le=32)]
 # range of the text-derived default (blake2b, 8 bytes), so a request can name any stream the
 # service would pick on its own.
 _Seed = Annotated[int, Field(ge=0, le=2**64 - 1)]
+# `--top` on the sentences CLI, which had no twin here at all. It decides WHICH sentences come
+# back flagged — the entire output of that operation -- so a REST caller could not ask the
+# question the CLI answers, and got the worst-third default whatever they meant. 0 is a meaning
+# ("flag none"); the high bound is above any reachable sentence count, since MAX_INPUT_CHARS caps
+# a document near 650 sentences. A bare int made `order[:top]` a negative slice: measured, -1
+# flagged 2 of 3 sentences, more than `--top 1`.
+_Top = Annotated[int, Field(ge=0, le=10_000)]
 _SampleN = Annotated[int, Field(ge=1, le=1000)]
 
 # The CLI validates --rewriter against this list; this field was a bare `str`. An unknown name
@@ -344,6 +351,8 @@ class SentencesRequest(_Request):
     text: str = _TEXT
     tier: _TIER = "lite"
     threshold: _Probability = DEFAULT_THRESHOLD
+    # Unset means the worst ~third, which is what this endpoint always returned.
+    top: _Top | None = None
 
 
 class VerifyRequest(_Request):
@@ -932,7 +941,7 @@ async def scrub(body: ScrubRequest) -> dict:
 async def sentences(body: SentencesRequest) -> dict:
     """Per-sentence AI scores. Flags the worst ~third of sentences for rewrite targeting."""
     return await _offload(
-        score_sentences, body.text, tier=body.tier, threshold=body.threshold
+        score_sentences, body.text, tier=body.tier, threshold=body.threshold, top=body.top
     )
 
 

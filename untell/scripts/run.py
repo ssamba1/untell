@@ -1690,9 +1690,7 @@ _SEED = _ranged("seed", int, "_Seed", (0, 2**64 - 1))
 # `untell sentences --top`, the same shape one more time. A bare int made `order[:top]` a Python
 # negative slice, so `--top -1` flagged n-1 sentences — MEASURED at 2 of 3, more than `--top 1`
 # flags — and `--top -5` flagged 0, which reads as "nothing to rewrite". 0 is a meaning here too
-# ("flag none"), so the low bound is 0. Unlike its siblings there is no API twin: no surface but
-# the CLI exposes `--top`, so the fallback pair below IS the definition — the name is wired so a
-# future `_Top` on the REST model takes over without a second copy appearing. The high bound is
+# ("flag none"), so the low bound is 0. The high bound is
 # above any reachable sentence count (MAX_INPUT_CHARS caps a document near 650 sentences), so it
 # refuses absurd input without ever refusing a usable value: `--top 99` still means "flag all".
 _TOP = _ranged("top", int, "_Top", (0, 10_000))
