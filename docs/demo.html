@@ -142,6 +142,11 @@
      this line the most public surface showed a bare percentage and a 'Human' badge with
      no caveat at all, while the CLI printed the same caveat in full. */
   .caveat { color: var(--muted, #888); font-size: 0.8rem; margin: 8px 0; line-height: 1.4; }
+  /* Same muted treatment as the caveat: a supporting number beside the headline, not a competing
+     one. /humanize returns tells_before and tells_after and this page showed neither, so on input
+     where the detectors saturate the percentage could barely move while the tells went to zero —
+     the bars alone read as "nothing happened". */
+  .tells { color: var(--muted, #888); font-size: 0.85rem; margin: 8px 0; }
 
   .badge {
     display: inline-block;
@@ -220,6 +225,11 @@
           <div style="margin-top:8px"><span class="badge" id="afterBadge">—</span></div>
         </div>
       </div>
+      <!-- The AI-tell counts the API already returns. Shown next to the percentages because on a
+           corpus where the detectors saturate the percentage can barely move while the tells fall
+           to zero — so the bars alone can read as "nothing happened" when the tells are the thing
+           that changed. -->
+      <div class="tells" id="tellsRow" style="display:none;"></div>
       <div class="caveat" id="scoreCaveat" style="display:none;"></div>
       <div class="diff-box" id="diffOutput">Results will appear here...</div>
     </div>
@@ -313,6 +323,20 @@ async function humanize() {
     document.getElementById('beforeBadge').className = `badge ${bc.cls}`;
     document.getElementById('afterBadge').textContent = ac.text;
     document.getElementById('afterBadge').className = `badge ${ac.cls}`;
+
+    // Surface the tell counts. /humanize returns them and this page showed neither, so the one
+    // number that moves on saturating input was missing from the surface a non-technical reader
+    // is most likely to see. Both keys are checked rather than assumed present, so an older
+    // server answering without them hides the row instead of printing "undefined".
+    const tellsRow = document.getElementById('tellsRow');
+    if (typeof h.tells_before === 'number' && typeof h.tells_after === 'number') {
+      const delta = h.tells_after - h.tells_before;
+      const change = delta === 0 ? 'no change' : `${delta > 0 ? '+' : ''}${delta}`;
+      tellsRow.textContent = `AI tells: ${h.tells_before} → ${h.tells_after} (${change})`;
+      tellsRow.style.display = 'block';
+    } else {
+      tellsRow.style.display = 'none';
+    }
 
     // Surface the caveat the API already returns. `pre` and `post` are scores of the same tier,
     // so their warnings are usually identical; showing the "after" one keeps it next to the number
