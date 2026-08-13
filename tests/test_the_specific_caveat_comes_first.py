@@ -87,6 +87,50 @@ def test_ordinary_prose_still_gets_exactly_one_note() -> None:
     assert " Also: " not in warning
 
 
+def test_no_caveat_repeats_another() -> None:
+    """Caveats are read in combination, and two describing the same situation in different words
+    would be the composition defect Result 208 found in a different form.
+
+    MEASURED on the three inputs that fire the most caveats at once — code with a bad threshold,
+    quotations with a bad threshold, and code alone: 12 to 14 sentences, **0** near-duplicate pairs,
+    where a pair counts as near-duplicate if it shares six consecutive words. The roster note and
+    the abstention note were the pair at risk, and they were given distinct wording when the second
+    was added.
+    """
+    import re
+
+    warning = score_text(CODE, tier="lite", threshold=45.0).get("warning") or ""
+    parts = [s.strip() for s in re.split(r"(?<=[.!?])\s+", warning) if len(s.strip()) > 25]
+    assert len(parts) >= 5, "too few caveats fired to test for repetition"
+    for i, first in enumerate(parts):
+        words = first.lower().split()
+        for second in parts[i + 1:]:
+            haystack = " ".join(second.lower().split())
+            repeated = [
+                " ".join(words[k:k + 6]) for k in range(len(words) - 5)
+                if " ".join(words[k:k + 6]) in haystack
+            ]
+            assert not repeated, repeated[:2]
+
+
+def test_the_merged_warning_stays_bounded() -> None:
+    """Nothing caps how many caveats can stack, and this session added seven.
+
+    MEASURED: corpus warnings run to a median of 503 characters and a maximum of 882 (Result 182,
+    120 HC3 and RAID texts). The worst pathological input measured here is 1794 characters across 14
+    sentences — code with no prose, mostly locked, on the lite path.
+
+    The bound is set above that and below twice it. It is a regression guard, not a target: the
+    ordering fix means a reader meets the specific caveat first, so length is a cost rather than a
+    defect, and this exists so the cost cannot grow without someone deciding it should.
+    """
+    worst = max(
+        len(score_text(text, tier="lite", **kwargs).get("warning") or "")
+        for text, kwargs in ((CODE, {}), (CODE, {"threshold": 45.0}), (PROSE, {}))
+    )
+    assert worst < 2500, worst
+
+
 def test_several_caveats_still_compose() -> None:
     """The question this loop opened with. Up to three fire together on one document, and the
     answer was that none masks another — recorded so a future ordering change cannot quietly
