@@ -537,6 +537,11 @@ def untell_text(
     #
     # The previous state is restored on the way out. A library caller who seeded their own RNG
     # before calling should not find it moved afterwards.
+    if seed is not None and seed < 0:
+        # `random.seed()` takes the absolute value of an int, so -1 and 1 are one stream, not two.
+        # The CLI refuses this before it arrives; refused here too because `untell_text` is the
+        # public entry point and a silently aliased seed is worse than a rejected one.
+        raise ValueError(f"seed must be 0 or greater, got {seed}")
     effective_seed = (
         seed if seed is not None
         else int.from_bytes(hashlib.blake2b(text.encode("utf-8"), digest_size=8).digest(), "big")
@@ -1556,9 +1561,14 @@ def _bounds(name: str, fallback: tuple[float, float]) -> tuple[float, float]:
         # and the CLI validated against its own hardcoded copy. Caught by the test that exists to
         # check the indirection is real rather than decorative.
         low = high = None
+        # Kept in the type the API declared rather than cast to float. A float cannot hold an int
+        # above 2**53, and `_Seed` is bounded at 2**64 - 1: casting rounded it UP to 2**64, so the
+        # CLI advertised "between 0 and 18446744073709551616" — a bound one past the one the REST
+        # surface enforces, and a number that is not the one anybody wrote. Probability bounds are
+        # declared as floats and stay floats, so nothing else moves.
         for constraint in getattr(api_server, name).__metadata__[0].metadata:
-            low = float(getattr(constraint, "ge", low)) if hasattr(constraint, "ge") else low
-            high = float(getattr(constraint, "le", high)) if hasattr(constraint, "le") else high
+            low = getattr(constraint, "ge", low)
+            high = getattr(constraint, "le", high)
         if low is None or high is None:
             return fallback
         return low, high
@@ -1595,6 +1605,15 @@ _MARGIN = _ranged("margin", float, "_Probability", (0.0, 1.0))
 # bare int, so `--confirm -5` was accepted and `range(-5)` simply never ran, silently
 # turning the guard off. Derived from the same API type as the others.
 _CONFIRM = _ranged("confirm", int, "_Confirm", (0, 32))
+# `--seed` is sold as "fix the random stream", and its help recommends it for comparing two
+# settings on ONE stream. Negative values break that: CPython's `random.seed()` takes the ABSOLUTE
+# value of an int argument, so -1 and 1 are the same stream. MEASURED end to end on the lite path,
+# seven seeds through `untell_text`: -1 and 1 returned byte-identical output at post=0.0731 while
+# 0, 2, 7 and 12345 each returned something different. A user comparing -1 against 1 to see whether
+# a flag mattered would read that as "the flag changed nothing", which is the exact confusion the
+# help text exists to prevent. The high bound matches the range of the text-derived default
+# (`blake2b`, 8 bytes), so the flag can name any stream the tool picks on its own.
+_SEED = _ranged("seed", int, "_Seed", (0, 2**64 - 1))
 # `untell sentences --top`, the same shape one more time. A bare int made `order[:top]` a Python
 # negative slice, so `--top -1` flagged n-1 sentences — MEASURED at 2 of 3, more than `--top 1`
 # flags — and `--top -5` flagged 0, which reads as "nothing to rewrite". 0 is a meaning here too
@@ -1711,7 +1730,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--seed",
-        type=int,
+        type=_SEED,
         default=None,
         help="fix the random stream for this run. Unset derives it from the text, so the same "
         "input already gives the same output regardless of what was rewritten before it. Pass an "

@@ -64,6 +64,14 @@ def _bad_args(**checks) -> dict | None:
         # ge=0, le=32.
         if kind == "count_or_zero" and not (0 <= int(value) <= 32):
             return {"error": f"{name}={value!r} is outside 0..32."}
+        # A seed names a stream, so two seeds that differ must name different streams. CPython's
+        # `random.seed()` takes the ABSOLUTE value of an int, so -1 and 1 are one stream: measured
+        # byte-identical output for both where 0, 2, 7 and 12345 each differed. `None` is the
+        # default and means "derive it from the text", so it is not out of range.
+        if kind == "seed" and value is not None and not (0 <= int(value) <= 2**64 - 1):
+            return {"error": f"{name}={value!r} is outside 0..2**64-1. A negative seed is not a "
+                             "different stream — random.seed() reads its absolute value, so -1 "
+                             "and 1 give byte-identical output."}
     return None
 
 
@@ -201,6 +209,7 @@ def _server():
             max_iters=(max_iters, "count"),
             best_of=(best_of, "count"),
             confirm=(confirm, "count_or_zero"),
+            seed=(seed, "seed"),
         )
         if bad:
             return bad

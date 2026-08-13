@@ -248,6 +248,12 @@ _Probability = Annotated[float, Field(ge=0.0, le=1.0)]
 _Iters = Annotated[int, Field(ge=1, le=100)]
 _BestOf = Annotated[int, Field(ge=1, le=32)]
 _Confirm = Annotated[int, Field(ge=0, le=32)]
+# A seed names a stream, so two different seeds must be two different streams. CPython's
+# `random.seed()` takes the ABSOLUTE value of an int, which makes -1 and 1 the same one: measured
+# byte-identical output for both, where 0, 2, 7 and 12345 each differed. The upper bound is the
+# range of the text-derived default (blake2b, 8 bytes), so a request can name any stream the
+# service would pick on its own.
+_Seed = Annotated[int, Field(ge=0, le=2**64 - 1)]
 _SampleN = Annotated[int, Field(ge=1, le=1000)]
 
 # The CLI validates --rewriter against this list; this field was a bare `str`. An unknown name
@@ -322,7 +328,7 @@ class HumanizeRequest(_Request):
     # Unset derives the stream from the text, so an identical request already returns an identical
     # result. Sent as an int it fixes the stream, which is what makes two requests that differ by
     # one field comparable — otherwise the difference between them includes the draw.
-    seed: int | None = None
+    seed: _Seed | None = None
 
 
 class TellsRequest(_Request):
