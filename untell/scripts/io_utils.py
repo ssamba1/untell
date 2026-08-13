@@ -37,6 +37,21 @@ _BOMS: tuple[tuple[bytes, str], ...] = (
 # scanned-PDF branch).
 
 
+def _has_bytes(path: str) -> bool:
+    """True when the file has any content at all.
+
+    An empty file and a corrupt one need different sentences: "there is nothing here" is
+    actionable, "it may be corrupt or a different format" sends the reader looking for damage that
+    is not there.
+    """
+    import os
+
+    try:
+        return os.path.getsize(path) > 0
+    except OSError:
+        return True  # unreadable size is not evidence of emptiness; let the parser's message stand
+
+
 def _read_docx(path: str) -> str:
     # Name the extra rather than letting ModuleNotFoundError out. `--file report.docx` is the very
     # first thing a user with a Word document tries, and "No module named 'docx'" does not tell
@@ -49,7 +64,31 @@ def _read_docx(path: str) -> str:
             f"{path} is a .docx and reading it needs python-docx: pip install 'untell[docs]'"
         ) from None
 
-    doc = Document(path)
+    # python-docx raises `PackageNotFoundError` for anything that is not a valid OOXML zip — an
+    # empty file, a truncated download, a .txt someone renamed. It is not a ValueError or an
+    # OSError, so it escaped `read_file_or_exit`'s handlers entirely. MEASURED before this:
+    #
+    #     untell tells --file zero.docx  ->  exit 1, raw traceback,
+    #                                        docx.opc.exceptions.PackageNotFoundError:
+    #                                        Package not found at '...zero.docx'
+    #
+    # and the same for a text file renamed to .docx. "Package not found" is actively misleading:
+    # the file is right there and readable, it is simply not a .docx. The convention here is exit 2
+    # with one line, which is what `ValueError` gets — the same conversion this function already
+    # does for the missing-dependency case a few lines up.
+    #
+    # Caught around the CONSTRUCTOR only, so a bug in the paragraph/table walk below still raises
+    # normally rather than being reported as a bad file.
+    try:
+        doc = Document(path)
+    except Exception as exc:  # PackageNotFoundError and anything else the parser raises
+        if not _has_bytes(path):
+            raise ValueError(f"{path} is empty, so there is no .docx to read") from None
+        raise ValueError(
+            f"{path} is not a readable .docx ({type(exc).__name__}). It may be corrupt, "
+            f"truncated, or a different format with a .docx extension."
+        ) from None
+
     parts = [p.text for p in doc.paragraphs]
     # Document.paragraphs does NOT descend into tables, so a document whose content lives in a table
     # (very common for reports, forms and CVs) previously read as empty or near-empty and was then
@@ -71,8 +110,41 @@ def _read_pdf(path: str) -> str:
             f"{path} is a .pdf and reading it needs pypdf: pip install 'untell[docs]'"
         ) from None
 
-    pages = PdfReader(path).pages
-    texts = [(page.extract_text() or "") for page in pages]
+    # Same conversion as the .docx path, and for the same reason: pypdf's errors all descend from
+    # `PyPdfError`, not from `ValueError` or `OSError`, so every one of them escaped
+    # `read_file_or_exit` as a raw traceback with exit 1. MEASURED before this:
+    #
+    #     zero.pdf       exit 1  pypdf.errors.EmptyFileError: Cannot read an empty file
+    #     corrupt.pdf    exit 1  pypdf.errors.PdfStreamError: Stream has ended unexpectedly
+    #     encrypted.pdf  exit 1  pypdf.errors.FileNotDecryptedError: File has not been decrypted
+    #
+    # The encrypted case is the one worth naming separately — the file is perfectly valid and the
+    # user needs a password, which is a different action from "your file is broken".
+    #
+    # Catching by NAME rather than by imported class: pypdf has reorganised this hierarchy across
+    # versions, and importing `pypdf.errors` to reference them would add a second import that can
+    # itself fail on an older release.
+    # Extraction is INSIDE the guard, not just the constructor. `PdfReader(path)` succeeds on an
+    # encrypted file and `.pages` gives a list; the refusal only surfaces when a page is actually
+    # read. Guarding the constructor alone left that case exiting 1 with a traceback from
+    # `page.extract_text()`, which is how this was first "fixed" and then found still broken.
+    try:
+        pages = PdfReader(path).pages
+        texts = [(page.extract_text() or "") for page in pages]
+    except Exception as exc:
+        name = type(exc).__name__
+        if not _has_bytes(path):
+            raise ValueError(f"{path} is empty, so there is no .pdf to read") from None
+        if "Decrypt" in name or "decrypted" in str(exc):
+            raise ValueError(
+                f"{path} is password-protected, so its text cannot be read. Decrypt it first "
+                f"(e.g. `qpdf --decrypt in.pdf out.pdf`) and retry."
+            ) from None
+        raise ValueError(
+            f"{path} is not a readable .pdf ({name}). It may be corrupt, truncated, or a "
+            f"different format with a .pdf extension."
+        ) from None
+
     empty = sum(1 for t in texts if not t.strip())
     if pages and empty == len(pages):
         # Every page yielded nothing: this is a scanned/image PDF and pypdf cannot read it. Returning
