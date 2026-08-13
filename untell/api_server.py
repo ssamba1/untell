@@ -196,6 +196,22 @@ def _check_auth(authorization: str | None, x_api_key: str | None) -> str | None:
 # megabyte occupies a worker for ~45s. score.py's 50k cap did not protect this path because it
 # applies after locking. Rejecting at the edge turns an unbounded request into a 422 instead of a
 # tied-up worker, and the bound is the scorer's own constant so the two cannot drift.
+#
+# EVERY model, including the endpoints that do not lock — and that uniformity is deliberate rather
+# than inherited. Wall-clock per call against input size, spaCy warm:
+#
+#        input     tells    scrub      lock    score
+#        10 KB    0.043s   0.008s    (warm)   0.292s
+#        50 KB    0.413s   0.084s    2.017s   2.132s
+#       100 KB    1.019s   0.095s    2.854s   1.387s
+#       200 KB    2.137s   0.193s    5.483s   1.484s
+#
+# `lock` dominates and is the reason the bound exists, so /tells and /scrub could carry a much
+# larger one on their own cost. They do not, because the bound is a network-edge guard and not a
+# per-endpoint budget: /tells is linear, so a 10 MB body is ~100 seconds of regex on a worker
+# whatever its per-KB cost looks like. The CLI is not a network surface and takes any length,
+# reporting what it truncated (see `score._truncation_warning`) — the two surfaces differ because
+# one of them has an untrusted caller.
 _TEXT = Field(..., max_length=MAX_INPUT_CHARS)
 
 # The CLI rejects an unknown --tier at parse time (argparse `choices`, exit 2). The network surfaces
