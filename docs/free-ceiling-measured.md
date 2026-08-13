@@ -10967,3 +10967,54 @@ back at HEAD with only my untracked test file surviving. No commits were lost �
 The edits were uncommitted for about ten minutes, which is how long the regression run took. That is
 the whole lesson: in this repository, a source edit that is not committed is a source edit that may
 not exist by the time the tests finish. Commit before the long run, not after it.
+
+## Result 225
+
+**Three surfaces, two loops, one shape: the tool knows, and the thing that answers does not ask.**
+
+Result 224 fixed `score_text` and `score_tells`. The obvious next question is whether that shape
+repeats, so I built the matrix — adversarial inputs against every public surface — and the third
+instance was in the module that produces the headline number.
+
+    input       humanness   classification   undetermined_reason
+    japanese         50.0   mixed            (abstained)
+    german          100.0   human            "not in a script this catalogue can read"
+
+**100.0 is the top of the scale**, produced *because* the catalogue found zero tells in text it
+cannot read a word of, on the command that advertises "how human does it read". The `languages`
+module names this exact failure in as many words — "a score of 0 tells means the patterns did not
+apply, NOT that the text reads as human" — and `undetermined_reason` was computing the right answer
+the whole time. `humanness` did not consult it.
+
+The check was there. It was nested **inside** the too-short branch, so it could only fire for text
+with fewer than five Latin words. Non-Latin scripts satisfy that by accident; Latin-script
+non-English never does.
+
+The two functions had also drifted in opposite directions, each right about the case the other got
+wrong:
+
+    humanness()            correct reason for Japanese, no abstention at all for German
+    undetermined_reason()  correct for German, "shorter than 5 words" for Japanese
+
+The second is why the order changed. `_WORD_RE` is `[A-Za-z']+`, so a Japanese paragraph counts zero
+words, the length test claimed it first, and the tool reported "shorter than 5 words" about forty
+characters of prose — true of the regex, absurd to the reader, and it points at the wrong fix.
+
+### The test that failed for the wrong reason
+
+Pinning it, I asserted a 20-point humanness gap between an English paragraph and an AI-ish one,
+on the strength of a probe that had given 88.1 and 28.9 for a *different* pair I had also written.
+The two in the test gave **52.8 and 47.0**. Gap 5.8. It read like the fix having broken
+discrimination.
+
+    MEASURED, 20 HC3 pairs, lite tier:
+        human mean 81.7    machine mean 58.6    gap 23.1    correctly ordered 19 of 20
+
+The tool discriminates well. My constructed pair did not. Both of my hand-written pairs were
+evidence about my writing and nothing else, and the two of them disagreed by 55 points on the same
+quantity.
+
+Worth keeping: **a hand-written example is a fixture, not a sample.** It is fine for showing that a
+branch fires; it cannot support a claim about how well something works, and the tell is that a
+second hand-written pair gives a wildly different number. The corpus assertion that replaced it —
+pair ordering rather than absolute gap — survives a change of text, which the original never could.
