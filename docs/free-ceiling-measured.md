@@ -9481,3 +9481,50 @@ plausible.** Every step here could have found something — a deselected file, a
 clears, an inert rewriter — and the reason none did is that someone had already thought about it. The
 suite declining to compare against unchanged text is the strongest evidence in this document that the
 discipline is in the code and not only in the log.
+
+## Result 189
+
+**Double quotes are safe, curly quotes are safe, single quotes were rewritten — and main was red on
+a different rule while I looked.**
+
+Reading real output on an input type not yet tried: does the rewriter alter words inside quotation
+marks? That is not a style question. Changing what a source is reported as having said is a factual
+error, and the preserve layer exists precisely to stop it.
+
+MEASURED through the shipped loop, same sentence in three punctuations, 3 seeds each:
+
+    "double quotes"   2 of 2 quotations preserved
+    “curly quotes”    2 of 2 preserved
+    'single quotes'   0 of 2 preserved      <- 'we utilize a seamless methodology' came back rewritten
+
+British and academic house styles quote this way as a matter of course, so this is not an exotic
+input. The reason it was left out is the apostrophe: a naive `'...'` locks from "team's" to "didn't"
+and swallows the prose in between. Four guards make it safe — opening quote at a word boundary,
+closing quote followed by space or punctuation, no whitespace before the close, six characters
+minimum — and the hazard was measured rather than assumed:
+
+    80 HC3 texts, both halves       0 spurious matches
+    apostrophe-dense probe          0 matches   ("team's ... didn't ... Jones' ... councils' ...")
+    genuine single quotation        matches
+
+Corpus locked share is unmoved — median 0.020, p90 0.063, max 0.177 — so the 0.80 bar in
+`_mostly_locked_warning` still sits in the same empty gap it was measured into. Curly single quotes
+are deliberately excluded: U+2019 is the typographic apostrophe, so `‘...’` cannot be told from
+"don’t" by shape.
+
+**The first arm of this measurement was wrong in the usual way.** Calling `structural_rewrite`
+directly reported double and curly quotes being altered too — 3 of 4 documents damaged. `preserve.lock`
+runs in the loop, not inside the rewriter, so that arm was measuring an unmasked path no user takes.
+The real answer is the narrower one, and it only appeared through `untell_text`.
+
+**And a red main, found sideways.** Running the preserve suite for regression surfaced a failure that
+had nothing to do with this change: `tests/test_preserve.py` enforces "import `SENTINEL_RE` from
+`untell.scripts.preserve` instead of re-declaring it", and `tells.py` declared its own copy, on main,
+committed. Its justification was written into the code — "`preserve` imports from this module, and
+the pattern is four characters of regex" — and the first half is false: `preserve` imports from
+`untell.scripts.latex` and from nothing else in this package.
+
+Worth keeping: **a duplicated constant that explains why it is duplicated is still a duplicated
+constant, and the explanation is the part most likely to be wrong.** Nobody re-checks a reason once
+it is written down. The rule had a test, the test was failing, and the comment was the reason it had
+survived long enough to fail.
