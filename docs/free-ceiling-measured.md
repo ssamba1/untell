@@ -9300,3 +9300,51 @@ Worth keeping: **a scoped claim is only as useful as the reader's ability to tel
 scope.** "2.3x less wall-clock at full tier" is a true sentence. The person most likely to read it is
 running the zero-dependency install, where the figure is 1.0x, and nothing in the sentence told them
 which side of it they were on.
+
+## Result 185
+
+**"Furthermore" went in and "but" came out. 36% of merges asserted a relation the source
+contradicted, and no gate in the system can see it.**
+
+Found by running the documented quickstart through the CLI and reading the output — the first loop in
+a while to use the product the way a user does rather than the API. It returned:
+
+    "Furthermore, it is important to note that this underscores the pivotal integration"
+      ->  "..., but this highlights the critical integration"
+
+`Furthermore` says the second sentence ADDS to the first. `but` says it opposes it.
+
+`_MERGE_CONNECTORS` is `(", and ", ", but ", ", so ", ", while ", ", though ")`, chosen by weighted
+random. Three assert CONTRAST, one asserts CONSEQUENCE, and only `and` is relation-neutral. The same
+file's `_vary_openers` screens "so", "then", "meanwhile" and "recently" out of its pool on precisely
+this ground — each "asserts something about the sentence it is prepended to and the meaning gates do
+not check discourse relations" — while the merger inserted those relations at random between two
+sentences.
+
+MEASURED over 1000 merges of pairs whose second sentence opens with an explicit additive marker:
+
+    , and 645    , but 224    , so 84    , while 40    , though 7
+
+**355 of 1000 — 36%.** And it is invisible to every gate: no fact changed, so the numeral and role
+checks pass; the words are nearly all the same, so similarity is high; and NLI reads two clauses that
+both still hold, because each half is true — it is the *relation between them* that was invented.
+
+**The fix needed two mechanisms, and the first left an exact residual.** `_strip_transitions` deletes
+the marker before `_merge_sentences` ever runs, so the relation must be captured at strip time. That
+took the stripped markers to 0/120 and left "In addition", "Also" and "Besides" at 37/120 each,
+because `_TRANSITIONS_RE` does not strip those. Widening the stripper would have been the obvious
+move and is wrong: "Also," is an opener `_vary_openers` deliberately ADDS, on measured human
+frequency. Reading a surviving marker in place closes the gap:
+
+    after both mechanisms     0 / 720 wrong-relation, across seven markers
+
+Where the source states no relation there is nothing to honour, and the measured connector
+distribution stands — `, and ` 135, `, but ` 42, `, so ` 18 over 200 seeds. Coverage is partial by
+construction: transforms between the strip and the merge can rewrite a sentence enough that its key
+stops matching, and a missed sentence falls back to where it was.
+
+Worth keeping: **the argument for this fix was already written in the same file, for a different
+transform.** `_vary_openers` had the reasoning, the vocabulary, and the measured decision to exclude
+relation-asserting words. Nothing carried it thirty lines down to the transform that joins two
+sentences with "but". A principle recorded next to one transform is not a principle the file
+follows — and the way it surfaced was reading four lines of ordinary output.
