@@ -9430,3 +9430,54 @@ Worth keeping: **"is this tested?" is a question about the test selection at lea
 the code.** The same eight transforms, the same stubs, the same machine: three dead with one file
 list, zero dead with another. The number that mattered was not in either sweep — it was the count of
 files each one ran.
+
+## Result 188
+
+**Nothing is excluded, and the suite already encodes the discipline the last fifteen results have
+been applying by hand.**
+
+Result 187 ended on "is this tested?" being a question about test selection. The sharpest version is
+whether the project's own invocation runs everything. It does:
+
+    CI job 1 (lite)   pip install -e ".[dev,mcp]"                            pytest -q
+    CI job 2 (full)   torch CPU + .[full,eval,quality,docs,rich,dev] + spaCy pytest -q
+
+No `--ignore`, no `-k`, no deselection, no marker filter. So a test that never runs would have to
+skip itself.
+
+**69 of 282 test files contain a skip** — a quarter of the suite. The conditions cluster on NLI,
+torch, spaCy, BERTScore, HC3 pairs and git checkout, and every one of those is satisfied by CI job 2,
+which installs the eval and quality extras and downloads the spaCy model. The candidate class that
+would clear in NEITHER job — commercial detectors gated on an API key — turned out not to exist here:
+the `not available()` gates are spaCy and NLI, not paid services.
+
+MEASURED over 14 skip-bearing files: **501 passed, 7 skipped**. Three of the seven are the finding:
+
+    t5_paraphrase left the text unchanged on every draw; nothing to compare
+    mt_pivot left the text unchanged on every draw; nothing to compare
+    local_policy reports itself unavailable; a no-op looks deterministic
+
+Those skips fire **because the denominator is zero**. They are the same reasoning this document has
+spent fifteen results applying by hand — a comparison against an unchanged text proves nothing, so
+decline to make the claim — already written into the suite as a runtime condition rather than a note.
+
+The two rewriter skips were worth chasing, because "left the text unchanged on every draw" is exactly
+how the no-op default rewriter presented. Called directly with a score result, all three change the
+text:
+
+    T5ParaphraseRewriter   available=True  changed=True
+    MTPivotRewriter        available=True  changed=True
+    StructuralRewriter     available=True  changed=True
+
+**No defect.** The skips describe those tests' own draws, not an inert rewriter.
+
+**Four probe errors in one loop**, all from guessing an API rather than reading it: a lookup function
+that does not exist, a package listing to find it, then `rewrite()` called without the score argument
+— which made all three rewriters, including the one I had just watched work, look broken with a
+`TypeError`. The fourth attempt was the first to call the real signature.
+
+Worth keeping: **a null result on a whole line of questioning is worth the loop when the line was
+plausible.** Every step here could have found something — a deselected file, a skip that never
+clears, an inert rewriter — and the reason none did is that someone had already thought about it. The
+suite declining to compare against unchanged text is the strongest evidence in this document that the
+discipline is in the code and not only in the log.
