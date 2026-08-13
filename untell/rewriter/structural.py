@@ -197,6 +197,11 @@ _OPENERS = (
 # The three whose meaning depends on something having been said already — see `_opener` for the
 # measurement. Not removed from the pool: they are fine anywhere but the top of a block.
 _NEEDS_PRIOR_DISCOURSE = frozenset({"In short,", "Put simply,", "Also,"})
+# Openers that carry a spoken register. Fine in casual prose, wrong in a paper or a spec — and the
+# formal profiles already decline contractions and the plain-word swap for exactly that reason.
+# The rest of the pool ("In practice,", "In short,", "Put simply,", "Also,", "Now,", "Of course,")
+# is attested in formal writing and stays available, so a formal style is steered, not silenced.
+_CONVERSATIONAL_OPENERS = frozenset({"Basically,", "Well,", "Actually,"})
 _ANY_LEADING_MARKER_RE = re.compile(
     r"^(?:"
     + "|".join(re.escape(o.rstrip(",")) for o in _OPENERS)
@@ -2070,7 +2075,9 @@ def _parenthesise_asides(text: str) -> str:
     return _ASIDE_RE.sub(_swap, text)
 
 
-def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
+def _vary_openers(
+    sentences: list[str], rate: float = 0.3, *, conversational: bool = True
+) -> list[str]:
     """Vary sentence openings by prepending transitional phrases or restructuring."""
     # Openers humans are MEASURED to use, not ones that merely sound casual. Sentence-opening
     # frequency over 400 HC3+RAID pairs (3347 human sentences, 4094 AI):
@@ -2104,7 +2111,9 @@ def _vary_openers(sentences: list[str], rate: float = 0.3) -> list[str]:
     #
     # Every entry is screened against score_tells and _TRANSITIONS_RE, so none is a catalogued tell
     # and none would be deleted by the stripper that runs later.
-    openers = list(_OPENERS)
+    openers = list(_OPENERS) if conversational else [
+        o for o in _OPENERS if o not in _CONVERSATIONAL_OPENERS
+    ]
     context = " ".join(sentences)
     # Openers already spent in this text. Picking independently from an 8-item pool at ~0.3 rate
     # means a long passage reuses one: MEASURED over 60 RAID+HC3 texts, "Looking at this," was the
@@ -2541,6 +2550,20 @@ _NEUTRAL = {
     # Markers _strip_transitions must leave alone. Empty for every style but "academic" —
     # see _ACADEMIC_HUMAN_TRANSITIONS for the per-corpus measurement that separates them.
     "keep_transitions": frozenset(),
+    # May `_vary_openers` reach for the conversational end of its pool? The formal styles already
+    # turn contractions off and hold back the plain-word swap, on the stated ground that
+    # "utilize" -> "use" is right for casual prose and wrong for a paper. The opener pool is the
+    # same argument and was not covered by it: `--style academic` still produced
+    # "Basically, the study examined soil carbon at eleven sites". MEASURED over 60 rewrites of one
+    # paper abstract, openers emitted per style BEFORE this knob existed:
+    #
+    #     none          Actually 2  Also 1  In short 2  In practice 3  Basically 1  Of course 2
+    #     academic      Actually 2          In practice 2  Basically 1  Of course 2
+    #     technical     Actually 1          In practice 1               Of course 2
+    #     professional  Actually 2  In short 1  In practice 2  Basically 1  Of course 2
+    #
+    # The rate falls with the profile — that dial worked — but the VOCABULARY never changed.
+    "conversational_openers": True,
 }
 
 _STYLE_PROFILES: dict[str, dict] = {
@@ -2560,9 +2583,12 @@ _STYLE_PROFILES: dict[str, dict] = {
     # so it is claimed for academic prose and NOT extended to professional/technical, where the
     # same direction is plausible but unmeasured.
     "academic":      {"contractions": False, "register": 0.15, "sentences": 0.7, "openers": 0.4,
-                      "keep_transitions": _ACADEMIC_HUMAN_TRANSITIONS, "burstiness": 0.35},
-    "professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "openers": 0.6},
-    "technical":     {"contractions": False, "register": 0.3,  "sentences": 1.2, "openers": 0.3},
+                      "keep_transitions": _ACADEMIC_HUMAN_TRANSITIONS, "burstiness": 0.35,
+                      "conversational_openers": False},
+    "professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "openers": 0.6,
+                      "conversational_openers": False},
+    "technical":     {"contractions": False, "register": 0.3,  "sentences": 1.2, "openers": 0.3,
+                      "conversational_openers": False},
     "poetic":        {"contractions": True,  "register": 0.5,  "sentences": 0.6, "openers": 0.8},
 }
 
@@ -2792,7 +2818,9 @@ def _rewrite_prose(text: str, *, intensity: float, style: str | None) -> str:
         # comparison is 0.03. Scaled so the default lands a little above human rather than 12x it,
         # leaving headroom at intensity 1.0 for the duplicate-opener work the transform exists for.
         open_rate = min(0.20, intensity * 0.10 * profile["openers"])
-        sents = _vary_openers(sents, rate=open_rate)
+        sents = _vary_openers(
+        sents, rate=open_rate, conversational=profile["conversational_openers"]
+    )
 
         # 8. Burstiness targeting — drive sentence-length variance toward the human range. The single
         # most reliable stylometric differentiator; only redistributes existing words (meaning-safe).
