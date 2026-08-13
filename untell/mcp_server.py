@@ -308,6 +308,27 @@ def _server():
         from eval.ceiling import measure_ceiling
         from untell.rewriter import get_rewriter
 
+        # The tool `_bad_args` was written for and never wired into. Its docstring names both of
+        # these and says "this was the third surface, still silent" — `ceiling` was the fourth, and
+        # it validated the rewriter name while letting the tier and the threshold through.
+        # MEASURED before this, one sample:
+        #
+        #     tier="bogus"      result reports tier: "bogus", only perplexity_burstiness ran
+        #     threshold=50.0    pre_flagged_rate 0.0, post_flagged_rate 0.0, no warning
+        #
+        # The second is the worse one on a MEASUREMENT tool. A threshold above 1 cannot be reached
+        # by a probability, so nothing is ever flagged and the answer reads as a perfect result —
+        # 0% flagged before and after — when in fact nothing was measured at all.
+        bad = _bad_args(
+            tier=(tier, "tier"),
+            threshold=(threshold, "probability"),
+            max_iters=(max_iters, "count"),
+            best_of=(best_of, "count"),
+            n=(n, "count"),
+        )
+        if bad:
+            return bad
+
         rw = None
         if rewriter not in _FREE_REWRITERS and rewriter != "auto":
             # An unknown name fell through as None and was then silently auto-selected, so a typo
