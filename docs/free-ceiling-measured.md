@@ -8319,3 +8319,44 @@ Worth keeping: **"zero emissions" and "zero opportunities to emit" print the sam
 clean result this session has needed a second measurement establishing that the thing measured was
 capable of being dirty — the wrong table, the untouched document, the near-miss control. The zero is
 never the finding; the denominator is.
+
+## Result 165
+
+**Running it twice changes nothing — and the interesting part is how few documents could prove it.**
+
+Users re-run tools. Nothing had checked what the second pass does, and the risk is specific: the
+meaning gate compares each candidate against the **current** input, not the original, so a gate that
+admits a small drift admits it again from the new baseline. No single step fails, and the document
+walks away from its source.
+
+MEASURED at `tier=lite`, `structural`, `max_iters=2`, `best_of=1`, seed fixed, 8 HC3 answers. Every
+document ran its full two iterations, so nothing short-circuited:
+
+```
+doc  tells0  tells1  tells2  sim(1,2)  changed by 1st  changed by 2nd
+ 1     23      23      23     1.000        no               no
+ 3      1       0       0     1.000        yes              no
+ 4      4       0       0     1.000        yes              no
+ 5      0       0       0     1.000        yes              no
+ 6     28      28      28     1.000        yes              no
+ 7      1       0       0     1.000        yes              no
+ 8     13      13      13     1.000        no               no
+```
+
+**Byte-identical on the second pass, every time.** But three documents adopted no candidate on the
+first pass either, and a loop that does nothing is trivially stable — so the real evidence is **5 of
+8**, not 8 of 8, and the test says so.
+
+That is the previous result's lesson arriving one loop later in a new costume: *zero drift* and *zero
+opportunity to drift* print the same number. Half of this measurement was denominator.
+
+Two probe errors on the way, both mine. A `grep -v '^ +'` written to strip a stderr traceback ate
+every indented row of the results table, leaving only the summary line — I nearly wrote up a finding
+from a table I had filtered away. And the three unchanged documents looked like a failure to improve
+until I checked `stopped` and `changed`: `lite` + `structural` + `best_of=1` is the weakest path the
+tool offers, and adopting nothing when no candidate beats the incumbent is correct behaviour, not a
+defect.
+
+Worth keeping: **a stability property is only as strong as the instability it was given a chance to
+show.** Idempotence measured on documents the tool declines to touch is a measurement of nothing, and
+it reads exactly like a clean result.
