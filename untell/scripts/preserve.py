@@ -718,6 +718,17 @@ def lock(text: str) -> tuple[str, dict[str, str]]:
 _PLAIN_LOWERCASE_WORD = re.compile(r"^[a-z]+(?=\s|$)")
 # Sentinel at the very start, or following a sentence terminator — i.e. where a capital belongs.
 _SENTINEL_AT_SENTENCE_START = re.compile(r"(?:^|(?<=[.!?])\s+)(⟦HZ\d{4,}⟧)")
+# ...except after an ordered-list marker, whose "." is not a sentence terminator. MEASURED on this
+# repo's own docs: `docs/free-ceiling-report.md` contains "1. untell's actual inference-only %
+# flagged", and `restore(lock(text))` returned "1. Untell's" — a changed document from a round trip
+# in which NOTHING was rewritten. The capitalisation pass exists for spans the loop MOVED to a
+# sentence start; a list item's first word is already where its author put it, and here that word
+# was the product's own deliberately lowercase name.
+#
+# Decided in `_capitalise` rather than in the pattern above because the test needs the whole line
+# prefix, and `re` has no variable-length lookbehind. A leading `-`/`*` bullet never reached the
+# pattern in the first place (no terminator precedes it), so only the numbered form needs this.
+_LIST_MARKER_ONLY = re.compile(r"^\s*\d+[.)]\s*$")
 
 # An article immediately before a sentinel. A rewriter cannot see inside a locked span, so when the
 # span already opens with an article the rewriter may supply a second one. MEASURED in
@@ -745,9 +756,13 @@ def restore(masked: str, mapping: dict[str, str]) -> str:
 
     def _capitalise(m: re.Match) -> str:
         span = mapping.get(m.group(1))
-        if span and _PLAIN_LOWERCASE_WORD.match(span):
-            return m.group(0).replace(m.group(1), span[0].upper() + span[1:])
-        return m.group(0)
+        if not (span and _PLAIN_LOWERCASE_WORD.match(span)):
+            return m.group(0)
+        # The "." of "1." terminates a list marker, not a sentence.
+        line_start = m.string.rfind("\n", 0, m.start()) + 1
+        if _LIST_MARKER_ONLY.match(m.string[line_start:m.start()]):
+            return m.group(0)
+        return m.group(0).replace(m.group(1), span[0].upper() + span[1:])
 
     def _dedupe_article(m: re.Match) -> str:
         span = mapping.get(m.group(3))

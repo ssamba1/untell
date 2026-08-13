@@ -335,7 +335,9 @@ class TestFlagsAndEnvVars:
         [
             ("Pass --tier full to enable the ensemble.", "--tier"),
             ("Use --best-of 3 for stronger results.", "--best-of"),
-            ("Set UNTELL_ENABLE_RADAR=1 before running.", "UNTELL_ENABLE_RADAR"),
+            # The bare name is matched by the env-var rule but the code rule runs later and
+            # matches the full VAR=value form. The code rule intentionally covers assignments.
+            ("Set UNTELL_ENABLE_RADAR=1 before running.", "UNTELL_ENABLE_RADAR=1"),
             ("The UNTELL_LITE_NO_TORCH switch disables torch.", "UNTELL_LITE_NO_TORCH"),
         ],
     )
