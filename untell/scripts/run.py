@@ -1595,6 +1595,15 @@ _MARGIN = _ranged("margin", float, "_Probability", (0.0, 1.0))
 # bare int, so `--confirm -5` was accepted and `range(-5)` simply never ran, silently
 # turning the guard off. Derived from the same API type as the others.
 _CONFIRM = _ranged("confirm", int, "_Confirm", (0, 32))
+# `untell sentences --top`, the same shape one more time. A bare int made `order[:top]` a Python
+# negative slice, so `--top -1` flagged n-1 sentences — MEASURED at 2 of 3, more than `--top 1`
+# flags — and `--top -5` flagged 0, which reads as "nothing to rewrite". 0 is a meaning here too
+# ("flag none"), so the low bound is 0. Unlike its siblings there is no API twin: no surface but
+# the CLI exposes `--top`, so the fallback pair below IS the definition — the name is wired so a
+# future `_Top` on the REST model takes over without a second copy appearing. The high bound is
+# above any reachable sentence count (MAX_INPUT_CHARS caps a document near 650 sentences), so it
+# refuses absurd input without ever refusing a usable value: `--top 99` still means "flag all".
+_TOP = _ranged("top", int, "_Top", (0, 10_000))
 
 # The same bounds, keyed by config name, for values that arrive as argparse DEFAULTS rather
 # than as typed arguments — a config file or a UNTELL_* variable. Derived from the API types

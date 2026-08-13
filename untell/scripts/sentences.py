@@ -206,6 +206,12 @@ def score_sentences(
     n = len(scored)
     if top is None:
         top = max(1, (n + 2) // 3)  # the worst ~third, at least one
+    elif top < 0:
+        # `order[:top]` with a negative `top` is a Python slice from the END, not a count: -1
+        # flagged n-1 sentences (2 of 3, more than `--top 1`) and -5 flagged 0. The CLI refuses
+        # this before it arrives, but this function is importable, so it refuses it too rather
+        # than turning a nonsense count into a plausible-looking answer.
+        raise ValueError(f"top must be 0 or greater, got {top}")
     # Rank by score (desc); flag the worst `top` that are also at/above threshold.
     order = sorted(range(n), key=lambda i: scored[i][1], reverse=True)
     flag_idx = {i for i in order[:top] if scored[i][1] >= threshold}
@@ -255,12 +261,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tier", default="lite", choices=["lite", "full", "heavy", "commercial"])
     # Range-checked, like the other scoring commands. `--threshold 5` flagged 0 sentences of 1,
     # because a probability cannot exceed 1 — an answer that looks like "nothing to rewrite".
-    from untell.scripts.run import _PROBABILITY
+    from untell.scripts.run import _PROBABILITY, _TOP
 
     parser.add_argument("--threshold", "-t", type=_PROBABILITY, default=DEFAULT_THRESHOLD)
     parser.add_argument(
         "--top",
-        type=int,
+        type=_TOP,
         default=None,
         help="Flag at most this many of the worst sentences (default: ~the worst third).",
     )

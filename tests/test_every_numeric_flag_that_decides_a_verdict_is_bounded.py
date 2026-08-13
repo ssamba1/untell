@@ -8,10 +8,17 @@ verdict:
     untell sentences --threshold 5   ->  0 of 1 sentences flagged
     untell humanize  --confirm -5    ->  accepted; `range(-5)` never runs, so the re-scan guard
                                          is silently off
+    untell sentences --top -1        ->  2 of 3 sentences flagged, MORE than `--top 1` flags
 
-All three are the same shape as the verify defect: a value outside the range the quantity can take,
+All four are the same shape as the verify defect: a value outside the range the quantity can take,
 accepted without complaint, producing an answer that looks like a clean result. The REST and MCP
-surfaces already refuse every one of them.
+surfaces already refuse the first three.
+
+`--top` was missed by the original sweep because it is a count rather than a threshold, and a
+count reads as harmless. It is not: `order[:top]` makes a negative value a slice from the END, so
+`--top -1` selects n-1 sentences instead of raising, and `--top -5` selects none — the same
+"nothing to rewrite" answer `--threshold 5` produced. It has no REST or MCP twin to compare
+against, which is why nothing else caught it.
 
 The remaining bare casts are in `eval/` harnesses (`--n`, `--repeats`, `--workers`, `--pairs`) and
 `untell-server --port`. Those are developer tools where a bad value fails loudly and immediately
@@ -46,6 +53,8 @@ UNREACHABLE = [
     ("untell.scripts.verify", ["--threshold", "5"]),
     ("untell.scripts.run", ["--confirm", "-5", "--max-iters", "1"]),
     ("untell.scripts.run", ["--confirm", "99", "--max-iters", "1"]),
+    ("untell.scripts.sentences", ["--top", "-1"]),
+    ("untell.scripts.sentences", ["--top", "-5"]),
 ]
 
 
@@ -67,6 +76,10 @@ REACHABLE = [
     ("untell.scripts.score", ["--threshold", "1"]),
     ("untell.scripts.sentences", ["--threshold", "0.3"]),
     ("untell.scripts.run", ["--confirm", "0", "--max-iters", "1"]),
+    # 0 means "flag none" and a count far above the sentences present means "flag all" — both are
+    # usable answers, and a bound that refused either would be its own bug.
+    ("untell.scripts.sentences", ["--top", "0"]),
+    ("untell.scripts.sentences", ["--top", "99"]),
 ]
 
 
@@ -100,3 +113,39 @@ def test_the_bounds_come_from_one_place():
         )
 
     assert "_CONFIRM" in inspect.getsource(run.build_parser)
+    assert "_TOP" in inspect.getsource(sentences.main), (
+        "sentences declares its own --top bound instead of importing the shared validator"
+    )
+
+
+class TestTopIsACountNotASlice:
+    """`--top` is guarded at the CLI, but `score_sentences` is importable and was the thing
+    actually holding the defect. Both ends are checked so a future caller cannot reach the slice
+    by going around argparse."""
+
+    TEXT = (
+        "Moreover, it is important to note that the system delivers value. "
+        "The cat sat on the mat. "
+        "Furthermore, this comprehensive solution leverages synergies to unlock potential."
+    )
+
+    def _flagged(self, top):
+        from untell.scripts.sentences import score_sentences
+
+        return len(score_sentences(self.TEXT, tier="lite", top=top)["flagged"])
+
+    @pytest.mark.parametrize("top", [-1, -2, -5])
+    def test_a_negative_count_is_refused(self, top: int):
+        from untell.scripts.sentences import score_sentences
+
+        with pytest.raises(ValueError, match="0 or greater"):
+            score_sentences(self.TEXT, tier="lite", top=top)
+
+    def test_the_count_never_exceeds_what_was_asked(self):
+        """The property the negative slice broke: asking for k cannot return more than k. `--top -1`
+        returned 2 of 3 — more than `--top 1` — which is the observable symptom."""
+        for top in (0, 1, 2, 3, 99):
+            assert self._flagged(top) <= top, f"--top {top} flagged more than {top} sentences"
+
+    def test_asking_for_none_flags_none(self):
+        assert self._flagged(0) == 0
