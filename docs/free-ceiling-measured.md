@@ -9176,3 +9176,43 @@ correction Result 179 required after measuring browser checkers against the wron
 Worth keeping: **a warning that names a number the caller did not pass is worse than no warning.** It
 reads as confirmation. Whatever else this fix does, it stops the tool from quoting `0.30` back at
 someone who asked for `45`.
+
+## Result 182
+
+**Every run carries a warning, so the note that mattered was arriving 500 characters in.**
+
+The caveats added across this session needed checking for interference: does one mask another? They
+compose — up to three fire together on one document and none is dropped. The useful measurement was
+the one taken alongside it, over 120 corpus texts (HC3 and RAID, both halves) at `tier=lite`:
+
+    texts with an EMPTY warning        0 / 120
+    warning length                     median 503, p90 882, max 882
+    tier caveat                      120 / 120
+    human-false-positive note         46 / 120
+    every other caveat                 0 / 120
+
+Two things in that table. The four caveats added this session fire on **none** of the corpus, which
+is exactly what their bars were calibrated for — the noise budget was spent honestly. And the tier
+caveat fires on **every single run**, which makes it wallpaper.
+
+It was also first. A reader who stops after the first sentence — which is what people do with a note
+they have seen a hundred times — never reached the one specific to their input. The worst case was
+Result 181's threshold caveat: it says the caller's setting passes everything, and it was arriving
+behind "Also:", five hundred characters in, underneath a paragraph the reader had already learned to
+skip.
+
+**The first attempt fixed nothing and would have shipped a comment saying it had.** Reordering the
+merge tuple changed no output at all, because the tier notes were assigned straight to
+`result["warning"]` in an if/elif chain BEFORE the loop ran — so they held first place whatever the
+tuple said. The reorder was written, the comment explaining it was written, and only re-running the
+measurement showed the leading text had not moved a character. That chain is now a value that takes
+its turn in the order like every other note.
+
+Ordering is the whole change. Nothing is dropped, shortened or conditioned, and all three branches of
+the tier chain stay reachable.
+
+Worth keeping: **a caveat's position is part of its content.** This document has spent a lot of
+effort on whether each note is true, correctly bounded, and reachable — and none, until now, on
+whether anyone gets to it. A true warning nobody reads scores the same as a missing one, and the
+measurement that revealed it was not about correctness at all: it was counting how often the tool
+says something.
