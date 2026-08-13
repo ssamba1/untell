@@ -1237,12 +1237,23 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         # non-Latin script" is true of a Chinese paragraph and false of `;;; ...`, which has no
         # script at all — the same distinction `humanness` already draws between "too short" and
         # "not English", and for the same reason: the message is what a reader acts on.
+        # THREE reasons, not two. A Latin-script language that is not English is the common case in
+        # this repo's own examples, and the two-way split described it as "mostly non-Latin script",
+        # which is false of German and is exactly the wrong-reason failure this branch exists to
+        # prevent: a reader told their Latin-script paragraph is non-Latin has been sent at a fix
+        # that does not exist. MEASURED on a four-sentence German paragraph — tells 0, and the
+        # caveat said "mostly non-Latin script". `score`, `run` and the REST schema all already say
+        # "a Latin-script language other than English" for the same input; this is the surface that
+        # disagreed with them.
+        from untell.languages import dominant_script
+
         has_letters = any(ch.isalpha() for ch in text)
-        why = (
-            "the text is mostly non-Latin script"
-            if has_letters
-            else "the text contains no letters at all, so there is no prose to read"
-        )
+        if not has_letters:
+            why = "the text contains no letters at all, so there is no prose to read"
+        elif dominant_script(text) == "Latin":
+            why = "the text reads as a Latin-script language other than English"
+        else:
+            why = "the text is mostly non-Latin script"
         result["warning"] = (
             f"this catalogue is English-only, and {why} — a score of "
             f"{total} tells means the patterns did not apply, NOT that the text reads as human"
