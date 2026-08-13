@@ -49,12 +49,41 @@ class CompositeRewriter(Rewriter):
     """Chain StructuralRewriter → SurgicalRewriter for the strongest free rewrite.
 
     Structural transforms fix sentence-level tells (transitions, burstiness, trailers).
-    Surgical fixes word-level tells (AI vocabulary). Combined they are far more effective
-    than either alone, at no cost.
+    Surgical fixes word-level tells (AI vocabulary).
 
     Internally draws ``best_of`` candidates with different random seeds and returns
     the one with the lowest detector score — guaranteeing visible improvement on
     almost every call.
+
+    WHERE THE GAIN ACTUALLY COMES FROM. This used to say the two "combined are far more effective
+    than either alone, at no cost". Half of that is right and the attribution is not. Mean detector
+    max over 10 seeds, one rewrite call each:
+
+        text              before   surgical   structural   composite
+        ai vocab heavy    0.664     0.607       0.332        0.294
+        delve tapestry    0.511     0.485       0.358        0.284
+        hedged report     0.533     0.482       0.284        0.123
+        plain academic    0.565     0.565       0.202        0.195
+
+    Composite beats surgical by a mile, so "more effective than either alone" holds against that
+    member. Against STRUCTURAL the margin is real too — but it is not the surgical stage producing
+    it. Replacing that stage with an identity function inside this class, same seeds, same draws:
+
+        ai vocab heavy    with 0.2939   without 0.2939   byte-identical 10/10
+        hedged report     with 0.1227   without 0.1227   byte-identical 10/10
+        delve tapestry    with 0.2840   without 0.2840   byte-identical 10/10
+
+    Identical output, to four decimal places, with the second stage removed. The margin over a
+    single structural call is the best-of-N SELECTION described above, not the chaining. Surgical
+    acts on AI vocabulary that structural has already removed, so there is nothing left for it to
+    substitute — measured at 0 changes out of 60 draws across five texts, and 0 of 12 on two more.
+    That is the same thing the polish knob ran into a layer up (see
+    `tests/test_every_knob_has_an_effect.py`): not a gate rejecting a candidate, nothing left to
+    swap.
+
+    The stage is kept, because it is the cheap half and it is the one that fires when structural
+    declines — on text the structural transforms do not match, surgical is what changes anything at
+    all. What is corrected here is only the claim about where the improvement comes from.
     """
 
     name = "composite"

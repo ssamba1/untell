@@ -102,10 +102,26 @@ def test_composite_stillness_on_a_clean_sentence_is_a_no_op_not_determinism(monk
     """The distinction that let a false claim spread to four files.
 
     A test measured 40 draws of composite on this sentence, got one output, and wrote it down as
-    "composite is deterministic on a sentence this short". Those 40 draws are 40/40 UNCHANGED — the
+    "composite is deterministic on a sentence this short". Those 40 draws were 40/40 UNCHANGED — the
     rewriter declined to touch it, which looks exactly like perfect determinism from outside. Three
     other files then repeated "deterministic composite member" as though it were a property of the
     rewriter rather than of that input.
+
+    THE FIXTURE NO LONGER SHOWS A NO-OP, and that is the right outcome rather than a problem here.
+    A later fix ("a paragraph of one sentence is still prose") made single-sentence input eligible
+    for the transforms that were skipping it, so composite now changes this sentence at 2 of 8
+    seeds:
+
+        An unsupervised segmentation approach was used throughout the study.
+        Basically, an unsupervised segmentation method was used throughout the study.
+
+    Which settles the original question in the same direction by a different route: composite is
+    stochastic on this input, so declaring no `deterministic` flag is correct. What this case now
+    asserts is that reading — that the stillness was never determinism — and it would fail if the
+    sentence went back to being untouched at every seed without the docstrings being revisited.
+
+    Seeded per draw. Unseeded it asserted a property of whatever RNG state the suite happened to be
+    in, passing standalone and failing inside a selection where other tests had drawn first.
     """
     monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
     from untell.rewriter.composite import CompositeRewriter
@@ -114,10 +130,15 @@ def test_composite_stillness_on_a_clean_sentence_is_a_no_op_not_determinism(monk
     assert score_tells(CLEAN_SENTENCE)["tells"] == 0, "fixture no longer clean; premise gone"
 
     rw = CompositeRewriter()
-    drawn = [rw.rewrite(CLEAN_SENTENCE, {"max": 0.9}, 0.30) for _ in range(8)]
-    assert all(d.strip() == CLEAN_SENTENCE.strip() for d in drawn), (
-        "expected an untouched input; if this ever varies the no-op explanation is wrong and the "
-        "four docstrings citing it need re-measuring"
+    drawn = []
+    for seed in range(8):
+        random.seed(seed)
+        drawn.append(rw.rewrite(CLEAN_SENTENCE, {"max": 0.9}, 0.30))
+
+    assert len(set(drawn)) > 1, (
+        "composite gives one output at every seed on this sentence. That is what it did when the "
+        "single-sentence transforms were skipping it, and it was read as determinism — check "
+        "whether the rewriter has stopped treating a lone sentence as prose before relaxing this."
     )
 
 
@@ -130,7 +151,10 @@ def test_composite_varies_as_soon_as_there_is_something_to_fix(monkeypatch):
     assert score_tells(TELLY_SENTENCE)["tells"] > 0, "fixture carries no tells; premise gone"
 
     rw = CompositeRewriter()
-    drawn = [rw.rewrite(TELLY_SENTENCE, {"max": 0.9}, 0.30) for _ in range(8)]
+    drawn = []
+    for seed in range(8):
+        random.seed(seed)
+        drawn.append(rw.rewrite(TELLY_SENTENCE, {"max": 0.9}, 0.30))
     assert len(set(drawn)) > 1, (
         f"composite gave one output from 8 draws on tell-bearing input; that WOULD make it "
         f"deterministic and the flag it declares (absent, i.e. stochastic) wrong: {drawn[0]!r}"

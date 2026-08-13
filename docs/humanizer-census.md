@@ -123,7 +123,7 @@ Narrower than before, and checkable:
    profiled repo has all four *and* an installable package.
 2. **Measurement discipline.** No profiled repo publishes negative results, refuted claims, or
    corrections to its own headline numbers. That remains genuinely unusual.
-3. **Test depth** — 5497 tests (reproduce with `pytest --collect-only -q`) against the 136
+3. **Test depth** — 6205 tests (reproduce with `pytest --collect-only -q`) against the 136
    repos having "any tests" at all.
 
 And what it should stop claiming: that nobody else closes the loop, that its evasion numbers are
