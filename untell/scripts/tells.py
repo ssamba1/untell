@@ -987,7 +987,21 @@ _SENTINEL_RE = re.compile(r"⟦HZ\d{4,}⟧")
 
 # Minimum words before the ratios mean anything, and the share of other-language function words
 # that counts as positive evidence. See `looks_non_english` for the measurement behind both.
-_LANG_MIN_WORDS = 20
+# 20 was a guess, and it left a real hole: a 13-word Spanish sentence went ungated and the
+# rewriter prepended "In practice," to it — MEASURED at 1 of 16 seeds calling the structural
+# rewriter directly. Re-measured against 20 SHORT English samples of 8-13 words chosen to be as
+# hostile as possible (Der Spiegel, Le Monde and El Pais, El Paso, La Nina, Von Neumann, A la
+# carte, Rio de Janeiro, "the del operator ... the in operator") and 10 short non-English:
+#
+#     min_words   English false positives   non-English caught
+#         8               0/20                     9/10
+#        10               0/20                     7/10
+#        12               0/20                     0/10
+#        20               0/20                     0/10
+#
+# 8 costs nothing on the side that matters and closes most of the hole. The floor cannot go much
+# lower: below ~8 words a single article decides the ratio.
+_LANG_MIN_WORDS = 8
 _OTHER_FUNCTION_WORD_FLOOR = 0.12
 
 
