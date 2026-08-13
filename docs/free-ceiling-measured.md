@@ -10744,3 +10744,48 @@ it never matched — the second component must contain a letter. It locks "01" a
 "model." outside, a partial lock. Verified against unmodified `main` so the attribution is honest.
 Widening the rule to `word.digits` would claim every "Section 3" in the language, so the example was
 wrong rather than the pattern, and the comment now says so.
+
+## Result 220
+
+**The gate catches 8 of 12 deliberate meaning breaks. The 4 it misses cannot be produced by the
+rewriters that exist.**
+
+`meaning_preserved` is a conjunction of eight checks and nothing had ever asked whether each detects
+the defect it exists for. One candidate per break, against a 26-word clinical sentence, NLI and
+spaCy both live:
+
+    vetoed      numeral changed, numeral dropped, percentage changed, polarity flipped,
+                negation added, clause deleted, contradiction, count changed          8 of 12
+    ADMITTED    certainty raised, certainty hedged, subject swapped, unit changed     4 of 12
+    faithful    register change, reordered, de-nominalised, identical           0 of 4 rejected
+
+The interesting part is what to do about the four, and the answer is nothing — decided by a
+measurement rather than by taste:
+
+    booster count change, 40 HC3 + 40 RAID documents through the shipped loop:   0
+    hedge count change, same documents:                                          0
+
+Not "rare". Exactly zero, both directions, both corpora. The free rewriters substitute words, merge
+sentences and split them; none of those introduces "certainly" or "may have". A booster check would
+be unfalsifiable on the only path that can be verified here — which is precisely the reasoning
+`certainty_kept` already records for the two false vetoes it chose to keep.
+
+Two of the four are different in kind, and worth naming:
+
+* **`certainty_kept` is `not dropped_hedges(...)`** — one-directional by construction. It detects a
+  hedge REMOVED; a hedge or booster ADDED is outside what it measures at all. The module's stated
+  danger is "ships a strengthened claim", and a dropped hedge is one way to strengthen. This is a
+  definition narrower than the claim above it, not a bug in the definition.
+* **`role_swap` caught the drug/placebo swap in a 7-word sentence and missed it in the 26-word one**,
+  where entailment scored 0.984 and contradiction 0.010 — so nothing else objected either. The check
+  is not absent, it degrades with sentence complexity, and the entailment floor does not cover the
+  degradation.
+
+Worth keeping: **"we have a check for that" and "the check fires on that" are different claims, and
+only the second one is a measurement.** Eight of these had never been demonstrated to fire; four
+turned out not to. The gate is a hard veto in the meaning path, the most safety-critical code in the
+repository, and its coverage was assumed by everything that referenced it.
+
+The eight vetoes are now asserted; the four gaps are `xfail(strict=False)`, so closing one shows as
+an XPASS rather than a failure. A separate assertion fails if any rewriter ever starts adding a
+booster — which is what makes recording an unreachable gap better than deleting it from the list.
