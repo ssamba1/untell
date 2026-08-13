@@ -9216,3 +9216,53 @@ effort on whether each note is true, correctly bounded, and reachable — and no
 whether anyone gets to it. A true warning nobody reads scores the same as a missing one, and the
 measurement that revealed it was not about correctness at all: it was counting how often the tool
 says something.
+
+## Result 183
+
+**The cost of my own fix, measured three times, wrong twice — and the two wrong answers were both
+first-call warm-up.**
+
+Result 176 added a per-call lite per-sentence pass so `flagged_sentences` describes the text the
+caller received. This repository has reverted two scoring changes on cost grounds, so shipping a new
+scoring pass without measuring it was an open debt.
+
+**First measurement: +25.1% median, and a 4x difference in totals.** Six documents, the instrumented
+arm first, the patched-out arm second.
+
+**Second measurement, per document:** doc 0 at **23.5x** — 19.25 s against 0.82 s — with the rest
+between 1.55x and 2.79x. A 23x regression on a reporting field would be a straightforward revert.
+
+Both were artifacts. The first document measured in a fresh process pays detector warm-up, and in
+both runs that document sat in the arm being blamed. With warm-up performed before any timing and
+the two arms alternated document by document:
+
+    doc  sents     with  without      x
+      0      7    1.055    0.919   1.15
+      1      8    1.093    1.484   0.74
+      2      7    1.830    0.723   2.53
+      3      7    0.811    1.197   0.68
+      4      9    1.735    1.010   1.72
+      5     10    1.201    1.583   0.76
+
+    median 0.95x
+
+Ratios scatter in **both** directions — three of six below 1.0 — which is what noise larger than the
+effect looks like. End to end, the change is not separable from run-to-run variance.
+
+The component measurement is the one that means anything, and it is low-variance:
+
+    per-sentence pass              0.076 - 0.120 s
+    one whole-document score_text  0.038 - 0.056 s
+    ratio                          2.30x  (median, 8 documents, 3 runs each)
+
+About 9% of a ~1.1 s run. That reconciles the two: 9% sits well under the ±30% scatter above, which
+is exactly why the end-to-end arm could not see it, and why the end-to-end arm was never the right
+instrument.
+
+No behaviour change. Making the field opt-in would break a documented always-present key and hand
+Result 176's defect back to anyone who did not opt in.
+
+Worth keeping: **timing a whole pipeline to measure one component inside it is a losing instrument.**
+The end-to-end arm produced a 25% regression, a 23x regression, and a 5% improvement from the same
+code on the same corpus, depending on ordering. The component took a tenth of the effort and gave a
+number that held still.
