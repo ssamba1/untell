@@ -1063,12 +1063,30 @@ def looks_non_english(text: str) -> bool:
 
 
 def _language_supported(text: str) -> bool:
-    """False when the text is mostly a script none of these English patterns can match.
+    """False when this English catalogue cannot read the text — wrong script OR wrong language.
 
     Compared against Latin letters rather than against total length, so punctuation, digits and
     whitespace do not sway it. A passage that is majority non-Latin gets a warning; a mostly-English
     passage quoting a Chinese phrase does not.
+
+    The Latin-script clause was added after finding that this module held two answers to the same
+    question. `looks_non_english` — written for the rewriter, after English openers and an English
+    "and" were found welded into German and French sentences — says German is not English. This
+    function said German was supported, and `score_tells` reported this one:
+
+        german    language_supported=True    tells_per_100w=0.00
+        french    language_supported=True    tells_per_100w=0.00
+        japanese  language_supported=False   tells_per_100w=0.00
+
+    The field exists precisely to stop that zero being read as a clean bill of health — the
+    `languages` module says so in as many words, about Korean. German produces the identical
+    misleading zero, and Latin-script non-English is far the commoner case of the two.
+
+    This widens what `False` means: not "wrong script" but "cannot be read". The REST schema's
+    description is updated with it, since that description is the contract a caller reads.
     """
+    if text.strip() and looks_non_english(text):
+        return False
     non_latin = len(_NON_LATIN_RE.findall(text))
     latin = sum(1 for ch in text if ch.isascii() and ch.isalpha())
     # No letters at all is the same situation as the wrong script, and it reached the opposite

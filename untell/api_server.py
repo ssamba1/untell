@@ -589,8 +589,9 @@ _TELLS_RESPONSES = _obj(
         "low_burstiness": _BOOL,
         "language_supported": {
             **_BOOL,
-            "description": "false when the text is mostly a script this English catalogue "
-                           "cannot match; the counts are then not evidence of anything",
+            "description": "false when this English catalogue cannot read the text — a script it "
+                           "cannot match, or a Latin-script language other than English; "
+                           "the counts are then not evidence of anything",
         },
         # Returned all along and documented nowhere, so an API consumer reading the spec had no
         # reason to look for the one field that says the numbers above it mean nothing.

@@ -896,7 +896,8 @@ def _score_with_detectors(
     #
     # Ordering is the whole change. Nothing is dropped, shortened or conditioned; the rare and
     # actionable note simply goes first and the standing one keeps the last word.
-    for extra in (_threshold_range_warning(threshold), _short_text_warning(text),
+    for extra in (_non_english_warning(text), _threshold_range_warning(threshold),
+                  _short_text_warning(text),
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
                   _homoglyph_warning(text), _no_prose_warning(text),
                   _mostly_locked_warning(text), _line_per_sentence_warning(text),
@@ -1135,6 +1136,41 @@ def _short_roster_note(tier: str, effective: str, scores: dict) -> str | None:
         "lower it, so a short roster can only make text look MORE human than the complete "
         "ensemble would. MEASURED on one paragraph: the same text scored 1.0000 with every "
         "detector present and 0.1722 without one of them."
+    )
+
+
+def _non_english_warning(text: str) -> str | None:
+    """The rewrite path refuses non-English text and says so. The scoring path did neither.
+
+    `untell_text` calls `looks_non_english` and returns the text unchanged with a caveat ending
+    "any score here is not a verdict about this text". `score_text` is a separate public surface —
+    the CLI's `score`, the MCP tool, the REST endpoint — and never consulted that check, so a German
+    paragraph came back with a `flagged` verdict and caveats about its LENGTH and its TIER and
+    nothing at all about its language.
+
+    MEASURED on one paragraph of the same content in five languages, lite tier:
+
+        english   0.7495  flagged=True    rewritten, 1 candidate adopted
+        german    0.4788  flagged=True    returned unchanged, no language caveat here
+        spanish   0.2680  flagged=False   returned unchanged, no language caveat here
+        french    0.2364  flagged=False   returned unchanged, no language caveat here
+        japanese  0.0000  flagged=False   non-Latin script, already caveated
+
+    The German row is the one that matters: a confident-looking AI verdict, produced by
+    English-only models, on text the rest of the pipeline had already declined to process.
+
+    First in the caveat order, ahead of the threshold note, because it invalidates the number the
+    other caveats are qualifying rather than qualifying it.
+    """
+    from untell.scripts.tells import looks_non_english
+
+    if not text.strip() or not looks_non_english(text):
+        return None
+    return (
+        "this text reads as a Latin-script language other than English. The detectors and the tell "
+        "catalogue are English-only, so the score above is not a verdict about this text — treat a "
+        "flag and a clear alike as no evidence. The rewriter returns such text unchanged for the "
+        "same reason."
     )
 
 
