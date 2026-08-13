@@ -39,7 +39,8 @@ if __package__ in (None, ""):
             _sys.path.insert(0, str(_p))
             break
 
-from untell.scripts.latex import ENV_ALTERNATION as _LATEX_ENV_ALTERNATION  # noqa: E402
+from untell.scripts.latex import ENV_ALTERNATION as _LATEX_ENV_ALTERNATION
+from untell.text_split import _ABBREVIATIONS  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,12 @@ _WEEKDAY = r"Mon(?:day)?|Tue(?:s(?:day)?)?|Wed(?:nesday)?|Thu(?:rs(?:day)?)?|Fri
 # `_WEEKDAY` above is still used where a month or a number pins the context.
 _WEEKDAY_FULL = r"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
 _WEEKDAY_ABBR = r"Mon|Tues|Tue|Wed|Thurs|Thur|Thu|Fri|Sat|Sun"
+
+# The dotted abbreviations, taken from the sentence splitter rather than retyped, so the two cannot
+# drift apart — the whole defect this guards was the two disagreeing about what a sentence end is.
+_ABBR_DOTTED = "|".join(
+    sorted((re.escape(a) for a in _ABBREVIATIONS if "." in a), key=len, reverse=True)
+)
 
 # One author-year entry, and the signal words that can introduce one. Split out because the
 # parenthetical rule below repeats the entry either side of a semicolon; see the measurement there.
@@ -403,12 +410,34 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         re.compile(r"\b\d+(?:\.\d+){2,}\b"),
     ),
     # Two-component dotted identifiers: `word.number` where the second component has a non-digit
-    # character (e.g. `np.float64`, `tensorflow v2`, `model.01`). The 3+ numeric-component pattern
-    # above misses these because the second component contains letters. Ordered after it so purely-
-    # numeric "1.2" still falls through to the number rules.
+    # character (`np.float64`, `untell.score`, `os.path`). The 3+ numeric-component pattern above
+    # misses these because the second component contains letters. Ordered after it so purely-numeric
+    # "1.2" still falls through to the number rules.
+    #
+    # `model.01` was listed here as a third example and never matched: the second component must
+    # contain a LETTER, and "01" does not. MEASURED — it locks as `⟦HZ0000⟧` for "01" alone, leaving
+    # "model." outside the lock, which is the partial lock this list's ORDER comment calls the worst
+    # possible outcome. Left standing and recorded rather than widened, because widening this rule
+    # to `word.digits` would claim every "Section 3" and "Figure 2" in the language; the example was
+    # wrong, not the pattern.
+    #
+    # `\d*` matches ZERO digits, so this also claims any `word.word` — including the dotted
+    # ABBREVIATIONS, 13 of the 47 the sentence splitter knows about: e.g, i.e, a.m, p.m, u.s, u.k,
+    # ph.d, m.d, b.a, m.a, d.c. Locking one is not harmless, because the sentinel hides the evidence
+    # every abbreviation-aware guard downstream depends on. `⟦HZ0000⟧.` looks exactly like the end of
+    # a sentence, so `split_sentences` mis-splits there and the capital-restore pass upcases what
+    # follows. FOUND on RAID, which writes in the register that uses these:
+    #
+    #     "(e.g. small branches or blurred edges)"  ->  "(e.g. Small branches or blurred edges)"
+    #
+    # 2 of 50 RAID halves, 0 of 50 HC3 halves — forum prose does not write "e.g." at all.
+    #
+    # Excluded here rather than guarded downstream because the blindness is not confined to one
+    # pass: sentence splitting feeds burstiness, per-sentence scoring and the targeted rewriter's
+    # unit of work, and all of them see the masked text.
     (
         "dotted",
-        re.compile(r"\b[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"),
+        re.compile(rf"\b(?!(?i:{_ABBR_DOTTED})\b)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"),
     ),
     # Phone numbers: international E.164, national formats, extensions. A rewrite that changes a
     # phone number while the sentinel survives intact is the worst possible outcome.

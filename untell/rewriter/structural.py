@@ -25,7 +25,7 @@ from untell.scripts.tells import (
     CLOSER_REMAINDER_WORDS as _TELLS_CLOSER_REMAINDER_WORDS,
 )
 from untell.scripts.tells import is_pure_scaffolding, looks_non_english
-from untell.text_split import split_sentences
+from untell.text_split import ends_with_abbreviation, split_sentences
 
 # ---------------------------------------------------------------------------
 # Sentence-level patterns
@@ -1849,9 +1849,27 @@ _NOT_A_PROSE_WORD = re.compile(r"[.=/\\(){}\[\]<>@:_\d-]|^-{1,2}[a-z]")
 
 
 def _capitalise_sentence_start(match: re.Match) -> str:
-    """Upcase the first letter of a sentence, unless the token is not prose."""
+    """Upcase the first letter of a sentence, unless the token is not prose.
+
+    The dot after an abbreviation is not a terminator, and the `(?<!\\.)` guard in the pattern only
+    catches an ellipsis — in "e.g." the final dot follows a letter and sails straight through. FOUND
+    on RAID, which is written in the register that uses these:
+
+        "(e.g. small branches or blurred edges)"  ->  "(e.g. Small branches or blurred edges)"
+        "(e.g. mean or median)"                   ->  "(e.g. Mean or median)"
+
+    2 of 50 RAID halves, **0 of 50 HC3 halves** — forum prose does not write "e.g.", so the corpus
+    the earlier bracket work was measured on could not show this at all.
+
+    `_strip_filler_openers` carries this same lesson with this same example, having been caught
+    capitalising after `e.g.` by a whole-string `re.sub`. It was fixed by scoping the substitution
+    instead of by consulting the abbreviation list, so the list — which the sentence splitter has
+    had all along — was never brought to this second site.
+    """
     lead, first, rest = match.group(1), match.group(2), match.group(3)
     if _NOT_A_PROSE_WORD.search(rest):
+        return match.group(0)
+    if ends_with_abbreviation(match.string[: match.start() + len(lead)]):
         return match.group(0)
     return lead + first.upper() + rest
 
