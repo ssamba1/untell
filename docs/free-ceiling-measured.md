@@ -9046,3 +9046,43 @@ Worth keeping: **a partial fix leaves the surface looking consistent from wherev
 The earlier change was correct, measured, and stopped at the rows its author could see running. What
 remained was invisible in the default configuration and would have shipped a contradictory report to
 exactly the users who pay for a commercial checker.
+
+## Result 179
+
+**No defect, and the trace is the result: an adapter missing one attribute would break `score_text`,
+not the command that reads it.**
+
+Result 178 ended on the observation that paths unreachable in the default configuration are the ones
+that ship broken. The stub commercial detector written for it raised
+
+    AttributeError: '_StubDetector' object has no attribute 'tier'
+
+which is the kind of thing that gets patched around in ten seconds. Tracing it instead:
+
+    verify.py:66   ->   score.py:314 (score_text)   ->   base.py:300 (load_detectors)
+
+`verify` never reads `tier`. `commercial_detectors()` feeds the ordinary detector registry, so an
+adapter missing that attribute breaks **`score_text`** — the main scoring entry point, used by every
+surface — and only for users who have configured an API key. Everyone else would see a clean test
+suite.
+
+MEASURED, all six adapters against the protocol `load_detectors` requires:
+
+    OriginalityDetector  WinstonDetector  GPTZeroDetector
+    SaplingDetector      ZeroGPTDetector  CopyleaksDetector       6/6 conform, tier='commercial'
+
+**No defect.** The interface is satisfied today and was held in place by nothing but habit. The guard
+now also pins that a declared tier is one the registry actually filters on, because a typo there does
+not raise — it removes the detector from every tier silently, which is the worse failure.
+
+**One probe error, and it is the same shape as the one in Result 174.** The first sweep measured the
+browser checkers against the detector protocol and reported three missing attributes each. They are a
+different interface: `verify` drives them with `available()` and `check()` and keys the row by the
+site string it was handed, never reading `name`, `tier` or `score`. A conformance check is only as
+good as its knowledge of which contract applies, and a confident list of missing members is exactly
+what a wrong contract produces.
+
+Worth keeping: **a stub that fails to satisfy an interface is evidence about the interface.** The
+fast move was to add `tier` to the stub and carry on — the test would have gone green and the fact
+that the main scoring path depends on an attribute no visible caller reads would have stayed
+unwritten.
