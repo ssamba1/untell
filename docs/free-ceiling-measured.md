@@ -9348,3 +9348,43 @@ transform.** `_vary_openers` had the reasoning, the vocabulary, and the measured
 relation-asserting words. Nothing carried it thirty lines down to the transform that joins two
 sentences with "but". A principle recorded next to one transform is not a principle the file
 follows — and the way it surfaced was reading four lines of ordinary output.
+
+## Result 186
+
+**The mirror of Result 185 does not exist, and it took four wrong probes to establish that.**
+
+If merging can invent a discourse relation, splitting can delete one: break "A, but B" into "A. B."
+and the contrast is gone, invisibly, for the same reason — each half stays true on its own. That is a
+one-line hypothesis and it is wrong.
+
+The probes, in order, and what each actually measured:
+
+1. Five connective sentences through `_split_long_sentences` at `rate=1.0`: "never split". They were
+   22-25 words against a `max_words=28` gate. **Zero denominator.**
+2. Rebuilt at 30-39 words: "never split" again. Still nothing, and by now the natural reading was
+   that the splitter refuses connectives.
+3. A control with a comma and no conjunction, to check the splitter splits anything at all: also
+   nothing. That should have been the moment the instrument came under suspicion.
+4. Reading the function end to end instead: when a split would strand a fragment, it does not
+   decline — it **rejoins the halves with a comma** and emits ONE sentence:
+
+       out.append(_terminated(f"{first}, {second}"))
+
+My detection was `len(out) > 1`. Every case where the transform ran, considered the split, judged it
+unsafe and preserved the sentence was recorded by that test as "never split" — the transform working
+exactly as designed, counted as the transform never running.
+
+**No defect.** The connective survives because the split is declined, and the guard that declines it
+carries its own provenance:
+
+    "FOUND by reading actual rewriter output on RAID and HC3 rather than by any metric,
+     because a fragment is perfect English to a tell catalogue"
+
+Which is the same method that produced Result 185 one loop earlier, applied to this transform by
+whoever wrote it — and the reason there was nothing here to find.
+
+Worth keeping: **"the transform did not fire" and "the transform fired and chose not to act" are
+different facts, and a boolean on the output length cannot tell them apart.** Three probes in a row
+returned the same clean-looking zero, and the zero meant something different each time. The cost of
+the confusion was four measurements; the cost of publishing it would have been a fix to a guard that
+was already correct.
