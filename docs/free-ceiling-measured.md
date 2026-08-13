@@ -10066,3 +10066,40 @@ at only one surface.
 Worth keeping: **a second implementation of the same contract is a free review of the first.** Two
 surfaces, one of them written by someone thinking about validation, and the disagreement between them
 is a list of defects that needs no judgement call to produce — only the discipline to read both.
+
+## Result 204
+
+**Two more pairs read as reviews of each other. One found nothing, and the nothing is worth having.**
+
+Result 203's lesson was that a second implementation of a contract reviews the first for free. Two
+more pairs exist in this repository.
+
+**`score_text` against `batch_score_texts`**, over 12 corpus texts: worst `|max|` difference
+**0.000000**, identical key sets. A clean null — and not a trivial one, because per-sentence
+targeting runs through the batch path while the loop runs through the single-text path, so a drift
+between them would put the sentences the rewriter is told to fix on a different scale from the
+document verdict it is judged by.
+
+**CLI against REST against the library**, on the values Result 203 fixed:
+
+    value            CLI       REST      library
+    max_iters=0      refuses   422       warns
+    best_of=0        refuses   422       warns
+    threshold=45     refuses   422       warns
+
+The CLI refuses all three, through custom argparse `type=` callables rather than plain `int` — which
+is why the earlier sweep of `choices` found nothing to report on those flags.
+
+**The split is coherent and it is one session old.** The two surfaces a human types into refuse,
+because a typo there is a typo. The programmatic surface warns and proceeds, because an embedding
+caller may be passing a value from a newer version and refusing the whole run would be harsher than
+the mistake deserves. Before Results 181 and 203 the library was not the lenient member of a
+deliberate design — it was simply silent, which is the same behaviour with none of the intent.
+
+Pinned in both directions now: a later change making the library raise would break embedding callers,
+and one relaxing the CLI would admit a typo where it is most likely to be made.
+
+Worth keeping: **a null from a comparison is cheaper than a null from a sweep and says more.** Twelve
+texts through two functions answered a question that no amount of reading either function would have
+settled, and the answer — exact agreement — is the kind of fact that is only ever noticed when it
+stops being true.
