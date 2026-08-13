@@ -757,7 +757,8 @@ def _score_with_detectors(
     # one happened to be checked first and hidden the other.
     for extra in (ensemble_warning, _short_text_warning(text),
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
-                  _homoglyph_warning(text), _human_false_positive_warning(result)):
+                  _homoglyph_warning(text), _human_false_positive_warning(result),
+                  _no_prose_warning(text)):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
@@ -799,6 +800,45 @@ _HUMAN_FP_NOTE = (
 def _human_false_positive_warning(result: dict) -> str | None:
     """Say what a flagged verdict is worth, on the tier that was previously silent."""
     return _HUMAN_FP_NOTE if result.get("flagged") else None
+
+
+
+# A document with no prose is one the rewriter provably cannot touch, and the verdict on it describes
+# a kind of text the detectors were never built for. MEASURED at tier=lite on a 272-word Python
+# fence: `flagged: True`, `stopped: max_iters`, `changed: False` — the loop ran every iteration,
+# adopted nothing, and reported an AI verdict with no hint that there was nothing to rewrite.
+#
+# The discriminator already exists. `layout._prose_line_mask` marks which lines the rewriter may
+# touch, and that module is stdlib-only with no intra-package imports, so this costs a scan:
+#
+#     pure code fence     0 of 62 lines prose
+#     ordinary prose      1 of 1
+#     prose + a fence     1 of 64
+#
+# MEASURED on 120 corpus texts (HC3 and RAID, both halves): **0** have zero prose lines, so it
+# cannot fire on real writing.
+#
+# What it covers, stated rather than implied: fenced code, markdown tables and YAML front matter —
+# what someone pastes out of a README. It does NOT fire on a bullet list or a bare URL list, because
+# `_prose_line_mask` counts list items as prose and the rewriter does rewrite them. That is the right
+# call for bullets and merely a miss for URLs; a caveat firing on every list would be noise on the
+# most common markdown there is.
+_NO_PROSE_NOTE = (
+    "this document contains no prose lines — it is code, a table or front matter — so the score "
+    "describes text the detectors were not built for and the rewriter has nothing it may touch. "
+    "Treat the verdict as undefined for this input rather than as a judgement about the writing."
+)
+
+
+def _no_prose_warning(text: str) -> str | None:
+    """Say when the input is entirely non-prose, which makes the verdict undefined."""
+    try:
+        from untell.layout import _prose_line_mask
+
+        mask = _prose_line_mask(text)
+    except Exception:  # a caveat must never break the score it qualifies
+        return None
+    return _NO_PROSE_NOTE if mask and not any(mask) else None
 
 
 def _read_input(args: argparse.Namespace) -> str | None:
