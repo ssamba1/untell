@@ -449,9 +449,27 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 # more honestly than a false precision, which is the whole job of the sentence it appears in.
 # Truncated figures are the upper bound, natural the lower; the 5 and 10 rows carry the truncated
 # number alone because natural HC3 text does not go that short.
-# DID NOT REPRODUCE on 2026-08-13, and the numbers are left standing rather than replaced, because
-# this comment's own rule applies to the person re-measuring it: "replacing measured numbers with
-# differently-measured numbers would swap one unstated method for another."
+# RE-MEASURED 2026-08-13 with the scoring path PINNED, which the settled run did not record. That
+# was the one unknown standing between a failed reproduction and a refutation, and it is now closed:
+#
+#     band   shipped     stdlib path   gpt2 path      sample: 40 HC3 human texts, 120-320 words
+#       5    ~100%            0%          5%          (mean 188; the settled run used mean 212)
+#      10    ~85%            18%          5%
+#      20    71-85%          50%          8%
+#      40    86-100%         65%         10%
+#
+# The stdlib path is unambiguously the one the settled run used: it rises with length exactly as the
+# shipped table does, while the GPT-2 path is flat and three to six times lower. So the shape was
+# right and the level was not — every band is 20 to 35 points low except the 5-word row, which is
+# 100 points low and cannot be a sampling difference.
+#
+# The bands below are the range across BOTH lite paths, because either can run and nothing in the
+# result says which did. The method is stated in full here for the reason the note under this one
+# gives: numbers whose method is unrecorded cannot be argued with, only replaced.
+#
+# STILL UNMEASURED: the naturally-short arm. These are truncations of long answers, and a naturally
+# 20-word reply is a different object — which is the distinction the previous note was built around
+# and the reason it quoted ranges. Whoever measures it should widen these rather than replace them.
 #
 # Re-run of the TRUNCATED arm, 40 HC3 human texts of mean 332 words (the settled run used mean 212),
 # counting `max >= 0.30`, on both lite paths — because the lite tier silently uses GPT-2 when torch
@@ -473,7 +491,7 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 # loop threshold, which is ample reason to distrust a short verdict. What the re-run suggests is that
 # the direction may be the other one for the shortest inputs — a five-word text scoring 0.0 makes a
 # CLEAR verdict the uninformative one, not the flag.
-_SHORT_TEXT_BANDS = ((5, "~100%"), (10, "~85%"), (20, "71-85%"), (40, "86-100%"))
+_SHORT_TEXT_BANDS = ((5, "0-5%"), (10, "5-18%"), (20, "8-50%"), (40, "10-65%"))
 _MIN_WORDS_FOR_A_VERDICT = 40
 
 
@@ -593,9 +611,11 @@ def _short_text_warning(text: str) -> str | None:
             pass  # a diagnostic must never break the scoring it describes
     rate = next(pct for bound, pct in _SHORT_TEXT_BANDS if words <= bound)
     return (
-        f"{words} word{'' if words == 1 else 's'}: too short for a reliable verdict. MEASURED on 40 HC3 pairs at this "
-        f"threshold, {rate} of HUMAN text this length also flags. Score longer text, or treat this "
-        f"as no evidence either way."
+        f"{words} word{'' if words == 1 else 's'}: too short for a reliable verdict. MEASURED on 40 "
+        f"HC3 human texts truncated to this length, {rate} score above the loop threshold "
+        f"(the range spans the two lite scoring paths). At this length the score collapses toward "
+        f"its floor as the text gets shorter, so a CLEAR verdict carries as little information as a "
+        f"flagged one. Score longer text, or treat this as no evidence either way."
     )
 
 
