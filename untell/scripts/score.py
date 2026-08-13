@@ -497,7 +497,12 @@ _MIN_WORDS_FOR_A_VERDICT = 40
 
 # Characters with no visible width that nonetheless change every tokenisation: zero-width space,
 # ZWNJ/ZWJ, word joiner, bidi marks, BOM, and the soft hyphen that justified PDF text is full of.
-_INVISIBLE_RE = re.compile("[" + "\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad" + "]")
+# U+2028/U+2029 added 2026-08-13: categories Zl and Zp, so they sat outside every class here and
+# in `scrub`. MEASURED, inserted after every "e" in a two-sentence paragraph: 0.6735 -> 0.5545,
+# unscrubbed and unwarned -- a score-moving invisible in the direction that reads AI as human.
+_INVISIBLE_RE = re.compile(
+    "[" + "\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad\u2028\u2029" + "]"
+)
 
 
 def _invisible_char_warning(text: str) -> str | None:

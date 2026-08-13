@@ -81,6 +81,19 @@ _WATERMARK_CHARS = re.compile(
 # The trade-off is deliberate and narrow — U+00A0 loses its non-breaking behaviour. For prose being
 # fed to a detector that is the right call: unusual whitespace is itself something detectors flag.
 _EXOTIC_SPACE = re.compile("[   -   　]")
+# U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR are categories Zl and Zp, not Zs, so they
+# fall through the class above and through score.py's `_INVISIBLE_RE` -- which made them the one
+# whitespace family that survived a scrub AND raised no caveat.
+#
+# MEASURED, inserted after every "e" in a two-sentence paragraph, lite/stdlib path:
+#
+#     baseline                  0.6735
+#     with U+2028 or U+2029     0.5545     removed by scrub: NO     warned: NO
+#
+# A drop of 0.119 in the direction that reports AI text as human, from a character no surface
+# mentioned. Mapped to a newline rather than deleted: they ARE line breaks, and deleting one welds
+# two lines together, which is the damage the layout work elsewhere in this repo exists to stop.
+_LINE_SEPARATORS = re.compile("[  ]")
 
 
 def _is_emoji_adjacent(ch: str) -> bool:
@@ -299,6 +312,9 @@ def scrub_hidden(text: str) -> str:
     """
     text = _WATERMARK_CHARS.sub("", text)
     text = _EXOTIC_SPACE.sub(" ", text)
+    # After the space class, so a Zl/Zp separator becomes a real line break rather than
+    # being collapsed into a space by the line above.
+    text = _LINE_SEPARATORS.sub(chr(10), text)
     text = _strip_orphan_zwj(text)
     text = _strip_orphan_variation_selectors(text)
     text = _strip_orphan_bidi(text)
