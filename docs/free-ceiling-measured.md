@@ -10255,3 +10255,33 @@ Worth keeping: **a caveat is written once and read in combination.** Every one o
 in the situation it was written for. The one that failed did so only in the presence of another,
 which is a state no author is thinking about while writing either — and which costs one command to
 check for all of them at once.
+
+## Result 209
+
+**No caveat repeats another, and the clean null is the interesting part.**
+
+Result 208 found a defect that existed only in the composition of two caveats. Two more composition
+properties follow from that, and neither had been checked.
+
+**Redundancy.** MEASURED on the three inputs that fire the most caveats at once — code with a bad
+threshold, quotations with a bad threshold, and code alone: 12 to 14 sentences each, and **0**
+near-duplicate pairs, counting a pair as near-duplicate when it shares six consecutive words.
+
+That null is not an accident, and tracing why is worth more than the result. The roster note and the
+abstention note both describe a short ensemble, and both were at risk of saying it in the same words —
+Result 199 records that the first draft of the roster note reused the abstention note's phrase
+verbatim, which collided with a test keying on that string. Rewording it to avoid the collision is
+what makes this sweep come back empty. The guard against duplication was installed by accident,
+three results before anyone looked for duplication.
+
+**Length.** Nothing caps how many caveats can stack, and this session added seven. Corpus warnings
+run to a median of 503 characters and a maximum of 882 (Result 182, 120 texts); the worst pathological
+input measured here is **1794 across 14 sentences**. The bound is now set above that and below twice
+it — a regression guard rather than a target. Result 182's ordering fix means a reader meets the
+specific caveat first, so length is a cost rather than a defect; this exists so the cost cannot grow
+without someone deciding it should.
+
+Worth keeping: **a property that holds by accident is worth pinning precisely because nobody chose
+it.** The distinct wording that makes these eleven caveats non-redundant was the side effect of a
+test collision, and nothing recorded it as a requirement. It would have survived exactly until the
+next person wrote a caveat about a short ensemble.
