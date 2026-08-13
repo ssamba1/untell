@@ -10184,3 +10184,42 @@ Worth keeping: **the discipline that produced a number has to survive the person
 it.** Everything in this session pushed toward replacing the table — I had four measurements, two
 paths, and a clean story about the direction inverting for short inputs. What stopped it was a
 sentence written by whoever measured it last, warning against exactly the move I was about to make.
+
+## Result 207
+
+**The path was the unknown, and pinning it settled the shape while refuting the level.**
+
+Result 206 left the short-text bands standing as a failed reproduction with one variable unresolved:
+the settled run does not record which lite scoring path it used, and the tier silently uses GPT-2
+when torch is importable. Matching its stated sample and pinning the path:
+
+    band   shipped     stdlib path   gpt2 path      40 HC3 human texts, 120-320 words
+      5    ~100%            0%          5%          (mean 188; the settled run used mean 212)
+     10    ~85%            18%          5%
+     20    71-85%          50%          8%
+     40    86-100%         65%         10%
+
+**The stdlib path is unambiguously the one that was measured.** It rises with length exactly as the
+shipped table does, while GPT-2 is flat and three to six times lower. So the shape was right and the
+level was not: every band 20 to 35 points low, except the 5-word row at 100 points low, which no
+sampling difference explains.
+
+That closes the objection Result 206 raised against itself. The rule in the note was against swapping
+one **unstated** method for another; the method here is stated in full, and the bands are now the
+range across both lite paths, because either can run and nothing in the result says which did.
+
+**Replacing the numbers alone would have reintroduced the exact defect that note was written about.**
+It says the string "exists to tell a caller their verdict is unreliable, and it was reassuring them
+instead" — and "0-5% of HUMAN text this length also flags" reads as reassurance. The rendered message
+proved it: at four words the caveat came out sounding like a clean bill. So the sentence changed with
+the numbers, and now says what the measurement actually shows — the score collapses toward its floor
+as text gets shorter, so a CLEAR verdict carries as little information as a flagged one.
+
+The naturally-short arm is still unmeasured and marked as such, because a truncated fragment and a
+complete short reply are different objects — which is the distinction the previous note was built
+around.
+
+Worth keeping: **a number and the sentence around it are one claim, and changing half of it is how
+you get a caveat that reassures.** Two loops ago the figures were wrong and the sentence was right.
+Correcting the figures alone would have left the sentence wrong in the more dangerous direction, and
+the only reason that was caught is that the message was rendered and read rather than reasoned about.
