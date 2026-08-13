@@ -49,7 +49,9 @@ untell_text       adopted, changed, final, flagged, iterations, meaning_gate, po
                   post                the score_text keys above, plus
                                       flagged_sentences, style
 
-verify            configured, n_configured, n_passing, passes_all, results, threshold
+verify            configured, n_configured, n_passing, passes_all, results, threshold,
+                  warning (only when a caveat applies)
+                  each row of `results` carries ai, passes, verdict_threshold
 ```
 
 ## Three that are easy to misread even with the right key

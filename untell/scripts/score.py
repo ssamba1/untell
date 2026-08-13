@@ -766,7 +766,7 @@ def _score_with_detectors(
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
                   _homoglyph_warning(text), _human_false_positive_warning(result),
                   _no_prose_warning(text), _mostly_locked_warning(text),
-                  _line_per_sentence_warning(text)):
+                  _line_per_sentence_warning(text), _threshold_range_warning(threshold)):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
@@ -928,6 +928,47 @@ _LINE_PER_SENTENCE_NOTE = (
     "score is real, but the rewriter reached less of the text than it would have on the same words "
     "in ordinary paragraphs."
 )
+
+
+# Detector scores are probabilities: every checker in the registry returns a value clamped to
+# [0, 1]. A threshold outside that range is therefore not a strict setting, it is an unreachable one,
+# and the failure is silent and one-directional.
+#
+# MEASURED on the same AI paragraph, across all three surfaces:
+#
+#     threshold   score.flagged   untell.flagged   verify.passes_all
+#         0.30          True             True            False
+#         0.45          True             True            False
+#         1.50          False            False           True
+#        45.00          False            False           True
+#        -1.00          True             True            False
+#
+# A caller who types `45` meaning 45 per cent gets a clean verdict from every surface, including
+# `verify`, which is the CI-facing one that exits 0 on a pass. Nothing said a word: the only warning
+# present was the generic lite caveat, byte-identical at 0.30 and at 45.00 — and it quotes "the 0.30
+# loop threshold", a number the caller did not use.
+#
+# A warning rather than a refusal, matching how this tool treats an unknown tier and an unknown
+# style: the run still happens and the caller is told what their setting actually did.
+_THRESHOLD_RANGE_NOTE_HIGH = (
+    "the threshold {value} is above 1.0, and detector scores are probabilities in [0, 1] — no text "
+    "can ever reach it, so this run passes everything. If you meant a percentage, divide by 100."
+)
+_THRESHOLD_RANGE_NOTE_LOW = (
+    "the threshold {value} is below 0.0, and detector scores are probabilities in [0, 1] — every "
+    "text is above it, so this run flags everything and the rewrite loop can never stop."
+)
+
+
+def _threshold_range_warning(threshold: float | None) -> str | None:
+    """Say when the bar is outside the range any score can occupy."""
+    if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+        return None
+    if threshold > 1.0:
+        return _THRESHOLD_RANGE_NOTE_HIGH.format(value=threshold)
+    if threshold < 0.0:
+        return _THRESHOLD_RANGE_NOTE_LOW.format(value=threshold)
+    return None
 
 
 def _line_per_sentence_warning(text: str) -> str | None:

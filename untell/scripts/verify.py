@@ -34,7 +34,7 @@ if __package__ in (None, ""):
 
 from untell._env import load_env  # noqa: E402
 from untell.detectors.base import clamp01
-from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+from untell.scripts.score import DEFAULT_THRESHOLD, _threshold_range_warning, score_text
 
 
 def verify(
@@ -185,7 +185,20 @@ def verify(
     # warns about both; `verify` was reporting PASS on the same input in silence.
     from untell.scripts.score import _homoglyph_warning, _invisible_char_warning
 
-    caveats = [w for w in (_invisible_char_warning(text), _homoglyph_warning(text)) if w]
+    # The threshold note belongs here most of all. This is the surface that exits 0 on a pass, so a
+    # bar no score can reach turns a CI gate green in silence — MEASURED: at `threshold=45` (a
+    # caller meaning 45 per cent) `passes_all` is True on AI text, and before this the only warning
+    # anywhere was the generic lite caveat, which quotes "the 0.30 loop threshold" the caller never
+    # used.
+    caveats = [
+        w
+        for w in (
+            _invisible_char_warning(text),
+            _homoglyph_warning(text),
+            _threshold_range_warning(threshold),
+        )
+        if w
+    ]
 
     out = {
         "configured": names,
