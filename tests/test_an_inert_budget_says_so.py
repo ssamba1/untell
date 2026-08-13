@@ -92,6 +92,39 @@ def test_an_ordinary_run_stays_clean() -> None:
     assert "was ignored" not in warning
 
 
+@pytest.mark.parametrize(
+    "flag,value", [("--max-iters", "0"), ("--best-of", "0"), ("--threshold", "45")]
+)
+def test_the_cli_refuses_what_the_library_warns_about(flag: str, value: str) -> None:
+    """Three implementations of one contract, and the split is deliberate.
+
+    MEASURED across all three surfaces:
+
+        value            CLI       REST      library
+        max_iters=0      refuses   422       warns
+        best_of=0        refuses   422       warns
+        threshold=45     refuses   422       warns
+
+    The two surfaces a human types into refuse, because a typo there is a typo. The programmatic
+    surface warns and proceeds, because an embedding caller may be passing a value from a newer
+    version and refusing the whole run would be harsher than the mistake. That split is only true as
+    of this session — before the warnings were added the library was simply silent.
+
+    Pinned in both directions: a later change that makes the library raise would break embedding
+    callers, and one that relaxes the CLI would let a typo through where it is most likely.
+    """
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [sys.executable, "-m", "untell.scripts.run", "--tier", "lite", "--rewriter", "structural",
+         flag, value, "Some text about winter roads and the salt spread on them."],
+        capture_output=True, text=True, timeout=300,
+    )
+    assert result.returncode != 0, result.stdout[:200]
+    assert "error:" in (result.stderr or "").lower(), result.stderr[:200]
+
+
 def test_rest_still_refuses_what_the_library_warns_about() -> None:
     """The two surfaces answer differently on purpose, and Result 202 recorded why: a schema that
     can refuse is stronger than a caveat, and the library warns because an embedding caller may be
