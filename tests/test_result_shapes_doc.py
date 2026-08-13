@@ -41,8 +41,10 @@ def _documented_keys() -> dict[str, set[str]]:
     out: dict[str, set[str]] = {}
     conditional: dict[str, set[str]] = {}
     current = None
+    nested = False
     for line in block.splitlines():
         if not line.strip():
+            nested = False  # a blank line ends a nested block
             continue
         head = re.match(r"^(\w+)\s+(.*)$", line)
         if head and not line.startswith(" "):
@@ -50,9 +52,31 @@ def _documented_keys() -> dict[str, set[str]]:
             out.setdefault(current, set())
             conditional.setdefault(current, set())
             rest = head.group(2)
+            nested = False
         else:
             rest = line
         if current is None:
+            continue
+        # NESTED shapes are described in the same block and are not top-level keys. The document
+        # says so plainly and this parser could not read it:
+        #
+        #     post                the score_text keys above, plus
+        #                         flagged_sentences, style
+        #     each row of `results` carries ai, passes, verdict_threshold
+        #
+        # Read as a flat list, that contributes `plus`, `flagged_sentences` and `style` to
+        # `untell_text` and `passes` and `verdict_threshold` to `verify` — five keys that are real
+        # and simply live one level down, plus one English word. The full-suite run reported all
+        # three of those tests as failures naming keys the functions "do not return", and they do
+        # return every one of them, inside `post` and inside each row of `results`.
+        #
+        # A nested block opens with an indented key that is already a top-level key of the current
+        # function (`pre`, `post`) or with "each row", and closes at the next blank line.
+        stripped = rest.strip()
+        opener = re.match(r"^(\w+)\s{2,}\S", stripped)
+        if stripped.startswith("each row") or (opener and opener.group(1) in out[current]):
+            nested = True
+        if nested:
             continue
         if rest.strip().startswith("+"):  # conditional keys, noted separately
             continue
