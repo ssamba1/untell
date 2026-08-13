@@ -89,9 +89,38 @@ _FREE_REWRITERS = frozenset(
 )
 
 
+async def _warm_detectors() -> None:
+    """Resolve the full detector list off the event loop, so `/health` is warm from the first call."""
+    import asyncio as _asyncio
+
+    from untell.detectors.base import load_detectors
+
+    await _asyncio.to_thread(load_detectors, "full")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_env()
+    # Resolve the detector list before the server accepts traffic.
+    #
+    # `/health` reports it, and resolving it means calling `available()` on every detector, which
+    # imports and probes the transformer stack. MEASURED on a cold process: the first /health took
+    # 9.34s and the second 0.0026s — 3,636x. That first call is exactly the one an orchestrator
+    # makes: the container starts, the probe fires, and a liveness timeout of 1-5s (the common
+    # defaults) expires before the answer arrives. The process is then restarted, and restarted
+    # again, having never served a request. `/health` was also the one endpoint not offloaded, so
+    # those 9.34s blocked the event loop as well.
+    #
+    # Doing it here moves the cost to startup, where it belongs and where it is visible: uvicorn
+    # does not accept connections until lifespan completes, so a probe either gets no connection
+    # (unambiguous, and what startupProbe is for) or a fast answer. It never gets a slow one.
+    #
+    # Best-effort: a failure to warm must not stop the server, because /tells and /scrub need no
+    # detectors at all and a user with a broken transformers install can still use them.
+    try:
+        await _warm_detectors()
+    except Exception as exc:  # pragma: no cover - depends on the local install
+        logger.warning("detector warm-up failed, /health will resolve them on demand: %s", exc)
     yield
 
 
@@ -757,7 +786,11 @@ async def health() -> dict:
     """Health check. Returns service info and the available detector tier."""
     from untell.detectors.base import load_detectors, resolved_tier
 
-    dets = load_detectors("full")
+    # Offloaded like every other worker. Warm this is microseconds, but `available()` on the
+    # transformer detectors is not guaranteed to stay warm — a torn-down model cache or a first
+    # call that outran the startup warm-up would otherwise block the loop, and this is the one
+    # endpoint whose whole job is to answer promptly.
+    dets = await _offload(load_detectors, "full")
     return {
         "status": "ok",
         "version": APP_VERSION,
