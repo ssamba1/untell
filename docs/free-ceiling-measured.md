@@ -9086,3 +9086,49 @@ Worth keeping: **a stub that fails to satisfy an interface is evidence about the
 fast move was to add `tier` to the stub and carry on — the test would have gone green and the fact
 that the main scoring path depends on an attribute no visible caller reads would have stayed
 unwritten.
+
+## Result 180
+
+**Three user-supplied names, probed for how they fail. Two are loud. The third silently bought a
+neutral rewrite and reported nothing — including when it worked.**
+
+Result 179 ended on a tier typo that would remove a detector without a word. The general question is
+which user-supplied names fail loudly:
+
+    tier      'lyte'      -> warns "unknown tier 'lyte' — no tier matched"        loud
+    rewriter  'structual' -> returns {"error": ..., "final": text}                loud
+    style     'acadmic'   -> silently neutral, nothing said                       SILENT
+
+MEASURED at seed 5 on the same text, `style="academic"` produced different output from `style=None`
+— the academic profile keeps the transitions the neutral one strips — so the parameter works. And
+`post["style"]` came back `None` for `academic`, for `casual`, and for `None` alike.
+
+Two defects in one place.
+
+**The report never named the style.** `best_score` is replaced wholesale when a candidate is adopted,
+rescored or polished, and `style` is set at the TOP of an iteration: the identical construction that
+lost `flagged_sentences` in Result 176. That fix recomputed one field and left its neighbour sitting
+in the same expression. Recorded rather than quietly tidied, because the interesting part is that a
+correct fix to a named field did not prompt anyone — including me — to look at the field beside it.
+
+**An unrecognised style was silently ignored.** `style_profile` maps an unknown name to the neutral
+default by design, which is reasonable for a lookup and wrong for a report. `api_server.py` already
+records this exact failure for REST and fixed it there by constraining the field to `STYLE_NAMES`: an
+unrecognised name "received a rewrite with no style applied and nothing saying so". The CLI has
+`choices=STYLE_NAMES`. **The library entry point — the one the MCP server and every embedding caller
+use — had neither guard.** The same shape as Result 178: a fix applied where the fixer stood.
+
+A warning rather than an exception, because the fallback is documented behaviour and a caller may be
+passing a name from a newer version. The message carries the valid names, since the whole failure is
+that the caller believed they had used one. Reporting agrees with the lookup on case and padding, so
+` ACADEMIC ` runs the academic profile and is reported as `academic` rather than as unrecognised.
+
+**One probe error.** The rewriter typo appeared to raise `KeyError: 'post'`, which read as a raw
+crash on a user mistake. It is not: `untell_text` returns `{"error": ..., "final": text}` for an
+unavailable rewriter, deliberately and with a comment saying why. The KeyError was my probe indexing
+`r['post']` on an error result. The honest table above has two loud cases, not one.
+
+Worth keeping: **the surfaces that guard a value are the ones whose author had to type it.** The CLI
+takes `choices=STYLE_NAMES` because argparse makes that easy; REST took it after a measured failure.
+The library path is the one nobody types by hand, and it was the one that let a typo through to a
+rewrite that silently did something else.
