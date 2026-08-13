@@ -479,8 +479,42 @@ def _at_sentence_start(text: str, pos: int) -> bool:
 _LEADING_SENTINEL_RE = re.compile(r"^(?:\s*(?:⟦HZ[0-9a-fA-F]+⟧|\x00\d+\x00))+\s*")
 
 
+# Markers whose whole job is "this ADDS to what came before". When one of these is stripped, the
+# relation it stated is the last record of how the two sentences were joined, and `_merge_sentences`
+# is the transform that would otherwise guess.
+_ADDITIVE_MARKERS = frozenset({
+    "furthermore", "additionally", "moreover", "in addition", "also", "further", "likewise",
+    "similarly", "besides", "what is more", "what's more",
+})
+
+
+_ADDITIVE_OPENER_RE = re.compile(
+    r"^\s*(?:" + "|".join(sorted((re.escape(m) for m in _ADDITIVE_MARKERS), key=len, reverse=True))
+    + r")\s*,?\s+",
+    re.IGNORECASE,
+)
+
+
+def _opens_additive(sentence: str) -> bool:
+    """Does this sentence still carry the additive marker that states its own relation?"""
+    return bool(_ADDITIVE_OPENER_RE.match(sentence))
+
+
+def _norm_key(sentence: str) -> str:
+    """Stable key for a sentence across the transforms between stripping and merging.
+
+    Case and trailing punctuation both move — the strip pass re-capitalises the clause it exposes,
+    and the merger lowercases and de-punctuates the second half — so the key ignores both.
+    """
+    return " ".join(sentence.split()).strip(" .!?,;:").lower()
+
+
 def _strip_transitions(
-    sentences: list[str], rate: float = 1.0, keep: frozenset[str] = frozenset()
+    sentences: list[str],
+    rate: float = 1.0,
+    keep: frozenset[str] = frozenset(),
+    *,
+    additive_out: set[str] | None = None,
 ) -> list[str]:
     """Strip formulaic openers from a fraction of sentences (``rate`` in [0, 1]).
 
@@ -519,10 +553,14 @@ def _strip_transitions(
             # Twice in one document, on 3 of 3 runs. Invisible until `composite` started adopting
             # candidates at all — its selector was discarding every draft (see composite.py).
             if m and m.group(1).lower() not in keep:
+                was_additive = m.group(1).strip().lower() in _ADDITIVE_MARKERS
                 body = _TRANSITIONS_RE.sub("", body)
                 # Capitalise the clause the strip exposes, not the sentinel prefix.
                 if body and body[0].islower():
                     body = body[0].upper() + body[1:]
+                # Record the relation before the only thing that stated it is gone.
+                if was_additive and additive_out is not None:
+                    additive_out.add(_norm_key(prefix + body))
             s = prefix + body
         out.append(s)
     return out
@@ -663,8 +701,15 @@ _MEAN_LENGTH_BUDGET = 1.10
 _ALWAYS_MERGEABLE_WORDS = 25
 
 
-def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
-    """Merge adjacent sentence pairs into compound sentences (raises burstiness)."""
+def _merge_sentences(
+    sentences: list[str], rate: float = 0.33, *, additive: set[str] | None = None
+) -> list[str]:
+    """Merge adjacent sentence pairs into compound sentences (raises burstiness).
+
+    ``additive`` names sentences whose source opened with an additive marker, keyed by
+    `_norm_key`. Those merge with ", and " rather than a random connector — see the note at the
+    connector choice.
+    """
     if len(sentences) < 2:
         return sentences
     # Length budget, relative to the input rather than to a constant: a paper's sentences are
@@ -749,7 +794,39 @@ def _merge_sentences(sentences: list[str], rate: float = 0.33) -> list[str]:
                 # merging made merges more frequent: 40 AI texts through the loop went from 0
                 # semicolons in to 4 out, i.e. the rewriter was manufacturing a tell it also
                 # counts. The remaining connectors carry the same clause relation without it.
-                conn = random.choices(_MERGE_CONNECTORS, weights=_MERGE_WEIGHTS, k=1)[0]
+                # Three of the five connectors assert CONTRAST and one asserts CONSEQUENCE; only
+                # ", and " is relation-neutral. `_vary_openers` screens "so", "then", "meanwhile"
+                # and "recently" out of its pool on exactly that ground — each "asserts something
+                # about the sentence it is prepended to and the meaning gates do not check
+                # discourse relations" — and this transform, in the same file, was inserting those
+                # relations at random between two sentences.
+                #
+                # MEASURED over 1000 merges of pairs whose SECOND sentence opens with an explicit
+                # additive marker (Furthermore / Additionally / Moreover / In addition / Also):
+                #
+                #     , and 645   , but 224   , so 84   , while 40   , though 7
+                #
+                # 355 of 1000 — **36%** — assert a relation the source contradicts. Seen in real
+                # CLI output: "Furthermore, it is important to note that this underscores the
+                # pivotal integration" came back as ", but this highlights the critical
+                # integration". Additive in, adversative out, and no gate can see it: no fact
+                # changed, similarity is high, and NLI reads two clauses that both still hold.
+                #
+                # Where the source states the relation, honour it. Where it states nothing there is
+                # nothing to honour, and the measured distribution stands.
+                # Two ways to know. `additive` carries markers the stripper removed, which is the
+                # only record once they are gone; `_opens_additive` reads one that is still there.
+                # Both are needed: `_TRANSITIONS_RE` strips "Furthermore" and "Additionally" but
+                # not "In addition", "Also" or "Besides", and those three accounted for the entire
+                # residual — 37/120 each — after the captured set alone took the stripped markers
+                # to 0/120. Widening the stripper is not the fix: "Also," is an opener
+                # `_vary_openers` deliberately ADDS, on measured human frequency.
+                if (additive and _norm_key(sentences[i + 1]) in additive) or _opens_additive(
+                    sentences[i + 1]
+                ):
+                    conn = ", and "
+                else:
+                    conn = random.choices(_MERGE_CONNECTORS, weights=_MERGE_WEIGHTS, k=1)[0]
                 out.append(f"{a}{conn}{b}.")
                 i += 2
                 continue
@@ -2875,7 +2952,14 @@ def _rewrite_prose(
     # opener outright, and blocks are per-paragraph — MEASURED over 60 RAID+HC3 texts, 9 of the 10
     # surviving `formulaic_transition` hits were a lone "Overall, ..." paragraph that no pass ever
     # looked at, while the rewriter's own strip rate was 100%.
-    sents = _strip_transitions(sents, rate=1.0, keep=profile["keep_transitions"])
+    # The additive relation is captured here and spent at the merge below. Between the two,
+    # other transforms may rewrite a sentence enough that its key no longer matches — clause
+    # fronting is the main one — so coverage is partial by construction. A missed sentence falls
+    # back to the measured connector distribution, which is where it was before.
+    additive: set[str] = set()
+    sents = _strip_transitions(
+        sents, rate=1.0, keep=profile["keep_transitions"], additive_out=additive
+    )
 
     if len(sents) >= 2:
         # At intensity 1.0: merge ~60% of pairs, split ~50% of long sentences,
@@ -2972,7 +3056,7 @@ def _rewrite_prose(
         sents = _drop_restatements(sents)
 
         merge_rate = min(0.7, intensity * 0.6)
-        sents = _merge_sentences(sents, rate=merge_rate)
+        sents = _merge_sentences(sents, rate=merge_rate, additive=additive)
 
         split_rate = min(0.9, intensity * 0.5 * profile["sentences"])
         sents = _split_long_sentences(sents, rate=split_rate)
