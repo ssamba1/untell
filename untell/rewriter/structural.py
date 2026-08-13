@@ -1688,6 +1688,66 @@ def _capitalise_sentence_start(match: re.Match) -> str:
     return lead + first.upper() + rest
 
 
+# The capital restore above finds a sentence start at the beginning of the STRING or after a
+# terminator. Neither describes a line that opens with a marker, so a deletion there left the tell it
+# exists to prevent. MEASURED, one cliché stripped from the head of each line:
+#
+#     Alice: In conclusion, organizations ...  ->  "Alice: organizations must adopt ..."
+#     1.3 In conclusion, any defect ...        ->  "1.3 any defect shall be notified ..."
+#     - In conclusion, the team ...            ->  "- the team must use a sturdy approach"
+#     ## In conclusion, the team ...           ->  "## the team must tap into a solid approach"
+#
+# **6 of 7 marker kinds reached shipped `structural_rewrite` output.** Only "1. " survived, and by
+# accident: its dot reads as a terminator to the pattern above, so the existing repair fired.
+#
+# Widening that pattern to every line start is the wrong fix twice over. A soft-wrapped paragraph
+# continues mid-sentence in lower case, and — the case that decided this — plenty of marked lines are
+# DELIBERATELY lower case:
+#
+#     (a) the Seller shall deliver ...     legal drafting, lower case by convention
+#     - apples / - bananas                 list fragments
+#
+# So the rule is to RESTORE a capital that was there, never to invent one: a line is corrected only
+# when the transform changed it AND the word it now begins with was capitalised before. That is what
+# the docstring always claimed, applied at the boundary it missed.
+_LINE_MARKER_PREFIX = re.compile(
+    r"^[ \t]*(?:"
+    r"[-*+>]+[ \t]+"  # bullet, blockquote
+    r"|\#{1,6}[ \t]+"  # heading
+    r"|\d+(?:\.\d+)+[ \t]+"  # dotted clause: 1.3, 2.4.1
+    r"|\(?[A-Za-z0-9]{1,4}[.)][ \t]+"  # 1. / 1) / (a) / (iv)
+    r"|[A-Z][A-Za-z.'’-]{0,20}:[ \t]+"  # speaker label
+    r")"
+)
+
+
+def _first_word_after_marker(line: str) -> tuple[int, str]:
+    """Offset and token of the first word on a line, skipping any list or speaker marker."""
+    marker = _LINE_MARKER_PREFIX.match(line)
+    start = marker.end() if marker else len(line) - len(line.lstrip())
+    return start, line[start:].split(" ", 1)[0]
+
+
+def _restore_marker_capitals(before: str, after: str) -> str:
+    """Re-capitalise lines a deletion left lower-case, where the capital existed beforehand."""
+    old_lines, new_lines = before.split("\n"), after.split("\n")
+    if len(old_lines) != len(new_lines):  # a transform moved a line boundary; alignment is a guess
+        return after
+    out = []
+    for old, new in zip(old_lines, new_lines):
+        start, word = _first_word_after_marker(new)
+        _, was = _first_word_after_marker(old)
+        if (
+            old != new
+            and word[:1].islower()
+            and was[:1].isupper()
+            and not _NOT_A_PROSE_WORD.search(word[1:])
+        ):
+            new = new[:start] + word[0].upper() + new[start + 1 :]
+        out.append(new)
+    return "\n".join(out)
+
+
 def _flatten_cliches(text: str) -> str:
     """Delete or plainly replace the catalogued clichés.
 
@@ -1697,9 +1757,11 @@ def _flatten_cliches(text: str) -> str:
     """
     if not text.strip():
         return text
+    source = text
     for pattern, replacement in _CLICHE_FLATTEN:
         text = pattern.sub(replacement, text)
-    return _AFTER_SENTENCE_START.sub(_capitalise_sentence_start, text)
+    text = _AFTER_SENTENCE_START.sub(_capitalise_sentence_start, text)
+    return _restore_marker_capitals(source, text)
 
 
 def _flatten_copula(text: str) -> str:
