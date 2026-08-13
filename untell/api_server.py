@@ -29,6 +29,8 @@ See the ``/docs`` page for full schemas.
 
 from __future__ import annotations
 
+import asyncio
+import functools
 import hmac
 import logging
 import os
@@ -776,11 +778,33 @@ def _numeric_detectors(result: dict) -> dict:
     return split_detector_errors(result)
 
 
+async def _offload(fn, *args, **kwargs):
+    """Run a blocking worker off the event loop.
+
+    Every endpoint here is `async def` and used to call its worker DIRECTLY, so the work ran on the
+    event loop and nothing else could be served until it returned. MEASURED against an 11.20s
+    /humanize with /health polled every 20ms throughout: 2 health responses before it started, 0
+    DURING, 1 after. A liveness probe with any timeout under 11 seconds fails, and an orchestrator
+    acting on that restarts the process mid-request.
+
+    Per-call latency cannot show this and the first attempt to measure it used exactly that
+    statistic: a blocked loop makes the polls queue and then complete quickly once the rewrite
+    returns, which reads as a healthy 2.8ms median. What separates the two is WHEN each response
+    lands relative to the rewrite, not how long each took.
+
+    This does NOT make concurrent rewrites parallel. `untell_text` holds a process-wide lock around
+    its seeded region (see run.py) because it seeds the global `random` module, so two rewrites
+    still serialise — they just serialise off the event loop instead of on it. Offloading before
+    that lock existed would have traded a blocked server for irreproducible output.
+    """
+    return await asyncio.to_thread(functools.partial(fn, *args, **kwargs))
+
+
 @app.post("/score", responses=_SCORE_RESPONSES)
 async def score(body: ScoreRequest) -> dict:
     """Score text for AI-likelihood. Returns max, ai_percent, and per-detector breakdown."""
     return _numeric_detectors(
-        score_text(body.text, tier=body.tier, threshold=body.threshold)
+        await _offload(score_text, body.text, tier=body.tier, threshold=body.threshold)
     )
 
 
@@ -804,7 +828,8 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
         rw = get_rewriter(prefer=body.rewriter)
     else:
         rw = None if body.rewriter == "auto" else body.rewriter
-    result = untell_text(
+    result = await _offload(
+        untell_text,
         body.text,
         tier=body.tier,
         threshold=body.threshold,
@@ -849,7 +874,9 @@ async def scrub(body: ScrubRequest) -> dict:
 @app.post("/sentences", responses=_SENTENCES_RESPONSES)
 async def sentences(body: SentencesRequest) -> dict:
     """Per-sentence AI scores. Flags the worst ~third of sentences for rewrite targeting."""
-    return score_sentences(body.text, tier=body.tier, threshold=body.threshold)
+    return await _offload(
+        score_sentences, body.text, tier=body.tier, threshold=body.threshold
+    )
 
 
 @app.post("/verify", responses=_VERIFY_RESPONSES)
@@ -857,7 +884,10 @@ async def verify_endpoint(body: VerifyRequest) -> dict:
     """Pass/fail vs every configured commercial checker plus the local detector ensemble."""
     browser_list = [s.strip() for s in body.browser.split(",")] if body.browser else None
     tier_arg: str | None = None if (body.tier or "").lower() in ("commercial", "") else body.tier
-    return verify(body.text, threshold=body.threshold, sandbox=body.sandbox, browser=browser_list, tier=tier_arg)
+    return await _offload(
+        verify, body.text, threshold=body.threshold, sandbox=body.sandbox,
+        browser=browser_list, tier=tier_arg,
+    )
 
 
 @app.post("/ceiling", responses=_CEILING_RESPONSES)
@@ -885,7 +915,8 @@ async def ceiling(body: CeilingRequest) -> dict:
     # sample regardless, so a caller asking for one fast sample paid for all of them. Capped by
     # the sample size, and the response echoes the count actually measured.
     texts = list(_SAMPLE)[: max(1, body.n)]
-    result = measure_ceiling(
+    result = await _offload(
+        measure_ceiling,
         texts,
         tier=body.tier,
         threshold=body.threshold,
