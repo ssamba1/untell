@@ -958,6 +958,80 @@ def _by_evidence(by_category: dict[str, int]) -> dict[str, int]:
 _MIN_WORDS_FOR_A_RATE = 14
 
 
+# Closed-class English words. Short, and deliberately not a full stopword list — the ratio only has
+# to be stable, not complete.
+_ENGLISH_FUNCTION_WORDS = frozenset("""
+a an the and or but if then than that this these those of in on at to for with from by about
+is are was were be been being am do does did have has had will would can could should may might
+not no nor as it its he she they them we you i his her their our your my me him us
+""".split())
+
+# The same class for the other major Latin-script languages, MINUS anything that is also an English
+# function word: "a" is a Portuguese and Italian article, "in" is German and Dutch, and a shared
+# token is evidence of nothing.
+_OTHER_FUNCTION_WORDS = frozenset("""
+el la los las un una del al es son fue eran ser estar y o pero si por para con sin sobre entre
+le les des du au aux une est sont était être et ou mais si pour avec sans sur dans chez ce cette
+der die das dem den ein eine einer und oder aber wenn ist sind war waren sein werden nach bei
+mit von zu auf aus durch über unter zwischen sich nicht auch noch schon
+il lo gli della dei delle sono era essere senza sopra tra questo questa
+os um uma dos das na pelo pela sao foi mas se sem
+het een van voor met zonder over tussen deze dit zijn worden niet ook al
+""".split()) - _ENGLISH_FUNCTION_WORDS
+
+_WORD_RE = re.compile(r"[A-Za-zÀ-ÿ']+")
+
+# Minimum words before the ratios mean anything, and the share of other-language function words
+# that counts as positive evidence. See `looks_non_english` for the measurement behind both.
+_LANG_MIN_WORDS = 20
+_OTHER_FUNCTION_WORD_FLOOR = 0.12
+
+
+def looks_non_english(text: str) -> bool:
+    """True when the text is confidently a Latin-script language that is not English.
+
+    `_language_supported` below is SCRIPT-based, so Chinese is caught and German is not. That
+    mattered: the rewriter injected English words into Latin-script text it could not read —
+    MEASURED end to end on a German paragraph and a French one, every word the loop changed:
+
+        Die Studie ...        ->  Of course, die Studie ...
+        ... erheblich. Die    ->  ... erheblich, and die
+        ... sur le site. Les  ->  ... sur le site, and les
+
+    An English opener from the pool, and `and` as a clause joiner, welded onto German and French.
+
+    Absence of English is NOT enough to decide this, and trying it first is what showed why. The
+    share of English function words alone does not separate the classes — a run of English headings
+    scores 0.000 and Italian scores 0.125 — so any single bar either lets German through or
+    disables the rewriter on English headings, and the second is far worse than the first.
+
+    So this requires POSITIVE evidence of another language: enough other-language function words,
+    and more of them than English ones. MEASURED over 10 deliberately awkward English samples
+    (headings, terse lists, code-heavy prose, a passage quoting German, one full of French and
+    German proper nouns) and 6 non-English:
+
+        floor   English false positives   non-English caught
+        0.10            0/10                     6/6
+        0.12            0/10                     6/6
+        0.15            0/10                     5/6   (Portuguese, 0.136)
+        0.20            0/10                     5/6
+
+    0.12 sits inside the margin on both sides. The `more than English` half is what does the real
+    work: the proper-noun sample scores 0.130 on other-language words and is not flagged, because
+    its English share is 0.261.
+
+    Conservative by construction. A false positive silences the rewriter on English, which is worse
+    than the damage it prevents, so anything short of confident is treated as English.
+    """
+    words = [w.lower().strip("'") for w in _WORD_RE.findall(text)]
+    words = [w for w in words if w]
+    if len(words) < _LANG_MIN_WORDS:
+        return False
+    english = sum(1 for w in words if w in _ENGLISH_FUNCTION_WORDS) / len(words)
+    other = sum(1 for w in words if w in _OTHER_FUNCTION_WORDS) / len(words)
+    return other >= _OTHER_FUNCTION_WORD_FLOOR and other > english
+
+
 def _language_supported(text: str) -> bool:
     """False when the text is mostly a script none of these English patterns can match.
 

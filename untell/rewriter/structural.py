@@ -15,6 +15,7 @@ Always ``available()``. Deterministic (identical input → identical output for 
 
 from __future__ import annotations
 
+import logging
 import random
 import re
 
@@ -23,7 +24,7 @@ from untell.rewriter.base import Rewriter
 from untell.scripts.tells import (
     CLOSER_REMAINDER_WORDS as _TELLS_CLOSER_REMAINDER_WORDS,
 )
-from untell.scripts.tells import is_pure_scaffolding
+from untell.scripts.tells import is_pure_scaffolding, looks_non_english
 from untell.text_split import split_sentences
 
 # ---------------------------------------------------------------------------
@@ -196,6 +197,25 @@ _OPENERS = (
 )
 # The three whose meaning depends on something having been said already — see `_opener` for the
 # measurement. Not removed from the pool: they are fine anywhere but the top of a block.
+# Warn once per process, like the other caveats in this repo — a batch of German paragraphs should
+# say this once, not per document.
+_WARNED_NON_ENGLISH = False
+
+
+def _warn_non_english() -> None:
+    global _WARNED_NON_ENGLISH
+    if _WARNED_NON_ENGLISH:
+        return
+    _WARNED_NON_ENGLISH = True
+    logging.getLogger(__name__).warning(
+        "this text reads as a Latin-script language other than English, so the structural rewriter "
+        "returned it unchanged. Every transform it applies is English - left to run, it welds "
+        "English words into the text (measured: an opener prepended to a German sentence, and "
+        "'and' inserted as a clause joiner in German and French). The detectors and the tell "
+        "catalogue are English-only too, so any score for this text is not a verdict about it."
+    )
+
+
 _NEEDS_PRIOR_DISCOURSE = frozenset({"In short,", "Put simply,", "Also,"})
 # Openers that carry a spoken register. Fine in casual prose, wrong in a paper or a spec — and the
 # formal profiles already decline contractions and the plain-word swap for exactly that reason.
@@ -2722,6 +2742,27 @@ def structural_rewrite(
     Prose is therefore rewritten a line-block at a time and the original separators are restored
     verbatim.
     """
+    # Every transform below is English. Applied to Latin-script text that is NOT English, they do
+    # not fail — they weld English words into it. MEASURED end to end on a German paragraph and a
+    # French one, every word the loop changed:
+    #
+    #     Die Studie ...        ->  Of course, die Studie ...
+    #     ... erheblich. Die    ->  ... erheblich, and die
+    #     ... sur le site. Les  ->  ... sur le site, and les
+    #
+    # An opener from the pool, and `and` as a clause joiner. The script guard in tells.py does not
+    # catch this: it separates Chinese from Latin, and German is Latin. Two transforms and two
+    # different English words, so this gates the pipeline rather than either one — a per-transform
+    # fix would leave whichever one was not measured.
+    #
+    # Returning the input is the honest outcome. The tool cannot rewrite what it cannot read, and
+    # unchanged text is strictly better than damaged text; the caller still gets the caveat from
+    # the scoring surfaces. The test is deliberately conservative (0 false positives over 10
+    # awkward English samples), because silencing the rewriter on English would be the worse error.
+    if looks_non_english(text):
+        _warn_non_english()
+        return text
+
     # One set per DOCUMENT, shared by every block. Both guards exist to stop a many-to-one map
     # landing on the same replacement twice, and `apply_per_block` would otherwise hand each
     # paragraph a fresh one — see the measurements on `_plain_register` and `_vary_openers`.
