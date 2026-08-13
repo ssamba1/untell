@@ -25,6 +25,8 @@ the warning decision rests on. They are marked slow: each loads the full ensembl
 """
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from eval.datasets import load_pairs
@@ -48,6 +50,29 @@ def sentences() -> dict:
 
 @pytest.fixture(scope="module")
 def scored(sentences) -> dict:
+    """Full-tier `max` per sentence — which means the FULL ensemble, MAGE included.
+
+    Every figure below is a property of that ensemble, so dropping a member changes them. MEASURED
+    by running this file with `UNTELL_DISABLE_MAGE=1`, which the README's own reproduce command
+    sets:
+
+        with mage        AUROC 0.886 or below, 12+ of 40 human sentences at the ceiling — passes
+        without mage     AUROC 0.935,          11 of 40 at the ceiling                  — 2 failures
+
+    Removing a detector can only lower `max`, and here it lowers the HUMAN side further than the AI
+    side, so separation improves and the two assertions that pin this file's finding both fire. The
+    messages then say the docstring's re-measurement is stale, which is a confident diagnosis of the
+    wrong thing: nothing about the measurement changed, the ensemble did.
+
+    `test_detectors_full.py` already carries this exact guard, with a comment recording that
+    "following the documentation and then running the suite produced two failures that were not
+    bugs". This file was written later and did not inherit it.
+    """
+    if os.environ.get("UNTELL_DISABLE_MAGE") == "1":
+        pytest.skip(
+            "UNTELL_DISABLE_MAGE=1 removes a member of the full ensemble, and every number in this "
+            "file is a property of the complete one"
+        )
     return {
         "human": [r["max"] for r in batch_score_texts(sentences["human"], tier="full")],
         "ai": [r["max"] for r in batch_score_texts(sentences["ai"], tier="full")],
