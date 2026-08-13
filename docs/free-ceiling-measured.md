@@ -9388,3 +9388,45 @@ different facts, and a boolean on the output length cannot tell them apart.** Th
 returned the same clean-looking zero, and the zero meant something different each time. The cost of
 the confusion was four measurements; the cost of publishing it would have been a fix to a guard that
 was already correct.
+
+## Result 187
+
+**All eight structural transforms are covered — a fact nobody could state without running the sweep,
+and which the first sweep got wrong.**
+
+Result 186 ended on a test that could not tell "the transform did not fire" from "the transform fired
+and declined". The same question turned on the suite: how many tests would still pass if a transform
+were replaced by identity? This repository has shipped that defect — a saturating detector made
+`cand < best` unreachable and the DEFAULT rewriter went out as a no-op on 10 of 10 HC3 documents.
+
+MEASURED by stubbing each transform to identity. First sweep, over six test files:
+
+    _merge_sentences        7 failed      _strip_transitions   1 failed
+    _vary_openers           3 failed      _flatten_cliches     2 failed
+    _plain_register         2 failed
+    _split_long_sentences   79 passed     <- survives
+    _target_burstiness      79 passed     <- survives
+    _flatten_copula         79 passed     <- survives
+
+Three transforms apparently untested, including burstiness targeting — which the code calls "the
+single most reliable stylometric differentiator". A real finding, if the six files had been the
+coverage. They were not. Against the wider structural suites:
+
+    _split_long_sentences   5 failed      _target_burstiness   4 failed
+    _flatten_copula         3 failed
+
+**No gap.** The coverage is spread across 27 files and 670 tests, which is why the narrow sweep found
+nothing and why the property was worth making local.
+
+**The new guard's own fixture was wrong twice, in the same shape.** At 15-20 words a sentence with
+nothing restated, it reported `_split_long_sentences` and `_drop_restatements` dead — both had
+nothing to act on, the splitter needing a sentence over its 28-word gate. Adding one fixed the
+splitter and left burstiness, restatement-drop and the copula flattener still reporting no effect,
+because each is conditional on input this fixture does not supply. So the file asserts what a fixture
+can settle — six transforms shown CHANGING the output, three shown REACHED — rather than a claim it
+cannot support.
+
+Worth keeping: **"is this tested?" is a question about the test selection at least as much as about
+the code.** The same eight transforms, the same stubs, the same machine: three dead with one file
+list, zero dead with another. The number that mattered was not in either sweep — it was the count of
+files each one ran.
