@@ -9879,3 +9879,41 @@ Worth keeping: **the fix for a wrong conclusion is not always a better test.** F
 each gain a guard, and seven of them cannot be verified inside the time budget. One line of output
 that was missing costs nothing, applies to every file including the ones nobody has audited yet, and
 would have ended the original investigation before it produced a false accusation.
+
+## Result 199
+
+**One environment variable turned 1.0 into 0.17 and the verdict from AI into clear, and the payload
+said nothing about it.**
+
+Result 198 made the ambient scoring settings visible in the TEST output. The product form of the same
+question: does a user see which detectors ran? MEASURED on one paragraph at `--tier full`, the only
+difference being a variable the README's own reproduce command sets:
+
+    complete ensemble        5 detectors    max 1.0000    flagged True
+    UNTELL_DISABLE_MAGE=1    4 detectors    max 0.1722    flagged False
+
+Same text, same command. `flagged` is the headline and nothing qualified it — the `detectors` dict
+does list what ran, so a careful reader could notice the absence, but noticing requires already
+suspecting.
+
+**Three ways for a detector to be absent, and only two were covered.** `failed_detectors` names the
+ones that loaded and raised. The abstention note covers the ones that loaded and returned None, and
+says outright that the error runs toward NOT flagged. A detector that was never selected — no model
+file, no key, or a documented opt-out — took neither path, because `available()` returning False is
+not an error anywhere in the system. The tier-mismatch branch stayed quiet too: with four of five
+members the effective tier is still `full`, so nothing was downgraded and nothing was said.
+
+**The first version had a false positive that made the point twice.** It reported "ran without radar"
+on a COMPLETE ensemble. `radar` arrives only via `UNTELL_ENABLE_RADAR`, so its absence is the shipped
+configuration rather than a loss; `mage` is the other kind, enabled by default and removed by an env
+var. Opt-in and opt-out look identical from the registry, and only one of them is news.
+
+**Then it collided with an existing test**, which asserts that a healthy ensemble carries no "errs
+toward NOT flagged" phrasing. My note used the same words for a different situation, so the two
+caveats became indistinguishable to anything keying on that string — and the collision is the
+evidence: the wording is now distinct, and each caveat is testable on its own terms.
+
+Worth keeping: **the direction of an error decides how much it matters.** Every absence here lowers
+`max`, and a lower `max` means "reads as human". The whole failure runs toward telling someone their
+AI text is clean — which is the direction this repository spends most of its guards on, arriving
+through a door nobody had put a guard on: not a detector that broke, but one that was never asked.
