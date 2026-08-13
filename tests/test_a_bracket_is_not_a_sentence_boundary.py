@@ -32,7 +32,12 @@ import re
 
 import pytest
 
-from untell.rewriter.structural import _inside_brackets, _semicolons_to_periods
+from untell.rewriter.structural import (
+    _inside_brackets,
+    _semicolons_to_periods,
+    _split_lands_inside_brackets,
+    _split_one,
+)
 from untell.scripts.run import untell_text
 
 # A period followed by a capital, inside a bracket that opens and closes on the same line.
@@ -124,3 +129,63 @@ def test_the_prose_still_changes() -> None:
     final = untell_text(doc, tier="lite", max_iters=3)["final"]
     assert final != doc
     assert "Moreover, it is important to note" not in final
+
+
+# --- the same island, the other two splitters -------------------------------------------------
+#
+# The semicolon guard alone did not cover this. MEASURED over 40 HC3 halves containing a bracket,
+# counted AGAINST THE SOURCE rather than against nothing — HC3 prose already contains 1 bracketed
+# sentence break and 2 unbalanced brackets of its own, which an uncontrolled count reports as damage:
+#
+#     NEW sentence break inside a bracket   2   ->  0
+#     NEW unbalanced bracket                0   ->  0
+#
+# Both were COMMAS, not semicolons:
+#
+#     (BSE, also known as "mad cow disease")        ->  (BSE. Also known as "mad cow disease")
+#     (... Java Applets, but they're hardly used)   ->  (... Java Applets. They're hardly used)
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        'The disease (BSE, also known as "mad cow disease" in the press) was traced to feed that '
+        "had been rendered from infected carcasses over several years.",
+        "Another such plugin is Java (which displays applets, but they are hardly in use anymore "
+        "on the modern web) and it is usually disabled by default now.",
+    ],
+    ids=["appositive", "contrastive"],
+)
+def test_the_long_splitter_does_not_split_inside_a_bracket(sentence: str) -> None:
+    """`_split_one` picks the comma nearest the midpoint, and a comma inside a parenthesis is the
+    commonest comma there is. It already refused to split inside a QUOTATION for this exact reason —
+    the sentence continues after the close — and a bracket is the same island."""
+    parts = _split_one(sentence)
+    for part in parts or []:
+        assert not SPLIT_IN_BRACKET.search(part), part
+        assert part.count("(") == part.count(")"), part
+
+
+def test_a_closed_bracket_does_not_block_a_later_split() -> None:
+    """The guard is about being INSIDE a bracket, not about the sentence containing one. MEASURED
+    over 1177 long corpus sentences: 45.3% of bracket-free sentences split, and 36.1% of bracketed
+    ones still do — targeted, not blanket."""
+    sentence = (
+        "The council (chaired by the deputy) approved the plan for the new depot last night, but "
+        "the budget for the second phase was left undecided until the spring review meeting."
+    )
+    parts = _split_one(sentence)
+    assert parts and len(parts) == 2, parts
+    assert "(chaired by the deputy)" in parts[0]
+
+
+@pytest.mark.parametrize(
+    "words,index,expected",
+    [
+        (["a", "(b,", "c)", "d"], 2, True),
+        (["a", "(b,", "c)", "d"], 3, False),
+        (["a", "b,", "c"], 2, False),
+    ],
+)
+def test_the_word_level_counter(words: list[str], index: int, expected: bool) -> None:
+    assert _split_lands_inside_brackets(words, index) is expected

@@ -1064,6 +1064,21 @@ def _inside_brackets(text: str, index: int) -> bool:
     return False
 
 
+def _split_lands_inside_brackets(words: list[str], index: int) -> bool:
+    """Would a split before ``words[index]`` put a sentence boundary inside an open bracket?
+
+    The word-list counterpart of `_inside_brackets`. Both splitters choose a comma near the midpoint,
+    and a comma inside a parenthesis is the commonest comma there is:
+
+        (BSE, also known as "mad cow disease")  ->  (BSE. Also known as "mad cow disease")
+
+    MEASURED on 40 HC3 halves containing a bracket, against the SOURCE rather than against nothing:
+    2 new sentence breaks inside a bracket, 0 new unbalanced brackets. Both were commas, which is why
+    the semicolon guard alone did not cover it.
+    """
+    return _inside_brackets(" ".join(words), len(" ".join(words[:index])))
+
+
 def _semicolons_to_periods(text: str) -> str:
     """Promote each "; " to a sentence break, but only where the right side can stand alone.
 
@@ -1176,7 +1191,11 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                     # in a token like `Imaging,"`, which does not end with a comma and made the one
                     # real boundary in that RAID sentence invisible — which is how it reached the
                     # midpoint fallback in the first place. 1 sentence in 269, and it was this one.
-                    if 0 < pos < len(words) and words[pos].rstrip("\"')]”’").endswith(","):
+                    if (
+                        0 < pos < len(words)
+                        and words[pos].rstrip("\"')]”’").endswith(",")
+                        and not _split_lands_inside_brackets(words, pos + 1)
+                    ):
                         split_at = pos + 1
                         break
                 if split_at is not None:
@@ -2603,6 +2622,9 @@ def _split_one(s: str) -> list[str] | None:
                 and words[pos].endswith(",")
                 and not list_like
                 and not _inside_quotes(words, pos + 1)
+                # A bracket is an island for the same reason a quotation is: the sentence continues
+                # after it closes, so no clause inside can stand alone however well-formed it looks.
+                and not _split_lands_inside_brackets(words, pos + 1)
                 and not _cannot_start_a_sentence(
                     " ".join(words[pos + 1:]), " ".join(words[:pos + 1])
                 )
@@ -2629,6 +2651,7 @@ def _split_one(s: str) -> list[str] | None:
                     # coordinator by a clause.
                     and _words_until_next_comma(words, pos + 1) >= _MIN_SPLIT_SIDE
                     and not _inside_quotes(words, pos + 1)
+                    and not _split_lands_inside_brackets(words, pos + 1)
                     and _starts_a_clause(words[pos + 1])
                 ):
                     best = pos
