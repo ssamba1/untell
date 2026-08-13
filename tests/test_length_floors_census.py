@@ -64,6 +64,13 @@ FLOORS: dict[str, dict[str, tuple[float, str]]] = {
                                           "evidence rather than coincidence"),
         "_MIN_WORDS_FOR_A_RATE": (14, "100/14 = 7.1 per-100w, just under the 7.335 AI corpus mean: "
                                       "at 13 words a single tell already outranks average AI text"),
+        # Added to the census by the full-suite run that found it missing, not by the commit that
+        # introduced it — which is what this census exists to catch. The floor carries its own
+        # measurement: at 8 words, 0/20 English false positives and 9/10 non-English caught; at 12,
+        # 0/20 and 0/10. Below ~8 words a single article decides the function-word ratio.
+        "_LANG_MIN_WORDS": (8, "the shortest text where the English function-word ratio still "
+                               "separates the classes: 0/20 false positives and 9/10 non-English "
+                               "caught, against 0/10 caught at 12 words"),
     },
     "untell/scripts/voice.py": {
         "MIN_SAMPLE_WORDS": (150, "where the same-author/cross-author AUROC of 0.680 was measured"),

@@ -789,6 +789,7 @@ without a row here.
 | `UNTELL_CORS_ORIGINS` | comma-separated origins the REST server allows; unset means no cross-origin access |
 | `UNTELL_BROWSER_SITES` | comma-separated free web detectors for `--browser` |
 | `UNTELL_LITE_NO_TORCH` | force the pure-stdlib lite path even when torch is installed. The two paths differ by 11.5x in false positives, so this is how you pin which one you are measuring |
+| `UNTELL_SELECT` | what best-of-N ranks candidates on: `max` (default, the shipped objective), `mean`, or `dropout` (rank on a random 60% subset of the tier, resampled each iteration, so a candidate cannot win by exploiting a member absent from the subset that judged it). Anything else falls back to `max`. Read per call, so a sweep needs no reload |
 | `UNTELL_DISABLE_MAGE` | skip the MAGE detector (large download) |
 | `UNTELL_ENABLE_RADAR` | opt into the RADAR detector in the benchmark |
 | `UNTELL_ENABLE_LOCAL_JUDGE` / `UNTELL_JUDGE_MODEL` | enable and select the local LLM judge. Defaults to `Qwen/Qwen2.5-1.5B-Instruct`; `Qwen/Qwen2.5-7B-Instruct` is the larger option (`untell.detectors.local_judge.suggested_models()`). The judge is **heavy tier at either size** — 3.7s per call against 0.03–0.06s for every other detector, for AUROC 0.514 on 40 labelled HC3 pairs. The 7B is unmeasured here; measure it before believing it. |
