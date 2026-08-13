@@ -154,7 +154,32 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     #
     # Math first — $...$ and \[...\] can contain braces and commands, so a command pattern would
     # otherwise carve them up.
-    ("latex_math", re.compile(r"\$\$.+?\$\$|\\\[.+?\\\]|\$[^$\n]{1,200}\$", re.DOTALL)),
+    #
+    # The inline form is guarded because `$` is also a currency sign, and a bare `\$[^$\n]{1,200}\$`
+    # pairs the LEFTMOST two it finds. Measured on "The budget was $500 while $E=mc^2$ is the
+    # formula.": the span `$500 while $` locked, leaving `E=mc^2$` visible and REWRITABLE — the
+    # equation this rule exists to protect, exposed by the presence of a price earlier in the
+    # sentence. A simulated rewrite turned it into `$F=ma$` and restore() put the sentence back
+    # around it, so the round-trip test could never see this. The mirror case over-locks instead:
+    # "It cost $500 and then $700 in total." froze `$500 and then $700` as one equation.
+    #
+    # Two guards, both anchored at the opening `$`:
+    #   1. the span must contain a math indicator (\ ^ _ = { } < > + |) before the closing `$`, or
+    #      be a short unspaced token — `$x$`, `$500$`, `$\alpha$` are real inline math;
+    #   2. it must not open with a currency amount followed by a word — `$20 per item = $40 total.`
+    #      satisfies (1) via the `=` but is two prices, not an equation.
+    # Genuine math keeps matching: `$5 + 3 = 8$` opens with a digit but is followed by an operator,
+    # not a word. Once math declines them, the currency alternative of the `number` rule below locks
+    # `$500` on its own, which is what it was always there to do.
+    (
+        "latex_math",
+        re.compile(
+            r"\$\$.+?\$\$|\\\[.+?\\\]|"
+            r"\$(?=(?:[^$\n]{0,200}[\\^_={}<>+|]|[^$\s\n]{1,24}\$))"
+            r"(?!\d[\d,]*(?:\.\d+)?\s+[a-z])[^$\n]{1,200}\$",
+            re.DOTALL,
+        ),
+    ),
     # Environments whose CONTENT must survive byte-for-byte — not every environment.
     #
     # This used to be `\\begin\{(\w+\*?)\}.*?\\end\{\1\}`, matching ANY environment, and
