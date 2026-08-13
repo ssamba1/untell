@@ -10698,3 +10698,49 @@ gets its background rate — and here the background rate was 100% of one of the
 Also worth noting what the earlier probe got wrong: two constructed sentences said the long splitter
 had no bracket hole. Forty corpus halves said it had two. n=2 on hand-written examples is not a
 measurement, and it was reported in Result 217 as though it were.
+
+## Result 219
+
+**Fourteen invariants, two corpora, and the one defect appeared only in the corpus the previous four
+results never used.**
+
+The mechanical version of the last three loops: instead of guessing which transform breaks which
+construct, define what the output must satisfy and count NEW violations against the source. Fourteen
+invariants — bracket balance, quote balance, doubled punctuation, doubled words, lowercase sentence
+starts, stranded conjunctions, empty brackets, comma-before-close, and so on:
+
+    HC3    50 documents, 62% changed, 14 invariants   ->  0 new violations
+    RAID   50 documents, 64% changed, 14 invariants   ->  2 new violations
+
+Two things make that table worth having. The change rate is in it, because "no new violations" from
+a rewriter that did nothing is not a result — 62% of documents changed, so the sweep has something
+to be clean about. And the corpora disagree.
+
+The RAID rows:
+
+    "(e.g. small branches or blurred edges)"  ->  "(e.g. Small branches or blurred edges)"
+
+**`lock()` was masking the abbreviation.** The two-component dotted rule exists for `np.float64`,
+its `\d*` matches zero digits, and so it claimed any `word.word` — 13 of the 47 abbreviations the
+sentence splitter knows about. A sentinel followed by a dot looks exactly like the end of a
+sentence, and the list that would say otherwise is one module away, consulted by `split_sentences`
+and by nothing that runs on masked text.
+
+The blindness was never confined to the capital pass. **Sentence splitting feeds burstiness,
+per-sentence scoring and the targeted rewriter's unit of work, and all of them see the masked text**
+— so every one of them was mis-counting a sentence wherever an abbreviation had been locked. That is
+why the fix is at the lock rather than in the guard that caught it.
+
+0 of 50 on HC3. Forum prose does not write "e.g.", so the corpus Results 215–218 measured on could
+not have shown this defect however hard they looked.
+
+Worth keeping: **an invariant sweep finds what a targeted probe cannot, because it does not need to
+know what is broken.** The last three loops each started from a suspicion and found the defect that
+suspicion pointed at. This one started from "what must be true of any output" and found a defect in
+a different subsystem, of a different kind, in the corpus the others were blind to.
+
+Recorded and not fixed: the dotted rule's own comment names `model.01` as an example it covers, and
+it never matched — the second component must contain a letter. It locks "01" alone and leaves
+"model." outside, a partial lock. Verified against unmodified `main` so the attribution is honest.
+Widening the rule to `word.digits` would claim every "Section 3" in the language, so the example was
+wrong rather than the pattern, and the comment now says so.
