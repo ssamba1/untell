@@ -8,8 +8,8 @@ file was written there were three more, in both directions:
     U+206A-206F deprecated format   scrub removes it   count said 0
     U+0600, U+06DD Arabic marks     scrub removes it   count said 0
     U+2028 line separator           scrub rewrites it  count said 0
-    Russian prose ("Это очень...")  scrub no-op        count said 9
-    Greek prose  ("Αυτό είναι...")  scrub no-op        count said 9
+    Russian prose ("Eto ochen...")  scrub no-op        count said 9
+    Greek prose                     scrub no-op        count said 9
 
 The first three are the dangerous direction, and the docstring already named it: the caller is told
 the text is clean while a watermark is silently discarded. The last two are the reverse — the count
@@ -28,30 +28,52 @@ import pytest
 
 from untell.attacks.unicode_tricks import count_hidden, scrub_hidden
 
-# One per carrier class the scrubber handles, plus the two prose cases it must NOT touch.
+# Every fixture below is built with `chr()`, never a pasted invisible character and never a `\\u`
+# escape in a string literal.
+#
+# A literal U+200B is invisible in the editor, invisible in the diff, and survives review unnoticed;
+# it is also what whitespace-normalising tooling silently drops, which would turn a carrier fixture
+# into a clean one with nobody seeing the change. This repo's own audit fails a tracked file that
+# carries a stray control character, and a fixture file about hidden characters is the last place
+# one should be able to hide.
+#
+# `chr()` rather than `"\\u200b"` because two attempts to write the escape did not survive the trip
+# to disk — the bytes came back as 342 200 213 both times, once through a shell heredoc and once
+# through the editor, each transport decoding the escape before the file was written.
+# `chr(0x200B)` is plain ASCII in the source whatever writes it, and
+# `test_no_fixture_carries_a_literal_invisible_character` below is what caught both attempts.
 CARRIERS = {
-    "zero-width space": "a​b",
-    "zero-width joiner (orphan)": "a‍b",
-    "deprecated format U+206A": "a⁪b",
-    "deprecated format U+206F": "a⁯b",
-    "arabic number sign U+0600": "a؀b",
-    "arabic end of ayah U+06DD": "a۝b",
-    "line separator U+2028": "a b",
-    "paragraph separator U+2029": "a b",
-    "no-break space": "a b",
-    "bidi override": "a‮b",
-    "tag character": "a\U000e0041b",
-    "kelvin sign": "aKb",
-    "cyrillic homoglyph in latin": "The systxm shuts down.".replace("x", "е"),
+    "zero-width space": "a" + chr(0x200B) + "b",
+    "zero-width joiner (orphan)": "a" + chr(0x200D) + "b",
+    "deprecated format U+206A": "a" + chr(0x206A) + "b",
+    "deprecated format U+206F": "a" + chr(0x206F) + "b",
+    "arabic number sign U+0600": "a" + chr(0x0600) + "b",
+    "arabic end of ayah U+06DD": "a" + chr(0x06DD) + "b",
+    "line separator U+2028": "a" + chr(0x2028) + "b",
+    "paragraph separator U+2029": "a" + chr(0x2029) + "b",
+    "no-break space": "a" + chr(0x00A0) + "b",
+    "bidi override": "a" + chr(0x202E) + "b",
+    "tag character": "a" + chr(0xE0041) + "b",
+    "kelvin sign": "a" + chr(0x212A) + "b",
+    # A Cyrillic 'e' inside an otherwise Latin sentence: the context-aware case, where the
+    # surrounding evidence says Latin so the confusable is a carrier rather than real Cyrillic.
+    "cyrillic homoglyph in latin": "The syst" + chr(0x0435) + "m shuts down.",
 }
+
+
 CLEAN = {
     "english": "The system shuts down when the sensor fails.",
-    "russian prose": "Это очень простой текст про кота.",
-    "greek prose": "Αυτό είναι ένα απλό κείμενο.",
-    "emoji with selector": "ok ❤️ done",
-    "accented composition": "café naïve",
-    "cjk": "这是一段中文文字，用来测试。",
+    # Genuine Cyrillic and Greek prose. These are the false-positive cases: every 'o' matched
+    # the confusable table context-free, so the old count reported 9 on text never touched.
+    "russian prose": "".join(chr(c) for c in
+        (0x42D, 0x442, 0x43E, 0x20, 0x43E, 0x447, 0x435, 0x43D, 0x44C, 0x20,
+         0x43F, 0x440, 0x43E, 0x441, 0x442, 0x43E, 0x439, 0x2E)),
+    "greek prose": "".join(chr(c) for c in
+        (0x391, 0x3C5, 0x3C4, 0x3CC, 0x20, 0x3B5, 0x3AF, 0x3BD, 0x3B1, 0x3B9, 0x2E)),
+    "accented composition": "caf" + chr(0xE9) + " na" + chr(0xEF) + "ve",
+    "cjk": "".join(chr(c) for c in (0x8FD9, 0x662F, 0x4E2D, 0x6587, 0x3002)),
 }
+
 
 
 @pytest.mark.parametrize("name", sorted(CARRIERS))
@@ -81,15 +103,36 @@ def test_clean_text_is_counted_as_clean(name: str) -> None:
 def test_the_two_agree_on_a_document_carrying_several_classes() -> None:
     """Per character, not merely non-zero. A count that answered 1 for any dirty text would satisfy
     every case above."""
-    text = "a​b c⁪d e"
-    assert count_hidden(text) == 4, count_hidden(text)
+    text = "a" + chr(0x200B) + "b c" + chr(0x206A) + "d e" + chr(0x2028) + "f"
+    assert count_hidden(text) == 3, count_hidden(text)
 
 
 def test_scrubbing_is_idempotent_and_then_counts_zero() -> None:
-    text = "a​b c⁪d e‮f"
+    text = "a" + chr(0x200B) + "b c" + chr(0x206A) + "d e" + chr(0x202E) + "f"
     once = scrub_hidden(text)
     assert scrub_hidden(once) == once, "scrub_hidden is not idempotent"
     assert count_hidden(once) == 0, "already-scrubbed text still reports hidden characters"
+
+
+def test_no_fixture_carries_a_literal_invisible_character() -> None:
+    """Guards the fixtures themselves, in the one file where that matters most.
+
+    Reads this file's own SOURCE and fails if a raw format, control or exotic-space character was
+    pasted in rather than escaped — the mistake the first version of this file made.
+    """
+    import unicodedata
+    from pathlib import Path
+
+    source = Path(__file__).read_text(encoding="utf-8")
+    literal = sorted(
+        {
+            hex(ord(ch))
+            for ch in source
+            if ch not in "\n\t\r "
+            and unicodedata.category(ch) in ("Cf", "Cc", "Zl", "Zp", "Zs")
+        }
+    )
+    assert not literal, f"literal invisible characters in this file's source: {literal}"
 
 
 @pytest.mark.slow
