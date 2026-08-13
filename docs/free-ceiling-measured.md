@@ -8505,3 +8505,63 @@ Worth keeping: **a stronger proposer is not a better rewriter, and the gates are
 knows the difference.** Every in-sample number in the failing arm looked like progress —
 0.9998 -> 0.4446, 0.9983 -> 0.2318 — and three of three candidates changed the meaning. Without the
 vetoes this would have published as the biggest jump in the document.
+
+## Result 169
+
+**A line marker is a sentence start, and the capital-restore pass did not know it. 6 of 7 marker
+kinds shipped a lower-case sentence start — and the obvious fix would have damaged text.**
+
+Continuing Result 167's question — what does this tool do with what a user actually pastes — five
+more input shapes went through `untell_text` at `tier=lite`: a transcript with speaker labels, verse,
+one long unterminated sentence, HTML markup, and numbered legal clauses. Every one came back
+unchanged, which by this document's own twice-learned lesson proves nothing, so tell-heavy variants
+were forced through `structural_rewrite` at seeds 1/7/13. All produced real rewrites with line
+structure exact: 2->2, 3->3, speaker labels, clause numbers and `<p>` tags all intact.
+
+The line counts were perfect. The text was not:
+
+    Alice: organizations must tap these smooth solutions.
+    1.3 any defect shall be notified without delay.
+
+`_flatten_cliches` deletes "In conclusion, " and then restores the capital it displaced — its
+docstring says so. `_AFTER_SENTENCE_START` finds that start at the beginning of the STRING or after
+a terminator, and a line opening with a marker is neither, so the restore never fired. The transform
+that exists to remove tells was emitting one: broken capitalisation is itself catalogued.
+
+MEASURED, one cliché stripped from the head of each marked line, through shipped output:
+
+    speaker label   Alice: In conclusion, ...  ->  "Alice: organizations must adopt ..."
+    dotted clause   1.3 In conclusion, ...     ->  "1.3 any defect shall be notified ..."
+    bullet          - In conclusion, ...       ->  "- the team must use a sturdy approach"
+    blockquote      > In conclusion, ...       ->  "> the team must use a solid approach"
+    heading         ## In conclusion, ...      ->  "## the team must tap into a solid approach"
+    paren clause    (a) In conclusion, ...     ->  "(a) the team must tap into a solid approach"
+    numbered list   1. In conclusion, ...      ->  "1. The team must use a sturdy approach"   ok
+
+**Six of seven, not the two the output showed** — bullets and headings are the commonest markdown
+there is. The one survivor survived by accident rather than by design: the dot in "1. " reads as a
+sentence terminator to the existing pattern, so the old repair fired for the wrong reason.
+
+**The obvious fix is wrong twice, which is the result worth keeping.** Running the restore in
+multiline mode breaks soft-wrapped prose, whose continuation lines legitimately begin mid-sentence in
+lower case. Restricting it to MARKED line starts is still wrong, because many marked lines are
+deliberately lower case:
+
+    (a) the Seller shall deliver ...     how legal sub-clauses are drafted
+    - apples / - bananas                 list fragments
+
+Either version edits text nothing had touched. So the rule restores a capital that was there and
+never invents one: a line is corrected only when the transform changed it AND the word it now begins
+with was capitalised before. Same line, same marker, same edit, differing only in the source:
+
+    "- In summary, the plan"  ->  "- The plan"
+    "- in summary, the plan"  ->  "- the plan"
+
+All 7 marker kinds now hold; all 5 deliberate-lower-case cases and the wrapped paragraph are
+untouched. `_NOT_A_PROSE_WORD` still applies, so `- untell.score` keeps its spelling, and a line-count
+change falls back to the uncorrected text rather than guessing an alignment.
+
+Worth keeping: **this was invisible to every metric the loop has.** No word changed, so similarity,
+NLI and the role check all pass; line counts were exact; and a lower-case sentence start is clean to
+a tell catalogue. It was found by reading the output — the same discipline that found the sentence
+fragments, and the second defect of that exact class this document records.
