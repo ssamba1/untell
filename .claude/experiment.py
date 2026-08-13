@@ -129,12 +129,19 @@ def cmd_run(knob: str, recipe: str) -> int:
     # with nothing changed; a recipe that came back identical cannot distinguish an effect from
     # its absence, and that is a fact about the instrument, not an opinion about it.
     instruments = ROOT / ".claude" / "instruments.json"
-    if instruments.exists():
-        known = json.loads(instruments.read_text(encoding="utf-8")).get(recipe)
-        if known and known.get("deterministic"):
-            sys.exit(f"REFUSED: --recipe {recipe} was calibrated and returns identical numbers "
-                     f"run to run ({known['run_to_run']}). Through it, a knob that works and a "
-                     "knob that does nothing look the same. Use a recipe that moves.")
+    known = (json.loads(instruments.read_text(encoding="utf-8")).get(recipe)
+             if instruments.exists() else None)
+    if known and known.get("deterministic"):
+        sys.exit(f"REFUSED: --recipe {recipe} was calibrated and returns identical numbers "
+                 f"run to run ({known['run_to_run']}). Through it, a knob that works and a "
+                 "knob that does nothing look the same. Use a recipe that moves.")
+    if known is None:
+        # An uncalibrated instrument is not known to be good, only untested — and the one time
+        # that went unchecked here it produced a confident "no effect" from a corpus that could
+        # not have shown one. Two runs up front is cheaper than a ledger of false negatives.
+        sys.exit(f"REFUSED: {recipe} has never been calibrated, so nothing yet shows it can "
+                 f"tell an effect from no effect. Run this first, then retry:\n"
+                 f"  python .claude/research.py calibrate {recipe}")
     if recipe in KNOB_UNSAFE:
         sys.exit(f"REFUSED: --recipe {recipe} cannot answer a knob question - "
                  f"{KNOB_UNSAFE[recipe]}. Use lite-hc3 or a full-tier recipe.")

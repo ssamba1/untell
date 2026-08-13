@@ -130,8 +130,18 @@ defect in the harness — fix it, and treat every earlier record it let through 
 ## L8 — measure, and change nothing
 
 ```bash
-.venv/Scripts/python.exe .claude/research.py list
+.venv/Scripts/python.exe .claude/research.py list       # every recipe, cost, runs so far
 .venv/Scripts/python.exe .claude/research.py run <recipe>
+.venv/Scripts/python.exe .claude/research.py sweep <family>   # next unmeasured in a family
+.venv/Scripts/python.exe .claude/research.py table <family>   # the family side by side
+.venv/Scripts/python.exe .claude/research.py report            # every ledger, one screen
+```
+
+A recipe that names a corpus file refuses to run without it. Build it first, exactly as the
+refusal says:
+
+```bash
+.venv/Scripts/python.exe .claude/corpus.py build --dataset hc3 --bucket long --n 10
 ```
 
 The recipe is chosen for you. It runs at fixed settings, refuses to record a result whose
@@ -165,6 +175,16 @@ nothing.
 Applies one candidate value to one tuning constant, measures before and after at identical
 settings, **restores the file unconditionally**, and appends both sides to
 `.claude/experiments.jsonl`.
+
+It refuses a recipe that has never been calibrated, and a recipe calibration showed to be
+deterministic. Calibration is two identical runs — if nothing moves with nothing changed, that
+instrument cannot tell an effect from its absence, and every knob measured through it reads as
+"no effect". That is not hypothetical: it happened here, on `lite-builtin`, and the refusal now
+quotes the measured deltas rather than an opinion.
+
+```bash
+.venv/Scripts/python.exe .claude/research.py calibrate lite-hc3
+```
 
 Nothing RED is ever staged, so the guard needs no exception and no branch is left carrying a
 forbidden change. The knob is chosen for you; do not invent one, and do not adopt a value —
