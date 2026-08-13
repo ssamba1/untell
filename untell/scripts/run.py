@@ -269,6 +269,41 @@ def _browser_scorer(sites: list[str], mapping: dict, threshold: float):
     return _score
 
 
+def _inert_budget_warning(max_iters: int, best_of: int) -> str | None:
+    """Say when a budget setting made the loop do nothing, or was ignored.
+
+    The REST schema refuses both of these — `max_iters` is `Ge1,Le100` and `best_of` is `Ge1,Le32`,
+    so a value below one is a 422 there. The library accepts them, which is the same split Result
+    180 found for `style`: the surface a caller types by hand validates, and the one every embedding
+    caller uses does not.
+
+    MEASURED on one paragraph at `tier=lite`:
+
+        max_iters=1  best_of=1    changed=True   iters=1  rewrites=1  adopted=1
+        max_iters=0               changed=False  iters=0  rewrites=0  adopted=0   nothing said
+        max_iters=-3              changed=False  iters=0  rewrites=0  adopted=0   nothing said
+        best_of=0                 changed=True   iters=1  rewrites=1  adopted=1   value ignored
+        best_of=-2                changed=True   iters=1  rewrites=1  adopted=1   value ignored
+
+    Two different failures. A non-positive `max_iters` returns the input untouched and says nothing —
+    `_nothing_adopted_warning` cannot cover it, because no draft was ever drawn to refuse. A
+    non-positive `best_of` is not respected at all: the caller asked for zero draws and got a
+    rewrite, which is the worse of the two, because the result looks like a normal run.
+    """
+    notes = []
+    if max_iters is not None and max_iters < 1:
+        notes.append(
+            f"max_iters={max_iters} means no rewriting was attempted at all, so your text came back "
+            "exactly as you sent it. Pass 1 or more to run the loop."
+        )
+    if best_of is not None and best_of < 1:
+        notes.append(
+            f"best_of={best_of} is not a number of drafts, so it was ignored and one draft was "
+            "drawn. Pass 1 or more to choose how many candidates the loop picks between."
+        )
+    return " ".join(notes) if notes else None
+
+
 def _nothing_adopted_warning(
     rewrites: int, adopted: int, changed: bool, vetoed: int = 0
 ) -> str | None:
@@ -1162,10 +1197,12 @@ def _untell_text(
             language_warning, carried_payload, best_score.get("warning"),
             _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
             _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed),
+            _inert_budget_warning(max_iters, best_of),
         )}
            if (language_warning or carried_payload or best_score.get("warning")
                or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)
-               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed))
+               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed)
+               or _inert_budget_warning(max_iters, best_of))
            else {}),
         "sim_bar": sim_bar,
         "quality_metric": method(),
@@ -1754,7 +1791,18 @@ def main(argv: list[str] | None = None) -> int:
         try:
             detector_thresholds = {k: float(v) for k, v in json.loads(args.detector_thresholds).items()}
         except (ValueError, AttributeError) as exc:
-            print(f"ERROR: --detector-thresholds must be a JSON object of name:number pairs ({exc}).")
+            # Same contract as every other error this command can return: under `--json` the answer
+            # is JSON, because a caller parsing stdout cannot special-case one branch. This printed
+            # `ERROR: ...` as plain text on stdout regardless of the flag, so `json.loads(stdout)`
+            # raised on a bad `--detector-thresholds` value — the one situation where the caller
+            # most needs to read what was wrong with their argument.
+            message = (
+                f"--detector-thresholds must be a JSON object of name:number pairs ({exc})."
+            )
+            if args.json:
+                print(json.dumps({"error": message}))
+            else:
+                print(f"ERROR: {message}", file=sys.stderr)
             return 2
 
     result = untell_text(
