@@ -10427,3 +10427,35 @@ and a conclusion, and not enough for any of them to be true.** 175 had a real fi
 sitting beside an artefact of the same size and shape, and nothing in that run distinguished them.
 Third time this session: the conviction split, doc 3, and the seeding defect that made even the same
 seed unreproducible.
+
+## Result 212
+
+**The suite's exposure to the scoring path is one file, and it is already guarded.**
+
+Result 211 recorded three ways a test can fail to reproduce the measurement it pins, one of them
+being an unpinned scoring path. The suite deserves the same question, because `conftest.stdlib_lite`
+exists for exactly this: "three tests assert numbers that are only true of the pure-Python lite
+scorer, and they were reading that path out of the ambient environment instead of asking for it."
+
+    files scoring at lite tier that pin the path        46
+    files asserting a lite number without pinning it    37   <- by a crude heuristic
+    narrowed to a real score assertion                   4
+    verdict changing when the path is forced             0
+
+The 37 is the interesting number, and it is wrong. The heuristic counted any `assert ... == <int>`,
+which catches `assert len(sentences) == 3` and every other structural check in the suite. Narrowing
+to assertions that compare a score-like name against a decimal bound leaves **four**, and running
+those four with the path forced both ways gives 42 passed either way.
+
+So the lite path exposes nothing. Together with Result 197 — which found one file sensitive to the
+FULL-tier ensemble, now guarded — the suite's total exposure to which detectors ran is a single file,
+and it announces itself.
+
+**Two loops, two heuristics, the same shape.** Result 197 turned a 26-file question into a 14-file
+one by reading what each file asserts rather than running it; this turned a 37-file question into a
+4-file one the same way. In both cases the cheap narrowing was worth more than the expensive sweep,
+and in both cases the first number would have been publishable and wrong.
+
+Worth keeping: **an over-broad detector makes a small problem look like a policy failure.** Thirty-
+seven files asserting unpinned numbers would be a finding about how this suite is written. Four files,
+none of them sensitive, is a finding about nothing — and the difference between them was one regex.
