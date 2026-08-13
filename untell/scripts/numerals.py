@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 # would silently start reading sentinel indices as facts.
 from untell.scripts.preserve import SENTINEL_RE  # noqa: E402
 
-_NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
+_NUMBER_RE = re.compile(r"(?<![\w.])-?\d[\d,]*(?:\.\d+)?")
 
 # Spelled-out forms a faithful rewrite may legitimately substitute for a numeral. Only the small
 # integers matter: nobody rewrites "1,234" as words, and if they do, the numeral is still gone in a
@@ -54,8 +54,7 @@ _WORDS = {
     "8": ("eight",), "9": ("nine",), "10": ("ten",), "11": ("eleven",), "12": ("twelve", "a dozen"),
     "13": ("thirteen",), "14": ("fourteen",), "15": ("fifteen",), "16": ("sixteen",),
     "17": ("seventeen",), "18": ("eighteen",), "19": ("nineteen",), "20": ("twenty",),
-    "30": ("thirty",), "40": ("forty",), "50": ("fifty",), "100": ("hundred",),
-    "1000": ("thousand",), "1000000": ("million",),
+    "30": ("thirty",), "40": ("forty",), "50": ("fifty",),
 }
 
 
@@ -98,7 +97,7 @@ _TENS = {
 _SPELLED_RE = re.compile(
     r"(?<![\w-])(?:"
     # A multiplier compound first, so "two hundred and forty" is one number rather than two.
-    r"(?:(?:one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")[-\s]+(?:hundred|thousand|million)"
+    r"(?:(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")[-\s]+(?:hundred|thousand|million)"
     r"(?:[-\s]+and)?(?:[-\s]+(?:(?:" + "|".join(_TENS) + r")(?:[-\s]+(?:one|" + "|".join(_UNITS) + r"))?|(?:" + "|".join(_TEENS) + r")|(?:one|" + "|".join(_UNITS) + r")))?)"
     r"|(?:(?:" + "|".join(_TENS) + r")(?:[-\s](?:one|" + "|".join(_UNITS) + r"))?"
     r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
@@ -128,6 +127,52 @@ _SCALES: dict[str, int] = {
 _DIGIT_MAGNITUDE_RE = re.compile(
     r"(\d[\d,]*(?:\.\d+)?)\s+(" + "|".join(_SCALES) + r")\b", re.IGNORECASE
 )
+
+
+def _canonical(value: str) -> str:
+    """One spelling per quantity, so equal numbers compare equal.
+
+    Comparison here is by STRING, and "5.0" and "5" are different strings — so a rewrite that
+    tidied a trailing zero was reported as dropping the number, in both directions:
+
+        "5.0 per 100" -> "5 per 100"      vetoed, missing ['5.0']
+        "5 per 100"   -> "5.0 per 100"    vetoed, missing ['5']
+        "5.50"        -> "5.5"            vetoed, missing ['5.50']
+
+    A false veto costs the loop a legitimate candidate, and this one fires on ordinary tidying of
+    exactly the kind a rewriter does. Trailing zeros after a decimal point carry no value, so they
+    are stripped before comparison; an integer is left alone, and a value that does not parse is
+    returned untouched rather than guessed at.
+    """
+    if "." not in value:
+        return value
+    try:
+        float(value)
+    except ValueError:
+        return value
+    trimmed = value.rstrip("0").rstrip(".")
+    return trimmed or "0"
+
+
+def _says_word(haystack: str, word: str) -> bool:
+    """True when `word` stands alone in `haystack`, not inside a larger number word.
+
+    This was a bare `word in haystack`, and every compound spelled number slipped through it:
+
+        source 5    candidate "twenty-five cases"   "five" is a substring      passed
+        source 9    candidate "ninety cases"        "nine" is a substring      passed
+        source 1    candidate "twenty-one cases"    "one" is a substring       passed
+        source 100  candidate "three hundred"       "hundred" is a substring   passed
+
+    Each of those is a changed quantity admitted by the gate whose contract is that every number
+    the source states must survive. The value path already reads compounds correctly — `_SPELLED_RE`
+    carries these same boundaries and `_spelled_value` sums them — so the fallback only has to stop
+    claiming a match inside a word it is not.
+
+    Hyphen is a boundary character here as well as a word character, because "twenty-five" is one
+    numeral written with a hyphen and `` alone would happily match its tail.
+    """
+    return re.search(r"(?<![\w-])" + re.escape(word) + r"(?![\w-])", haystack) is not None
 
 
 def _spelled_value(match: str) -> str:
@@ -171,7 +216,7 @@ def _numbers(text: str) -> list[str]:
 
     without_structure = _DIGIT_MAGNITUDE_RE.sub(_fold, without_structure)
 
-    out = [n.replace(",", "") for n in _NUMBER_RE.findall(without_structure)]
+    out = [_canonical(n.replace(",", "")) for n in _NUMBER_RE.findall(without_structure)]
     out += [_spelled_value(m.group(0)) for m in _SPELLED_RE.finditer(without_structure)]
     return out
 
@@ -194,7 +239,7 @@ def missing_numbers(source: str, candidate: str) -> list[str]:
         seen.add(n)
         # Present as the same value written either way, or as one of the loose synonyms above
         # ("a dozen" for 12, "both" for 2) that are too ambiguous to read out of a source.
-        if n in cand_values or any(w in cand_lower for w in _WORDS.get(n, ())):
+        if n in cand_values or any(_says_word(cand_lower, w) for w in _WORDS.get(n, ())):
             continue
         missing.append(n)
     return missing
