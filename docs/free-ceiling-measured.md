@@ -9645,3 +9645,47 @@ this session's new files, and `UNTELL_POLICY_WHOLE_DOC` was undocumented. **`unt
 Worth keeping: **`except: continue` inside a verifier is a different animal from `except: continue`
 anywhere else.** Sixteen silent handlers, thirteen of them defensible, and the three that mattered
 were the three inside the thing whose entire job is to notice.
+
+## Result 193
+
+**A 406-word document came back untouched with 41 tells, after the rewriter produced a version with
+34 — and the loop was right to refuse it.**
+
+Every measurement in this document uses corpus texts of about 120 words. The flagship use case is an
+essay. Run at four lengths, `tier=lite`, `structural`, `best_of=1`, seed fixed:
+
+    words   secs    pre      post     delta     tells      changed
+      207  20.81  0.6239   0.6239   +0.0000   23 -> 23     False
+      406   2.61  0.5987   0.5987   +0.0000   41 -> 41     False
+      697   8.08  0.5335   0.4713   -0.0622   60 -> 49     True
+     1136  20.53  0.4847   0.4351   -0.0496   98 -> 85     True
+
+The 207-word row's 20.81s is first-call warm-up, not length — the trap Result 183 records, and this
+table would have shown "short documents are slowest" to anyone reading the column without it.
+
+The 406-word row is the finding. `rewrites=2, adopted=0`: candidates were drawn and both refused.
+Scoring one directly says why:
+
+    tells          41 -> 34          better by this tool's own catalogue
+    detector max   0.5987 -> 0.6203     WORSE, so correctly not adopted
+    meaning gate   passed
+
+**The two objectives disagreed, and the loop follows the one it optimises.** Removing seven
+catalogued tells made the stdlib detector score go up. That is the same direction-of-travel problem
+this log records for `tells/100w` on real text, arriving in the place where it actually costs the
+user something: a document that is measurably less AI-tell-ridden was thrown away because the number
+the loop drives went the wrong way.
+
+Nothing said so. `changed: false` on its own reads as "the tool did nothing", which is
+indistinguishable from "the tool tried and every draft was worse". The two fields that separate them
+— `rewrites` and `adopted` — were already in the payload and are the ones nobody reads.
+
+The note now names what happened and the three remedies that exist (`--best-of`, a different
+`--rewriter`, `--tier full`, where the score has more to respond to), and says outright that this is
+the loop refusing to make the score worse rather than a failure to run, so it does not invite a bug
+report against correct behaviour.
+
+Worth keeping: **the most useful thing in the payload was the absence of an event, and the tool had
+no vocabulary for it.** Every caveat added this session describes something the input IS. This one
+describes something the loop DID and then undid, which is invisible in the output by construction —
+the whole evidence for it is two integers that agree with each other.
