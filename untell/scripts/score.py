@@ -758,7 +758,8 @@ def _score_with_detectors(
     for extra in (ensemble_warning, _short_text_warning(text),
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
                   _homoglyph_warning(text), _human_false_positive_warning(result),
-                  _no_prose_warning(text), _mostly_locked_warning(text)):
+                  _no_prose_warning(text), _mostly_locked_warning(text),
+                  _line_per_sentence_warning(text)):
         if extra:
             result["warning"] = (
                 f'{result["warning"]} Also: {extra}' if result.get("warning") else extra
@@ -886,6 +887,57 @@ def _mostly_locked_warning(text: str) -> str | None:
         return None
     share = sum(len(v) for v in mapping.values()) / len(text)
     return _MOSTLY_LOCKED_NOTE if share > _LOCKED_SHARE_BAR else None
+
+
+# A block of one sentence has no PAIR, and merge, split, restatement-drop and burstiness targeting
+# all need one. They are correctly gated — merging across a paragraph boundary would weld two
+# paragraphs together and destroy a transcript, a bullet list or a changelog — so this is a limit of
+# the input's shape rather than a defect to fix in the rewriter.
+#
+# It is worth saying out loud because it costs the user real ground. MEASURED on 8 HC3 documents at
+# `tier=lite`, the SAME text with the only difference being one sentence per paragraph:
+#
+#     as written              0.5501 -> 0.5097   (-0.0404)    flagged 6/8
+#     one sentence per para   0.5501 -> 0.5349   (-0.0152)    flagged 7/8
+#
+# The `pre` scores are identical — detectors do not read paragraph breaks — so the whole difference
+# is what the rewriter was able to do. **2.7x less improvement**, and one document crossed back over
+# the verdict threshold: 0.434 (clear) as written, 0.539 (flagged) split. Sentence-length variance
+# tells the same story: document CV reaches 0.374 at three sentences a paragraph and 0.319 at one,
+# against a measured human 0.484.
+#
+# MEASURED over 120 corpus texts (HC3 and RAID, both halves), share of prose blocks holding exactly
+# one sentence: median 0.000, p90 0.500, p99 0.667, max 0.667. Restricted to the 61 texts with three
+# or more prose blocks the max is the same 0.667, and **0** exceed 0.80. Six real documents re-laid
+# out one sentence per line all score 1.00 across 7 to 10 blocks, so the bar sits in a wide gap.
+#
+# The three-block floor keeps this off short input, where a single one-sentence block is 1.00 by
+# arithmetic and `_short_text_warning` is the note that actually applies.
+_LONE_BLOCK_SHARE_BAR = 0.80
+_MIN_BLOCKS_FOR_LONE_NOTE = 3
+_LINE_PER_SENTENCE_NOTE = (
+    "this document is laid out roughly one sentence per paragraph, so the transforms that need two "
+    "adjacent sentences — merging, splitting and sentence-length variation — could not run. The "
+    "score is real, but the rewriter reached less of the text than it would have on the same words "
+    "in ordinary paragraphs."
+)
+
+
+def _line_per_sentence_warning(text: str) -> str | None:
+    """Say when the input's shape, not the text, is what limited the rewrite."""
+    try:
+        from untell.layout import apply_per_block
+        from untell.text_split import split_sentences
+
+        blocks: list[str] = []
+        apply_per_block(text, lambda block: (blocks.append(block), block)[1])
+        prose = [b for b in blocks if b.strip()]
+    except Exception:  # a caveat must never break the score it qualifies
+        return None
+    if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:
+        return None
+    lone = sum(1 for b in prose if len([s for s in split_sentences(b) if s.strip()]) <= 1)
+    return _LINE_PER_SENTENCE_NOTE if lone / len(prose) > _LONE_BLOCK_SHARE_BAR else None
 
 
 def _read_input(args: argparse.Namespace) -> str | None:
