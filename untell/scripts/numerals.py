@@ -170,7 +170,7 @@ def _says_word(haystack: str, word: str) -> bool:
     claiming a match inside a word it is not.
 
     Hyphen is a boundary character here as well as a word character, because "twenty-five" is one
-    numeral written with a hyphen and `` alone would happily match its tail.
+    numeral written with a hyphen and a bare word boundary alone would happily match its tail.
     """
     return re.search(r"(?<![\w-])" + re.escape(word) + r"(?![\w-])", haystack) is not None
 

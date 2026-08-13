@@ -8243,7 +8243,9 @@ say so.** Four detectors were recalibrated, a selector was fixed, a beam search 
 corpus was rescoped — 158 results, all of them read through the quantity being optimised. The one
 number that answers "is any of this real" cost one afternoon and a detector that was already on disk.
 
-## Result 163
+## Result 163b
+
+*(Renumbered. This heading collided with Result 163 above; the number is suffixed rather than reassigned because Result 163 is cited by name elsewhere in the repository and those citations mean the earlier one.)*
 
 **A defect I read out of a diff did not exist, and chasing it found a real gap in how the pipeline
 can be tested.**
@@ -10428,7 +10430,9 @@ sitting beside an artefact of the same size and shape, and nothing in that run d
 Third time this session: the conviction split, doc 3, and the seeding defect that made even the same
 seed unreproducible.
 
-## Result 212
+## Result 212b
+
+*(Renumbered. This heading collided with Result 212 above; the number is suffixed rather than reassigned because Result 212 is cited by name elsewhere in the repository and those citations mean the earlier one.)*
 
 **The suite's exposure to the scoring path is one file, and it is already guarded.**
 
