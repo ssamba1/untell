@@ -9917,3 +9917,33 @@ Worth keeping: **the direction of an error decides how much it matters.** Every 
 `max`, and a lower `max` means "reads as human". The whole failure runs toward telling someone their
 AI text is clean — which is the direction this repository spends most of its guards on, arriving
 through a door nobody had put a guard on: not a detector that broke, but one that was never asked.
+
+## Result 200
+
+**The caveat landed on two surfaces out of three, and the one it missed is the one with an exit
+code.**
+
+Result 199 added a note for a full ensemble running a member short. It went into `score_text`.
+MEASURED immediately afterwards, one paragraph at `--tier full` with `UNTELL_DISABLE_MAGE=1`:
+
+    score_text    roster note present
+    untell_text   roster note present
+    verify        roster note ABSENT, passes_all True
+
+`untell_text` inherits it because it forwards `best_score["warning"]`. `verify` builds its own caveat
+list, so nothing arrived — and `verify` is the command CI runs and the one that turns a verdict into
+an exit status. A reduced ensemble can only lower `max`, which can only turn a fail into a pass, so
+the single surface where that matters most was the single surface not saying it.
+
+This is the third time in this session the same shape has appeared: a correct fix reaching the places
+its author was looking at. Result 178 found an earlier calibration fix that reached `verify`'s local
+rows and not its commercial ones. Result 180 found a style guard on the CLI and REST but not the
+library. Now a caveat on `score_text` and the loop but not on `verify`.
+
+After: the note appears next to `passes_all: True` on a reduced ensemble and stays absent on a
+complete one.
+
+Worth keeping: **"which surfaces did this reach?" is worth asking every time, and it takes one
+measurement.** Three calls, three booleans. The answer has been wrong three times out of three when
+somebody thought to ask, which is a better hit rate than most questions in this document — and each
+time the missing surface was the one furthest from where the change was made.
