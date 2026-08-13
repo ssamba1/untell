@@ -8622,3 +8622,59 @@ collision, documented it, measured it, and fixed it — inside one call. Nothing
 stated the scope, and the tell catalogue scores `repeated_phrasing` 0 for both the clean and the
 duplicated output, so no gate, no detector and no test could see the difference. Both defects in this
 pair were found the same way: by reading the output on input that was not one paragraph.
+
+## Result 171
+
+**The transform that offsets duplicate openers was never called on a one-sentence paragraph — and
+the first measurement of what that cost was wrong, because the corpus was three copies of itself.**
+
+Continuing the scope question from Results 169 and 170: where else does a per-block scope disagree
+with a per-document property? `_rewrite_prose` guards its sentence stages with `len(sents) >= 2`, and
+the comment on that guard already names the transforms that need a PAIR — merge, restatement-drop,
+burstiness. Prepending a marker to one sentence is not one of them. `_strip_transitions` had been
+moved out of that guard for exactly this reason, and `_vary_openers` was left inside, so the two
+halves of one job disagreed.
+
+Instrumented, on three sentences:
+
+    1 block of 3     _vary_openers called 1x
+    3 blocks of 1    _vary_openers called 0x
+
+A transcript, a bullet list or a changelog had "Moreover," / "Furthermore," / "Additionally," deleted
+from every paragraph, and nothing ever ran to vary what the deletion exposed.
+
+**The first number was an artifact, and catching it is the result.** A synthetic 18-sentence document
+gave repeated openers 12 in -> 14.00 out — the tool adding the tell it exists to remove, which read
+as a serious finding. That document was three verbatim copies of six sentences. It was repetitive by
+construction, and the 14 was a property of the corpus. The same trap this log records at Result 162
+and the reason "a number is a property of its corpus" is written down at all.
+
+MEASURED again on 12 real HC3 documents, 5 seeds, the same documents in both arms and layout the only
+other variable:
+
+    arm      layout              n    dups in   dups out    delta
+    before   as written         60      2.08      2.23      +0.15
+    before   one sentence/para  55      2.09      2.18      +0.09
+    after    as written         60      2.08      2.15      +0.07
+    after    one sentence/para  58      2.09      2.00      -0.09
+
+**The sign flips.** On one-sentence paragraphs the rewriter went from adding duplicate openers to
+removing them. The as-written case improves as well, because the fix also gives the transform a
+document-scoped `seen` counter: a block of one has no duplicate to find inside itself, so the counts
+have to come from the document. It accumulates as blocks are processed, so the earliest paragraphs
+are still blind — a duplicate is only a duplicate once it has occurred twice — and that limit is
+stated in the code rather than papered over.
+
+The effect is small in absolute terms, about a fifth of a duplicate per document, and the as-written
+arm remains slightly positive: the known budgeted cost of this transform, +13 openers created against
+28 removed over 60 texts. What changed is the direction on the layout where it was backwards.
+
+Dose is unchanged where it matters. Reaching MORE sentences could have undone the calibration that
+exists because output once sat at 36.54% against a human 3.13% — 12x. MEASURED across four layouts:
+4.08% to 5.28%, or 1.30x to 1.69x human, with no drift as blocks shrink.
+
+Worth keeping: **the previous fix's own comment contained the argument for this one.** It had already
+established that per-sentence transforms do not belong behind a pair guard, listed which transforms
+were the exception, and moved one of them out. The other half sat one screen further down and was
+never revisited. A fix that states its reasoning makes the next defect findable — and the corpus
+check is what kept the write-up honest once it was found.
