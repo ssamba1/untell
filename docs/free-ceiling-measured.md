@@ -9947,3 +9947,38 @@ Worth keeping: **"which surfaces did this reach?" is worth asking every time, an
 measurement.** Three calls, three booleans. The answer has been wrong three times out of three when
 somebody thought to ask, which is a better hit rate than most questions in this document — and each
 time the missing surface was the one furthest from where the change was made.
+
+## Result 201
+
+**Three of four caveats never reached `verify`, and the two that did were the two somebody had
+remembered by hand.**
+
+Result 200 ended on "which surfaces did this reach?" being worth asking every time. Asked
+mechanically of every caveat added this session, rather than one per loop:
+
+    caveat             score_text   untell_text   verify
+    no prose              yes          yes         NO
+    mostly locked         yes          yes         NO
+    one sentence/para     yes          yes         NO
+    threshold range       yes          yes         yes
+
+The single passing row is the one wired into `verify` by hand two loops earlier, and the roster note
+from one loop earlier was the same. **That is the structural cause, not a coincidence:** `verify`
+hand-picked a handful of caveat functions, so every caveat added to `score_text` had to be remembered
+separately here — and three in a row were not.
+
+`untell_text` never had the problem, because it forwards `best_score["warning"]` and inherits
+whatever the score decided to say. `verify` now does the same, which retires both hand-wired caveats:
+they travel inside the forwarded string, and the threshold note appears exactly once. Commercial-only
+mode keeps the text-shape caveats, since no local score runs there and there is nothing to forward.
+
+**The fix broke my own test from the previous loop**, which stubbed a score result with no `warning`
+key. That was realistic against the hand-picked implementation and is not against this one — the
+stub now carries a warning and the assertion is about forwarding, which is the property that keeps
+the next caveat from going missing.
+
+Worth keeping: **fixing an instance three times is the signal that the instance was never the
+problem.** Results 178, 200 and this one are the same defect at increasing resolution: a caveat wired
+where its author stood, then a second, then the realisation that the surface re-derives what it could
+inherit. The mechanical sweep cost one measurement and answered for all four at once, where three
+loops of asking one at a time had answered for two.
