@@ -45,6 +45,10 @@ untell_text       adopted, changed, final, flagged, iterations, meaning_gate, po
                   quality_metric, rewrites, seed, sim_bar, similarity, stopped,
                   tells_after, tells_before, tier, warning (only when a caveat applies)
 
+                  pre                 the score_text keys above, for the input
+                  post                the score_text keys above, plus
+                                      flagged_sentences, style
+
 verify            configured, n_configured, n_passing, passes_all, results, threshold
 ```
 
