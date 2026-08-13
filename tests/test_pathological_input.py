@@ -385,7 +385,17 @@ def test_verify_carries_the_evasion_caveats() -> None:
     reporting PASS on injected text in silence while `score_text` warned about the same input."""
     from untell.scripts.verify import verify
 
-    assert verify(_PROSE, tier="lite").get("warning") is None
+    # Was `.get("warning") is None`, which was a proxy for "no evasion caveat" and stopped being
+    # one. `verify` now FORWARDS `score_text`'s caveats rather than hand-picking two of them \u2014 that
+    # was a deliberate fix, and `_PROSE` is 37 words, so it legitimately earns the short-text note:
+    #
+    #     "37 words: too short for a reliable verdict. MEASURED on 40 HC3 human texts ..."
+    #
+    # True, useful, and nothing to do with evasion. The assertion now says what it meant: clean text
+    # carries no EVASION caveat. Asserting the absence of *any* caveat made this test fail every
+    # time the verdict surface honestly gained one, which is the opposite of what it is guarding.
+    clean = verify(_PROSE, tier="lite").get("warning") or ""
+    assert "invisible" not in clean and "homoglyph" not in clean, clean[:160]
     assert "invisible" in (verify(_inject(_PROSE, "\u200b"), tier="lite").get("warning") or "")
     assert "homoglyph" in (verify(_homoglyph(_PROSE), tier="lite").get("warning") or "")
 
