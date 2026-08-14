@@ -437,3 +437,5 @@ permanently.
 | 389 | L8 | lite-hc3-surgical | clean | 5768 | 5768 | - | L8 lite-hc3-surgical RE-RUN: pre 0.6362 -> post 0.6327, delta 0.000 within +-0.020 band. Perfectly stable — cheapest backend floor confirmed. |
 | 390 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (6th): 5/5 neutral transforms OK. Fix holds. |
 | 391 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (7th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. |
+| 392 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
+| 393 | L1 | T15 | clean | 5768 | 5768 | - | T15 re-audit (6th): pass-249 verified 20/20 numbers clean. No change. |
