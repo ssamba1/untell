@@ -219,3 +219,5 @@ permanently.
 | 203 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (4th): 33/33 environments live (liveness probe). Mutate still blocked by CPU. No dead patterns. |
 | 204 | L1 | T20 | clean | 5768 | 5768 | - | T20 re-audit (4th): real-MCP round-trip tests pass (3). Real engine accepts what tests assert. |
 | 205 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests (all rotation tests <1s). Established real-model slow set unchanged. |
+| 206 | L1 | T01 | clean | 5768 | 5768 | - | T01 re-audit (5th): 5/5 lock+roundtrip. No regression. |
+| 207 | L2 | untell/scripts/io_utils.py | clean | 5768 | 5768 | - | L2 io_utils.py re-audit (4th): decrypt-guard killing test green. Survivors unchanged. No new. |
