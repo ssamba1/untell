@@ -133,3 +133,10 @@ permanently.
 | 117 | L1 | T06 | clean | 5768 | 5768 | - | T06 re-audit (3rd): 0/226 replacements emit tells, unchanged. All substitution outputs score clean. |
 | 118 | L9 | threshold-0.40 | clean | 5768 | 5768 | - | L9 threshold-0.40: REFUSED with measured evidence (lite-hc3 deterministic). Same as passes 78/98. L9 blocked until a moving recipe exists. Knob untouched. |
 | 119 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit: 9/10 killed. Lines 84 (comment skip) + 100 (real-env-wins) still pinned by my killing tests. Only 103 (except-path False) survives — defensive, unkillable with readable files. Best-covered module in the rotation. |
+| 120 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrinking-suite refusal fires. Working tree clean. Harness sound at pass 120. |
+| 121 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (3rd): 7/7 spot-check patterns alive (vague_attr/cliche/inflated_copula/false_range/formulaic_transition/hedge_stack/ai_vocab). No dead patterns. |
+| 122 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (3rd): _MERGE_WEIGHTS unchanged (0.659/0.216/0.079/0.039/0.007), matches human column. Fix holds. |
+| 123 | L2 | untell/layout.py | clean | 5768 | 5768 | - | L2 layout.py re-audit: all layout killing tests green (display-math 4, line-149 boundary, blocks-agrees). Full mutation sweep impossible in 600s (baseline 512s, real rewriters) but every known mutation line is pinned. |
+| 124 | L1 | T09 | clean | 5768 | 5768 | - | T09 re-audit: 3/3 documents changed at lite tier (was 6/10 at full — the full-tier no-ops are mage saturation, lite path rewrites everything). No no-op regression. |
+| 125 | L3 | L3 | clean | 5768 | 5768 | - | L3: all killing tests from this rotation under 0.1s each (12 in 1.2s). No new slow tests. Established slow set unchanged (real-model class). |
+| 126 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit: 6 structural candidates gated, 0 rejected (0%). Gate admits rewriter's normal output. Prior predicate-argument veto bug stays fixed. |
