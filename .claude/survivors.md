@@ -112,7 +112,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` | KILLED by same test: 'I went to the shop and I bought some milk.' -> 20.0 at 100, 20.2 at 101. Red on mutation, green on original. |
 | untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` | KILLED by tests/test_sufficient_voice_sample_does_not_warn.py: sufficient (200-word) sample with _WARNED=False must NOT warn; mutant falls through and logs a false 'under 150 words' warning. Red on mutation, green on original. |
 | untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` |
-| untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` |
+| untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` | KILLED by tests/test_sample_at_min_words_has_no_warning.py: exactly 150 words -> no warning under original; mutant fires a self-contradictory 'sample is 150 words; below 150...' warning. The boundary is the documented usable-signal point. Red on mutation, green on original. |
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, help="file of YOUR writing (120+ words` |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ensure_ascii=True, indent=2))` |
