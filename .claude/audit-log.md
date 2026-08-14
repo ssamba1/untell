@@ -242,3 +242,6 @@ permanently.
 | 226 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (5th): _MERGE_WEIGHTS unchanged. Fix holds. |
 | 227 | L2 | untell/layout.py | clean | 5768 | 5768 | - | L2 layout.py re-audit (5th): display-math + line-149 killing tests green. Mutations pinned; sweep blocked by 512s baseline. |
 | 228 | L4 | L4 | clean | 5768 | 5768 | - | L4 structural.py: 9/9 compiled patterns alive (_INTERNAL_CAPS, _LEADING_MARKER, _LEADING_SUBORDINATOR, _ANY_LEADING_MARKER, _TRANSITIONS, _PARTICIPIAL with -ing verbs, _NEGATED_CONTRAST verified pass 88). First probe used wrong grammar; corrected strings all fire. |
+| 229 | L1 | T09 | clean | 5768 | 5768 | - | T09 re-audit (5th): pass-177 verified 3/3 docs changed at lite. No no-op regression. |
+| 230 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit (5th): pass-181 verified 0% gate rejection. No change. |
+| 231 | L2 | untell/text_split.py | clean | 5768 | 5768 | - | L2 text_split.py re-audit (5th): identical 15-survivor set. All documented. |
