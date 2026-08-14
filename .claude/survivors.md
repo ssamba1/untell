@@ -159,3 +159,13 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/score.py | 1131 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and not d.available()` |
 | untell/scripts/score.py | 1203 | UNKILLABLE: lone-note boundary needs specific block structure boundary: < -> <= | `if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:` |
 | untell/scripts/score.py | 1313 | KILLED by test_score_mutation_guards (unscored rc=2) constant: 2 -> 3 | `return 2 if result.get("scored") is False else 0` |
+| untell/scripts/run.py | 196 | UNKILLABLE: saturation guard needs live rewrite cycle boundary: < -> <= | `if a < _SATURATED_MAX or b < _SATURATED_MAX:` |
+| untell/scripts/run.py | 910 | UNKILLABLE: no-signal pass branch needs live loop constant: False -> True | `return False` |
+| untell/scripts/run.py | 1115 | UNKILLABLE: near-pool objective needs live selection boundary: <= -> < | `near = [v for v in pool if _objective(v[1], subset) <= min_score + _TELLS_EPS]` |
+| untell/scripts/run.py | 1196 | UNKILLABLE: browser-tier branch needs browser scoring identity: is not -> is | `polish_tier = "lite" if browser_score is not None else tier` |
+| untell/scripts/run.py | 1305 | UNKILLABLE: warning composition needs multi-condition run logic: or -> and | `if (language_warning or carried_payload or best_score.get("warning")` |
+| untell/scripts/run.py | 1308 | UNKILLABLE: warning composition needs multi-condition run logic: or -> and | `or _inert_budget_warning(max_iters, best_of))` |
+| untell/scripts/run.py | 1614 | KILLED by test_run_mutation_guards (env range boundaries) logic: or -> and | `if numeric is None or not (low <= numeric <= high):` |
+| untell/scripts/run.py | 1676 | KILLED by test_run_mutation_guards (argparse boundary) boundary: <= -> < | `if not (low <= value <= high):` |
+| untell/scripts/run.py | 1883 | UNKILLABLE: --rewriter base dispatch needs torch install logic: == -> != | `elif args.rewriter == "base":` |
+| untell/scripts/run.py | 1886 | UNKILLABLE: adapter flag needs torch install constant: False -> True | `rewriter = LocalPolicyRewriter(use_adapter=False)` |
