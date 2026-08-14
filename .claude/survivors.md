@@ -246,3 +246,13 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/mage.py | 121 | logic: or -> and | `if "human" in str(v).lower() or str(v).lower() in ("label_1", "real")` | UNKILLABLE: human_idx label regex needs live model.config
 | untell/detectors/mage.py | 127 | constant: 700 -> 701 | `p = windowed_max(text, lambda w: 1.0 - float(_probs(w)[human_idx]), 700)` | UNKILLABLE: window 700 constant, model-dependent
 | untell/detectors/mage.py | 129 | constant: 700 -> 701 | `p = windowed_max(text, lambda w: float(_probs(w)[ai_idx]), 700)` | UNKILLABLE: window 700 constant, model-dependent
+| untell/detectors/fast_detectgpt.py | 63 | constant: False -> True | `_dead = False` | UNKILLABLE: _dead initializer; tests set explicitly
+| untell/detectors/fast_detectgpt.py | 64 | constant: False -> True | `_warned = False` | UNKILLABLE: _warned initializer
+| untell/detectors/fast_detectgpt.py | 71 | constant: False -> True | `return False` | UNKILLABLE: available() torch-import branch needs torch-less env
+| untell/detectors/fast_detectgpt.py | 72 | constant: True -> False | `return True` | UNKILLABLE: available() True return, torch presence assumed
+| untell/detectors/fast_detectgpt.py | 92 | constant: True -> False | `FastDetectGPTDetector._dead = True` | UNKILLABLE: _dead latch in except path, needs live load failure
+| untell/detectors/fast_detectgpt.py | 99 | constant: True -> False | `FastDetectGPTDetector._warned = True` | UNKILLABLE: _warned flag in except path
+| untell/detectors/fast_detectgpt.py | 102 | constant: True -> False | `enc = tok(window, return_tensors="pt", truncation=True, max_length=512)` | UNKILLABLE: tokenizer max_length 512 (both), model-dependent
+| untell/detectors/fast_detectgpt.py | 102 | constant: 512 -> 513 | `enc = tok(window, return_tensors="pt", truncation=True, max_length=512)` |
+| untell/detectors/fast_detectgpt.py | 104 | boundary: < -> <= | `if ids.shape[1] < 2:` | UNKILLABLE: ids.shape guard needs live tokenizer output
+| untell/detectors/fast_detectgpt.py | 117 | constant: 8 -> 9 | `discrepancy = ((actual - mean_ref) / torch.sqrt(var_ref + 1e-8)).mean().item()` | UNKILLABLE: var epsilon 1e-8 in torch path, model-dependent
