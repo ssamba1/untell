@@ -241,3 +241,4 @@ permanently.
 | 225 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
 | 226 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (5th): _MERGE_WEIGHTS unchanged. Fix holds. |
 | 227 | L2 | untell/layout.py | clean | 5768 | 5768 | - | L2 layout.py re-audit (5th): display-math + line-149 killing tests green. Mutations pinned; sweep blocked by 512s baseline. |
+| 228 | L4 | L4 | clean | 5768 | 5768 | - | L4 structural.py: 9/9 compiled patterns alive (_INTERNAL_CAPS, _LEADING_MARKER, _LEADING_SUBORDINATOR, _ANY_LEADING_MARKER, _TRANSITIONS, _PARTICIPIAL with -ing verbs, _NEGATED_CONTRAST verified pass 88). First probe used wrong grammar; corrected strings all fire. |
