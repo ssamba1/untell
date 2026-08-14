@@ -759,3 +759,4 @@ permanently.
 | 677 | L1 | T06 | clean | 5781 | 5781 | - | T06 re-audit (9th): tells separation verified. Unchanged. |
 | 678 | L9 | contradiction-bar-0.35 | clean | 5781 | 5781 | - | L9 contradiction-bar-0.35: REFUSED (deterministic). Knob untouched. |
 | 679 | L2 | untell/scripts/hedges.py | clean | 5781 | 5781 | - | L2 hedges.py re-audit (10th): 2 documented survivors (148/328). No new. |
+| 680 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 680. |
