@@ -123,8 +123,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.file:
-        with open(args.file, encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
+        from untell.scripts.io_utils import read_file_or_exit
+
+        text = read_file_or_exit(args.file)
     elif args.text:
         text = args.text
     else:
