@@ -176,3 +176,9 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/humanness.py | 370 | UNKILLABLE: CV bands continuous at 0.50 (formula gives 0 penalty) boundary: < -> <= | `elif cv < 0.50:` |
 | untell/humanness.py | 372 | UNKILLABLE: CV bands continuous at 1.00 (no penalty either side) boundary: > -> >= | `elif cv > 1.0:` |
 | untell/humanness.py | 605 | KILLED by test_humanness_mutation_guards (detector_max exactly 0.5) boundary: >= -> > | `if detector_max is not None and detector_max >= 0.5:` |
+| untell/scripts/cli.py | 127 | KILLED by test_cli_mutation_guards (torch-notice gate) logic: != -> == | `if os.environ.get("UNTELL_LITE_NO_TORCH") != "1":` |
+| untell/scripts/cli.py | 131 | UNKILLABLE: torch-presence check needs env with/without torch (env-dependent) identity: is not -> is | `if importlib.util.find_spec("torch") is not None:` |
+| untell/scripts/cli.py | 212 | UNKILLABLE: demo display count needs live detector registry logic: or -> and | `ran = len(pre.get("detectors", {})) or 1` |
+| untell/scripts/cli.py | 260 | UNKILLABLE: rewriter status needs a rewriter returning None logic: and -> or | `status = "✓" if rw and rw.available() else "✗"` |
+| untell/scripts/cli.py | 353 | KILLED by test_cli_mutation_guards (standalone rc=2) constant: 2 -> 3 | `return 2` |
+| untell/scripts/cli.py | 364 | KILLED by test_cli_mutation_guards (add_help flag) constant: False -> True | `parser = argparse.ArgumentParser(prog="untell", add_help=False, description="AI-` |
