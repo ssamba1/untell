@@ -239,3 +239,5 @@ permanently.
 | 223 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit (4th): both killing tests green. 9/10 killed holds (only 103 defensive). |
 | 224 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (5th): pass-121 verified 7/7 patterns alive. No dead patterns. |
 | 225 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
+| 226 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (5th): _MERGE_WEIGHTS unchanged. Fix holds. |
+| 227 | L2 | untell/layout.py | clean | 5768 | 5768 | - | L2 layout.py re-audit (5th): display-math + line-149 killing tests green. Mutations pinned; sweep blocked by 512s baseline. |
