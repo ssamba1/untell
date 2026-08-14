@@ -56,8 +56,8 @@ def test_build_pairs_human_fallback_without_datasets(monkeypatch):
 
 
 def test_distill_keeps_passing_samples(monkeypatch):
-    import untell.scripts.run as run_mod
     import untell.scripts.entailment as ent
+    import untell.scripts.run as run_mod
 
     monkeypatch.setattr(
         run_mod, "untell_text", lambda text, **k: {"final": "a human rewrite", "flagged": False, "similarity": 0.9}
@@ -72,8 +72,8 @@ def test_distill_keeps_passing_samples(monkeypatch):
 
 
 def test_distill_drops_flagged_or_low_similarity(monkeypatch):
-    import untell.scripts.run as run_mod
     import untell.scripts.entailment as ent
+    import untell.scripts.run as run_mod
 
     monkeypatch.setattr(run_mod, "untell_text", lambda text, **k: {"final": "x", "flagged": True, "similarity": 0.9})
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
@@ -95,8 +95,8 @@ def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
     fixed in training/reward.py, at the site that decides which examples enter the DISTILLATION
     SET. `meaning_preserved` is the loop's own gate; the filter now uses it.
     """
-    import untell.scripts.run as run_mod
     import untell.scripts.entailment as ent
+    import untell.scripts.run as run_mod
     from untell.scripts.quality import similarity
 
     orig = "The cat sat on the mat in the warm afternoon sun, perfectly content."

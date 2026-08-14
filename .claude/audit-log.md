@@ -458,4 +458,4 @@ permanently.
 | 409 | L1 | T01 | clean | 5768 | 5768 | - | T01 re-audit (7th): pass-266 verified 4/4 lock+roundtrip. No change. |
 | 410 | L1 | T02 | clean | 5768 | 5768 | - | T02 re-audit (7th): pass-270 verified 12/12 carriers. No change. |
 | 411 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (7th): kill tests green (8). Nearly fully pinned. |
-| 412 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
+| 412 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff fixed 3 import-sort issues in test_training.py (I001), 19 tests still pass. ruff clean on untell+tests. 3 CLIs launch. |
