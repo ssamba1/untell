@@ -769,3 +769,5 @@ permanently.
 | 687 | L2 | untell/languages.py | clean | 5781 | 5781 | - | L2 languages.py re-audit (9th): 12/12 ranges. Survivors 43/89 unchanged. |
 | 688 | L6 | L6 | clean | 5781 | 5781 | - | L6 verification: README hc3_roberta non-transfer claim (AUROC 0.531 on MAGE) consistent with code — detector is Hello-SimpleAI/chatgpt-detector-roberta fine-tuned on HC3 (hc3_roberta.py:18), out-of-distribution on MAGE as documented. README detector numbers primary-source. |
 | 689 | L4 | L4 | clean | 5781 | 5781 | - | L4 structural.py re-verified: 9/9 alive. |
+| 690 | L1 | T11 | clean | 5781 | 5781 | - | T11 re-audit (9th): pass-478 verified. No change. |
+| 691 | L2 | untell/config.py | clean | 5781 | 5781 | - | L2 config.py re-audit (9th): 5/5 killed, fully pinned (8th consecutive). |

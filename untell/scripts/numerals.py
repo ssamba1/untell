@@ -359,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
     import json
 
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    args = argv if argv is None else sys.argv[1:]
+    args = argv if argv is not None else sys.argv[1:]
     if any(a in ("-h", "--help") for a in args):
         print(
             'usage: numerals.py "<original>" "<rewrite>"\n\n'
@@ -373,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     missing = missing_numbers(args[0], args[1])
-    print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))
+    print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=False))
     return 1 if missing else 0
 
 
