@@ -157,7 +157,13 @@ RECIPES: dict[str, dict] = {
         "metrics": [],
         "spread": "",
         "liveness": [],
-        "minutes": 30,
+        # MEASURED 2026-08-13: killed at the 60-minute budget (2x the 30-minute estimate) with
+        # the run unfinished. Pass 14's "timed out after 10 min" was an agent-imposed cap, not
+        # the recipe's budget — the real recipe runs 5 techniques x 10 texts, two of which are
+        # untell_text loops (max_iters=5, best_of=3) plus a marian back-translation, each draw
+        # a full detector pass. 60 is the floor; the sibling run in the same session also
+        # exceeded 30 minutes before the machine was free.
+        "minutes": 60,
     },
     "claims-audit": {
         "why": "re-checks every documented claim that CAN be re-checked, and reports how many "
