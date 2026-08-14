@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import math
 
-from untell.detectors import fast_detectgpt as FDG
 from untell.detectors import binoculars as BIN
+from untell.detectors import fast_detectgpt as FDG
 
 
 def _squash(x: float, mid: float, scale: float) -> float:

@@ -5,7 +5,6 @@ False, "error": "detector returned NaN"} — the comment says a broken detector
 must not read as a score. The mutation False -> True makes NaN report
 passes=True (the caller would treat un-scored text as clean).
 """
-from unittest.mock import patch
 
 from untell.scripts.verify import verify
 
