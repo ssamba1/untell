@@ -589,6 +589,11 @@ def untell_text(
     if sim_bar is None:
         sim_bar = recommended_bar()
 
+    if not isinstance(text, str):
+        # Fuzz-found: bytes input raised 'ord() expected string of length 1' deep inside
+        # the surrogate scan. Clean type error naming the contract instead.
+        raise TypeError(f"text must be str, got {type(text).__name__}")
+
     # Sanitize lone surrogates up front. They are invalid Unicode that arrives from broken
     # file encodings; score_text tolerates them but spaCy's tokenizer and the seed hash both
     # raise UnicodeEncodeError on them. Replace (not strip) so positions and word counts

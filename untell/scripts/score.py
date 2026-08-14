@@ -349,6 +349,11 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
     number, so a full-tier run whose ML stack is broken honestly reports ``lite`` (plus a
     ``warning`` and a ``failed_detectors`` list), instead of looking like a real full-tier score.
     """
+    if not isinstance(text, str):
+        # Fuzz-found: bytes input (e.g. a file read in binary mode) raised an internal
+        # 'string pattern on bytes-like object' TypeError deep in the whitespace normaliser.
+        # A clean type error names the contract: text must be str.
+        raise TypeError(f"text must be str, got {type(text).__name__}")
     result = _score_with_detectors(load_detectors(tier), _truncate(text), tier, threshold)
     # Prepended, not appended. The ordering note further down keeps rare and actionable caveats
     # first and the standing ones last; "you got a number about a quarter less than you sent" is
