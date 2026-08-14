@@ -155,3 +155,7 @@ permanently.
 | 139 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (3rd): same survivor set as pass 27/99 (160 per-100w, 185/187 flags, 218/228 boundaries, 265 indent). No new. |
 | 140 | L7 | L7 | clean | 1 | 2 | - | L7 harness: 1->2 grows the suite, so no refusal fires (correct — only SHRINKS refuse). Verified the actual shrink path in earlier passes (10->5 refused at pass 120). |
 | 141 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness (dup of 140, removed): the 1->2 record was mislabeled as a refusal. The genuine shrink refusal was verified at pass 120 (10->5 refused). Harness sound. |
+| 142 | L1 | T15 | clean | 5768 | 5768 | - | T15 re-audit: 20/20 figure-dense docs, 0 numbers dropped/invented/changed. Fleet's spelled-decimal + my multi-scale fixes both hold in the end-to-end probe. |
+| 143 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (3rd): all 4 killing tests green (quality 2-token boundary, retry class-name, env comment-skip, env real-wins). Survivor set unchanged from pass 31/103. |
+| 144 | L1 | T16 | clean | 5768 | 5768 | - | T16 re-audit (3rd, real FastAPI surface): empty->422, empty_string/whitespace->flagged=False, malformed/wrong-type/1MB->422, unicode/null->200 with warning, 2 concurrent->200. No 500s. Invariant holds. |
+| 145 | L3 | L3 | clean | 5768 | 5768 | - | L3: all regression/killing tests from this rotation fast (24 in 1.2s). No new slow tests; established slow set is real-model class only. |
