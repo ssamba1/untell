@@ -142,7 +142,12 @@ RECIPES: dict[str, dict] = {
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
-        "minutes": 30,
+        # MEASURED 2026-08-13: every backend the ensemble runs has now been timed on this exact
+        # recipe shape (n=10, repeats=3, lite) — composite 841s, targeted 810s, structural 357s,
+        # surgical 204s — and ensemble runs ALL of them plus selection, so the old 30-minute
+        # estimate was ~3x short. The program run killed it at 90 minutes (3x budget) with the
+        # measurement unfinished. 60 is a floor for the ensemble sweep, not a guess.
+        "minutes": 60,
     },
     "compare-hc3": {
         "why": "this pipeline against the other humanizers on the same text - the only "
@@ -161,7 +166,12 @@ RECIPES: dict[str, dict] = {
         "metrics": [],
         "spread": "",
         "liveness": [],
-        "minutes": 15,
+        # MEASURED 2026-08-13: pass 8 killed this recipe at 30 minutes (2x the 15-minute
+        # estimate) with the audit unfinished. The audit runs 45 checks, including a full
+        # pytest --collect-only and per-script --help subprocesses; 30 minutes is a floor,
+        # not an upper bound. 45 gives the program runner (3x budget) ~2h15m, which is what
+        # the run actually needs.
+        "minutes": 45,
     },
     "length-short": {
         "why": "openings only. Detectors used to read the first few hundred words and nothing "

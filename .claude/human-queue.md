@@ -45,3 +45,29 @@ NEXT   Ensemble: raise its estimate to match reality (composite took 841s, targe
        ensemble runs every backend, so ~1h is plausible) or drop its n. Detector audit:
        reproduce with `python -m eval.detector_audit --pairs 20 --dataset hc3 --json` and
        read the failing field before changing anything.
+
+## 2026-08-13 me2 worker — AMBER — detector-audit failing field identified; both recipe estimates corrected
+
+WHAT   Reproduced `detector-audit` exactly as the queue entry asked. The failing field is
+       `broken: ["mage"]`. mage is MISCALIBRATED at the SHIPPED threshold: on 20 HC3 pairs
+       (layout collapsed) human mean 0.3477, FPR 0.35 at threshold 0.30, against MAX_FPR 0.20.
+       AUROC 1.0, TPR 1.0 — it separates perfectly and still flags a third of human text.
+       This is the README's documented number (33% HC3, 0% RAID, 3.3% MAGE), so the audit is
+       CORRECT and pass 28's "eval load-order issue" diagnosis was wrong. The recipe can never
+       record because `research.py` refuses any non-zero exit and `detector_audit.main` returns
+       1 whenever `broken` is non-empty. The recipe's own reason-for-existing is to catch
+       exactly this, so the fix is either (a) let the recipe record a finding, or (b) run the
+       audit on a corpus where mage is calibrated (RAID). Both are human calls: (a) changes
+       what a refusing recipe means, (b) changes what the recipe measures.
+RAN    python -m eval.detector_audit --pairs 20 --dataset hc3 --json
+SAW    broken: ['mage']; mage MISCALIBRATED hm=0.3477 am=1.0 auroc=1.0 fpr=0.35 tpr=1.0;
+       4 other detectors OK/OK_SEPARATED at paragraph granularity
+WHY    AMBER — the failing field is identified but the two candidate fixes change either the
+       harness's refusal semantics or the recipe's corpus, both of which a human should pick.
+NEXT   Pick (a) or (b) above. (a) is one line in research.py: treat a non-zero exit with
+       parseable JSON as a recordable finding when the recipe declares no liveness fields.
+       (b) is one line in research.py: --dataset raid. Meanwhile both wrong estimates are
+       fixed in this commit: lite-hc3-ensemble 30->60 (measured: composite 841s + targeted
+       810s + structural 357s + surgical 204s; ensemble runs all), claims-audit 15->45
+       (pass 8 killed it at 2x estimate with the audit unfinished; 45 checks incl. pytest
+       --collect-only and per-script --help subprocesses).
