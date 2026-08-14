@@ -6,7 +6,6 @@ raised an uncaught UnicodeDecodeError from sys.stdin.read(). The contract
 is an input class that must take the same path, not leak a traceback.
 """
 import subprocess
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

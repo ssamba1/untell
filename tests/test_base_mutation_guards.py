@@ -14,7 +14,7 @@ empty window that the `if w.strip()` filter drops. Recorded as unkillable.
 
 from __future__ import annotations
 
-from untell.detectors.base import _split_to_width, windowed_max, WINDOW_WORDS
+from untell.detectors.base import WINDOW_WORDS, windowed_max
 
 
 class TestSingleCallBoundary:
