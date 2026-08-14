@@ -7,7 +7,6 @@ ASCII distinguishes the mutation (it survived 8 prior audits under the wrong
 assumption that "tests don't check stdout encoding" — they didn't, until now).
 """
 import json
-import sys
 
 from untell.scripts.scrub import main as scrub_main
 

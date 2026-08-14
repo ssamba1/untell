@@ -14,7 +14,7 @@ import pytest
 spacy = pytest.importorskip("spacy")
 pytest.importorskip("en_core_web_sm")
 
-from untell.scripts.preserve import lock, _spacy_entity_spans
+from untell.scripts.preserve import lock  # noqa: E402  (after importorskip guard)
 
 VERB_FALSE_POSITIVES = [
     "Email me the file",          # 'Email' is a verb, not a person

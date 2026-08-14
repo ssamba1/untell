@@ -5,7 +5,6 @@ UnicodeEncodeError when hashing the text for the seed (blake2b of utf-8
 encode). Lone surrogates arrive from broken file encodings; the rewrite
 loop must process or sanitize them, never leak a traceback.
 """
-import pytest
 
 from untell.scripts.run import untell_text
 
