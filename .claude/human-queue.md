@@ -185,3 +185,19 @@ NEXT   Human decision needed: (a) accept as documented limitation, (b) drop mage
        default full ensemble (README sweep shows it weakly dominates to drop hc3_roberta,
        and mage is HC3-specific saturated), or (c) weight the max aggregation. Do not
        adopt from one run — this needs the repeats/family sweep first.
+
+## 2026-08-14 me2 worker — AMBER — tells-raise-score tests were torch-path-dependent; pinned stdlib; GPT-2 lite path question stands
+
+WHAT   tests/test_adding_a_tell_does_not_lower_the_score.py failed 3-4 tests on this torch
+       machine ("2 of 10 HC3 docs scored LOWER with tells added"; salt 0.317 -> 0.286). The
+       docstring numbers (salt 0.678 -> 0.748, bridge 0.631 -> 0.727, receipts 0.377 -> 0.541)
+       reproduce EXACTLY with UNTELL_LITE_NO_TORCH=1 — the test was written against the stdlib
+       lite path, but tier="lite" auto-upgrades to GPT-2 math when torch is importable, and the
+       GPT-2 path violates the invariant. Test verified red-at-its-own-commit (471847b).
+FIX    Pinned the stdlib path with the repo's stdlib_lite fixture (4 tests). Red-without proven
+       (stash -> 3 salt failures on torch machine; restore -> 13/13 green incl. slow corpus test).
+OPEN   Product question, NOT fixed here: on the GPT-2 lite path, injecting 8 catalogued tells
+       LOWERS the score on some docs (salt -0.031). The full-tier docstring table shows the
+       ensemble max rises 20/20 but roberta_openai 11/2/7, fast_detectgpt 11/9/0, hc3_roberta
+       10/1/9 — several members are directionless on this manipulation. Whether the GPT-2 lite
+       path's directionality is acceptable is a human/scoring call (RED band).

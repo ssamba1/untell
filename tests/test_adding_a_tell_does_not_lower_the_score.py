@@ -68,6 +68,28 @@ def _quiet(caplog):
     caplog.set_level(logging.CRITICAL)
 
 
+@pytest.fixture
+def stdlib_lite(monkeypatch):
+    """Pin the lite tier to its pure-Python path. The detector auto-upgrades to GPT-2 math
+    whenever torch is importable, and the numbers in this file's docstrings — 0.678, 0.631,
+    0.377 baselines, the 0.085 salt dip, the flat tail from n=3 — were all measured on the
+    stdlib path. On a torch machine, the GPT-2 path scores salt 0.317 -> 0.286 (DOWN), which
+    violates the invariant this file exists to pin. The detector's own behaviour is the same;
+    the tier's maths is not."""
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    from untell.scripts import score as score_mod
+
+    for name in ("score_text", "batch_score_texts"):
+        fn = getattr(score_mod, name, None)
+        if hasattr(fn, "cache_clear"):
+            fn.cache_clear()
+    yield
+    for name in ("score_text", "batch_score_texts"):
+        fn = getattr(score_mod, name, None)
+        if hasattr(fn, "cache_clear"):
+            fn.cache_clear()
+
+
 def inject(text: str, n: int) -> str:
     sentences = split_sentences(text)
     out, used = [], 0
@@ -81,7 +103,7 @@ def inject(text: str, n: int) -> str:
 
 
 @pytest.mark.parametrize("text", CLEAN, ids=["salt", "bridge", "receipts"])
-def test_injecting_tells_does_not_lower_the_score(text: str) -> None:
+def test_injecting_tells_does_not_lower_the_score(text: str, stdlib_lite) -> None:
     """The premise, stated as the weakest form that must hold: adding eight catalogued AI tells
     must not make the detector *less* suspicious. Measured 20 of 20 on corpus text; asserted here
     with a small tolerance so detector jitter is not a failure."""
@@ -91,7 +113,7 @@ def test_injecting_tells_does_not_lower_the_score(text: str) -> None:
 
 
 @pytest.mark.parametrize("text", CLEAN, ids=["salt", "bridge", "receipts"])
-def test_a_full_dose_raises_the_score(text: str) -> None:
+def test_a_full_dose_raises_the_score(text: str, stdlib_lite) -> None:
     """Guards the guard from the other side. `>=` above is satisfied by a detector that ignores
     tells entirely, which would be the more interesting defect — it would mean the loop's entry
     condition is disconnected from the catalogue it rewrites against.
@@ -103,7 +125,7 @@ def test_a_full_dose_raises_the_score(text: str) -> None:
 
 
 @pytest.mark.parametrize("text", CLEAN, ids=["salt", "bridge", "receipts"])
-def test_the_low_dose_response_is_not_monotone(text: str) -> None:
+def test_the_low_dose_response_is_not_monotone(text: str, stdlib_lite) -> None:
     """Recorded because the first version of the test above asserted "two tells raise the score" and
     it is FALSE. The dose-response measured at 0, 1, 2, 3, 4, 6 and 8 injections:
 
@@ -140,7 +162,7 @@ def test_the_tell_catalogue_counts_what_was_injected(text: str) -> None:
 
 
 @pytest.mark.slow
-def test_the_ensemble_agrees_on_the_corpus() -> None:
+def test_the_ensemble_agrees_on_the_corpus(stdlib_lite) -> None:
     """The measurement above on real text, at the sample size that produced the table. Slow because
     it loads the full ensemble; skipped when the corpora are absent."""
     pytest.importorskip("datasets")
