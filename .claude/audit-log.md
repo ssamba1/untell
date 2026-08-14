@@ -435,3 +435,5 @@ permanently.
 | 381 | L4 | fluency | clean | 5796 | 5796 | 544f7e2 | L4 fluency (2nd): normal prose 1.0, 'yes yes yes yes' 0.3333 (bigram), 3-word fallback unigram 0.3333, empty 1.0 (hard-gated earlier), monotone < varied. Degenerate-short-completion penalty works as documented. |
 | 382 | L4 | surrogate truncation | clean | 5796 | 5796 | 2a6630f | L4 SurrogateDetector.score truncation (2nd): max_length=512 no windowing vs free ensemble's windowed_max — BUT unreachable in the training path: GRPO generation capped at max_completion_length 64/128 tokens (rl_humanizer.py:232), far below 512. Not a defect for the actual use case; documented boundary analysis. |
 | 389 | L8 | lite-hc3-surgical | clean | 5768 | 5768 | - | L8 lite-hc3-surgical RE-RUN: pre 0.6362 -> post 0.6327, delta 0.000 within +-0.020 band. Perfectly stable — cheapest backend floor confirmed. |
+| 390 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (6th): 5/5 neutral transforms OK. Fix holds. |
+| 391 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (7th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. |
