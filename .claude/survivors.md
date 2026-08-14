@@ -256,3 +256,5 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/fast_detectgpt.py | 102 | constant: 512 -> 513 | `enc = tok(window, return_tensors="pt", truncation=True, max_length=512)` |
 | untell/detectors/fast_detectgpt.py | 104 | boundary: < -> <= | `if ids.shape[1] < 2:` | UNKILLABLE: ids.shape guard needs live tokenizer output
 | untell/detectors/fast_detectgpt.py | 117 | constant: 8 -> 9 | `discrepancy = ((actual - mean_ref) / torch.sqrt(var_ref + 1e-8)).mean().item()` | UNKILLABLE: var epsilon 1e-8 in torch path, model-dependent
+| untell/scripts/sentences.py | 338 | constant: True -> False | `print(json.dumps(result, ensure_ascii=True, indent=2))` |
+| untell/scripts/sentences.py | 356 | constant: 2 -> 3 | `return 2` |
