@@ -160,3 +160,25 @@ SAW    7004 tests collected in 60.93s
 NEXT   Edit line 154: "6982" -> "7004" (and re-verify the module count: 409 .py files
        under untell/eval/tests minus worktrees — the "334 modules" figure needs the
        same refresh). Then claims-audit records.
+
+## 2026-08-13 pass 88 L8 AMBER — full-hc3-composite headline: the default rewriter cannot move the full-tier score
+
+WHAT   First measurement of the headline recipe (full tier, composite rewriter, 6 real HC3
+       documents, 3 repeats, 2 workers): pre_flagged_rate 1.0 -> post_flagged_rate 1.0,
+       pre_mean_max 1.0000 -> post_mean_max 1.0000. The rewriter WAS live (rewrote 18
+       spans, rewriter_available=True) yet NO candidate ever beat the baseline.
+RAN    .venv/Scripts/python.exe .claude/research.py run full-hc3-composite
+SAW    appended to measurements.jsonl (1 run of full-hc3-composite)
+WHY    AMBER — this is the mage-saturation failure measured end to end at the flagship
+       recipe: mage returns exactly 1.0 on AI genre text, the ensemble takes max, so every
+       candidate scores 1.0 and `cand < best` never fires. The README documents this
+       (selection_key comment: 'composite, the DEFAULT rewriter, returned its input
+       byte-identical on 6 of 6 documents'), and the (max,mean) key fixed it for the
+       selector — but mean is also ~1.0 when every detector saturates, so the OUTER loop
+       sees no improvement and stops. The pipeline is honest about it (flagged stays True,
+       no fake pass), but the tool's headline promise — 'untell humanize' reduces the
+       score — does not hold at full tier on real AI text with the default rewriter.
+NEXT   Human decision needed: (a) accept as documented limitation, (b) drop mage from the
+       default full ensemble (README sweep shows it weakly dominates to drop hc3_roberta,
+       and mage is HC3-specific saturated), or (c) weight the max aggregation. Do not
+       adopt from one run — this needs the repeats/family sweep first.

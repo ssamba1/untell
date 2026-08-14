@@ -151,15 +151,39 @@ _SPELLED_DECIMAL_RE = re.compile(
 
 # Tens-and-units compounds are matched FIRST, so "twenty-four" reads as 24 rather than as 20 and 4
 # — which would demand the candidate contain both and veto the perfectly faithful "24".
+#
+# Spelled numbers are a chain of scale groups: each group is a head (a/one/unit/teen/tens)
+# followed by "hundred" and/or a scale word. The group chain is what the OLD regex got wrong:
+# it allowed exactly ONE scale group plus ONE trailing tens/units, so "three thousand two
+# hundred" matched only "three thousand two" (3002) and left the "hundred" dangling — a
+# faithful rewrite of 3,200 was vetoed, and "thousand" -> "thousand two hundred" (a real
+# +200 change) was missed. "two hundred three thousand" (203000) and "two million three
+# hundred thousand" (2300000) failed for the same reason. MEASURED before the rewrite:
+#
+#     "three thousand two hundred"        -> ['3002']   (should be 3200)
+#     "two hundred three thousand"        -> ['203']    (should be 203000)
+#     "two million three hundred thousand" -> ['2000300'] (should be 2300000)
+#
+# The grammar below accepts any number of groups in either order, with an optional trailing
+# tens/units tail. `_spelled_value` already sums the chain correctly; the regex just had to
+# carry the whole span instead of stopping at the first group.
+_SMALL_TAIL = (
+    r"(?:(?:" + "|".join(_TENS) + r")(?:[\-\s]+(?:one|" + "|".join(_UNITS) + r"))?"
+    r"|(?:" + "|".join(_TEENS) + r")|(?:one|" + "|".join(_UNITS) + r"))"
+)
+_GROUP_HEAD = r"(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")"
+# One scale group: "two hundred", "three thousand", "two hundred thousand", "fifteen hundred".
+_GROUP = (
+    r"(?:" + _GROUP_HEAD + r")[\-\s]+"
+    r"(?:hundred(?:[\-\s]+(?:hundred|" + "|".join(_SCALES) + r"))?|" + "|".join(_SCALES) + r")"
+)
 _SPELLED_RE = re.compile(
     r"(?<![\w-])(?:"
-    # A multiplier compound first, so "two hundred and forty" is one number rather than two.
-    # The scale list is `_SCALES` + "hundred" — one source for both paths, so a magnitude word
-    # added to the digit fold cannot drift away from the spelled fold again.
-    r"(?:(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")[-\s]+(?:hundred|" + "|".join(_SCALES) + r")"
-    r"(?:[-\s]+and)?(?:[-\s]+(?:(?:" + "|".join(_TENS) + r")(?:[-\s]+(?:one|" + "|".join(_UNITS) + r"))?|(?:" + "|".join(_TEENS) + r")|(?:one|" + "|".join(_UNITS) + r")))?)"
-    r"|(?:(?:" + "|".join(_TENS) + r")(?:[-\s](?:one|" + "|".join(_UNITS) + r"))?"
-    r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
+    # A chain of scale groups, then an optional "and" + tens/units tail.
+    r"(?:" + _GROUP + r"(?:[\-\s]+" + _GROUP + r")*"
+    r"(?:[\-\s]+and)?(?:[\-\s]+" + _SMALL_TAIL + r")?"
+    # A bare tens/units compound with no scale word.
+    r"|" + _SMALL_TAIL + r")"
     r")(?![\w-])",
     re.IGNORECASE,
 )
