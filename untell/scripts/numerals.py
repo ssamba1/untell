@@ -92,20 +92,6 @@ _TENS = {
     "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
     "eighty": 80, "ninety": 90,
 }
-# Tens-and-units compounds are matched FIRST, so "twenty-four" reads as 24 rather than as 20 and 4
-# — which would demand the candidate contain both and veto the perfectly faithful "24".
-_SPELLED_RE = re.compile(
-    r"(?<![\w-])(?:"
-    # A multiplier compound first, so "two hundred and forty" is one number rather than two.
-    r"(?:(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")[-\s]+(?:hundred|thousand|million)"
-    r"(?:[-\s]+and)?(?:[-\s]+(?:(?:" + "|".join(_TENS) + r")(?:[-\s]+(?:one|" + "|".join(_UNITS) + r"))?|(?:" + "|".join(_TEENS) + r")|(?:one|" + "|".join(_UNITS) + r")))?)"
-    r"|(?:(?:" + "|".join(_TENS) + r")(?:[-\s](?:one|" + "|".join(_UNITS) + r"))?"
-    r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
-    r")(?![\w-])",
-    re.IGNORECASE,
-)
-
-
 # Magnitude words, and the reason they are shared by both extraction paths below.
 #
 # The spelled path already multiplied by "thousand" and "million"; the DIGIT path ignored the word
@@ -118,6 +104,12 @@ _SPELLED_RE = re.compile(
 # not known at all, so "five billion" read as 5. Folding the magnitude into the value also makes
 # the two notations agree — "5 million" and "5,000,000" both normalise to 5000000, so a rewrite
 # that expands the notation is not flagged as dropping a number.
+#
+# The spelled multiplier branch in `_SPELLED_RE` carries the same list, so the two paths fold the
+# same words. MEASURED before they were aligned: "Losses hit five billion." read as ['5'], and a
+# rewrite that changed billion to trillion passed `numbers_kept` with nothing missing — the digit
+# path had billion/trillion and the spelled path did not, the exact two-copies drift this file
+# exists to prevent.
 _SCALES: dict[str, int] = {
     "thousand": 1_000,
     "million": 1_000_000,
@@ -126,6 +118,50 @@ _SCALES: dict[str, int] = {
 }
 _DIGIT_MAGNITUDE_RE = re.compile(
     r"(\d[\d,]*(?:\.\d+)?)\s+(" + "|".join(_SCALES) + r")\b", re.IGNORECASE
+)
+
+# Spelled decimals: "twelve point four" is the English word form of 12.4, and the module's
+# contract is that a numeral counts "as a numeral or as its English word". MEASURED before this
+# pattern existed, both directions were vetoed:
+#
+#     "The fund returned 12.4%." -> "The fund returned twelve point four percent."   VETOED
+#     "twelve point four"        -> "12.4"   reads as ['12', '4'], both reported missing
+#
+# `_SPELLED_RE` read "twelve" and "four" as two separate integers, and `_WORDS` has no decimal
+# entry, so the value 12.4 could never match. The fold runs BEFORE the digit scan (like the
+# magnitude fold), replacing the words with a literal "12.4" that `_NUMBER_RE` then picks up —
+# and consuming the words, so they are not counted twice.
+#
+# The integer part allows zero and one as well as the units/teens/tens: "zero point five" (0.5)
+# and "one point five" (1.5) are unambiguous BECAUSE the "point" follows — the same reason "one"
+# alone is not read out. The fraction is one or more single digit words ("three point one four").
+# A multiplier compound integer ("five million point five") is deliberately out of scope: it is
+# vanishingly rare, and this is the documented boundary the way `test_thousands_combined_with_
+# hundreds_are_a_known_limit` pins its own.
+_DECIMAL_DIGIT = r"(?:zero|one|" + "|".join(_UNITS) + r")"
+_SPELLED_DECIMAL_RE = re.compile(
+    r"(?<![\w-])"
+    r"(?:zero|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS)
+    + r"|(?:" + "|".join(_TENS) + r")(?:[-\s]+(?:one|" + "|".join(_UNITS) + r"))?)"
+    r"[-\s]+point[-\s]+" + _DECIMAL_DIGIT + r"(?:[-\s]+" + _DECIMAL_DIGIT + r")*"
+    r"(?![\w-])",
+    re.IGNORECASE,
+)
+
+
+# Tens-and-units compounds are matched FIRST, so "twenty-four" reads as 24 rather than as 20 and 4
+# — which would demand the candidate contain both and veto the perfectly faithful "24".
+_SPELLED_RE = re.compile(
+    r"(?<![\w-])(?:"
+    # A multiplier compound first, so "two hundred and forty" is one number rather than two.
+    # The scale list is `_SCALES` + "hundred" — one source for both paths, so a magnitude word
+    # added to the digit fold cannot drift away from the spelled fold again.
+    r"(?:(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")[-\s]+(?:hundred|" + "|".join(_SCALES) + r")"
+    r"(?:[-\s]+and)?(?:[-\s]+(?:(?:" + "|".join(_TENS) + r")(?:[-\s]+(?:one|" + "|".join(_UNITS) + r"))?|(?:" + "|".join(_TEENS) + r")|(?:one|" + "|".join(_UNITS) + r")))?)"
+    r"|(?:(?:" + "|".join(_TENS) + r")(?:[-\s](?:one|" + "|".join(_UNITS) + r"))?"
+    r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
+    r")(?![\w-])",
+    re.IGNORECASE,
 )
 
 
@@ -203,9 +239,29 @@ def _spelled_value(match: str) -> str:
     return str(total + chunk)
 
 
+def _decimal_fold(match: re.Match) -> str:
+    """Replace a spelled decimal ("twelve point four") with its digit form ("12.4").
+
+    Runs before the digit scan, so `_NUMBER_RE` picks the value up as one number and the
+    component words are consumed rather than counted twice. The integer part reuses
+    `_spelled_value` (units, teens, tens, compounds); the fraction is one digit char per
+    word, so "three point one four" becomes 3.14.
+    """
+    words = re.split(r"[-\s]+", match.group(0).strip().lower())
+    idx = words.index("point")
+    int_value = _spelled_value(" ".join(words[:idx]))
+    digit = {"zero": "0", "one": "1", **{w: str(v) for w, v in _UNITS.items()}}
+    frac = "".join(digit[w] for w in words[idx + 1:])
+    return f" {int_value}.{frac} "
+
+
 def _numbers(text: str) -> list[str]:
     """Every number in ``text`` as a normalised digit string — digits and spelled-out alike."""
     without_structure = _LIST_MARKER_RE.sub(" ", SENTINEL_RE.sub(" ", text))
+
+    # Spelled decimals FIRST, so "one point five million" folds to "1.5 million" and the
+    # magnitude fold below then reaches 1500000 in one pass.
+    without_structure = _SPELLED_DECIMAL_RE.sub(_decimal_fold, without_structure)
 
     # Fold "5 million" into 5000000 BEFORE the plain digit scan, so the magnitude word cannot be
     # dropped on the floor and the value matches however it is written.

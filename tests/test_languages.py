@@ -48,6 +48,56 @@ class TestScriptDetection:
             assert languages.catalogue_for(text) is None
 
 
+class TestEveryScriptRangeFires:
+    """Every row in `_SCRIPT_RANGES` must match a real codepoint.
+
+    A range that matches nothing is not dead weight, it is a lie: the router counts
+    characters against these blocks, and a block nobody can ever hit makes text in that
+    script fall through to the unicodedata fallback — which still names the script, so the
+    defect is invisible until the fallback and the block disagree. PROBED before this
+    class existed: all 12 ranges fire, including the two the common-character tests never
+    touch (CJK Extension A 0x3400-0x4DBF, Hangul Jamo 0x1100-0x11FF). Now the suite pins
+    it instead of a one-off probe.
+    """
+
+    @pytest.mark.parametrize(
+        "script,first,last",
+        [
+            ("Han", 0x4E00, 0x9FFF),
+            ("Han", 0x3400, 0x4DBF),   # CJK Extension A — no common character exercises this
+            ("Hangul", 0xAC00, 0xD7AF),
+            ("Hangul", 0x1100, 0x11FF),  # Jamo — no common character exercises this
+            ("Hiragana", 0x3040, 0x309F),
+            ("Katakana", 0x30A0, 0x30FF),
+            ("Cyrillic", 0x0400, 0x04FF),
+            ("Arabic", 0x0600, 0x06FF),
+            ("Hebrew", 0x0590, 0x05FF),
+            ("Devanagari", 0x0900, 0x097F),
+            ("Thai", 0x0E00, 0x0E7F),
+            ("Greek", 0x0370, 0x03FF),
+        ],
+    )
+    def test_the_range_matches_a_codepoint(self, script: str, first: int, last: int):
+        # The range EDGES are not letters (0x0E00 is a Thai combining mark, 0x4DBF is
+        # extension-A's last slot). `dominant_script` counts alphabetic characters only,
+        # so assert on the first actual letter the block contains.
+        for point in range(first, last + 1):
+            if chr(point).isalpha():
+                assert languages.dominant_script(chr(point)) == script, (
+                    f"0x{point:04X} should read as {script}"
+                )
+                return
+        raise AssertionError(f"{script} range 0x{first:04X}-0x{last:04X} contains no letters")
+
+    def test_a_character_just_outside_a_range_does_not_claim_it(self):
+        # 0x03FF is Greek's last codepoint; 0x0400 is Cyrillic's first. The boundary must
+        # not bleed: a range that claimed one extra codepoint would misroute a real script.
+        assert languages.dominant_script(chr(0x03FF)) == "Greek"
+        assert languages.dominant_script(chr(0x0400)) == "Cyrillic"
+        assert languages.dominant_script(chr(0x4DBF)) == "Han"
+        assert languages.dominant_script(chr(0x4E00)) == "Han"
+
+
 class TestRouting:
     def test_english_is_registered_and_is_the_existing_catalogue(self):
         from untell.scripts.tells import score_tells
