@@ -8,5 +8,15 @@
       "post_mean_max": 0.0
     },
     "reported_spread": 0.017
+  },
+  "lite-hc3": {
+    "deterministic": true,
+    "run_to_run": {
+      "pre_flagged_rate": 0.0,
+      "post_flagged_rate": 0.0,
+      "pre_mean_max": 0.0,
+      "post_mean_max": 0.0
+    },
+    "reported_spread": 0.0014
   }
 }

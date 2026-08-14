@@ -172,12 +172,11 @@ RECIPES: dict[str, dict] = {
         "metrics": [],
         "spread": "",
         "liveness": [],
-        # MEASURED 2026-08-13: pass 8 killed this recipe at 30 minutes (2x the 15-minute
-        # estimate) with the audit unfinished. The audit runs 45 checks, including a full
-        # pytest --collect-only and per-script --help subprocesses; 30 minutes is a floor,
-        # not an upper bound. 45 gives the program runner (3x budget) ~2h15m, which is what
-        # the run actually needs.
-        "minutes": 45,
+        # MEASURED 2026-08-13 (twice): the full audit completes in ~7 minutes (423s and 443s),
+        # including the internal pytest --collect-only. Pass 8's ">30 min" was measured while
+        # the loop's own parallel pytest suite was fighting the audit's subprocess for the
+        # machine; on an idle machine it is a 7-minute run. 15 is a comfortable ceiling.
+        "minutes": 15,
     },
     "length-short": {
         "why": "openings only. Detectors used to read the first few hundred words and nothing "

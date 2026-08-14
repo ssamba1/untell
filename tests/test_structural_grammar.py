@@ -65,6 +65,27 @@ class TestNegatedContrastGrammar:
         # Should NOT have awkward double-segments
         assert "about. The" not in result
 
+    def test_the_uncontracted_form_is_flattened_too(self):
+        """"It is not X, it is Y" (uncontracted) must flatten like "It's not X, it's Y".
+
+        The pattern used to read `it'?s not ... it'?s`, which only matches the contracted
+        form. Contraction injection runs AFTER this pass, so "It is not that the results
+        are bad, it is that they are incomplete." survived the flattening whole — and the
+        tells catalogue counts both spellings as `negated_contrast`, so the rewriter
+        emitted a tell the detector still scored. MEASURED before the fix: contracted
+        flattened, uncontracted unchanged; both are the same rhetorical structure.
+        """
+        text = "It is not that the results are bad, it is that they are incomplete."
+        result = structural_rewrite(text, intensity=1.0)
+        # The negated half's CONTENT must be gone. (Asserting on "not that" is not enough:
+        # contraction injection turns "it is not" into "it isn't", so the surviving
+        # negated contrast reads "... isn't that the results are bad ..." on the old code.)
+        assert "bad" not in result.lower(), (
+            f"uncontracted negated contrast survived the rewrite: {result!r}"
+        )
+        # The positive half survives.
+        assert "they are incomplete" in result.lower()
+
     def test_not_only_but_also(self):
         text = "Not only does this improve efficiency, but it also reduces costs."
         result = structural_rewrite(text, intensity=1.0)
