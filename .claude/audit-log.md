@@ -194,3 +194,6 @@ permanently.
 | 178 | L9 | ppl-weight-0.40 | clean | 5768 | 5768 | - | L9 ppl-weight-0.40: REFUSED with measured evidence (lite-hc3 deterministic). Knob untouched. |
 | 179 | L2 | untell/scripts/preserve.py | clean | 5768 | 5768 | - | L2 preserve.py re-audit (4th): identical 8-survivor set as passes 11/87/131. All documented. No new. |
 | 180 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified (5768->5767). Tree clean. Sound at pass 180. |
+| 181 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit (4th): 0% gate rejection of structural output. Gate admits rewriter's normal output. |
+| 182 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (4th): 0 fragments in structural output. Grammar clean. |
+| 183 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (4th): multi-scale + spelled-decimal regression tests green (16 tests). My fix + fleet's fix both hold. Survivors unchanged (dict entries, main guard). |
