@@ -711,3 +711,4 @@ permanently.
 | 629 | L1 | T07 | clean | 5774 | 5774 | - | T07 re-audit (8th): 18-pattern spot-check ALL fire with grammar-built carriers. No dead patterns (consistent 290 full-29/29, 471). |
 | 630 | L2 | untell/scripts/sentences.py | clean | 5774 | 5774 | - | L2 sentences.py re-audit (9th): 338 ensure_ascii CONFIRMED KILLED by my test (7/8 in this draw). 209 'survivor' is set-coverage artifact (killing test test_top_zero_flags_nothing.py not in my 3-file set - killed at pass 322). True remaining: 165 spread boundary, 216 reverse, 356 exit-code - all documented. No new survivors. |
 | 631 | L5 | L5 | clean | 5774 | 5774 | - | L5: ruff clean on untell+tests+eval, 3 CLIs launch. |
+| 632 | L1 | T08 | clean | 5774 | 5774 | - | T08 re-audit (9th): 200k draws match weights within 0.0012, all 5 connectors alive. Unchanged. |
