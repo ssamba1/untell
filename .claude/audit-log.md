@@ -279,3 +279,5 @@ permanently.
 | 263 | L2 | untell/scripts/verify.py | clean | 5768 | 5768 | - | L2 verify.py re-audit (5th): survivor classes unchanged (rounding, flags, exit codes). No new. |
 | 264 | L1 | T20 | clean | 5768 | 5768 | - | T20 re-audit (5th): real-MCP round-trip tests pass. Real engine accepts what tests assert. |
 | 265 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
+| 266 | L1 | T01 | clean | 5768 | 5768 | - | T01 re-audit (6th): 4/4 lock+roundtrip. No regression. |
+| 267 | L2 | untell/languages.py | clean | 5768 | 5768 | - | L2 languages.py re-audit (5th): 12/12 ranges classify boundary letters. Coverage-closed tests from pass 77 hold. |
