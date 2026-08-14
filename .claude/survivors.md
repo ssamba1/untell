@@ -318,3 +318,17 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/commercial.py | 249 | constant: False -> True | `def __init__(self, sandbox: bool = False):` | UNKILLABLE: sandbox default, key-gated
 | untell/detectors/commercial.py | 258 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
 | untell/detectors/commercial.py | 262 | constant: 20 -> 21 | `scan_id = "hz" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:20]` | UNKILLABLE: scan_id hash length, cosmetic
+| untell/detectors/local_judge.py | 96 | logic: or -> and | `self.model_id = model_id or _DEFAULT_MODEL` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 127 | constant: False -> True | `return False` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 128 | constant: True -> False | `return True` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 138 | logic: or -> and | `device = self._device_override or ("cuda" if torch.cuda.is_available() else "cpu` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 145 | logic: != -> == | `dtype=torch.bfloat16 if device != "cpu" else torch.float32,` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 158 | constant: True -> False | `input_text = tok.apply_chat_template(messages, tokenize=False, add_generation_pr` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 158 | constant: False -> True | `input_text = tok.apply_chat_template(messages, tokenize=False, add_generation_pr` |
+| untell/detectors/local_judge.py | 160 | constant: 2048 -> 2049 | `inputs = tok(input_text, return_tensors="pt", truncation=True, max_length=2048).` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 160 | constant: True -> False | `inputs = tok(input_text, return_tensors="pt", truncation=True, max_length=2048).` |
+| untell/detectors/local_judge.py | 166 | constant: 16 -> 17 | `max_new_tokens=16,` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 167 | constant: False -> True | `do_sample=False,` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 173 | constant: True -> False | `reply = tok.decode(gen, skip_special_tokens=True).strip()` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 174 | logic: or -> and | `m = _NUM.search(reply or "")` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
+| untell/detectors/local_judge.py | 178 | boundary: >= -> > | `if val >= 2.0:` | KILLED by test_local_judge_mutation_guards (exact-2.0 percent boundary - mutation clamps 2.0% to 1.0)
