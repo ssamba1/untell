@@ -258,7 +258,7 @@ def _spelled_value(match: str) -> str:
             total += (chunk or 1) * _SCALES[part]
             chunk = 0
             continue
-        value = _TENS.get(part) and _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
+        value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
         chunk += value
     return str(total + chunk)
 
@@ -359,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
     import json
 
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    args = argv if argv is not None else sys.argv[1:]
+    args = argv if argv is None else sys.argv[1:]
     if any(a in ("-h", "--help") for a in args):
         print(
             'usage: numerals.py "<original>" "<rewrite>"\n\n'
