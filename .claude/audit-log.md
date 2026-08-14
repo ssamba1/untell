@@ -778,3 +778,4 @@ permanently.
 | 696 | L9 | ppl-weight-0.40 | clean | 5775 | 5775 | - | L9 ppl-weight-0.40: REFUSED (lite-hc3 deterministic, deltas 0.0). Calibration running UNCONTENDED (101 min, run 1 of 2 nearly done) - when it lands this refusal expires. Knob untouched. |
 | 697 | L2 | untell/_env.py | clean | 5775 | 5775 | - | L2 _env.py re-audit (9th): baseline green, 6/6 killed, 0 survivors. Fully pinned (4th consecutive clean run). |
 | 698 | L7 | L7 | clean | 5775 | 5775 | - | L7 harness: shrink refusal fires (100->99 REFUSED), tree clean. Sound at pass 700. |
+| 699 | L1 | T13 | clean | 5775 | 5775 | - | T13 re-audit (10th): 4/4 display-math tests pass (0.38s). Fix holds (consistent 357/386/480/590). |
