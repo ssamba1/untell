@@ -159,3 +159,30 @@ class TestSentencesThatEndInsideAQuoteOrBracket:
             'He said "See Fig. 3 for details."',
             "Then he left.",
         ]
+
+    def test_a_quoted_period_with_a_lowercase_continuation_is_not_a_boundary(self):
+        """A quote's period only ends the sentence when a new sentence follows.
+
+        `He said "stop." and left.` — the quoted period is followed by a LOWERCASE
+        continuation, which cannot open a new sentence, so the period was mid-sentence and the
+        fragment "and left." must merge back. The splitter used to cut there, handing the
+        rewriter (and back_translation's chunker) a dangling clause as a standalone "sentence".
+        A capitalised continuation (`"Done." Then he left.`) still splits — the case of the
+        next word decides, same shape as the ellipsis rule.
+        """
+        assert split_sentences('He said "the meeting is at 3." and left.') == [
+            'He said "the meeting is at 3." and left.',
+        ]
+        assert split_sentences('He said "the meeting is at 3 p.m." and left.') == [
+            'He said "the meeting is at 3 p.m." and left.',
+        ]
+        # capitalised continuation keeps the split
+        assert split_sentences('He said "Done." Then he left.') == [
+            'He said "Done."',
+            "Then he left.",
+        ]
+        # bracket-nested quoted period keeps the split on a capitalised next sentence
+        assert split_sentences('(He said "Done.") Next up.') == [
+            '(He said "Done.")',
+            "Next up.",
+        ]
