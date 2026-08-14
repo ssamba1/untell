@@ -122,7 +122,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
 | untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` |
 | untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` |
-| untell/scripts/tells.py | 708 | boundary: < -> <= | `if len(words) < _MIN_WORDS_FOR_REPETITION:` |
+| untell/scripts/tells.py | 708 | boundary: < -> <= | `if len(words) < _MIN_WORDS_FOR_REPETITION:` | KILLED by tests/test_exactly_min_words_still_counts_repeated_trigrams.py: exactly 60 words with a repeated trigram -> original 55, mutant 0 (detector silent at its own boundary). Below-min (57 words) returns 0 under both. |
 | untell/scripts/tells.py | 921 | constant: 2 -> 3 | `("diff_anchored", len(_DIFF_ANCHOR_RE.findall(body)), 2),` |
 | untell/scripts/tells.py | 945 | constant: 4 -> 5 | `return round((var**0.5) / mean, 4)` |
 | untell/scripts/tells.py | 1017 | DOCSTRING-PROSE (not code; mutator rewrote a docstring sentence) identity: is not -> is | ``_language_supported` below is SCRIPT-based, so Chinese is caught and German is ` |
