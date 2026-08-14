@@ -157,7 +157,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/score.py | 1129 | membership: not in -> in | `and d.name not in scores` |
 | untell/scripts/score.py | 1130 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in _OPT_IN_DETECTORS` |
 | untell/scripts/score.py | 1131 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and not d.available()` |
-| untell/scripts/score.py | 1203 | UNKILLABLE: lone-note boundary needs specific block structure boundary: < -> <= | `if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:` |
+| untell/scripts/score.py | 1203 | UNKILLABLE: lone-note boundary needs specific block structure boundary: < -> <= | `if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:` | KILLED by tests/test_lone_block_warning_fires_at_exactly_min.py: exactly 3 single-sentence blocks (lone share 1.0 > 0.80) -> original fires the note, mutant None. Prior 'needs specific block structure' note wrong — 3 one-sentence paragraphs is exactly that structure. |
 | untell/scripts/score.py | 1313 | KILLED by test_score_mutation_guards (unscored rc=2) constant: 2 -> 3 | `return 2 if result.get("scored") is False else 0` |
 | untell/scripts/run.py | 196 | UNKILLABLE: saturation guard needs live rewrite cycle boundary: < -> <= | `if a < _SATURATED_MAX or b < _SATURATED_MAX:` | KILLED by tests/test_saturation_caveat_fires_at_exactly_max.py: pure function — at exactly 0.99 original emits the 'pinned' caveat, mutant returns None (silent). Prior 'needs live rewrite cycle' note wrong. Red on mutation, green on original. |
 | untell/scripts/run.py | 910 | UNKILLABLE: no-signal pass branch needs live loop constant: False -> True | `return False` |
