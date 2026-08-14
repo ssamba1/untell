@@ -6,7 +6,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 
 | module | line | mutation | source | analysis |
 | --- | --- | --- | --- | --- |
-| untell/text_split.py | 55 | constant: True -> False | `return True` | Abbreviations dict covers all cases in test corpus; dead branch when word IS in dict |
+| untell/text_split.py | 55 | constant: True -> False | `return True` | KILLED by tests/test_dict_abbreviation_does_not_end_a_sentence.py: 'Dr. Smith arrived.' splits into ['Dr.', 'Smith arrived.'] under the mutant (dict lookup returns False, fallthrough treats 'dr' as sentence-ender); original keeps one sentence. Prior 'dead branch' note superseded. |
 | untell/text_split.py | 57 | constant: 3 -> 4 | `if not word or len(word.replace(".", "")) > 3 or any(len(p) > 1 for p in parts):` | Length threshold 3 vs 4: abbreviations with 4-char word stems are rare |
 | untell/text_split.py | 57 | logic: or -> and | same | Same as above — logic change doesn't affect the specific inputs tested |
 | untell/text_split.py | 57 | boundary: > -> >= | same | Same as above — boundary shift doesn't affect tested abbreviations |
