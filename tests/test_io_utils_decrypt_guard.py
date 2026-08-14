@@ -5,6 +5,7 @@ A password-protected PDF raises an exception whose CLASS name contains "Decrypt"
 "decrypted" (or vice versa). The guard must fire when EITHER matches.
 """
 import sys
+
 import pytest
 
 import untell.scripts.io_utils as io
