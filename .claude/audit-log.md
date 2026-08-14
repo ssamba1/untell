@@ -467,3 +467,6 @@ permanently.
 | 418 | L9 | quality-bar-0.82 | clean | 5768 | 5768 | - | L9 quality-bar-0.82: REFUSED (instrument says deterministic; recalibration pending per pass-258). Knob untouched. |
 | 419 | L2 | untell/layout.py | clean | 5768 | 5768 | - | L2 layout.py re-audit (8th): killing tests green. Mutations pinned. |
 | 420 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 420. |
+| 421 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (7th): 4/4 spot-check patterns alive. No dead patterns. |
+| 422 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (7th): _MERGE_WEIGHTS unchanged (0.659/0.216/0.079/0.039/0.007). Fix holds. |
+| 423 | L2 | untell/scripts/preserve.py | clean | 5768 | 5768 | - | L2 preserve.py re-audit (7th): identical 8-survivor set. All documented, no new. |
