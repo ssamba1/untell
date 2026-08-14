@@ -702,3 +702,4 @@ permanently.
 | 620 | L7 | L7 | clean | 5780 | 5780 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 620. |
 | 621 | L1 | T03 | clean | 5780 | 5780 | - | T03 re-audit (8th): pass-334 verified seed determinism end-to-end. Also concurrency agent confirmed cross-process seed=42 byte-identical (verified by me). No change. |
 | 622 | L1 | T04 | clean | 5780 | 5780 | - | T04 re-audit (8th): pass-307 verified edge semantics (abstention/truncation/scrub-in-lock). No change. |
+| 623 | L2 | untell/scripts/preserve.py | clean | 5780 | 5780 | - | L2 preserve.py re-audit (9th): NER fix + preserve suite green (151 tests). Pass-466 mutate-refusal was contention artifact, not defect. |
