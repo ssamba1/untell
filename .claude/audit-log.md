@@ -113,3 +113,4 @@ permanently.
 | 97 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit: all 5 neutral transforms (nbsp/curly/crlf/double-space/trailing-ws) keep verdict 9/10 -> 9/10 and tells 0 -> 0. Prior NBSP defect fix holds. |
 | 98 | L9 | relaxed-sim-0.20 | clean | 5768 | 5768 | - | L9 relaxed-sim-0.20: REFUSED with measured evidence (lite-hc3 deterministic, deltas 0.0). Same as passes 78/38 — L9 blocked until a moving recipe exists. Knob untouched. |
 | 99 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit: same 10-11 survivors as pass 27 (rounding precision, per-100w, warning flags, boundaries, CLI). Line-shift dup 119 documented. No new survivors. |
+| 100 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: defect-fixed w/o commit refused, working tree clean. 100 passes recorded; all 4 refusal types verified across passes 20/40/80/100. |
