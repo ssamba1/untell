@@ -29,6 +29,7 @@ beats the incumbent is behaving correctly. This file makes no claim about the de
 from __future__ import annotations
 
 import logging
+import os
 
 import pytest
 
@@ -45,6 +46,31 @@ TEXTS = [
     "and the intricate design fosters a vibrant ecosystem for everyone.",
 ]
 KWARGS = dict(tier="lite", threshold=0.3, max_iters=2, rewriter="structural", best_of=1, seed=3)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _stdlib_lite_module():
+    """Pin the lite tier to its pure-Python path for the whole module.
+
+    The measurement in this file's docstring — 5 of 8 documents changed by the first
+    pass at tier=lite/structural — was made on the stdlib path. On a torch machine the
+    lite tier auto-upgrades to GPT-2 math and adopts no candidate for these documents,
+    which fails the denominator test without saying anything about idempotence. The
+    loop's behaviour is path-dependent; the numbers being pinned are the stdlib ones.
+    Module scope because the module-scoped `passes` fixture must run under the pin."""
+    os.environ["UNTELL_LITE_NO_TORCH"] = "1"
+    from untell.scripts import score as score_mod
+
+    for name in ("score_text", "batch_score_texts"):
+        fn = getattr(score_mod, name, None)
+        if hasattr(fn, "cache_clear"):
+            fn.cache_clear()
+    yield
+    os.environ.pop("UNTELL_LITE_NO_TORCH", None)
+    for name in ("score_text", "batch_score_texts"):
+        fn = getattr(score_mod, name, None)
+        if hasattr(fn, "cache_clear"):
+            fn.cache_clear()
 
 
 @pytest.fixture(autouse=True)
