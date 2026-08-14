@@ -103,7 +103,9 @@ def test_clamp01():
     assert clamp01(-1.0) == 0.0
     assert clamp01(2.0) == 1.0
     assert clamp01(0.5) == 0.5
-    assert clamp01(float("nan")) == 0.5
+    # NaN is a failure signal, not a neutral score: it must reach the aggregation's NaN guard
+    # (which records `<name>__error: detector returned NaN`) rather than reading as a valid 0.5.
+    assert clamp01(float("nan")) != clamp01(float("nan"))
 
 
 def test_new_detectors_registered():
