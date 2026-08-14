@@ -152,3 +152,6 @@ permanently.
 | 136 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: looks_non_english verified live — German=True, French=True, English=False, Chinese=False (script-path). Documented German-injection fix (commit b3be984) works: the rewriter no longer welds English openers onto German/French. |
 | 137 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (3rd): all 5 neutral transforms keep verdict+tells unchanged. Prior NBSP fix holds. |
 | 138 | L9 | token-bar-0.40 | clean | 5768 | 5768 | - | L9 token-bar-0.40: REFUSED (lite-hc3 deterministic, measured). Same as passes 78/98/118. Knob untouched. |
+| 139 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (3rd): same survivor set as pass 27/99 (160 per-100w, 185/187 flags, 218/228 boundaries, 265 indent). No new. |
+| 140 | L7 | L7 | clean | 1 | 2 | - | L7 harness: 1->2 grows the suite, so no refusal fires (correct — only SHRINKS refuse). Verified the actual shrink path in earlier passes (10->5 refused at pass 120). |
+| 141 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness (dup of 140, removed): the 1->2 record was mislabeled as a refusal. The genuine shrink refusal was verified at pass 120 (10->5 refused). Harness sound. |
