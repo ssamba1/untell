@@ -732,3 +732,4 @@ permanently.
 | 650 | L1 | T15 | clean | 5781 | 5781 | - | T15 re-audit (8th): pass-443 verified 20/20 numbers clean. No change. |
 | 651 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (8th): 33/33 environments live. No dead patterns. |
 | 652 | L2 | untell/scripts/scrub.py | clean | 5774 | 5774 | - | L2 scrub.py re-audit (10th): baseline green (174), 4/4 killed, 0 survivors (58/109/121/124). 119 not drawn but its killing test verified at 495. Module clean 2nd consecutive run. |
+| 653 | L6 | L6 | clean | 5774 | 5774 | - | L6: README:538 lite-tier claim (verdict cut 0.45 reduces human FP 60%->15%, AUROC 0.810) directionally verified by my T05 probes (verdict-cut FP 0/20 vs raw 50% at 473/557 - same direction, FP cut). mage HC3 FP 33.3% claim consistent with T04 orientation (human 0.578 vs ai 1.0). Detector-audit numbers live in audit outputs not the ledger - documented shapes. No drift. |
