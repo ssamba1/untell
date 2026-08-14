@@ -297,3 +297,4 @@ permanently.
 | 281 | L1 | T04 | clean | 5768 | 5768 | - | T04 re-audit (6th): pass-162 verified on real HC3. No change. |
 | 282 | L1 | T05 | clean | 5768 | 5768 | - | T05 re-audit (6th): pass-113 verified raw 50%/verdict-cut 20%. Consistent with README. |
 | 283 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit (5th): both killing tests green. 9/10 killed holds. |
+| 284 | L1 | T04 | clean | 5768 | 5768 | - | T04 re-audit (6th): real HC3 (12 pairs) - all 5 detectors correctly oriented: ppl 0.183v0.641, roberta 0.084v0.996, hc3_roberta 0.165v0.999, mage 0.578v1.000, fdg 0.079v0.618. All distinct, none dead/constant. NOTE: synthetic formulaic-AI probe showed hc3_roberta 'inverted' (0.877v0.645) - that is the KNOWN corpus artifact (hc3_roberta is ChatGPT-register-tuned; pass 110 documented this). Real HC3 confirms orientation. |
