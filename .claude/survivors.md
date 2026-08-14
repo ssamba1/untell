@@ -31,7 +31,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/preserve.py | 777 | constant: 3 -> 4 | `return m.group(3)` | m.group(3) is always defined when this line is reached (regex has 3 groups); changing to 4 would be IndexError. Dead branch on valid inputs |
 | untell/scripts/preserve.py | 827 | constant: 2 -> 3 | `return 2` | Tuning constant (max leading spaces to strip); 2 vs 3 is imperceptible |
 | untell/scripts/preserve.py | 850 | constant: 2 -> 3 | `json.dumps(..., indent=2)` | indent parameter: test doesn't check JSON formatting |
-| untell/scripts/numerals.py | 88 | constant: 10 -> 11 | `"ten": 10, "eleven": 11, "twelve": 12` | Dead code path: _TEENS dict correctly maps "ten" to 10; mutation to 11 would incorrectly map "ten" to 11. Test corpus doesn't use "ten" as a spelled-out number |
+| untell/scripts/numerals.py | 88 | constant: 10 -> 11 | `"ten": 10, "eleven": 11, "twelve": 12` | KILLED by tests/test_spelled_number_dict_values_are_exact.py: _spelled_value('ten') -> '10' original, '11' mutant. Prior 'test corpus doesn't use ten' note wrong — the dict value is the parser's output. Red on mutation, green on original. |
 | untell/scripts/numerals.py | 194 | logic: == -> != | `if part == "hundred":` | Defensive check: "hundred" is the only word handled specially in the loop. != would break all compound numbers like "two hundred" |
 | untell/scripts/numerals.py | 201 | logic: or -> and | `value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)` | Complex fallback: OR->AND would require word to be in all three dicts simultaneously, breaking all number parsing. Dead branch on valid inputs |
 | untell/scripts/numerals.py | 214 | constant: 2 -> 3 | `scaled = float(digits) * _SCALES[match.group(2).lower()]` | Index access: regex guarantees group 2 exists; group(3) would be IndexError. Dead code path |
@@ -204,7 +204,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/api_server.py | 682 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"results": {"type": "object", "additionalProperties": True},` |
 | untell/api_server.py | 715 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"pre": {"type": "object", "additionalProperties": True, "description": "score be` |
 | untell/api_server.py | 1025 | KILLED by test_api_server_mutation_guards (empty port env) logic: == -> != | `if raw is None or raw.strip() == "":` |
-| untell/scripts/numerals.py | 93 | constant: 80 -> 81 | `"eighty": 80, "ninety": 90,` |
+| untell/scripts/numerals.py | 93 | constant: 80 -> 81 | `"eighty": 80, "ninety": 90,` | KILLED by tests/test_spelled_number_dict_values_are_exact.py: _spelled_value('eighty') -> '80' original, '81' mutant. Red on mutation, green on original. |
 | untell/scripts/numerals.py | 376 | constant: True -> False | `print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))` |
 | untell/layout.py | 156 | logic: and -> or | `if lines and lines[0].strip() == "---":` |
 | untell/layout.py | 226 | logic: or -> and | `if not buffer and (line.startswith("    ") or line.startswith("\t")):` |
