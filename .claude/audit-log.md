@@ -276,3 +276,6 @@ permanently.
 | 260 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 260. |
 | 261 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (5th): all no-result CLI paths exit 2 naming file. Fix holds. |
 | 262 | L1 | T19 | clean | 5768 | 5768 | - | T19 re-audit (5th): ledger now 17 rows incl. 3-row full-hc3 family + 2 length buckets + lite-builtin(5) + lite-hc3(4). All carry corpus+n, aggregates consistent. |
+| 263 | L2 | untell/scripts/verify.py | clean | 5768 | 5768 | - | L2 verify.py re-audit (5th): survivor classes unchanged (rounding, flags, exit codes). No new. |
+| 264 | L1 | T20 | clean | 5768 | 5768 | - | T20 re-audit (5th): real-MCP round-trip tests pass. Real engine accepts what tests assert. |
+| 265 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
