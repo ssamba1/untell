@@ -12,7 +12,6 @@ import untell.layout as layout
 
 def test_indented_line_after_blank_is_layout():
     text = "Para one.\n\n    indented code\nMore prose."
-    kinds = [k for k, _, _ in layout._segments(text)]
     assert "    indented code" not in " ".join(
         b for k, _, b in layout._segments(text) if k == "prose"
     ), "indented code leaked into prose"

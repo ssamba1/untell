@@ -7,8 +7,8 @@ name the contract: text must be str.
 """
 import pytest
 
-from untell.scripts.score import score_text
 from untell.scripts.run import untell_text
+from untell.scripts.score import score_text
 
 BAD_INPUTS = [
     b"hello world",        # utf-8 bytes
