@@ -470,3 +470,7 @@ permanently.
 | 421 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (7th): 4/4 spot-check patterns alive. No dead patterns. |
 | 422 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (7th): _MERGE_WEIGHTS unchanged (0.659/0.216/0.079/0.039/0.007). Fix holds. |
 | 423 | L2 | untell/scripts/preserve.py | clean | 5768 | 5768 | - | L2 preserve.py re-audit (7th): identical 8-survivor set. All documented, no new. |
+| 424 | L1 | T09 | clean | 5768 | 5768 | - | T09 re-audit (7th): pass-377 verified. No change. |
+| 425 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
+| 426 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit (7th): pass-381 verified. No change. |
+| 427 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (8th): multi-scale regression green (5). Fix holds. |
