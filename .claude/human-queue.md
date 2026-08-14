@@ -71,3 +71,21 @@ NEXT   Pick (a) or (b) above. (a) is one line in research.py: treat a non-zero e
        810s + structural 357s + surgical 204s; ensemble runs all), claims-audit 15->45
        (pass 8 killed it at 2x estimate with the audit unfinished; 45 checks incl. pytest
        --collect-only and per-script --help subprocesses).
+
+## 2026-08-13 me2 worker — AMBER — claims-audit's one remaining failing check is a stale module count in a RED file
+
+WHAT   `untell-audit` (the claims-audit recipe) fails exactly ONE of 40 checks: "every 'N test
+       modules' claim matches tests/" — `docs/why-best-open-repo.md:154` says "325 modules",
+       tests/ actually has 333. Drift is 8, the audit's band is 5. The earlier queue entry about
+       UNTELL_POLICY_WHOLE_DOC is already resolved (README line 800 documents it; the check
+       passes). The test-count claim (6930) is within the 10% band on a clean run (6964 with
+       UNTELL_LITE_NO_TORCH=1, 6980 without) — it only failed in an earlier run because the
+       audit's internal pytest --collect-only subprocess raced the loop's own parallel pytest
+       suite and collected 1735. The audit runs in ~7 min, not >30.
+RAN    python -m untell.scripts.audit --json   (twice; second run on an idle machine)
+SAW    ok: False, 40 checks, 1 fail: "docs/why-best-open-repo.md: says 325 test modules,
+       tests/ has 333 — stale by more than 5"
+WHY    AMBER — the fix is updating a number in docs/why-best-open-repo.md, which the envelope
+       marks RED (a published number in a human-owned file). The audit is correctly refusing.
+NEXT   Edit line 154: "325 modules" -> "333 modules". Optionally refresh the test count to
+       6964 (UNTELL_LITE_NO_TORCH=1) / 6980 (full). Then claims-audit records.
