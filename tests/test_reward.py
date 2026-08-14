@@ -50,6 +50,33 @@ def test_off_topic_rewrite_is_still_hard_gated(monkeypatch):
     assert r.humanness_reward(orig, off_topic) == -1.0
 
 
+def test_faithful_paraphrase_the_loop_accepts_is_not_gated(monkeypatch):
+    """The reward's meaning gate must agree with the deployed loop's.
+
+    The loop gates candidates on `meaning_preserved` (NLI contradiction + bidirectional
+    entailment when the stack is present), NOT on a raw similarity bar. The reward used to gate
+    on `similarity >= recommended_bar()`, so a faithful paraphrase that the loop's own gate
+    admits — measured 0.664-0.704 against the 0.76 embedding cosine bar — earned -1.0, the SAME
+    reward as an off-topic rewrite. The policy then had no gradient toward the paraphrases the
+    deployed loop accepts. The docstring's own measurement of the raw cosine gate admits 4 of 11
+    meaning-broken rewrites; NLI admits 0 of 11, so aligning the reward with the loop is not a
+    loosening of the gate, it is the gate the loop actually ships.
+    """
+    import training.reward as r
+
+    orig = "The cat sat on the mat in the warm afternoon sun, perfectly content."
+    faithful = "The feline rested upon the rug during the sunny afternoon, quite satisfied."
+    # Sanity: the raw cosine bar WOULD have gated this (the old behavior).
+    from untell.scripts.quality import similarity
+
+    assert similarity(orig, faithful) < 0.76
+    # The loop's meaning gate admits it (NLI present in the test env), so the reward must too.
+    from untell.scripts.entailment import meaning_preserved
+
+    assert meaning_preserved(orig, faithful, similarity(orig, faithful), 0.76)
+    assert r.humanness_reward(orig, faithful, tier="lite") > -1.0
+
+
 class TestTheGateIsTheWorstOutcome:
     """A gate-PASSING candidate must never rank below a gate-FAILING one.
 

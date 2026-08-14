@@ -16,6 +16,7 @@ GPU (the surrogate path needs `.[train]` + a trained surrogate dir).
 import os
 import re
 
+from untell.scripts.entailment import meaning_preserved
 from untell.scripts.quality import recommended_bar, similarity
 from untell.scripts.score import score_text
 from untell.scripts.tells import score_tells
@@ -199,7 +200,17 @@ def humanness_reward(
     if sim_floor is None:
         sim_floor = recommended_bar()
     # Hard gates first — a gated candidate earns nothing regardless of how well it evades.
-    if similarity(original, candidate) < sim_floor:
+    # The meaning gate must be the SAME check the deployed loop applies, or the policy learns
+    # paraphrases the loop will veto. The loop gates on `meaning_preserved` (entailment.py):
+    # NLI contradiction + bidirectional entailment when the NLI stack is present, falling back
+    # to the raw similarity bar when it is not. A raw `similarity >= sim_floor` gate was NOT
+    # that check — MEASURED on the embedding backend, faithful paraphrases that the loop's own
+    # gate admits score 0.664-0.704 against the 0.76 cosine bar and were hard-gated to -1.0,
+    # the SAME reward as an off-topic rewrite. The policy then had no gradient toward the
+    # paraphrases the deployed loop accepts, and the docstring's own measurement of the raw
+    # cosine gate admits 4 of 11 meaning-broken rewrites — the exact blind spot (negation,
+    # role swaps) the NLI path exists to close.
+    if not meaning_preserved(original, candidate, similarity(original, candidate), sim_floor):
         return _GATE_REWARD
     if len(candidate) < 0.5 * len(original):
         return _GATE_REWARD

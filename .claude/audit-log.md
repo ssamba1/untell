@@ -416,3 +416,4 @@ permanently.
 | 372 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
 | 373 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (6th): 4/4 spot-check patterns alive. No dead patterns. |
 | 369 | L4 | thread safety | clean | 5795 | 5795 | 450b75d | L4 concurrency (2nd): 4 threads x untell_text with different seeds — all valid, same seed byte-identical to sequential run (2/2 threaded matches), different seeds distinct. RNG isolation holds under contention. First probe's mismatch was doc-text closure bug, not a defect. |
+| 374 | L8 | lite-hc3-structural | clean | 5768 | 5768 | - | L8 lite-hc3-structural RE-RUN: pre 0.6362 -> post 0.5701, delta -0.014 within +-0.020 band. Stable — the clause-joining veto fix holds (post improved slightly, flagged rate unchanged 1.0). |
