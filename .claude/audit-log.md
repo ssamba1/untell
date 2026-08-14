@@ -695,3 +695,4 @@ permanently.
 | 613 | L5 | L5 | clean | 5780 | 5780 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
 | 614 | L2 | untell/_env.py | clean | 5780 | 5780 | - | L2 _env.py re-audit (8th): killing tests green. 10/10 killed, fully pinned. |
 | 615 | L2 | untell/_env.py | clean | 5774 | 5774 | - | L2 _env.py re-audit (7th): baseline green, 8/8 killed, 0 survivors. Fully pinned (3rd consecutive clean, verified 367/463/535). |
+| 616 | L1 | T02 | clean | 5780 | 5780 | - | T02 novel probe: scrub invariant — 12/12 carriers verified (6 space-normalizing NBSP-class: nbsp/narrow/hair/figure/en/em -> 'a b'; 6 deleting ZWSP-class: zwsp/BOM/wj/invisible-times/zwnj/func-app -> 'ab'). My first probe misclassified hair/figure/en/em as deleting; code normalizes them correctly. |
