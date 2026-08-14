@@ -119,7 +119,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/verify.py | 139 | constant: False -> True | `results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"` |
 | untell/scripts/verify.py | 172 | constant: 4 -> 5 | `"ai": round(ai, 4),` |
 | untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
-| untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_no_input_exits_two.py: read_stdin_or_none patched to None (TTY) -> main([]) exits 2, mutant exits 3. The no-input usage-error code is now pinned alongside the whitespace (368) and no-results (400) paths. Red on mutation, green on original. |
 | untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_whitespace_input_exits_two.py: main(['   ']) exits 2 (empty-input path), mutant exits 3. The no-results path (400) was already pinned; this pins the whitespace path. Red on mutation (2 failed), green on original. |
 | untell/scripts/tells.py | 708 | boundary: < -> <= | `if len(words) < _MIN_WORDS_FOR_REPETITION:` | KILLED by tests/test_exactly_min_words_still_counts_repeated_trigrams.py: exactly 60 words with a repeated trigram -> original 55, mutant 0 (detector silent at its own boundary). Below-min (57 words) returns 0 under both. |
 | untell/scripts/tells.py | 921 | constant: 2 -> 3 | `("diff_anchored", len(_DIFF_ANCHOR_RE.findall(body)), 2),` |
