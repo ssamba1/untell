@@ -45,7 +45,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/sentences.py | 216 | constant: True -> False | `order = sorted(range(n), key=..., reverse=True)` | Reverse flag: test corpus doesn't depend on sort direction for the specific case |
 | untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | KILLED by tests/test_english_text_is_not_warned_as_non_english.py: ordinary English text must NOT get the 'reads as a Latin-script language other than English' caveat; mutant fires it on any non-empty text (1 failed under mutation). Prior 'English-only corpus' note wrong — English text IS the distinguishing input. |
 | untell/scripts/sentences.py | 327 | constant: 2 -> 3 | `print(json.dumps(..., indent=2))` | JSON indent: test doesn't check formatting |
-| untell/scripts/sentences.py | 345 | constant: 2 -> 3 | `return 2` | Tuning constant (rank or indent): test corpus doesn't exercise exact boundary |
+| untell/scripts/sentences.py | 345 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_unsupported_language_exits_two.py: Chinese text (language_supported=False) -> main returns 2 under original, 3 under mutant. The comment documents the reasoning ('the same code and reasoning untell-verify... use', MEASURED on a Chinese paragraph). Actual line is 356. Red on mutation, green on original. |
 | untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` |
 | untell/scripts/quality.py | 78 | constant: True -> False | `_bs_model = BERTScorer(lang="en", rescale_with_baseline=True)` |
 | untell/scripts/quality.py | 145 | constant: 2 -> 3 | `if sum(ca.values()) < 2 or sum(cb.values()) < 2:` |
@@ -259,4 +259,4 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/fast_detectgpt.py | 104 | boundary: < -> <= | `if ids.shape[1] < 2:` | UNKILLABLE: ids.shape guard needs live tokenizer output
 | untell/detectors/fast_detectgpt.py | 117 | constant: 8 -> 9 | `discrepancy = ((actual - mean_ref) / torch.sqrt(var_ref + 1e-8)).mean().item()` | UNKILLABLE: var epsilon 1e-8 in torch path, model-dependent
 | untell/scripts/sentences.py | 338 | constant: True -> False | `print(json.dumps(result, ensure_ascii=True, indent=2))` | KILLED by tests/test_sentences_cli_ascii_safe.py: non-ASCII input through --json asserts output encodes ascii. Mutant emits literal é -> encode('ascii') raises. Red on mutation (verified), green on original. Same class as scrub.py:119/quality.py:304. |
-| untell/scripts/sentences.py | 356 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/sentences.py | 356 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_unsupported_language_exits_two.py: Chinese text -> main returns 2 under original, 3 under mutant. Duplicate of the 345 row (same kill). |
