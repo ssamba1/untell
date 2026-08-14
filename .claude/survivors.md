@@ -106,3 +106,14 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/_retry.py | 128 | boundary: < -> <= | `if max_attempts < 1: max_attempts = 1` | EQUIVALENT mutation: both forms clamp 0/1/negatives to 1 and keep larger values — no behavioral test can distinguish |
 | untell/_retry.py | 141 | constant: 2 -> 3 | `delay = min(base_delay * (2 ** (attempt - 1)) + _JITTER.random(), max_delay)` | KILLED by test_backoff_doubles_each_attempt (jitter fixed at 0, sleeps recorded as [1.0, 2.0, 4.0]) |
 | untell/layout.py | 66 | logic: == -> != | `if kind == "prose" and body.strip():` | KILLED by test_blocks_agrees_with_apply_per_block (line 179: blocks() must return prose units). Verified: != mutation fails that test. |
+| untell/scripts/hedges.py | 148 | constant: True -> False | `name: re.compile(r"(?<!\w)(?:" + "/".join(re.escape(t) for t in sorted(terms, ke` |
+| untell/scripts/hedges.py | 328 | constant: True -> False | `print(json.dumps({"dropped": dropped, "kept": not dropped}, ensure_ascii=True))` |
+| untell/scripts/voice.py | 156 | constant: 4 -> 5 | `"burst": round(st.pstdev(lengths) / mean_len, 4) if mean_len else 0.0,` |
+| untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` |
+| untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` |
+| untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` |
+| untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` |
+| untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` |
+| untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` |
+| untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, help="file of YOUR writing (120+ words` |
+| untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ensure_ascii=True, indent=2))` |
