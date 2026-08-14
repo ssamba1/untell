@@ -694,3 +694,4 @@ permanently.
 | 612 | L5 | L5 | clean | 5774 | 5774 | - | L5: ruff clean on untell+tests+eval, 3 CLIs launch. |
 | 613 | L5 | L5 | clean | 5780 | 5780 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
 | 614 | L2 | untell/_env.py | clean | 5780 | 5780 | - | L2 _env.py re-audit (8th): killing tests green. 10/10 killed, fully pinned. |
+| 615 | L2 | untell/_env.py | clean | 5774 | 5774 | - | L2 _env.py re-audit (7th): baseline green, 8/8 killed, 0 survivors. Fully pinned (3rd consecutive clean, verified 367/463/535). |
