@@ -142,15 +142,18 @@ RECIPES: dict[str, dict] = {
         "metrics": ["pre_flagged_rate", "post_flagged_rate", "pre_mean_max", "post_mean_max"],
         "spread": "post_mean_max_stdev",
         "liveness": ["rewriter_available", "rewrote", "n"],
-        # MEASURED 2026-08-13: every backend the ensemble runs has now been timed on this exact
+        # MEASURED 2026-08-13/14: every backend the ensemble runs has now been timed on this exact
         # recipe shape (n=10, repeats=3, lite) — composite 841s, targeted 810s, structural 357s,
         # surgical 204s — and ensemble runs ALL of them plus selection, so the old 30-minute
         # estimate was ~3x short. The program run killed it at 90 minutes (3x budget) with the
         # measurement unfinished. A second run was killed at 120 minutes (2x the 60-minute
-        # estimate) while a sibling fleet run of the same recipe shared the machine — 4 heavy
-        # model slots split between two workers roughly doubles wall time. Solo floor is ~90m;
-        # 90 is the estimate, and the program runner's 3x budget covers the contended case.
-        "minutes": 90,
+        # estimate) while a sibling fleet run of the same recipe shared the machine. A THIRD run
+        # (2026-08-14, solo start, ~1h of light sibling holdout contention) was killed at 180
+        # minutes (2x the 90-minute estimate) still unfinished — 3 repeats of 4 backends plus
+        # selection genuinely exceeds 3 hours. The recipe needs n=6 or repeats=2 to be runnable
+        # in a session; as defined it is a multi-hour measurement best left to the fleet runner
+        # with a 240m budget. 150 is the estimate; the program runner's 3x budget covers it.
+        "minutes": 150,
     },
     "compare-hc3": {
         "why": "this pipeline against the other humanizers on the same text - the only "
