@@ -76,7 +76,13 @@ def test_the_bar_sits_between_the_two_measured_populations() -> None:
     assert 0.177 < _LOCKED_SHARE_BAR < 0.899
 
 
-def test_it_reaches_a_real_score_result() -> None:
+def test_it_reaches_a_real_score_result(stdlib_lite) -> None:
+    """Wired, not merely defined.
+
+    Pinned to the stdlib lite path (see test_a_document_with_no_prose_says_so): the
+    assertion is about warning content, which the pure-Python path answers without
+    loading GPT-2.
+    """
     assert "preserved material" in (score_text(QUOTE_HEAVY, tier="lite").get("warning") or "")
     assert "preserved material" not in (score_text(PROSE, tier="lite").get("warning") or "")
 

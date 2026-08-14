@@ -64,9 +64,15 @@ def test_prose_with_a_code_block_still_counts_as_prose() -> None:
     assert _no_prose_warning(PROSE + "\n\n" + CODE) is None
 
 
-def test_it_reaches_a_real_score_result() -> None:
+def test_it_reaches_a_real_score_result(stdlib_lite) -> None:
     """Wired, not merely defined. The defect this session has hit most often is a function that
-    works and is never called."""
+    works and is never called.
+
+    Pinned to the stdlib lite path: on a torch machine `tier="lite"` silently upgrades to
+    GPT-2 perplexity (~10.6s first call plus seconds per score), and this test only asserts
+    that a warning string appears — which the pure-Python path answers identically in
+    milliseconds. The scoring path is pinned, the wiring contract is unchanged.
+    """
     assert "no prose lines" in (score_text(CODE, tier="lite").get("warning") or "")
     assert "no prose lines" not in (score_text(PROSE, tier="lite").get("warning") or "")
 
