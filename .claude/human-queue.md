@@ -89,3 +89,14 @@ WHY    AMBER — the fix is updating a number in docs/why-best-open-repo.md, whi
        marks RED (a published number in a human-owned file). The audit is correctly refusing.
 NEXT   Edit line 154: "325 modules" -> "333 modules". Optionally refresh the test count to
        6964 (UNTELL_LITE_NO_TORCH=1) / 6980 (full). Then claims-audit records.
+
+## 2026-08-13 me3 worker — L6 claim verified (pass 56)
+
+CLAIM   untell/SKILL.md: "0.76 for semantic embeddings, 0.50 for the lite
+        token-overlap fallback" (recommended_bar per metric).
+RAN     PYTHONPATH= python -c "from untell.scripts.quality import method,
+        recommended_bar; ..." — method()='embedding', recommended_bar()=0.76.
+        MATCH. Also reproduced README's negation-flip example: "runs faster"
+        -> "runs slower" similarity 0.9825 (README says 0.983) vs 0.76 bar,
+        passes=True without NLI — consistent with "ADMITTED without it."
+SAW     No drift. Claim verified.
