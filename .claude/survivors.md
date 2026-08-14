@@ -195,3 +195,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rich_output.py | 316 | boundary: >= -> > | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` |
 | untell/browser_check.py | 131 | KILLED by test_browser_check_mutation_guards (24-gap boundary) constant: 24 -> 25 | `if _gap(lstart, lend, nearest.start(), nearest.end()) <= 24:` |
 | untell/browser_check.py | 324 | UNKILLABLE: Playwright timeout constant needs live browser constant: 1000 -> 1001 | `page.wait_for_selector(sel, timeout=per_result * 1000)` |
+| untell/mcp_server.py | 75 | KILLED by test_mcp_mutation_guards (seed 2**64-1 boundary) boundary: <= -> < | `if kind == "seed" and value is not None and not (0 <= int(value) <= 2**64 - 1):` |
+| untell/mcp_server.py | 246 | UNKILLABLE: all paths converge (name-resolution, auto->None at run.py:768, identical errors) logic: and -> or | `if rewriter not in _FREE_REWRITERS and rewriter != "auto":` |
+| untell/mcp_server.py | 297 | UNKILLABLE: sandbox default needs live commercial API keys constant: False -> True | `sandbox: bool = False,` |
