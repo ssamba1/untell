@@ -57,10 +57,14 @@ def test_build_pairs_human_fallback_without_datasets(monkeypatch):
 
 def test_distill_keeps_passing_samples(monkeypatch):
     import untell.scripts.run as run_mod
+    import untell.scripts.entailment as ent
 
     monkeypatch.setattr(
         run_mod, "untell_text", lambda text, **k: {"final": "a human rewrite", "flagged": False, "similarity": 0.9}
     )
+    # The gate now goes through meaning_preserved (NLI), so stub it to admit — the stub final
+    # text is unrelated to the sample and would otherwise be NLI-rejected.
+    monkeypatch.setattr(ent, "meaning_preserved", lambda *a, **k: True)
     out = distill("builtin", n=3, tier="lite")
     assert out["kept"] == 3
     assert len(out["rows"]) == 3
@@ -69,12 +73,43 @@ def test_distill_keeps_passing_samples(monkeypatch):
 
 def test_distill_drops_flagged_or_low_similarity(monkeypatch):
     import untell.scripts.run as run_mod
+    import untell.scripts.entailment as ent
 
     monkeypatch.setattr(run_mod, "untell_text", lambda text, **k: {"final": "x", "flagged": True, "similarity": 0.9})
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
 
     monkeypatch.setattr(run_mod, "untell_text", lambda text, **k: {"final": "x", "flagged": False, "similarity": 0.2})
+    # The meaning gate must reject an unrelated rewrite even when NLI is present.
     assert distill("builtin", n=3, tier="lite")["kept"] == 0
+
+    # And it must reject when NLI is absent and the raw bar is not met.
+    monkeypatch.setattr(ent, "meaning_preserved", lambda *a, **k: False)
+    assert distill("builtin", n=3, tier="lite")["kept"] == 0
+
+
+def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
+    """The distillation filter must agree with the deployed loop's meaning gate.
+
+    A faithful rewrite the loop's NLI gate admits (measured 0.664-0.704 on the embedding cosine
+    bar, below the 0.76 raw bar) used to be dropped from the training set — the same defect just
+    fixed in training/reward.py, at the site that decides which examples enter the DISTILLATION
+    SET. `meaning_preserved` is the loop's own gate; the filter now uses it.
+    """
+    import untell.scripts.run as run_mod
+    import untell.scripts.entailment as ent
+    from untell.scripts.quality import similarity
+
+    orig = "The cat sat on the mat in the warm afternoon sun, perfectly content."
+    faithful = "The feline rested upon the rug during the sunny afternoon, quite satisfied."
+    assert similarity(orig, faithful) < 0.76  # the OLD raw gate would have dropped it
+    assert ent.meaning_preserved(orig, faithful, similarity(orig, faithful), 0.76)  # loop admits it
+
+    monkeypatch.setattr(
+        run_mod, "untell_text",
+        lambda text, **k: {"final": faithful, "flagged": False, "similarity": similarity(orig, faithful)},
+    )
+    out = distill("builtin", n=1, tier="lite")
+    assert out["kept"] == 1, out
 
 
 class TestDistillRunsTheStrongLoop:
