@@ -159,3 +159,5 @@ permanently.
 | 143 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (3rd): all 4 killing tests green (quality 2-token boundary, retry class-name, env comment-skip, env real-wins). Survivor set unchanged from pass 31/103. |
 | 144 | L1 | T16 | clean | 5768 | 5768 | - | T16 re-audit (3rd, real FastAPI surface): empty->422, empty_string/whitespace->flagged=False, malformed/wrong-type/1MB->422, unicode/null->200 with warning, 2 concurrent->200. No 500s. Invariant holds. |
 | 145 | L3 | L3 | clean | 5768 | 5768 | - | L3: all regression/killing tests from this rotation fast (24 in 1.2s). No new slow tests; established slow set is real-model class only. |
+| 146 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (3rd): empty stdin -> exit 2 'empty input', missing file -> exit 2 naming file, whitespace -> exit 2, valid -> exit 0 JSON parses. No-result paths all exit non-zero. Fix holds. |
+| 147 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (3rd): 3/4 killed (58/104/116), 1 survived (119 ensure_ascii, documented untestable). Identical to passes 34/107. |
