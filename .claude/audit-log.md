@@ -478,3 +478,6 @@ permanently.
 | 429 | L8 | detector-audit | clean | 5768 | 5768 | - | L8 detector-audit: harness REFUSED (exit 1, pydantic_core shadow). Manual re-run with PYTHONPATH= cleared succeeded: 20 HC3 pairs, layout_shortcut=1.0, mage broken (documented), roberta_openai AUROC 0.9283 TPR 1.0. AMBER queued; env artifact, not a code defect. |
 | 430 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (7th): pass-382 verified. No change. |
 | 431 | L2 | untell/scripts/hedges.py | clean | 5768 | 5768 | - | L2 hedges.py re-audit (7th): same 2 survivors. 8/10 killed. No new. |
+| 432 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
+| 433 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (8th): pass-384 verified. No change. |
+| 434 | L8 | claims-audit | clean | 5768 | 5768 | - | L8 claims-audit: harness REFUSED (exit 1, pydantic_core shadow). Manual run with PYTHONPATH= cleared: 158 attributed claims, 0 unattributed, ok=true. Same env artifact as detector-audit (pass 429). No invented rows. |
