@@ -783,3 +783,5 @@ permanently.
 | 701 | L1 | T15 | clean | 5775 | 5775 | - | T15 re-audit (9th): 12/12 figure-dense docs, 0 numbers dropped/invented/changed. Consistent 249/346/393/442/512/598. |
 | 702 | L1 | T16 | clean | 5775 | 5775 | - | T16 re-audit (9th): fleet 571 bytes-InputTypeError fix VERIFIED - score_text and untell_text both raise clean TypeError 'text must be str, got bytes'. Hostile-body behavior unchanged (9 bodies, 0 server errors from 496). Fix holds. |
 | 703 | L3 | L3 | clean | 5775 | 5775 | - | L3: no new slow tests. Slow-marked set stable (14). My 4 CLI-encoding killing tests run 10.37s combined. Calibration occupies box; full durations deferred. |
+| 704 | L1 | T14 | clean | 5781 | 5781 | - | T14 re-audit (9th): pass-509 verified 5/5 neutral transforms. No change. |
+| 705 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
