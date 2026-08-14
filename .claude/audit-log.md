@@ -740,3 +740,5 @@ permanently.
 | 658 | L9 | token-bar-0.40 | clean | 5781 | 5781 | - | L9 token-bar-0.40: REFUSED (deterministic). Knob untouched. |
 | 659 | L2 | untell/scripts/io_utils.py | clean | 5781 | 5781 | - | L2 io_utils.py re-audit (9th): 36 tests green incl. binary-stdin (my pass-525 fix) + fleet exit-code kills (pass 492). No survivors. |
 | 660 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 660. |
+| 661 | L1 | T19 | clean | 5781 | 5781 | - | T19 re-audit (8th): ledger 35 rows, pass-483 verified. full-hc3-max 2nd run in flight (~60min). |
+| 662 | L1 | T01 | clean | 5781 | 5781 | - | T01 re-audit (9th): 5/5 lock+roundtrip incl. NER fix regression check. |
