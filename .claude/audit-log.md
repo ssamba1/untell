@@ -190,3 +190,5 @@ permanently.
 | 174 | L2 | untell/layout.py | clean | 5768 | 5768 | - | L2 layout.py re-audit (4th): all layout killing tests green (display-math, line-149, blocks-agrees). Mutations pinned; full sweep blocked by 512s baseline. |
 | 175 | L2 | untell/text_split.py | clean | 5768 | 5768 | - | L2 text_split.py re-audit (4th): identical 15-survivor set as passes 7/83/127. All documented (CHUNK_WORDS, autojunk, thresholds, dead branches). No change. |
 | 176 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: README 100%->0% flagged claim (0.86->0.15, 27 runs) is against FREE WEB CHECKERS (ZeroGPT etc), not the local ensemble — my full-hc3 measurements (composite 1.0->1.0, max 1.0->0.9758) are local-ensemble numbers and do not contradict it. Two different detector targets, README explicit about both. No drift. |
+| 177 | L1 | T09 | clean | 5768 | 5768 | - | T09 re-audit (4th): 3/3 docs changed at lite tier. No no-op regression. Full-tier no-ops remain mage-saturation (measured pass 89). |
+| 178 | L9 | ppl-weight-0.40 | clean | 5768 | 5768 | - | L9 ppl-weight-0.40: REFUSED with measured evidence (lite-hc3 deterministic). Knob untouched. |
