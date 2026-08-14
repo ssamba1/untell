@@ -177,7 +177,7 @@ def _reject_if_binary(path: str, text: str) -> str:
 
 def _read_text(path: str) -> str:
     with open(path, "rb") as fh:
-        head = fh.read(4)
+        head = fh.read(5)
     # A byte-order mark is unambiguous: use it rather than guessing. Without this, UTF-16/UTF-32
     # files fell through to latin-1 (which cannot fail) and became mojibake, silently.
     for bom, encoding in _BOMS:

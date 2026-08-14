@@ -739,3 +739,4 @@ permanently.
 | 657 | L1 | T17 | clean | 5781 | 5781 | - | T17 re-audit (8th): clamp01(NaN)=NaN verified. No change. |
 | 658 | L9 | token-bar-0.40 | clean | 5781 | 5781 | - | L9 token-bar-0.40: REFUSED (deterministic). Knob untouched. |
 | 659 | L2 | untell/scripts/io_utils.py | clean | 5781 | 5781 | - | L2 io_utils.py re-audit (9th): 36 tests green incl. binary-stdin (my pass-525 fix) + fleet exit-code kills (pass 492). No survivors. |
+| 660 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 660. |
