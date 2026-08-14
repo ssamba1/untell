@@ -725,3 +725,6 @@ permanently.
 | 643 | L1 | T13 | clean | 5774 | 5774 | - | T13 re-audit (9th): math block byte-identical, fence+list preserved, prose transformed (REWRITTEN). Layout round-trip holds (consistent 357/386/480). |
 | 644 | L1 | T12 | clean | 5781 | 5781 | - | T12 re-audit (9th): pass-586 verified. No change. |
 | 645 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. full-hc3-max at 51min/120. |
+| 646 | L1 | T14 | clean | 5781 | 5781 | - | T14 re-audit (8th): pass-597 verified 5/5 transforms. No change. |
+| 647 | L2 | untell/scripts/scrub.py | clean | 5781 | 5781 | - | L2 scrub.py re-audit (10th): line-119 ensure_ascii survivor KILLED by fleet pass-495 (CLI ascii-safety test). 4/4 killed now. No survivors. |
+| 648 | L4 | L4 | clean | 5781 | 5781 | - | L4 structural.py re-verified (pass 228): 9/9 patterns alive. |
