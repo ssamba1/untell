@@ -687,3 +687,4 @@ permanently.
 | 605 | L3 | L3 | clean | 5780 | 5780 | - | L3: no new slow tests. Slow-marked set stable (14 files). full-hc3-max recipe running (2 workers) — durations deferred. |
 | 606 | L1 | T01 | clean | 5780 | 5780 | - | T01 re-audit (8th): 4/4 lock+roundtrip. No regression incl. NER fix. |
 | 607 | L2 | untell/config.py | clean | 5780 | 5780 | - | L2 config.py re-audit (7th): 5/5 killed, zero survivors (verified pass 455). Fully pinned. |
+| 608 | L1 | T18 | clean | 5780 | 5780 | - | Novel probe: untell-loop CLI full contract — no-input exit 2, help 0, bad tier/seed/threshold exit 2 with SPECIFIC errors (invalid choice lists tiers, seed range names -5), missing file 2, valid lite json run exit 0. Zero tracebacks. Loop CLI matches documented contract. |
