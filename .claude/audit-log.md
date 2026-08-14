@@ -267,3 +267,6 @@ permanently.
 | 251 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (5th): 2-token boundary killing test green. Survivor set unchanged. |
 | 252 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No regressions. |
 | 253 | L1 | T17 | clean | 5768 | 5768 | - | T17 re-audit (5th): NaN stays NaN, dead->None. Fix holds. |
+| 254 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (5th): 3/4 killed, 1 survived (119 ensure_ascii, documented). Identical to prior. |
+| 255 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (5th): 33/33 environments live. No dead patterns. |
+| 256 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README claims verified across 10+ passes. No new drift. |
