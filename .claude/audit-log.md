@@ -683,3 +683,5 @@ permanently.
 | 601 | L1 | T19 | clean | 5780 | 5780 | - | T19 re-audit (7th): ledger 27+ rows, pass-400 verified all carry per-item counts. full-hc3-max re-run in flight. |
 | 602 | L3 | L3 | clean | 5774 | 5774 | - | L3: no new slow tests. Slow-marked set stable (14). My 3 killing tests run 9.75s. Calibration occupies box; full durations deferred. |
 | 603 | L2 | untell/languages.py | clean | 5780 | 5780 | - | L2 languages.py re-audit (8th): 12/12 ranges classify boundary letters. Survivors unchanged (43/89). |
+| 604 | L1 | T20 | clean | 5780 | 5780 | - | T20 re-audit (7th): pass-406 verified. No change. |
+| 605 | L3 | L3 | clean | 5780 | 5780 | - | L3: no new slow tests. Slow-marked set stable (14 files). full-hc3-max recipe running (2 workers) — durations deferred. |
