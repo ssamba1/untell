@@ -89,7 +89,6 @@ def test_the_pattern_has_no_stray_control_character():
     [
         ("unit", "The dose was 5 mg.", "The dose was 5 g."),
         ("ordinal", "It ranked third overall.", "It ranked first overall."),
-        ("fraction", "One third of the group left.", "Half of the group left."),
     ],
 )
 @pytest.mark.xfail(reason="out of scope: units, ordinals and fractions are not numerals", strict=True)
@@ -101,3 +100,14 @@ def test_the_remaining_gaps_are_recorded(name: str, source: str, rewrite: str):
     different check from "every number survives".
     """
     assert missing_numbers(source, rewrite)
+
+
+def test_a_fraction_change_is_now_caught() -> None:
+    """Fractions became numerals (spelled numerator), closing the old xfail gap.
+
+    "One third" -> "Half" changes the quantity (1/3 vs 1/2); the numerator "1"
+    is a spelled numeral and its loss is reported. This case used to be an
+    xfail member of test_the_remaining_gaps_are_recorded; the gap closed, so
+    it now asserts the detection instead of expecting the miss.
+    """
+    assert missing_numbers("One third of the group left.", "Half of the group left.") == ["1"]

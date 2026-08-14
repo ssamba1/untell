@@ -59,13 +59,12 @@ def test_a_changed_or_vanished_quantity_is_still_caught(source: str, candidate: 
     assert not numbers_kept(source, candidate)
 
 
-def test_thousands_combined_with_hundreds_are_a_known_limit() -> None:
-    """Pinned so it is a documented boundary rather than a surprise.
+def test_thousands_combine_with_hundreds_into_one_quantity() -> None:
+    """Multi-scale spelled numbers parse as ONE quantity (fleet fix 524e6a7).
 
-    "one thousand two hundred and forty" reads as two numbers, 1002 and 40, because the pattern
-    takes one multiplier per match. Prose almost never spells a number that large, and the
-    alternative is a materially more complex regex for a case with no observed instance — the same
-    call made about the spaCy parse asymmetry in Result 72. If this starts mattering, the test
-    names the behaviour to change.
+    This test previously pinned the old limit — "one thousand two hundred and
+    forty" read as two numbers, 1002 and 40, because the pattern took one
+    multiplier per match. The fix made the multiplier stack, so the whole
+    expression is one value.
     """
-    assert _numbers("one thousand two hundred and forty") == ["1002", "40"]
+    assert _numbers("one thousand two hundred and forty") == ["1240"]

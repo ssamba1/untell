@@ -301,3 +301,23 @@ WHAT   `research.py run detector-audit` exited 1 and refused to record: the tran
 NEXT   If detector-audit is needed in a cron/recipe context, run it with PYTHONPATH=
        cleared. Numbers above are from the manual run (not appended to measurements
        because the harness refused — correct behavior, no invented rows).
+
+## 2026-08-14 me3 worker — L3 found 2 stale numerals tests; fixed
+
+WHAT   The durations re-audit run surfaced 7 failures. 2 were REAL stale-test defects
+       left by fleet commit 524e6a7 ("spelled multi-scale numbers parse as one quantity"):
+       - test_thousands_combined_with_hundreds_are_a_known_limit pinned the OLD broken
+         parse (["1002","40"]) after the code correctly returned ["1240"]. Renamed to
+         test_thousands_combine_with_hundreds_into_one_quantity and updated to the fixed
+         value.
+       - the fraction parametrize case of test_the_remaining_gaps_are_recorded was xfail
+         ("fractions are not numerals") but the gap CLOSED: missing_numbers now reports
+         ['1'] for "One third" -> "Half". Converted to a real assertion
+         (test_a_fraction_change_is_now_caught). Removed the fraction case from the xfail
+         parametrize; unit/ordinal stay xfail (still out of scope).
+       The other 5 (style/caveat) were memory-contention artifacts of the fleet's
+       concurrent lite-hc3-ensemble run — all pass on a free box.
+RAN     pytest tests/test_a_magnitude_word_is_part_of_the_number.py tests/test_spelled_numbers.py
+SAW     27 passed, 2 xfailed. Suite 5769 -> 5770.
+WHY     AMBER (test rename + xfail scope change are human-owned per the guard).
+NEXT    None.
