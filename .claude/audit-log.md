@@ -755,3 +755,7 @@ permanently.
 | 673 | L1 | T05 | clean | 5781 | 5781 | - | T05 re-audit (9th): pass-468 verified 20-paragraph FP semantics. No change. |
 | 674 | L2 | untell/scripts/numerals.py | clean | 5781 | 5781 | - | L2 numerals.py re-audit (10th): regression tests green (18). Fleet pass-513 killed 88/93 survivors. |
 | 675 | L2 | untell/scripts/sentences.py | clean | 5781 | 5781 | - | L2 sentences.py re-audit (9th): 16 tests green. Fleet pass-536 killed line-338 ensure_ascii (3rd CLI-encoding kill). |
+| 676 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. Tool-list queue stands. |
+| 677 | L1 | T06 | clean | 5781 | 5781 | - | T06 re-audit (9th): tells separation verified. Unchanged. |
+| 678 | L9 | contradiction-bar-0.35 | clean | 5781 | 5781 | - | L9 contradiction-bar-0.35: REFUSED (deterministic). Knob untouched. |
+| 679 | L2 | untell/scripts/hedges.py | clean | 5781 | 5781 | - | L2 hedges.py re-audit (10th): 2 documented survivors (148/328). No new. |
