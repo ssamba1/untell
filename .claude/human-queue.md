@@ -147,3 +147,16 @@ RAN    python -m untell.scripts.audit --json (twice: 423s, 443s; exit 0 both)
 SAW    ok: True, 40 checks, 0 failures, 158 attributed claims
 NEXT   Run `python .claude/research.py run claims-audit` to close the L8 row. The two earlier
        me2 queue entries (detector-audit failing field, claims-audit stale count) stand as-is.
+
+## 2026-08-13 pass 74 L6 AMBER — docs/why-best-open-repo.md test count drifted again
+
+WHAT   Line 154 claims "6982 tests, 334 modules". Actual (measured just now,
+       UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q): **7004 tests**. The fleet's
+       earlier note said refresh to 6964/6980; this rotation's killing tests
+       (test_env_*, test_retry_class_name_alone, fleet's MCP/decimals/NaN suites)
+       pushed it past both figures. Count moves every time a test lands.
+RAN    UNTELL_LITE_NO_TORCH=1 .venv/Scripts/python.exe -m pytest --collect-only -q
+SAW    7004 tests collected in 60.93s
+NEXT   Edit line 154: "6982" -> "7004" (and re-verify the module count: 409 .py files
+       under untell/eval/tests minus worktrees — the "334 modules" figure needs the
+       same refresh). Then claims-audit records.
