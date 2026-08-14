@@ -291,3 +291,6 @@ permanently.
 | 275 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README claims verified across 12 passes. No new drift. |
 | 276 | L9 | threshold-0.40 | clean | 5768 | 5768 | - | L9 threshold-0.40: REFUSED with measured evidence, same as 78/98/118. Both calibrated instruments (lite-builtin, lite-hc3) are deterministic (all deltas 0.0); lite-hc3-ensemble calibration (2x90min) never completed under fleet contention. Knob untouched. Unblock: run calibrate lite-hc3-ensemble to completion. |
 | 277 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: all four refusals fire (no-commit, suite-not-grown, suite-shrank, short-note). mutate.py on untell/_retry.py restored byte-identical. Note: fleet main-tree agent has an in-flight RED-file edit (docs/why-best-open-repo.md count) in the working tree - guard will block it; not mine. |
+| 278 | L9 | token-bar-0.40 | clean | 5768 | 5768 | - | L9 token-bar-0.40: REFUSED (instrument says deterministic; note: pass-257 showed the calibration may be stale — re-calibration queued). Knob untouched. |
+| 279 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (5th): kill tests green (8). Nearly fully pinned (128 equivalent documented). |
+| 280 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 280. |
