@@ -787,3 +787,4 @@ permanently.
 | 705 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
 | 706 | L1 | T17 | clean | 5775 | 5775 | - | T17 re-audit (9th): clamp01(NaN)=nan, full-tier max=0.9999, no neutral 0.5, NaN never surfaced. Pass-57 fix holds. |
 | 707 | L4 | untell/scripts/tells.py | clean | 5775 | 5775 | - | L4 tells.py extended spot-check: 8 MORE patterns verified alive (_META_CLOSER, _ARTIFACT, _FENCE, _HEADING, _DIFF_ANCHOR, _SPACE_TOKENIZED, _WORD incl. accented Latin, _NON_LATIN Cyrillic). Combined with pass 471's 18 + 290's full-29, tells.py inventory now thoroughly covered. No dead patterns. |
+| 708 | L1 | T19 | clean | 5775 | 5775 | - | T19 re-audit (9th): ledger 35 rows all consistent - every row has per-item count; mean-recipes carry pre/post; claims-audit/compare-hc3 by-design shapes. full-hc3-max re-run appended. No partial ensemble row (calibration in flight). |
