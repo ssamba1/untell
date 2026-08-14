@@ -212,3 +212,5 @@ permanently.
 | 196 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: UNTELL_LITE_NO_TORCH documented in README (line 538/574/791) matches code (perplexity_burstiness.py:350 forces stdlib when env=1). Claim verified. |
 | 197 | L1 | T17 | clean | 5768 | 5768 | - | T17 re-audit (4th): clamp01(NaN)=NaN (not 0.5), dead mage returns None. Fleet's pass-57 fix holds. |
 | 198 | L9 | quality-bar-0.70 | clean | 5768 | 5768 | - | L9 quality-bar-0.70: REFUSED with measured evidence (deterministic). Knob untouched. |
+| 199 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (4th): 3/4 killed, 1 survived (119 ensure_ascii, documented). Identical to passes 34/107/147. |
+| 200 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified (5768->5767). Tree clean. Sound at pass 200. |
