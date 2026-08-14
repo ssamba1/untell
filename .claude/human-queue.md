@@ -251,3 +251,12 @@ WHY    AMBER — the rewriter moved the score DOWN by more than noise on this ru
 NEXT   Not an adoption trigger by itself — the band rule exists to catch drift, and a
        single -0.026 could be a lucky draw at n=10. Watch the next lite-hc3 run before
        treating this as a real improvement in rewriter strength.
+
+## 2026-08-13 pass 258 AMBER — lite-hc3 calibration stale: determinism claim contradicted
+
+WHAT   instruments.json records lite-hc3 deterministic=True spread=0.0014 (from the
+       fleet's 2-run calibration). The pass-257 4th run moved post_mean_max -0.026
+       beyond the +-0.020 noise band — a recipe that was 'identical run to run' just
+       differed by more than the band. The determinism claim is stale.
+NEXT   Re-run the calibrate step (or accept that lite-hc3 is not deterministic and needs
+       3+ runs per measurement). Until then L9 refusals cite a possibly-wrong reason.
