@@ -245,3 +245,4 @@ permanently.
 | 229 | L1 | T09 | clean | 5768 | 5768 | - | T09 re-audit (5th): pass-177 verified 3/3 docs changed at lite. No no-op regression. |
 | 230 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit (5th): pass-181 verified 0% gate rejection. No change. |
 | 231 | L2 | untell/text_split.py | clean | 5768 | 5768 | - | L2 text_split.py re-audit (5th): identical 15-survivor set. All documented. |
+| 232 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff found unused pytest import in fleet test_api_server_mutation_guards.py — fixed, tests still pass. ruff clean. |

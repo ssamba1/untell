@@ -12,8 +12,6 @@ schema-description-only. All recorded as unkillable in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
 from untell import api_server as A
 
 
