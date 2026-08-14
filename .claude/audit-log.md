@@ -250,3 +250,7 @@ permanently.
 | 234 | L2 | untell/scripts/preserve.py | clean | 5768 | 5768 | - | L2 preserve.py re-audit (5th): identical 8-survivor set. All documented, no new. |
 | 235 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (5th): multi-scale regression tests green (5). Fix holds. |
 | 236 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README detector claims verified across passes 96/116/136/156/176. No new drift. |
+| 237 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (5th): pass-182 verified 0 fragments. No change. |
+| 238 | L9 | quality-bar-0.82 | clean | 5768 | 5768 | - | L9 quality-bar-0.82: REFUSED (deterministic, measured). Knob untouched. |
+| 239 | L2 | untell/scripts/sentences.py | clean | 5768 | 5768 | - | L2 sentences.py re-audit (5th): identical survivor set. All documented, no new. |
+| 240 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 240. |
