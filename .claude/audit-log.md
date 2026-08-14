@@ -660,3 +660,4 @@ permanently.
 | 578 | L8 | fuzz-campaign | clean | 5780 | 5780 | - | Delegated fuzz campaign (380 score + 120 loop + 108 CLI cases): 205 score findings = ALL one class (TypeError on bytes input) — FIXED (pass 571). Loop 120 cases 0 findings. 28 CLI timeouts are full-tier cold-start throughput (untell defaults to full tier; 40s budget too tight for cold import 10-15s + rewrite), not hangs — verified --check/--file/empty-argv all complete <60s. Stdout-pollution suspect = false alarm (untell_text emits 0 bytes, import clean). |
 | 579 | L2 | untell/_retry.py | clean | 5780 | 5780 | - | L2 _retry.py re-audit (8th): kill tests green (8). Nearly fully pinned. |
 | 580 | L7 | L7 | clean | 5780 | 5780 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 580. |
+| 581 | L1 | T07 | clean | 5780 | 5780 | - | T07 re-audit (7th): 4/4 spot-check patterns alive. |
