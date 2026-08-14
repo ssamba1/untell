@@ -141,14 +141,23 @@ def test_no_codepoint_anywhere_disagrees() -> None:
 
     A curated list is exactly what the previous implementation was, and it drifted five times. This
     is the check that cannot drift: every codepoint, both directions. MEASURED: 0 disagreements.
+
+    "Changed" means changed beyond legitimate composition. `scrub_hidden` ends with an NFC pass,
+    and NFC composes base+combining-mark pairs into precomposed codepoints — a rendering
+    normalisation of ordinary accented text that `count_hidden` deliberately does NOT charge for
+    (see `test_marks_on_separate_bases_are_not_a_stack` in the mark-stack module). Comparing
+    against the raw probe would flag every combining mark as a disagreement, so the probe is
+    composed the same way `count_hidden` composes its baseline.
     """
+    from untell.attacks.unicode_tricks import _compose_legitimate
+
     disagreements = []
     for codepoint in range(0x110000):
         if 0xD800 <= codepoint <= 0xDFFF:  # lone surrogates are not valid text
             continue
         probe = "a" + chr(codepoint) + "b"
         try:
-            changed = scrub_hidden(probe) != probe
+            changed = scrub_hidden(probe) != _compose_legitimate(probe)
             counted = count_hidden(probe)
         except Exception:  # pragma: no cover - a codepoint the scrubber cannot handle at all
             continue

@@ -85,14 +85,37 @@ class TestRouting:
 
         Checked by asserting that module has no knowledge of the registry at all — if it grows an
         import of `untell.languages`, the two are coupled and "add a file, touch nothing" stops
-        being true."""
-        import inspect
+        being true.
 
-        from untell.scripts import tells
+        The check is a fresh-interpreter probe rather than sys.modules or source text: `tells.py`
+        legitimately imports `untell.languages` LAZILY (inside the unsupported-language branch, to
+        name the script correctly in the caveat), so a source-text assertion like
+        `"untell.languages" not in source` fails on a legitimate feature, and this test module
+        imports the registry at its own top level, which pollutes sys.modules for the whole class.
+        A lazy import preserves additivity — a language can be added without editing `tells.py` —
+        while a module-level import would make every English-only caller pay for the registry.
+        The probe asserts exactly the property that matters: importing `tells` in a cold
+        interpreter must not pull the registry in.
+        """
+        import subprocess
+        import sys
+        from pathlib import Path
 
-        source = inspect.getsource(tells)
-        assert "untell.languages" not in source
-        assert "from untell import languages" not in source
+        repo = Path(__file__).resolve().parent.parent
+        probe = (
+            "import sys;"
+            "from untell.scripts import tells;"
+            "assert 'untell.languages' not in sys.modules, "
+            "'importing untell.scripts.tells must not import the language registry'"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", probe], capture_output=True, text=True,
+            timeout=60, cwd=repo,
+        )
+        assert result.returncode == 0, (
+            "importing untell.scripts.tells must not import the language registry — "
+            f"the English catalogue has no dependency on it: {result.stderr.strip()}"
+        )
 
 
 class TestRegistryHygiene:

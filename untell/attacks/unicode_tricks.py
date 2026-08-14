@@ -432,11 +432,48 @@ def count_hidden(text: str) -> int:
     and rewrites them (exotic space -> ' ', U+2028 -> newline, homoglyph -> ASCII), and both are
     "this character was not what it looked like". The unit is SOURCE characters affected, which is
     what `hidden_chars_removed` means on the MCP and REST surfaces.
+
+    The diff is against the legitimately-composed baseline, not the raw input. `scrub_hidden` ends
+    with an NFC pass, and NFC does two different things: it COMPOSES a base character with a
+    combining mark into a precomposed codepoint (`a\u0301` -> `á`), which is a rendering
+    normalisation of ordinary accented text, and it REWRITES a handful of singleton confusables
+    (U+212A KELVIN SIGN -> 'K', U+037E GREEK QUESTION MARK -> ';', U+1FEF GREEK VARIA -> '`'),
+    which are carriers in their own right. MEASURED on `a\u0301b\u0301c\u0301 d\u0301e\u0301f\u0301
+    g\u0301h\u0301i\u0301` (one combining acute per base): counting against the raw input reported
+    10 hidden characters on text that is ordinary accented English. The two cases were already told
+    apart by the per-character implementation this diff replaced ("composing 'e' + combining acute
+    changes neither character alone, so only the singletons count"), and the diff-based version
+    lost that distinction; this baseline restores it. A carrier — zero-width mark, exotic space,
+    homoglyph, singleton confusable — survives composition unchanged, so composing the baseline
+    first loses nothing the check exists to find.
     """
+    base = _compose_legitimate(text)
     cleaned = scrub_hidden(text)
-    if cleaned == text:
+    if cleaned == base:
         return 0
-    return _affected_chars(text, cleaned)
+    return _affected_chars(base, cleaned)
+
+
+def _compose_legitimate(text: str) -> str:
+    """Compose base + combining mark pairs, WITHOUT folding singleton NFC confusables.
+
+    Exactly the half of NFC the scrubber's final pass performs that is NOT a carrier removal.
+    `unicodedata.normalize("NFC", text)` also rewrites singleton codepoints (U+212A -> 'K'), and
+    those ARE carriers — the Kelvin-sign test pins it — so this baseline cannot be plain NFC.
+    Composing the pairs is a rendering normalisation; folding the singletons is a scrub. A single
+    pass over the text, composing each mark with the character before it when a precomposed form
+    exists, mirrors what NFC does to legitimate mark stacks (only the first mark of a run can
+    compose; the rest stay decomposed, exactly as NFC leaves them).
+    """
+    out: list[str] = []
+    for ch in text:
+        if out and unicodedata.category(ch) in ("Mn", "Me"):
+            composed = unicodedata.normalize("NFC", out[-1] + ch)
+            if len(composed) == 1:
+                out[-1] = composed
+                continue
+        out.append(ch)
+    return "".join(out)
 
 
 # How far ahead to look when deciding whether a mismatch was a substitution or a deletion.

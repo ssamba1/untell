@@ -66,17 +66,17 @@ def test_a_plain_run_of_digits_stays_with_the_number_rule():
 def test_uppercase_digests_are_covered_by_the_identifier_rule():
     """Checked rather than assumed — the first version of the comment claimed these were a miss.
 
-    The identifier pattern locks the alphanumeric token, not the preceding word. So "ABCDEF1"
-    is locked but "Model ABCDEF1" as a phrase is not — the "Model" prefix is separate prose
-    and the pattern only claims the identifier part. Both cases pass because the token being
-    asserted is the part the pattern actually captures.
+    With the spaCy NER model present (en_core_web_sm), "Model ABCDEF1" locks whole as one entity
+    span; with NER absent, the identifier pattern locks "ABCDEF1" alone. Either way the digest is
+    frozen — the assertion accepts both, because what matters is that the hex identifier is
+    protected, not which rule protected it.
     """
     for text, token in (
         ("The digest was A3F5B2C9D8E14F6072B3C4D5E6F70819.", "A3F5B2C9D8E14F6072B3C4D5E6F70819"),
         ("Model ABCDEF1 shipped in 2024.", "ABCDEF1"),
     ):
         _, mapping = lock(text)
-        assert token in mapping.values(), f"{token} unlocked ({mapping})"
+        assert any(token in v for v in mapping.values()), f"{token} unlocked ({mapping})"
 
 
 def test_a_six_character_hex_is_left_alone():

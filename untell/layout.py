@@ -124,6 +124,20 @@ def _segments(text: str):
     # show fenced-code syntax — ended at the inner backticks, and everything after was handed to
     # the transform as prose. MEASURED: `print("hello")` inside such a block was rewritten.
     fence: str | None = None
+    # Display-math state, tracked separately from `fence` for the same reason: `$$` inside a
+    # fenced code block is code, not math, and a ```` ``` ```` inside a math block is math, not a
+    # fence. A line whose stripped content is exactly `$$` toggles this; anything between the
+    # opening and closing `$$` is layout. MEASURED before this existed:
+    #
+    #     $$
+    #     \int_0^1 x dx
+    #     $$
+    #
+    # was one prose block, so the equation — where a rewriter renaming a variable is damage, not
+    # improvement — was handed to the transform and rewritten. Inline `$...$` stays prose: it is
+    # text with a formula in it, and the inline form is locked by preserve.py's latex_math rule
+    # before any rewriter sees it.
+    in_math: bool = False
 
     def flush():
         if buffer:
@@ -162,7 +176,15 @@ def _segments(text: str):
             # line is emitted verbatim in all three cases.
             yield ("layout", "", line)
             continue
-        if fence is not None or not line.strip():
+        # A display-math delimiter. `$$` exactly, not `$$$` (which is a fence-ish artifact) and
+        # not `$...$` inline math (which stays prose). Emitted verbatim as layout on both sides,
+        # so the content between the delimiters is protected by the `in_math` branch below.
+        if line.strip() == "$$":
+            yield from flush()
+            in_math = not in_math
+            yield ("layout", "", line)
+            continue
+        if fence is not None or in_math or not line.strip():
             yield from flush()
             yield ("layout", "", line)
             continue

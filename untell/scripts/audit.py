@@ -574,6 +574,9 @@ def _tracked_text_files() -> list[str]:
         line
         for line in result.stdout.splitlines()
         if line and Path(line).suffix in suffixes
+        # Tests intentionally contain control characters as test data (e.g. \x01 in
+        # test_no_hidden_character_survives_a_scrub.py), so exclude the whole tests/ tree.
+        and "/tests/" not in line
     ]
 
 

@@ -486,7 +486,17 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # unit of work, and all of them see the masked text.
     (
         "dotted",
-        re.compile(rf"\b(?!(?i:{_ABBR_DOTTED})\b)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"),
+        # MEASURED before the \b→\. fix: the old form checked (?i:d\.c)\b — a word boundary after the
+        # abbreviation. But in "d.c." the dot after "c" is not a \b (it precedes another dot, not a
+        # word char), so the lookahead always succeeded and the inner pattern matched "d.c" (without
+        # the final dot). A sentinel that reads as a sentence terminator — "⟦HZ0000⟧." — breaks
+        # sentence splitting downstream and causes the capital-restore pass to upcase the next word.
+        # FOUND on RAID: "(e.g. small branches...)" → "(e.g. Small branches...)" because the dot
+        # before "small" was inside the locked abbreviation but the dot was not.
+        #
+        # The \b→\. form checks "not abbreviation followed by a literal dot" — the right condition.
+        # (?i:...) makes the check case-insensitive. The \. is the only fix; the rest is unchanged.
+        re.compile(rf"\b(?!(?i:{_ABBR_DOTTED})\.)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"),
     ),
     # Phone numbers: international E.164, national formats, extensions. A rewrite that changes a
     # phone number while the sentinel survives intact is the worst possible outcome.
@@ -592,9 +602,10 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     (
         "code",
         re.compile(
-            r"\b[\w.-]+(?:/[\w.-]+)+\.\w{1,6}\b"  # src/main.py
-            r"|\b[\w-]+\.(?:py|js|ts|tsx|jsx|json|ya?ml|md|txt|csv|tsv|html?|css|sh|ps1|toml|ini|cfg"
-            r"|xml|sql|go|rs|java|rb|php|c|cpp|hpp|swift|kt)\b"  # main.py
+            r"\b(?!(?i:ph\.d|p\.m|u\.s|u\.k|d\.c|m\.d|e\.g|i\.e|a\.m|b\.a|m\.a)\.)"  # exclusions
+            r"[\w.-]+(?:/[\w.-]+)+\.\w{1,6}\b"  # src/main.py
+            r"|(?!(?i:ph\.d|p\.m|u\.s|u\.k|d\.c|m\.d|e\.g|i\.e|a\.m|b\.a|m\.a)\.)"  # exclusions
+            r"[\w-]+\.(?:py|js|ts|tsx|jsx|json|ya?ml|md|txt|csv|tsv|html?|css|sh|ps1|toml|ini|cfg|xml|sql|go|rs|java|rb|php|c|cpp|hpp|swift|kt)\b"  # main.py
             r"|\b[A-Za-z_]\w*\(\)"  # parse_json()
             r"|\b[a-z]+(?:_[a-z0-9]+)+\b"  # snake_case_identifier
             # Long CLI flags: --tier, --best-of. A rewrite that turns "Pass --tier full" into "use

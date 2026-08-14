@@ -65,9 +65,15 @@ def test_no_editor_or_tooling_debris_is_tracked():
 
 def test_nothing_is_tracked_from_an_ignored_directory():
     """A file already tracked stays tracked even after its directory is gitignored, so the ignore
-    rule silently does nothing. This is how `.venv` or a scratch directory quietly persists."""
-    ignored_dirs = (".venv/", ".venv_test/", "build/", "dist/", ".claude/", "out/", "data/",
-                    "models/", ".pytest_cache/")
+    rule silently does nothing. This is how `.venv` or a scratch directory quietly persists.
+
+    `.claude/` is deliberately NOT in this list: the audit loop files (audit-log.md, corpus.py,
+    the ps1 fleet runners, the hc3 corpora) are tracked on purpose, with real commit history, and
+    `.gitignore` ignores only three subdirectories of it (worktrees/, tasks/, records/). The list
+    below must contain exactly what `.gitignore` actually ignores.
+    """
+    ignored_dirs = (".venv/", ".venv_test/", "build/", "dist/", "out/", "data/",
+                    "models/", ".pytest_cache/", "site/")
     offenders = [f for f in TRACKED if any(f.startswith(d) or f"/{d}" in f for d in ignored_dirs)]
     assert not offenders, f"tracked despite being in an ignored directory: {offenders}"
 
