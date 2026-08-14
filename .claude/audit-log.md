@@ -461,3 +461,5 @@ permanently.
 | 412 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff fixed 3 import-sort issues in test_training.py (I001), 19 tests still pass. ruff clean on untell+tests. 3 CLIs launch. |
 | 413 | L1 | T05 | clean | 5768 | 5768 | - | T05 re-audit (7th): pass-282 verified. No change. |
 | 414 | L8 | lite-raid | clean | 5768 | 5768 | - | L8 lite-raid RE-RUN: pre 0.9 -> post 0.2 flagged, 0.4415 -> 0.2641 mean max, delta -0.005 within band. Strongest de-flag in the ledger (RAID corpus), stable across runs. Matches README: RAID is the corpus where mage does NOT saturate. |
+| 415 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit (6th): both killing tests green. 9/10 killed holds. |
+| 416 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: no new drift across 15 passes of README verification. |
