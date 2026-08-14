@@ -516,3 +516,4 @@ permanently.
 | 467 | L5 | L5 | clean | 5770 | 5770 | - | L5 re-audit: ruff clean on untell+tests+eval (0 errors), 3 CLIs launch, import OK. |
 | 468 | L1 | T05 | clean | 5770 | 5770 | - | T05 re-audit (7th): 20 human paragraphs at shipped threshold 0.3 - raw FP 10/20 (50%, matches documented lite false-positive path), verdict-cut FP 0/20 (0%, prior 20% - no drift, this corpus cleaner). max scores 0.3-0.7 range consistent with prior. |
 | 469 | L5 | L5 | clean | 5770 | 5770 | - | L5 re-audit: ruff clean on untell+tests+eval, 3 CLIs launch. |
+| 470 | L1 | T06 | clean | 5770 | 5770 | - | T06 re-audit (7th): tells_per_100w separation - AI-flavored 11.53 (5 texts, 0-16.67 range) vs human 0.00 (5/5). Perfect discrimination. NOTE: probe v1 used inverted pass condition (tells_per_100w higher = MORE AI; prior pass 358 used humanness score where higher=human - different metric, both correct). No replacement emits tells. |
