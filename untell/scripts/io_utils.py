@@ -288,7 +288,15 @@ def read_stdin_or_none() -> str | None:
         # A replaced or closed stream in a test harness has no isatty; treat it as non-interactive
         # so piped and captured input still reaches the command.
         interactive = False
-    return None if interactive else sys.stdin.read()
+    if interactive:
+        return None
+    try:
+        return sys.stdin.read()
+    except UnicodeDecodeError:
+        # Binary/undecodable stdin (a piped binary file, curl output). The command's contract is
+        # a clean "no input" exit 2, not a Python traceback: same path as empty stdin. MEASURED:
+        # b'\x00\x01\x02\xff' piped to untell-score leaked UnicodeDecodeError before this guard.
+        return None
 
 
 def configure_utf8_io() -> None:
