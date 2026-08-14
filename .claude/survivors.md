@@ -53,7 +53,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/quality.py | 147 | logic: and -> or | `if not ca and not cb:` |
 | untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` |
 | untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` |
-| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` |
 | untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` |
 | untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 (e.g. Windows cp1252)` |
 | untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` | Lazy-load guard: only differs on first call, tests never hit the sentinel state |
@@ -63,8 +62,8 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/quality.py | 147 | logic: and -> or | `if not ca and not cb:` | Empty-both path: only reachable when both sides tokenize to nothing, test corpus always has tokens |
 | untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` | One-empty path: char-bigram fallback only fires for scriptio-continua scripts (CJK) — English test corpus never hits |
 | untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` | normalize_embeddings: cosine of normalized vs raw embeddings differs in practice but tests use tolerant thresholds |
-| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | Exact-equality float case: sim == bar is measure-zero with real embeddings, unreachable |
-| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | Same: exact boundary unreachable |
+| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | KILLED by tests/test_similarity_exactly_at_bar_passes.py: with _model=None the token path yields exact rationals — 1 shared of 4 unique = Dice 0.5 = TOKEN_BAR exactly; original passes, mutant rejects. Prior 'measure-zero with real embeddings' note wrong: the token path makes equality exact. |
+| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | Same boundary as 263 (CLI JSON path) — same test kills it via the shared similarity/passes logic; the CLI main() is a thin print wrapper. |
 | untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding |
 | untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 stdout` |
 | untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding, same class as voice.py:265 |
