@@ -279,7 +279,28 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/binoculars.py | 83 | constant: 512 -> 513 | `enc = tok(text, return_tensors="pt", truncation=True, max_length=512).to(device)` |
 | untell/detectors/binoculars.py | 85 | boundary: < -> <= | `if ids.shape[1] < 2:` | UNKILLABLE: ids.shape guard needs live tokenizer
 | untell/detectors/binoculars.py | 101 | constant: 8 -> 9 | `binoculars = float(log_ppl / (x_ppl + 1e-8))` | UNKILLABLE: epsilon 1e-8 in torch path
-| untell/scripts/preserve.py | 707 | logic: and -> or | `and e.text.lower() in _COMMON_WORD_PERSONS` |
-| untell/scripts/preserve.py | 816 | constant: 3 -> 4 | `return m.group(3)` |
-| untell/scripts/preserve.py | 857 | identity: is not -> is | `if args.text is not None:` |
-| untell/scripts/preserve.py | 889 | constant: True -> False | `print(json.dumps({"masked": masked, "mapping": mapping}, ensure_ascii=True, inde` |
+| untell/detectors/hc3_roberta.py | 27 | constant: False -> True | `_dead = False` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/hc3_roberta.py | 28 | constant: False -> True | `_warned = False` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/hc3_roberta.py | 35 | constant: False -> True | `return False` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/hc3_roberta.py | 36 | constant: True -> False | `return True` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/hc3_roberta.py | 58 | constant: True -> False | `HC3RobertaDetector._dead = True` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/hc3_roberta.py | 65 | constant: True -> False | `HC3RobertaDetector._warned = True` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/hc3_roberta.py | 68 | constant: True -> False | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/hc3_roberta.py | 68 | constant: 512 -> 513 | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` |
+| untell/detectors/roberta_openai.py | 24 | constant: False -> True | `_dead = False` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/roberta_openai.py | 25 | constant: False -> True | `_warned = False` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/roberta_openai.py | 32 | constant: False -> True | `return False` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/roberta_openai.py | 33 | constant: True -> False | `return True` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/roberta_openai.py | 43 | constant: True -> False | `truncation=True,` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/roberta_openai.py | 44 | constant: 512 -> 513 | `max_length=512,` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/roberta_openai.py | 58 | constant: True -> False | `RobertaOpenAIDetector._dead = True` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/roberta_openai.py | 65 | constant: True -> False | `RobertaOpenAIDetector._warned = True` | UNKILLABLE: model/env-dependent (dead/warned latch, torch branch, tokenizer kwarg)
+| untell/detectors/radar.py | 35 | constant: False -> True | `_warned = False` | UNKILLABLE: _warned initializer
+| untell/detectors/radar.py | 38 | logic: or -> and | `if not (os.environ.get("UNTELL_ENABLE_RADAR") or os.environ.get("HUMANIZE_ENABLE` | UNKILLABLE: env-gate logic needs real env flip
+| untell/detectors/radar.py | 39 | constant: False -> True | `return False  # opt-in only (non-commercial license)` | UNKILLABLE: opt-in return constant
+| untell/detectors/radar.py | 44 | constant: False -> True | `return False` | UNKILLABLE: torch-import branch
+| untell/detectors/radar.py | 45 | constant: True -> False | `return True` | UNKILLABLE: available() True return
+| untell/detectors/radar.py | 59 | logic: or -> and | `if not self.available() or not text.strip():` | KILLED by test_radar_mutation_guards (opt-out must prevent 7B model load - MEASURED: mutation loaded model and scored 0.993)
+| untell/detectors/radar.py | 66 | constant: True -> False | `RadarDetector._warned = True` | UNKILLABLE: _warned flag in except path
+| untell/detectors/radar.py | 73 | constant: True -> False | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` | UNKILLABLE: tokenizer max_length 512 (both)
+| untell/detectors/radar.py | 73 | constant: 512 -> 513 | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` |
