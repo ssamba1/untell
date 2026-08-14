@@ -494,3 +494,6 @@ permanently.
 | 445 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
 | 446 | L1 | T17 | clean | 5768 | 5768 | - | T17 re-audit (7th): pass-410 verified NaN/None behavior. No change. |
 | 447 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (7th): 33/33 environments live. No dead patterns. |
+| 448 | L4 | L4 | clean | 5768 | 5768 | - | L4 targeted.py: _SENT_SPLIT alive (splits on sentence boundaries). Other rewriter backends (composite/neural/surgical) have no compiled patterns. No dead patterns. |
+| 449 | L4 | L4 | clean | 5768 | 5768 | - | L4 structural.py re-verified (pass 228): 9/9 patterns alive. No dead patterns. |
+| 450 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (7th): 3/3 no-result paths exit 2. Fix holds. |
