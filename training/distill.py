@@ -37,6 +37,7 @@ def distill(
     """Run the loop on ``n`` samples; yield SFT rows for the ones that passed (kept the meaning)."""
     from eval.datasets import load_samples
     from untell.rewriter import get_rewriter
+    from untell.scripts.entailment import meaning_preserved
     from untell.scripts.quality import recommended_bar
     from untell.scripts.run import untell_text
 
@@ -71,7 +72,14 @@ def distill(
         # sentence-transformers it silently rejects nearly every good rewrite and "successfully"
         # trains on an almost-empty dataset.
         sim_bar = recommended_bar()
-        if not result.get("flagged") and result.get("similarity", 0.0) >= sim_bar:
+        sim = result.get("similarity", 0.0)
+        # Same gate the deployed loop applies, not a raw cosine bar. `meaning_preserved` uses NLI
+        # contradiction + bidirectional entailment when the stack is present and falls back to the
+        # raw bar when it is not — so a faithful rewrite the loop admits at 0.664-0.704 (measured)
+        # is not silently dropped from the training set while the loop's own meaning gate would
+        # keep it. A raw `similarity >= sim_bar` filter and the loop disagreed on exactly these
+        # paraphrases, and this filter decides which examples enter the DISTILLATION SET.
+        if not result.get("flagged") and meaning_preserved(src, result["final"], sim, sim_bar):
             rows.append({"prompt": _PROMPT.format(text=src), "source": src, "humanized": result["final"]})
             kept += 1
     return {"kept": kept, "total": len(samples), "requested": n, "rows": rows}
