@@ -68,7 +68,11 @@ def _bad_args(**checks) -> dict | None:
             # default — the sentences tool answers {"error": "top=None is not a number"}
             # to an ordinary call that omits top. MEASURED: _bad_args(top=(None, "top"))
             # rejected the default until the conversion was skipped.
-            if value is None:
+            #
+            # The other kinds have no None default and still refuse it: a threshold of None
+            # is not a probability, so _bad_args(threshold=(None, "probability")) must
+            # keep answering a refusal dict, not None.
+            if value is None and kind in ("top", "seed"):
                 continue
             try:
                 if kind == "probability":

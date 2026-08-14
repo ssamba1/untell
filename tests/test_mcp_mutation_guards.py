@@ -68,6 +68,14 @@ class TestNonNumericInput:
         out = M._bad_args(threshold=(None, "probability"))
         assert out is not None
 
+    def test_none_top_and_seed_are_the_defaults_not_a_number(self) -> None:
+        """`top`/`seed` are optional ints; `None` is their documented default, so it must
+        pass through — not be rejected as a non-number. This is the `int(None)` regression:
+        the conversion raised TypeError, the catch turned it into a refusal dict, and an
+        ordinary call that omitted `top` got {"error": "top=None is not a number"}."""
+        assert M._bad_args(top=(None, "top")) is None
+        assert M._bad_args(seed=(None, "seed")) is None
+
     def test_valid_values_still_pass(self) -> None:
         assert M._bad_args(threshold=(0.3, "probability")) is None
         assert M._bad_args(max_subs=(12, "count")) is None
