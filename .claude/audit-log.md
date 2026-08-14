@@ -226,3 +226,8 @@ permanently.
 | 210 | L8 | full-hc3-neural | clean | 5768 | 5768 | - | L8 full-hc3-neural COMPLETED: pre 1.0 -> post 0.9999 (negligible). Family complete: composite 1.0->1.0, max 1.0->0.9758, neural 1.0->0.9999. All flagged at 0.45. AMBER queued. |
 | 211 | L2 | untell/scripts/verify.py | clean | 5768 | 5768 | - | L2 verify.py re-audit (4th): survivor set unchanged (rounding, measure-zero boundaries, truncation). No new. |
 | 212 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff found 2 unused imports in fleet test files (cli_mutation_guards, rich_output_mutation_guards) — fixed with ruff --fix, tests still pass. ruff now clean. |
+| 213 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (5th): pass-161 verified 5/5 inverted pairs vetoed. Gate sound, unchanged. |
+| 214 | L2 | untell/languages.py | clean | 5768 | 5768 | - | L2 languages.py re-audit (4th): 12/12 script ranges classify boundary letters. Survivors unchanged. |
+| 215 | L2 | untell/config.py | clean | 5768 | 5768 | - | L2 config.py re-audit (4th): 5/5 killed, zero survivors (verified pass 163). Fully pinned. |
+| 216 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: pass-156 verified hc3_roberta non-transfer live. README consistent. No new drift found. |
+| 217 | L1 | T04 | clean | 5768 | 5768 | - | T04 re-audit (5th): pass-162 verified on real HC3. No change. |
