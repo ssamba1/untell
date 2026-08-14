@@ -182,3 +182,14 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/cli.py | 260 | UNKILLABLE: rewriter status needs a rewriter returning None logic: and -> or | `status = "✓" if rw and rw.available() else "✗"` |
 | untell/scripts/cli.py | 353 | KILLED by test_cli_mutation_guards (standalone rc=2) constant: 2 -> 3 | `return 2` |
 | untell/scripts/cli.py | 364 | KILLED by test_cli_mutation_guards (add_help flag) constant: False -> True | `parser = argparse.ArgumentParser(prog="untell", add_help=False, description="AI-` |
+| untell/rich_output.py | 82 | UNKILLABLE: diff-tag branch, style-only logic: == -> != | `if tag == "equal":` |
+| untell/rich_output.py | 205 | UNKILLABLE: delta-zero style, unobservable in plain capture boundary: < -> <= | `delta_style = "green" if delta < 0 else ("red" if delta > 0 else "white")` |
+| untell/rich_output.py | 230 | KILLED by test_rich_output_mutation_guards (verdict at exact cut) boundary: >= -> > | `if p_ai >= cut:` |
+| untell/rich_output.py | 232 | UNKILLABLE: borderline band edge (0.30-band), not assertion-visible boundary: >= -> > | `return "borderline" if p_ai >= cut - _VERDICT_BAND else "clear"` |
+| untell/rich_output.py | 266 | KILLED by test_rich_output_mutation_guards (truncation at 2000) boundary: > -> >= | `_CONSOLE.print(_Panel(original[:2000] + ("..." if len(original) > 2000 else ""),` |
+| untell/rich_output.py | 267 | KILLED by test_rich_output_mutation_guards (truncation at 2000) boundary: > -> >= | `_CONSOLE.print(_Panel(final[:2000] + ("..." if len(final) > 2000 else ""), title` |
+| untell/rich_output.py | 267 | constant: 2000 -> 2001 | `_CONSOLE.print(_Panel(final[:2000] + ("..." if len(final) > 2000 else ""), title` |
+| untell/rich_output.py | 271 | KILLED by test_rich_output_mutation_guards (truncation at 2000) boundary: > -> >= | `original[:2000] + ("..." if len(original) > 2000 else ""),` |
+| untell/rich_output.py | 312 | UNKILLABLE: table header flag, style-only constant: True -> False | `table = _Table(show_header=True, header_style="bold")` |
+| untell/rich_output.py | 316 | UNKILLABLE: count style, ANSI codes dropped in captured output constant: 3 -> 4 | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` |
+| untell/rich_output.py | 316 | boundary: >= -> > | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` |
