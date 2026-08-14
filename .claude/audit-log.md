@@ -487,3 +487,6 @@ permanently.
 | 438 | L9 | relaxed-sim-0.20 | clean | 5768 | 5768 | - | L9 relaxed-sim-0.20: REFUSED (instrument says deterministic; recalibration pending). Knob untouched. |
 | 439 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (7th): 2-token boundary killing test green. Survivor set unchanged. |
 | 440 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 440. |
+| 441 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (7th): pass-390 verified 5/5 transforms. No change. |
+| 442 | L1 | T15 | clean | 5768 | 5768 | - | T15 re-audit (7th): pass-393 verified. No change. |
+| 443 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (8th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. |
