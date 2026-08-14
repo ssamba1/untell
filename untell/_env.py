@@ -74,7 +74,7 @@ def load_env(path: str | None = None) -> bool:
 
         # utf-8-sig so a BOM-prefixed .env (common from Windows editors) doesn't corrupt the first key.
         load_dotenv(str(p), override=False, encoding="utf-8-sig")
-        return True
+        return False
     except Exception:
         pass
 

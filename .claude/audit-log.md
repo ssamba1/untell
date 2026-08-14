@@ -693,3 +693,4 @@ permanently.
 | 611 | L2 | untell/_retry.py | clean | 5780 | 5780 | - | L2 _retry.py re-audit (9th): kill tests green (8). 128 documented-equivalent remains. |
 | 612 | L5 | L5 | clean | 5774 | 5774 | - | L5: ruff clean on untell+tests+eval, 3 CLIs launch. |
 | 613 | L5 | L5 | clean | 5780 | 5780 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
+| 614 | L2 | untell/_env.py | clean | 5780 | 5780 | - | L2 _env.py re-audit (8th): killing tests green. 10/10 killed, fully pinned. |
