@@ -737,3 +737,5 @@ permanently.
 | 655 | L9 | threshold-0.40 | clean | 5774 | 5774 | - | L9 threshold-0.40: REFUSED (lite-hc3 deterministic, deltas 0.0). UNBLOCK IN PROGRESS: lite-hc3-ensemble calibration running UNCONTENDED (54 min into run 1 of 2, 150min each) - the documented prerequisite, first clean attempt after two contention kills. When it lands, this refusal expires. Knob untouched. |
 | 656 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. README headline consistency already verified (fleet 537 + my 596). |
 | 657 | L1 | T17 | clean | 5781 | 5781 | - | T17 re-audit (8th): clamp01(NaN)=NaN verified. No change. |
+| 658 | L9 | token-bar-0.40 | clean | 5781 | 5781 | - | L9 token-bar-0.40: REFUSED (deterministic). Knob untouched. |
+| 659 | L2 | untell/scripts/io_utils.py | clean | 5781 | 5781 | - | L2 io_utils.py re-audit (9th): 36 tests green incl. binary-stdin (my pass-525 fix) + fleet exit-code kills (pass 492). No survivors. |
