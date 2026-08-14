@@ -427,3 +427,6 @@ permanently.
 | 382 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (6th): pass-182 verified 0 fragments. No change. |
 | 383 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (6th): identical survivor set. All documented, no new. |
 | 384 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (7th): pass-242 verified 14/14 to tail. No change. |
+| 385 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
+| 386 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (7th): pass-357 verified 4/4 display-math. No change. |
+| 379 | L4 | batch_rewards parity | clean | 5796 | 5796 | a6808a7 | L4 batch_rewards (2nd, post-fix): delegates to humanness_reward (line 242) so the fixed NLI gate flows through — faithful paraphrase earns 1.0, off-topic still -1.0, faithful > off. The GRPO-called batch path is aligned with the deployed loop's gate. |
