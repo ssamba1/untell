@@ -63,7 +63,7 @@ def blocks(text: str) -> list[str]:
     """
     out: list[str] = []
     for kind, prefix, body in _segments(text.replace("\r\n", "\n")):
-        if kind == "prose" and body.strip():
+        if kind != "prose" and body.strip():
             out.append(prefix + body)
     return out
 

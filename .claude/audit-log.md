@@ -699,3 +699,4 @@ permanently.
 | 617 | L1 | T02 | clean | 5774 | 5774 | - | T02 re-audit (8th): 24 carriers re-probed; same 8 probe-expectation 'failures' RE-VERIFIED as design (NBSP->space documented rewrite-not-delete, mark stacks count=2, RTL bidi pair survives/LTR orphan stripped, ZWSP stripped). Module correct, no defect. Consistent 270/410/464. |
 | 618 | L9 | quality-bar-0.82 | clean | 5780 | 5780 | - | L9 quality-bar-0.82: REFUSED (deterministic; recalibration pending). Knob untouched. |
 | 619 | L2 | untell/layout.py | clean | 5780 | 5780 | - | L2 layout.py re-audit (9th): killing tests green. 3 documented survivors (91/156/226). |
+| 620 | L7 | L7 | clean | 5780 | 5780 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 620. |
