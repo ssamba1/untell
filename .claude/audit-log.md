@@ -677,3 +677,4 @@ permanently.
 | 595 | L7 | L7 | clean | 5774 | 5774 | - | L7 harness: shrink refusal fires (100->99 REFUSED), mutate kills 2/2 + restores byte-identical, tree clean. Sound at pass 600. |
 | 596 | L6 | L6 | clean | 5780 | 5780 | - | L6 drift: MCP tool-list drift already queued (pass 534); README headline claims verified consistent (pass 537). No new drift. |
 | 597 | L1 | T14 | clean | 5780 | 5780 | - | T14 re-audit (7th): pass-441 verified 5/5 transforms. No change. |
+| 598 | L1 | T15 | clean | 5774 | 5774 | - | T15 re-audit (8th): 12/12 figure-dense docs, 0 numbers dropped/invented/changed. Consistent with 249/346/393/442. |
