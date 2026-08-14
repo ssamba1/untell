@@ -4,8 +4,6 @@ An exception whose type name is in _RETRYABLE_ERRS but whose message contains no
 retry keyword must still be retried. Mutating `return True` to `return False`
 makes it fall through to the message-keyword checks and give up.
 """
-import pytest
-
 from untell._retry import _is_retryable
 
 
