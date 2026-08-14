@@ -41,3 +41,22 @@ def test_binary_stdin_never_leaks_traceback():
             assert "Traceback" not in stderr, (
                 f"{cmd} leaked traceback for {payload[:8]!r}:\n{stderr[-500:]}"
             )
+
+
+def test_binary_stdin_exits_cleanly():
+    """The no-input contract: binary stdin must exit 2 (or clean) — never crash."""
+    env = dict(__import__("os").environ)
+    env["PYTHONPATH"] = ""
+    for cmd in COMMANDS:
+        proc = subprocess.run(
+            [str(PYTHON), *cmd],
+            input=b"\xff\x00\x01",
+            capture_output=True,
+            env=env,
+            timeout=120,
+        )
+        assert proc.returncode != 1, f"{cmd} crashed (exit 1) on binary stdin"
+        # stderr must not contain a Python exception class name
+        assert "Error" not in proc.stderr.decode("utf-8", errors="replace"), (
+            f"{cmd} raised on binary stdin"
+        )
