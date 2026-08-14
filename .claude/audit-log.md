@@ -167,3 +167,6 @@ permanently.
 | 151 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (3rd): 33/33 environments live (liveness probe, mutate baseline still >600s under recipe CPU load). No dead patterns. |
 | 152 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No lint regressions. |
 | 153 | L1 | T01 | clean | 5768 | 5768 | - | T01 re-audit (4th): 7/7 spot facts lock+roundtrip incl. all prior fixes. No regression. |
+| 154 | L2 | untell/scripts/io_utils.py | clean | 5768 | 5768 | - | L2 io_utils.py re-audit (3rd): decrypt-guard killing test still green (2 pass). Survivors unchanged (50/180/290). No new. |
+| 155 | L2 | untell/scripts/verify.py | clean | 5768 | 5768 | - | L2 verify.py re-audit (3rd): verify() smoke — clean text passes_all=True at verdict_cut 0.45 (ai=0.25). Survivor set unchanged (rounding, measure-zero boundaries, truncation). No new. |
+| 156 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: README hc3_roberta non-transfer claim VERIFIED live — on conversational text it scores human 0.99 vs AI 0.14 (INVERTED), vs HC3-genre 0.248/0.999 (correct). Exactly the documented 'trained on HC3, does not transfer' defect. README matches shipped behavior. |
