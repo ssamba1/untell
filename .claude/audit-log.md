@@ -197,3 +197,5 @@ permanently.
 | 181 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit (4th): 0% gate rejection of structural output. Gate admits rewriter's normal output. |
 | 182 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (4th): 0 fragments in structural output. Grammar clean. |
 | 183 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (4th): multi-scale + spelled-decimal regression tests green (16 tests). My fix + fleet's fix both hold. Survivors unchanged (dict entries, main guard). |
+| 184 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (4th): 14/14 paragraphs rewritten, last change at final index. Tail-reachability holds. |
+| 185 | L3 | L3 | clean | 5768 | 5768 | - | L3: all regression tests fast (<1s). No new slow tests. |
