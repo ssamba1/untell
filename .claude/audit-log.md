@@ -672,3 +672,4 @@ permanently.
 | 590 | L1 | T13 | clean | 5780 | 5780 | - | T13 re-audit (8th): 4/4 display-math tests pass. Fix holds. |
 | 591 | L2 | untell/scripts/hedges.py | clean | 5780 | 5780 | - | L2 hedges.py re-audit (8th): same 2 survivors (148 sort key, 328 CLI print). No new. |
 | 592 | L5 | L5 | clean | 5780 | 5780 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
+| 593 | L6 | L6 | clean | 5774 | 5774 | - | L6 drift INDEPENDENTLY CONFIRMED (fleet 534): README:149 documents 5 MCP tools (score/sentences/untell/verify/scrub) but _TOOL_NAMES registers 8 (score/sentences/tells/untell/verify_commercial/ceiling/compare/scrub) - verify renamed verify_commercial, tells/ceiling/compare undocumented. test_mcp_server.py pins _TOOL_NAMES vs server so code is authoritative; README stale. L6 queues (already queued by fleet), does not edit docs. |
