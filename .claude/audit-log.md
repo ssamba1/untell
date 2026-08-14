@@ -181,3 +181,6 @@ permanently.
 | 165 | L3 | L3 | clean | 5768 | 5768 | - | L3: regression tests fast (10 in <1s). No new slow tests. |
 | 166 | L1 | T06 | clean | 5768 | 5768 | - | T06 re-audit (4th): 0/226 replacements emit tells. Unchanged. |
 | 167 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (3rd): fleet's test_retry_kill_survivors.py (kills 35/119/141) + my test_retry_class_name_alone.py (kills 103) all green — 8 tests. Only 128 (< vs <=) remains as documented-equivalent. Nearly fully pinned. |
+| 168 | L4 | L4 | clean | 5768 | 5768 | - | L4 score.py: 5/5 patterns alive (_WS_RUN_RE, _BLANK_RUN_RE, _INVISIBLE_RE, _LATIN, _CONFUSABLE_SCRIPT). No dead patterns. |
+| 169 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (4th): 4/4 spot-check patterns alive. No dead patterns. |
+| 170 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (4th): _MERGE_WEIGHTS unchanged, matches human column. Fix holds. |
