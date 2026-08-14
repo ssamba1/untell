@@ -16,7 +16,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/text_split.py | 95 | logic: and -> or | `return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()` | KILLED by tests/test_lowercase_continuation_without_ellipsis_does_not_merge.py: 'Hello world. next thing' merges to ONE sentence under the mutant (False or True), splitting correctly as two under the original. Prior note ('corpus doesn't cover ellipsis-after-lowercase') wrong — the distinguishing input has NO ellipsis. |
 | untell/text_split.py | 122 | constant: 90 -> 91 | `CHUNK_WORDS = 90` | Tuning constant: 90 vs 91 words per chunk is imperceptible to test corpus |
 | untell/text_split.py | 143 | boundary: < -> <= | `if k == 1 or len(aw) < 2 or len(bw) < 2:` | Very short texts rare in test corpus; boundary shift doesn't affect tested cases |
-| untell/text_split.py | 143 | logic: or -> and | same | Same as above |
+| untell/text_split.py | 143 | logic: or -> and | same | KILLED by tests/test_tiny_side_returns_the_pair_whole.py: 100-word vs 1-word pair falls through to chunking, re-cutting the long side to 50 words; original returns the pair whole. Prior 'very short texts rare' note wrong — the distinguishing input has ONE tiny side. |
 | untell/text_split.py | 143 | logic: == -> != | same | Same as above |
 | untell/text_split.py | 146 | constant: False -> True | `matcher = difflib.SequenceMatcher(a=aw, b=bw, autojunk=False)` | autojunk parameter: test corpus doesn't have strings long enough to trigger junk detection |
 | untell/text_split.py | 152 | boundary: <= -> < | `if blk.a <= i < blk.a + blk.size:` | difflib block boundary: test corpus alignment doesn't hit exact boundary cases |
