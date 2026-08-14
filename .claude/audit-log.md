@@ -786,3 +786,4 @@ permanently.
 | 704 | L1 | T14 | clean | 5781 | 5781 | - | T14 re-audit (9th): pass-509 verified 5/5 neutral transforms. No change. |
 | 705 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
 | 706 | L1 | T17 | clean | 5775 | 5775 | - | T17 re-audit (9th): clamp01(NaN)=nan, full-tier max=0.9999, no neutral 0.5, NaN never surfaced. Pass-57 fix holds. |
+| 707 | L4 | untell/scripts/tells.py | clean | 5775 | 5775 | - | L4 tells.py extended spot-check: 8 MORE patterns verified alive (_META_CLOSER, _ARTIFACT, _FENCE, _HEADING, _DIFF_ANCHOR, _SPACE_TOKENIZED, _WORD incl. accented Latin, _NON_LATIN Cyrillic). Combined with pass 471's 18 + 290's full-29, tells.py inventory now thoroughly covered. No dead patterns. |
