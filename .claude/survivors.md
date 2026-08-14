@@ -198,3 +198,10 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/mcp_server.py | 75 | KILLED by test_mcp_mutation_guards (seed 2**64-1 boundary) boundary: <= -> < | `if kind == "seed" and value is not None and not (0 <= int(value) <= 2**64 - 1):` |
 | untell/mcp_server.py | 246 | UNKILLABLE: all paths converge (name-resolution, auto->None at run.py:768, identical errors) logic: and -> or | `if rewriter not in _FREE_REWRITERS and rewriter != "auto":` |
 | untell/mcp_server.py | 297 | UNKILLABLE: sandbox default needs live commercial API keys constant: False -> True | `sandbox: bool = False,` |
+| untell/api_server.py | 409 | UNKILLABLE: rate-window constant, timing-dependent constant: 60 -> 61 | `_RATE_WINDOW_SECONDS = 60` |
+| untell/api_server.py | 428 | UNKILLABLE: bucket-cap boundary at exactly 4096, timing-dependent boundary: <= -> < | `if len(_rate_buckets) <= _RATE_BUCKET_SOFT_CAP:` |
+| untell/api_server.py | 496 | UNKILLABLE: mutation falls back to client IP; TestClient reuses one IP so both paths trip identically (verified by applying mutant) logic: or -> and | `retry_after = _rate_limited(request, x_key or auth or "")` |
+| untell/api_server.py | 650 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"sentences": {"type": "array", "items": {"type": "object", "additionalProperties` |
+| untell/api_server.py | 682 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"results": {"type": "object", "additionalProperties": True},` |
+| untell/api_server.py | 715 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"pre": {"type": "object", "additionalProperties": True, "description": "score be` |
+| untell/api_server.py | 1025 | KILLED by test_api_server_mutation_guards (empty port env) logic: == -> != | `if raw is None or raw.strip() == "":` |
