@@ -173,3 +173,4 @@ permanently.
 | 157 | L1 | T02 | clean | 5768 | 5768 | - | T02 re-audit (4th): 12/12 carriers counted+scrubbed (first probe used wrong removal assertion for space-normalizing carriers; corrected check confirms all 12). No regression. |
 | 158 | L9 | contradiction-bar-0.35 | clean | 5768 | 5768 | - | L9 contradiction-bar-0.35: REFUSED (lite-hc3 deterministic, measured). Same as passes 18/38/78. Knob untouched. |
 | 159 | L2 | untell/languages.py | clean | 5768 | 5768 | - | L2 languages.py re-audit (3rd): 12/12 script ranges classify boundary letters correctly. Survivors unchanged (Protocol default, label fallback, <= boundary verified correct). |
+| 160 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: refusal fires, tree clean. Sound at pass 160. |
