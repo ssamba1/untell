@@ -66,8 +66,32 @@ def _quiet(caplog):
     caplog.set_level(logging.CRITICAL)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(autouse=True)
+def stdlib_lite(monkeypatch):
+    """Pin the lite tier to its pure-Python scorer.
+
+    These documents are flagged by the stdlib lite heuristic (max ~0.49) but scored ~0.10 by the
+    GPT-2 perplexity path the lite tier auto-upgrades to when torch is importable — so the loop
+    declined to rewrite them and every assertion about a changed document became vacuous. Same
+    shape as the failure conftest.py documents: an ambient-environment dependence made the test
+    pass on one machine and fail on another. The measurement this file pins is about the reported
+    numbers describing the final text, which requires the loop to actually change something.
+    """
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")
+    from untell.scripts import score as score_mod
+
+    for name in ("score_text", "batch_score_texts"):
+        fn = getattr(score_mod, name, None)
+        if hasattr(fn, "cache_clear"):
+            fn.cache_clear()
+
+
+@pytest.fixture
 def runs() -> dict[str, tuple[str, dict]]:
+    """Function-scoped so the autouse `stdlib_lite` fixture (function scope) pins the stdlib
+    scorer BEFORE the loop runs. Module-scoped, it ran first — pytest sets up wider scopes before
+    narrower ones — and `untell_text` scored with the torch-backed lite path while every test
+    compared against the stdlib score, a mismatch that surfaced as pre.max 0.0451 vs 0.338."""
     return {name: (text, untell_text(text, **KWARGS)) for name, text in
             (("plain", PLAIN), ("dense", DENSE))}
 

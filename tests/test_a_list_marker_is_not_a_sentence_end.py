@@ -30,7 +30,6 @@ what changed and `restore` is what these call.
 from __future__ import annotations
 
 import glob
-import io
 
 import pytest
 
@@ -90,7 +89,7 @@ def test_every_document_in_the_repo_survives_a_round_trip():
     failures = []
     for path in sorted(glob.glob("docs/*.md")) + sorted(glob.glob("*.md")):
         try:
-            text = io.open(path, encoding="utf-8").read()
+            text = open(path, encoding="utf-8").read()
         except OSError:
             continue
         masked, mapping = lock(text)

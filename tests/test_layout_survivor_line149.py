@@ -8,8 +8,7 @@ The distinction matters for any document starting with ---:
   index <= front_matter_end: line is front matter (layout)
   index <  front_matter_end: with front_matter_end=0, line 0 would NOT be front matter
 """
-import pytest
-from untell.layout import _segments, _prose_line_mask
+from untell.layout import _prose_line_mask, _segments
 
 
 class TestFrontMatterBoundary:
@@ -37,5 +36,5 @@ class TestFrontMatterBoundary:
             "This means front matter lines were misclassified as prose."
         )
         # The blank line after --- should be layout
-        assert mask[0] == False, "first line (---) must be layout"
-        assert mask[1] == False, "second line (---) must be layout"
+        assert not mask[0], "first line (---) must be layout"
+        assert not mask[1], "second line (---) must be layout"

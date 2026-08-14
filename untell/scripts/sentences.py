@@ -268,6 +268,17 @@ def _warning_for(text: str, tier: str, results: list, rows: list[dict]) -> str |
             "tell catalogue are English-only, so these per-sentence scores are not verdicts about "
             "these sentences — no tier changes that, and the rewriter returns such text unchanged."
         )
+    # A document with no letters has no prose for the per-sentence scores to be about. `score_tells`
+    # draws the same line ("the text contains no letters at all, so there is no prose to read") and
+    # `score_text` abstains on the same grounds, and a German paragraph reaching the branch above
+    # while `;;;` fell through to a bare tier note would be the fourth surface repeating the
+    # wrong-reason failure this function exists to prevent. MEASURED: `;;; ;;; --- ...` scored one
+    # sentence at 0.0000 and returned no warning at all — a verdict-shaped list with nothing attached.
+    if text.strip() and not any(ch.isalpha() for ch in text):
+        return (
+            "this text contains no letters at all, so there is no prose to read — the per-sentence "
+            "scores are placeholders, not verdicts"
+        )
     # From the results that were actually produced, not from what was predicted before they were.
     # `results` is non-empty whenever `sents` is.
     if _targeting_is_uninformative(tier, (results[0].get("detector_modes") if results else None)):
