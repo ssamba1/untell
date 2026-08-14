@@ -117,3 +117,8 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, help="file of YOUR writing (120+ words` |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ensure_ascii=True, indent=2))` |
+| untell/scripts/verify.py | 139 | constant: False -> True | `results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"` |
+| untell/scripts/verify.py | 172 | constant: 4 -> 5 | `"ai": round(ai, 4),` |
+| untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
+| untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` |
