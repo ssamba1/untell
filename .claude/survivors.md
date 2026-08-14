@@ -193,3 +193,5 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rich_output.py | 312 | UNKILLABLE: table header flag, style-only constant: True -> False | `table = _Table(show_header=True, header_style="bold")` |
 | untell/rich_output.py | 316 | UNKILLABLE: count style, ANSI codes dropped in captured output constant: 3 -> 4 | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` |
 | untell/rich_output.py | 316 | boundary: >= -> > | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` |
+| untell/browser_check.py | 131 | KILLED by test_browser_check_mutation_guards (24-gap boundary) constant: 24 -> 25 | `if _gap(lstart, lend, nearest.start(), nearest.end()) <= 24:` |
+| untell/browser_check.py | 324 | UNKILLABLE: Playwright timeout constant needs live browser constant: 1000 -> 1001 | `page.wait_for_selector(sel, timeout=per_result * 1000)` |
