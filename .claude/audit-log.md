@@ -288,3 +288,4 @@ permanently.
 | 272 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No regressions. |
 | 273 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (6th): pass-161 verified 5/5 inverted pairs vetoed. Gate sound. |
 | 274 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (6th): largest probe yet - 20 inversion pairs + 20 paraphrase pairs through meaning_preserved with NLI live. 20/20 inversions vetoed, 20/20 paraphrases admitted. Bare-similarity probe (probe_t03.py) fails 19/20 as DOCUMENTED (sim is negation-blind; the gate is meaning_preserved) - no defect. |
+| 275 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README claims verified across 12 passes. No new drift. |
