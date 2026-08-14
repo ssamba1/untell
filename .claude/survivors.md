@@ -148,3 +148,14 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/latex.py | 102 | KILLED by test_latex_mutation_guards (3-pass unwrap bound) constant: 3 -> 4 | `for _ in range(3):  # nested \textbf{\emph{x}} needs more than one pass` |
 | untell/scripts/latex.py | 194 | KILLED by test_latex_mutation_guards (missing --bib rc=2) constant: 2 -> 3 | `return 2` |
 | untell/scripts/latex.py | 206 | KILLED by test_latex_mutation_guards (missing --against rc=2) constant: 2 -> 3 | `return 2` |
+| untell/scripts/score.py | 338 | KILLED by test_score_mutation_guards (scoring-set equality) logic: != -> == | `if scoring != {"perplexity_burstiness"}:` |
+| untell/scripts/score.py | 664 | UNKILLABLE: gpt2-mode short-circuit needs live torch runtime logic: or -> and | `if (modes or {}).get("perplexity_burstiness") == "gpt2":` |
+| untell/scripts/score.py | 677 | KILLED by test_score_mutation_guards (2-sentence boundary) constant: 2 -> 3 | `if len([s for s in split_sentences(text) if s.strip()]) >= 2:` |
+| untell/scripts/score.py | 751 | UNKILLABLE: per-detector round(...,4) at line 739 dominates max; 4dp vs 5dp invisible constant: 4 -> 5 | `"max": round(mx, 4),` |
+| untell/scripts/score.py | 762 | KILLED by test_score_mutation_guards (exact-threshold flag) boundary: >= -> > | `result["flagged"] = bool(numeric) and mx >= verdict_threshold` |
+| untell/scripts/score.py | 1129 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in scores` |
+| untell/scripts/score.py | 1129 | membership: not in -> in | `and d.name not in scores` |
+| untell/scripts/score.py | 1130 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in _OPT_IN_DETECTORS` |
+| untell/scripts/score.py | 1131 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and not d.available()` |
+| untell/scripts/score.py | 1203 | UNKILLABLE: lone-note boundary needs specific block structure boundary: < -> <= | `if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:` |
+| untell/scripts/score.py | 1313 | KILLED by test_score_mutation_guards (unscored rc=2) constant: 2 -> 3 | `return 2 if result.get("scored") is False else 0` |
