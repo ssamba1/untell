@@ -785,3 +785,4 @@ permanently.
 | 703 | L3 | L3 | clean | 5775 | 5775 | - | L3: no new slow tests. Slow-marked set stable (14). My 4 CLI-encoding killing tests run 10.37s combined. Calibration occupies box; full durations deferred. |
 | 704 | L1 | T14 | clean | 5781 | 5781 | - | T14 re-audit (9th): pass-509 verified 5/5 neutral transforms. No change. |
 | 705 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
+| 706 | L1 | T17 | clean | 5775 | 5775 | - | T17 re-audit (9th): clamp01(NaN)=nan, full-tier max=0.9999, no neutral 0.5, NaN never surfaced. Pass-57 fix holds. |
