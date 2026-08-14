@@ -731,3 +731,4 @@ permanently.
 | 649 | L4 | L4 | clean | 5781 | 5781 | - | L4 local_policy.py re-verified (pass 268): 2/2 patterns alive. |
 | 650 | L1 | T15 | clean | 5781 | 5781 | - | T15 re-audit (8th): pass-443 verified 20/20 numbers clean. No change. |
 | 651 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (8th): 33/33 environments live. No dead patterns. |
+| 652 | L2 | untell/scripts/scrub.py | clean | 5774 | 5774 | - | L2 scrub.py re-audit (10th): baseline green (174), 4/4 killed, 0 survivors (58/109/121/124). 119 not drawn but its killing test verified at 495. Module clean 2nd consecutive run. |
