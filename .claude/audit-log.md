@@ -414,3 +414,4 @@ permanently.
 | 370 | L1 | T19 | clean | 5768 | 5768 | - | T19 re-audit (6th): ledger 25 rows, no partial lite-hc3-ensemble row (correctly refused). Aggregates consistent. |
 | 371 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (6th): kill tests green (8). Nearly fully pinned. |
 | 372 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
+| 373 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (6th): 4/4 spot-check patterns alive. No dead patterns. |
