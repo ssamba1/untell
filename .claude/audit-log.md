@@ -412,3 +412,5 @@ permanently.
 | 368 | L4 | surface parity | clean | 5795 | 5795 | 626af4a | L4 cross-surface parity (2nd, live): same text scored via library vs CLI subprocess -> identical max (0.6485), identical flagged, identical detector key set. The historical REST/MCP drift (documented) is fixed; CLI and library agree exactly. |
 | 369 | L8 | lite-hc3-ensemble | clean | 5768 | 5768 | - | L8 lite-hc3-ensemble: REFUSED by harness — exceeded 180-min kill ceiling (n=10 ensemble sweep heavier than 90-min estimate). No partial row. AMBER queued; budget sizing issue, not a code defect. |
 | 370 | L1 | T19 | clean | 5768 | 5768 | - | T19 re-audit (6th): ledger 25 rows, no partial lite-hc3-ensemble row (correctly refused). Aggregates consistent. |
+| 371 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (6th): kill tests green (8). Nearly fully pinned. |
+| 372 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
