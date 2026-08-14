@@ -49,3 +49,23 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | English-only test corpus: AND->OR has no effect |
 | untell/scripts/sentences.py | 327 | constant: 2 -> 3 | `print(json.dumps(..., indent=2))` | JSON indent: test doesn't check formatting |
 | untell/scripts/sentences.py | 345 | constant: 2 -> 3 | `return 2` | Tuning constant (rank or indent): test corpus doesn't exercise exact boundary |
+| untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` |
+| untell/scripts/quality.py | 78 | constant: True -> False | `_bs_model = BERTScorer(lang="en", rescale_with_baseline=True)` |
+| untell/scripts/quality.py | 145 | constant: 2 -> 3 | `if sum(ca.values()) < 2 or sum(cb.values()) < 2:` |
+| untell/scripts/quality.py | 145 | boundary: < -> <= | `if sum(ca.values()) < 2 or sum(cb.values()) < 2:` |
+| untell/scripts/quality.py | 147 | logic: and -> or | `if not ca and not cb:` |
+| untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` |
+| untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` |
+| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` |
+| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` |
+| untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 (e.g. Windows cp1252)` |
+| untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` | Lazy-load guard: only differs on first call, tests never hit the sentinel state |
+| untell/scripts/quality.py | 78 | constant: True -> False | `_bs_model = BERTScorer(lang="en", rescale_with_baseline=True)` | Assignment arg: rescale_with_baseline only affects BERTScore which is NOT the gate (documented line 196-212) |
+| untell/scripts/quality.py | 145 | constant: 2 -> 3 | `if sum(ca.values()) < 2 or sum(cb.values()) < 2:` | KILLED by test_quality_two_word_boundary.py (word-Dice vs char-bigram divergence at exactly 2 tokens) |
+| untell/scripts/quality.py | 145 | boundary: < -> <= | same | Same test kills the boundary mutation too |
+| untell/scripts/quality.py | 147 | logic: and -> or | `if not ca and not cb:` | Empty-both path: only reachable when both sides tokenize to nothing, test corpus always has tokens |
+| untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` | One-empty path: char-bigram fallback only fires for scriptio-continua scripts (CJK) — English test corpus never hits |
+| untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` | normalize_embeddings: cosine of normalized vs raw embeddings differs in practice but tests use tolerant thresholds |
+| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | Exact-equality float case: sim == bar is measure-zero with real embeddings, unreachable |
+| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | Same: exact boundary unreachable |
+| untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding |
