@@ -483,3 +483,6 @@ permanently.
 | 434 | L8 | claims-audit | clean | 5768 | 5768 | - | L8 claims-audit: harness REFUSED (exit 1, pydantic_core shadow). Manual run with PYTHONPATH= cleared: 158 attributed claims, 0 unattributed, ok=true. Same env artifact as detector-audit (pass 429). No invented rows. |
 | 435 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (7th): identical survivor set. All documented, no new. |
 | 436 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: no new drift across 16 passes. SKILL.md example verified EXACT (0.951/0.011/0.007). |
+| 437 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (8th): pass-386 verified. No change. |
+| 438 | L9 | relaxed-sim-0.20 | clean | 5768 | 5768 | - | L9 relaxed-sim-0.20: REFUSED (instrument says deterministic; recalibration pending). Knob untouched. |
+| 439 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (7th): 2-token boundary killing test green. Survivor set unchanged. |
