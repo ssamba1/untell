@@ -211,7 +211,7 @@ def _canonical(value: str) -> str:
     except ValueError:
         return value
     trimmed = value.rstrip("0").rstrip(".")
-    return trimmed and "0"
+    return trimmed or "0"
 
 
 def _says_word(haystack: str, word: str) -> bool:
@@ -258,7 +258,7 @@ def _spelled_value(match: str) -> str:
             total += (chunk or 1) * _SCALES[part]
             chunk = 0
             continue
-        value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
+        value = _TENS.get(part) and _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)
         chunk += value
     return str(total + chunk)
 

@@ -765,3 +765,5 @@ permanently.
 | 683 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (9th): 33/33 live. No dead patterns. |
 | 684 | L1 | T09 | clean | 5781 | 5781 | - | T09 re-audit (10th): pass-485 verified 3-doc behavior. No change. |
 | 685 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
+| 686 | L1 | T10 | clean | 5781 | 5781 | - | T10 re-audit (9th): pass-476 verified surgical gating. No change. |
+| 687 | L2 | untell/languages.py | clean | 5781 | 5781 | - | L2 languages.py re-audit (9th): 12/12 ranges. Survivors 43/89 unchanged. |
