@@ -286,3 +286,5 @@ permanently.
 | 270 | L1 | T02 | clean | 5768 | 5768 | - | T02 re-audit (6th): 12/12 carriers counted+scrubbed. No regression. |
 | 271 | L2 | untell/config.py | clean | 5768 | 5768 | - | L2 config.py re-audit (5th): 5/5 killed, zero survivors (verified pass 163/215). Fully pinned. |
 | 272 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No regressions. |
+| 273 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (6th): pass-161 verified 5/5 inverted pairs vetoed. Gate sound. |
+| 274 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (6th): largest probe yet - 20 inversion pairs + 20 paraphrase pairs through meaning_preserved with NLI live. 20/20 inversions vetoed, 20/20 paraphrases admitted. Bare-similarity probe (probe_t03.py) fails 19/20 as DOCUMENTED (sim is negation-blind; the gate is meaning_preserved) - no defect. |
