@@ -13,7 +13,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/text_split.py | 58 | constant: False -> True | `return False` | Unreachable: line 57 already returns when conditions match; this line only reached when line 57 passes AND later checks fail |
 | untell/text_split.py | 74 | logic: and -> or | `return all(p.isdigit() for p in parts) and tail == fragment.strip()` | Digit-only abbreviations like "1." rarely in test corpus; AND->OR changes behavior only for digit cases |
 | untell/text_split.py | 74 | logic: == -> != | same | Same as above |
-| untell/text_split.py | 95 | logic: and -> or | `return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()` | Ellipsis continuation: AND->OR makes it more permissive; test corpus doesn't cover ellipsis-after-lowercase cases |
+| untell/text_split.py | 95 | logic: and -> or | `return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()` | KILLED by tests/test_lowercase_continuation_without_ellipsis_does_not_merge.py: 'Hello world. next thing' merges to ONE sentence under the mutant (False or True), splitting correctly as two under the original. Prior note ('corpus doesn't cover ellipsis-after-lowercase') wrong — the distinguishing input has NO ellipsis. |
 | untell/text_split.py | 122 | constant: 90 -> 91 | `CHUNK_WORDS = 90` | Tuning constant: 90 vs 91 words per chunk is imperceptible to test corpus |
 | untell/text_split.py | 143 | boundary: < -> <= | `if k == 1 or len(aw) < 2 or len(bw) < 2:` | Very short texts rare in test corpus; boundary shift doesn't affect tested cases |
 | untell/text_split.py | 143 | logic: or -> and | same | Same as above |
