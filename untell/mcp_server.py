@@ -60,6 +60,16 @@ def _bad_args(**checks) -> dict | None:
             # dict like every other out-of-range answer — a traceback is what this function
             # exists to prevent. MEASURED before: _bad_args(threshold=("abc", "probability"))
             # raised ValueError instead of refusing.
+            #
+            # `None` is a MEANING for top/seed (the documented "use the default" for an
+            # optional int), not an out-of-range number, so it skips the conversion entirely
+            # and falls through to the range checks below, which already exempt it
+            # (`value is not None`). Converting it would raise TypeError and reject the
+            # default — the sentences tool answers {"error": "top=None is not a number"}
+            # to an ordinary call that omits top. MEASURED: _bad_args(top=(None, "top"))
+            # rejected the default until the conversion was skipped.
+            if value is None:
+                continue
             try:
                 if kind == "probability":
                     float(value)
