@@ -122,3 +122,12 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
 | untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` |
 | untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/preserve.py | 626 | constant: False -> True | `_WARNED_NO_NER = False` |
+| untell/scripts/preserve.py | 638 | constant: True -> False | `_WARNED_NO_NER = True` |
+| untell/scripts/preserve.py | 702 | boundary: <= -> < | `if start <= last_end:  # overlap or touch` |
+| untell/scripts/preserve.py | 770 | logic: and -> or | `if not (span and _PLAIN_LOWERCASE_WORD.match(span)):` |
+| untell/scripts/preserve.py | 788 | constant: 3 -> 4 | `return m.group(3)` |
+| untell/scripts/preserve.py | 838 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/preserve.py | 861 | constant: 2 -> 3 | `print(json.dumps({"masked": masked, "mapping": mapping}, ensure_ascii=True, inde` |
+| untell/scripts/sentences.py | 338 | constant: True -> False | `print(json.dumps(result, ensure_ascii=True, indent=2))` |
+| untell/scripts/sentences.py | 356 | constant: 2 -> 3 | `return 2` |

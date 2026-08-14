@@ -143,3 +143,9 @@ permanently.
 | 127 | L2 | untell/text_split.py | clean | 5768 | 5768 | - | L2 text_split.py re-audit (3rd): identical 15-survivor set as passes 7/83 (CHUNK_WORDS, autojunk, abbreviation thresholds, dead branches). No change, all documented. |
 | 128 | L4 | untell/detectors/base.py | clean | 5768 | 5768 | - | L4 base.py: 4/4 patterns alive (_HORIZONTAL_RUN, _TRAILING_HORIZONTAL, _SPACE_BEFORE_PUNCT, _UNICODE_LINEBREAK). _TRAILING_HORIZONTAL requires trailing spaces BEFORE newline (lookahead) — my first probe omitted the newline; with it the pattern matches and line 135 strips correctly. No dead patterns post-NaN-fix. |
 | 129 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (3rd): 0 fragments across structural output. Fleet's negated-contrast flatten still works ('It is not X, it is Y' -> 'It's Y'). Grammar clean. |
+| 130 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit: 14/14 paragraphs rewritten, last change at final index 13. Tail-reachability holds, unchanged from pass 30. |
+| 131 | L2 | untell/scripts/preserve.py | clean | 5768 | 5768 | - | L2 preserve.py re-audit (3rd): identical 8-survivor set (126 sort key, 626/638 NER flags, 702 boundary, 770 guard, 788 index, 838/861 tuning). All documented, no new. |
+| 132 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, all 3 CLIs launch. No regressions after the numerals/layout fixes. |
+| 133 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (3rd): 4/4 display-math tests pass. Fix holds across all merges. |
+| 134 | L2 | untell/scripts/sentences.py | clean | 5768 | 5768 | - | L2 sentences.py re-audit (3rd): same survivor set as passes 19/91 (164 early return, 165 spread bar, 209 neg index, 216 sort dir, 338/356 indent+exit). All documented, no new. |
+| 135 | L2 | untell/scripts/hedges.py | clean | 5768 | 5768 | - | L2 hedges.py re-audit (3rd): same 2 survivors (148 sort key, 328 CLI print). 8/10 killed. No new. |
