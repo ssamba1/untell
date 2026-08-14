@@ -779,3 +779,4 @@ permanently.
 | 697 | L2 | untell/_env.py | clean | 5775 | 5775 | - | L2 _env.py re-audit (9th): baseline green, 6/6 killed, 0 survivors. Fully pinned (4th consecutive clean run). |
 | 698 | L7 | L7 | clean | 5775 | 5775 | - | L7 harness: shrink refusal fires (100->99 REFUSED), tree clean. Sound at pass 700. |
 | 699 | L1 | T13 | clean | 5775 | 5775 | - | T13 re-audit (10th): 4/4 display-math tests pass (0.38s). Fix holds (consistent 357/386/480/590). |
+| 700 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 700. |
