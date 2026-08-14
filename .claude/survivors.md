@@ -98,3 +98,15 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/languages.py | 43 | constant: False -> True | `def __call__(self, text, *, include_matches: bool = False)` | Protocol method default: test corpus always calls with explicit include_matches or default False |
 | untell/languages.py | 89 | logic: or -> and | `code=code, label=label or code, scorer=scorer, script=script` | Label fallback: tests always pass a label, so label or code == label either way |
 | untell/languages.py | 111 | boundary: <= -> < | `if low <= point <= high:` | Boundary verified by L4-style probe: 12/12 script ranges classify first+last actual letters (U+4E00->Han, U+D7A3->Hangul, U+3041->Hiragana, etc). <= is required for inclusive ranges |
+| untell/_retry.py | 103 | constant: True -> False | `return True` |
+| untell/_retry.py | 119 | constant: 3 -> 4 | `max_attempts: int = 3,` |
+| untell/_retry.py | 35 | constant: 408 -> 409 | `_RETRYABLE_HTTP = frozenset({408, 429, 500, 502, 503, 504, 529})` | Set membership: test corpus doesn't exercise an HTTP 408 response; 429/500/503/504 covered |
+| untell/_retry.py | 103 | constant: True -> False | `if name in _RETRYABLE_ERRS: return True` | KILLED by test_retry_class_name_alone.py (RateLimitError with no retry keyword in msg) |
+| untell/_retry.py | 119 | constant: 3 -> 4 | `max_attempts: int = 3,` | Default retry count: tests pass explicit max_attempts or use the default which behaves identically for successful calls |
+| untell/_retry.py | 128 | boundary: < -> <= | `if max_attempts < 1:` | max_attempts=0 edge: caught by < 1 either way; =1 is valid and tests use it |
+| untell/_retry.py | 141 | constant: 2 -> 3 | `delay = min(base_delay * (2 ** (attempt - 1)) + _JITTER.random(), max_delay)` | Exponential backoff base: 2 vs 3 both valid strategies, tests only assert delay <= max_delay |
+| untell/_env.py | 84 | logic: or -> and | `if not line or line.startswith("#") or "=" not in line:` |
+| untell/_env.py | 100 | logic: and -> or | `if key and key not in os.environ:  # real env wins` |
+| untell/_env.py | 103 | constant: False -> True | `return False` |
+| untell/_env.py | 100 | logic: and -> or | `if key and key not in os.environ:  # real env wins` | KILLED by test_env_real_env_wins.py (real env var must not be overridden) |
+| untell/_env.py | 103 | constant: False -> True | `return False` (except path) | Defensive: except fires only on unreadable/corrupt .env; tests use readable files so the branch is never hit |
