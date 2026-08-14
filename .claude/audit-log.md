@@ -274,3 +274,5 @@ permanently.
 | 258 | L9 | relaxed-sim-0.20 | clean | 5768 | 5768 | - | L9 relaxed-sim-0.20: REFUSED (instrument still records lite-hc3 deterministic). NOTE: pass-257 run moved post_max -0.026 beyond band — determinism claim now contradicted by fresh data; instrument needs re-calibration before trusting the refusal. Knob untouched. |
 | 259 | L2 | untell/scripts/io_utils.py | clean | 5768 | 5768 | - | L2 io_utils.py re-audit (5th): decrypt-guard killing test green. Survivors unchanged. No new. |
 | 260 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 260. |
+| 261 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (5th): all no-result CLI paths exit 2 naming file. Fix holds. |
+| 262 | L1 | T19 | clean | 5768 | 5768 | - | T19 re-audit (5th): ledger now 17 rows incl. 3-row full-hc3 family + 2 length buckets + lite-builtin(5) + lite-hc3(4). All carry corpus+n, aggregates consistent. |
