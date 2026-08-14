@@ -174,3 +174,4 @@ permanently.
 | 158 | L9 | contradiction-bar-0.35 | clean | 5768 | 5768 | - | L9 contradiction-bar-0.35: REFUSED (lite-hc3 deterministic, measured). Same as passes 18/38/78. Knob untouched. |
 | 159 | L2 | untell/languages.py | clean | 5768 | 5768 | - | L2 languages.py re-audit (3rd): 12/12 script ranges classify boundary letters correctly. Survivors unchanged (Protocol default, label fallback, <= boundary verified correct). |
 | 160 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: refusal fires, tree clean. Sound at pass 160. |
+| 161 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (4th): 5/5 inverted pairs vetoed by meaning gate. Gate sound. |
