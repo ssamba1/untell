@@ -135,6 +135,9 @@ def verify(
                 results[d.name] = {"ai": None, "passes": False, "error": "no signal (empty/unavailable for this text)"}
                 continue
             ai = clamp01(float(raw))
+            if ai != ai:  # NaN: a broken detector must not read as a score (json.dumps would emit bare NaN)
+                results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"}
+                continue
             # Judged at the caller's `threshold`, NOT at `verdict_cut`. That cut is swept for the
             # local stdlib ensemble and published by `score_text` for it; a commercial detector
             # returns its own probability on its own scale, and borrowing a calibration derived

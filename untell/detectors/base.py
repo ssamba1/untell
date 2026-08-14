@@ -26,9 +26,18 @@ _TIER_RANK = {"lite": 0, "full": 1, "heavy": 2, "commercial": 3}
 
 
 def clamp01(x: float) -> float:
-    """Clamp a probability into [0, 1] (guards against numerical drift)."""
+    """Clamp a probability into [0, 1] (guards against numerical drift).
+
+    NaN passes through UNCHANGED rather than becoming a neutral 0.5. A NaN is a failure signal
+    — a broken model, an unreachable API, a malformed response — and the aggregation layer has
+    a guard built exactly for it (`_score_with_detectors` records ``<name>__error: detector
+    returned NaN`` and excludes the detector). Converting NaN to 0.5 here manufactures a
+    valid-looking score from a failure: the guard never fires, and a dead component reads as
+    "unsure" in every aggregate. MEASURED through the real pipeline: a detector returning
+    ``clamp01(nan)`` produced ``max=0.5, mean=0.5, flagged=True``.
+    """
     if x != x:  # NaN
-        return 0.5
+        return x
     return 0.0 if x < 0.0 else 1.0 if x > 1.0 else float(x)
 
 
@@ -235,7 +244,8 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
     if current:
         windows.append(" ".join(current))
 
-    scores = [s for s in (score_window(w) for w in windows if w.strip()) if s is not None]
+    scores = [s for s in (score_window(w) for w in windows if w.strip())
+              if s is not None and s == s]  # drop NaN windows: max() with a NaN is order-dependent
     return max(scores) if scores else None
 
 
