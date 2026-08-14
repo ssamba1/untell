@@ -775,3 +775,4 @@ permanently.
 | 693 | L1 | T12 | clean | 5781 | 5781 | - | T12 re-audit (10th): pass-488 verified tail reach. No change. |
 | 694 | L2 | untell/_retry.py | clean | 5781 | 5781 | - | L2 _retry.py re-audit (11th): kill tests green (8). |
 | 695 | L2 | untell/_retry.py | clean | 5775 | 5775 | - | L2 _retry.py re-audit (10th): baseline green, 7/8 killed. Sole survivor 128 (< vs <=) = DOCUMENTED equivalent mutation (both clamp to 1). State unchanged since 70. |
+| 696 | L9 | ppl-weight-0.40 | clean | 5775 | 5775 | - | L9 ppl-weight-0.40: REFUSED (lite-hc3 deterministic, deltas 0.0). Calibration running UNCONTENDED (101 min, run 1 of 2 nearly done) - when it lands this refusal expires. Knob untouched. |
