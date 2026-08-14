@@ -122,12 +122,19 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
 | untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` |
 | untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` |
-| untell/scripts/preserve.py | 626 | constant: False -> True | `_WARNED_NO_NER = False` |
-| untell/scripts/preserve.py | 638 | constant: True -> False | `_WARNED_NO_NER = True` |
-| untell/scripts/preserve.py | 702 | boundary: <= -> < | `if start <= last_end:  # overlap or touch` |
-| untell/scripts/preserve.py | 770 | logic: and -> or | `if not (span and _PLAIN_LOWERCASE_WORD.match(span)):` |
-| untell/scripts/preserve.py | 788 | constant: 3 -> 4 | `return m.group(3)` |
-| untell/scripts/preserve.py | 838 | constant: 2 -> 3 | `return 2` |
-| untell/scripts/preserve.py | 861 | constant: 2 -> 3 | `print(json.dumps({"masked": masked, "mapping": mapping}, ensure_ascii=True, inde` |
-| untell/scripts/sentences.py | 338 | constant: True -> False | `print(json.dumps(result, ensure_ascii=True, indent=2))` |
-| untell/scripts/sentences.py | 356 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/tells.py | 708 | boundary: < -> <= | `if len(words) < _MIN_WORDS_FOR_REPETITION:` |
+| untell/scripts/tells.py | 921 | constant: 2 -> 3 | `("diff_anchored", len(_DIFF_ANCHOR_RE.findall(body)), 2),` |
+| untell/scripts/tells.py | 945 | constant: 4 -> 5 | `return round((var**0.5) / mean, 4)` |
+| untell/scripts/tells.py | 1017 | DOCSTRING-PROSE (not code; mutator rewrote a docstring sentence) identity: is not -> is | ``_language_supported` below is SCRIPT-based, so Chinese is caught and German is ` |
+| untell/scripts/tells.py | 1029 | DOCSTRING-PROSE logic: or -> and | `scores 0.000 and Italian scores 0.125 — so any single bar either lets German thr` |
+| untell/scripts/tells.py | 1034 | DOCSTRING-PROSE logic: and -> or | `(headings, terse lists, code-heavy prose, a passage quoting German, one full of ` |
+| untell/scripts/tells.py | 1035 | DOCSTRING-PROSE constant: 6 -> 7 | `German proper nouns) and 6 non-English:` |
+| untell/scripts/tells.py | 1044 | DOCSTRING-PROSE identity: is not -> is | `work: the proper-noun sample scores 0.130 on other-language words and is not fla` |
+| untell/scripts/tells.py | 1079 | DOCSTRING-PROSE constant: False -> True | `japanese  language_supported=False   tells_per_100w=0.00` |
+| untell/scripts/tells.py | 1083 | DOCSTRING-PROSE logic: and -> or | `misleading zero, and Latin-script non-English is far the commoner case of the tw` |
+| untell/scripts/tells.py | 1187 | boundary: > -> >= | `if any(start < c_end and end > c_start for c_start, c_end in claimed):` |
+| untell/scripts/tells.py | 1187 | boundary: < -> <= | `if any(start < c_end and end > c_start for c_start, c_end in claimed):` |
+| untell/scripts/entailment.py | 69 | KILLED by test_entailment_mutation_guards (dead-flag guard) constant: False -> True | `return False` |
+| untell/scripts/entailment.py | 500 | UNKILLABLE: allowance is 10 + 10% of words (fractional); words_lost is int; > vs >= equality unreachable boundary: > -> >= | `if words_lost(source, candidate) > deletion_allowance(source):` |
+| untell/scripts/entailment.py | 511 | UNKILLABLE: contradiction scores are live model calls; exact 0.5 bar is a model artifact boundary: < -> <= | `if not (sim >= relaxed_sim_bar and con < contradiction_bar and ent >= entailment` |
+| untell/scripts/entailment.py | 560 | KILLED by test_entailment_mutation_guards (CLI 4dp precision) constant: 4 -> 5 | `print(_json.dumps({"available": True, "contradiction": round(con, 4),` |
