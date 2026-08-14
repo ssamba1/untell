@@ -288,3 +288,16 @@ NEXT   Re-run lite-hc3 calibration (settles pass-258 determinism contradiction) 
        lite-hc3-ensemble only when no other heavy recipe is running. Watch
        Get-Process python* CPU totals before launching; ~40min and ~90min solo
        budgets respectively.
+
+## 2026-08-13 pass 429 AMBER — detector-audit recipe fails under Hermes-venv shadow; runs clean with PYTHONPATH=
+
+WHAT   `research.py run detector-audit` exited 1 and refused to record: the transformers
+       load path (fast_detectgpt) dies on pydantic_core._pydantic_core missing — the
+       known Hermes-desktop-venv shadow artifact (memory note). Same class as the
+       FastAPI/API-test failures. With PYTHONPATH= cleared the same command completes:
+       20 HC3 pairs, layout_shortcut=1.0, mage listed in `broken` (documented
+       saturation), roberta_openai AUROC 0.9283 TPR 1.0 FPR 0.567, radar/local_judge/
+       binoculars UNAVAILABLE (heavy/opt-in, not installed).
+NEXT   If detector-audit is needed in a cron/recipe context, run it with PYTHONPATH=
+       cleared. Numbers above are from the manual run (not appended to measurements
+       because the harness refused — correct behavior, no invented rows).
