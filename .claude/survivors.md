@@ -30,7 +30,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/preserve.py | 759 | logic: and -> or | `if not (span and _PLAIN_LOWERCASE_WORD.match(span)):` | Capitalisation guard: AND->OR makes it less restrictive. Test corpus doesn't have the specific case that would expose this |
 | untell/scripts/preserve.py | 777 | constant: 3 -> 4 | `return m.group(3)` | m.group(3) is always defined when this line is reached (regex has 3 groups); changing to 4 would be IndexError. Dead branch on valid inputs |
 | untell/scripts/preserve.py | 827 | constant: 2 -> 3 | `return 2` | Tuning constant (max leading spaces to strip); 2 vs 3 is imperceptible |
-| untell/scripts/preserve.py | 889 | constant: True -> False | `print(json.dumps({"masked": masked, "mapping": mapping}, ensure_ascii=True, indent=2))` | KILLED by tests/test_preserve_cli_ascii_safe.py: dotted-identifier lock produces U+27E6 sentinels; --json output must encode('ascii') for cp1252 stdout. Mutant emits literal sentinels -> raises. Red on mutation (verified), green on original. 4th of the CLI-encoding class killed this session (after quality:302, scrub:119, sentences:338). |
+| untell/scripts/preserve.py | 850 | constant: 2 -> 3 | `json.dumps(..., indent=2)` | indent parameter: test doesn't check JSON formatting |
 | untell/scripts/numerals.py | 88 | constant: 10 -> 11 | `"ten": 10, "eleven": 11, "twelve": 12` | Dead code path: _TEENS dict correctly maps "ten" to 10; mutation to 11 would incorrectly map "ten" to 11. Test corpus doesn't use "ten" as a spelled-out number |
 | untell/scripts/numerals.py | 194 | logic: == -> != | `if part == "hundred":` | Defensive check: "hundred" is the only word handled specially in the loop. != would break all compound numbers like "two hundred" |
 | untell/scripts/numerals.py | 201 | logic: or -> and | `value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)` | Complex fallback: OR->AND would require word to be in all three dicts simultaneously, breaking all number parsing. Dead branch on valid inputs |
@@ -304,3 +304,17 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/radar.py | 66 | constant: True -> False | `RadarDetector._warned = True` | UNKILLABLE: _warned flag in except path
 | untell/detectors/radar.py | 73 | constant: True -> False | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` | UNKILLABLE: tokenizer max_length 512 (both)
 | untell/detectors/radar.py | 73 | constant: 512 -> 513 | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` |
+| untell/detectors/commercial.py | 78 | constant: 3 -> 4 | `return retry(_once, max_attempts=3)` | UNKILLABLE: retry count, needs live API call
+| untell/detectors/commercial.py | 86 | constant: False -> True | `return False` | UNKILLABLE: available() key-gated branch
+| untell/detectors/commercial.py | 98 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True (keys present)
+| untell/detectors/commercial.py | 121 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 127 | constant: False -> True | `{"text": text, "sentences": False, "language": "auto"},` | UNKILLABLE: API response structure, key-gated
+| untell/detectors/commercial.py | 144 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 186 | constant: False -> True | `{"key": os.environ["SAPLING_API_KEY"], "text": text, "sent_scores": False},` | UNKILLABLE: API request payload, key-gated
+| untell/detectors/commercial.py | 203 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 233 | boundary: < -> <= | `if _CL_TOKEN["token"] and time.time() < _CL_TOKEN["exp"]:` | UNKILLABLE (<= variant): exact-expiry instant is a race; KILLED (or variant) by test_commercial_mutation_guards
+| untell/detectors/commercial.py | 233 | logic: and -> or | `if _CL_TOKEN["token"] and time.time() < _CL_TOKEN["exp"]:` |
+| untell/detectors/commercial.py | 241 | constant: 40 -> 41 | `_CL_TOKEN["exp"] = time.time() + 40 * 3600  # token lives 48h; refresh well insi` | KILLED by test_commercial_mutation_guards (refresh window 40h)
+| untell/detectors/commercial.py | 249 | constant: False -> True | `def __init__(self, sandbox: bool = False):` | UNKILLABLE: sandbox default, key-gated
+| untell/detectors/commercial.py | 258 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 262 | constant: 20 -> 21 | `scan_id = "hz" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:20]` | UNKILLABLE: scan_id hash length, cosmetic
