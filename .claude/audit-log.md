@@ -667,3 +667,4 @@ permanently.
 | 585 | L3 | L3 | clean | 5780 | 5780 | - | L3: no new slow tests. New tests from this loop all <2s combined (10 in 49s incl. 3 subprocess-heavy). Slow-marked set stable. |
 | 586 | L1 | T12 | clean | 5780 | 5780 | - | T12 re-audit (8th): pass-433 verified. No change. |
 | 587 | L2 | untell/scripts/preserve.py | clean | 5780 | 5780 | - | L2 preserve.py re-audit (8th): NER common-word fix holds (2 tests green). Survivor set unchanged. |
+| 588 | L8 | full-hc3-max | clean | 5774 | 5774 | - | L8 full-hc3-max RE-RUN (2nd): pre/post flagged 1.0->1.0, pre_mean_max 1.0->0.9999. vs run 1: post_mean_max 0.976->1.000 (+0.024, NOISE within +/-0.068 band). CORRECTION to pass-172 AMBER: the 'first measurable beat of mage saturation (post 0.9758)' does NOT reproduce - run 2 is within noise of 1.0. Family stands: composite 1.0->1.0, max 1.0->0.9999, neural 1.0->0.9999, all flagged at 0.45. Nothing moved outside band - no queue entry needed. |
