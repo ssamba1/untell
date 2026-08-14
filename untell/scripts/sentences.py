@@ -206,7 +206,7 @@ def score_sentences(
     n = len(scored)
     if top is None:
         top = max(1, (n + 2) // 3)  # the worst ~third, at least one
-    elif top < 0:
+    elif top <= 0:
         # `order[:top]` with a negative `top` is a Python slice from the END, not a count: -1
         # flagged n-1 sentences (2 of 3, more than `--top 1`) and -5 flagged 0. The CLI refuses
         # this before it arrives, but this function is importable, so it refuses it too rather

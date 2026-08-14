@@ -321,3 +321,16 @@ RAN     pytest tests/test_a_magnitude_word_is_part_of_the_number.py tests/test_s
 SAW     27 passed, 2 xfailed. Suite 5769 -> 5770.
 WHY     AMBER (test rename + xfail scope change are human-owned per the guard).
 NEXT    None.
+
+## 2026-08-14 pass 531 L6 AMBER — README MCP tool list stale: 5 documented, 8 registered
+
+WHAT   README.md:149 says the MCP server "exposes score/sentences/untell/verify/scrub
+       as tools" (5 tools). Live registration (mcp_server._server().list_tools())
+       returns 8: ceiling, compare, score, scrub, sentences, tells, untell,
+       verify_commercial. Undocumented: ceiling, compare, tells; the documented
+       "verify" does not exist under that name (it is verify_commercial).
+WHY    AMBER — documentation understates the MCP surface. The README's phrase
+       "verify/scrub" names 2 of 8; a client that discovers tools will find 3 extra
+       (plus a renamed verify). Not a functional defect; doc drift.
+NEXT   L6 does not edit docs (established rule). Human: update README line 149 to
+       list the real 8-tool surface.
