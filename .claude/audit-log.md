@@ -476,3 +476,5 @@ permanently.
 | 427 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (8th): multi-scale regression green (5). Fix holds. |
 | 428 | L8 | tells-auroc | clean | 5768 | 5768 | - | L8 tells-auroc RE-RUN: AUROC 0.8875 on 40 HC3 pairs, margin over length baseline +0.176 (0.8875 vs 0.7119). gap 5.125 between human/AI tell means. Catalogue discriminates well above length; per-tell direction fix holds. |
 | 429 | L8 | detector-audit | clean | 5768 | 5768 | - | L8 detector-audit: harness REFUSED (exit 1, pydantic_core shadow). Manual re-run with PYTHONPATH= cleared succeeded: 20 HC3 pairs, layout_shortcut=1.0, mage broken (documented), roberta_openai AUROC 0.9283 TPR 1.0. AMBER queued; env artifact, not a code defect. |
+| 430 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (7th): pass-382 verified. No change. |
+| 431 | L2 | untell/scripts/hedges.py | clean | 5768 | 5768 | - | L2 hedges.py re-audit (7th): same 2 survivors. 8/10 killed. No new. |
