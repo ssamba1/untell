@@ -463,3 +463,7 @@ permanently.
 | 414 | L8 | lite-raid | clean | 5768 | 5768 | - | L8 lite-raid RE-RUN: pre 0.9 -> post 0.2 flagged, 0.4415 -> 0.2641 mean max, delta -0.005 within band. Strongest de-flag in the ledger (RAID corpus), stable across runs. Matches README: RAID is the corpus where mage does NOT saturate. |
 | 415 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit (6th): both killing tests green. 9/10 killed holds. |
 | 416 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: no new drift across 15 passes of README verification. |
+| 417 | L1 | T06 | clean | 5768 | 5768 | - | T06 re-audit (7th): pass-322 verified 0/226 tells. No change. |
+| 418 | L9 | quality-bar-0.82 | clean | 5768 | 5768 | - | L9 quality-bar-0.82: REFUSED (instrument says deterministic; recalibration pending per pass-258). Knob untouched. |
+| 419 | L2 | untell/layout.py | clean | 5768 | 5768 | - | L2 layout.py re-audit (8th): killing tests green. Mutations pinned. |
+| 420 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 420. |
