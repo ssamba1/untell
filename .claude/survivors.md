@@ -6,11 +6,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 
 | module | line | mutation | source | analysis |
 | --- | --- | --- | --- | --- |
-| untell/_retry.py | 35 | constant: 408 -> 409 | `_RETRYABLE_HTTP = frozenset({408, 429, 500, 502, 503, 504, 529})` | KILLED by test_a_bare_408_status_is_retryable (bare "HTTP 408" has no timeout phrase to fall back on). NOTE: the stale row claiming 408 is unlikely retryable predates the 408/529 fix that deliberately added both. |
-| untell/_retry.py | 103 | constant: True -> False | `if name in _RETRYABLE_ERRS: return True` | KILLED by test_an_sdk_exception_name_is_retryable (local RateLimitError class with no message signal) |
-| untell/_retry.py | 119 | constant: 3 -> 4 | `max_attempts: int = 3,` | KILLED by test_the_default_is_three_attempts (clears on 4th call; 3-attempt default raises) |
-| untell/_retry.py | 128 | boundary: < -> <= | `if max_attempts < 1: max_attempts = 1` | EQUIVALENT mutation: both forms clamp 0/1/negatives to 1 and keep larger values — no behavioral test can distinguish |
-| untell/_retry.py | 141 | constant: 2 -> 3 | `delay = min(base_delay * (2 ** (attempt - 1)) + _JITTER.random(), max_delay)` | KILLED by test_backoff_doubles_each_attempt (jitter fixed at 0, sleeps recorded as [1.0, 2.0, 4.0]) |
 | untell/text_split.py | 55 | constant: True -> False | `return True` | Abbreviations dict covers all cases in test corpus; dead branch when word IS in dict |
 | untell/text_split.py | 57 | constant: 3 -> 4 | `if not word or len(word.replace(".", "")) > 3 or any(len(p) > 1 for p in parts):` | Length threshold 3 vs 4: abbreviations with 4-char word stems are rare |
 | untell/text_split.py | 57 | logic: or -> and | same | Same as above — logic change doesn't affect the specific inputs tested |
@@ -100,15 +95,13 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/languages.py | 43 | constant: False -> True | `def __call__(self, text, *, include_matches: bool = False)` | Protocol method default: test corpus always calls with explicit include_matches or default False |
 | untell/languages.py | 89 | logic: or -> and | `code=code, label=label or code, scorer=scorer, script=script` | Label fallback: tests always pass a label, so label or code == label either way |
 | untell/languages.py | 111 | boundary: <= -> < | `if low <= point <= high:` | Boundary verified by L4-style probe: 12/12 script ranges classify first+last actual letters (U+4E00->Han, U+D7A3->Hangul, U+3041->Hiragana, etc). <= is required for inclusive ranges |
-| untell/_retry.py | 103 | constant: True -> False | `return True` |
-| untell/_retry.py | 119 | constant: 3 -> 4 | `max_attempts: int = 3,` |
-| untell/_retry.py | 35 | constant: 408 -> 409 | `_RETRYABLE_HTTP = frozenset({408, 429, 500, 502, 503, 504, 529})` | Set membership: test corpus doesn't exercise an HTTP 408 response; 429/500/503/504 covered |
-| untell/_retry.py | 103 | constant: True -> False | `if name in _RETRYABLE_ERRS: return True` | KILLED by test_retry_class_name_alone.py (RateLimitError with no retry keyword in msg) |
-| untell/_retry.py | 119 | constant: 3 -> 4 | `max_attempts: int = 3,` | Default retry count: tests pass explicit max_attempts or use the default which behaves identically for successful calls |
-| untell/_retry.py | 128 | boundary: < -> <= | `if max_attempts < 1:` | max_attempts=0 edge: caught by < 1 either way; =1 is valid and tests use it |
-| untell/_retry.py | 141 | constant: 2 -> 3 | `delay = min(base_delay * (2 ** (attempt - 1)) + _JITTER.random(), max_delay)` | Exponential backoff base: 2 vs 3 both valid strategies, tests only assert delay <= max_delay |
 | untell/_env.py | 84 | logic: or -> and | `if not line or line.startswith("#") or "=" not in line:` |
 | untell/_env.py | 100 | logic: and -> or | `if key and key not in os.environ:  # real env wins` |
 | untell/_env.py | 103 | constant: False -> True | `return False` |
 | untell/_env.py | 100 | logic: and -> or | `if key and key not in os.environ:  # real env wins` | KILLED by test_env_real_env_wins.py (real env var must not be overridden) |
 | untell/_env.py | 103 | constant: False -> True | `return False` (except path) | Defensive: except fires only on unreadable/corrupt .env; tests use readable files so the branch is never hit |
+| untell/_retry.py | 35 | constant: 408 -> 409 | `_RETRYABLE_HTTP = frozenset({408, 429, 500, 502, 503, 504, 529})` | KILLED by test_a_bare_408_status_is_retryable (bare "HTTP 408" has no timeout phrase to fall back on). NOTE: an earlier row calling this unkillable predated the 408/529 fix that deliberately added both; the stale "tuning/defensive" claims for 35/119/141 are superseded by the killing tests in test_retry_kill_survivors.py. |
+| untell/_retry.py | 103 | constant: True -> False | `if name in _RETRYABLE_ERRS: return True` | KILLED (two independent tests: test_an_sdk_exception_name_is_retryable... and the fleet's test_retry_class_name_alone.py) — local RateLimitError class with no message signal |
+| untell/_retry.py | 119 | constant: 3 -> 4 | `max_attempts: int = 3,` | KILLED by test_the_default_is_three_attempts (clears on 4th call; 3-attempt default raises) |
+| untell/_retry.py | 128 | boundary: < -> <= | `if max_attempts < 1: max_attempts = 1` | EQUIVALENT mutation: both forms clamp 0/1/negatives to 1 and keep larger values — no behavioral test can distinguish |
+| untell/_retry.py | 141 | constant: 2 -> 3 | `delay = min(base_delay * (2 ** (attempt - 1)) + _JITTER.random(), max_delay)` | KILLED by test_backoff_doubles_each_attempt (jitter fixed at 0, sleeps recorded as [1.0, 2.0, 4.0]) |
