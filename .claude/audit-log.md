@@ -685,3 +685,5 @@ permanently.
 | 603 | L2 | untell/languages.py | clean | 5780 | 5780 | - | L2 languages.py re-audit (8th): 12/12 ranges classify boundary letters. Survivors unchanged (43/89). |
 | 604 | L1 | T20 | clean | 5780 | 5780 | - | T20 re-audit (7th): pass-406 verified. No change. |
 | 605 | L3 | L3 | clean | 5780 | 5780 | - | L3: no new slow tests. Slow-marked set stable (14 files). full-hc3-max recipe running (2 workers) — durations deferred. |
+| 606 | L1 | T01 | clean | 5780 | 5780 | - | T01 re-audit (8th): 4/4 lock+roundtrip. No regression incl. NER fix. |
+| 607 | L2 | untell/config.py | clean | 5780 | 5780 | - | L2 config.py re-audit (7th): 5/5 killed, zero survivors (verified pass 455). Fully pinned. |
