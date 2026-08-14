@@ -113,7 +113,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` | KILLED by tests/test_sufficient_voice_sample_does_not_warn.py: sufficient (200-word) sample with _WARNED=False must NOT warn; mutant falls through and logs a false 'under 150 words' warning. Red on mutation, green on original. |
 | untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` |
 | untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` | KILLED by tests/test_sample_at_min_words_has_no_warning.py: exactly 150 words -> no warning under original; mutant fires a self-contradictory 'sample is 150 words; below 150...' warning. The boundary is the documented usable-signal point. Red on mutation, green on original. |
-| untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` |
+| untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | KILLED by tests/test_gap_at_boundary_is_not_a_match.py: gap exactly 0.25 -> original 'more varied rhythm (+0.25)', mutant 'matches' (hides a real between-author distance). Pure function. Red on mutation, green on original. |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, help="file of YOUR writing (120+ words` |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ensure_ascii=True, indent=2))` |
 | untell/scripts/verify.py | 139 | constant: False -> True | `results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"` |
