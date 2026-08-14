@@ -415,3 +415,4 @@ permanently.
 | 371 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (6th): kill tests green (8). Nearly fully pinned. |
 | 372 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
 | 373 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (6th): 4/4 spot-check patterns alive. No dead patterns. |
+| 369 | L4 | thread safety | clean | 5795 | 5795 | 450b75d | L4 concurrency (2nd): 4 threads x untell_text with different seeds — all valid, same seed byte-identical to sequential run (2/2 threaded matches), different seeds distinct. RNG isolation holds under contention. First probe's mismatch was doc-text closure bug, not a defect. |
