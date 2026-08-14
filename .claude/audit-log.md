@@ -603,3 +603,4 @@ permanently.
 | 538 | L9 | quality-bar-0.70 | clean | 5778 | 5778 | - | L9 quality-bar-0.70: REFUSED (deterministic; recalibration pending). Knob untouched. |
 | 539 | L2 | untell/scripts/hedges.py | clean | 5778 | 5778 | - | L2 hedges.py re-audit (8th): identical survivor set (148 sort key, 328 CLI print). 8/10 killed. No new. |
 | 540 | L7 | L7 | clean | 5778 | 5778 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 540. |
+| 524 | L4 | targeted rewriter | clean | 5798 | 5798 | 1d4ea69 | L4 targeted.py live (3rd): 3-sentence doc — flagged sentence rewritten ('Moreover' gone), clean sentence kept byte-identical, cliche sentence ('important to note') rewritten, no sentinel leak, (max,mean) selection key. Per-sentence targeting + single-sentence validation correct. |
