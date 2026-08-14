@@ -149,3 +149,6 @@ permanently.
 | 133 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (3rd): 4/4 display-math tests pass. Fix holds across all merges. |
 | 134 | L2 | untell/scripts/sentences.py | clean | 5768 | 5768 | - | L2 sentences.py re-audit (3rd): same survivor set as passes 19/91 (164 early return, 165 spread bar, 209 neg index, 216 sort dir, 338/356 indent+exit). All documented, no new. |
 | 135 | L2 | untell/scripts/hedges.py | clean | 5768 | 5768 | - | L2 hedges.py re-audit (3rd): same 2 survivors (148 sort key, 328 CLI print). 8/10 killed. No new. |
+| 136 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: looks_non_english verified live — German=True, French=True, English=False, Chinese=False (script-path). Documented German-injection fix (commit b3be984) works: the rewriter no longer welds English openers onto German/French. |
+| 137 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (3rd): all 5 neutral transforms keep verdict+tells unchanged. Prior NBSP fix holds. |
+| 138 | L9 | token-bar-0.40 | clean | 5768 | 5768 | - | L9 token-bar-0.40: REFUSED (lite-hc3 deterministic, measured). Same as passes 78/98/118. Knob untouched. |
