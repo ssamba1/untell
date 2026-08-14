@@ -497,3 +497,5 @@ permanently.
 | 448 | L4 | L4 | clean | 5768 | 5768 | - | L4 targeted.py: _SENT_SPLIT alive (splits on sentence boundaries). Other rewriter backends (composite/neural/surgical) have no compiled patterns. No dead patterns. |
 | 449 | L4 | L4 | clean | 5768 | 5768 | - | L4 structural.py re-verified (pass 228): 9/9 patterns alive. No dead patterns. |
 | 450 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (7th): 3/3 no-result paths exit 2. Fix holds. |
+| 451 | L2 | untell/scripts/io_utils.py | clean | 5768 | 5768 | - | L2 io_utils.py re-audit (6th): decrypt-guard killing test green. Survivors unchanged. |
+| 452 | L8 | compare-hc3 | clean | 5768 | 5768 | - | L8 compare-hc3 RE-RUN (2nd): raw AI baseline on 10 HC3 docs — ai_max 0.6362, tells 4.14/100w (87 total), flagged 1.0, sim 1.0. Second row of the cross-humanizer comparison; harness band +-0.020. |
