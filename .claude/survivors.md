@@ -343,3 +343,4 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/llm_judge.py | 90 | constant: 3 -> 4 | `max_attempts=3,` | UNKILLABLE: key/provider-dependent or API-payload constant
 | untell/detectors/llm_judge.py | 92 | logic: or -> and | `return resp.choices[0].message.content or ""` | UNKILLABLE: key/provider-dependent or API-payload constant
 | untell/detectors/llm_judge.py | 102 | boundary: >= -> > | `if val >= 2.0:  # answered as a percentage (e.g. "73"). Values in (1.0, 2.0) are` | KILLED by test_llm_judge_mutation_guards (exact-2.0 percent boundary - same class as local_judge:178)
+| untell/scripts/numerals.py | 376 | constant: True -> False | `print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))` |

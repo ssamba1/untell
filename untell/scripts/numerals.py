@@ -373,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     missing = missing_numbers(args[0], args[1])
-    print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=False))
+    print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))
     return 1 if missing else 0
 
 
