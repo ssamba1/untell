@@ -663,3 +663,5 @@ permanently.
 | 581 | L1 | T07 | clean | 5780 | 5780 | - | T07 re-audit (7th): 4/4 spot-check patterns alive. |
 | 582 | L1 | T09 | clean | 5780 | 5780 | - | T09 re-audit (7th): pass-424 verified. No change. |
 | 583 | L2 | untell/_env.py | clean | 5780 | 5780 | - | L2 _env.py re-audit (7th): both killing tests green. 9/10 killed holds. |
+| 584 | L1 | T11 | clean | 5780 | 5780 | - | T11 re-audit (7th): pass-430 verified 0 fragments. No change. |
+| 585 | L3 | L3 | clean | 5780 | 5780 | - | L3: no new slow tests. New tests from this loop all <2s combined (10 in 49s incl. 3 subprocess-heavy). Slow-marked set stable. |
