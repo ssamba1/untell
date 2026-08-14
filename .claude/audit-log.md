@@ -216,3 +216,6 @@ permanently.
 | 200 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified (5768->5767). Tree clean. Sound at pass 200. |
 | 201 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (4th): empty->exit 2, missing->exit 2 names file, whitespace->exit 2, valid->exit 0 JSON parses. Fix holds. |
 | 202 | L1 | T19 | clean | 5768 | 5768 | - | T19 re-audit (4th): ledger has 2 full-hc3 rows (composite 1.0->1.0, max 1.0->0.9758), all with n+corpus, 0 unscored. Aggregates consistent. |
+| 203 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (4th): 33/33 environments live (liveness probe). Mutate still blocked by CPU. No dead patterns. |
+| 204 | L1 | T20 | clean | 5768 | 5768 | - | T20 re-audit (4th): real-MCP round-trip tests pass (3). Real engine accepts what tests assert. |
+| 205 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests (all rotation tests <1s). Established real-model slow set unchanged. |
