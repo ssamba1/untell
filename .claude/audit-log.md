@@ -264,3 +264,6 @@ permanently.
 | 248 | L8 | lite-builtin | clean | 5768 | 5768 | - | L8 lite-builtin RE-RUN (5th): pre 1.0 -> post 0.0 flagged, pre 0.409 -> post 0.1259. Stable across 5 runs (post_max drift +0.010 within +-0.034 band). The lite builtin path fully de-flags — the one recipe immune to mage saturation. |
 | 249 | L1 | T15 | clean | 5768 | 5768 | - | T15 re-audit (5th): 20/20 figure-dense docs, 0 numbers dropped/invented/changed. Fleet's decimal fix + my multi-scale fix hold. |
 | 250 | L1 | T16 | clean | 5768 | 5768 | - | T16 re-audit (5th): no 500s, empty never AI, malformed 422. Real FastAPI surface. |
+| 251 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (5th): 2-token boundary killing test green. Survivor set unchanged. |
+| 252 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No regressions. |
+| 253 | L1 | T17 | clean | 5768 | 5768 | - | T17 re-audit (5th): NaN stays NaN, dead->None. Fix holds. |
