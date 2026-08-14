@@ -221,3 +221,20 @@ WHY    AMBER — family comparison now exists:
        mage from the default ensemble / weight the max / accept as documented.
 NEXT   Human decision (same as full-hc3-composite entry). Do not adopt from single runs —
        the tiers family (lite-hc3 vs full-hc3-composite) and a rewriters sweep exist for that.
+
+## 2026-08-13 pass 210 L8 AMBER — full-hc3-neural: complete rewriter family comparison
+
+WHAT   Third headline measurement (full tier, neural rewriter, 6 real HC3 docs, 3 repeats):
+       pre_flagged_rate 1.0 -> post_flagged_rate 1.0, pre_mean_max 1.0000 -> post_mean_max
+       0.9999. The neural (MT back-translate) rewriter is live but cannot beat the
+       mage-saturated max either.
+FAMILY (all full tier, n=6, 3 repeats, real HC3):
+         composite  1.0 -> 1.0      (zero movement)
+         max        1.0 -> 0.9758   (small movement — best-of-all-backends partially defeats saturation)
+         neural     1.0 -> 0.9999   (negligible movement)
+       All three stay flagged at the 0.45 verdict cut. The mage saturation wall is
+       confirmed from every direction: the default composite selector cannot improve the
+       score, best-of-all-backends barely can, MT cannot.
+NEXT   Same human decision as the other two entries: drop mage from the default ensemble /
+       change the (max,mean) selection key / accept as documented. Do not adopt from single
+       runs. This family is now COMPLETE — the L8 lane has its full comparison set.
