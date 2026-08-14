@@ -76,7 +76,9 @@ NEXT   Pick (a) or (b) above. (a) is one line in research.py: treat a non-zero e
 
 WHAT   `untell-audit` (the claims-audit recipe) fails exactly ONE of 40 checks: "every 'N test
        modules' claim matches tests/" — `docs/why-best-open-repo.md:154` says "325 modules",
-       tests/ actually has 333. Drift is 8, the audit's band is 5. The earlier queue entry about
+       tests/ actually has 334 (333 at the time of the original entry; worker me added
+       test_mcp_real_round_trip.py + test_spelled_decimals_and_big_scales.py). Drift is 9, the
+       audit's band is 5. The earlier queue entry about
        UNTELL_POLICY_WHOLE_DOC is already resolved (README line 800 documents it; the check
        passes). The test-count claim (6930) is within the 10% band on a clean run (6964 with
        UNTELL_LITE_NO_TORCH=1, 6980 without) — it only failed in an earlier run because the
@@ -84,11 +86,12 @@ WHAT   `untell-audit` (the claims-audit recipe) fails exactly ONE of 40 checks: 
        suite and collected 1735. The audit runs in ~7 min, not >30.
 RAN    python -m untell.scripts.audit --json   (twice; second run on an idle machine)
 SAW    ok: False, 40 checks, 1 fail: "docs/why-best-open-repo.md: says 325 test modules,
-       tests/ has 333 — stale by more than 5"
+       tests/ has 333 — stale by more than 5"  [now 334 in the merged tree]
 WHY    AMBER — the fix is updating a number in docs/why-best-open-repo.md, which the envelope
        marks RED (a published number in a human-owned file). The audit is correctly refusing.
-NEXT   Edit line 154: "325 modules" -> "333 modules". Optionally refresh the test count to
-       6964 (UNTELL_LITE_NO_TORCH=1) / 6980 (full). Then claims-audit records.
+NEXT   Edit line 154: "325 modules" -> "334 modules" (or the count at merge time — the
+       concurrent session's uncommitted tree already shows 339). Optionally refresh the test
+       count to 6964 (UNTELL_LITE_NO_TORCH=1) / 6980 (full). Then claims-audit records.
 
 ## 2026-08-13 me3 worker — L6 claim verified (pass 56)
 
