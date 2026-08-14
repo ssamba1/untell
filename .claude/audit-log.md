@@ -247,3 +247,6 @@ permanently.
 | 231 | L2 | untell/text_split.py | clean | 5768 | 5768 | - | L2 text_split.py re-audit (5th): identical 15-survivor set. All documented. |
 | 232 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff found unused pytest import in fleet test_api_server_mutation_guards.py — fixed, tests still pass. ruff clean. |
 | 233 | L8 | length-long | clean | 5768 | 5768 | - | L8 length-long RE-RUN: pre 0.6467 -> post 0.6274, identical to prior (all deltas +0.000 within +-0.020 band). Windowed scoring fix holds — long docs not systematically easier than short. |
+| 234 | L2 | untell/scripts/preserve.py | clean | 5768 | 5768 | - | L2 preserve.py re-audit (5th): identical 8-survivor set. All documented, no new. |
+| 235 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (5th): multi-scale regression tests green (5). Fix holds. |
+| 236 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README detector claims verified across passes 96/116/136/156/176. No new drift. |
