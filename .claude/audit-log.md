@@ -234,3 +234,8 @@ permanently.
 | 218 | L8 | human-false-positives | clean | 5768 | 5768 | - | L8 human-false-positives RE-RUN: pre_flag 0.0, pre_max 0.1589, identical to prior run (+0.000, within +-0.020 noise band). No movement — human text stays unflagged at shipped threshold as documented post-fix. |
 | 219 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (4th): fleet kill-survivors + my class-name test green (8 tests). Nearly fully pinned (only 128 equivalent remains). |
 | 220 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 220. |
+| 221 | L1 | T05 | clean | 5768 | 5768 | - | T05 re-audit (5th): pass-113 verified raw 50%/verdict-cut 20% on HC3. Consistent with README. No change. |
+| 222 | L1 | T06 | clean | 5768 | 5768 | - | T06 re-audit (5th): 0/226 replacements emit tells. Unchanged. |
+| 223 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit (4th): both killing tests green. 9/10 killed holds (only 103 defensive). |
+| 224 | L1 | T07 | clean | 5768 | 5768 | - | T07 re-audit (5th): pass-121 verified 7/7 patterns alive. No dead patterns. |
+| 225 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
