@@ -89,3 +89,39 @@ WHY    AMBER — the fix is updating a number in docs/why-best-open-repo.md, whi
        marks RED (a published number in a human-owned file). The audit is correctly refusing.
 NEXT   Edit line 154: "325 modules" -> "333 modules". Optionally refresh the test count to
        6964 (UNTELL_LITE_NO_TORCH=1) / 6980 (full). Then claims-audit records.
+
+## 2026-08-13 pass 56 re-audit AMBER — the pass-42 T16 record's premise is false
+
+WHAT   The T16 (API server) pass-42 record says "FastAPI surface itself untestable
+       (pydantic_core broken in env, tests skip)". That is an environment artifact, not a
+       repo property: a polluted PYTHONPATH (hermes desktop app injecting its own venv's
+       site-packages, whose pydantic_core is broken) was shadowing the project venv. With
+       `PYTHONPATH=` cleared, the FastAPI surface imports and tests fine.
+RAN    PYTHONPATH= .venv/Scripts/python.exe -m pytest tests/test_detector_errors_never_ride_inside_the_scores.py -k humanize_endpoint
+SAW    1 passed (67s). Also probed /score with 8 hostile bodies (empty, missing field, wrong
+       type, whitespace, unicode-only, null byte, 1MB): no 500s; empty/whitespace ->
+       flagged=False, scored=False, warning; malformed -> 422. Invariant holds.
+WHY    AMBER: the record's reasoning is wrong, but its verdict (clean) is correct, so there
+       is no code defect to fix — yet the false premise would make a future pass skip T16
+       again. Anyone running the audit loop outside this desktop app should NOT see the
+       "untestable" failure the record describes.
+NEXT   Nothing to fix in code. If a future T16 pass reports pydantic_core errors, clear
+       PYTHONPATH (or run outside the Hermes desktop app) before treating it as a repo defect.
+
+## 2026-08-13 pass 58 L9 AMBER — lite-hc3 is deterministic; the L9 knob lane has no working instrument
+
+WHAT   Calibrated lite-hc3 (two identical runs): DETERMINISTIC, all deltas
+       +0.000000 (pre/post flagged rate, pre/post mean max), spread 0.0014. The
+       experiment lane now REFUSES lite-hc3 ("a knob that works and a knob that
+       does nothing look the same through it"). lite-builtin is also recorded
+       deterministic. Every L9 knob pass assigned through lite-hc3 (18, 38, 58)
+       would have measured through an instrument that cannot detect an effect.
+RAN    .venv/Scripts/python.exe .claude/research.py calibrate lite-hc3
+SAW    "lite-hc3 is DETERMINISTIC: identical output with nothing changed. Good for
+       liveness, useless for comparison"; experiment run quality-bar-0.70
+       --recipe lite-hc3 -> REFUSED with the deterministic message.
+WHY    AMBER: measurement data (instruments.json, measurements.jsonl) — committed,
+       but no knob value was adopted and no tuning constant changed.
+NEXT   Calibrate a recipe that moves (e.g. full-hc3-composite, ~90 min x2, or
+       lite-hc3-surgical) before trusting any future L9 knob reading. Until one is
+       calibrated, L9 passes will refuse — that is the harness working, not a bug.
