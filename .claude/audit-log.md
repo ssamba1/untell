@@ -492,3 +492,5 @@ permanently.
 | 443 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (8th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. |
 | 444 | L1 | T16 | clean | 5768 | 5768 | - | T16 re-audit (7th): pass-402 verified. No change. |
 | 445 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
+| 446 | L1 | T17 | clean | 5768 | 5768 | - | T17 re-audit (7th): pass-410 verified NaN/None behavior. No change. |
+| 447 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (7th): 33/33 environments live. No dead patterns. |
