@@ -781,3 +781,4 @@ permanently.
 | 699 | L1 | T13 | clean | 5775 | 5775 | - | T13 re-audit (10th): 4/4 display-math tests pass (0.38s). Fix holds (consistent 357/386/480/590). |
 | 700 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 700. |
 | 701 | L1 | T15 | clean | 5775 | 5775 | - | T15 re-audit (9th): 12/12 figure-dense docs, 0 numbers dropped/invented/changed. Consistent 249/346/393/442/512/598. |
+| 702 | L1 | T16 | clean | 5775 | 5775 | - | T16 re-audit (9th): fleet 571 bytes-InputTypeError fix VERIFIED - score_text and untell_text both raise clean TypeError 'text must be str, got bytes'. Hostile-body behavior unchanged (9 bodies, 0 server errors from 496). Fix holds. |
