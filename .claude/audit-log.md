@@ -399,3 +399,4 @@ permanently.
 | 357 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (6th): 4/4 display-math tests pass. Fix holds. |
 | 358 | L9 | ppl-weight-0.40 | clean | 5768 | 5768 | - | L9 ppl-weight-0.40: REFUSED (instrument says deterministic; re-calibration pending per pass-258 note). Knob untouched. |
 | 359 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (6th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. |
+| 362 | L4 | voice.py | clean | 5795 | 5795 | 9d25ce6 | L4 voice.py (5th): style_profile 6 features (sent_len/burst/comma/contractions/mean_word_len/first_person per 100w), rates comparable, voice_distance(self)=0.0 exactly, voice_gaps keys match profile, thin-sample warning fires under 150 words (documented AUROC 0.680 regime). Profile machinery correct. |
