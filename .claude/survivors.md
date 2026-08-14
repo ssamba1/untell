@@ -272,3 +272,10 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/audit.py | 1346 | logic: and -> or | `the three built-in demo paragraphs and 4.22 -> 3.81 on HC3. Worse, the document ` | UNKILLABLE: comment prose
 | untell/scripts/audit.py | 1474 | constant: 2 -> 3 | `indent=2,` | UNKILLABLE: JSON indent cosmetic (indent=2->3)
 | untell/scripts/audit.py | 1551 | logic: and -> or | `return 0 if (not report.failures and not report.unattributed) else 1` | KILLED by test_audit_mutation_guards (exit code with failures)
+| untell/detectors/binoculars.py | 38 | constant: False -> True | `return False` | UNKILLABLE: torch-import branch needs torch-less env
+| untell/detectors/binoculars.py | 43 | constant: False -> True | `return False` | UNKILLABLE: CUDA check needs a GPU-less machine
+| untell/detectors/binoculars.py | 67 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: available() gate needs no-CUDA env; empty-text caught by same guard
+| untell/detectors/binoculars.py | 83 | constant: True -> False | `enc = tok(text, return_tensors="pt", truncation=True, max_length=512).to(device)` | UNKILLABLE: tokenizer max_length 512 (both), model-dependent
+| untell/detectors/binoculars.py | 83 | constant: 512 -> 513 | `enc = tok(text, return_tensors="pt", truncation=True, max_length=512).to(device)` |
+| untell/detectors/binoculars.py | 85 | boundary: < -> <= | `if ids.shape[1] < 2:` | UNKILLABLE: ids.shape guard needs live tokenizer
+| untell/detectors/binoculars.py | 101 | constant: 8 -> 9 | `binoculars = float(log_ppl / (x_ppl + 1e-8))` | UNKILLABLE: epsilon 1e-8 in torch path
