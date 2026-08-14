@@ -258,3 +258,6 @@ permanently.
 | 242 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (5th): 14/14 paragraphs rewritten, last change at final index. Tail-reachability holds. |
 | 243 | L2 | untell/scripts/hedges.py | clean | 5768 | 5768 | - | L2 hedges.py re-audit (5th): same 2 survivors (148 sort key, 328 CLI print). 8/10 killed. No new. |
 | 244 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (5th): 4/4 display-math tests pass. Fix holds. |
+| 245 | L3 | L3 | clean | 5768 | 5768 | - | L3: regression tests fast (11 in <1s). No new slow tests. |
+| 246 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (5th): all 5 neutral transforms OK. Fix holds. |
+| 247 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (5th): identical survivor set. All documented, no new. |
