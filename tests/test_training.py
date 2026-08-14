@@ -104,6 +104,12 @@ def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
     assert similarity(orig, faithful) < 0.76  # the OLD raw gate would have dropped it
     assert ent.meaning_preserved(orig, faithful, similarity(orig, faithful), 0.76)  # loop admits it
 
+    # The gate runs on the ACTUAL sample (from load_samples) vs the rewrite, so stub the sample
+    # to `orig` and return `faithful` as the rewrite — then the NLI gate sees the pair above.
+    monkeypatch.setattr(
+        "eval.datasets.load_samples",
+        lambda dataset, n, strict=False: [orig],
+    )
     monkeypatch.setattr(
         run_mod, "untell_text",
         lambda text, **k: {"final": faithful, "flagged": False, "similarity": similarity(orig, faithful)},
