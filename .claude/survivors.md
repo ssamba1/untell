@@ -23,7 +23,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/text_split.py | 172 | logic: or -> and | `return out or [(a, b)]` | Empty-chunks case: only reached when all chunks were filtered out, which the chunking logic prevents |
 | untell/layout.py | 91 | logic: != -> == | `if len(mask) != len(src):` | Guard unreachable: mask and src always same length for valid text (both from same split) |
 | untell/layout.py | 149 | boundary: <= -> < | `if index <= front_matter_end:` | Killing test written: test_closing_fence_is_layout_not_prose (line 149 boundary for empty front matter) |
-| untell/layout.py | 156 | logic: and -> or | `if lines and lines[0].strip() == "---":` | KILLED by tests/test_non_front_matter_doc_is_not_consumed.py: 'Hello\n...\nWorld' -> original blocks ['Hello\n...', 'World'], mutant ['World'] (the '...' line is scanned as a front-matter terminator and preceding prose is consumed/dropped). Red on mutation, green on original. |
 | untell/scripts/preserve.py | 126 | constant: True -> False | `sorted(..., key=len, reverse=True)` | key=len argument: test corpus doesn't have duplicate-length abbreviations that would expose sort order difference |
 | untell/scripts/preserve.py | 615 | constant: False -> True | `_WARNED_NO_NER = False` | Module-level flag: only affects logging; first call sets True and logs warning once. Mutation to True would log warning immediately, but test never triggers the warning path |
 | untell/scripts/preserve.py | 627 | constant: True -> False | `_WARNED_NO_NER = True` | Same flag: mutation to False would suppress the warning, but test never exercises the warning |
@@ -218,3 +217,18 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/base.py | 225 | `or` -> `and` (fallback) | UNKILLABLE: split_sentences only returns [] for text the boundary check catches first |
 | untell/detectors/base.py | 239 | `>` -> `>=` (flush) | KILLED by test_base_mutation_guards (320+1 packing) |
 | untell/detectors/base.py | 242 | `and` -> `or` (flush guard) | UNKILLABLE: only appends empty window that `if w.strip()` drops |
+| untell/detectors/perplexity_burstiness.py | 126 | KILLED by test_pb_mutation_guards (zero-word CV exclusion) boundary: > -> >= | `lengths = [n for n in lengths if n > 0]` |
+| untell/detectors/perplexity_burstiness.py | 202 | UNKILLABLE: tell-density tuning constant logic: or -> and | `density = float(score_tells(text).get("tells_per_100w") or 0.0)` |
+| untell/detectors/perplexity_burstiness.py | 211 | UNKILLABLE: TTR window tuning constant constant: 100 -> 101 | `_TTR_WINDOW = 100` |
+| untell/detectors/perplexity_burstiness.py | 252 | UNKILLABLE: whitespace guard; MIN-words guard catches same inputs logic: or -> and | `if not text or not text.strip():` |
+| untell/detectors/perplexity_burstiness.py | 273 | KILLED by test_pb_mutation_guards (2-sentence path) constant: 2 -> 3 | `if len(nonempty) < 2:` |
+| untell/detectors/perplexity_burstiness.py | 350 | UNKILLABLE: torch-gate env comparison needs live torch flip logic: == -> != | `if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":` |
+| untell/detectors/perplexity_burstiness.py | 357 | UNKILLABLE: _torch_ready availability constant constant: True -> False | `return True` |
+| untell/detectors/perplexity_burstiness.py | 383 | UNKILLABLE: GPT-2 tokenizer kwargs, model-dependent constant: False -> True | `enc = tok(text, return_tensors="pt", return_offsets_mapping=True, verbose=False)` |
+| untell/detectors/perplexity_burstiness.py | 386 | UNKILLABLE: GPT-2 chunk threshold (both), model-dependent constant: 2 -> 3 | `if total < 2:` |
+| untell/detectors/perplexity_burstiness.py | 386 | boundary: < -> <= | `if total < 2:` |
+| untell/detectors/perplexity_burstiness.py | 405 | UNKILLABLE: GPT-2 span boundary, model-dependent boundary: >= -> > | `if end >= total:` |
+| untell/detectors/perplexity_burstiness.py | 409 | UNKILLABLE: GPT-2 chunk join, model-dependent boundary: > -> >= | `nll = torch.cat(chunks) if len(chunks) > 1 else chunks[0]` |
+| untell/detectors/perplexity_burstiness.py | 442 | UNKILLABLE: GPT-2 idx guard, model-dependent boundary: < -> <= | `if idx < 0:` |
+| untell/detectors/perplexity_burstiness.py | 451 | UNKILLABLE: GPT-2 per-sentence threshold, model-dependent boundary: >= -> > | `if len(per_sent) >= 2:` |
+| untell/detectors/perplexity_burstiness.py | 525 | KILLED by test_pb_mutation_guards (exact-MIN abstain, both twins) boundary: < -> <= | `if len(_WORD.findall(text)) < _MIN_WORDS_FOR_SIGNAL:` |
