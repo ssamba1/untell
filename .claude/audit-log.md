@@ -705,3 +705,5 @@ permanently.
 | 623 | L2 | untell/scripts/preserve.py | clean | 5780 | 5780 | - | L2 preserve.py re-audit (9th): NER fix + preserve suite green (151 tests). Pass-466 mutate-refusal was contention artifact, not defect. |
 | 624 | L1 | T05 | clean | 5780 | 5780 | - | T05 re-audit (8th): pass-413 verified. No change. |
 | 625 | L3 | L3 | clean | 5780 | 5780 | - | L3: no new slow tests. Slow-marked set stable. full-hc3-max recipe running (2 workers). |
+| 626 | L1 | T06 | clean | 5780 | 5780 | - | T06 re-audit (8th): 0/226 replacements emit tells. Unchanged. |
+| 627 | L2 | untell/scripts/numerals.py | clean | 5780 | 5780 | - | L2 numerals.py re-audit (9th): regression tests green (18). 3 documented survivors. Fixes hold. |
