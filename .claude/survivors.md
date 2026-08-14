@@ -87,7 +87,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/verify.py | 144 | constant: 4 -> 5 | `round(ai, 4)` | Same rounding precision |
 | untell/scripts/verify.py | 145 | boundary: < -> <= | `"passes": ai < verdict_cut,` | Same measure-zero boundary as 106 |
 | untell/scripts/verify.py | 149 | constant: 160 -> 161 | `str(exc)[:160]` | Error truncation length: display-only, tests don't assert exact truncation point |
-| untell/scripts/verify.py | 174 | constant: False -> True | `results[key] = {"ai": None, "passes": False, ...}` | Error-dict flag: mutation would claim a pass on an errored detector; test corpus never hits this branch |
+| untell/scripts/verify.py | 174 | constant: False -> True | `results[key] = {"ai": None, "passes": False, ...}` | KILLED by tests/test_a_raising_detector_is_not_a_pass.py: monkeypatched commercial_detectors -> [fake detector whose score raises]; row must be {"ai": None, "passes": False, error}. Mutant reports passes:True — red on the mutation, green on original. Prior note ('test corpus never hits this branch') superseded — the branch is forced. |
 | untell/scripts/verify.py | 174 | constant: 160 -> 161 | `str(exc)[:160]` | Same error truncation as 149 |
 | untell/languages.py | 43 | constant: False -> True | `def __call__(self, text: str, *, include_matches: bool = False) -> dict: ...` |
 | untell/languages.py | 89 | logic: or -> and | `code=code, label=label or code, scorer=scorer, script=script` |
