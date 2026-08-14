@@ -32,3 +32,43 @@ class TestSeedBoundary:
     def test_negative_seed_is_rejected(self) -> None:
         out = M._bad_args(seed=(-1, "seed"))
         assert out is not None
+
+
+class TestNonNumericInput:
+    """Non-numeric strings must be refused as dicts, not crash with a traceback.
+
+    The conversions in `_bad_args` (float()/int()) are unguarded for the numeric kinds, and the
+    docstring's whole point is that an MCP client can send ANYTHING — `tier="fulll"` or
+    `threshold=50` were the shapes that motivated this function, and `threshold="abc"` crashed it
+    with ValueError instead of refusing. An MCP client then saw a traceback rather than the
+    refusal dict every other out-of-range answer returns.
+    """
+
+    def test_non_numeric_threshold_is_refused(self) -> None:
+        out = M._bad_args(threshold=("abc", "probability"))
+        assert out is not None
+        assert "not a number" in out["error"]
+
+    def test_non_numeric_count_is_refused(self) -> None:
+        out = M._bad_args(max_subs=("many", "count"))
+        assert out is not None
+        assert "not a number" in out["error"]
+
+    def test_non_numeric_top_is_refused(self) -> None:
+        out = M._bad_args(top=("all", "top"))
+        assert out is not None
+        assert "not a number" in out["error"]
+
+    def test_non_numeric_seed_is_refused(self) -> None:
+        out = M._bad_args(seed=("random", "seed"))
+        assert out is not None
+        assert "not a number" in out["error"]
+
+    def test_none_threshold_is_refused(self) -> None:
+        out = M._bad_args(threshold=(None, "probability"))
+        assert out is not None
+
+    def test_valid_values_still_pass(self) -> None:
+        assert M._bad_args(threshold=(0.3, "probability")) is None
+        assert M._bad_args(max_subs=(12, "count")) is None
+        assert M._bad_args(seed=(42, "seed")) is None

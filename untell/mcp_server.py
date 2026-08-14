@@ -52,6 +52,22 @@ def _bad_args(**checks) -> dict | None:
         if kind == "tier" and value not in _TIERS:
             return {"error": f"unknown tier {value!r} — valid: {', '.join(_TIERS)}. "
                              "It would have silently fallen back to the lite heuristic."}
+        if kind in ("probability", "count", "count_or_zero", "top", "seed"):
+            # A non-numeric string crashes the conversions below, and the whole point of this
+            # guard is that an MCP client can send ANYTHING (the docstring above says so). The
+            # tier check is a string membership test and cannot raise; the numeric kinds convert
+            # with float()/int(), which raise on garbage. Caught here and returned as a refusal
+            # dict like every other out-of-range answer — a traceback is what this function
+            # exists to prevent. MEASURED before: _bad_args(threshold=("abc", "probability"))
+            # raised ValueError instead of refusing.
+            try:
+                if kind == "probability":
+                    float(value)
+                else:
+                    int(value)
+            except (TypeError, ValueError):
+                return {"error": f"{name}={value!r} is not a number; expected a "
+                                 f"{'probability in [0, 1]' if kind == 'probability' else 'whole number'}."}
         if kind == "probability" and not (0.0 <= float(value) <= 1.0):
             return {"error": f"{name}={value!r} is outside [0, 1]. Detector scores are "
                              "probabilities, so a value above 1 can never be reached."}
