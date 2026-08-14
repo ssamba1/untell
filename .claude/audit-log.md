@@ -748,3 +748,4 @@ permanently.
 | 666 | L1 | T03 | clean | 5781 | 5781 | - | T03 re-audit (9th): NLI gate sound (inversions vetoed, paraphrases admitted). |
 | 667 | L4 | untell/detectors/base.py | clean | 5774 | 5774 | - | L4 detectors/base.py re-verified: 4/4 patterns fire (horizontal run, trailing horizontal, space-before-punct, unicode linebreak). Negative control 'failure' was MY probe error - _HORIZONTAL_RUN [ \t]+ matches single space by design (run length 1), pattern correct for whitespace-compression purpose; trailing/space-punct negatives correct. No dead patterns. |
 | 668 | L2 | untell/_retry.py | clean | 5781 | 5781 | - | L2 _retry.py re-audit (10th): kill tests green. Sole 128 survivor documented-equivalent. |
+| 669 | L4 | L4 | clean | 5781 | 5781 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |

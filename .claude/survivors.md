@@ -279,3 +279,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/binoculars.py | 83 | constant: 512 -> 513 | `enc = tok(text, return_tensors="pt", truncation=True, max_length=512).to(device)` |
 | untell/detectors/binoculars.py | 85 | boundary: < -> <= | `if ids.shape[1] < 2:` | UNKILLABLE: ids.shape guard needs live tokenizer
 | untell/detectors/binoculars.py | 101 | constant: 8 -> 9 | `binoculars = float(log_ppl / (x_ppl + 1e-8))` | UNKILLABLE: epsilon 1e-8 in torch path
+| untell/scripts/preserve.py | 707 | logic: and -> or | `and e.text.lower() in _COMMON_WORD_PERSONS` |
+| untell/scripts/preserve.py | 816 | constant: 3 -> 4 | `return m.group(3)` |
+| untell/scripts/preserve.py | 857 | identity: is not -> is | `if args.text is not None:` |
+| untell/scripts/preserve.py | 889 | constant: True -> False | `print(json.dumps({"masked": masked, "mapping": mapping}, ensure_ascii=True, inde` |
