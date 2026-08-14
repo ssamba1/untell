@@ -231,3 +231,4 @@ permanently.
 | 215 | L2 | untell/config.py | clean | 5768 | 5768 | - | L2 config.py re-audit (4th): 5/5 killed, zero survivors (verified pass 163). Fully pinned. |
 | 216 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: pass-156 verified hc3_roberta non-transfer live. README consistent. No new drift found. |
 | 217 | L1 | T04 | clean | 5768 | 5768 | - | T04 re-audit (5th): pass-162 verified on real HC3. No change. |
+| 218 | L8 | human-false-positives | clean | 5768 | 5768 | - | L8 human-false-positives RE-RUN: pre_flag 0.0, pre_max 0.1589, identical to prior run (+0.000, within +-0.020 noise band). No movement — human text stays unflagged at shipped threshold as documented post-fix. |
