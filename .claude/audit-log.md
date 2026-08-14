@@ -396,3 +396,6 @@ permanently.
 | 355 | L2 | untell/config.py | clean | 5769 | 5769 | - | L2 config.py re-audit (5th): mutate ran clean - baseline green (119 passed), 5/5 mutations killed (and->or, is not->is x4), 0 survivors. Module remains fully pinned (verified passes 163/215). |
 | 360 | L4 | compare_humanizers | clean | 5795 | 5795 | f93f509 | L4 eval/compare_humanizers (2nd, live): 5 techniques scored on built-in sample — none 0.482/16 tells -> synonym_swap 0.459/14 -> back_translation 0.267/4 -> loop-surgical 0.470/1 -> loop-composite 0.266/0. Sim trades 0.92-0.99. Coherent ranking, corpus named. MCP compare tool backed by this verified. |
 | 361 | L4 | ceiling harness | clean | 5795 | 5795 | 552dcd4 | L4 eval/ceiling measure_ceiling (2nd, live): repeats=2 -> post_mean_max_stdev present + run_post_means length 2, n=3 built-in samples, threshold/tier/unscored keys. The documented reproducibility spread contract verified. |
+| 357 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (6th): 4/4 display-math tests pass. Fix holds. |
+| 358 | L9 | ppl-weight-0.40 | clean | 5768 | 5768 | - | L9 ppl-weight-0.40: REFUSED (instrument says deterministic; re-calibration pending per pass-258 note). Knob untouched. |
+| 359 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (6th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. |
