@@ -722,3 +722,4 @@ permanently.
 | 640 | L7 | L7 | clean | 5774 | 5774 | - | L7 harness: shrink refusal fires (100->99 REFUSED), mutate kills 2/2 + restores byte-identical, tree clean (0 modified). Sound at pass 640. |
 | 641 | L1 | T11 | clean | 5781 | 5781 | - | T11 re-audit (8th): pass-584 verified. No change. |
 | 642 | L3 | L3 | clean | 5774 | 5774 | - | L3: no new slow tests. Slow-marked set stable (14). My 3 killing tests run 10.09s. Calibration occupies box; full durations deferred. |
+| 643 | L1 | T13 | clean | 5774 | 5774 | - | T13 re-audit (9th): math block byte-identical, fence+list preserved, prose transformed (REWRITTEN). Layout round-trip holds (consistent 357/386/480). |
