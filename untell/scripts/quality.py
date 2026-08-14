@@ -191,8 +191,24 @@ def similarity(a: str, b: str) -> float:
     # min, not mean: meaning destroyed in one paragraph is destroyed, and averaging it against four
     # untouched paragraphs is what hid it in the first place.
     chunks = aligned_chunks(a, b)
-    if len(chunks) > 1:
-        return min(similarity(ca, cb) for ca, cb in chunks)
+    # Recurse only into pieces that are strictly smaller than the pair they came from. `len(chunks)
+    # > 1` is not a termination guarantee: it says the splitter produced several pieces, not that
+    # any of them shrank, and a piece the same size as its parent recurses forever.
+    #
+    # MEASURED: this crashed a real run. `untell-holdout --rewriter ensemble` on RAID seed 2 died
+    # with `RecursionError: maximum recursion depth exceeded` inside this function, having produced
+    # a 185KB traceback of nothing but this line. The exact input was not isolated — a sweep of 4000
+    # synthetic shapes and 3000 small-vocabulary pairs reproduced no cycle, so the trigger is
+    # something about real rewriter output that neither sweep generated.
+    #
+    # Guarding the invariant rather than the input, because the invariant is the thing that has to
+    # hold for any input: a recursion that only descends into strictly smaller work terminates,
+    # whatever the splitter does. A pair that does not shrink is scored directly below instead,
+    # which is what would have happened anyway had the splitter returned it whole.
+    parent = len(a.split()) + len(b.split())
+    smaller = [(ca, cb) for ca, cb in chunks if len(ca.split()) + len(cb.split()) < parent]
+    if len(chunks) > 1 and len(smaller) == len(chunks):
+        return min(similarity(ca, cb) for ca, cb in smaller)
     # BERTScore is NOT used as the gate. It was, as the "higher-fidelity backend", and MEASURED
     # 2026-08-09 it is unusable for this job — not mis-tuned, inverted:
     #

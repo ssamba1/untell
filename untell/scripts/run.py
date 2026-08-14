@@ -589,6 +589,13 @@ def untell_text(
     if sim_bar is None:
         sim_bar = recommended_bar()
 
+    # Sanitize lone surrogates up front. They are invalid Unicode that arrives from broken
+    # file encodings; score_text tolerates them but spaCy's tokenizer and the seed hash both
+    # raise UnicodeEncodeError on them. Replace (not strip) so positions and word counts
+    # stay aligned with what the caller passed.
+    if any(0xD800 <= ord(ch) <= 0xDFFF for ch in text):
+        text = text.encode("utf-8", errors="replace").decode("utf-8")
+
     # Seed the RNG from the INPUT, so a run depends on its text and not on what the process
     # rewrote earlier.
     #
@@ -621,7 +628,12 @@ def untell_text(
         raise ValueError(f"seed must be 0 or greater, got {seed}")
     effective_seed = (
         seed if seed is not None
-        else int.from_bytes(hashlib.blake2b(text.encode("utf-8"), digest_size=8).digest(), "big")
+        else int.from_bytes(
+            hashlib.blake2b(
+                text.encode("utf-8", errors="replace"), digest_size=8
+            ).digest(),
+            "big",
+        )
     )
     # Held for the whole run, because the thing being protected is the GLOBAL `random` module.
     # `structural.py` draws from it in 27 places, so seeding it is a process-wide side effect and

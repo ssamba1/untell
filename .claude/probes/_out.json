@@ -1,0 +1,17 @@
+{
+  "tier": "lite",
+  "tier_requested": "lite",
+  "detectors": {
+    "perplexity_burstiness": 0.25
+  },
+  "max": 0.25,
+  "mean": 0.25,
+  "ai_percent": 25.0,
+  "threshold": 0.3,
+  "verdict_threshold": 0.45,
+  "flagged": false,
+  "detector_modes": {
+    "perplexity_burstiness": "stdlib"
+  },
+  "warning": "16 words: too short for a reliable verdict. MEASURED on 40 HC3 HUMAN texts truncated to this length, 8-50% score above the loop threshold (the range spans the two lite scoring paths). At this length the score collapses toward its floor as the text gets shorter, so a CLEAR verdict carries as little information as a flagged one. Score longer text, or treat this as no evidence either way. Also: one sentence: the stdlib heuristic is half burstiness, which is the variation in sentence length and is undefined here. MEASURED over 60 HC3 sentences, 82% of single sentences score exactly 0.2500 and adding one more moves the score by a median of 0.41 \u2014 this is a placeholder, not a verdict. Score a paragraph, or install .[full]. Also: lite tier on the stdlib path. Re-measured on 100 HC3 pairs: 64% of HUMAN text scores above the 0.30 loop threshold, and 30% is FLAGGED \u2014 `flagged` uses the 0.45 verdict threshold, not the loop one, so the two numbers answer different questions. It misses the other way too: of AI text the full ensemble flags, this path clears 10% (HC3, n=30) and 70% (RAID, n=30), every miss against a full-tier score of 1.000. Weak evidence in both directions \u2014 re-run at --tier full before trusting a flag OR a clear."
+}

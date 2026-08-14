@@ -1,27 +1,25 @@
-"""prove: structure contract via stubs — no model loading."""
+"""prove: structure contract via stubs on prove's own bindings."""
 import json, os
 os.environ["UNTELL_LITE_NO_TORCH"] = "1"
 import eval.prove as P
-import untell.scripts.verify as V
-import untell.scripts.run as R
 
+orig_text = P.untell_text
 orig_verify = P.verify
-orig_text = R.untell_text
-V.verify = lambda text, threshold=0.3: {"passes_all": False, "results": [{"name": "x", "passed": False}]}
-R.untell_text = lambda *a, **k: {"error": "no rewriter configured", "iterations": 0, "final": None}
+P.verify = lambda text, threshold=0.3: {"passes_all": False, "results": [{"name": "x", "passed": False}]}
 try:
+    P.untell_text = lambda *a, **k: {"error": "no rewriter configured", "iterations": 0, "final": None}
     r = P.prove("Some text to prove.")
     out = {
         "error_structured": "error" in r and "before" in r,
         "before_passes": r.get("before", {}).get("passes_all") is False,
-        "keys": sorted(r.keys()),
+        "error_keys": sorted(r.keys()),
     }
-    # success path
-    R.untell_text = lambda *a, **k: {"final": "humanized out", "iterations": 2, "error": None}
+    P.untell_text = lambda *a, **k: {"final": "humanized out", "iterations": 2}
     r2 = P.prove("Some text to prove.")
     out["success_keys"] = sorted(r2.keys())
-    out["passes_after"] = "passes_all" in r2
+    out["passes_after"] = "passes_all" in r2 and r2.get("passes_all") is False
+    out["humanized_flow"] = r2.get("humanized") == "humanized out"
 finally:
+    P.untell_text = orig_text
     P.verify = orig_verify
-    R.untell_text = orig_text
 print(json.dumps(out, indent=1))
