@@ -451,3 +451,5 @@ permanently.
 | 402 | L1 | T16 | clean | 5768 | 5768 | - | T16 re-audit (6th): pass-250 verified no 500s/empty-never-AI. No change. |
 | 403 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (6th): 33/33 environments live. No dead patterns. |
 | 404 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (6th): all no-result paths exit 2. Fix holds. |
+| 405 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
+| 406 | L1 | T20 | clean | 5768 | 5768 | - | T20 re-audit (6th): pass-264 verified real-MCP tests pass. No change. |
