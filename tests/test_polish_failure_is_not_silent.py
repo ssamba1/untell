@@ -66,6 +66,42 @@ def test_it_warns_once_not_every_call(broken_polish, caplog: pytest.LogCaptureFi
     assert caplog.text.count("polish stage failed") == 1
 
 
+def test_two_different_failure_types_each_warn_once(broken_polish, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch):
+    """The dedupe is per exception TYPE, not a single process-wide warning.
+
+    The guard used to be ``if not _POLISH_FAILED`` — emptiness, not membership — which let the
+    FIRST exception type (possibly a transient OOM) suppress the warning for every later type,
+    including a persistent broken-model failure whose whole reason to warn is that it is NOT
+    transient. ``_MEMBER_FAILED`` in rewriter/ensemble.py dedupes by name; this must too, and the
+    exception type is already in the message, so it is the natural key.
+    """
+    from untell import attacks as attacks_mod
+
+    original = attacks_mod.surgical_substitute
+    state = {"calls": 0}
+
+    def first_valueerror_then_keyerror(*args, **kwargs):
+        if set(kwargs) == {"tier", "threshold"}:
+            state["calls"] += 1
+            if state["calls"] == 1:
+                raise ValueError("transient blip")
+            raise KeyError("persistent broken model")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(attacks_mod, "surgical_substitute", first_valueerror_then_keyerror)
+    run_module._POLISH_FAILED.clear()
+    try:
+        with caplog.at_level(logging.WARNING, logger="untell.scripts.run"):
+            _run()  # ValueError
+            _run()  # KeyError — must warn again
+            _run()  # KeyError again — must NOT warn a third time
+        assert caplog.text.count("polish stage failed") == 2, caplog.text
+        assert "ValueError" in caplog.text and "KeyError" in caplog.text
+    finally:
+        run_module._POLISH_FAILED.clear()
+        monkeypatch.setattr(attacks_mod, "surgical_substitute", original)
+
+
 def test_the_run_still_returns_usable_text(broken_polish):
     """Polish is optional: its failure must not cost the caller their rewrite."""
     result = _run()

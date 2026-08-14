@@ -1224,12 +1224,19 @@ def _untell_text(
             # stage on every call, output quality drops, and nothing anywhere says so. That is the
             # same silent-no-op shape as the composite selector that shipped disabled, so it gets
             # the same treatment as a failing ensemble member: one warning, then quiet.
-            if not _POLISH_FAILED:
-                _POLISH_FAILED.add(type(exc).__name__)
+            #
+            # Per TYPE, matching `_MEMBER_FAILED` in rewriter/ensemble.py. The guard used to be
+            # `if not _POLISH_FAILED` — emptiness, not membership — which let the FIRST exception
+            # type (possibly a transient OOM) suppress the warning for every later type, including
+            # a persistent one. A set of names whose membership is never checked dedupes nothing;
+            # the type is in the message, so it must be the key.
+            _name = type(exc).__name__
+            if _name not in _POLISH_FAILED:
+                _POLISH_FAILED.add(_name)
                 logging.getLogger(__name__).warning(
                     "polish stage failed and is being skipped (%s: %s); output is the unpolished "
                     "candidate. This is logged once per process.",
-                    type(exc).__name__, str(exc)[:120],
+                    _name, str(exc)[:120],
                 )
 
     return {
