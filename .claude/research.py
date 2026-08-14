@@ -224,7 +224,10 @@ RECIPES: dict[str, dict] = {
         "metrics": [],
         "spread": "",
         "liveness": [],
-        "minutes": 20,
+        # MEASURED 2026-08-13: pure tell-catalogue scoring, no model loading — 40 pairs (80
+        # documents) completed in 6.5s. The 20-minute estimate was a guess carried over from the
+        # model-backed recipes; this one is a regex pass and finishes before the first torch import.
+        "minutes": 1,
     },
 }
 
