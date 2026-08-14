@@ -481,3 +481,5 @@ permanently.
 | 432 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
 | 433 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (8th): pass-384 verified. No change. |
 | 434 | L8 | claims-audit | clean | 5768 | 5768 | - | L8 claims-audit: harness REFUSED (exit 1, pydantic_core shadow). Manual run with PYTHONPATH= cleared: 158 attributed claims, 0 unattributed, ok=true. Same env artifact as detector-audit (pass 429). No invented rows. |
+| 435 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (7th): identical survivor set. All documented, no new. |
+| 436 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: no new drift across 16 passes. SKILL.md example verified EXACT (0.951/0.011/0.007). |
