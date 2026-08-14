@@ -294,3 +294,6 @@ permanently.
 | 278 | L9 | token-bar-0.40 | clean | 5768 | 5768 | - | L9 token-bar-0.40: REFUSED (instrument says deterministic; note: pass-257 showed the calibration may be stale — re-calibration queued). Knob untouched. |
 | 279 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (5th): kill tests green (8). Nearly fully pinned (128 equivalent documented). |
 | 280 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 280. |
+| 281 | L1 | T04 | clean | 5768 | 5768 | - | T04 re-audit (6th): pass-162 verified on real HC3. No change. |
+| 282 | L1 | T05 | clean | 5768 | 5768 | - | T05 re-audit (6th): pass-113 verified raw 50%/verdict-cut 20%. Consistent with README. |
+| 283 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit (5th): both killing tests green. 9/10 killed holds. |
