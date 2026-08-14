@@ -222,3 +222,4 @@ permanently.
 | 206 | L1 | T01 | clean | 5768 | 5768 | - | T01 re-audit (5th): 5/5 lock+roundtrip. No regression. |
 | 207 | L2 | untell/scripts/io_utils.py | clean | 5768 | 5768 | - | L2 io_utils.py re-audit (4th): decrypt-guard killing test green. Survivors unchanged. No new. |
 | 208 | L4 | L4 | clean | 5768 | 5768 | - | L4 unicode_tricks.py: all 6 compiled patterns fire on their carriers (_WATERMARK_CHARS x5, _EXOTIC_SPACE, _LINE_SEPARATORS, _BIDI_CONTROLS, _VARIATION_SELECTORS, _DEPRECATED_FORMAT = 10 firings). 12/12 carrier classes counted+scrubbed (pass 104). No dead patterns. |
+| 209 | L1 | T02 | clean | 5768 | 5768 | - | T02 re-audit (5th): 12/12 carriers counted+scrubbed (verified pass 157 with corrected assertion). No regression. |
