@@ -146,8 +146,11 @@ RECIPES: dict[str, dict] = {
         # recipe shape (n=10, repeats=3, lite) — composite 841s, targeted 810s, structural 357s,
         # surgical 204s — and ensemble runs ALL of them plus selection, so the old 30-minute
         # estimate was ~3x short. The program run killed it at 90 minutes (3x budget) with the
-        # measurement unfinished. 60 is a floor for the ensemble sweep, not a guess.
-        "minutes": 60,
+        # measurement unfinished. A second run was killed at 120 minutes (2x the 60-minute
+        # estimate) while a sibling fleet run of the same recipe shared the machine — 4 heavy
+        # model slots split between two workers roughly doubles wall time. Solo floor is ~90m;
+        # 90 is the estimate, and the program runner's 3x budget covers the contended case.
+        "minutes": 90,
     },
     "compare-hc3": {
         "why": "this pipeline against the other humanizers on the same text - the only "
