@@ -136,4 +136,3 @@ WHY    AMBER: measurement data (instruments.json, measurements.jsonl) — commit
 NEXT   Calibrate a recipe that moves (e.g. full-hc3-composite, ~90 min x2, or
        lite-hc3-surgical) before trusting any future L9 knob reading. Until one is
        calibrated, L9 passes will refuse — that is the harness working, not a bug.
->>>>>>> origin/main
