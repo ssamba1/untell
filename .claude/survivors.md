@@ -138,3 +138,9 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/entailment.py | 500 | UNKILLABLE: allowance is 10 + 10% of words (fractional); words_lost is int; > vs >= equality unreachable boundary: > -> >= | `if words_lost(source, candidate) > deletion_allowance(source):` |
 | untell/scripts/entailment.py | 511 | UNKILLABLE: contradiction scores are live model calls; exact 0.5 bar is a model artifact boundary: < -> <= | `if not (sim >= relaxed_sim_bar and con < contradiction_bar and ent >= entailment` |
 | untell/scripts/entailment.py | 560 | KILLED by test_entailment_mutation_guards (CLI 4dp precision) constant: 4 -> 5 | `print(_json.dumps({"available": True, "contradiction": round(con, 4),` |
+| untell/scripts/roles.py | 82 | KILLED by test_roles_mutation_guards (availability) identity: is not -> is | `return _load() is not None` |
+| untell/scripts/roles.py | 218 | UNKILLABLE: spaCy parse-shape mutation; existing model-gated tests pin real parses logic: or -> and | `if tok.dep_ != "prep" or tok.text.lower() not in _COMPARISON_PREPS:` |
+| untell/scripts/roles.py | 269 | UNKILLABLE: spaCy parse-shape mutation; existing model-gated tests pin real parses membership: not in -> in | `if antecedent.pos_ not in ("VERB", "AUX") and antecedent.dep_ != "advcl":` |
+| untell/scripts/roles.py | 273 | UNKILLABLE: self-headed token does not exist in spaCy parses identity: is not -> is | `while consequent.head is not consequent and consequent.dep_ != "ROOT" and guard ` |
+| untell/scripts/roles.py | 308 | KILLED by test_roles_mutation_guards (availability) identity: is not -> is | `return _load() is not None` |
+| untell/scripts/roles.py | 327 | KILLED by test_roles_mutation_guards (empty-analysis guard) logic: or -> and | `if not ta or not tb:` |
