@@ -4,7 +4,6 @@ A `$$...$$` block was classified as prose — the delimiters are not fences, so 
 equation was handed to the transform and rewritten. Same damage class as fenced
 code before it was protected. Inline `$...$` stays prose (locked by preserve.py).
 """
-import pytest
 
 from untell.layout import apply_per_block, restore_layout_lines
 
