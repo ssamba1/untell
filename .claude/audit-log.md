@@ -729,3 +729,5 @@ permanently.
 | 647 | L2 | untell/scripts/scrub.py | clean | 5781 | 5781 | - | L2 scrub.py re-audit (10th): line-119 ensure_ascii survivor KILLED by fleet pass-495 (CLI ascii-safety test). 4/4 killed now. No survivors. |
 | 648 | L4 | L4 | clean | 5781 | 5781 | - | L4 structural.py re-verified (pass 228): 9/9 patterns alive. |
 | 649 | L4 | L4 | clean | 5781 | 5781 | - | L4 local_policy.py re-verified (pass 268): 2/2 patterns alive. |
+| 650 | L1 | T15 | clean | 5781 | 5781 | - | T15 re-audit (8th): pass-443 verified 20/20 numbers clean. No change. |
+| 651 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (8th): 33/33 environments live. No dead patterns. |
