@@ -255,3 +255,6 @@ permanently.
 | 239 | L2 | untell/scripts/sentences.py | clean | 5768 | 5768 | - | L2 sentences.py re-audit (5th): identical survivor set. All documented, no new. |
 | 240 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 240. |
 | 241 | L8 | length-short | clean | 5768 | 5768 | - | L8 length-short RE-RUN: pre 0.5948 -> post 0.556, deltas +0.000..+0.003 within +-0.020 band. No movement. Short-doc rewrite stable across runs. |
+| 242 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (5th): 14/14 paragraphs rewritten, last change at final index. Tail-reachability holds. |
+| 243 | L2 | untell/scripts/hedges.py | clean | 5768 | 5768 | - | L2 hedges.py re-audit (5th): same 2 survivors (148 sort key, 328 CLI print). 8/10 killed. No new. |
+| 244 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (5th): 4/4 display-math tests pass. Fix holds. |
