@@ -201,3 +201,23 @@ OPEN   Product question, NOT fixed here: on the GPT-2 lite path, injecting 8 cat
        ensemble max rises 20/20 but roberta_openai 11/2/7, fast_detectgpt 11/9/0, hc3_roberta
        10/1/9 — several members are directionless on this manipulation. Whether the GPT-2 lite
        path's directionality is acceptable is a human/scoring call (RED band).
+
+## 2026-08-13 pass 172 L8 AMBER — full-hc3-max: best-of-all-backends beats composite but stays flagged
+
+WHAT   Second headline measurement (full tier, max rewriter, 6 real HC3 docs, 3 repeats,
+       2 workers): pre_flagged_rate 1.0 -> post_flagged_rate 1.0, pre_mean_max 1.0000 ->
+       post_mean_max 0.9758. Rewrote 18 spans, rewriter live. Unlike full-hc3-composite
+       (1.0 -> 1.0, zero movement), the max selector DID find candidates that beat the
+       mage-saturated max — first measurable evidence the (max,mean) selection key can
+       partially defeat saturation.
+RAN    .venv/Scripts/python.exe .claude/research.py run full-hc3-max
+SAW    appended to measurements.jsonl (1 run of full-hc3-max)
+WHY    AMBER — family comparison now exists:
+         composite  1.0 -> 1.0      (no improvement)
+         max        1.0 -> 0.9758   (score moved, still flagged)
+       The mean-max moved but the flagged rate did not: at best-of-all-backends the tool
+       still cannot clear the 0.45 verdict cut on real AI text. This quantifies the mage
+       saturation wall from both sides. Same NEXT options as the composite entry: drop
+       mage from the default ensemble / weight the max / accept as documented.
+NEXT   Human decision (same as full-hc3-composite entry). Do not adopt from single runs —
+       the tiers family (lite-hc3 vs full-hc3-composite) and a rewriters sweep exist for that.
