@@ -678,7 +678,35 @@ def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
     except (ImportError, OSError):
         return []
     keep = {"PERSON", "ORG", "GPE", "LOC", "WORK_OF_ART", "LAW", "PRODUCT", "EVENT", "NORP", "FAC"}
-    return [(e.start_char, e.end_char) for e in getattr(doc, "ents", []) if e.label_ in keep]
+    # spaCy's small NER tags capitalised common words as PERSON: measured on
+    # en_core_web_sm, 'Email me the file' -> [('Email', 'PERSON')]. lock() would
+    # then freeze the verb 'Email' as a protected fact — a rewrite can never touch
+    # it. 'Email', 'May', 'Will', 'Mark', 'Bill', 'Rose' are common-word false
+    # positives. A genuine entity is almost never a bare common word (usually
+    # multi-token, or an uncommon name), so drop single-token PERSON entities that
+    # are dictionary words. Wordlist is deliberately small and unambiguous.
+    _COMMON_WORD_PERSONS = frozenset(
+        {
+            "email", "may", "will", "mark", "bill", "rose", "lily", "holly",
+            "hunter", "harper", "mason", "logan", "carter", "chase", "clay",
+            "cole", "drake", "grant", "reed", "stone", "wolf", "fox", "crow",
+            "robin", "wren", "jade", "amber", "ivy", "joy", "hope", "faith",
+            "grace", "summer", "autumn", "winter", "june", "march", "april",
+            "august", "jack", "max", "sam", "pat", "rob", "tom", "sue",
+            "article", "comments", "feedback", "status", "update", "support",
+            "contact", "security", "terms", "privacy", "search", "settings",
+        }
+    )
+    return [
+        (e.start_char, e.end_char)
+        for e in getattr(doc, "ents", [])
+        if e.label_ in keep
+        and not (
+            e.label_ == "PERSON"
+            and len(e.text.split()) == 1
+            and e.text.lower() in _COMMON_WORD_PERSONS
+        )
+    ]
 
 
 def _collect_spans(text: str) -> list[tuple[int, int]]:
