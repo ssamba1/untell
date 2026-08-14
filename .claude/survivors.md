@@ -144,3 +144,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/roles.py | 273 | UNKILLABLE: self-headed token does not exist in spaCy parses identity: is not -> is | `while consequent.head is not consequent and consequent.dep_ != "ROOT" and guard ` |
 | untell/scripts/roles.py | 308 | KILLED by test_roles_mutation_guards (availability) identity: is not -> is | `return _load() is not None` |
 | untell/scripts/roles.py | 327 | KILLED by test_roles_mutation_guards (empty-analysis guard) logic: or -> and | `if not ta or not tb:` |
+| untell/scripts/latex.py | 88 | KILLED by test_latex_mutation_guards (2-signal boundary) boundary: >= -> > | `return sum(1 for p in _LATEX_SIGNALS if p.search(text)) >= 2` |
+| untell/scripts/latex.py | 102 | KILLED by test_latex_mutation_guards (3-pass unwrap bound) constant: 3 -> 4 | `for _ in range(3):  # nested \textbf{\emph{x}} needs more than one pass` |
+| untell/scripts/latex.py | 194 | KILLED by test_latex_mutation_guards (missing --bib rc=2) constant: 2 -> 3 | `return 2` |
+| untell/scripts/latex.py | 206 | KILLED by test_latex_mutation_guards (missing --against rc=2) constant: 2 -> 3 | `return 2` |
