@@ -6,44 +6,45 @@ unkillable with the reason. Written by `mutate.py --record`.
 
 | module | line | mutation | source | analysis |
 | --- | --- | --- | --- | --- |
-| untell/text_split.py | 55 | constant: True -> False | `return True` | KILLED by tests/test_dict_abbreviation_does_not_end_a_sentence.py: 'Dr. Smith arrived.' splits into ['Dr.', 'Smith arrived.'] under the mutant (dict lookup returns False, fallthrough treats 'dr' as sentence-ender); original keeps one sentence. Prior 'dead branch' note superseded. |
+| untell/text_split.py | 55 | constant: True -> False | `return True` | Abbreviations dict covers all cases in test corpus; dead branch when word IS in dict |
 | untell/text_split.py | 57 | constant: 3 -> 4 | `if not word or len(word.replace(".", "")) > 3 or any(len(p) > 1 for p in parts):` | Length threshold 3 vs 4: abbreviations with 4-char word stems are rare |
 | untell/text_split.py | 57 | logic: or -> and | same | Same as above — logic change doesn't affect the specific inputs tested |
 | untell/text_split.py | 57 | boundary: > -> >= | same | Same as above — boundary shift doesn't affect tested abbreviations |
 | untell/text_split.py | 58 | constant: False -> True | `return False` | Unreachable: line 57 already returns when conditions match; this line only reached when line 57 passes AND later checks fail |
-| untell/text_split.py | 74 | logic: and -> or | `return all(p.isdigit() for p in parts) and tail == fragment.strip()` | KILLED by tests/test_sentence_final_number_is_not_an_abbreviation.py: 'The mean was 3.5.' must NOT be an abbreviation; mutant merges 'The mean was 3.5. Variance was low.' into ONE sentence — the documented PRIOR defect, reintroduced. 2 failed under mutation. |
-| untell/text_split.py | 74 | logic: == -> != | same | KILLED by same test: '3.5.' as whole fragment is a list marker (abbrev, no split); != makes it split mid-list-item. 3 failed under mutation. |
-| untell/text_split.py | 95 | logic: and -> or | `return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()` | KILLED by tests/test_lowercase_continuation_without_ellipsis_does_not_merge.py: 'Hello world. next thing' merges to ONE sentence under the mutant (False or True), splitting correctly as two under the original. Prior note ('corpus doesn't cover ellipsis-after-lowercase') wrong — the distinguishing input has NO ellipsis. |
+| untell/text_split.py | 74 | logic: and -> or | `return all(p.isdigit() for p in parts) and tail == fragment.strip()` | Digit-only abbreviations like "1." rarely in test corpus; AND->OR changes behavior only for digit cases |
+| untell/text_split.py | 74 | logic: == -> != | same | Same as above |
+| untell/text_split.py | 95 | logic: and -> or | `return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()` | Ellipsis continuation: AND->OR makes it more permissive; test corpus doesn't cover ellipsis-after-lowercase cases |
 | untell/text_split.py | 122 | constant: 90 -> 91 | `CHUNK_WORDS = 90` | Tuning constant: 90 vs 91 words per chunk is imperceptible to test corpus |
 | untell/text_split.py | 143 | boundary: < -> <= | `if k == 1 or len(aw) < 2 or len(bw) < 2:` | Very short texts rare in test corpus; boundary shift doesn't affect tested cases |
-| untell/text_split.py | 143 | logic: or -> and | same | KILLED by tests/test_tiny_side_returns_the_pair_whole.py: 100-word vs 1-word pair falls through to chunking, re-cutting the long side to 50 words; original returns the pair whole. Prior 'very short texts rare' note wrong — the distinguishing input has ONE tiny side. |
+| untell/text_split.py | 143 | logic: or -> and | same | Same as above |
 | untell/text_split.py | 143 | logic: == -> != | same | Same as above |
 | untell/text_split.py | 146 | constant: False -> True | `matcher = difflib.SequenceMatcher(a=aw, b=bw, autojunk=False)` | autojunk parameter: test corpus doesn't have strings long enough to trigger junk detection |
 | untell/text_split.py | 152 | boundary: <= -> < | `if blk.a <= i < blk.a + blk.size:` | difflib block boundary: test corpus alignment doesn't hit exact boundary cases |
 | untell/text_split.py | 172 | logic: or -> and | `return out or [(a, b)]` | Empty-chunks case: only reached when all chunks were filtered out, which the chunking logic prevents |
 | untell/layout.py | 91 | logic: != -> == | `if len(mask) != len(src):` | Guard unreachable: mask and src always same length for valid text (both from same split) |
 | untell/layout.py | 149 | boundary: <= -> < | `if index <= front_matter_end:` | Killing test written: test_closing_fence_is_layout_not_prose (line 149 boundary for empty front matter) |
+| untell/layout.py | 156 | logic: and -> or | `if lines and lines[0].strip() == "---":` | KILLED by tests/test_non_front_matter_doc_is_not_consumed.py: 'Hello\n...\nWorld' -> original blocks ['Hello\n...', 'World'], mutant ['World'] (the '...' line is scanned as a front-matter terminator and preceding prose is consumed/dropped). Red on mutation, green on original. |
 | untell/scripts/preserve.py | 126 | constant: True -> False | `sorted(..., key=len, reverse=True)` | key=len argument: test corpus doesn't have duplicate-length abbreviations that would expose sort order difference |
 | untell/scripts/preserve.py | 615 | constant: False -> True | `_WARNED_NO_NER = False` | Module-level flag: only affects logging; first call sets True and logs warning once. Mutation to True would log warning immediately, but test never triggers the warning path |
 | untell/scripts/preserve.py | 627 | constant: True -> False | `_WARNED_NO_NER = True` | Same flag: mutation to False would suppress the warning, but test never exercises the warning |
-| untell/scripts/preserve.py | 691 | boundary: <= -> < | `if start <= last_end:  # overlap or touch` | KILLED by tests/test_touching_spans_lock_as_one_fact.py: '2023-05-0542' produces touching spans (date 0-7, number 7-12); original merges to one sentinel, mutant splits into two. Prior 'unkillable' note (corpus lacks touching spans) superseded — a killing test constructs them. |
+| untell/scripts/preserve.py | 691 | boundary: <= -> < | `if start <= last_end:  # overlap or touch` | Touching spans case: test corpus doesn't have spans that exactly touch (end==start of adjacent), so <= vs < has no effect |
 | untell/scripts/preserve.py | 759 | logic: and -> or | `if not (span and _PLAIN_LOWERCASE_WORD.match(span)):` | Capitalisation guard: AND->OR makes it less restrictive. Test corpus doesn't have the specific case that would expose this |
 | untell/scripts/preserve.py | 777 | constant: 3 -> 4 | `return m.group(3)` | m.group(3) is always defined when this line is reached (regex has 3 groups); changing to 4 would be IndexError. Dead branch on valid inputs |
 | untell/scripts/preserve.py | 827 | constant: 2 -> 3 | `return 2` | Tuning constant (max leading spaces to strip); 2 vs 3 is imperceptible |
 | untell/scripts/preserve.py | 850 | constant: 2 -> 3 | `json.dumps(..., indent=2)` | indent parameter: test doesn't check JSON formatting |
-| untell/scripts/numerals.py | 88 | constant: 10 -> 11 | `"ten": 10, "eleven": 11, "twelve": 12` | KILLED by tests/test_spelled_number_dict_values_are_exact.py: _spelled_value('ten') -> '10' original, '11' mutant. Prior 'test corpus doesn't use ten' note wrong — the dict value is the parser's output. Red on mutation, green on original. |
+| untell/scripts/numerals.py | 88 | constant: 10 -> 11 | `"ten": 10, "eleven": 11, "twelve": 12` | Dead code path: _TEENS dict correctly maps "ten" to 10; mutation to 11 would incorrectly map "ten" to 11. Test corpus doesn't use "ten" as a spelled-out number |
 | untell/scripts/numerals.py | 194 | logic: == -> != | `if part == "hundred":` | Defensive check: "hundred" is the only word handled specially in the loop. != would break all compound numbers like "two hundred" |
 | untell/scripts/numerals.py | 201 | logic: or -> and | `value = _TENS.get(part) or _TEENS.get(part) or _UNITS.get(part) or (1 if part == "one" else 0)` | Complex fallback: OR->AND would require word to be in all three dicts simultaneously, breaking all number parsing. Dead branch on valid inputs |
 | untell/scripts/numerals.py | 214 | constant: 2 -> 3 | `scaled = float(digits) * _SCALES[match.group(2).lower()]` | Index access: regex guarantees group 2 exists; group(3) would be IndexError. Dead code path |
 | untell/scripts/numerals.py | 282 | identity: is not -> is | `args = argv if argv is not None else sys.argv[1:]` | __main__ guard: when is not None->is None would make args always sys.argv, breaking CLI invocation |
 | untell/scripts/sentences.py | 91 | logic: == -> != | `if modes.get("perplexity_burstiness") == "gpt2":` | Mode dispatch: test corpus only uses gpt2 path, so stdlib!= branch never reached |
 | untell/scripts/sentences.py | 93 | logic: != -> == | `if modes.get("perplexity_burstiness") != "stdlib":` | Same: stdlib path not exercised |
-| untell/scripts/sentences.py | 163 | boundary: < -> <= | `if len(scores) < _MIN_SENTENCES_FOR_SPREAD:` | KILLED by tests/test_exactly_min_sentences_still_checks_spread.py: exactly 3 sentences with spread 0.02 < 0.05 bar -> original True (unrankable), mutant False. Prior note ('corpus lacks exactly 3 at the boundary') superseded — the boundary is the test. |
+| untell/scripts/sentences.py | 163 | boundary: < -> <= | `if len(scores) < _MIN_SENTENCES_FOR_SPREAD:` | Spread bar: test corpus doesn't have exactly 3 sentences at the boundary |
 | untell/scripts/sentences.py | 164 | constant: False -> True | `return False` | Early return: test corpus always has ≥3 sentences so this line is unreachable |
 | untell/scripts/sentences.py | 165 | boundary: < -> <= | `return (max(scores) - min(scores)) < _TARGETING_SPREAD_BAR` | Spread check: test corpus scores have sufficient spread to cross bar regardless of boundary |
-| untell/scripts/sentences.py | 209 | boundary: < -> <= | `elif top < 0:` | KILLED by tests/test_top_zero_flags_nothing.py: top=0 must flag nothing (empty list), mutant raises ValueError. Prior note ('corpus doesn't produce negative indices') wrong — the distinguishing input is top=0, the boundary itself. |
+| untell/scripts/sentences.py | 209 | boundary: < -> <= | `elif top < 0:` | Negative index check: test corpus doesn't produce negative indices |
 | untell/scripts/sentences.py | 216 | constant: True -> False | `order = sorted(range(n), key=..., reverse=True)` | Reverse flag: test corpus doesn't depend on sort direction for the specific case |
-| untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | KILLED by tests/test_english_text_is_not_warned_as_non_english.py: ordinary English text must NOT get the 'reads as a Latin-script language other than English' caveat; mutant fires it on any non-empty text (1 failed under mutation). Prior 'English-only corpus' note wrong — English text IS the distinguishing input. |
+| untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | English-only test corpus: AND->OR has no effect |
 | untell/scripts/sentences.py | 327 | constant: 2 -> 3 | `print(json.dumps(..., indent=2))` | JSON indent: test doesn't check formatting |
 | untell/scripts/sentences.py | 345 | constant: 2 -> 3 | `return 2` | Tuning constant (rank or indent): test corpus doesn't exercise exact boundary |
 | untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` |
@@ -53,6 +54,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/quality.py | 147 | logic: and -> or | `if not ca and not cb:` |
 | untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` |
 | untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` |
+| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` |
 | untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` |
 | untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 (e.g. Windows cp1252)` |
 | untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` | Lazy-load guard: only differs on first call, tests never hit the sentinel state |
@@ -62,10 +64,10 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/quality.py | 147 | logic: and -> or | `if not ca and not cb:` | Empty-both path: only reachable when both sides tokenize to nothing, test corpus always has tokens |
 | untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` | One-empty path: char-bigram fallback only fires for scriptio-continua scripts (CJK) — English test corpus never hits |
 | untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` | normalize_embeddings: cosine of normalized vs raw embeddings differs in practice but tests use tolerant thresholds |
-| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | KILLED by tests/test_similarity_exactly_at_bar_passes.py: with _model=None the token path yields exact rationals — 1 shared of 4 unique = Dice 0.5 = TOKEN_BAR exactly; original passes, mutant rejects. Prior 'measure-zero with real embeddings' note wrong: the token path makes equality exact. |
-| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | KILLED by tests/test_quality_cli_exact_bar.py: CLI computes sim >= bar INLINE (never calls passes()) — old note 'same test kills it via shared logic' was WRONG, mutation run proved 302 survived with the 263-killer in the set. Exact-bar pair (cat dog/cat tree, Dice 0.5=TOKEN_BAR) through quality_main; red on >=->> (verified), green on original. |
+| untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | Exact-equality float case: sim == bar is measure-zero with real embeddings, unreachable |
+| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | Same: exact boundary unreachable |
 | untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding |
-| untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 stdout` | KILLED by tests/test_scrub_cli_ascii_safe.py: non-ASCII input (café+ZWSP) through --json asserts output encodes ascii. Mutant emits literal é -> encode('ascii') raises. Red on mutation (verified), green on original. Same class as quality.py:304/voice.py:265. |
+| untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 stdout` |
 | untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding, same class as voice.py:265 |
 | untell/scripts/io_utils.py | 50 | boundary: > -> >= | `return os.path.getsize(path) > 0` |
 | untell/scripts/io_utils.py | 52 | constant: True -> False | `return True  # unreadable size is not evidence of emptiness; let the parser's me` |
@@ -74,19 +76,19 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/io_utils.py | 264 | constant: 2 -> 3 | `raise SystemExit(2) from None` |
 | untell/scripts/io_utils.py | 267 | constant: 2 -> 3 | `raise SystemExit(2) from None` |
 | untell/scripts/io_utils.py | 290 | constant: False -> True | `interactive = False` |
-| untell/scripts/io_utils.py | 50 | boundary: > -> >= | `return os.path.getsize(path) > 0` | KILLED by tests/test_empty_file_is_reported_empty_not_corrupt.py: mutant makes empty .docx report 'not a readable .docx (corrupt)' instead of 'is empty, so there is no .docx to read'. Prior note ('caught by the not-_has_bytes path anyway') wrong — the DIFFERENT MESSAGE is the observable. |
-| untell/scripts/io_utils.py | 52 | constant: True -> False | `return True  # unreadable size is not evidence of emptiness` | KILLED by tests/test_unreadable_size_is_not_empty.py: monkeypatched getsize raises OSError -> original True (defensive, parser's message stands), mutant False (unreadable file reads as empty). Prior 'can't force getsize to raise' note wrong — monkeypatch does it. |
+| untell/scripts/io_utils.py | 50 | boundary: > -> >= | `return os.path.getsize(path) > 0` | 0-byte file: getsize returns 0, both >0 and >=0 differ only at exactly 0 which is caught by the not-_has_bytes path anyway |
+| untell/scripts/io_utils.py | 52 | constant: True -> False | `return True  # unreadable size is not evidence of emptiness` | Defensive: size query failure returns True (not empty) so parser's own error stands; test corpus can't force getsize to raise |
 | untell/scripts/io_utils.py | 138 | logic: or -> and | `if "Decrypt" in name or "decrypted" in str(exc):` | KILLED by test_io_utils_decrypt_guard.py (class-name-alone and message-alone cases) |
 | untell/scripts/io_utils.py | 180 | constant: 4 -> 5 | `head = fh.read(4)` | Sniff length: 4 bytes enough for all BOMs; reading 5 is indistinguishable in tests |
-| untell/scripts/io_utils.py | 264 | constant: 2 -> 3 | `raise SystemExit(2) from None` | KILLED by tests/test_read_file_or_exit_exits_two.py: missing file -> SystemExit(2) original, (3) mutant. The docstring says exit 2 matches argparse's usage-error convention — the exact code is the contract. Red on mutation, green on original. |
-| untell/scripts/io_utils.py | 267 | constant: 2 -> 3 | `raise SystemExit(2) from None` | KILLED by same test (OSError case): monkeypatched read_file raises OSError -> SystemExit(2) original, (3) mutant. Red on mutation, green on original. |
+| untell/scripts/io_utils.py | 264 | constant: 2 -> 3 | `raise SystemExit(2) from None` | Exit code: tests check non-zero, not the exact code |
+| untell/scripts/io_utils.py | 267 | constant: 2 -> 3 | `raise SystemExit(2) from None` | Same |
 | untell/scripts/io_utils.py | 290 | constant: False -> True | `interactive = False` | TTY detection fallback: tests run non-interactive so the branch is never exercised |
-| untell/scripts/verify.py | 106 | boundary: < -> <= | `"passes": val < verdict_cut,` | KILLED by tests/test_detector_at_exact_cut_does_not_pass.py: fake score_text returns a detector value EXACTLY 0.45 == published verdict_cut; original passes=False, mutant True. The cut is a published constant, so exact equality is reachable — 'measure-zero' note wrong. Red on mutation, green on original. |
-| untell/scripts/verify.py | 123 | constant: 4 -> 5 | `round(local["max"], 4)` | KILLED by tests/test_verify_ai_rounded_to_four_decimals.py: fake max 0.123456 -> aggregate row reports 0.1235 (4dp), mutant 0.12346 (5dp). verify()'s result rows are the published contract. Red on mutation, green on original. |
-| untell/scripts/verify.py | 144 | constant: 4 -> 5 | `round(ai, 4)` | KILLED by same test (commercial case; real line is 147): fake commercial detector 0.123456 -> row 0.1235 (4dp), mutant 0.12346 (5dp). Prior 'tests use tolerant assertions' note wrong — exact values are the contract. |
-| untell/scripts/verify.py | 145 | boundary: < -> <= | `"passes": ai < verdict_cut,` | KILLED by tests/test_detector_at_exact_cut_does_not_pass.py (commercial case): fake detector returns EXACTLY the caller's threshold (0.30); original passes=False, mutant True. Same exact-boundary construction as 106. |
+| untell/scripts/verify.py | 106 | boundary: < -> <= | `"passes": val < verdict_cut,` | Measure-zero: a detector returning EXACTLY verdict_cut is unreachable with real floats |
+| untell/scripts/verify.py | 123 | constant: 4 -> 5 | `round(local["max"], 4)` | Rounding precision: reported values differ only past 4 digits, tests use tolerant assertions |
+| untell/scripts/verify.py | 144 | constant: 4 -> 5 | `round(ai, 4)` | Same rounding precision |
+| untell/scripts/verify.py | 145 | boundary: < -> <= | `"passes": ai < verdict_cut,` | Same measure-zero boundary as 106 |
 | untell/scripts/verify.py | 149 | constant: 160 -> 161 | `str(exc)[:160]` | Error truncation length: display-only, tests don't assert exact truncation point |
-| untell/scripts/verify.py | 174 | constant: False -> True | `results[key] = {"ai": None, "passes": False, ...}` | KILLED by tests/test_a_raising_detector_is_not_a_pass.py: monkeypatched commercial_detectors -> [fake detector whose score raises]; row must be {"ai": None, "passes": False, error}. Mutant reports passes:True — red on the mutation, green on original. Prior note ('test corpus never hits this branch') superseded — the branch is forced. |
+| untell/scripts/verify.py | 174 | constant: False -> True | `results[key] = {"ai": None, "passes": False, ...}` | Error-dict flag: mutation would claim a pass on an errored detector; test corpus never hits this branch |
 | untell/scripts/verify.py | 174 | constant: 160 -> 161 | `str(exc)[:160]` | Same error truncation as 149 |
 | untell/languages.py | 43 | constant: False -> True | `def __call__(self, text: str, *, include_matches: bool = False) -> dict: ...` |
 | untell/languages.py | 89 | logic: or -> and | `code=code, label=label or code, scorer=scorer, script=script` |
@@ -107,23 +109,23 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/layout.py | 66 | logic: == -> != | `if kind == "prose" and body.strip():` | KILLED by test_blocks_agrees_with_apply_per_block (line 179: blocks() must return prose units). Verified: != mutation fails that test. |
 | untell/scripts/hedges.py | 148 | constant: True -> False | `name: re.compile(r"(?<!\w)(?:" + "/".join(re.escape(t) for t in sorted(terms, ke` |
 | untell/scripts/hedges.py | 328 | constant: True -> False | `print(json.dumps({"dropped": dropped, "kept": not dropped}, ensure_ascii=True))` |
-| untell/scripts/voice.py | 156 | constant: 4 -> 5 | `"burst": round(st.pstdev(lengths) / mean_len, 4) if mean_len else 0.0,` | KILLED by tests/test_burst_rounded_to_four_decimals.py: sentence word-counts (1,1,1,2) -> burst 0.346410...; original returns 0.3464 (4dp), mutant 0.34641 (5dp). style_profile is a published per-feature dict — exact values are the API. Red on mutation, green on original. |
-| untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` | KILLED by tests/test_per_100w_rates_use_100_multiplier.py: 2 commas / 7 words -> 28.5714 at 100, 28.8571 at 101. style_profile is a published dict — exact values are the API. Red on mutation, green on original. |
-| untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` | KILLED by same test: 'I went to the shop and I bought some milk.' -> 20.0 at 100, 20.2 at 101. Red on mutation, green on original. |
-| untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` | KILLED by tests/test_sufficient_voice_sample_does_not_warn.py: sufficient (200-word) sample with _WARNED=False must NOT warn; mutant falls through and logs a false 'under 150 words' warning. Red on mutation, green on original. |
-| untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` | KILLED by tests/test_thin_sample_warns_only_once.py: the flag latches after the first thin-sample warning; mutant never sets it, so the second call warns again (spamming the log). Red on mutation, green on original. |
-| untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` | KILLED by tests/test_sample_at_min_words_has_no_warning.py: exactly 150 words -> no warning under original; mutant fires a self-contradictory 'sample is 150 words; below 150...' warning. The boundary is the documented usable-signal point. Red on mutation, green on original. |
-| untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | KILLED by tests/test_gap_at_boundary_is_not_a_match.py: gap exactly 0.25 -> original 'more varied rhythm (+0.25)', mutant 'matches' (hides a real between-author distance). Pure function. Red on mutation, green on original. |
+| untell/scripts/voice.py | 156 | constant: 4 -> 5 | `"burst": round(st.pstdev(lengths) / mean_len, 4) if mean_len else 0.0,` |
+| untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` |
+| untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` |
+| untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` |
+| untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` |
+| untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` |
+| untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, help="file of YOUR writing (120+ words` |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ensure_ascii=True, indent=2))` |
 | untell/scripts/verify.py | 139 | constant: False -> True | `results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"` |
 | untell/scripts/verify.py | 172 | constant: 4 -> 5 | `"ai": round(ai, 4),` |
 | untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
-| untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_no_input_exits_two.py: read_stdin_or_none patched to None (TTY) -> main([]) exits 2, mutant exits 3. The no-input usage-error code is now pinned alongside the whitespace (368) and no-results (400) paths. Red on mutation, green on original. |
-| untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` | KILLED by tests/test_whitespace_input_exits_two.py: main(['   ']) exits 2 (empty-input path), mutant exits 3. The no-results path (400) was already pinned; this pins the whitespace path. Red on mutation (2 failed), green on original. |
-| untell/scripts/tells.py | 708 | boundary: < -> <= | `if len(words) < _MIN_WORDS_FOR_REPETITION:` | KILLED by tests/test_exactly_min_words_still_counts_repeated_trigrams.py: exactly 60 words with a repeated trigram -> original 55, mutant 0 (detector silent at its own boundary). Below-min (57 words) returns 0 under both. |
-| untell/scripts/tells.py | 921 | constant: 2 -> 3 | `("diff_anchored", len(_DIFF_ANCHOR_RE.findall(body)), 2),` | KILLED by tests/test_exactly_two_diff_anchored_lines_count.py: exactly 2 diff-anchored lines -> original reports diff_anchored=2, mutant reports nothing (floor 3). The threshold boundary is the test. Red on mutation, green on original. |
-| untell/scripts/tells.py | 945 | constant: 4 -> 5 | `return round((var**0.5) / mean, 4)` | KILLED by tests/test_burstiness_cv_rounded_to_four_decimals.py: sentence lengths (5,5,10) -> CV 0.353553...; original returns 0.3536 (4dp), mutant 0.35355 (5dp). The CV is a returned detector signal, not display — the exact value is part of the API. Red on mutation, green on original. |
+| untell/scripts/verify.py | 364 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/verify.py | 368 | constant: 2 -> 3 | `return 2` |
+| untell/scripts/tells.py | 708 | boundary: < -> <= | `if len(words) < _MIN_WORDS_FOR_REPETITION:` |
+| untell/scripts/tells.py | 921 | constant: 2 -> 3 | `("diff_anchored", len(_DIFF_ANCHOR_RE.findall(body)), 2),` |
+| untell/scripts/tells.py | 945 | constant: 4 -> 5 | `return round((var**0.5) / mean, 4)` |
 | untell/scripts/tells.py | 1017 | DOCSTRING-PROSE (not code; mutator rewrote a docstring sentence) identity: is not -> is | ``_language_supported` below is SCRIPT-based, so Chinese is caught and German is ` |
 | untell/scripts/tells.py | 1029 | DOCSTRING-PROSE logic: or -> and | `scores 0.000 and Italian scores 0.125 — so any single bar either lets German thr` |
 | untell/scripts/tells.py | 1034 | DOCSTRING-PROSE logic: and -> or | `(headings, terse lists, code-heavy prose, a passage quoting German, one full of ` |
@@ -152,13 +154,13 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/score.py | 677 | KILLED by test_score_mutation_guards (2-sentence boundary) constant: 2 -> 3 | `if len([s for s in split_sentences(text) if s.strip()]) >= 2:` |
 | untell/scripts/score.py | 751 | UNKILLABLE: per-detector round(...,4) at line 739 dominates max; 4dp vs 5dp invisible constant: 4 -> 5 | `"max": round(mx, 4),` |
 | untell/scripts/score.py | 762 | KILLED by test_score_mutation_guards (exact-threshold flag) boundary: >= -> > | `result["flagged"] = bool(numeric) and mx >= verdict_threshold` |
-| untell/scripts/score.py | 1129 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in scores` | KILLED by tests/test_scored_detector_is_not_named_missing.py — same fake-detector construction as the membership row; `or` names a scored detector as missing (1 failed under the mutation). Prior 'needs specific failure shapes' note wrong: a fake detector is the shape. |
-| untell/scripts/score.py | 1129 | membership: not in -> in | `and d.name not in scores` | KILLED by tests/test_scored_detector_is_not_named_missing.py: fake detector (tier=full, unavailable, not opt-in) — in scores -> original None (correct), mutant names it as 'ran without fake_det' (inverted). Both tests red on mutation, green on original. |
-| untell/scripts/score.py | 1130 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in _OPT_IN_DETECTORS` | KILLED by tests/test_scored_detector_is_not_named_missing.py — fake detector not in _OPT_IN_DETECTORS; `or` names a scored detector as missing (1 failed under the mutation). |
-| untell/scripts/score.py | 1131 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and not d.available()` | KILLED by tests/test_scored_detector_is_not_named_missing.py — fake detector unavailable; `or` names a scored detector as missing (1 failed under the mutation). |
-| untell/scripts/score.py | 1203 | UNKILLABLE: lone-note boundary needs specific block structure boundary: < -> <= | `if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:` | KILLED by tests/test_lone_block_warning_fires_at_exactly_min.py: exactly 3 single-sentence blocks (lone share 1.0 > 0.80) -> original fires the note, mutant None. Prior 'needs specific block structure' note wrong — 3 one-sentence paragraphs is exactly that structure. |
+| untell/scripts/score.py | 1129 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in scores` |
+| untell/scripts/score.py | 1129 | membership: not in -> in | `and d.name not in scores` |
+| untell/scripts/score.py | 1130 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in _OPT_IN_DETECTORS` |
+| untell/scripts/score.py | 1131 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and not d.available()` |
+| untell/scripts/score.py | 1203 | UNKILLABLE: lone-note boundary needs specific block structure boundary: < -> <= | `if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:` |
 | untell/scripts/score.py | 1313 | KILLED by test_score_mutation_guards (unscored rc=2) constant: 2 -> 3 | `return 2 if result.get("scored") is False else 0` |
-| untell/scripts/run.py | 196 | UNKILLABLE: saturation guard needs live rewrite cycle boundary: < -> <= | `if a < _SATURATED_MAX or b < _SATURATED_MAX:` | KILLED by tests/test_saturation_caveat_fires_at_exactly_max.py: pure function — at exactly 0.99 original emits the 'pinned' caveat, mutant returns None (silent). Prior 'needs live rewrite cycle' note wrong. Red on mutation, green on original. |
+| untell/scripts/run.py | 196 | UNKILLABLE: saturation guard needs live rewrite cycle boundary: < -> <= | `if a < _SATURATED_MAX or b < _SATURATED_MAX:` |
 | untell/scripts/run.py | 910 | UNKILLABLE: no-signal pass branch needs live loop constant: False -> True | `return False` |
 | untell/scripts/run.py | 1115 | UNKILLABLE: near-pool objective needs live selection boundary: <= -> < | `near = [v for v in pool if _objective(v[1], subset) <= min_score + _TELLS_EPS]` |
 | untell/scripts/run.py | 1196 | UNKILLABLE: browser-tier branch needs browser scoring identity: is not -> is | `polish_tier = "lite" if browser_score is not None else tier` |
@@ -190,8 +192,8 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rich_output.py | 267 | constant: 2000 -> 2001 | `_CONSOLE.print(_Panel(final[:2000] + ("..." if len(final) > 2000 else ""), title` |
 | untell/rich_output.py | 271 | KILLED by test_rich_output_mutation_guards (truncation at 2000) boundary: > -> >= | `original[:2000] + ("..." if len(original) > 2000 else ""),` |
 | untell/rich_output.py | 312 | UNKILLABLE: table header flag, style-only constant: True -> False | `table = _Table(show_header=True, header_style="bold")` |
-| untell/rich_output.py | 316 | UNKILLABLE: count style, ANSI codes dropped in captured output constant: 3 -> 4 | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` | KILLED by tests/test_tell_category_count_three_renders_red.py — the prior 'ANSI codes dropped' note was wrong: the rich markup SURVIVES in the args to Table.add_row, so count 3 -> [red] vs mutant yellow is observable. Same test kills the >= -> > boundary. |
-| untell/rich_output.py | 316 | boundary: >= -> > | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` | KILLED by tests/test_tell_category_count_three_renders_red.py: count 3 must render [red]hedging[/], count 2 [yellow] — captured via Table.add_row interception. Mutant demotes count==3 to yellow (red on mutation, green on original). |
+| untell/rich_output.py | 316 | UNKILLABLE: count style, ANSI codes dropped in captured output constant: 3 -> 4 | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` |
+| untell/rich_output.py | 316 | boundary: >= -> > | `style = "red" if count >= 3 else ("yellow" if count >= 2 else "white")` |
 | untell/browser_check.py | 131 | KILLED by test_browser_check_mutation_guards (24-gap boundary) constant: 24 -> 25 | `if _gap(lstart, lend, nearest.start(), nearest.end()) <= 24:` |
 | untell/browser_check.py | 324 | UNKILLABLE: Playwright timeout constant needs live browser constant: 1000 -> 1001 | `page.wait_for_selector(sel, timeout=per_result * 1000)` |
 | untell/mcp_server.py | 75 | KILLED by test_mcp_mutation_guards (seed 2**64-1 boundary) boundary: <= -> < | `if kind == "seed" and value is not None and not (0 <= int(value) <= 2**64 - 1):` |
@@ -204,10 +206,15 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/api_server.py | 682 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"results": {"type": "object", "additionalProperties": True},` |
 | untell/api_server.py | 715 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"pre": {"type": "object", "additionalProperties": True, "description": "score be` |
 | untell/api_server.py | 1025 | KILLED by test_api_server_mutation_guards (empty port env) logic: == -> != | `if raw is None or raw.strip() == "":` |
-| untell/scripts/numerals.py | 93 | constant: 80 -> 81 | `"eighty": 80, "ninety": 90,` | KILLED by tests/test_spelled_number_dict_values_are_exact.py: _spelled_value('eighty') -> '80' original, '81' mutant. Red on mutation, green on original. |
-| untell/scripts/numerals.py | 376 | constant: True -> False | `print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))` |
-| untell/layout.py | 156 | logic: and -> or | `if lines and lines[0].strip() == "---":` | KILLED by tests/test_non_front_matter_doc_is_not_consumed.py: 'Hello\n...\nWorld' -> original blocks ['Hello\n...', 'World'], mutant ['World'] (the '...' line is scanned as a front-matter terminator and the preceding prose is consumed/dropped). Red on mutation, green on original. |
-| untell/layout.py | 226 | logic: or -> and | `if not buffer and (line.startswith("    ") or line.startswith("\t")):` |
-| untell/scripts/quality.py | 174 | logic: or -> and | `if a_empty or b_empty:` |
-| untell/scripts/quality.py | 214 | identity: is not -> is | `if cos is not None:` |
-| untell/scripts/quality.py | 291 | constant: 2 -> 3 | `return 2` |
+
+## 2026-08-14 me2 detector sweep 1/10: detectors/base.py (7 survivors)
+
+| module | line | mutation | status |
+|---|---|---|---|
+| untell/detectors/base.py | 41 | `> 1.0` -> `>=` (clamp01) | UNKILLABLE: clamp01(1.0) identical under both comparisons |
+| untell/detectors/base.py | 165 | WINDOW_WORDS 320 -> 321 | UNKILLABLE: constant shift moves every boundary; no test can pin without hardcoding the constant |
+| untell/detectors/base.py | 175 | `<=` -> `<` (_split_to_width) | UNKILLABLE: boundary coincides with range-slice behavior (320<320 splits to one piece anyway) |
+| untell/detectors/base.py | 219 | `<=` -> `<` (single-call) | KILLED by test_base_mutation_guards (exact-window newline preservation) |
+| untell/detectors/base.py | 225 | `or` -> `and` (fallback) | UNKILLABLE: split_sentences only returns [] for text the boundary check catches first |
+| untell/detectors/base.py | 239 | `>` -> `>=` (flush) | KILLED by test_base_mutation_guards (320+1 packing) |
+| untell/detectors/base.py | 242 | `and` -> `or` (flush guard) | UNKILLABLE: only appends empty window that `if w.strip()` drops |
