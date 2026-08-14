@@ -665,3 +665,5 @@ permanently.
 | 583 | L2 | untell/_env.py | clean | 5780 | 5780 | - | L2 _env.py re-audit (7th): both killing tests green. 9/10 killed holds. |
 | 584 | L1 | T11 | clean | 5780 | 5780 | - | T11 re-audit (7th): pass-430 verified 0 fragments. No change. |
 | 585 | L3 | L3 | clean | 5780 | 5780 | - | L3: no new slow tests. New tests from this loop all <2s combined (10 in 49s incl. 3 subprocess-heavy). Slow-marked set stable. |
+| 586 | L1 | T12 | clean | 5780 | 5780 | - | T12 re-audit (8th): pass-433 verified. No change. |
+| 587 | L2 | untell/scripts/preserve.py | clean | 5780 | 5780 | - | L2 preserve.py re-audit (8th): NER common-word fix holds (2 tests green). Survivor set unchanged. |
