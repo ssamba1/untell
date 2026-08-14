@@ -332,3 +332,14 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/local_judge.py | 173 | constant: True -> False | `reply = tok.decode(gen, skip_special_tokens=True).strip()` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
 | untell/detectors/local_judge.py | 174 | logic: or -> and | `m = _NUM.search(reply or "")` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
 | untell/detectors/local_judge.py | 178 | boundary: >= -> > | `if val >= 2.0:` | KILLED by test_local_judge_mutation_guards (exact-2.0 percent boundary - mutation clamps 2.0% to 1.0)
+| untell/detectors/llm_judge.py | 51 | constant: True -> False | `return True` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 58 | constant: True -> False | `return True` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 70 | identity: is not -> is | `if anthropic is not None:` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 74 | logic: or -> and | `"model": self.model or "claude-sonnet-4-6",` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 75 | constant: 8 -> 9 | `"max_tokens": 8,` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 78 | constant: 3 -> 4 | `max_attempts=3,` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 86 | logic: or -> and | `"model": self.model or "gpt-4o-mini",` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 87 | constant: 8 -> 9 | `"max_tokens": 8,` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 90 | constant: 3 -> 4 | `max_attempts=3,` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 92 | logic: or -> and | `return resp.choices[0].message.content or ""` | UNKILLABLE: key/provider-dependent or API-payload constant
+| untell/detectors/llm_judge.py | 102 | boundary: >= -> > | `if val >= 2.0:  # answered as a percentage (e.g. "73"). Values in (1.0, 2.0) are` | KILLED by test_llm_judge_mutation_guards (exact-2.0 percent boundary - same class as local_judge:178)
