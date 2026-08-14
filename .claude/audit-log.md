@@ -289,3 +289,4 @@ permanently.
 | 273 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (6th): pass-161 verified 5/5 inverted pairs vetoed. Gate sound. |
 | 274 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (6th): largest probe yet - 20 inversion pairs + 20 paraphrase pairs through meaning_preserved with NLI live. 20/20 inversions vetoed, 20/20 paraphrases admitted. Bare-similarity probe (probe_t03.py) fails 19/20 as DOCUMENTED (sim is negation-blind; the gate is meaning_preserved) - no defect. |
 | 275 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README claims verified across 12 passes. No new drift. |
+| 276 | L9 | threshold-0.40 | clean | 5768 | 5768 | - | L9 threshold-0.40: REFUSED with measured evidence, same as 78/98/118. Both calibrated instruments (lite-builtin, lite-hc3) are deterministic (all deltas 0.0); lite-hc3-ensemble calibration (2x90min) never completed under fleet contention. Knob untouched. Unblock: run calibrate lite-hc3-ensemble to completion. |
