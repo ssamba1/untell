@@ -281,3 +281,4 @@ permanently.
 | 265 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
 | 266 | L1 | T01 | clean | 5768 | 5768 | - | T01 re-audit (6th): 4/4 lock+roundtrip. No regression. |
 | 267 | L2 | untell/languages.py | clean | 5768 | 5768 | - | L2 languages.py re-audit (5th): 12/12 ranges classify boundary letters. Coverage-closed tests from pass 77 hold. |
+| 268 | L4 | L4 | clean | 5768 | 5768 | - | L4 local_policy.py: 2/2 patterns alive (_PREAMBLE_RE matches preamble lines 'Sure:'/'Here's what I found:'/'Output:'/'The rewritten text:'; _SHIELD_RE matches [REF12] shields). Grammar probed from source; no dead patterns. |
