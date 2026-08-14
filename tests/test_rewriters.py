@@ -462,6 +462,23 @@ class TestCompositeIntensitySweep:
 
         assert len(set(_intensity_sweep(0.7, 3))) == 3  # default path unchanged: 0.4 / 0.7 / 1.0
 
+    @pytest.mark.parametrize("base", [0.4, 0.44, 0.47, 0.5, 0.7, 0.9, 1.0])
+    @pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 7, 8, 9, 10])
+    def test_sweep_never_duplicates_an_intensity(self, base, n):
+        """Every draw must be a distinct intensity.
+
+        Clamping at the edges used to double values — 1.0 -> [0.7, 1.0, 1.0], 0.4 -> [0.4, 0.4, 0.7]
+        — and the docstring's own rationale says the whole point of the spread is that drafts
+        differing only by RNG seed score near-identically and waste the draw, so a duplicate
+        intensity is a best_of slot thrown away before it is rolled. MEASURED before the fix:
+        161 of 366 in-contract (base, n) pairs emitted a duplicate (44%); at the clamping edges it
+        was the configured intensity itself that doubled.
+        """
+        from untell.rewriter.composite import _intensity_sweep
+
+        out = _intensity_sweep(base, n)
+        assert len(set(round(v, 6) for v in out)) == n, f"duplicate intensity: {out}"
+
     def test_baseline_scoring_failure_does_not_abort_the_rewrite(self, monkeypatch):
         """A candidate scoring error is swallowed; the baseline's used to propagate and crash.
 
