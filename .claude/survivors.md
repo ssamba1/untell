@@ -20,7 +20,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/text_split.py | 143 | logic: == -> != | same | Same as above |
 | untell/text_split.py | 146 | constant: False -> True | `matcher = difflib.SequenceMatcher(a=aw, b=bw, autojunk=False)` | autojunk parameter: test corpus doesn't have strings long enough to trigger junk detection |
 | untell/text_split.py | 152 | boundary: <= -> < | `if blk.a <= i < blk.a + blk.size:` | difflib block boundary: test corpus alignment doesn't hit exact boundary cases |
-| untell/text_split.py | 172 | logic: or -> and | `return out or [(a, b)]` | Empty-chunks case: only reached when all chunks were filtered out, which the chunking logic prevents |
+| untell/text_split.py | 172 | logic: or -> and | `return out or [(a, b)]` | KILLED by tests/test_long_pair_is_proportionally_chunked.py: 7000-word pair -> 78 chunks of 90 words under original, 1 chunk of 7000 under mutant (out and [(a,b)] returns the whole pair when out is non-empty, defeating the CHUNK_WORDS bound the proportional path enforces). Actual line is 175. Prior 'empty-chunks only' note wrong — the or returns the chunks. Red on mutation, green on original. |
 | untell/layout.py | 91 | logic: != -> == | `if len(mask) != len(src):` | Guard unreachable: mask and src always same length for valid text (both from same split) |
 | untell/layout.py | 149 | boundary: <= -> < | `if index <= front_matter_end:` | Killing test written: test_closing_fence_is_layout_not_prose (line 149 boundary for empty front matter) |
 | untell/scripts/preserve.py | 126 | constant: True -> False | `sorted(..., key=len, reverse=True)` | key=len argument: test corpus doesn't have duplicate-length abbreviations that would expose sort order difference |
