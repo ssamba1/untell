@@ -708,3 +708,4 @@ permanently.
 | 626 | L1 | T06 | clean | 5780 | 5780 | - | T06 re-audit (8th): 0/226 replacements emit tells. Unchanged. |
 | 627 | L2 | untell/scripts/numerals.py | clean | 5780 | 5780 | - | L2 numerals.py re-audit (9th): regression tests green (18). 3 documented survivors. Fixes hold. |
 | 628 | L2 | untell/layout.py | clean | 5774 | 5774 | - | L2 layout.py re-audit (9th): baseline green, 7/8 killed. Line 156 (front-matter and->or) now KILLED - fleet pass-519 killing test confirmed (both 156 mutations killed). Remaining: 91 (mask-len guard, documented unreachable) this draw; 226 (indented-code) documented from 482. State improved since my 482 note. |
+| 629 | L1 | T07 | clean | 5774 | 5774 | - | T07 re-audit (8th): 18-pattern spot-check ALL fire with grammar-built carriers. No dead patterns (consistent 290 full-29/29, 471). |
