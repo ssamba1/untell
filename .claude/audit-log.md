@@ -207,3 +207,6 @@ permanently.
 | 191 | L2 | untell/scripts/hedges.py | clean | 5768 | 5768 | - | L2 hedges.py re-audit (4th): same 2 survivors (148 sort key, 328 CLI print). 8/10 killed. No new. |
 | 192 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No regressions. |
 | 193 | L1 | T16 | clean | 5768 | 5768 | - | T16 re-audit (4th): no 500s, empty never AI, malformed 422, concurrent OK. Real FastAPI surface. |
+| 194 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (4th): identical survivor set as passes 27/99/139. All documented, no new. |
+| 195 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (4th): line-145 killing test still green (2-token boundary). Survivor set unchanged. No new. |
+| 196 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: UNTELL_LITE_NO_TORCH documented in README (line 538/574/791) matches code (perplexity_burstiness.py:350 forces stdlib when env=1). Claim verified. |
