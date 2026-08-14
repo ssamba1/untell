@@ -743,3 +743,4 @@ permanently.
 | 661 | L1 | T19 | clean | 5781 | 5781 | - | T19 re-audit (8th): ledger 35 rows, pass-483 verified. full-hc3-max 2nd run in flight (~60min). |
 | 662 | L1 | T01 | clean | 5781 | 5781 | - | T01 re-audit (9th): 5/5 lock+roundtrip incl. NER fix regression check. |
 | 663 | L2 | untell/scripts/io_utils.py | clean | 5774 | 5774 | - | L2 io_utils.py re-audit: baseline green, 7/8 killed. Sole survivor 180 (read(4) BOM-sniff length -> 5) DOCUMENTED: startswith works for any length >= BOM bytes, behaviorally equivalent. 264/267 exit-code survivors stay killed (fleet 492 confirmed in prior passes). No new survivors. |
+| 664 | L2 | untell/languages.py | clean | 5774 | 5774 | - | L2 languages.py re-audit (9th): survivors 43/89 unchanged (Protocol signature default, label-or-code fallback) - verified at 516/559 this session, stable since 159. Boundary probe 12/12 holds. No new survivors. |
