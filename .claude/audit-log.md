@@ -439,3 +439,4 @@ permanently.
 | 391 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (7th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. |
 | 392 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
 | 393 | L1 | T15 | clean | 5768 | 5768 | - | T15 re-audit (6th): pass-249 verified 20/20 numbers clean. No change. |
+| 394 | L8 | lite-hc3-ensemble | clean | 5769 | 5769 | - | L8 lite-hc3-ensemble: run killed at 180min (harness REFUSED partial - correct). Cause: my run + fleet's identical run + fleet's other recipes contended for 2x the recipe's ~90min solo budget. Fleet's own ensemble run still alive; when IT records, that is the measurement. No data adopted, nothing changed. |
