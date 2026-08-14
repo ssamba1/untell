@@ -474,3 +474,4 @@ permanently.
 | 425 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
 | 426 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit (7th): pass-381 verified. No change. |
 | 427 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (8th): multi-scale regression green (5). Fix holds. |
+| 428 | L8 | tells-auroc | clean | 5768 | 5768 | - | L8 tells-auroc RE-RUN: AUROC 0.8875 on 40 HC3 pairs, margin over length baseline +0.176 (0.8875 vs 0.7119). gap 5.125 between human/AI tell means. Catalogue discriminates well above length; per-tell direction fix holds. |
