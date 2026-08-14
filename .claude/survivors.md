@@ -55,7 +55,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` |
 | untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` |
 | untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 (e.g. Windows cp1252)` |
-| untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` | Lazy-load guard: only differs on first call, tests never hit the sentinel state |
+| untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` | KILLED by tests/test_bs_scorer_loads_on_first_call.py: first call after resetting _bs_model=_UNSET -> original loads the scorer (not the sentinel), mutant returns _UNSET itself. Works in both envs (None != sentinel when bert-score is absent). Prior 'tests never hit the sentinel state' note wrong — resetting the module global constructs it. Red on mutation, green on original. |
 | untell/scripts/quality.py | 78 | constant: True -> False | `_bs_model = BERTScorer(lang="en", rescale_with_baseline=True)` | Assignment arg: rescale_with_baseline only affects BERTScore which is NOT the gate (documented line 196-212) |
 | untell/scripts/quality.py | 145 | constant: 2 -> 3 | `if sum(ca.values()) < 2 or sum(cb.values()) < 2:` | KILLED by test_quality_two_word_boundary.py (word-Dice vs char-bigram divergence at exactly 2 tokens) |
 | untell/scripts/quality.py | 145 | boundary: < -> <= | same | Same test kills the boundary mutation too |
