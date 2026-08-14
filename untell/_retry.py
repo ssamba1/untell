@@ -116,7 +116,7 @@ def retry(
     fn: Callable[..., T],
     args: tuple = (),
     kw: dict | None = None,
-    max_attempts: int = 4,
+    max_attempts: int = 3,
     base_delay: float = 1.0,
     max_delay: float = 30.0,
 ) -> T:
