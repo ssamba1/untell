@@ -680,3 +680,4 @@ permanently.
 | 598 | L1 | T15 | clean | 5774 | 5774 | - | T15 re-audit (8th): 12/12 figure-dense docs, 0 numbers dropped/invented/changed. Consistent with 249/346/393/442. |
 | 599 | L2 | untell/scripts/scrub.py | clean | 5780 | 5780 | - | L2 scrub.py re-audit (9th): 3/4 killed, 1 survived (119 ensure_ascii). Identical. Binary-stdin guard verified in pass 525. |
 | 600 | L7 | L7 | clean | 5780 | 5780 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 600. |
+| 601 | L1 | T19 | clean | 5780 | 5780 | - | T19 re-audit (7th): ledger 27+ rows, pass-400 verified all carry per-item counts. full-hc3-max re-run in flight. |
