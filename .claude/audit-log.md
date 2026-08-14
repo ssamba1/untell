@@ -283,3 +283,6 @@ permanently.
 | 267 | L2 | untell/languages.py | clean | 5768 | 5768 | - | L2 languages.py re-audit (5th): 12/12 ranges classify boundary letters. Coverage-closed tests from pass 77 hold. |
 | 268 | L4 | L4 | clean | 5768 | 5768 | - | L4 local_policy.py: 2/2 patterns alive (_PREAMBLE_RE matches preamble lines 'Sure:'/'Here's what I found:'/'Output:'/'The rewritten text:'; _SHIELD_RE matches [REF12] shields). Grammar probed from source; no dead patterns. |
 | 269 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene re-audit: ruff clean (0 errors), all 3 CLIs launch, import OK. No regressions. |
+| 270 | L1 | T02 | clean | 5768 | 5768 | - | T02 re-audit (6th): 12/12 carriers counted+scrubbed. No regression. |
+| 271 | L2 | untell/config.py | clean | 5768 | 5768 | - | L2 config.py re-audit (5th): 5/5 killed, zero survivors (verified pass 163/215). Fully pinned. |
+| 272 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No regressions. |
