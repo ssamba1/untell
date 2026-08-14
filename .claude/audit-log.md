@@ -225,4 +225,4 @@ permanently.
 | 209 | L1 | T02 | clean | 5768 | 5768 | - | T02 re-audit (5th): 12/12 carriers counted+scrubbed (verified pass 157 with corrected assertion). No regression. |
 | 210 | L8 | full-hc3-neural | clean | 5768 | 5768 | - | L8 full-hc3-neural COMPLETED: pre 1.0 -> post 0.9999 (negligible). Family complete: composite 1.0->1.0, max 1.0->0.9758, neural 1.0->0.9999. All flagged at 0.45. AMBER queued. |
 | 211 | L2 | untell/scripts/verify.py | clean | 5768 | 5768 | - | L2 verify.py re-audit (4th): survivor set unchanged (rounding, measure-zero boundaries, truncation). No new. |
-| 212 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No regressions. |
+| 212 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff found 2 unused imports in fleet test files (cli_mutation_guards, rich_output_mutation_guards) — fixed with ruff --fix, tests still pass. ruff now clean. |

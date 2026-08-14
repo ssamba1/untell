@@ -12,8 +12,8 @@ distinguish — recorded as unkillable in survivors.md.
 
 from __future__ import annotations
 
-import io
 import contextlib
+import io
 
 from untell.scripts import cli
 

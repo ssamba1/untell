@@ -14,8 +14,8 @@ recorded as unkillable in survivors.md.
 
 from __future__ import annotations
 
-import io
 import contextlib
+import io
 
 from untell import rich_output as RO
 
