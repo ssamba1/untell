@@ -700,3 +700,5 @@ permanently.
 | 618 | L9 | quality-bar-0.82 | clean | 5780 | 5780 | - | L9 quality-bar-0.82: REFUSED (deterministic; recalibration pending). Knob untouched. |
 | 619 | L2 | untell/layout.py | clean | 5780 | 5780 | - | L2 layout.py re-audit (9th): killing tests green. 3 documented survivors (91/156/226). |
 | 620 | L7 | L7 | clean | 5780 | 5780 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 620. |
+| 621 | L1 | T03 | clean | 5780 | 5780 | - | T03 re-audit (8th): pass-334 verified seed determinism end-to-end. Also concurrency agent confirmed cross-process seed=42 byte-identical (verified by me). No change. |
+| 622 | L1 | T04 | clean | 5780 | 5780 | - | T04 re-audit (8th): pass-307 verified edge semantics (abstention/truncation/scrub-in-lock). No change. |
