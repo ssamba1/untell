@@ -270,3 +270,4 @@ permanently.
 | 254 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (5th): 3/4 killed, 1 survived (119 ensure_ascii, documented). Identical to prior. |
 | 255 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (5th): 33/33 environments live. No dead patterns. |
 | 256 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README claims verified across 10+ passes. No new drift. |
+| 257 | L8 | lite-hc3 | clean | 5768 | 5768 | - | L8 lite-hc3 RE-RUN (4th): pre 1.0 -> post 1.0 flagged, pre 0.6362 -> post 0.5625. post_max 0.589 -> 0.562 (-0.026, MOVED beyond +-0.020 band). Flagged rate unchanged; score moved down beyond noise. AMBER queued per harness rule. |

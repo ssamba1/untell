@@ -238,3 +238,16 @@ FAMILY (all full tier, n=6, 3 repeats, real HC3):
 NEXT   Same human decision as the other two entries: drop mage from the default ensemble /
        change the (max,mean) selection key / accept as documented. Do not adopt from single
        runs. This family is now COMPLETE — the L8 lane has its full comparison set.
+
+## 2026-08-13 pass 257 L8 AMBER — lite-hc3: post_mean_max moved -0.026 (outside +-0.020 band)
+
+WHAT   4th run of lite-hc3: pre_flagged_rate 1.0 -> post_flagged_rate 1.0, pre_mean_max
+       0.6362 -> post_mean_max 0.5625. Against run 3: post_mean_max 0.589 -> 0.562
+       (-0.026, MOVED beyond the +-0.020 noise band). pre numbers identical (+0.000).
+WHY    AMBER — the rewriter moved the score DOWN by more than noise on this run (better
+       rewriting or a draw that happened to land better). The flagged rate did not move
+       (1.0 both), so the headline verdict is unchanged; only the magnitude of the
+       post-rewrite score improved. Direction is consistent with the tool's intent.
+NEXT   Not an adoption trigger by itself — the band rule exists to catch drift, and a
+       single -0.026 could be a lucky draw at n=10. Watch the next lite-hc3 run before
+       treating this as a real improvement in rewriter strength.
