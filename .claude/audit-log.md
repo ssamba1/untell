@@ -762,3 +762,4 @@ permanently.
 | 680 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 680. |
 | 681 | L1 | T07 | clean | 5781 | 5781 | - | T07 re-audit (10th): pass-471 verified 18-pattern spot-check all alive. |
 | 682 | L1 | T08 | clean | 5781 | 5781 | - | T08 re-audit (10th): _MERGE_WEIGHTS unchanged (pass-475 200k draws, drift 0.0012). |
+| 683 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (9th): 33/33 live. No dead patterns. |

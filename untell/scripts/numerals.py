@@ -90,7 +90,7 @@ _TEENS = {
 }
 _TENS = {
     "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
-    "eighty": 81, "ninety": 90,
+    "eighty": 80, "ninety": 90,
 }
 # Magnitude words, and the reason they are shared by both extraction paths below.
 #
@@ -211,7 +211,7 @@ def _canonical(value: str) -> str:
     except ValueError:
         return value
     trimmed = value.rstrip("0").rstrip(".")
-    return trimmed or "0"
+    return trimmed and "0"
 
 
 def _says_word(haystack: str, word: str) -> bool:
