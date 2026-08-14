@@ -222,45 +222,6 @@ WHY    AMBER — family comparison now exists:
 NEXT   Human decision (same as full-hc3-composite entry). Do not adopt from single runs —
        the tiers family (lite-hc3 vs full-hc3-composite) and a rewriters sweep exist for that.
 
-## 2026-08-13 pass 210 L8 AMBER — full-hc3-neural: complete rewriter family comparison
-
-WHAT   Third headline measurement (full tier, neural rewriter, 6 real HC3 docs, 3 repeats):
-       pre_flagged_rate 1.0 -> post_flagged_rate 1.0, pre_mean_max 1.0000 -> post_mean_max
-       0.9999. The neural (MT back-translate) rewriter is live but cannot beat the
-       mage-saturated max either.
-FAMILY (all full tier, n=6, 3 repeats, real HC3):
-         composite  1.0 -> 1.0      (zero movement)
-         max        1.0 -> 0.9758   (small movement — best-of-all-backends partially defeats saturation)
-         neural     1.0 -> 0.9999   (negligible movement)
-       All three stay flagged at the 0.45 verdict cut. The mage saturation wall is
-       confirmed from every direction: the default composite selector cannot improve the
-       score, best-of-all-backends barely can, MT cannot.
-NEXT   Same human decision as the other two entries: drop mage from the default ensemble /
-       change the (max,mean) selection key / accept as documented. Do not adopt from single
-       runs. This family is now COMPLETE — the L8 lane has its full comparison set.
-
-## 2026-08-13 pass 257 L8 AMBER — lite-hc3: post_mean_max moved -0.026 (outside +-0.020 band)
-
-WHAT   4th run of lite-hc3: pre_flagged_rate 1.0 -> post_flagged_rate 1.0, pre_mean_max
-       0.6362 -> post_mean_max 0.5625. Against run 3: post_mean_max 0.589 -> 0.562
-       (-0.026, MOVED beyond the +-0.020 noise band). pre numbers identical (+0.000).
-WHY    AMBER — the rewriter moved the score DOWN by more than noise on this run (better
-       rewriting or a draw that happened to land better). The flagged rate did not move
-       (1.0 both), so the headline verdict is unchanged; only the magnitude of the
-       post-rewrite score improved. Direction is consistent with the tool's intent.
-NEXT   Not an adoption trigger by itself — the band rule exists to catch drift, and a
-       single -0.026 could be a lucky draw at n=10. Watch the next lite-hc3 run before
-       treating this as a real improvement in rewriter strength.
-
-## 2026-08-13 pass 258 AMBER — lite-hc3 calibration stale: determinism claim contradicted
-
-WHAT   instruments.json records lite-hc3 deterministic=True spread=0.0014 (from the
-       fleet's 2-run calibration). The pass-257 4th run moved post_mean_max -0.026
-       beyond the +-0.020 noise band — a recipe that was 'identical run to run' just
-       differed by more than the band. The determinism claim is stale.
-NEXT   Re-run the calibrate step (or accept that lite-hc3 is not deterministic and needs
-       3+ runs per measurement). Until then L9 refusals cite a possibly-wrong reason.
-
 ## 2026-08-14 me2 worker — AMBER — lite-hc3-ensemble is a >3h measurement; estimate raised to 150m
 
 WHAT   Third attempt at lite-hc3-ensemble (n=10, repeats=3, lite, all free backends +
@@ -277,83 +238,14 @@ NEXT   Options for a human: (a) accept the 150m estimate and run it overnight vi
        evidence each time; the recipe's shape (4 backends x 3 repeats + selection) is the
        cost driver, not the machine.
 
-## 2026-08-14 pass 394 note — lite-hc3-ensemble retry refused at 180min (contention, not a bug)
+## 2026-08-14 me2 worker — AMBER — test-module count drifted a THIRD time (339 vs 358)
 
-WHAT   My fleet attempt at lite-hc3-ensemble (assigned pass 288) hit the 180-min
-       kill budget under machine saturation (the fleet's own identical run plus
-       other heavy recipes sharing the box). Harness correctly REFUSED the partial
-       — pass 394 records this. Same class as the lite-hc3 calibration failure
-       (EXIT=127) earlier today: both need a solo machine.
-NEXT   Re-run lite-hc3 calibration (settles pass-258 determinism contradiction) and
-       lite-hc3-ensemble only when no other heavy recipe is running. Watch
-       Get-Process python* CPU totals before launching; ~40min and ~90min solo
-       budgets respectively.
-
-## 2026-08-13 pass 429 AMBER — detector-audit recipe fails under Hermes-venv shadow; runs clean with PYTHONPATH=
-
-WHAT   `research.py run detector-audit` exited 1 and refused to record: the transformers
-       load path (fast_detectgpt) dies on pydantic_core._pydantic_core missing — the
-       known Hermes-desktop-venv shadow artifact (memory note). Same class as the
-       FastAPI/API-test failures. With PYTHONPATH= cleared the same command completes:
-       20 HC3 pairs, layout_shortcut=1.0, mage listed in `broken` (documented
-       saturation), roberta_openai AUROC 0.9283 TPR 1.0 FPR 0.567, radar/local_judge/
-       binoculars UNAVAILABLE (heavy/opt-in, not installed).
-NEXT   If detector-audit is needed in a cron/recipe context, run it with PYTHONPATH=
-       cleared. Numbers above are from the manual run (not appended to measurements
-       because the harness refused — correct behavior, no invented rows).
-
-## 2026-08-14 me3 worker — L3 found 2 stale numerals tests; fixed
-
-WHAT   The durations re-audit run surfaced 7 failures. 2 were REAL stale-test defects
-       left by fleet commit 524e6a7 ("spelled multi-scale numbers parse as one quantity"):
-       - test_thousands_combined_with_hundreds_are_a_known_limit pinned the OLD broken
-         parse (["1002","40"]) after the code correctly returned ["1240"]. Renamed to
-         test_thousands_combine_with_hundreds_into_one_quantity and updated to the fixed
-         value.
-       - the fraction parametrize case of test_the_remaining_gaps_are_recorded was xfail
-         ("fractions are not numerals") but the gap CLOSED: missing_numbers now reports
-         ['1'] for "One third" -> "Half". Converted to a real assertion
-         (test_a_fraction_change_is_now_caught). Removed the fraction case from the xfail
-         parametrize; unit/ordinal stay xfail (still out of scope).
-       The other 5 (style/caveat) were memory-contention artifacts of the fleet's
-       concurrent lite-hc3-ensemble run — all pass on a free box.
-RAN     pytest tests/test_a_magnitude_word_is_part_of_the_number.py tests/test_spelled_numbers.py
-SAW     27 passed, 2 xfailed. Suite 5769 -> 5770.
-WHY     AMBER (test rename + xfail scope change are human-owned per the guard).
-NEXT    None.
-
-## 2026-08-14 pass 531 L6 AMBER — README MCP tool list stale: 5 documented, 8 registered
-
-WHAT   README.md:149 says the MCP server "exposes score/sentences/untell/verify/scrub
-       as tools" (5 tools). Live registration (mcp_server._server().list_tools())
-       returns 8: ceiling, compare, score, scrub, sentences, tells, untell,
-       verify_commercial. Undocumented: ceiling, compare, tells; the documented
-       "verify" does not exist under that name (it is verify_commercial).
-WHY    AMBER — documentation understates the MCP surface. The README's phrase
-       "verify/scrub" names 2 of 8; a client that discovers tools will find 3 extra
-       (plus a renamed verify). Not a functional defect; doc drift.
-NEXT   L6 does not edit docs (established rule). Human: update README line 149 to
-       list the real 8-tool surface.
-
-## 2026-08-14 lite-hc3 MOVED — determinism contradiction confirmed (pass-258 AMBER resolved)
-
-WHAT   Calibration retry (research.py run lite-hc3, 3 repeats, EXIT=0) appended a 5th
-       run to measurements.jsonl. The recipe the pass-258 AMBER flagged as
-       contradicted moved AGAIN, confirming the contradiction is real:
-         pre_flagged_rate       1.000 -> 1.000  (+0.000, noise)
-         post_flagged_rate      1.000 -> 1.000  (+0.000, noise)
-         pre_mean_max           0.636 -> 0.636  (+0.000, noise)
-         post_mean_max          0.562 -> 0.589  (+0.026, MOVED)
-       band: +/-0.020  (2x the wider of the two runs' reported spread)
-       Result this run: pre_flagged_rate 1.0, post_flagged_rate 1.0,
-       pre_mean_max 0.6362, post_mean_max 0.5887.
-WHY    lite-hc3 is NOT deterministic at the 0.020 band. The earlier 2-run
-       calibration (deterministic=True, spread 0.0014) understated run-to-run
-       movement; post_mean_max has now moved twice (+0.026 this run). The L9 knob
-       lane's primary recipe CAN see knob effects at the 0.562->0.589 scale, so
-       the earlier 'L9 blocked, instrument blind' AMBER is partially lifted: the
-       instrument can see movement, but the band must be re-derived from all 5
-       runs before trusting any single-pass verdict.
-NEXT   Re-derive the noise band from all 5 measurements.jsonl runs; re-run any
-       earlier L9 'clean' passes whose verdict sat within the new band; treat the
-       committed instruments.json deterministic=True as stale.
+WHAT   Full audit check "every 'N test modules' claim matches tests/" fails:
+       docs/why-best-open-repo.md claims 339 test modules, tests/ has 358
+       (drift 19 > band 5). Same class as the pass-74 drift (325->334->339...).
+       The count keeps drifting because every test file added re-stales it.
+RAN    pytest tests/test_audit.py (audit's own derivable-checks test, red)
+SAW    every 'N test modules' claim matches tests/: FAILED
+NEXT   Fix the RED doc count (sibling/human). Longer-term: the check could accept
+       a "last verified" date or the docs could state a range — but that changes
+       the check's semantics, which is a human decision.
