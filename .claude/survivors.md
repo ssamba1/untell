@@ -63,7 +63,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` | One-empty path: char-bigram fallback only fires for scriptio-continua scripts (CJK) — English test corpus never hits |
 | untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` | normalize_embeddings: cosine of normalized vs raw embeddings differs in practice but tests use tolerant thresholds |
 | untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | KILLED by tests/test_similarity_exactly_at_bar_passes.py: with _model=None the token path yields exact rationals — 1 shared of 4 unique = Dice 0.5 = TOKEN_BAR exactly; original passes, mutant rejects. Prior 'measure-zero with real embeddings' note wrong: the token path makes equality exact. |
-| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | Same boundary as 263 (CLI JSON path) — same test kills it via the shared similarity/passes logic; the CLI main() is a thin print wrapper. |
+| untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | KILLED by tests/test_quality_cli_exact_bar.py: the CLI computes sim >= bar INLINE (never calls passes()), so the old note 'same test kills it via shared logic' was WRONG — mutation run proved 302 survived with the 263-killer in the set. New CLI-level test: exact-bar pair (cat dog / cat tree, Dice 0.5 = TOKEN_BAR) through quality_main asserts JSON passes=True; red on >=->> (verified), green on original. |
 | untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding |
 | untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 stdout` |
 | untell/scripts/scrub.py | 119 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding, same class as voice.py:265 |
@@ -204,3 +204,10 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/api_server.py | 682 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"results": {"type": "object", "additionalProperties": True},` |
 | untell/api_server.py | 715 | UNKILLABLE: OpenAPI additionalProperties, schema-description only constant: True -> False | `"pre": {"type": "object", "additionalProperties": True, "description": "score be` |
 | untell/api_server.py | 1025 | KILLED by test_api_server_mutation_guards (empty port env) logic: == -> != | `if raw is None or raw.strip() == "":` |
+| untell/scripts/numerals.py | 93 | constant: 80 -> 81 | `"eighty": 80, "ninety": 90,` |
+| untell/scripts/numerals.py | 376 | constant: True -> False | `print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))` |
+| untell/layout.py | 156 | logic: and -> or | `if lines and lines[0].strip() == "---":` |
+| untell/layout.py | 226 | logic: or -> and | `if not buffer and (line.startswith("    ") or line.startswith("\t")):` |
+| untell/scripts/quality.py | 174 | logic: or -> and | `if a_empty or b_empty:` |
+| untell/scripts/quality.py | 214 | identity: is not -> is | `if cos is not None:` |
+| untell/scripts/quality.py | 291 | constant: 2 -> 3 | `return 2` |
