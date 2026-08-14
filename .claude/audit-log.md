@@ -597,3 +597,4 @@ permanently.
 | 532 | L6 | L6 | clean | 5773 | 5773 | - | L6 claim re-verified: SKILL.md 163-164 meaning-gate numbers - 'Only 7 of the 19 tests passed.' -> 'Only a few...' sim=0.951 contradiction=0.011 entailment=0.007, EXACT match, zero drift. |
 | 533 | L9 | ppl-weight-0.40 | clean | 5773 | 5773 | - | L9 ppl-weight-0.40: REFUSED with measured evidence (lite-hc3 deterministic, deltas 0.0). Calibration in flight (races 300-min kill); when ensemble calibration lands, this refusal expires. Knob untouched. |
 | 534 | L6 | L6 | clean | 5778 | 5778 | - | L6 drift: README MCP tool list stale — documents 5 tools (score/sentences/untell/verify/scrub), live server registers 8 (ceiling/compare/tells/verify_commercial undocumented, verify renamed). Queued to human-queue. L6 does not edit docs. |
+| 535 | L2 | untell/_env.py | clean | 5778 | 5778 | - | L2 _env.py re-audit (6th): env tests green (37+). Module fully pinned per pass 367 (10/10 killed incl. line 103). |
