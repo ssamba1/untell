@@ -661,3 +661,5 @@ permanently.
 | 579 | L2 | untell/_retry.py | clean | 5780 | 5780 | - | L2 _retry.py re-audit (8th): kill tests green (8). Nearly fully pinned. |
 | 580 | L7 | L7 | clean | 5780 | 5780 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 580. |
 | 581 | L1 | T07 | clean | 5780 | 5780 | - | T07 re-audit (7th): 4/4 spot-check patterns alive. |
+| 582 | L1 | T09 | clean | 5780 | 5780 | - | T09 re-audit (7th): pass-424 verified. No change. |
+| 583 | L2 | untell/_env.py | clean | 5780 | 5780 | - | L2 _env.py re-audit (7th): both killing tests green. 9/10 killed holds. |
