@@ -75,7 +75,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/io_utils.py | 264 | constant: 2 -> 3 | `raise SystemExit(2) from None` |
 | untell/scripts/io_utils.py | 267 | constant: 2 -> 3 | `raise SystemExit(2) from None` |
 | untell/scripts/io_utils.py | 290 | constant: False -> True | `interactive = False` |
-| untell/scripts/io_utils.py | 50 | boundary: > -> >= | `return os.path.getsize(path) > 0` | 0-byte file: getsize returns 0, both >0 and >=0 differ only at exactly 0 which is caught by the not-_has_bytes path anyway |
+| untell/scripts/io_utils.py | 50 | boundary: > -> >= | `return os.path.getsize(path) > 0` | KILLED by tests/test_empty_file_is_reported_empty_not_corrupt.py: mutant makes empty .docx report 'not a readable .docx (corrupt)' instead of 'is empty, so there is no .docx to read'. Prior note ('caught by the not-_has_bytes path anyway') wrong — the DIFFERENT MESSAGE is the observable. |
 | untell/scripts/io_utils.py | 52 | constant: True -> False | `return True  # unreadable size is not evidence of emptiness` | Defensive: size query failure returns True (not empty) so parser's own error stands; test corpus can't force getsize to raise |
 | untell/scripts/io_utils.py | 138 | logic: or -> and | `if "Decrypt" in name or "decrypted" in str(exc):` | KILLED by test_io_utils_decrypt_guard.py (class-name-alone and message-alone cases) |
 | untell/scripts/io_utils.py | 180 | constant: 4 -> 5 | `head = fh.read(4)` | Sniff length: 4 bytes enough for all BOMs; reading 5 is indistinguishable in tests |
