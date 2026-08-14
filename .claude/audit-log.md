@@ -261,3 +261,4 @@ permanently.
 | 245 | L3 | L3 | clean | 5768 | 5768 | - | L3: regression tests fast (11 in <1s). No new slow tests. |
 | 246 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (5th): all 5 neutral transforms OK. Fix holds. |
 | 247 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (5th): identical survivor set. All documented, no new. |
+| 248 | L8 | lite-builtin | clean | 5768 | 5768 | - | L8 lite-builtin RE-RUN (5th): pre 1.0 -> post 0.0 flagged, pre 0.409 -> post 0.1259. Stable across 5 runs (post_max drift +0.010 within +-0.034 band). The lite builtin path fully de-flags — the one recipe immune to mage saturation. |
