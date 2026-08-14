@@ -16,8 +16,6 @@ construct deterministically — recorded as unkillable in survivors.md.
 
 from __future__ import annotations
 
-import json
-
 from untell.scripts import score as S
 
 

@@ -6,14 +6,12 @@
   line 206   constant: 2 -> 3      CLI exit code for missing --against file.
 
 88, 194 and 206 are killed here. 102 pins the current contract: the unwrap loop
-runs three passes (enough for \textbf{\emph{x}} per the comment); a FOUR-level
+runs three passes (enough for \textbf{\\emph{x}} per the comment); a FOUR-level
 nest loses the word — that is the documented bound, and the mutation (four passes)
 would silently start keeping depth-4 words, changing the scoring view.
 """
 
 from __future__ import annotations
-
-import pytest
 
 from untell.scripts.latex import is_latex, main, prose_only
 

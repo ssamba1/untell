@@ -186,3 +186,4 @@ permanently.
 | 170 | L1 | T08 | clean | 5768 | 5768 | - | T08 re-audit (4th): _MERGE_WEIGHTS unchanged, matches human column. Fix holds. |
 | 171 | L2 | untell/_env.py | clean | 5768 | 5768 | - | L2 _env.py re-audit (3rd): both killing tests green (comment-skip line 84, real-env-wins line 100). Only except-path 103 survives. 9/10 killed state holds. |
 | 172 | L8 | full-hc3-max | clean | 5768 | 5768 | - | L8 full-hc3-max COMPLETED + recorded: n=6, rewrote=18. pre 1.0 -> post 1.0 flagged, pre 1.0 -> post 0.9758 mean max. First measurable beat of mage saturation (composite was 1.0->1.0). Still flagged at 0.45 cut. AMBER queued with family comparison. |
+| 173 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff found 5 unused imports in fleet test files (latex_mutation_guards, score_mutation_guards) — fixed with ruff --fix, 12 affected tests still pass. ruff now clean. |
