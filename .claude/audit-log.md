@@ -199,3 +199,5 @@ permanently.
 | 183 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (4th): multi-scale + spelled-decimal regression tests green (16 tests). My fix + fleet's fix both hold. Survivors unchanged (dict entries, main guard). |
 | 184 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (4th): 14/14 paragraphs rewritten, last change at final index. Tail-reachability holds. |
 | 185 | L3 | L3 | clean | 5768 | 5768 | - | L3: all regression tests fast (<1s). No new slow tests. |
+| 186 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (4th): 4/4 display-math tests pass. Fix holds. |
+| 187 | L2 | untell/scripts/sentences.py | clean | 5768 | 5768 | - | L2 sentences.py re-audit (4th): identical survivor set as passes 19/91/134. All documented, no new. |
