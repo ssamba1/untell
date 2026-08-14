@@ -66,16 +66,21 @@ def test_the_caveat_does_not_claim_the_verdict_is_wrong() -> None:
         assert overclaim not in _HUMAN_FP_NOTE.lower()
 
 
-def test_it_reaches_a_real_score_result() -> None:
+def test_it_reaches_a_real_score_result(stdlib_lite) -> None:
     """Wired in, not merely defined — the defect two results ago was a transform that worked and
-    was never called."""
+    was never called.
+
+    Pinned to the stdlib lite path (see test_a_document_with_no_prose_says_so for the same
+    reasoning): the assertion is about warning content, which the pure-Python path answers
+    without loading GPT-2.
+    """
     result = score_text(HUMAN, tier="lite", threshold=0.3)
     if not result.get("flagged"):
         pytest.skip("this text is not flagged on the installed tier")
     assert "not proof of AI authorship" in (result.get("warning") or "")
 
 
-def test_an_existing_warning_is_not_replaced() -> None:
+def test_an_existing_warning_is_not_replaced(stdlib_lite) -> None:
     """Length, tier and false-positive rate are independent problems; the merge appends rather than
     overwrites, and a short flagged text has both."""
     result = score_text("Short and flagged.", tier="lite", threshold=0.01)

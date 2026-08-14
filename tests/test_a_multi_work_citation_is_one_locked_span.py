@@ -103,9 +103,16 @@ def test_an_ordinary_parenthesis_is_not_frozen(text: str) -> None:
     assert not [v for v in spans.values() if "(" in v and len(v) > 12], spans
 
 
-def test_the_prose_around_a_citation_still_changes() -> None:
+def test_the_prose_around_a_citation_still_changes(stdlib_lite) -> None:
     """The same guard end to end. A pattern that swallowed the sentence would pass every assertion
-    above — the citation survives perfectly inside text nothing can touch."""
+    above — the citation survives perfectly inside text nothing can touch.
+
+    Scoring path pinned to stdlib lite, exactly as test_the_prose_around_a_quotation_
+    still_changes in test_a_curly_quotation_is_locked_too.py: on a torch machine
+    `tier="lite"` upgrades to GPT-2 perplexity, which scores this PROSE 0.036 — the loop
+    correctly sees an already-passing document, returns it unchanged, and `final != doc`
+    fails through no fault of the lock. The assertion is about the lock, not the model.
+    """
     doc = "The effect held (Smith, 2019; Jones, 2020) across every site tested. " + PROSE
     final = untell_text(doc, tier="lite", max_iters=3)["final"]
     assert final != doc
