@@ -214,3 +214,5 @@ permanently.
 | 198 | L9 | quality-bar-0.70 | clean | 5768 | 5768 | - | L9 quality-bar-0.70: REFUSED with measured evidence (deterministic). Knob untouched. |
 | 199 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (4th): 3/4 killed, 1 survived (119 ensure_ascii, documented). Identical to passes 34/107/147. |
 | 200 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified (5768->5767). Tree clean. Sound at pass 200. |
+| 201 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (4th): empty->exit 2, missing->exit 2 names file, whitespace->exit 2, valid->exit 0 JSON parses. Fix holds. |
+| 202 | L1 | T19 | clean | 5768 | 5768 | - | T19 re-audit (4th): ledger has 2 full-hc3 rows (composite 1.0->1.0, max 1.0->0.9758), all with n+corpus, 0 unscored. Aggregates consistent. |
