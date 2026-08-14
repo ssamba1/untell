@@ -431,3 +431,4 @@ permanently.
 | 386 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (7th): pass-357 verified 4/4 display-math. No change. |
 | 379 | L4 | batch_rewards parity | clean | 5796 | 5796 | a6808a7 | L4 batch_rewards (2nd, post-fix): delegates to humanness_reward (line 242) so the fixed NLI gate flows through — faithful paraphrase earns 1.0, off-topic still -1.0, faithful > off. The GRPO-called batch path is aligned with the deployed loop's gate. |
 | 387 | L2 | untell/scripts/quality.py | clean | 5768 | 5768 | - | L2 quality.py re-audit (6th): 2-token boundary killing test green. Survivor set unchanged. |
+| 380 | L4 | reward weights | clean | 5796 | 5796 | ff89fbe | L4 free_ensemble_score (2nd): renormalized weighted mean exact (0.8073 == (0.35*1.0+0.18*0.5+0.02*0.2)/0.55), below max 1.0 (dilutes saturating detector as designed), no-detector -> RuntimeError naming UNTELL_REWARD_FAST escape. Weighted-mean gradient is the documented StealthRL regime. |
