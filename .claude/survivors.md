@@ -208,7 +208,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/numerals.py | 376 | constant: True -> False | `print(json.dumps({"missing": missing, "kept": not missing}, ensure_ascii=True))` |
 | untell/layout.py | 156 | logic: and -> or | `if lines and lines[0].strip() == "---":` | KILLED by tests/test_non_front_matter_doc_is_not_consumed.py: 'Hello\n...\nWorld' -> original blocks ['Hello\n...', 'World'], mutant ['World'] (the '...' line is scanned as a front-matter terminator and the preceding prose is consumed/dropped). Red on mutation, green on original. |
 | untell/layout.py | 226 | logic: or -> and | `if not buffer and (line.startswith("    ") or line.startswith("\t")):` |
-| untell/scripts/quality.py | 174 | logic: or -> and | `if a_empty or b_empty:` |
+| untell/scripts/quality.py | 174 | logic: or -> and | `if a_empty or b_empty:` | KILLED by tests/test_empty_vs_text_similarity_is_zero.py: similarity('', 'hello') -> 0.0 under original, 0.5098 under mutant (spurious embedding cosine — exactly what the comment documents). Red on mutation, green on original. |
 | untell/scripts/quality.py | 214 | identity: is not -> is | `if cos is not None:` |
 | untell/scripts/quality.py | 291 | constant: 2 -> 3 | `return 2` |
 
