@@ -201,3 +201,6 @@ permanently.
 | 185 | L3 | L3 | clean | 5768 | 5768 | - | L3: all regression tests fast (<1s). No new slow tests. |
 | 186 | L1 | T13 | clean | 5768 | 5768 | - | T13 re-audit (4th): 4/4 display-math tests pass. Fix holds. |
 | 187 | L2 | untell/scripts/sentences.py | clean | 5768 | 5768 | - | L2 sentences.py re-audit (4th): identical survivor set as passes 19/91/134. All documented, no new. |
+| 188 | L4 | L4 | clean | 5768 | 5768 | - | L4 hedges.py deep sweep: 169/169 terms (20 modality, 60 evidential, 17 frequency, 17 quantifier, 34 degree, 21 intention) match their own class patterns. Stronger than pass-29's 6/6 class check — every term alive. |
+| 189 | L1 | T14 | clean | 5768 | 5768 | - | T14 re-audit (4th): all 5 neutral transforms OK (verdict+tells unchanged). Fix holds. |
+| 190 | L1 | T15 | clean | 5768 | 5768 | - | T15 re-audit (4th): 20/20 figure-dense docs, 0 numbers dropped/invented/changed. Fixes hold. |
