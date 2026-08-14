@@ -717,3 +717,6 @@ permanently.
 | 635 | L1 | T09 | clean | 5774 | 5774 | - | T09 re-audit (8th): 3 AI docs - 2/3 changed (rewrites=2), doc 1 unchanged = documented lite-detector limitation (pre_max < 0.30). No no-op regression. Consistent 293/377/485. |
 | 636 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: MCP tool-list drift already queued (fleet 534 + my 596). No new drift this pass. |
 | 637 | L1 | T10 | clean | 5781 | 5781 | - | T10 re-audit (8th): pass-426 verified. No change. |
+| 638 | L9 | relaxed-sim-0.20 | clean | 5781 | 5781 | - | L9 relaxed-sim-0.20: REFUSED (deterministic; recalibration pending). Knob untouched. |
+| 639 | L2 | untell/scripts/hedges.py | clean | 5781 | 5781 | - | L2 hedges.py re-audit (9th): 2 documented survivors (148, 328). No new. |
+| 640 | L7 | L7 | clean | 5774 | 5774 | - | L7 harness: shrink refusal fires (100->99 REFUSED), mutate kills 2/2 + restores byte-identical, tree clean (0 modified). Sound at pass 640. |
