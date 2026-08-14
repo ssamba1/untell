@@ -276,3 +276,15 @@ NEXT   Options for a human: (a) accept the 150m estimate and run it overnight vi
        session can complete it. The estimate was corrected 30->60->90->150 with measured
        evidence each time; the recipe's shape (4 backends x 3 repeats + selection) is the
        cost driver, not the machine.
+
+## 2026-08-14 pass 394 note — lite-hc3-ensemble retry refused at 180min (contention, not a bug)
+
+WHAT   My fleet attempt at lite-hc3-ensemble (assigned pass 288) hit the 180-min
+       kill budget under machine saturation (the fleet's own identical run plus
+       other heavy recipes sharing the box). Harness correctly REFUSED the partial
+       — pass 394 records this. Same class as the lite-hc3 calibration failure
+       (EXIT=127) earlier today: both need a solo machine.
+NEXT   Re-run lite-hc3 calibration (settles pass-258 determinism contradiction) and
+       lite-hc3-ensemble only when no other heavy recipe is running. Watch
+       Get-Process python* CPU totals before launching; ~40min and ~90min solo
+       budgets respectively.
