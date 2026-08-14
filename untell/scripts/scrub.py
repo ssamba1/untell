@@ -58,7 +58,12 @@ def _read_input(args: argparse.Namespace) -> str | None:
     if args.text is not None:
         return args.text
     if not sys.stdin.isatty():
-        return sys.stdin.read()
+        try:
+            return sys.stdin.read()
+        except UnicodeDecodeError:
+            # Binary/undecodable stdin — same guard as read_stdin_or_none: clean "no input"
+            # path instead of a traceback. MEASURED: b'\xff\xfe' piped here leaked before.
+            return None
     return None
 
 

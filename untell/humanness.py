@@ -644,7 +644,11 @@ def main(argv: list[str] | None = None) -> int:
     elif args.text:
         text = args.text
     else:
-        text = sys.stdin.read()
+        try:
+            text = sys.stdin.read()
+        except UnicodeDecodeError:
+            # Binary/undecodable stdin — clean "empty input" exit 2, not a traceback.
+            text = ""
     if not text.strip():
         print(json.dumps({"error": "empty input"}))
         return 2

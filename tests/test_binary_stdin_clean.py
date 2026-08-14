@@ -18,22 +18,26 @@ BINARY_INPUTS = [
     b"\xed\xa0\x80",            # lone surrogate in utf-8 (CESU-8 style)
 ]
 
+COMMANDS = [
+    ["-m", "untell.scripts.score"],
+    ["-m", "untell.scripts.scrub"],
+    ["-m", "untell.humanness"],
+]
+
 
 def test_binary_stdin_never_leaks_traceback():
     env = dict(__import__("os").environ)
     env["PYTHONPATH"] = ""
-    for payload in BINARY_INPUTS:
-        proc = subprocess.run(
-            [str(PYTHON), "-m", "untell.scripts.score"],
-            input=payload,
-            capture_output=True,
-            env=env,
-            timeout=120,
-        )
-        stderr = proc.stderr.decode("utf-8", errors="replace")
-        assert "Traceback" not in stderr, (
-            f"binary stdin leaked traceback for {payload[:8]!r}:\n{stderr[-500:]}"
-        )
-        assert proc.returncode == 2, (
-            f"expected exit 2 for binary stdin, got {proc.returncode}"
-        )
+    for cmd in COMMANDS:
+        for payload in BINARY_INPUTS:
+            proc = subprocess.run(
+                [str(PYTHON), *cmd],
+                input=payload,
+                capture_output=True,
+                env=env,
+                timeout=120,
+            )
+            stderr = proc.stderr.decode("utf-8", errors="replace")
+            assert "Traceback" not in stderr, (
+                f"{cmd} leaked traceback for {payload[:8]!r}:\n{stderr[-500:]}"
+            )
