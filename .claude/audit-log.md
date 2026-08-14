@@ -774,3 +774,4 @@ permanently.
 | 692 | L2 | untell/scripts/numerals.py | clean | 5775 | 5775 | - | L2 numerals.py re-audit (9th): baseline green, 7/8 killed. Line 214 (or->and canonical-trailing-zero) CONFIRMED KILLED (fleet 575). Sole survivor 376 (main-guard True->False, no module-import test) - documented. 88/93 kills (fleet 513) verified in their passes. No new survivors. |
 | 693 | L1 | T12 | clean | 5781 | 5781 | - | T12 re-audit (10th): pass-488 verified tail reach. No change. |
 | 694 | L2 | untell/_retry.py | clean | 5781 | 5781 | - | L2 _retry.py re-audit (11th): kill tests green (8). |
+| 695 | L2 | untell/_retry.py | clean | 5775 | 5775 | - | L2 _retry.py re-audit (10th): baseline green, 7/8 killed. Sole survivor 128 (< vs <=) = DOCUMENTED equivalent mutation (both clamp to 1). State unchanged since 70. |
