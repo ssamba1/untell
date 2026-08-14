@@ -723,3 +723,5 @@ permanently.
 | 641 | L1 | T11 | clean | 5781 | 5781 | - | T11 re-audit (8th): pass-584 verified. No change. |
 | 642 | L3 | L3 | clean | 5774 | 5774 | - | L3: no new slow tests. Slow-marked set stable (14). My 3 killing tests run 10.09s. Calibration occupies box; full durations deferred. |
 | 643 | L1 | T13 | clean | 5774 | 5774 | - | T13 re-audit (9th): math block byte-identical, fence+list preserved, prose transformed (REWRITTEN). Layout round-trip holds (consistent 357/386/480). |
+| 644 | L1 | T12 | clean | 5781 | 5781 | - | T12 re-audit (9th): pass-586 verified. No change. |
+| 645 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. full-hc3-max at 51min/120. |

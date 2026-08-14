@@ -55,7 +55,7 @@ def _read_input(args: argparse.Namespace) -> str | None:
         except (OSError, ValueError) as exc:
             logger.error("cannot read %s: %s", args.file, exc)
             return None
-    if args.text is not None:
+    if args.text is None:
         return args.text
     if not sys.stdin.isatty():
         try:
