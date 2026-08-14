@@ -222,6 +222,45 @@ WHY    AMBER — family comparison now exists:
 NEXT   Human decision (same as full-hc3-composite entry). Do not adopt from single runs —
        the tiers family (lite-hc3 vs full-hc3-composite) and a rewriters sweep exist for that.
 
+## 2026-08-13 pass 210 L8 AMBER — full-hc3-neural: complete rewriter family comparison
+
+WHAT   Third headline measurement (full tier, neural rewriter, 6 real HC3 docs, 3 repeats):
+       pre_flagged_rate 1.0 -> post_flagged_rate 1.0, pre_mean_max 1.0000 -> post_mean_max
+       0.9999. The neural (MT back-translate) rewriter is live but cannot beat the
+       mage-saturated max either.
+FAMILY (all full tier, n=6, 3 repeats, real HC3):
+         composite  1.0 -> 1.0      (zero movement)
+         max        1.0 -> 0.9758   (small movement — best-of-all-backends partially defeats saturation)
+         neural     1.0 -> 0.9999   (negligible movement)
+       All three stay flagged at the 0.45 verdict cut. The mage saturation wall is
+       confirmed from every direction: the default composite selector cannot improve the
+       score, best-of-all-backends barely can, MT cannot.
+NEXT   Same human decision as the other two entries: drop mage from the default ensemble /
+       change the (max,mean) selection key / accept as documented. Do not adopt from single
+       runs. This family is now COMPLETE — the L8 lane has its full comparison set.
+
+## 2026-08-13 pass 257 L8 AMBER — lite-hc3: post_mean_max moved -0.026 (outside +-0.020 band)
+
+WHAT   4th run of lite-hc3: pre_flagged_rate 1.0 -> post_flagged_rate 1.0, pre_mean_max
+       0.6362 -> post_mean_max 0.5625. Against run 3: post_mean_max 0.589 -> 0.562
+       (-0.026, MOVED beyond the +-0.020 noise band). pre numbers identical (+0.000).
+WHY    AMBER — the rewriter moved the score DOWN by more than noise on this run (better
+       rewriting or a draw that happened to land better). The flagged rate did not move
+       (1.0 both), so the headline verdict is unchanged; only the magnitude of the
+       post-rewrite score improved. Direction is consistent with the tool's intent.
+NEXT   Not an adoption trigger by itself — the band rule exists to catch drift, and a
+       single -0.026 could be a lucky draw at n=10. Watch the next lite-hc3 run before
+       treating this as a real improvement in rewriter strength.
+
+## 2026-08-13 pass 258 AMBER — lite-hc3 calibration stale: determinism claim contradicted
+
+WHAT   instruments.json records lite-hc3 deterministic=True spread=0.0014 (from the
+       fleet's 2-run calibration). The pass-257 4th run moved post_mean_max -0.026
+       beyond the +-0.020 noise band — a recipe that was 'identical run to run' just
+       differed by more than the band. The determinism claim is stale.
+NEXT   Re-run the calibrate step (or accept that lite-hc3 is not deterministic and needs
+       3+ runs per measurement). Until then L9 refusals cite a possibly-wrong reason.
+
 ## 2026-08-14 me2 worker — AMBER — lite-hc3-ensemble is a >3h measurement; estimate raised to 150m
 
 WHAT   Third attempt at lite-hc3-ensemble (n=10, repeats=3, lite, all free backends +
