@@ -43,7 +43,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/sentences.py | 165 | boundary: < -> <= | `return (max(scores) - min(scores)) < _TARGETING_SPREAD_BAR` | Spread check: test corpus scores have sufficient spread to cross bar regardless of boundary |
 | untell/scripts/sentences.py | 209 | boundary: < -> <= | `elif top < 0:` | KILLED by tests/test_top_zero_flags_nothing.py: top=0 must flag nothing (empty list), mutant raises ValueError. Prior note ('corpus doesn't produce negative indices') wrong — the distinguishing input is top=0, the boundary itself. |
 | untell/scripts/sentences.py | 216 | constant: True -> False | `order = sorted(range(n), key=..., reverse=True)` | Reverse flag: test corpus doesn't depend on sort direction for the specific case |
-| untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | English-only test corpus: AND->OR has no effect |
+| untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | KILLED by tests/test_english_text_is_not_warned_as_non_english.py: ordinary English text must NOT get the 'reads as a Latin-script language other than English' caveat; mutant fires it on any non-empty text (1 failed under mutation). Prior 'English-only corpus' note wrong — English text IS the distinguishing input. |
 | untell/scripts/sentences.py | 327 | constant: 2 -> 3 | `print(json.dumps(..., indent=2))` | JSON indent: test doesn't check formatting |
 | untell/scripts/sentences.py | 345 | constant: 2 -> 3 | `return 2` | Tuning constant (rank or indent): test corpus doesn't exercise exact boundary |
 | untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` |
