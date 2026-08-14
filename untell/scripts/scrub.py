@@ -121,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
                     "changed": cleaned != text,
                     "text": cleaned,
                 },
-                ensure_ascii=False,  # portable: never crash on a non-UTF-8 stdout
+                ensure_ascii=True,  # portable: never crash on a non-UTF-8 stdout
             )
         )
     else:
