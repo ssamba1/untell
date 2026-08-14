@@ -423,3 +423,7 @@ permanently.
 | 378 | L9 | quality-bar-0.70 | clean | 5768 | 5768 | - | L9 quality-bar-0.70: REFUSED (instrument says deterministic; recalibration pending). Knob untouched. |
 | 378 | L9 | training/reward.py | defect-fixed | 5795 | 5796 | 77ca2b4 | DEFECT FIXED: humanness_reward hard-gated on similarity >= recommended_bar() (0.76 cosine on embedding backend) while the deployed loop gates on meaning_preserved (NLI). MEASURED: faithful paraphrases the loop's gate ADMITS (0.664-0.704 vs 0.76 bar) earned -1.0, same as off-topic — GRPO had no gradient toward loop-accepted paraphrases. Raw cosine admits 4/11 bad rewrites (docstring's own measurement); NLI 0/11. Reward now uses meaning_preserved(orig, cand, sim, sim_floor), raw bar only when NLI absent. Regression test (cat-sat faithful pair, <0.76 cosine but NLI-admitted) verified red-without (1 fail) / green-with (11 pass). ruff clean. Commit absorbed into fleet's 77ca2b4 via git add -A. |
 | 380 | L2 | untell/scripts/numerals.py | clean | 5768 | 5768 | - | L2 numerals.py re-audit (7th): regression tests green (18). Fixes hold. |
+| 381 | L1 | T10 | clean | 5768 | 5768 | - | T10 re-audit (6th): pass-181 verified 0% gate rejection. No change. |
+| 382 | L1 | T11 | clean | 5768 | 5768 | - | T11 re-audit (6th): pass-182 verified 0 fragments. No change. |
+| 383 | L2 | untell/scripts/voice.py | clean | 5768 | 5768 | - | L2 voice.py re-audit (6th): identical survivor set. All documented, no new. |
+| 384 | L1 | T12 | clean | 5768 | 5768 | - | T12 re-audit (7th): pass-242 verified 14/14 to tail. No change. |
