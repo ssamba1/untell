@@ -192,3 +192,5 @@ permanently.
 | 176 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: README 100%->0% flagged claim (0.86->0.15, 27 runs) is against FREE WEB CHECKERS (ZeroGPT etc), not the local ensemble — my full-hc3 measurements (composite 1.0->1.0, max 1.0->0.9758) are local-ensemble numbers and do not contradict it. Two different detector targets, README explicit about both. No drift. |
 | 177 | L1 | T09 | clean | 5768 | 5768 | - | T09 re-audit (4th): 3/3 docs changed at lite tier. No no-op regression. Full-tier no-ops remain mage-saturation (measured pass 89). |
 | 178 | L9 | ppl-weight-0.40 | clean | 5768 | 5768 | - | L9 ppl-weight-0.40: REFUSED with measured evidence (lite-hc3 deterministic). Knob untouched. |
+| 179 | L2 | untell/scripts/preserve.py | clean | 5768 | 5768 | - | L2 preserve.py re-audit (4th): identical 8-survivor set as passes 11/87/131. All documented. No new. |
+| 180 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified (5768->5767). Tree clean. Sound at pass 180. |
