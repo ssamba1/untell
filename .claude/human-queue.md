@@ -136,3 +136,14 @@ WHY    AMBER: measurement data (instruments.json, measurements.jsonl) — commit
 NEXT   Calibrate a recipe that moves (e.g. full-hc3-composite, ~90 min x2, or
        lite-hc3-surgical) before trusting any future L9 knob reading. Until one is
        calibrated, L9 passes will refuse — that is the harness working, not a bug.
+
+## 2026-08-13 me2 worker — AMBER — claims-audit blocker RESOLVED; verify the recipe records now
+
+WHAT   `untell-audit` now passes 40/40 (exit 0, ok: True) on main after the module-count fix
+       (docs/why-best-open-repo.md now says 6982 tests / 334 modules, committed). The recipe
+       should record on its next `research.py run claims-audit`. Runtime confirmed ~7 min on
+       an idle machine (was mis-reported as ">30 min" by pass 8 under machine contention).
+RAN    python -m untell.scripts.audit --json (twice: 423s, 443s; exit 0 both)
+SAW    ok: True, 40 checks, 0 failures, 158 attributed claims
+NEXT   Run `python .claude/research.py run claims-audit` to close the L8 row. The two earlier
+       me2 queue entries (detector-audit failing field, claims-audit stale count) stand as-is.
