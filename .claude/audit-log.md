@@ -453,3 +453,5 @@ permanently.
 | 404 | L1 | T18 | clean | 5768 | 5768 | - | T18 re-audit (6th): all no-result paths exit 2. Fix holds. |
 | 405 | L3 | L3 | clean | 5768 | 5768 | - | L3: no new slow tests. Established real-model slow set unchanged. |
 | 406 | L1 | T20 | clean | 5768 | 5768 | - | T20 re-audit (6th): pass-264 verified real-MCP tests pass. No change. |
+| 407 | L2 | untell/config.py | clean | 5768 | 5768 | - | L2 config.py re-audit (6th): 5/5 killed, zero survivors. Fully pinned. |
+| 408 | L8 | lite-mage | clean | 5768 | 5768 | - | L8 lite-mage RE-RUN: identical to prior (all deltas +0.000). pre 0.2 -> post 0.1 flagged, 0.164 -> 0.141 mean max. Stable across runs; consistent with README's documented MAGE-specific low human-FP. |
