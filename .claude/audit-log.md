@@ -254,3 +254,4 @@ permanently.
 | 238 | L9 | quality-bar-0.82 | clean | 5768 | 5768 | - | L9 quality-bar-0.82: REFUSED (deterministic, measured). Knob untouched. |
 | 239 | L2 | untell/scripts/sentences.py | clean | 5768 | 5768 | - | L2 sentences.py re-audit (5th): identical survivor set. All documented, no new. |
 | 240 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 240. |
+| 241 | L8 | length-short | clean | 5768 | 5768 | - | L8 length-short RE-RUN: pre 0.5948 -> post 0.556, deltas +0.000..+0.003 within +-0.020 band. No movement. Short-doc rewrite stable across runs. |
