@@ -179,3 +179,5 @@ permanently.
 | 163 | L2 | untell/config.py | clean | 5768 | 5768 | - | L2 config.py re-audit (3rd): 5/5 mutations killed again, 0 survivors. Only module fully pinned by its tests. |
 | 164 | L1 | T05 | clean | 5768 | 5768 | - | T05 re-audit (4th): pass-113 verified raw 50%/verdict-cut 20% on HC3, consistent with README 65%/15%. No change since. |
 | 165 | L3 | L3 | clean | 5768 | 5768 | - | L3: regression tests fast (10 in <1s). No new slow tests. |
+| 166 | L1 | T06 | clean | 5768 | 5768 | - | T06 re-audit (4th): 0/226 replacements emit tells. Unchanged. |
+| 167 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (3rd): fleet's test_retry_kill_survivors.py (kills 35/119/141) + my test_retry_class_name_alone.py (kills 103) all green — 8 tests. Only 128 (< vs <=) remains as documented-equivalent. Nearly fully pinned. |
