@@ -670,3 +670,5 @@ permanently.
 | 588 | L8 | full-hc3-max | clean | 5774 | 5774 | - | L8 full-hc3-max RE-RUN (2nd): pre/post flagged 1.0->1.0, pre_mean_max 1.0->0.9999. vs run 1: post_mean_max 0.976->1.000 (+0.024, NOISE within +/-0.068 band). CORRECTION to pass-172 AMBER: the 'first measurable beat of mage saturation (post 0.9758)' does NOT reproduce - run 2 is within noise of 1.0. Family stands: composite 1.0->1.0, max 1.0->0.9999, neural 1.0->0.9999, all flagged at 0.45. Nothing moved outside band - no queue entry needed. |
 | 589 | L4 | L4 | clean | 5780 | 5780 | - | L4 local_policy.py re-verified (pass 268): 2/2 patterns alive. No dead patterns. |
 | 590 | L1 | T13 | clean | 5780 | 5780 | - | T13 re-audit (8th): 4/4 display-math tests pass. Fix holds. |
+| 591 | L2 | untell/scripts/hedges.py | clean | 5780 | 5780 | - | L2 hedges.py re-audit (8th): same 2 survivors (148 sort key, 328 CLI print). No new. |
+| 592 | L5 | L5 | clean | 5780 | 5780 | - | L5 hygiene: ruff clean on untell+tests, 3 CLIs launch. |
