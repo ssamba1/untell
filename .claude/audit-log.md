@@ -177,3 +177,5 @@ permanently.
 | 161 | L1 | T03 | clean | 5768 | 5768 | - | T03 re-audit (4th): 5/5 inverted pairs vetoed by meaning gate. Gate sound. |
 | 162 | L1 | T04 | clean | 5768 | 5768 | - | T04 re-audit (4th): verified pass 110 on real HC3 — all 5 detectors oriented (roberta 0.001v0.997, hc3 0.248v0.999, mage 0.619v1.0, fdg 0.077v0.709, ppl 0.191v0.647). No change since. |
 | 163 | L2 | untell/config.py | clean | 5768 | 5768 | - | L2 config.py re-audit (3rd): 5/5 mutations killed again, 0 survivors. Only module fully pinned by its tests. |
+| 164 | L1 | T05 | clean | 5768 | 5768 | - | T05 re-audit (4th): pass-113 verified raw 50%/verdict-cut 20% on HC3, consistent with README 65%/15%. No change since. |
+| 165 | L3 | L3 | clean | 5768 | 5768 | - | L3: regression tests fast (10 in <1s). No new slow tests. |
