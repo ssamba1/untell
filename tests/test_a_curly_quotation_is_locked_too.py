@@ -101,8 +101,17 @@ def test_the_lock_round_trips(quoted: str) -> None:
     assert restore(masked, spans) == doc
 
 
-def test_the_prose_around_a_quotation_still_changes() -> None:
-    """A rule that swallowed the sentence would pass everything above."""
+def test_the_prose_around_a_quotation_still_changes(stdlib_lite) -> None:
+    """A rule that swallowed the sentence would pass everything above.
+
+    The scoring path is pinned to the stdlib lite heuristic on purpose: this test's
+    premise is that the AI-flavoured PROSE gets flagged and therefore rewritten. On a
+    machine with torch installed the same detector silently upgrades to GPT-2
+    perplexity, which scores that prose 0.036 — the loop correctly sees an already-
+    passing document and returns it unchanged, and `final != doc` fails through no fault
+    of the lock. MEASURED at the commit that introduced this test: red with torch,
+    green without. Pin the path, not the machine.
+    """
     doc = f"The report said {LQ}{INNER}{RQ} when the committee met. " + PROSE
     final = untell_text(doc, tier="lite", max_iters=3)["final"]
     assert final != doc

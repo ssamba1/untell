@@ -306,8 +306,16 @@ _PARTICIPIAL_RE = re.compile(
 
 # Negated contrast: "It's not X, it's Y" / "Not only X but also Y".
 # These are complex patterns; the flatten function below handles each case.
+#
+# The first alternative accepts BOTH the contracted and uncontracted forms. It used to read
+# `it'?s not ... it'?s` — "It is not X, it is Y" matched nothing, and contraction injection
+# runs AFTER this pass, so the uncontracted tell survived the flattening whose contract is
+# to remove it. MEASURED: "It's not that the results are bad, it's that they are incomplete."
+# flattened, "It is not that the results are bad, it is that they are incomplete." did not —
+# and the tells catalogue counts both as `negated_contrast`, so the rewriter emitted a tell
+# the detector still scores.
 _NEGATED_CONTRAST_RE = re.compile(
-    r"\bit'?s not\s+.+?,?\s+it'?s\s+\w+[^.]*\.?"
+    r"\bit(?:'?s| is) not\s+.+?,?\s+it(?:'?s| is)\s+\w+[^.]*\.?"
     r"|not only\b[^.]{0,60}\bbut also\b"
     r"|isn'?t about\b[^.;]{0,50};?\s+it'?s about\b"
     r"|not\s+just\b[^.]{0,40}\bbut\b",
@@ -1291,12 +1299,16 @@ def _flatten_negated_contrast(text: str) -> str:
     """Convert 'It's not X, it's Y' → 'It's Y' preserving the positive statement."""
     def _replace(m: re.Match) -> str:
         full = m.group(0)
-        # Pattern: "It's not X, it's Y" — extract the Y part after the second "it's"
-        if "it's not" in full.lower() and "it's" in full.lower():
-            # Find the last "it's" and take everything after it
-            idx = full.lower().rindex("it's")
-            after = full[idx + len("it's"):].strip().strip(".,;!?")
-            return f"It's {after}."
+        lower = full.lower()
+        # Pattern: "It's not X, it's Y" / "It is not X, it is Y" — extract the Y part after
+        # the second "it's"/"it is" and keep the source's own register (contracted stays
+        # contracted, uncontracted stays uncontracted — the contraction pass runs later and
+        # owns that decision).
+        if ("it's not" in lower or "it is not" in lower) and ("it's" in lower or "it is" in lower):
+            head = "it's" if "it's" in lower else "it is"
+            idx = lower.rindex(head)
+            after = full[idx + len(head):].strip().strip(".,;!?")
+            return f"{head.capitalize()} {after}."
 
         if "not only" in full.lower() and "but also" in full.lower():
             # "not only X but also Y" is NOT a negated contrast — X and Y are BOTH asserted, so
