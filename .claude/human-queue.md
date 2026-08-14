@@ -334,3 +334,26 @@ WHY    AMBER — documentation understates the MCP surface. The README's phrase
        (plus a renamed verify). Not a functional defect; doc drift.
 NEXT   L6 does not edit docs (established rule). Human: update README line 149 to
        list the real 8-tool surface.
+
+## 2026-08-14 lite-hc3 MOVED — determinism contradiction confirmed (pass-258 AMBER resolved)
+
+WHAT   Calibration retry (research.py run lite-hc3, 3 repeats, EXIT=0) appended a 5th
+       run to measurements.jsonl. The recipe the pass-258 AMBER flagged as
+       contradicted moved AGAIN, confirming the contradiction is real:
+         pre_flagged_rate       1.000 -> 1.000  (+0.000, noise)
+         post_flagged_rate      1.000 -> 1.000  (+0.000, noise)
+         pre_mean_max           0.636 -> 0.636  (+0.000, noise)
+         post_mean_max          0.562 -> 0.589  (+0.026, MOVED)
+       band: +/-0.020  (2x the wider of the two runs' reported spread)
+       Result this run: pre_flagged_rate 1.0, post_flagged_rate 1.0,
+       pre_mean_max 0.6362, post_mean_max 0.5887.
+WHY    lite-hc3 is NOT deterministic at the 0.020 band. The earlier 2-run
+       calibration (deterministic=True, spread 0.0014) understated run-to-run
+       movement; post_mean_max has now moved twice (+0.026 this run). The L9 knob
+       lane's primary recipe CAN see knob effects at the 0.562->0.589 scale, so
+       the earlier 'L9 blocked, instrument blind' AMBER is partially lifted: the
+       instrument can see movement, but the band must be re-derived from all 5
+       runs before trusting any single-pass verdict.
+NEXT   Re-derive the noise band from all 5 measurements.jsonl runs; re-run any
+       earlier L9 'clean' passes whose verdict sat within the new band; treat the
+       committed instruments.json deterministic=True as stale.
