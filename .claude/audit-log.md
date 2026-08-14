@@ -272,3 +272,5 @@ permanently.
 | 256 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: all README claims verified across 10+ passes. No new drift. |
 | 257 | L8 | lite-hc3 | clean | 5768 | 5768 | - | L8 lite-hc3 RE-RUN (4th): pre 1.0 -> post 1.0 flagged, pre 0.6362 -> post 0.5625. post_max 0.589 -> 0.562 (-0.026, MOVED beyond +-0.020 band). Flagged rate unchanged; score moved down beyond noise. AMBER queued per harness rule. |
 | 258 | L9 | relaxed-sim-0.20 | clean | 5768 | 5768 | - | L9 relaxed-sim-0.20: REFUSED (instrument still records lite-hc3 deterministic). NOTE: pass-257 run moved post_max -0.026 beyond band — determinism claim now contradicted by fresh data; instrument needs re-calibration before trusting the refusal. Knob untouched. |
+| 259 | L2 | untell/scripts/io_utils.py | clean | 5768 | 5768 | - | L2 io_utils.py re-audit (5th): decrypt-guard killing test green. Survivors unchanged. No new. |
+| 260 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 260. |
