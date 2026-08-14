@@ -232,3 +232,5 @@ permanently.
 | 216 | L6 | L6 | clean | 5768 | 5768 | - | L6 drift: pass-156 verified hc3_roberta non-transfer live. README consistent. No new drift found. |
 | 217 | L1 | T04 | clean | 5768 | 5768 | - | T04 re-audit (5th): pass-162 verified on real HC3. No change. |
 | 218 | L8 | human-false-positives | clean | 5768 | 5768 | - | L8 human-false-positives RE-RUN: pre_flag 0.0, pre_max 0.1589, identical to prior run (+0.000, within +-0.020 noise band). No movement — human text stays unflagged at shipped threshold as documented post-fix. |
+| 219 | L2 | untell/_retry.py | clean | 5768 | 5768 | - | L2 _retry.py re-audit (4th): fleet kill-survivors + my class-name test green (8 tests). Nearly fully pinned (only 128 equivalent remains). |
+| 220 | L7 | L7 | clean | 5768 | 5768 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 220. |
