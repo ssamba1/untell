@@ -232,3 +232,17 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/perplexity_burstiness.py | 442 | UNKILLABLE: GPT-2 idx guard, model-dependent boundary: < -> <= | `if idx < 0:` |
 | untell/detectors/perplexity_burstiness.py | 451 | UNKILLABLE: GPT-2 per-sentence threshold, model-dependent boundary: >= -> > | `if len(per_sent) >= 2:` |
 | untell/detectors/perplexity_burstiness.py | 525 | KILLED by test_pb_mutation_guards (exact-MIN abstain, both twins) boundary: < -> <= | `if len(_WORD.findall(text)) < _MIN_WORDS_FOR_SIGNAL:` |
+| untell/detectors/mage.py | 25 | constant: False -> True | `_warned = False` | UNKILLABLE: module flag initializer, reset by every test setup
+| untell/detectors/mage.py | 26 | constant: False -> True | `_dead = False  # set once a load fails so we never re-attempt the heavy import p` | UNKILLABLE: _dead initializer; tests set it explicitly so class default is masked
+| untell/detectors/mage.py | 41 | constant: False -> True | `return False` | UNKILLABLE: torch-import branch needs a torch-less env
+| untell/detectors/mage.py | 64 | logic: or -> and | `i2l = raw.get("id2label") or {}` | UNKILLABLE: id2label config parse, needs live snapshot_download
+| untell/detectors/mage.py | 65 | logic: and -> or | `if not (i2l and all(isinstance(v, str) for v in i2l.values())):` | UNKILLABLE: config validation, needs live model dir
+| untell/detectors/mage.py | 69 | constant: 2 -> 3 | `raw["num_labels"] = 2` | UNKILLABLE: num_labels rewrite in config fix, needs live load
+| untell/detectors/mage.py | 88 | constant: True -> False | `MageDetector._dead = True` | UNKILLABLE: _dead latch in except path; requires a load failure with live HF
+| untell/detectors/mage.py | 95 | constant: True -> False | `MageDetector._warned = True` | UNKILLABLE: _warned flag in except path, same
+| untell/detectors/mage.py | 102 | constant: 1024 -> 1025 | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=1024)` | UNKILLABLE: tokenizer max_length 1024, model-dependent
+| untell/detectors/mage.py | 102 | constant: True -> False | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=1024)` |
+| untell/detectors/mage.py | 112 | logic: or -> and | `if "machine" in str(v).lower() or str(v).lower() in ("label_0", "ai", "fake")` | UNKILLABLE: ai_idx label regex needs live model.config
+| untell/detectors/mage.py | 121 | logic: or -> and | `if "human" in str(v).lower() or str(v).lower() in ("label_1", "real")` | UNKILLABLE: human_idx label regex needs live model.config
+| untell/detectors/mage.py | 127 | constant: 700 -> 701 | `p = windowed_max(text, lambda w: 1.0 - float(_probs(w)[human_idx]), 700)` | UNKILLABLE: window 700 constant, model-dependent
+| untell/detectors/mage.py | 129 | constant: 700 -> 701 | `p = windowed_max(text, lambda w: float(_probs(w)[ai_idx]), 700)` | UNKILLABLE: window 700 constant, model-dependent
