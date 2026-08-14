@@ -23,8 +23,6 @@ Survivor disposition (run 2026-08-14, 12 mutations, full tells test corpus):
 
 from __future__ import annotations
 
-import pytest
-
 from untell.scripts.tells import score_tells
 
 

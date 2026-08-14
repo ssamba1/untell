@@ -163,3 +163,6 @@ permanently.
 | 147 | L2 | untell/scripts/scrub.py | clean | 5768 | 5768 | - | L2 scrub.py re-audit (3rd): 3/4 killed (58/104/116), 1 survived (119 ensure_ascii, documented untestable). Identical to passes 34/107. |
 | 148 | L4 | L4 | clean | 5768 | 5768 | - | L4 audit.py: 5/5 patterns alive with correct positives (ENV_VAR_RE, _ATTRIBUTION 'MEASURED/n=20/Result N', _BOLD_NUMBER, _TRAINING_ONLY 'during training', _STAR_CLAIM). First probe used wrong strings (generic phrases); pattern grammar verified from source. No dead patterns. |
 | 149 | L1 | T19 | clean | 5768 | 5768 | - | T19 re-audit: 13 measurement rows all carry corpus+n, all unscored=0, aggregates self-consistent. full-hc3-composite: n=6, rewrote=18, available=True, pre/post 1.0. No aggregate/per-item disagreement found. |
+| 150 | L1 | T20 | clean | 5768 | 5768 | - | T20 re-audit (3rd): fleet's real-MCP round-trip tests pass (3 in 29.6s). Real engine accepts what tests assert. No mock-only shape tests. |
+| 151 | L2 | untell/scripts/latex.py | clean | 5768 | 5768 | - | L2 latex.py re-audit (3rd): 33/33 environments live (liveness probe, mutate baseline still >600s under recipe CPU load). No dead patterns. |
+| 152 | L5 | L5 | clean | 5768 | 5768 | - | L5 hygiene: ruff clean, 3 CLIs launch. No lint regressions. |
