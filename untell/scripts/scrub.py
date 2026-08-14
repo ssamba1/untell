@@ -55,7 +55,7 @@ def _read_input(args: argparse.Namespace) -> str | None:
         except (OSError, ValueError) as exc:
             logger.error("cannot read %s: %s", args.file, exc)
             return None
-    if args.text is None:
+    if args.text is not None:
         return args.text
     if not sys.stdin.isatty():
         try:
@@ -121,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
                     "changed": cleaned != text,
                     "text": cleaned,
                 },
-                ensure_ascii=True,  # portable: never crash on a non-UTF-8 stdout
+                ensure_ascii=False,  # portable: never crash on a non-UTF-8 stdout
             )
         )
     else:
