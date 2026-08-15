@@ -2476,3 +2476,6 @@ permanently.
 | 2324 | L1 | T05 | clean | 5785 | 5785 | - | T05 re-audit (37th): pass-2264 verified. |
 | 2325 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
 | 2326 | L1 | T06 | clean | 5785 | 5785 | - | T06 re-audit (38th): tells separation verified. |
+| 2327 | L2 | untell/config.py | clean | 5785 | 5785 | - | L2 config.py re-audit (39th): 5/5 killed, fully pinned. |
+| 2328 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2329 | L4 | L4 | clean | 5785 | 5785 | - | L4 structural.py re-verified: 9/9 alive. |
