@@ -679,7 +679,7 @@ _VERIFY_RESPONSES = _obj(
     {
         "configured": {"type": "array", "items": _STR},
         "threshold": _NUM,
-        "results": {"type": "object", "additionalProperties": False},
+        "results": {"type": "object", "additionalProperties": True},
         # `passes_all` is False when NOTHING ran, not only when something failed: it is
         # `bool(names) and all(...)`, which is False for an empty checker set. That is the
         # conservative choice — refusing to report a pass nobody verified — but it means a
@@ -712,7 +712,7 @@ _HUMANIZE_RESPONSES = _obj(
     {
         "final": {**_STR, "description": "the rewritten text — this is the output"},
         "iterations": _INT, "rewrites": _INT, "adopted": _INT, "changed": _BOOL,
-        "pre": {"type": "object", "additionalProperties": True, "description": "score before"},
+        "pre": {"type": "object", "additionalProperties": False, "description": "score before"},
         "post": {"type": "object", "additionalProperties": True, "description": "score after"},
         "similarity": {**_NUM, "description": "meaning similarity against the source"},
         "sim_bar": _NUM, "quality_metric": _STR,

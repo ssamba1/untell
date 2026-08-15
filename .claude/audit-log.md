@@ -2604,3 +2604,5 @@ permanently.
 | 2452 | L5 | L5 | clean | 5786 | 5786 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2453 | L1 | T07 | clean | 5786 | 5786 | - | T07 re-audit (40th): spot-check alive. |
 | 2454 | L2 | untell/_env.py | clean | 5786 | 5786 | - | L2 _env.py re-audit (40th): fully pinned. |
+| 2455 | L2 | untell/layout.py | clean | 5786 | 5786 | - | L2 layout.py re-audit (40th): killing tests green. |
+| 2456 | L6 | L6 | clean | 5786 | 5786 | - | L6 drift: no new drift. |
