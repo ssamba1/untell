@@ -2762,3 +2762,6 @@ permanently.
 | 2605 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2606 | L1 | T14 | clean | 5787 | 5787 | - | T14 re-audit (42nd): pass-2537 verified. |
 | 2607 | L2 | untell/languages.py | clean | 5787 | 5787 | - | L2 languages.py re-audit (44th): 12/12 ranges. |
+| 2608 | L4 | L4 | clean | 5787 | 5787 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2609 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2609 | L2 | untell/rewriter/structural.py | coverage-closed | 5876 | 5877 | 1abd4742a32d3f30d1ee97fdd811d2fea7739c34 | L2 structural.py: KILLED the line-2667/2654 comma-split openability survivor (and -> or). Actual line 2654 (comma path). 'the manager said the plan is quite good, and everyone agrees with her today now ok' -> original None (continuation cannot start a sentence, blocked); mutant or short-circuits the chain, bypassing _cannot_start_a_sentence and _orphans_a_subordinate_clause, producing fragments. Red on mutation, green on original. |
