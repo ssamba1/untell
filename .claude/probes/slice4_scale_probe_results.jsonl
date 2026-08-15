@@ -1,0 +1,15 @@
+{"max": 0.6667, "chars": 1050000, "peak_mb": 289.6, "wall_s": 50.59, "case": "score_text lite, ~1MB prose", "seconds": 52.23, "status": "ok"}
+{"max": 1.0, "chars": 2288889, "peak_mb": 326.8, "wall_s": 58.09, "case": "score_text lite, 100k short lines", "seconds": 59.73, "status": "ok"}
+{"case": "score_text lite, 100k-char wide line", "status": "TIMEOUT/HANG", "seconds": 60.12}
+{"max": 1.0, "chars": 799999, "peak_mb": 338.9, "wall_s": 56.0, "case": "score_text lite, 200k repeated tokens", "seconds": 57.8, "status": "ok"}
+{"max": 1.0, "chars": 863885, "peak_mb": 412.9, "wall_s": 50.28, "case": "score_text lite, 50k headings", "seconds": 51.69, "status": "ok"}
+{"max": 1.0, "chars": 1038033, "peak_mb": 323.8, "wall_s": 44.7, "case": "score_text lite, 5000x20 markdown table", "seconds": 46.24, "status": "ok"}
+{"error": "ValueError: [E088] Text of length 1050000 exceeds maximum of 1000000. The parser and NER models require roughly 1GB of temporary memory per 100,000 characters in the input. This means long texts may cause memory ", "peak_mb": 146.4, "wall_s": 41.11, "case": "lock, ~1MB prose (spaCy NER)", "seconds": 42.62, "status": "ok"}
+{"case": "lock, 33k fence-open runs", "status": "TIMEOUT/HANG", "seconds": 60.09}
+{"case": "lock, dollar runs", "status": "TIMEOUT/HANG", "seconds": 60.31}
+{"n_sentences": 1, "chars": 2288889, "peak_mb": 9.6, "wall_s": 2.25, "case": "split_sentences, 100k lines", "seconds": 3.64, "status": "ok"}
+{"n_chunks": 280, "words": 25200, "peak_mb": 3.6, "wall_s": 0.31, "case": "aligned_chunks, 20k words", "seconds": 0.62, "status": "ok"}
+{"value": 1.0, "words": 25200, "peak_mb": 3.7, "wall_s": 0.64, "case": "token_overlap, 20k words", "seconds": 1.03, "status": "ok"}
+{"tells": 199479, "chars": 1050000, "peak_mb": 24.8, "wall_s": 24.0, "case": "score_tells, ~1MB prose", "seconds": 24.3, "status": "ok"}
+{"case": "preserve._PATTERNS adversarial regex", "status": "TIMEOUT/HANG", "seconds": 120.03}
+{"error": "ImportError: cannot import name '_full_score' from 'untell.detectors.perplexity_burstiness' (C:\\Users\\Admin\\Humanize\\untell\\detectors\\perplexity_burstiness.py)", "peak_mb": 0.8, "wall_s": 0.3, "case": "gpt2 _full_score find-loop scaling", "seconds": 0.53, "status": "ok"}

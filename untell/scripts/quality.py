@@ -15,6 +15,7 @@ API:
 from __future__ import annotations
 
 import logging
+import os
 import re
 
 # RUN DIRECTLY (`python .../untell/scripts/quality.py`), put the directory that *contains* the package
@@ -54,6 +55,16 @@ def _st_model():
     broken torch DLL load), making the loop crawl.
     """
     global _model
+    # UNTELL_LITE_NO_TORCH=1 is the documented way to force the pure-stdlib lite path (README's
+    # env table, and the fallback note below), but it used to gate only the perplexity detector:
+    # the embedding quality gate loaded sentence-transformers anyway whenever it was installed, so
+    # "lite" silently ran ~20s of torch imports plus an embedding encode per comparison while being
+    # documented (and reported by `method()`) as token-overlap. MEASURED on the slice12 corpus
+    # bench: a 309-word flagged doc took 13.19s with the embeddings live and 0.69s on the true
+    # stdlib path. Checked BEFORE the cached model so a test flipping the variable mid-process
+    # still gets the stdlib gate.
+    if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+        return None
     if _model is not _UNSET:
         return _model
     try:

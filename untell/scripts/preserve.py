@@ -710,6 +710,13 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
 ]
 
 
+def _word_char_share(text: str) -> float:
+    """Fraction of characters that are word characters (regex \w, Unicode-aware)."""
+    if not text:
+        return 0.0
+    return len(_WORD_CHAR_RE.findall(text)) / len(text)
+
+
 _WARNED_NO_NER = False
 # One-time warning gate for the >1MB NER skip (spaCy's hard E088 cap). Separate flag: the
 # "model missing" message and the "text too long" message name different problems.
@@ -741,6 +748,24 @@ def _warn_no_ner() -> None:
 _SPACY_CACHE_MAX_CHARS = 50_000
 _SPACY_CACHE_MAXSIZE = 128
 
+# spaCy's tokenizer is O(n^2) on long runs of non-word characters: make_doc on N
+# backticks measured 0.05s/0.17s/0.64s/2.8s/11.4s at 500/1k/2k/4k/8k chars, and
+# nlp() on a 48k-char run of backticks or dollars never returned. A real document
+# never carries 1000+ consecutive punctuation/symbol chars, but a pasted code
+# blob or an adversarial input does — and lock() (and therefore score_text,
+# whose _mostly_locked_warning re-locks the text) would hang on it; the REST
+# surface accepts up to 50k chars. Such runs contain no named entities worth
+# locking, so skip the NER pass entirely; the regex locks (citations, numbers,
+# quotes, URLs) are linear and still apply.
+_DEGENERATE_RUN_RE = re.compile(r"[^\w\s]{1000,}")
+# Symbol soup (e.g. ("$"*60+" ")*5000) defeats the run check — no single run is long — but
+# spaCy's model passes still take ~36s on 10k such tokens (MEASURED) while containing no
+# entities at all. NER's output is characters, and an entity is made of word characters; if
+# fewer than one character in ten is a word character there is nothing worth locking. The
+# ratio check is a single linear regex pass, far cheaper than what it prevents.
+_WORD_CHAR_RE = re.compile(r"\w")
+_MIN_WORD_CHAR_SHARE = 0.10
+
 
 def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
     """Return (start, end) spans for named entities via spaCy, or [] if spaCy is absent."""
@@ -756,6 +781,13 @@ def _spacy_entity_spans_cached(text: str) -> tuple[tuple[int, int], ...]:
 
 def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
     """Uncached NER pass; see :func:`_spacy_entity_spans` for the caching wrapper."""
+    # Degenerate-input guards FIRST, before the spaCy model is even loaded: a pasted symbol blob
+    # (long punctuation runs, or text with almost no word characters) has no named entities worth
+    # locking, and spaCy is pathologically slow on it (tokenizer O(n^2) on long runs; ~36s of
+    # model passes on 10k "$" tokens). Skipping here also avoids the ~5s model import/load for
+    # inputs that would never use it.
+    if _DEGENERATE_RUN_RE.search(text) or _word_char_share(text) < _MIN_WORD_CHAR_SHARE:
+        return []
     try:
         nlp = _spacy_entity_spans._nlp  # type: ignore[attr-defined]
     except AttributeError:
