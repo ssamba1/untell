@@ -2053,3 +2053,23 @@ permanently.
 | 1898 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: pass-1758 verified, already MEASURED. |
 | 1899 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (32nd): 16 tests green. |
 | 1900 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1900 — audit-log milestone. |
+| 1901 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (29th): pass-1842 verified. |
+| 1902 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (26th): pass-1844 verified. |
+| 1903 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (33rd): 2 documented survivors. |
+| 1904 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (28th): pass-1846 verified 36 rows consistent. |
+| 1905 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1906 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (27th): pass-1850 verified. |
+| 1907 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (30th): pass-1854 verified. |
+| 1908 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1909 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1910 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (30th): pass-1853 verified. |
+| 1911 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (27th): pass-1855 verified. |
+| 1912 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1913 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (29th): pass-1857 verified. |
+| 1914 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (33rd): 4/4 killed. |
+| 1915 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (32nd): 33/33 live. |
+| 1916 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1917 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (30th): pass-1861 verified. |
+| 1918 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: pass-1778 verified, already MEASURED. |
+| 1919 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (32nd): 7/8 killed. |
+| 1920 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1920. |
