@@ -2420,3 +2420,5 @@ permanently.
 | 2265 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
 | 2266 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (37th): tells separation verified. |
 | 2267 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (38th): pass-2207 verified. |
+| 2268 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2269 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. L4 lane: 160th worked pass, zero regressions. |
