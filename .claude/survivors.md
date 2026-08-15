@@ -89,3 +89,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/radar.py | 59 | logic: or -> and | `if not self.available() or not text.strip():` |
 | untell/detectors/radar.py | 66 | constant: True -> False | `RadarDetector._warned = True` |
 | untell/detectors/radar.py | 73 | constant: 512 -> 513 | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` |
+| untell/detectors/llm_judge.py | 51 | constant: True -> False | `return True` |
+| untell/detectors/llm_judge.py | 70 | identity: is not -> is | `if anthropic is not None:` |
+| untell/detectors/llm_judge.py | 74 | logic: or -> and | `"model": self.model or "claude-sonnet-4-6",` |
+| untell/detectors/llm_judge.py | 78 | constant: 3 -> 4 | `max_attempts=3,` |
+| untell/detectors/llm_judge.py | 86 | logic: or -> and | `"model": self.model or "gpt-4o-mini",` |
+| untell/detectors/llm_judge.py | 87 | constant: 8 -> 9 | `"max_tokens": 8,` |
+| untell/detectors/llm_judge.py | 98 | logic: or -> and | `m = _NUM.search(out or "")` |
+| untell/detectors/llm_judge.py | 102 | boundary: >= -> > | `if val >= 2.0:  # answered as a percentage (e.g. "73"). Values in (1.0, 2.0) are` |
