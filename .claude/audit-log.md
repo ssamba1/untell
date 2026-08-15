@@ -2227,3 +2227,9 @@ permanently.
 | 2072 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2073 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (29th): pass-2017 verified. |
 | 2074 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (36th): 4/4 killed. |
+| 2075 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (35th): 33/33 live. |
+| 2076 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 2077 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (31st): pass-2021 verified 36 rows consistent. |
+| 2078 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-audit: pass-1938 verified, already MEASURED (MOVED). |
+| 2079 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (35th): 7/8 killed. |
+| 2080 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2080. |
