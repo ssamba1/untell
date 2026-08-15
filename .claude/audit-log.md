@@ -911,3 +911,5 @@ permanently.
 | 587 | L9 | aligned_chunks disjoint | defect-fixed | 5800 | 5801 | 4696358 | DEFECT FIXED: aligned_chunks with NO difflib matching blocks (the 'replaced a whole sentence with unrelated text' case, or fully disjoint text) mapped every cut through the sentinel to len(b) — ONE chunk of 75 source words vs 300 target words, dropping 75% of the source from the meaning-gate comparison. MEASURED on a 300-word disjoint pair. Fix: proportional cuts for BOTH sides when no real blocks exist (same fallback as the >6000-word path) — 4 chunks, full coverage, all under CHUNK_WORDS=90. Regression test red-without/green-with; 47 text_split tests pass. |
 | 776 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. README-numbers agent still in flight. |
 | 777 | L1 | T19 | clean | 5781 | 5781 | - | T19 re-audit (9th): ledger 35 rows, all carry per-item counts. full-hc3-max 2nd run completed (3 rows now). |
+| 778 | L2 | untell/scripts/io_utils.py | clean | 5781 | 5781 | - | L2 io_utils.py re-audit (11th): 35 tests green. |
+| 779 | L2 | untell/scripts/verify.py | clean | 5781 | 5781 | - | L2 verify.py re-audit (11th): pass-545 NaN kill verified. |
