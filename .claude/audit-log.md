@@ -863,3 +863,4 @@ permanently.
 | 734 | L2 | untell/scripts/scrub.py | clean | 5781 | 5781 | - | L2 scrub.py re-audit (11th): 4/4 killed post pass-495, binary-stdin guard holds. |
 | 735 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (10th): 33/33 live. |
 | 736 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. Delegated README-numbers agent in flight. |
+| 735 | L2 | untell/scripts/entailment.py | coverage-closed | 5855 | 5857 | fb89ded13ad947622e7f8dfdd07eac29a43d51e7 | L2 entailment.py: KILLED the line-511 contradiction-at-bar boundary survivor (< -> <=). contradiction_score pinned to exactly 0.5 == DEFAULT_CONTRADICTION_BAR -> original returns False (contradiction at the bar is a contradiction, gate rejects), mutant True (<= flips to a pass). Prior 'model artifact boundary unreachable' UNKILLABLE note wrong — the score is a pinable call. Red on mutation, green on original. |
