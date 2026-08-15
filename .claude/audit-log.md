@@ -1375,3 +1375,11 @@ permanently.
 | 1220 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1220. |
 | 1221 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (17th): pass-1164 verified. |
 | 1222 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (16th): pass-1166 verified 36 rows consistent. |
+| 1223 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (19th): 33/33 live. |
+| 1224 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (15th): pass-1170 verified. Three-surface threshold rejection confirmed. |
+| 1225 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1226 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (18th): pass-1173 verified. |
+| 1227 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (19th): 7/8 killed. |
+| 1228 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1229 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1230 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (17th): pass-1177 verified. |
