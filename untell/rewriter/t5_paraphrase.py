@@ -37,7 +37,7 @@ class T5ParaphraseRewriter:
 
     def __init__(
         self,
-        num_beams: int = 4,
+        num_beams: int = 5,
         max_length: int = 128,
         sample: bool = False,
         top_p: float = 0.95,

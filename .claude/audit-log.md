@@ -919,3 +919,6 @@ permanently.
 | 783 | L2 | untell/languages.py | clean | 5781 | 5781 | - | L2 languages.py re-audit (11th): survivors 43/89 unchanged. |
 | 784 | L1 | T01 | clean | 5781 | 5781 | - | T01 re-audit (11th): 4/4 lock+roundtrip. |
 | 785 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
+| 786 | L1 | T02 | clean | 5781 | 5781 | - | T02 re-audit (10th): pass-616 verified scrub invariant. |
+| 787 | L2 | untell/config.py | clean | 5781 | 5781 | - | L2 config.py re-audit (11th): 5/5 killed, fully pinned. |
+| 788 | L4 | L4 | clean | 5781 | 5781 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
