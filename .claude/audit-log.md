@@ -2280,3 +2280,7 @@ permanently.
 | 2125 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
 | 2126 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (33rd): pass-2070 verified. |
 | 2127 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (37th): 4/4 killed. |
+| 2128 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2129 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2130 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (30th): pass-2073 verified. |
+| 2131 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (36th): 33/33 live. |
