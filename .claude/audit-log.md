@@ -1047,3 +1047,4 @@ permanently.
 | 903 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (12th): fully pinned. |
 | 904 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (11th): pass-846 verified. No change. |
 | 905 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
+| 593 | L4 | cross-surface | clean | 5801 | 5801 | f1db74a | L4 cross-surface consistency (3rd): same AI text through all three surfaces — CLI tells rc=0 with count, REST /tells 200 (tells=2), MCP _bad_args refuses threshold='abc' (dict refusal) and accepts 0.3 (None). The (value, kind) tuple contract verified; my probe bugs (positional, bare kwarg) documented — code right each time. Three surfaces agree. |
