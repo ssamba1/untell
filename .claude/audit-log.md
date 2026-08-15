@@ -2758,3 +2758,4 @@ permanently.
 | 2601 | L1 | T12 | clean | 5787 | 5787 | - | T12 re-audit (42nd): pass-2530 verified. |
 | 2602 | L6 | docs/index.md | clean | 7465 | 7465 | - | L6 DEFECT FIXED (subagent swarm docs-audit): docs/index.md claimed '24 numbered results' in free-ceiling-measured.md but the file has 225 (grep -cE '^## Result [0-9]+'). Stale by 201 - understates the log by an order of magnitude. Fixed both occurrences (lines 50, 70). GREEN-band (index.md not in guard RED list). Commit c687923. |
 | 2603 | L2 | untell/scripts/verify.py | clean | 5787 | 5787 | - | L2 verify.py re-audit (44th): pass-2551 verified. |
+| 2604 | L1 | T13 | clean | 5787 | 5787 | - | T13 re-audit (40th): pass-2533 verified. |
