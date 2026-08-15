@@ -1082,3 +1082,8 @@ permanently.
 | 596 | L4 | commercial detector | clean | 5801 | 5801 | b3ba257 | L4 commercial detector no-key path (2nd): no API keys -> _has False, OriginalityDetector.available() False, load_detectors('commercial') returns ONLY the free detectors (perplexity_burstiness/roberta_openai/hc3_roberta/mage/fast_detectgpt) — key-gated detectors never enter the roster without keys. No crash, no phantom verdict (documented key-gated contract). |
 | 597 | L4 | prompts module | clean | 5801 | 5801 | b192cca | L4 prompts (3rd): 14 styles in STYLES, STYLE_NAMES matches; build_rewrite_prompt embeds the text + detector feedback + Voice line from score_result['style'] (NOT a kwarg — my probe bug); unknown style -> identical to no-style prompt (tolerant guard 'if style and style in STYLES'). Prompt builder verified. |
 | 934 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 FULL MEASUREMENT (fresh before+after, 40min): pre 1.0/0.6362 -> post 1.0/0.5625, deltas all +0.000 beyond noise. Harness: 'Nothing moved beyond noise.' Knob untouched. 4th knob closed with fresh full run. |
+| 935 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (15th): 4/4 killed. |
+| 936 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 937 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (14th): _MERGE_WEIGHTS unchanged. |
+| 938 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (14th): 33/33 live. |
+| 939 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (14th): 7/8 killed, 180 documented. |
