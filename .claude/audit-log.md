@@ -2629,3 +2629,6 @@ permanently.
 | 2477 | L1 | T14 | clean | 5786 | 5786 | - | T14 re-audit (40th): pass-2410 verified. |
 | 2478 | L9 | relaxed-sim-0.20 | clean | 5786 | 5786 | - | L9 relaxed-sim-0.20 re-audit: pass-2318 verified, already MEASURED. |
 | 2479 | L2 | untell/scripts/quality.py | clean | 5786 | 5786 | - | L2 quality.py re-audit (37th): pass-2423 verified. |
+| 2480 | L2 | untell/layout.py | defect-fixed | 5786 | 5787 | HEAD | DEFECT FIXED: fleet edit swept into dd034d8 inverted restore_layout_lines disagreement guard (!= -> ==), breaking layout restoration on aligned inputs (fences/math rewritten not restored). Pinned both paths with test_layout_disagreement_passthrough.py (red on mutant, green on fix). Suite 5786->5787. |
+| 2481 | L1 | T15 | clean | 5787 | 5787 | - | T15 re-audit (40th): pass-2413 verified. |
+| 2482 | L1 | T16 | clean | 5787 | 5787 | - | T16 re-audit (38th): pass-2417 verified. |
