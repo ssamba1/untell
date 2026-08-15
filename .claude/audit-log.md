@@ -2368,3 +2368,4 @@ permanently.
 | 2213 | L6 | L6 | clean | 5784 | 5784 | - | L6: version consistency pyproject 0.3.0 == untell.__version__ 0.3.0; detector registry 15 (1 lite/5 full/2 heavy/7 commercial) matches audit check '8 local 7 commercial'; package API = submodules only (documented). |
 | 2214 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (37th): 5/5 killed, fully pinned. |
 | 2215 | L6 | L6 | clean | 5784 | 5784 | - | L6: SKILL.md:163-164 claim text unchanged ('Only 7 of the 19 tests passed' pair, sim 0.951/contra 0.011/entail 0.007) - no text drift; numbers match pass-536 live verification. |
+| 2216 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. L6 lane: 100th worked pass, zero regressions. |
