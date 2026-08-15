@@ -407,3 +407,16 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/attacks/back_translation.py | 79 | > -> >= (pack loop) | KILLED by swarm (exact-fill merge; independently re-verified) |
 | untell/attacks/back_translation.py | 86 | or -> and (fallback) | KILLED by swarm (whitespace returns input) |
 | untell/attacks/unicode_tricks.py | 104-112 | emoji-adjacency boundaries | KILLED by swarm test_unicode_tricks_mutation_kills (44 tests) |
+| untell/rewriter/local_policy.py | 220 | constant: True -> False | `use_adapter: bool = True,` | UNKILLABLE: use_adapter constructor default
+| untell/rewriter/local_policy.py | 233 | constant: False -> True | `return False` | UNKILLABLE: availability return constant
+| untell/rewriter/local_policy.py | 245 | identity: is not -> is | `if self._model is not None:` | UNKILLABLE: model-cache identity check
+| untell/rewriter/local_policy.py | 262 | constant: True -> False | `load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16` | UNKILLABLE: load_in_4bit quantization constant
+| untell/rewriter/local_policy.py | 294 | logic: == -> != | `if not candidate or candidate == source:` | KILLED by test_local_policy_mutation_guards (identical candidate rejection)
+| untell/rewriter/local_policy.py | 297 | constant: False -> True | `return False` | UNKILLABLE: sentinel-integrity return constant
+| untell/rewriter/local_policy.py | 300 | logic: and -> or | `if words and not (low <= len(candidate.split()) / words <= high):` | KILLED by test_local_policy_mutation_guards (length-band guard)
+| untell/rewriter/local_policy.py | 301 | constant: False -> True | `return False` | UNKILLABLE: length-band return constant
+| untell/rewriter/local_policy.py | 305 | constant: True -> False | `return True` | UNKILLABLE: mechanical-band accept constant
+| untell/rewriter/local_policy.py | 339 | boundary: < -> <= | `if len(piece.split()) < 8:` | UNKILLABLE: 8-word fragment threshold, model-gated rewrite path
+| untell/rewriter/local_policy.py | 339 | constant: 8 -> 9 | `if len(piece.split()) < 8:` |
+| untell/rewriter/local_policy.py | 392 | constant: True -> False | `inputs = self._tok(prompt, return_tensors="pt", truncation=True, max_length=2048` | UNKILLABLE: tokenizer max_length kwarg
+| untell/rewriter/local_policy.py | 413 | constant: True -> False | `decoded = self._tok.decode(gen, skip_special_tokens=True).strip()` | UNKILLABLE: decode kwargs
