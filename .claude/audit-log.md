@@ -965,3 +965,5 @@ permanently.
 | 822 | L1 | T12 | clean | 5782 | 5782 | - | T12 re-audit (12th): pass-762 verified. No change. |
 | 823 | L2 | untell/scripts/scrub.py | clean | 5782 | 5782 | - | L2 scrub.py re-audit (13th): 4/4 killed, zero survivors. |
 | 592 | L4 | REST surface | clean | 5801 | 5801 | d9991f5 | L4 REST endpoint surface (3rd): /tells 200 with tells=2 (Moreover+framework), /ceiling 200 full keys (post_mean_max_stdev/run_post_means/threshold/tier/unscored), /scrub 200 (2 ZWSP removed), /sentences flags exactly the AI sentence. Pydantic strict models reject extra fields (422 extra_forbidden) — my probe's wrong bodies (tier on /tells, text on /ceiling) were the error, not the API; strictness is the feature. |
+| 824 | L1 | T13 | clean | 5782 | 5782 | - | T13 re-audit (10th): 4/4 display-math green. |
+| 825 | L3 | L3 | clean | 5782 | 5782 | - | L3: no new slow tests. Slow-marked set stable. |
