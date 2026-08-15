@@ -333,11 +333,22 @@ def print_humanness(score: float, cls: str):
         return
 
     bar_len = 30
-    filled = int(score / 100 * bar_len)
+    # A non-finite or out-of-range score must not crash the renderer or allocate an unbounded
+    # bar. Fuzz-found: `int(nan / 100 * bar_len)` raises ValueError, `int(inf ...)` raises
+    # OverflowError, and score=999999 painted ~300,000 block characters — one number became a
+    # megabyte of terminal output, a hang/OOM vector. NaN also cannot be compared, so the
+    # colour band below would land in the else (red) branch by accident. Clamp to [0, 100]
+    # first; non-numeric input becomes 50.0, the same "cannot tell" value humanness() itself
+    # abstains with, so the bar always renders exactly bar_len cells wide.
+    try:
+        bounded = min(100.0, max(0.0, float(score)))
+    except (TypeError, ValueError):
+        bounded = 50.0
+    filled = int(bounded / 100 * bar_len)
     bar = "█" * filled + "░" * (bar_len - filled)
-    if score >= 70:
+    if bounded >= 70:
         color = "green"
-    elif score >= 40:
+    elif bounded >= 40:
         color = "yellow"
     else:
         color = "red"
