@@ -2435,3 +2435,11 @@ permanently.
 | 2283 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (38th): killing tests green. |
 | 2284 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (37th): pass-2224 verified. |
 | 2285 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Fleet full-suite milestone: 789 passed, 3 xfailed. REAL doc drift queued (why-best-open-repo). |
+| 2286 | L6 | why-best-open-repo | defect-fixed | 5784 | 5785 | HEAD | DEFECT FIXED: docs/why-best-open-repo.md:154 claimed 7418 tests/445 modules, measured 7436/458 (RED-band, guard-blocked). Updated to measured truth. Also fixed docs-claims guard false positives on audit-log prose (dated record now excluded). 25/25 green. |
+| 2287 | L2 | untell/text_split.py | clean | 5785 | 5785 | - | L2 text_split.py re-audit (38th): aligned-chunks fix holds. |
+| 2288 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2289 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2290 | L1 | T13 | clean | 5785 | 5785 | - | T13 re-audit (35th): pass-2226 verified. |
+| 2291 | L2 | untell/scripts/preserve.py | clean | 5785 | 5785 | - | L2 preserve.py re-audit (39th): NER fix holds. |
+| 2292 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2293 | L1 | T14 | clean | 5785 | 5785 | - | T14 re-audit (37th): pass-2230 verified. |
