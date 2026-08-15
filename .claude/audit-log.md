@@ -1134,3 +1134,4 @@ permanently.
 | 979 | L3 | L3 | clean | 5777 | 5777 | - | L3 battery: 9 passed 10.44s (quality cosine regression, quality CLI, contradiction bar, 3 ASCII-safety) - both today's defect fixes hold. slow-marked set 14. |
 | 980 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (16th): 2 documented survivors. |
 | 981 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (14th): pass-921 verified. |
+| 982 | L1 | T16 | clean | 5777 | 5777 | - | T16 re-audit: score_text + untell_text both reject bytes with clean TypeError naming str contract. Fleet pass-571 fix holds. |
