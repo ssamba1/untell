@@ -357,3 +357,5 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/structural.py | 2853 | constant: True -> False | `"conversational_openers": True,` | UNKILLABLE: style-profile flag constant
 | untell/rewriter/structural.py | 2866 | constant: True -> False | `"minimalist":    {"contractions": True,  "register": 1.0,  "sentences": 1.8, "op` | UNKILLABLE: style-profile flag constant
 | untell/rewriter/structural.py | 2875 | constant: False -> True | `"professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "op` | UNKILLABLE: style-profile flag constant
+| untell/rewriter/structural.py | 1593 | logic: and -> or | `if _at_sentence_start(masked, m.start()) and _TRANSITIONS_RE.match(word + ", x")` |
+| untell/rewriter/structural.py | 2657 | logic: and -> or | `and not _split_lands_inside_brackets(words, pos + 1)` | UNKILLABLE: defense-in-depth redundant with _cannot_start_a_sentence (bracket-interior right side always rejected first - verified with mutation: output unchanged)
