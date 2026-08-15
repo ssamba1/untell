@@ -928,3 +928,5 @@ permanently.
 | 792 | L5 | L5 | clean | 5781 | 5781 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
 | 793 | L1 | T04 | clean | 5781 | 5781 | - | T04 re-audit (11th): pass-733 verified. No change. |
 | 794 | L9 | quality-bar-0.70 | clean | 5781 | 5781 | - | L9 quality-bar-0.70 FULL MEASUREMENT (fresh before+after, 40min): pre 1.0/0.6362 -> post 1.0/0.5625, deltas all +0.000 beyond noise. Harness: 'Nothing moved beyond noise. This knob does not do what it looks like it does at this corpus and tier.' Knob untouched (restored). Deterministic refusal now backed by a fresh full run. |
+| 795 | L2 | untell/_env.py | clean | 5781 | 5781 | - | L2 _env.py re-audit (10th): killing tests green. Fully pinned. |
+| 796 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. |

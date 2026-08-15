@@ -369,7 +369,7 @@ def humanness(text: str, tier: str = "full") -> float:
             bursty_penalty = _MAX_BURSTY_PENALTY  # uniform=AI tell
         elif cv < 0.50:
             bursty_penalty = _MAX_BURSTY_PENALTY * (0.50 - cv) / 0.15
-        elif cv >= 1.0:
+        elif cv > 1.0:
             bursty_penalty = _MAX_BURSTY_PENALTY * 0.5  # erratic, but less penalized
 
     # 4. Composite. With no detector signal, its weight is REDISTRIBUTED across the signals that
@@ -506,7 +506,7 @@ def classification(score: float) -> str:
     """
     if score >= 75:
         return "human"
-    if score >= 60:
+    if score >= 61:
         return "mostly human"
     if score >= 45:
         return "mixed"
