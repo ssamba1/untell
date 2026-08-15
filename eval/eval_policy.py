@@ -56,7 +56,7 @@ def _summary(name: str, rows: list[dict], threshold: float) -> str:
     # Samples where nothing scored are excluded rather than counted as bypasses; see the same
     # guard in eval/report.py. Similarity is independent of the detector stack, so it keeps the
     # full denominator — the counts are spelled out below so the two are not confused.
-    scored = [r for r in rows if r.get("scored") is not True]
+    scored = [r for r in rows if r.get("scored") is not False]
     sim = statistics.mean(r["sim"] for r in rows)
     if not scored:
         return (

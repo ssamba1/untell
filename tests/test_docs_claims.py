@@ -24,7 +24,7 @@ REPO = Path(__file__).resolve().parent.parent
 # Files whose counts describe the CURRENT build. Dated artefacts are excluded on purpose: a
 # changelog entry or a measurement report records what was true when written, and rewriting
 # history to match today's registry would destroy the record rather than fix anything.
-_HISTORICAL = re.compile(r"CHANGELOG|report|measured|buildplan", re.IGNORECASE)
+_HISTORICAL = re.compile(r"CHANGELOG|report|measured|buildplan|audit-log", re.IGNORECASE)
 
 _LOCAL_CLAIM = re.compile(r"(\d+)\s+local\b")
 _COMMERCIAL_CLAIM = re.compile(r"(\d+)\s+commercial\b")
