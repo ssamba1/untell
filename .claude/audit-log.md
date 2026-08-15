@@ -41,7 +41,6 @@ permanently.
 | 28 | L8 | detector-audit | clean | 5749 | 5749 | - | L8 detector-audit: recipe REFUSED to record (exit 1, mage reported 'broken' in eval). mage works standalone (score 0.99997). Eval-script load-order issue, not shipped-code defect. Harness correctly refused partial numbers. |
 | 29 | L4 | L4 | clean | 5749 | 5749 | - | L4 extended: hedges.py 6/6 classes live (modality, evidential, frequency, quantifier, degree, intention). numerals.py patterns live ('twenty-four'->24, '5 million'->5000000, 'seventeen'->17, 'a thousand'->1000). 'one'->[] is INTENDED (ambiguous in 'one of the reasons', documented line 82-86). No dead patterns. |
 | 30 | L1 | T12 | clean | 5749 | 5749 | - | T12: tail-reachability verified. 826-word/14-para doc: 14/14 paragraphs rewritten, last change at index 13 (final para). aligned_chunks aligns whole doc — last pair contains both tails. 4680-word doc too heavy for 600s budget (rewriter cost scales with length), but the 14-para run proves changes reach the end. |
-<<<<<<< Updated upstream
 | 31 | L2 | untell/scripts/quality.py | clean | 5749 | 5751 | - | L2 quality.py: 10 survivors analyzed. Line 145 KILLED by new test_quality_two_word_boundary.py (verified: passes on original, fails on <-><= mutation at exactly-2-token boundary). Others: lazy-load guard, BERTScore-not-gate, empty-token paths, normalize_embeddings, exact-boundary floats (measure-zero), CLI encoding. Survivors.md updated. |
 | 32 | L5 | L5 | clean | 5751 | 5751 | - | L5 hygiene re-run: 5 ruff errors found (my test files: unused pytest import, io.open, ==False, unsorted imports). All fixed with ruff --fix + manual patch. All 3 CLIs launch. ruff now clean, 11 affected tests pass. |
 | 33 | L1 | T13 | defect-fixed | 5751 | 5755 | HEAD | T13: DEFECT FIXED — display-math $$...$$ blocks classified as prose, equation content rewritten (verified: \int_0^1 x dx became \INT_0^1 X DX). Added $$ toggle to _segments (in_math state, separate from code fences). New tests/test_layout_display_math.py: 4 tests, 2 fail pre-fix, all pass post-fix. All 9 constructs now round-trip byte-identical, prose rewrites. |
@@ -2775,9 +2774,7 @@ permanently.
 | 2616 | L2 | untell/rewriter/structural.py | coverage-closed | 5877 | 5878 | 88f8faf9115982fb2f599f0c0a7228c8c4d30dd3 | L2 structural.py: KILLED the line-2516/2503 opener-budget duplicate-priority survivor (> -> >=). Dup 'The' openers + eligible non-dup 'Zebra': 40-seed sweep -> original 0/40 picks non-dup, mutant 11/40 (count>=1 makes single-occurrence openers budget-eligible). The transform's whole job is fixing duplicate openers; the mutant spends the budget on non-duplicates. Red on mutation, green on original. |
 | 2618 | L9 | quality-bar-0.82 | clean | 5787 | 5787 | - | L9 quality-bar-0.82 re-audit: pass-2438 verified, already MEASURED. |
 | 2619 | L2 | untell/layout.py | clean | 5787 | 5787 | - | L2 layout.py re-audit (43rd): killing tests green (guard double-pinned). |
-| 2620 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2620. |
-=======
->>>>>>> Stashed changes
+| 2620 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree cle
 | 2621 | L1 | T16 | clean | 5787 | 5787 | - | T16 re-audit (40th): pass-2542 verified. |
 | 2622 | L1 | T17 | clean | 5787 | 5787 | - | T17 re-audit (41st): pass-2544 verified. |
 | 2623 | L2 | untell/scripts/preserve.py | clean | 5787 | 5787 | - | L2 preserve.py re-audit (45th): NER fix holds. |
