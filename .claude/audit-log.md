@@ -2689,3 +2689,4 @@ permanently.
 | 2537 | L1 | T14 | clean | 5787 | 5787 | - | T14 re-audit (41st): pass-2477 verified. |
 | 2538 | L9 | contradiction-bar-0.35 | clean | 5787 | 5787 | - | L9 contradiction-bar-0.35 re-audit: pass-2378 verified, already MEASURED. |
 | 2539 | L2 | untell/scripts/scrub.py | clean | 5787 | 5787 | - | L2 scrub.py re-audit (44th): 4/4 killed. |
+| 2540 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2540. |
