@@ -1199,3 +1199,7 @@ permanently.
 | 1044 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (15th): pass-950 verified. |
 | 1045 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Defect-fix batteries green. |
 | 1046 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (13th): pass-953 verified. |
+| 1047 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (16th): 16 tests green. |
+| 1048 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1049 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1050 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (15th): pass-1006 verified. |
