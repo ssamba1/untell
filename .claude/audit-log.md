@@ -2711,3 +2711,4 @@ permanently.
 | 2559 | L2 | untell/_retry.py | clean | 5787 | 5787 | - | L2 _retry.py re-audit (44th): 128 documented-equivalent remains. |
 | 2560 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2560. |
 | 2561 | L1 | T02 | clean | 5787 | 5787 | - | T02 re-audit (40th): pass-2502 verified. |
+| 2562 | L1 | T03 | clean | 5787 | 5787 | - | T03 re-audit (41st): pass-2504 verified. |
