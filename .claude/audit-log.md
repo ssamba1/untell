@@ -2752,3 +2752,4 @@ permanently.
 | 2595 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (44th): 7/8 killed. |
 | 2596 | L6 | version | defect-fixed | 7463 | 7465 | 4a00730 | DEFECT FIXED (subagent swarm docs-audit + live verify): api_server APP_VERSION 0.2.0 stale vs package 0.3.0 - REST /health version wrong. Root cause: test_every_declared_version_agrees covered 4 declarations, not the API's. Fixed 0.2.0->0.3.0 (4a00730) + NEW test_api_version_matches_package.py (2 tests, red-on-mutation verified) + extended version test. Suite 7463->7465. |
 | 2597 | L1 | T11 | clean | 5787 | 5787 | - | T11 re-audit (42nd): pass-2526 verified. |
+| 2598 | L9 | quality-bar-0.70 | clean | 5787 | 5787 | - | L9 quality-bar-0.70 re-audit: pass-2418 verified, already MEASURED. |
