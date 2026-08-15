@@ -37,9 +37,9 @@ class T5ParaphraseRewriter:
 
     def __init__(
         self,
-        num_beams: int = 5,
+        num_beams: int = 4,
         max_length: int = 128,
-        sample: bool = False,
+        sample: bool = True,
         top_p: float = 0.95,
         temperature: float = 1.2,
     ):

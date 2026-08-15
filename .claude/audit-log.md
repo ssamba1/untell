@@ -925,3 +925,5 @@ permanently.
 | 789 | L4 | L4 | clean | 5781 | 5781 | - | L4 structural.py re-verified: 9/9 alive. |
 | 790 | L1 | T03 | clean | 5781 | 5781 | - | T03 re-audit (11th): pass-730 verified. No change. |
 | 791 | L2 | untell/_retry.py | clean | 5781 | 5781 | - | L2 _retry.py re-audit (12th): kill tests green (8). |
+| 792 | L5 | L5 | clean | 5781 | 5781 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
+| 793 | L1 | T04 | clean | 5781 | 5781 | - | T04 re-audit (11th): pass-733 verified. No change. |
