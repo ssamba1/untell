@@ -1145,3 +1145,4 @@ permanently.
 | 990 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (14th): pass-942 verified. |
 | 991 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (13th): pass-931 verified. |
 | 992 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 993 | L5 | L5 | clean | 5784 | 5784 | - | L5 ruff: 5 F401 + 1 F841 fixed (my test's unused token_overlap import + fleet's 4 mutation-guard files). ruff clean, tests pass. |
