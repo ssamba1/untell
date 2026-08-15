@@ -1072,3 +1072,7 @@ permanently.
 | 925 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
 | 926 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (13th): tells separation verified. |
 | 927 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (15th): 2 documented survivors. |
+| 928 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 929 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 595 | L4 | ensemble state | clean | 5801 | 5801 | eed591e | L4 EnsembleRewriter post-fleet (3rd, after 4ab2b52 N-of-M fix): members [composite, mt_pivot, neural], available True, live rewrite 'Moreover, the framework leverages robust solutions...' -> 'The structure uses strong solutions to deliver outcomes at s...' — changed, non-empty, zero sentinel leaks. Fleet's member-failure counting fix in place and working. |
+| 930 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (14th): spot-check alive. |
