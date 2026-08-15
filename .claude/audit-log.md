@@ -2596,3 +2596,5 @@ permanently.
 | 2444 | L1 | T04 | clean | 5786 | 5786 | - | T04 re-audit (40th): pass-2381 verified. |
 | 2445 | L2 | eval/prove.py | clean | 5786 | 5786 | - | L2 eval/prove.py FIRST AUDIT: baseline green (4), 0/8 killed - 8 survivors all documented default constants with MEASURED rationale (34 max_iters=5, 41 best_of=3 - the paid-checker fix '33% still flagged at best_of=1 vs 0% at 3', 108/110 CLI mirrors, 135/141/155 attempt counts) - no test asserts exact defaults. Documented class. |
 | 2446 | L1 | T05 | clean | 5786 | 5786 | - | T05 re-audit (39th): pass-2382 verified. |
+| 2447 | L2 | untell/config.py | clean | 5786 | 5786 | - | L2 config.py re-audit (41st): 5/5 killed, fully pinned. |
+| 2448 | L2 | eval/detector_audit.py | clean | 5786 | 5786 | - | L2 eval/detector_audit.py FIRST AUDIT: baseline green (4), 0/8 killed - 8 survivors all detector-audit recipe constants/logic (218 n=1000, 284 and->or, 303/304 seeds=4, 398 n=10 + >=, 477 identity, 495 and->or) - needs live detector runs. Documented recipe-logic class. |
