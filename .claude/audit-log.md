@@ -2293,3 +2293,5 @@ permanently.
 | 2138 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40 re-audit: pass-1998 verified, already MEASURED (MOVED). |
 | 2139 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (36th): 12/12 ranges. |
 | 2140 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2140. |
+| 2141 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (34th): pass-2082 verified. |
+| 2142 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (33rd): pass-2084 verified. |
