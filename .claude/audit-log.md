@@ -2860,3 +2860,4 @@ permanently.
 | 2699 | L2 | untell/scripts/numerals.py | clean | 7506 | 7506 | - | L2 numerals.py re-audit (46th): 18 regression tests green. |
 | 2700 | L7 | L7 | clean | 7506 | 7506 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2700 — audit-log milestone. |
 | 2701 | L2 | untell/detectors/perplexity_burstiness.py | coverage-closed | 5890 | 5891 | 1aac3c54a3d52bf9e970ab989350232690eb3f24 | L2 perplexity_burstiness.py: KILLED the line-211 TTR-window survivor (100 -> 101). 25 types x4 + one repeat (101 words): first-100 TTR 0.25 (>= floor, signal 0.0 under original); mutant includes word 101 -> 25/101 = 0.2475 < floor, repetition signal fires (0.0165). Prior 'tuning constant' UNKILLABLE note wrong — the window edge crosses the floor. Red on mutation, green on original. |
+| 2702 | L1 | T18 | clean | 7506 | 7506 | - | T18 re-audit (39th): pass-2624 verified. |
