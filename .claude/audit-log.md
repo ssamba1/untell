@@ -1323,3 +1323,10 @@ permanently.
 | 1168 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
 | 1169 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 1170 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (14th): pass-1117 verified. |
+| 1171 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (18th): 33/33 live. |
+| 1172 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1173 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (17th): pass-1121 verified. |
+| 1174 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (18th): 7/8 killed. |
+| 1175 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (18th): pass-1123 verified. |
+| 1176 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1177 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (16th): pass-1122 verified. |
