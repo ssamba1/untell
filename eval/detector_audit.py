@@ -301,7 +301,7 @@ def audit_detector(name: str, det, probes: tuple[list[str], list[str]] | None = 
         "ai_mean": round(am, 4),
         "gap": round(gap, 4),
         "range": round(rng, 4),
-        "auroc": round(au, 4) if au is not None else None,
+        "auroc": round(au, 5) if au is not None else None,
         "fpr": round(fpr, 4),
         "tpr": round(tpr, 4),
         "n": len(human),
