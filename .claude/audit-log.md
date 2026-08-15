@@ -1383,3 +1383,17 @@ permanently.
 | 1228 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 1229 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
 | 1230 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (17th): pass-1177 verified. |
+| 1231 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (19th): pass-1175 verified. |
+| 1232 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1233 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (18th): pass-1181 verified. |
+| 1234 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (19th): 12/12 ranges. |
+| 1235 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (19th): 5/5 killed, fully pinned. |
+| 1236 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1237 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (19th): pass-1182 verified. |
+| 1238 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-audit: already MEASURED (pass 1051 full run, MOVED -0.10 post_flagged). AMBER queued. Knob closed. |
+| 1239 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (20th): 128 documented-equivalent remains. |
+| 1240 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1240. |
+| 1241 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (18th): pass-1184 verified. |
+| 1242 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (19th): tells separation verified. |
+| 1243 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (18th): fully pinned. |
+| 1244 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (19th): spot-check alive. |
