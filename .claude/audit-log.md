@@ -1357,3 +1357,14 @@ permanently.
 | 1202 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (18th): pass-1146 verified. |
 | 1203 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (19th): 18 regression tests green. |
 | 1204 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (18th): pass-1150 verified. |
+| 1205 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1206 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (16th): pass-1153 verified. |
+| 1207 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (19th): 16 tests green. |
+| 1208 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1209 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1210 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (18th): pass-1157 verified. |
+| 1211 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (20th): 2 documented survivors. |
+| 1212 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1213 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (18th): pass-1161 verified. |
+| 1214 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (17th): pass-1159 verified. |
+| 1215 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (14th): pass-1163 verified. |
