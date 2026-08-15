@@ -176,6 +176,23 @@ def aligned_chunks(a: str, b: str) -> list[tuple[str, str]]:
 
     matcher = difflib.SequenceMatcher(a=aw, b=bw, autojunk=False)
     blocks = matcher.get_matching_blocks()  # ends with a zero-length sentinel
+    # No real matching blocks (the "replaced a whole sentence with unrelated text" case, or a
+    # completely disjoint pair): every cut would map through the sentinel to len(bw), collapsing
+    # all target chunks into one and leaving the source truncated at the first window — MEASURED:
+    # a 300-word source vs a 300-word disjoint target produced ONE chunk of 75 source words vs
+    # all 300 target words. The proportional fallback below is the same one the over-6000-word
+    # path uses: it bounds BOTH sides under CHUNK_WORDS, which is all the gates need.
+    if len([b for b in blocks if b.size > 0]) == 0:
+        cuts = [round(len(aw) * n / k) for n in range(1, k)]
+        bounds_a = [0, *cuts, len(aw)]
+        bounds_b = [0, *[round(len(bw) * n / k) for n in range(1, k)], len(bw)]
+        out: list[tuple[str, str]] = []
+        for n in range(k):
+            ca = " ".join(aw[bounds_a[n] : bounds_a[n + 1]])
+            cb = " ".join(bw[bounds_b[n] : bounds_b[n + 1]])
+            if ca.strip() and cb.strip():
+                out.append((ca, cb))
+        return out or [(a, b)]
 
     def map_index(i: int) -> int:
         """Where in ``b`` does word ``i`` of ``a`` correspond to?"""
