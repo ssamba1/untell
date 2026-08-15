@@ -354,6 +354,15 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
         # 'string pattern on bytes-like object' TypeError deep in the whitespace normaliser.
         # A clean type error names the contract: text must be str.
         raise TypeError(f"text must be str, got {type(text).__name__}")
+    if not isinstance(tier, str):
+        # Fuzz-found: tier=["lite"] crashed deep inside load_detectors with
+        # "unhashable type: 'list'" — the typed API must name the contract.
+        raise TypeError(f"tier must be str, got {type(tier).__name__}")
+    if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+        # Fuzz-found: a non-numeric threshold (str from a JSON mis-parse, None, a list)
+        # crashed deep inside _verdict_threshold with "not supported between instances"
+        # — the typed API must name the contract.
+        raise TypeError(f"threshold must be a number, got {type(threshold).__name__}")
     result = _score_with_detectors(load_detectors(tier), _truncate(text), tier, threshold)
     # Prepended, not appended. The ordering note further down keeps rare and actionable caveats
     # first and the standing ones last; "you got a number about a quarter less than you sent" is

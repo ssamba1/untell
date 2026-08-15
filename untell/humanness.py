@@ -285,6 +285,14 @@ def humanness(text: str, tier: str = "full") -> float:
         - 30–45: likely AI
         - < 30: AI
     """
+    if not isinstance(text, str):
+        # Fuzz-found: bytes input leaked "cannot use a string pattern on a bytes-like
+        # object" from scrub_hidden; score_text already names this contract.
+        raise TypeError(f"text must be str, got {type(text).__name__}")
+    if not isinstance(tier, str):
+        # A non-str tier (e.g. a list from a JSON mis-parse) crashed deep inside
+        # load_detectors with "unhashable type" — name the contract instead.
+        raise TypeError(f"tier must be str, got {type(tier).__name__}")
     if not text or not text.strip():
         return 50.0  # Neutral for empty text
 

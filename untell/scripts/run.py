@@ -593,6 +593,15 @@ def untell_text(
         # Fuzz-found: bytes input raised 'ord() expected string of length 1' deep inside
         # the surrogate scan. Clean type error naming the contract instead.
         raise TypeError(f"text must be str, got {type(text).__name__}")
+    if not isinstance(tier, str):
+        # Fuzz-found: tier=["lite"] crashed deep inside load_detectors with
+        # "unhashable type: 'list'" — name the contract like the text guard does.
+        raise TypeError(f"tier must be str, got {type(tier).__name__}")
+    if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+        # Fuzz-found: a non-numeric threshold (str, None, a list) reached the loop's
+        # score comparisons and crashed with "not supported between instances" — the
+        # typed API must name the contract like the text/tier guards do.
+        raise TypeError(f"threshold must be a number, got {type(threshold).__name__}")
 
     # Sanitize lone surrogates up front. They are invalid Unicode that arrives from broken
     # file encodings; score_text tolerates them but spaCy's tokenizer and the seed hash both

@@ -1047,6 +1047,10 @@ def looks_non_english(text: str) -> bool:
     Conservative by construction. A false positive silences the rewriter on English, which is worse
     than the damage it prevents, so anything short of confident is treated as English.
     """
+    if not isinstance(text, str):
+        # Same contract as score_tells/score_text: a clean TypeError naming the
+        # input type, not an internal regex error from _SENTINEL_RE.sub.
+        raise TypeError(f"text must be str, got {type(text).__name__}")
     # Strip sentinels before counting. The loop hands the rewriter MASKED text, and a sentinel is
     # not a word in any language — but `⟦HZ0000⟧` contributes "HZ" to `_WORD_RE`, so each locked
     # span both removes real words from the count and adds a token that dilutes the ratio. MEASURED
@@ -1109,6 +1113,11 @@ def _language_supported(text: str) -> bool:
 
 def score_tells(text: str, *, include_matches: bool = False) -> dict:
     """Count AI tells in ``text`` per the catalogue. Lower is more human-reading."""
+    if not isinstance(text, str):
+        # Fuzz-found: bytes input raised 'cannot use a string pattern on a bytes-like
+        # object' from deep inside scrub_hidden — the same style of internal leak
+        # score_text's guard exists for. Name the contract instead.
+        raise TypeError(f"text must be str, got {type(text).__name__}")
     # Every multi-word pattern in the catalogue is written with a literal space, so a non-breaking
     # space silently defeats it: "in conclusion" does not match "in conclusion". MEASURED on a
     # 37-word AI paragraph, replacing every space with U+00A0, 5 tells became 3 and humanness moved

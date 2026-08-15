@@ -168,6 +168,14 @@ def _targeting_is_unrankable(rows: list[dict]) -> bool:
 def score_sentences(
     text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, top: int | None = None
 ) -> dict:
+    if not isinstance(text, str):
+        # Fuzz-found: bytes input leaked "a bytes-like object is required, not 'str'"
+        # from layout.blocks — name the contract like score_text does.
+        raise TypeError(f"text must be str, got {type(text).__name__}")
+    if not isinstance(tier, str):
+        raise TypeError(f"tier must be str, got {type(tier).__name__}")
+    if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+        raise TypeError(f"threshold must be a number, got {type(threshold).__name__}")
     """Score each sentence; flag the WORST ones to rewrite first.
 
     Per-sentence scores are noisy — short sentences especially, where signals like burstiness are

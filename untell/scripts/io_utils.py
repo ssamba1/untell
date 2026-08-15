@@ -306,11 +306,16 @@ def configure_utf8_io() -> None:
     printing emoji / accented / RTL text then raises ``UnicodeDecodeError``/``UnicodeEncodeError``.
     Each stream is reconfigured independently and best-effort (a replaced stream in tests may lack
     ``reconfigure`` — that is fine, it is skipped).
+
+    ``errors="replace"`` as well as the encoding, so a LONE SURROGATE in the text (invalid Unicode
+    that reaches a CLI via argv or a broken file decode) prints as U+FFFD instead of killing the
+    process with UnicodeEncodeError. Fuzz-found: `untell scrub` printing a surrogate argv crashed
+    with a traceback; argparse's own stderr path did the same on a surrogate-bearing --tier value.
     """
     import sys
 
     for stream in (sys.stdin, sys.stdout, sys.stderr):
         try:
-            stream.reconfigure(encoding="utf-8")
+            stream.reconfigure(encoding="utf-8", errors="replace")
         except Exception:
             pass
