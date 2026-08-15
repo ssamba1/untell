@@ -477,3 +477,10 @@ gerund word, re-open.
 4. docs/free-ceiling-measured.md:440 — "_CAL_MID = -0.03, _CAL_SCALE = 0.12". STALE: actual untell/detectors/fast_detectgpt.py:53-54 = _CAL_MID 0.20, _CAL_SCALE 0.08; the doc's own Result 8 table (:599-600) lists the correct values and the file self-corrects at :7649.
 
 5. README.md:538 — "flags 65% of HUMAN text" (lite at 0.30). STALE: project's own re-measurement found 60% (free-ceiling-measured.md Result 24, "60
+## 2026-08-15 me2 worker — AMBER — test-module count drift (4th occurrence): docs say 458/7436, live is 482/7527
+
+docs/why-best-open-repo.md:154 claims "7436 tests, 458 modules". Live probe (2026-08-15):
+- tests/ has **482** test modules (files) — +24 over the claim
+- pytest --collect-only collects **7527** tests — +91 over the claim
+- `python -m untell.scripts.audit --json` → check "every 'N test modules' claim matches tests/" FAILS
+- Same defect class as the 3 prior drifts (356→358, 339→358, and the "test modules" phrase fix): the count is a RED-file constant that drifts as guard tests accumulate. RED file, human-owned — needs a doc edit. Suggest the doc either drop the exact count or the audit recipe be run before docs edits.
