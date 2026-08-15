@@ -2621,3 +2621,4 @@ permanently.
 | 2469 | L4 | L4 | clean | 5786 | 5786 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2470 | L1 | T12 | clean | 5786 | 5786 | - | T12 re-audit (40th): pass-2404 verified. |
 | 2471 | L2 | untell/scripts/sentences.py | clean | 5786 | 5786 | - | L2 sentences.py re-audit (42nd): 16 tests green. |
+| 2472 | L5 | L5 | clean | 5786 | 5786 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
