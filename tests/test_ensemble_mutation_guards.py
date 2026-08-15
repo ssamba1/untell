@@ -102,6 +102,30 @@ class TestNearBandFallback:
         assert isinstance(out, str)  # near-band fallback returns something, no crash
 
 
+class TestNeuralMemberInclusion:
+    """Survivor ensemble.py:107 — `use_t5=True` -> False in the neural member.
+
+    The neural member is only added when `use_t5=True` AND T5 deps load (the
+    `if neural._t5 is not None` gate at line 109). The mutation drops the flag;
+    with use_t5=False the composite never loads T5, _t5 stays None, and the
+    "neural" member silently disappears from the ensemble."""
+
+    def test_neural_member_included_when_t5_present(self, monkeypatch) -> None:
+        seen = {}
+
+        class _FakeComposite:
+            def __init__(self, **kw):
+                seen.update(kw)
+                # use_t5=True loads T5; use_t5=False leaves it None
+                self._t5 = object() if kw.get("use_t5") else None
+
+        monkeypatch.setattr("untell.rewriter.ensemble.CompositeRewriter", _FakeComposite)
+        rw = EnsembleRewriter()
+        names = rw.member_names
+        assert seen.get("use_t5") is True, f"neural member must be built with use_t5=True: {seen}"
+        assert "neural" in names, names
+
+
 class TestBandInclusiveEdge:
     """Survivor ensemble.py:178 — `r[0] <= best_max + _RANK_EPS` mutated to `<`.
 

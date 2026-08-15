@@ -462,3 +462,14 @@ unkillable with the reason. Written by `mutate.py --record`.
 |---|---|---|---|
 | untell/attacks/unicode_tricks.py | 108 | <= -> < (regional-indicator range) | UNKILLABLE: equivalent mutant — U+1F1E6-1F1FF is a strict subset of the pictographic range U+1F000-1FAFF matched by the preceding or-arm; the bound never decides any input |
 | untell/attacks/back_translation.py | 35 | False -> True (available import branch) | UNKILLABLE in this env: only observable if an import fails inside available(); transformers/torch/sentencepiece all import here |
+## 2026-08-14 me2 worker wave 3: swarm-a unlanded kills materialized + verified (base/ensemble)
+
+| module | line | mutation | status |
+|---|---|---|---|
+| untell/rewriter/base.py | 66 | False -> True (Anthropic no-key available) | KILLED by test_base_rewriter_mutation_guards (delenv key -> must be False) |
+| untell/rewriter/base.py | 78 | 2048 -> 2049 (Anthropic max_tokens) | KILLED by test_base_rewriter_mutation_guards (payload captured via fake client) |
+| untell/rewriter/base.py | 79 | 3 -> 4 (Anthropic max_attempts) | KILLED by test_base_rewriter_mutation_guards (retry count via failing ConnectionError client) |
+| untell/rewriter/ensemble.py | 107 | use_t5 True -> False (neural member) | KILLED by test_ensemble_mutation_guards (neural drops from member_names) |
+| untell/rewriter/ensemble.py | 178 | <= -> < (rank band edge) | KILLED by test_ensemble_mutation_guards (exact best_max+EPS stays in band) |
+| untell/rewriter/composite.py | 33 | <= -> < (n<=1 guard) | KILLED by test_composite_mutation_guards (n=1 ZeroDivisionError) |
+| untell/rewriter/composite.py | 37 | 2 -> 3 (fan-out span) | KILLED by test_composite_mutation_guards (n=4 3rd draw differs) |
