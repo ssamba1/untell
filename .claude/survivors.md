@@ -566,7 +566,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
 | eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
 | eval/detector_audit.py | 433 | logic: or -> and | `or r.get("auroc") is None` |
-| eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` |
+| eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` | KILLED by tests/test_real_tpr_renders_as_percentage.py: row with tpr=0.75 -> original renders '75%', mutant (is None) takes the placeholder branch and hides the value ('     -'). The FPR/TPR columns are what caught the two scale-miscalibrated detectors at AUROC 0.999+. Red on mutation, green on original. |
 | .claude/verify.py | 33 | constant: True -> False | `capture_output=True,` |
 | .claude/verify.py | 39 | constant: False -> True | `return False, "TIMEOUT"` |
 | .claude/verify.py | 40 | logic: == -> != | `return p.returncode == 0, next(iter(reversed((p.stdout or "").strip().splitlines` |
