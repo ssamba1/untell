@@ -17,7 +17,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/text_split.py | 74 | logic: and -> or | `return all(p.isdigit() for p in parts) and tail == fragment.strip()` | Digit-only abbreviations like "1." rarely in test corpus; AND->OR changes behavior only for digit cases |
 | untell/text_split.py | 74 | logic: == -> != | same | Same as above |
 | untell/text_split.py | 95 | logic: and -> or | `return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()` | Ellipsis continuation: AND->OR makes it more permissive; test corpus doesn't cover ellipsis-after-lowercase cases |
-| untell/text_split.py | 122 | constant: 90 -> 91 | `CHUNK_WORDS = 90` | Tuning constant: 90 vs 91 words per chunk is imperceptible to test corpus |
+| untell/text_split.py | 122 | constant: 90 -> 91 | `CHUNK_WORDS = 90` | KILLED by tests/test_chunk_words_boundary_181.py: 181 words -> 3 chunks under 90 (ceil(181/90)), 2 under 91 (ceil(181/91)) — the bound the constant exists to enforce is exceeded. Actual line is 135. Red on mutation, green on original. |
 | untell/text_split.py | 143 | boundary: < -> <= | `if k == 1 or len(aw) < 2 or len(bw) < 2:` | Very short texts rare in test corpus; boundary shift doesn't affect tested cases |
 | untell/text_split.py | 143 | logic: or -> and | same | Same as above |
 | untell/text_split.py | 143 | logic: == -> != | same | Same as above |
