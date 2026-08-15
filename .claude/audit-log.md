@@ -1177,3 +1177,4 @@ permanently.
 | 1022 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (13th): pass-913 verified. |
 | 1023 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (15th): 12/12 ranges. |
 | 1024 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (14th): RELAXED_SIM_BAR restore + pin verified. |
+| 1025 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40 FULL MEASUREMENT: post_mean_max 0.562->0.515 (-0.048, MOVED beyond +/-0.020 band) — FIRST knob that moved. Harness: 'Do NOT adopt — one experiment is a reason to look.' AMBER queued to human-queue. Knob restored (experiment auto-restore). |
