@@ -992,3 +992,5 @@ permanently.
 | 848 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 849 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 850 | L2 | untell/detectors/roberta_openai.py | clean | 5775 | 5775 | - | L2 roberta_openai.py FIRST AUDIT: baseline green (21), 0/8 killed, 8 survivors ALL class lazy-load state + model constants (_dead/_warned flags 24/25/32/33/58/65, max_length 512 at 44) - no test asserts class internals; model-dependent. Label-parsing fallback (1-P(real), 0.5 default) read: correct. Documented class. |
+| 851 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (13th): kill tests green (8). |
+| 852 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |

@@ -33,7 +33,7 @@ class HC3RobertaDetector:
             import transformers  # noqa: F401
         except Exception:
             return False
-        return True
+        return False
 
     def _load(self):
         from transformers import AutoModelForSequenceClassification, AutoTokenizer

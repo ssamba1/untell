@@ -30,7 +30,7 @@ class RobertaOpenAIDetector:
             import transformers  # noqa: F401
         except Exception:
             return False
-        return False
+        return True
 
     def _load(self):
         if RobertaOpenAIDetector._pipe is None:
