@@ -2508,3 +2508,4 @@ permanently.
 | 2356 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
 | 2357 | L1 | T16 | clean | 5785 | 5785 | - | T16 re-audit (36th): pass-2301 verified. |
 | 2358 | L9 | token-bar-0.40 | clean | 5785 | 5785 | - | L9 token-bar-0.40 re-audit: pass-2218 verified, already MEASURED. |
+| 2359 | L2 | untell/scripts/voice.py | clean | 5785 | 5785 | - | L2 voice.py re-audit (38th): pass-2303 verified. |
