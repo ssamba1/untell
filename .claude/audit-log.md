@@ -2654,3 +2654,4 @@ permanently.
 | 2502 | L1 | T02 | clean | 5787 | 5787 | - | T02 re-audit (39th): pass-2433 verified. |
 | 2503 | L5 | L5 | clean | 5787 | 5787 | - | L5 ruff clean + 3 CLIs launch (untell/untell-score/untell-loop). Citation-integrity guards verified (fabricated-quote guard + link resolution, 2 passed). |
 | 2504 | L1 | T03 | clean | 5787 | 5787 | - | T03 re-audit (40th): pass-2442 verified. |
+| 2505 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
