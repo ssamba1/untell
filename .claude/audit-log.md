@@ -2468,3 +2468,5 @@ permanently.
 | 2316 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
 | 2317 | L1 | T02 | clean | 5785 | 5785 | - | T02 re-audit (36th): pass-2253 verified. |
 | 2318 | L9 | relaxed-sim-0.20 | clean | 5785 | 5785 | - | L9 relaxed-sim-0.20 re-audit: pass-2198 verified, already MEASURED. |
+| 2319 | L2 | untell/scripts/verify.py | clean | 5785 | 5785 | - | L2 verify.py re-audit (39th): pass-2267 verified. |
+| 2320 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2320. |
