@@ -521,3 +521,106 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | Gap classification boundary: test corpus never lands exactly on 0.25 |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, ...)` | CLI help: required=True vs False only affects argparse error, tests call function directly |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ..., indent=2))` | JSON indent: tests don't check formatting |
+| eval/ceiling.py | 89 | < -> <= | KILLED by existing suite |
+| eval/ceiling.py | 148 | or -> and (parallel gate) | KILLED by test_ceiling_mutation_guards (workers=1 must stay serial) |
+| eval/ceiling.py | 148 | > -> >= (boundary) | UNKILLABLE: TIMEOUT — mutant loops forever on degenerate input; not a behavior difference |
+| eval/ceiling.py | 239 | is-not -> is (scored flag) | KILLED by test_ceiling_mutation_guards (scored=True must be included in run_post_means) |
+| eval/ceiling.py | 254 | or -> and | KILLED by existing suite |
+| eval/ceiling.py | 265 | >= -> > | KILLED by existing suite |
+| eval/report.py | 53 | boundary: < -> <= | `beat = [1.0 if post < threshold else 0.0 for _, post in paired]` |
+| eval/report.py | 123 | logic: != -> == | `if fl["bypass_rate"] != sp["bypass_rate"]:` |
+| eval/report.py | 124 | boundary: > -> >= | `better, basis = fl["bypass_rate"] > sp["bypass_rate"], "bypass_rate"` |
+| eval/report.py | 210 | logic: or -> and | `hardest = st.get("hardest_detector") or "-"` |
+| eval/report.py | 215 | logic: and -> or | `if hd and hd in best["per_detector"]:` |
+| eval/baselines.py | 66 | constant: 2 -> 3 | `if len(sentences) < 2:` |
+| eval/baselines.py | 71 | constant: 4 -> 5 | `merge_period = 4 - int(round(2 * strength))  # strength 0 -> every 4th, 1 -> eve` |
+| eval/baselines.py | 72 | constant: 2 -> 3 | `merge_period = max(2, merge_period)` |
+| eval/baselines.py | 113 | logic: and -> or | `if s and s[0].islower():` |
+| eval/baselines.py | 118 | boundary: >= -> > | `if strength >= 0.34:` |
+| eval/baselines.py | 190 | boundary: >= -> > | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| eval/baselines.py | 190 | boundary: <= -> < | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| eval/baselines.py | 190 | logic: and -> or | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| eval/baselines.py | 209 | constant: 5 -> 6 | `max_iters: int = 5,` |
+| eval/baselines.py | 230 | identity: is not -> is | `if rw is not None:` |
+| eval/baselines.py | 240 | logic: and -> or | `if cand_sim >= sim_bar and cand_score["max"] <= best_score["max"]:` |
+| eval/holdout.py | 89 | constant: 10 -> 11 | `n: int = 10,` |
+| eval/holdout.py | 93 | constant: 3 -> 4 | `best_of: int = 3,` |
+| eval/holdout.py | 94 | constant: 5 -> 6 | `max_iters: int = 5,` |
+| eval/holdout.py | 99 | constant: 60 -> 61 | `pairs = load_pairs(dataset, n=n, min_words=60)` |
+| eval/holdout.py | 164 | boundary: >= -> > | `pinned = all(r["pre_max"] >= 0.99 and r["post_max"] >= 0.99 for r in scored)` |
+| eval/holdout.py | 168 | boundary: > -> >= | `paired_wins = sum(r["holdout_pre"] > r["holdout_human"] for r in scored)` |
+| eval/holdout.py | 172 | boundary: >= -> > | `("confident", [r for r in scored if r["holdout_pre"] >= CONVICTION]),` |
+| eval/holdout.py | 173 | boundary: < -> <= | `("unsure", [r for r in scored if r["holdout_pre"] < CONVICTION]),` |
+| eval/holdout.py | 195 | boundary: >= -> > | `"separates": paired_wins >= 0.75 * len(scored),` |
+| eval/holdout.py | 201 | boundary: >= -> > | `"flagged_pre": sum(r["pre_max"] >= FLAG_BAR for r in scored),` |
+| eval/holdout.py | 202 | boundary: >= -> > | `"flagged_post": sum(r["post_max"] >= FLAG_BAR for r in scored),` |
+| eval/holdout.py | 207 | boundary: >= -> > | `"flagged_pre": sum(r["holdout_pre"] >= FLAG_BAR for r in scored),` |
+| eval/holdout.py | 208 | boundary: >= -> > | `"flagged_post": sum(r["holdout_post"] >= FLAG_BAR for r in scored),` |
+| eval/holdout.py | 209 | boundary: < -> <= | `"improved_on": sum(r["holdout_post"] < r["holdout_pre"] for r in scored),` |
+| eval/holdout.py | 213 | membership: not in -> in | `"rows": [{k: v for k, v in r.items() if k not in ("final", "source", "human")}` |
+| eval/holdout.py | 278 | constant: 2 -> 3 | `print(json.dumps(result, indent=2) if args.json else render(result))` |
+| eval/datasets.py | 136 | logic: or -> and | `if i >= scan_cap or len(pairs) >= n:` |
+| eval/datasets.py | 140 | logic: or -> and | `text = (row.get("generation") or "").strip()` |
+| eval/datasets.py | 147 | membership: not in -> in | `if key not in seen and key in humans and key in machines:` |
+| eval/datasets.py | 199 | boundary: < -> <= | `if not text or len(text.split()) < min_words:` |
+| eval/datasets.py | 204 | logic: == -> != | `bucket = humans if row.get("label") == 1 else machines` |
+| eval/datasets.py | 221 | constant: 50 -> 51 | `def load_pairs(dataset: str = "hc3", n: int = 50, min_words: int = 60) -> list[t` |
+| eval/datasets.py | 246 | logic: and -> or | `humans = [a for a in (row.get("human_answers") or []) if a and len(a.split()) >=` |
+| eval/datasets.py | 247 | logic: and -> or | `bots = [a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) >=` |
+| eval/datasets.py | 247 | boundary: >= -> > | `bots = [a for a in (row.get("chatgpt_answers") or []) if a and len(a.split()) >=` |
+| eval/datasets.py | 292 | constant: 40 -> 41 | `floor = 40` |
+| eval/datasets.py | 350 | constant: 30 -> 31 | `if a and len(a.split()) > 30:` |
+| eval/datasets.py | 353 | boundary: >= -> > | `if len(texts) >= n:` |
+| eval/datasets.py | 360 | constant: True -> False | `ds = load_dataset("liamdugan/raid", split="train", streaming=True)` |
+| eval/datasets.py | 364 | constant: 30 -> 31 | `if gen and row.get("model", "human") != "human" and len(gen.split()) > 30:` |
+| eval/datasets.py | 373 | constant: True -> False | `ds = load_dataset("yaful/MAGE", split="test", streaming=True)` |
+| eval/datasets.py | 380 | boundary: >= -> > | `if len(texts) >= n:` |
+| eval/eval_policy.py | 42 | logic: and -> or | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
+| eval/eval_policy.py | 42 | constant: False -> True | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
+| eval/eval_policy.py | 68 | boundary: < -> <= | `bypass = sum(1 for r in scored if r["post"] < threshold) / len(scored)` |
+| eval/eval_policy.py | 85 | constant: 25 -> 26 | `p.add_argument("--n", type=int, default=25)` |
+| eval/eval_policy.py | 104 | constant: 2 -> 3 | `return 2` |
+| eval/eval_policy.py | 111 | constant: False -> True | `base = LocalPolicyRewriter(adapter_dir=a.policy, use_adapter=False)` |
+| eval/eval_policy.py | 116 | constant: 2 -> 3 | `return 2` |
+| eval/eval_policy.py | 123 | constant: 2 -> 3 | `print(json.dumps(out, indent=2) if a.json else "\n".join(lines))` |
+| eval/tells_auroc.py | 126 | constant: 3 -> 4 | `"ci_high": round(hi, 3),` |
+| eval/tells_auroc.py | 133 | boundary: <= -> < | `"informative": (hi - lo) <= UNINFORMATIVE_CI_WIDTH,` |
+| eval/tells_auroc.py | 136 | logic: or -> and | `rows.sort(key=lambda r: (-(r["precision"] or 0), -r["n"]))` |
+| eval/tells_auroc.py | 145 | constant: 100 -> 101 | `return 100 * sum(v for k, v in cats.items() if k not in exclude) / words` |
+| eval/tells_auroc.py | 190 | constant: 3 -> 4 | `"human_mean": round(hm, 3),` |
+| eval/tells_auroc.py | 198 | constant: 4 -> 5 | `"layout_delta": round(collapsed - full, 4),` |
+| eval/tells_auroc.py | 199 | constant: 4 -> 5 | `"auroc_without_layout_categories": round(prose_only, 4),` |
+| eval/tells_auroc.py | 241 | constant: 200 -> 201 | `ap.add_argument("--pairs", type=int, default=200)` |
+| eval/tells_auroc.py | 260 | constant: 2 -> 3 | `return 2` |
+| eval/tells_auroc.py | 265 | constant: 2 -> 3 | `print(json.dumps({"dataset": args.dataset, "categories": rows}, indent=2))` |
+| eval/tells_auroc.py | 271 | logic: and -> or | `if not r["informative"] and r["p_direction"] and r["p_direction"] <= 0.05:` |
+| eval/prove.py | 34 | constant: 5 -> 6 | `max_iters: int = 5,` |
+| eval/prove.py | 108 | constant: 5 -> 6 | `parser.add_argument("--max-iters", type=int, default=5)` |
+| eval/prove.py | 134 | constant: 2 -> 3 | `return 2` |
+| eval/prove.py | 140 | constant: True -> False | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| eval/prove.py | 140 | constant: 2 -> 3 | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| eval/prove.py | 153 | logic: or -> and | `if "error" in (v or {}) or not after.get("configured"):` |
+| eval/compare_humanizers.py | 70 | constant: False -> True | `return None if res.get("scored") is False else float(res["max"])` |
+| eval/compare_humanizers.py | 79 | constant: 10 -> 11 | `return surgical_substitute(t, tier=tier, threshold=threshold, max_subs=10)["text` |
+| eval/compare_humanizers.py | 92 | constant: 5 -> 6 | `t, tier=tier, threshold=threshold, max_iters=5,` |
+| eval/compare_humanizers.py | 133 | constant: 3 -> 4 | `"ours_loop (composite)": _ours("composite", 3),` |
+| eval/compare_humanizers.py | 178 | logic: != -> == | `sims.append(similarity(t, out) if name != "none (raw AI)" else 1.0)` |
+| eval/compare_humanizers.py | 197 | constant: 4 -> 5 | `"ai_max_mean": round(sum(measured) / len(measured), 4) if measured else None,` |
+| eval/compare_humanizers.py | 198 | constant: 2 -> 3 | `"tells_per_100w_mean": round(sum(tell_rates) / n, 2),` |
+| eval/compare_humanizers.py | 200 | constant: 3 -> 4 | `"sim_mean": round(sum(sims) / n, 3),` |
+| eval/compare_humanizers.py | 267 | constant: 8 -> 9 | `parser.add_argument("--n", type=int, default=8, help="samples to draw from --dat` |
+| eval/compare_humanizers.py | 290 | constant: 2 -> 3 | `return 2` |
+| eval/compare_humanizers.py | 295 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
+| eval/benchmark.py | 42 | constant: 5 -> 6 | `parser.add_argument("--n", type=int, default=5, help="number of samples")` |
+| eval/benchmark.py | 68 | membership: not in -> in | `unknown = [s for s in strategies if s not in STRATEGIES]` |
+| eval/detector_audit.py | 218 | constant: 1000 -> 1001 | `return 1000 * t.count("\n") / max(len(_WORD_RE.findall(t)), 1)` |
+| eval/detector_audit.py | 275 | boundary: >= -> > | `fpr = sum(1 for x in human if x >= DEFAULT_THRESHOLD) / len(human)` |
+| eval/detector_audit.py | 280 | identity: is not -> is | `elif au is not None and au < INVERT_AUROC:` |
+| eval/detector_audit.py | 288 | boundary: > -> >= | `elif fpr > MAX_FPR:` |
+| eval/detector_audit.py | 301 | constant: 4 -> 5 | `"ai_mean": round(am, 4),` |
+| eval/detector_audit.py | 303 | constant: 4 -> 5 | `"range": round(rng, 4),` |
+| eval/detector_audit.py | 304 | constant: 4 -> 5 | `"auroc": round(au, 4) if au is not None else None,` |
+| eval/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
+| eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
+| eval/detector_audit.py | 433 | logic: or -> and | `or r.get("auroc") is None` |
+| eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` |
