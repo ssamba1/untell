@@ -1099,3 +1099,4 @@ permanently.
 | 948 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 949 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
 | 950 | L1 | T02 | clean | 5775 | 5775 | - | T02 re-audit: FLEET STATE-CHANGE - count_hidden now NFC-composes legitimate accents FIRST (docstring: raw counting reported 10 hidden on ordinary accented English = false positive; baseline restores per-character distinction). Verified: ZWSP x2=2, NBSP=1, homoglyph=1, accents=0, orphan bidi=1, balanced bidi=0, mixed=1 - all consistent with preservation design. Pass-464 expectation (stack=2) STALE, superseded by correct compose-first. |
+| 951 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (14th): pass-884 verified. |
