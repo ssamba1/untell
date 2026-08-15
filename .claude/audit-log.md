@@ -1135,3 +1135,4 @@ permanently.
 | 980 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (16th): 2 documented survivors. |
 | 981 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (14th): pass-921 verified. |
 | 982 | L1 | T16 | clean | 5777 | 5777 | - | T16 re-audit: score_text + untell_text both reject bytes with clean TypeError naming str contract. Fleet pass-571 fix holds. |
+| 983 | L1 | T09 | clean | 5777 | 5777 | - | T09 re-audit: max_iters=0 inert budget - changed=False, rewrites=0, iters=None (documented no-iteration shape). No rewrite attempted. |
