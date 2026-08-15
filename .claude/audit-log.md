@@ -981,3 +981,6 @@ permanently.
 | 837 | L1 | T18 | defect-fixed | 5782 | 5783 | HEAD | DEFECT FIXED (novel probe, sibling of ceiling): untell-compare --threshold 2.5 / --n 0 silently ran (exit 0). Now parser.error exit 2. Tests: test_compare_rejects_out_of_range_args (12 cases) + ceiling test (24 cases), suite 5782->5783, red/green verified. |
 | 838 | L2 | untell/scripts/verify.py | clean | 5783 | 5783 | - | L2 verify.py re-audit (12th): pass-577 raising-browser-checker kill holds. |
 | 839 | L2 | untell/detectors/base.py | clean | 5775 | 5775 | - | L2 detectors/base.py FIRST AUDIT: baseline green (24), 2/8 killed, 6 survivors: 39 (NaN check != -> ==, EQUIVALENT - float(NaN) fallthrough returns NaN anyway, pass-57 fix robust to own mutation), 178 (_split_to_width width boundary), 228 (window-packing guard), 242 (window NaN filter + max), 274 (count constant 99). All documented boundary/model-dependent classes. |
+| 840 | L2 | untell/languages.py | clean | 5783 | 5783 | - | L2 languages.py re-audit (12th): 12/12 ranges. Survivors 43/89. |
+| 841 | L1 | T17 | clean | 5783 | 5783 | - | T17 re-audit (11th): pass-773 verified. No change. |
+| 842 | L1 | T19 | clean | 5783 | 5783 | - | T19 re-audit (10th): ledger 35 rows consistent. |

@@ -336,7 +336,7 @@ def contradicts(a: str, b: str, bar: float = DEFAULT_CONTRADICTION_BAR) -> bool:
 DEFAULT_ENTAILMENT_FLOOR = 0.005
 # Similarity floor used only when NLI is carrying the meaning check. It exists to catch gross topic
 # drift that NLI might rate as merely "neutral", not to judge fidelity — NLI does that far better.
-RELAXED_SIM_BAR = 0.30
+RELAXED_SIM_BAR = 0.20
 
 # Deletion is the one defect class the zero-dependency path cannot see, and it is not hypothetical:
 # this pipeline now contains a transform that removes whole sentences.

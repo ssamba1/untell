@@ -487,3 +487,9 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/perplexity_burstiness.py | 386 | constant: 2 -> 3 | `if total < 2:` |
 | untell/detectors/perplexity_burstiness.py | 409 | boundary: > -> >= | `nll = torch.cat(chunks) if len(chunks) > 1 else chunks[0]` |
 | untell/detectors/perplexity_burstiness.py | 442 | boundary: < -> <= | `if idx < 0:` |
+| untell/detectors/base.py | 39 | logic: != -> == | `if x != x:  # NaN` |
+| untell/detectors/base.py | 178 | boundary: <= -> < | `if len(words) <= width:` |
+| untell/detectors/base.py | 228 | logic: or -> and | `for sentence in split_sentences(text) or [text]:` |
+| untell/detectors/base.py | 242 | logic: and -> or | `if current and count + n > window_words:` |
+| untell/detectors/base.py | 242 | boundary: > -> >= | `if current and count + n > window_words:` |
+| untell/detectors/base.py | 274 | constant: 99 -> 100 | `return _TIER_RANK.get(detector_tier, 99) <= _TIER_RANK.get(requested, 0)` |
