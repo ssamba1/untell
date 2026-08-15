@@ -195,9 +195,9 @@ def compare(
                 # Detector-independent columns keep the full denominator; the P(AI) columns are
                 # averaged over what actually scored, and say so when that is not everything.
                 "ai_max_mean": round(sum(measured) / len(measured), 4) if measured else None,
-                "tells_per_100w_mean": round(sum(tell_rates) / n, 3),
+                "tells_per_100w_mean": round(sum(tell_rates) / n, 2),
                 "tells_total": sum(tell_counts),
-                "sim_mean": round(sum(sims) / n, 3),
+                "sim_mean": round(sum(sims) / n, 4),
                 "flagged_rate": (
                     round(sum(1 for s in measured if s >= threshold) / len(measured), 3)
                     if measured else None
