@@ -1153,3 +1153,4 @@ permanently.
 | 998 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (16th): 4/4 killed. |
 | 999 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (15th): 33/33 live. |
 | 1000 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit: windowed_max reaches document TAIL - AI text only at end of 30-sentence human doc scores 0.99 (8 windows, max over all). Tail-visibility fix holds. |
+| 1001 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1000 — audit-log milestone. |
