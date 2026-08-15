@@ -1093,3 +1093,4 @@ permanently.
 | 943 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (14th): pass-891 verified. |
 | 944 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (14th): pass-882 verified. |
 | 945 | L8 | lite-hc3-ensemble | clean | 5775 | 5775 | - | Calibration attempt 3 REFUSED (300-min kill, run 1 of 2 incomplete). Root cause: my model-loading mutation hunts (t5/local_policy/roberta/mage/hc3_roberta) starved it - scheduling error owned. Attempt 4 restarted on fully quiet box (0 python procs), no heavy tests scheduled until done. L9 knobs remain refused until calibration lands. |
+| 946 | L5 | L5 | clean | 5775 | 5775 | - | L5 ruff: 2 F401 unused imports fixed in fleet's test_holdout_mutation_guards.py; ruff clean; test passes 1.47s. Light work only (calibration attempt 4 running). |
