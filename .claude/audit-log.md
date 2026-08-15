@@ -2650,3 +2650,5 @@ permanently.
 | 2498 | L9 | threshold-0.40 | clean | 5787 | 5787 | - | L9 threshold-0.40 re-audit: pass-2338 verified, already MEASURED (MOVED). |
 | 2499 | L2 | untell/languages.py | clean | 5787 | 5787 | - | L2 languages.py re-audit (42nd): 12/12 ranges. |
 | 2500 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2500 — audit-log milestone. |
+| 2501 | L1 | T01 | clean | 5787 | 5787 | - | T01 re-audit (40th): pass-2430 verified. |
+| 2502 | L1 | T02 | clean | 5787 | 5787 | - | T02 re-audit (39th): pass-2433 verified. |
