@@ -369,3 +369,9 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/attacks/word_importance.py | 876 | boundary: <= -> < | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` | UNKILLABLE (all 3 variants): acceptance criteria need real detector scores to distinguish
 | untell/attacks/word_importance.py | 876 | logic: or -> and | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` |
 | untell/attacks/word_importance.py | 876 | boundary: < -> <= | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` |
+| untell/rewriter/composite.py | 43 | boundary: < -> <= | `if not any(abs(v - base) < 1e-9 for v in out):` | EQUIVALENT-in-practice (verified 2000-base scan, 0 exact 1e-9 deltas): sweep arithmetic is rational multiples of span 0.15, never lands exactly on 1e-9; 1e-16 float noise caught by both variants |
+| untell/rewriter/composite.py | 71 | boundary: > -> >= | `step = min((hi - lo) / (run_len + 1), 1e-3) if hi > lo else 1e-3` |
+| untell/rewriter/composite.py | 83 | boundary: < -> <= | `elif pos < base_slot:` |
+| untell/rewriter/composite.py | 90 | boundary: <= -> < | `if hi <= base + 1e-6:` |
+| untell/rewriter/composite.py | 194 | identity: is not -> is | `if use_t5 and self._t5 is not None:` |
+| untell/rewriter/composite.py | 217 | logic: and -> or | `if para.strip() and para != text:` |
