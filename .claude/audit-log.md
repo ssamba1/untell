@@ -2460,3 +2460,6 @@ permanently.
 | 2308 | L4 | L4 | clean | 5785 | 5785 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2309 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2310 | L1 | T20 | clean | 5785 | 5785 | - | T20 re-audit (34th): pass-2246 verified. |
+| 2311 | L2 | untell/scripts/scrub.py | clean | 5785 | 5785 | - | L2 scrub.py re-audit (40th): 4/4 killed. |
+| 2312 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2313 | L1 | T01 | clean | 5785 | 5785 | - | T01 re-audit (37th): pass-2250 verified. |
