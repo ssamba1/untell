@@ -369,6 +369,12 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/attacks/word_importance.py | 876 | boundary: <= -> < | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` | UNKILLABLE (all 3 variants): acceptance criteria need real detector scores to distinguish
 | untell/attacks/word_importance.py | 876 | logic: or -> and | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` |
 | untell/attacks/word_importance.py | 876 | boundary: < -> <= | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` |
+| untell/rewriter/composite.py | 43 | boundary: < -> <= | `if not any(abs(v - base) < 1e-9 for v in out):` | EQUIVALENT-in-practice (verified 2000-base scan, 0 exact 1e-9 deltas): sweep arithmetic is rational multiples of span 0.15, never lands exactly on 1e-9; 1e-16 float noise caught by both variants |
+| untell/rewriter/composite.py | 71 | boundary: > -> >= | `step = min((hi - lo) / (run_len + 1), 1e-3) if hi > lo else 1e-3` |
+| untell/rewriter/composite.py | 83 | boundary: < -> <= | `elif pos < base_slot:` |
+| untell/rewriter/composite.py | 90 | boundary: <= -> < | `if hi <= base + 1e-6:` |
+| untell/rewriter/composite.py | 194 | identity: is not -> is | `if use_t5 and self._t5 is not None:` |
+| untell/rewriter/composite.py | 217 | logic: and -> or | `if para.strip() and para != text:` |
 
 ## 2026-08-14 me2 worker rewriter sweep: t5_paraphrase.py (partial - harness timeout at 6/13, baseline 7:42 T5 loads)
 
@@ -378,16 +384,26 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/t5_paraphrase.py | 41 | 128 -> 129 (max_length) | UNKILLABLE: generation parameter |
 | untell/rewriter/t5_paraphrase.py | 89 | False -> True (available) | UNKILLABLE: torch-import branch |
 | untell/rewriter/t5_paraphrase.py | 42/90/107 | availability/return constants | KILLED by existing tests (test_the_t5_rewriter_reports...) |
-| untell/rewriter/local_policy.py | 220 | constant: True -> False | `use_adapter: bool = True,` | UNKILLABLE: use_adapter constructor default
-| untell/rewriter/local_policy.py | 233 | constant: False -> True | `return False` | UNKILLABLE: availability return constant
-| untell/rewriter/local_policy.py | 245 | identity: is not -> is | `if self._model is not None:` | UNKILLABLE: model-cache identity check
-| untell/rewriter/local_policy.py | 262 | constant: True -> False | `load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16` | UNKILLABLE: load_in_4bit quantization constant
-| untell/rewriter/local_policy.py | 294 | logic: == -> != | `if not candidate or candidate == source:` | KILLED by test_local_policy_mutation_guards (identical candidate rejection)
-| untell/rewriter/local_policy.py | 297 | constant: False -> True | `return False` | UNKILLABLE: sentinel-integrity return constant
-| untell/rewriter/local_policy.py | 300 | logic: and -> or | `if words and not (low <= len(candidate.split()) / words <= high):` | KILLED by test_local_policy_mutation_guards (length-band guard)
-| untell/rewriter/local_policy.py | 301 | constant: False -> True | `return False` | UNKILLABLE: length-band return constant
-| untell/rewriter/local_policy.py | 305 | constant: True -> False | `return True` | UNKILLABLE: mechanical-band accept constant
-| untell/rewriter/local_policy.py | 339 | boundary: < -> <= | `if len(piece.split()) < 8:` | UNKILLABLE: 8-word fragment threshold, model-gated rewrite path
-| untell/rewriter/local_policy.py | 339 | constant: 8 -> 9 | `if len(piece.split()) < 8:` |
-| untell/rewriter/local_policy.py | 392 | constant: True -> False | `inputs = self._tok(prompt, return_tensors="pt", truncation=True, max_length=2048` | UNKILLABLE: tokenizer max_length kwarg
-| untell/rewriter/local_policy.py | 413 | constant: True -> False | `decoded = self._tok.decode(gen, skip_special_tokens=True).strip()` | UNKILLABLE: decode kwargs
+
+## 2026-08-14 swarm sweep (3 subagents, parallel worktrees) - all kills RED/GREEN proven
+
+| module | line | mutation | status |
+|---|---|---|---|
+| untell/rewriter/surgical.py | 46 | deterministic True->False | KILLED by swarm test_surgical_rewriter_mutation_guards |
+| untell/rewriter/surgical.py | 48 | max_subs 12->13 | KILLED by swarm (constructor default pin) |
+| untell/rewriter/surgical.py | 63 | tier not in -> in | KILLED by swarm (composite tier normalization spy) |
+| untell/rewriter/surgical.py | 96 | prefer_tells True->False | KILLED by swarm (tell-removal objective spy) |
+| untell/rewriter/mt_pivot.py | 54 | deterministic True->False | KILLED by swarm test_mt_pivot_mutation_guards |
+| untell/rewriter/mt_pivot.py | 64 | or -> and (guard) | KILLED by swarm (backend never consulted when unavailable) |
+| untell/rewriter/prompts.py | 75 | k 3->4 | KILLED by swarm test_prompts_mutation_guards (exactly top 3) |
+| untell/rewriter/prompts.py | 77 | and -> or (numeric filter) | KILLED by swarm (error-suffixed row stays out) |
+| untell/rewriter/prompts.py | 77 | not in -> in (__error) | KILLED by swarm (normal detector still named) |
+| untell/rewriter/prompts.py | 78 | reverse True->False | KILLED by swarm (worst named first) |
+| untell/rewriter/prompts.py | 96 | style and -> or | KILLED by swarm (unknown style skipped not crashed) |
+| untell/rewriter/prompts.py | 99 | or [] -> and [] | KILLED by swarm (flagged sentences listed) |
+| untell/rewriter/prompts.py | 101 | [:8] -> [:9] | KILLED by swarm (only first 8 listed) |
+| untell/attacks/back_translation.py | 50 | 512->513 (_MAX_TOKENS) | KILLED by swarm test_back_translation_mutation_kills |
+| untell/attacks/back_translation.py | 67 | 16->17 (budget margin) | KILLED by swarm (exact-fill stays one piece) |
+| untell/attacks/back_translation.py | 79 | > -> >= (pack loop) | KILLED by swarm (exact-fill merge; independently re-verified) |
+| untell/attacks/back_translation.py | 86 | or -> and (fallback) | KILLED by swarm (whitespace returns input) |
+| untell/attacks/unicode_tricks.py | 104-112 | emoji-adjacency boundaries | KILLED by swarm test_unicode_tricks_mutation_kills (44 tests) |
