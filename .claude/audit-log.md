@@ -1368,3 +1368,10 @@ permanently.
 | 1213 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (18th): pass-1161 verified. |
 | 1214 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (17th): pass-1159 verified. |
 | 1215 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (14th): pass-1163 verified. |
+| 1216 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1217 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (16th): pass-1162 verified. |
+| 1218 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: already MEASURED (pass 872 full run, inert +0.000). Knob closed. |
+| 1219 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (20th): 4/4 killed. |
+| 1220 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1220. |
+| 1221 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (17th): pass-1164 verified. |
+| 1222 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (16th): pass-1166 verified 36 rows consistent. |
