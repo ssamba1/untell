@@ -2787,3 +2787,5 @@ permanently.
 | 2627 | L2 | untell/scripts/numerals.py | clean | 5787 | 5787 | - | L2 numerals.py re-audit (45th): 18 regression tests green. |
 | 2628 | L4 | L4 | clean | 5787 | 5787 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2629 | L4 | L4 | clean | 5787 | 5787 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2630 | L1 | T19 | clean | 5787 | 5787 | - | T19 re-audit (40th): pass-2550 verified 36 rows consistent. |
+| 2631 | L7 | weak-tests | clean | 7506 | 7506 | - | L7 subagent-swarm weak-test findings FIXED: (1) test_retry_zero_attempts_does_one_anyway had NO assertion (bare call + comment) - added call-counter, red-on-mutation (retry returning without calling fn now fails); (2) test_retry_detects_api_keywords_in_message could not fail on broken detection - added attempt-count assert (2 calls required), red-on-mutation verified (broken _is_retryable -> 1 call -> FAIL); (3) test_cli_dispatch.py:19 bare 'assert True' tautology (only one in 460 files) - removed. Resolved live merge markers in audit.py (4th time this session, kept startswith fix). |
