@@ -438,3 +438,9 @@ WHY    AMBER per harness: "Never adopt from one run — this one moves every
 NEXT   Human decision: threshold sensitivity is real. The 0.30 shipped value
        was calibrated; a sweep (0.25/0.35/0.40) would map the tradeoff.
        Not adopted.
+
+## 2026-08-15 pass (L6/full-suite) AMBER — docs/why-best-open-repo.md:154 count stale
+line 154: "Automated tests | ✅ **7418** tests, 445 modules"
+MEASURED: tests/ has 456 modules (ls count), 7436 tests collected (pytest --co, 16.42s).
+Stale by 18 tests + 11 modules — exceeds the _MODULE_DRIFT=5 window the derivable-check allows.
+RED-band file: human edit required (guard blocks unattended loop).
