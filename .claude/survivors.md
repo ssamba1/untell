@@ -645,3 +645,4 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/baselines.py | 78 | logic: == -> != | `and i % merge_period == 0` |
 | eval/baselines.py | 78 | logic: and -> or | `and i % merge_period == 0` |
 | eval/eval_policy.py | 42 | identity: is not -> is | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
+| untell/detectors/commercial.py | 180 | logic: or -> and | `if not self.available() or not text.strip():` |

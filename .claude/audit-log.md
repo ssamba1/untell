@@ -2426,3 +2426,5 @@ permanently.
 | 2271 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (38th): 12/12 ranges. |
 | 2272 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2273 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (38th): _MERGE_WEIGHTS unchanged. |
+| 2274 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (38th): 5/5 killed, fully pinned. |
+| 2275 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (39th): kill tests green. |
