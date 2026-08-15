@@ -2454,3 +2454,6 @@ permanently.
 | 2302 | L1 | T17 | clean | 5785 | 5785 | - | T17 re-audit (36th): pass-2241 verified. |
 | 2303 | L2 | untell/scripts/voice.py | clean | 5785 | 5785 | - | L2 voice.py re-audit (37th): pass-2247 verified. |
 | 2304 | L1 | T18 | clean | 5785 | 5785 | - | T18 re-audit (33rd): pass-2242 verified. |
+| 2305 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
+| 2306 | L1 | T19 | clean | 5785 | 5785 | - | T19 re-audit (35th): pass-2244 verified 36 rows consistent. |
+| 2307 | L2 | untell/scripts/quality.py | clean | 5785 | 5785 | - | L2 quality.py re-audit (34th): pass-2252 verified. |
