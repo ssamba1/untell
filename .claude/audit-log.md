@@ -2687,3 +2687,4 @@ permanently.
 | 2535 | L2 | untell/scripts/quality.py | clean | 5787 | 5787 | - | L2 quality.py re-audit (38th): pass-2479 verified. |
 | 2536 | L6 | L6 | clean | 5787 | 5787 | - | L6 drift: no new drift. |
 | 2537 | L1 | T14 | clean | 5787 | 5787 | - | T14 re-audit (41st): pass-2477 verified. |
+| 2538 | L9 | contradiction-bar-0.35 | clean | 5787 | 5787 | - | L9 contradiction-bar-0.35 re-audit: pass-2378 verified, already MEASURED. |
