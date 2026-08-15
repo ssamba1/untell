@@ -1121,3 +1121,6 @@ permanently.
 | 966 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (12th): pass-897 verified. |
 | 967 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (14th): killing tests green. |
 | 968 | L1 | T05 | clean | 5775 | 5775 | - | T05 re-audit: verdict-cut FP 0/20 on clean text (0.45 cut, stdlib lite path). No false flags. |
+| 969 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (12th): pass-904 verified. |
+| 970 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (14th): pass-906 verified. |
+| 971 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (14th): aligned-chunks fix holds. |
