@@ -121,3 +121,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
 | eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` |
 | eval/detector_audit.py | 495 | logic: and -> or | `and r["auroc"] > SENTENCE_BROKEN_AUROC` |
+| untell/api_server.py | 428 | boundary: <= -> < | `if len(_rate_buckets) <= _RATE_BUCKET_SOFT_CAP:` |
+| untell/api_server.py | 496 | logic: or -> and | `retry_after = _rate_limited(request, x_key or auth or "")` |
+| untell/api_server.py | 682 | constant: True -> False | `"results": {"type": "object", "additionalProperties": True},` |
+| untell/api_server.py | 715 | constant: True -> False | `"pre": {"type": "object", "additionalProperties": True, "description": "score be` |

@@ -712,7 +712,7 @@ _HUMANIZE_RESPONSES = _obj(
     {
         "final": {**_STR, "description": "the rewritten text — this is the output"},
         "iterations": _INT, "rewrites": _INT, "adopted": _INT, "changed": _BOOL,
-        "pre": {"type": "object", "additionalProperties": False, "description": "score before"},
+        "pre": {"type": "object", "additionalProperties": True, "description": "score before"},
         "post": {"type": "object", "additionalProperties": True, "description": "score after"},
         "similarity": {**_NUM, "description": "meaning similarity against the source"},
         "sim_bar": _NUM, "quality_metric": _STR,
