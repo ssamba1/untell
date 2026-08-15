@@ -878,3 +878,4 @@ permanently.
 | 749 | L4 | L4 | clean | 5781 | 5781 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 750 | L1 | T09 | clean | 5781 | 5781 | - | T09 re-audit (11th): pass-684 verified. No change. |
 | 751 | L2 | untell/_env.py | clean | 5781 | 5781 | - | L2 _env.py re-audit (9th): killing tests green. Fully pinned. |
+| 752 | L5 | L5 | clean | 5781 | 5781 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
