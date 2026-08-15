@@ -2393,3 +2393,6 @@ permanently.
 | 2238 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: pass-2118 verified, already MEASURED. |
 | 2239 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (38th): 16 tests green. |
 | 2240 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2240. |
+| 2241 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (35th): pass-2186 verified. |
+| 2242 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (32nd): pass-2190 verified. |
+| 2243 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (39th): 2 documented survivors. |
