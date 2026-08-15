@@ -2411,3 +2411,4 @@ permanently.
 | 2256 | L2 | eval/datasets.py | clean | 5784 | 5784 | - | L2 eval/datasets.py FIRST AUDIT: baseline green (4), 2/8 killed (fleet's 30->31 min-length kills confirmed at 350/364), 6 survivors: 136 fallback logic, 221 n=50, 247 cleaning, 353 boundary, 360/373 warn flags - dataset-loading logic/constants. Documented class. |
 | 2257 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (36th): pass-2144 verified. |
 | 2258 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40 re-audit: pass-2138 verified, already MEASURED (MOVED). |
+| 2259 | L2 | eval/baselines.py | clean | 5784 | 5784 | - | L2 eval/baselines.py FIRST AUDIT: baseline green, 0/8 killed - 8 survivors all baseline-simulator logic/boundaries (66 merge-period, 78 sentence-merge cond x2, 113 acceptance, 118/190 sim-threshold boundaries x3, 240 best-candidate gate) - no test exercises the baseline candidate loop (needs full detector pipeline). Documented recipe-logic class. |
