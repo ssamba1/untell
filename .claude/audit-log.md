@@ -1397,3 +1397,8 @@ permanently.
 | 1242 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (19th): tells separation verified. |
 | 1243 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (18th): fully pinned. |
 | 1244 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (19th): spot-check alive. |
+| 1245 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1246 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (20th): _MERGE_WEIGHTS unchanged. |
+| 1247 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (19th): killing tests green. |
+| 1248 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1249 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
