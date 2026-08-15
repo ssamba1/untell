@@ -1239,3 +1239,6 @@ permanently.
 | 1084 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (17th): _MERGE_WEIGHTS unchanged. |
 | 1085 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Lite battery green post ppl-weight restore. |
 | 1086 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (16th): pass-1042 verified. |
+| 1087 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (16th): killing tests green. |
+| 1088 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1089 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
