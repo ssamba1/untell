@@ -1269,6 +1269,16 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_THRESHOLD,
         help=f"Max-proxy P(AI) below which text is considered human-passing (default: {DEFAULT_THRESHOLD}).",
     )
+    # Accepted for consistency, not because output can be anything else: this command's stdout is
+    # ALWAYS JSON, and every sibling JSON-emitting command (`tells`, `verify`, `sentences`,
+    # `scrub`, `humanize`) accepts `--json`. Before this flag existed, a script chain that added
+    # `--json` to every command in the family died here with "unrecognized arguments: --json"
+    # (exit 2) — the one command whose output was already JSON was the one that refused the ask.
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="accepted for consistency with the other commands; output is always JSON",
+    )
     args = parser.parse_args(argv)
 
     from untell._env import load_env

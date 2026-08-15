@@ -294,21 +294,29 @@ def main(argv: list[str] | None = None) -> int:
 
     configure_utf8_io()  # UTF-8 stdin/stdout/stderr (Windows defaults to cp1252)
     parser = argparse.ArgumentParser(prog="untell-sentences", description="Per-sentence AI scoring.")
-    parser.add_argument("text", nargs="?")
-    parser.add_argument("--file", "-f")
-    parser.add_argument("--tier", default="lite", choices=["lite", "full", "heavy", "commercial"])
+    parser.add_argument("text", nargs="?", help="text to scan (or --file / stdin)")
+    parser.add_argument("--file", "-f", help="read text from this file (.txt/.docx/.pdf)")
+    parser.add_argument(
+        "--tier",
+        default="lite",
+        choices=["lite", "full", "heavy", "commercial"],
+        help="max detector tier to attempt (default: lite)",
+    )
     # Range-checked, like the other scoring commands. `--threshold 5` flagged 0 sentences of 1,
     # because a probability cannot exceed 1 — an answer that looks like "nothing to rewrite".
     from untell.scripts.run import _PROBABILITY, _TOP
 
-    parser.add_argument("--threshold", "-t", type=_PROBABILITY, default=DEFAULT_THRESHOLD)
+    parser.add_argument(
+        "--threshold", "-t", type=_PROBABILITY, default=DEFAULT_THRESHOLD,
+        help="P(AI) at or above which a sentence is flagged (default: 0.3)",
+    )
     parser.add_argument(
         "--top",
         type=_TOP,
         default=None,
         help="Flag at most this many of the worst sentences (default: ~the worst third).",
     )
-    parser.add_argument("--json", action="store_true")
+    parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     args = parser.parse_args(argv)
 
     if args.file:

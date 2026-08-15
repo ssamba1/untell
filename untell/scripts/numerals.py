@@ -362,14 +362,23 @@ def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
     if any(a in ("-h", "--help") for a in args):
         print(
-            'usage: numerals.py "<original>" "<rewrite>"\n\n'
+            'usage: untell-numbers "<original>" "<rewrite>"\n\n'
             "Prints JSON: missing (numerals dropped by the rewrite), kept (bool).\n"
+            "-h, --help   show this help and exit\n"
             "Exit 0 if every number in the original survives — as a numeral or its English word —\n"
             "1 if any was dropped, 2 on usage error."
         )
         return 0
+    # The two positional slots are the whole interface; anything else that looks like a flag is a
+    # mistyped option, not a third text. MEASURED before this guard: `untell numbers --json "a" "b"`
+    # compared "--json" against "a" and exited 0 with `{"missing": [], "kept": true}` — a silent
+    # wrong answer exactly when the caller believed they had asked for machine output.
+    bad = [a for a in args if a.startswith("-") and a not in ("-h", "--help")]
+    if bad:
+        logger.error('unrecognized argument %s (usage: untell-numbers "<original>" "<rewrite>")', bad[0])
+        return 2
     if len(args) < 2:
-        logger.error('usage: numerals.py "<original>" "<rewrite>"')
+        logger.error('usage: untell-numbers "<original>" "<rewrite>"')
         return 2
 
     missing = missing_numbers(args[0], args[1])

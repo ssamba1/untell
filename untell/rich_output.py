@@ -259,23 +259,28 @@ def print_humanize_result(
 
     # Side-by-side diff — pointless when nothing moved, and printing the same text in two panels
     # labelled "Original" and "Humanized" actively suggests something happened.
+    #
+    # The panels take `_Text`, not str. Rich parses markup in plain strings, so a user text like
+    # "See [1] and [citation needed]." had its brackets swallowed as markup tags and rendered as
+    # "See  and ." — the report a user reads to see what the loop did was silently deleting their
+    # content. `_Text` escapes markup and prints the characters verbatim.
     if not no_change:
         _CONSOLE.print("\n[bold]Before → After[/]")
         _CONSOLE.print(_diff_words(original, final))
         _CONSOLE.print()
-        _CONSOLE.print(_Panel(original[:2000] + ("..." if len(original) > 2000 else ""), title="Original", border_style="yellow"))
-        _CONSOLE.print(_Panel(final[:2000] + ("..." if len(final) > 2000 else ""), title="Humanized", border_style="green"))
+        _CONSOLE.print(_Panel(_Text(original[:2000] + ("..." if len(original) > 2000 else "")), title="Original", border_style="yellow"))
+        _CONSOLE.print(_Panel(_Text(final[:2000] + ("..." if len(final) > 2000 else "")), title="Humanized", border_style="green"))
     else:
         _CONSOLE.print()
         _CONSOLE.print(_Panel(
-            original[:2000] + ("..." if len(original) > 2000 else ""),
+            _Text(original[:2000] + ("..." if len(original) > 2000 else "")),
             title="Text (unchanged)", border_style="yellow",
         ))
     # After the panels, not before: the output is what the reader came for. A payload the caller
     # asked to keep (`--no-scrub`) still travels in that output, and nothing else says so.
     if warning:
         _CONSOLE.print()
-        _CONSOLE.print(_Panel(warning, title="Warning", border_style="red"))
+        _CONSOLE.print(_Panel(_Text(warning), title="Warning", border_style="red"))
     _CONSOLE.print()
 
 

@@ -143,3 +143,25 @@ class TestListMarkersAreNotQuantities:
         src = "2024. That was the turning point for the project."
         assert not numbers_kept(src, "That was the turning point.")
         assert "2024" in missing_numbers(src, "That was the turning point.")
+
+
+class TestNumbersCLI:
+    def test_help_names_the_untell_command(self, capsys):
+        """The help advertised `numerals.py` — a filename, not a command on PATH — and did not
+        even document that `-h`/`--help` exist. Name the command as the other subcommands do."""
+        assert numbers.main(["--help"]) == 0
+        out = capsys.readouterr().out
+        assert "usage: untell-numbers" in out
+        assert "-h, --help" in out
+
+    def test_unknown_flag_is_a_usage_error_not_silently_swallowed(self, caplog):
+        """MEASURED before the guard: `untell numbers --json "a" "b"` compared "--json" against
+        "a" and exited 0 with `{"missing": [], "kept": true}` — a silent wrong answer exactly
+        when the caller believed they had asked for machine output."""
+        import logging
+
+        with caplog.at_level(logging.ERROR, logger="untell.scripts.numerals"):
+            rc = numbers.main(["--json", "Only 7 of the 19 tests passed.", "Only seven of the nineteen tests passed."])
+        assert rc == 2
+        assert any("unrecognized argument --json" in r.getMessage() and "untell-numbers" in r.getMessage()
+                   for r in caplog.records)

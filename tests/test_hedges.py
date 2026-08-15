@@ -187,6 +187,24 @@ class TestHedgesCLI:
         assert hedges.main([]) == 2
         assert hedges.main(["only one"]) == 2
 
+    def test_help_names_the_untell_command(self, capsys):
+        """The help advertised `hedges.py` — a filename, not a command on PATH — and did not
+        document that `-h`/`--help` exist. Name the command as the other subcommands do."""
+        assert hedges.main(["--help"]) == 0
+        out = capsys.readouterr().out
+        assert "usage: untell-hedges" in out
+        assert "-h, --help" in out
+
+    def test_unknown_flag_is_a_usage_error_not_silently_swallowed(self, caplog):
+        """MEASURED before the guard: `untell hedges --bogus "a" "b"` compared "--bogus" against
+        "a" and exited 0 — a silent wrong answer for a mistyped option."""
+        import logging
+
+        with caplog.at_level(logging.ERROR, logger="untell.scripts.hedges"):
+            rc = hedges.main(["--bogus", "It seems that X causes Y.", "X causes Y."])
+        assert rc == 2
+        assert any("unrecognized argument --bogus" in r.getMessage() for r in caplog.records)
+
     def test_exit_code_matches_kept_field(self, capsys):
         for a, b in [
             ("The drug may cause drowsiness.", "The drug causes drowsiness."),

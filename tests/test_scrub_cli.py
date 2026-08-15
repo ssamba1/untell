@@ -82,3 +82,13 @@ def test_visible_text_is_never_altered(text, capsys):
     silently corrupt every document that passes through the skill."""
     scrub.main(["--json", text])
     assert json.loads(capsys.readouterr().out)["text"] == text
+
+
+def test_help_names_the_untell_command(capsys):
+    """The usage line advertised the program as `scrub.py` even when invoked as `untell scrub`
+    (or `untell-scrub`) — the name a user would type back, which does not exist on PATH. Every
+    other subcommand names itself `untell-<name>`; this one must match."""
+    with pytest.raises(SystemExit) as exc:
+        scrub.main(["--help"])
+    assert exc.value.code == 0
+    assert "usage: untell-scrub" in capsys.readouterr().out

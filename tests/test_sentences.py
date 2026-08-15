@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from untell.scripts.sentences import main, score_sentences, split_sentences
 
 
@@ -36,6 +38,24 @@ def test_cli_json(capsys):
 
 def test_cli_empty_returns_2(capsys):
     assert main(["   "]) == 2
+
+
+def test_help_documents_every_flag(capsys):
+    """`--top` had a help string; `text`, `--file`, `--tier`, `--threshold` and `--json` had
+    none, so this was the only subcommand help that left a user guessing what each flag did."""
+    with pytest.raises(SystemExit) as exc:
+        main(["--help"])
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    for fragment in (
+        "text to scan",
+        "read text from this file",
+        "max detector tier to attempt",
+        "a sentence is flagged",
+        "Flag at most this many",
+        "full result as JSON",
+    ):
+        assert fragment in out, f"help does not document a flag: missing {fragment!r}"
 
 
 def test_flagging_is_relative_not_a_flood():

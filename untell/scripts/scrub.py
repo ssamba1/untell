@@ -77,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
         pass
 
     parser = argparse.ArgumentParser(
-        prog="scrub.py",
+        prog="untell-scrub",
         description="Remove hidden watermark characters (zero-width, tag, control, bidi, "
         "variation selectors) while leaving visible text byte-identical.",
     )

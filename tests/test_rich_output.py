@@ -287,3 +287,38 @@ class TestProgressIsWiredIntoTheLoop:
 
         src = inspect.getsource(run.main)
         assert "progress=not args.json" in src, "progress must be off whenever --json is set"
+
+
+def test_bracketed_text_survives_the_panels_verbatim(monkeypatch):
+    """Rich parses markup in plain strings, so user text containing `[...]` had its brackets
+    swallowed as markup tags: "See [citation needed]." rendered as "See  ." in the Original and
+    Humanized panels — the report the user reads to see what the loop did was silently deleting
+    their content. The panels must carry a Text (markup-escaped), not a raw str."""
+    from rich.panel import Panel
+
+    printed = []
+    monkeypatch.setattr(rich_output, "_RICH", True)
+    monkeypatch.setattr(
+        rich_output, "_CONSOLE", type("C", (), {"print": lambda self, *a, **k: printed.append(a)})()
+    )
+    orig = "See [1] and [citation needed] and [b] and [a/b]."
+    final = "See [1] and [citation needed]."
+    rich_output.print_humanize_result(
+        original=orig,
+        final=final,
+        pre_score={"max": 0.8, "tier": "lite"},
+        post_score={"max": 0.3, "tier": "lite"},
+        iterations=2,
+        stopped="passed",
+    )
+
+    panels = [a for args in printed for a in args if isinstance(a, Panel)]
+    assert panels, "no panels were rendered"
+    for p in panels:
+        assert not isinstance(p.renderable, str), (
+            f"panel {p.title!r} carries a raw str ({p.renderable!r:.60}); rich will parse "
+            "markup in it and swallow user brackets"
+        )
+    rendered = "\n".join(str(p.renderable) for p in panels)
+    for fragment in ("[1]", "[citation needed]", "[b]", "[a/b]"):
+        assert fragment in rendered, f"{fragment} was lost from the panel output:\n{rendered}"

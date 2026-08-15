@@ -314,14 +314,22 @@ def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
     if any(a in ("-h", "--help") for a in args):
         print(
-            'usage: hedges.py "<original>" "<rewrite>"\n\n'
+            'usage: untell-hedges "<original>" "<rewrite>"\n\n'
             "Prints JSON: dropped (hedge classes the rewrite no longer expresses), kept (bool).\n"
+            "-h, --help   show this help and exit\n"
             "Exit 0 if the rewrite hedges everything the original hedged, 1 if it states something\n"
             "more firmly than the original did, 2 on usage error."
         )
         return 0
+    # Same guard as numerals.py: the two positional slots are the whole interface, and a flag-like
+    # token is a mistyped option, not text. Before this, `untell hedges --bogus "a" "b"` compared
+    # "--bogus" against "a" and exited 0 — a silent wrong answer.
+    bad = [a for a in args if a.startswith("-") and a not in ("-h", "--help")]
+    if bad:
+        logger.error('unrecognized argument %s (usage: untell-hedges "<original>" "<rewrite>")', bad[0])
+        return 2
     if len(args) < 2:
-        logger.error('usage: hedges.py "<original>" "<rewrite>"')
+        logger.error('usage: untell-hedges "<original>" "<rewrite>"')
         return 2
 
     dropped = dropped_hedges(args[0], args[1])

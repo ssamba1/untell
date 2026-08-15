@@ -38,6 +38,19 @@ def test_cli_empty_input(capsys):
     assert "error" in parsed
 
 
+def test_cli_accepts_json_flag_for_consistency(monkeypatch, capsys):
+    """Every sibling JSON-emitting command (`tells`, `verify`, `sentences`, `scrub`, `humanize`)
+    accepts `--json`; score alone refused it with exit 2 — "unrecognized arguments: --json" — on
+    the one command whose stdout is ALWAYS JSON. Accept it so script chains that add `--json` to
+    every command in the family work uniformly."""
+    monkeypatch.setenv("UNTELL_LITE_NO_TORCH", "1")  # force the instant stdlib path
+    rc = main(["Furthermore, the system performs adequately overall.", "--tier", "lite", "--json"])
+    assert rc == 0
+    parsed = json.loads(capsys.readouterr().out)
+    assert parsed["tier"] == "lite"
+    assert "max" in parsed
+
+
 def test_full_tier_request_runs_without_torch():
     # Requesting 'full' with no ML installed must not raise; degrades to lite.
     result = score_text("Test text here.", tier="full")
