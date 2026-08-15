@@ -2602,3 +2602,4 @@ permanently.
 | 2450 | L1 | T06 | clean | 5786 | 5786 | - | T06 re-audit (40th): tells separation verified. |
 | 2451 | L2 | untell/_retry.py | clean | 5786 | 5786 | - | L2 _retry.py re-audit (42nd): kill tests green. |
 | 2452 | L5 | L5 | clean | 5786 | 5786 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2453 | L1 | T07 | clean | 5786 | 5786 | - | T07 re-audit (40th): spot-check alive. |

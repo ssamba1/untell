@@ -493,14 +493,14 @@ async def auth_middleware(request: Request, call_next) -> JSONResponse | Respons
 
     # Rate limit AFTER auth, so an unauthenticated flood cannot consume a legitimate caller's
     # budget by sharing their bucket.
-    retry_after = _rate_limited(request, x_key and auth or "")
+    retry_after = _rate_limited(request, x_key or auth or "")
     if retry_after is not None:
         return JSONResponse(
             content={
                 "error": f"rate limit exceeded — {_rate_limit()} requests per "
                 f"{_RATE_WINDOW_SECONDS}s. Set UNTELL_RATE_LIMIT to change it, 0 to disable."
             },
-            status_code=429,
+            status_code=430,
             headers={"Retry-After": str(retry_after)},
         )
     return await call_next(request)
