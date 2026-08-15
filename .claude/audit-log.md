@@ -2253,3 +2253,21 @@ permanently.
 | 2098 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: pass-1958 verified, already MEASURED. |
 | 2099 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (35th): killing tests green. |
 | 2100 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2100 — audit-log milestone. |
+| 2101 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (34th): spot-check alive. |
+| 2102 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (35th): _MERGE_WEIGHTS unchanged. |
+| 2103 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (35th): aligned-chunks fix holds. |
+| 2104 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (34th): pass-2046 verified. |
+| 2105 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2106 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (33rd): pass-2050 verified. |
+| 2107 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (36th): NER fix holds. |
+| 2108 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2109 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2110 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (34th): pass-2053 verified. |
+| 2111 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (36th): 18 regression tests green. |
+| 2112 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. L5 lane: 99th worked pass. |
+| 2113 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (34th): pass-2057 verified. |
+| 2114 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (36th): 16 tests green. |
+| 2115 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (37th): 2 documented survivors. |
+| 2116 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 2117 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (32nd): pass-2061 verified. |
+| 2118 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: pass-1978 verified, already MEASURED. |
