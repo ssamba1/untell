@@ -2807,3 +2807,5 @@ permanently.
 | 2647 | L2 | untell/scripts/quality.py | clean | 5787 | 5787 | - | L2 quality.py re-audit (40th): pass-2587 verified. |
 | 2648 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2649 | L4 | L4 | clean | 5787 | 5787 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2650 | L1 | T04 | clean | 5787 | 5787 | - | T04 re-audit (43rd): pass-2564 verified. |
+| 2650 | L2 | untell/detectors/commercial.py | coverage-closed | 5882 | 5883 | b1d92ed9e6408aba6766d892f71e7c942865e430 | L2 commercial.py: KILLED the whitespace-guard survivor FAMILY (98 + siblings 121/144/203/258, or -> and). available patched True + fake key + _post_json spy -> score('   ') returns None with NO post call under original; mutant falls through and calls the paid API with whitespace. Prior 'needs keys present' UNKILLABLE note wrong — spy-testable, deterministic, no real key. Red on mutation, green on original. |
