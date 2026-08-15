@@ -2213,3 +2213,17 @@ permanently.
 | 2058 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: pass-1918 verified, already MEASURED. |
 | 2059 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (35th): 16 tests green. |
 | 2060 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2060. |
+| 2061 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (31st): pass-2002 verified. |
+| 2062 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (33rd): pass-2004 verified. |
+| 2063 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (36th): 2 documented survivors. |
+| 2064 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (33rd): pass-2006 verified. |
+| 2065 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2066 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (31st): pass-2010 verified. |
+| 2067 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (33rd): pass-2014 verified. |
+| 2068 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2069 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2070 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (32nd): pass-2013 verified. |
+| 2071 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (30th): pass-2015 verified. |
+| 2072 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2073 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (29th): pass-2017 verified. |
+| 2074 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (36th): 4/4 killed. |
