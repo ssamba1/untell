@@ -2846,3 +2846,4 @@ permanently.
 | 2683 | L2 | untell/layout.py | clean | 7506 | 7506 | - | L2 layout.py re-audit (44th): guard double-pinned (fleet+me), battery green. |
 | 2684 | L1 | T14 | clean | 7506 | 7506 | - | T14 re-audit (43rd): pass-2606 verified. |
 | 2685 | L3 | L3 | clean | 7506 | 7506 | - | L3: no new slow tests. |
+| 2686 | L1 | T15 | clean | 7506 | 7506 | - | T15 re-audit (43rd): pass-2613 verified. |
