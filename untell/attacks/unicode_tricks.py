@@ -80,7 +80,11 @@ _WATERMARK_CHARS = re.compile(
 #
 # The trade-off is deliberate and narrow — U+00A0 loses its non-breaking behaviour. For prose being
 # fed to a detector that is the right call: unusual whitespace is itself something detectors flag.
-_EXOTIC_SPACE = re.compile("[   -   　]")
+#
+# The character class lives in `untell.text_split` (`fold_unicode_spaces`), the single source
+# scoring and the tell catalogue already import — this file once carried its own byte-identical
+# copy, which is exactly the "second copy" docs/free-ceiling-measured.md says must not exist.
+from untell.text_split import fold_unicode_spaces  # noqa: E402
 # U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR are categories Zl and Zp, not Zs, so they
 # fall through the class above and through score.py's `_INVISIBLE_RE` -- which made them the one
 # whitespace family that survived a scrub AND raised no caveat.
@@ -302,7 +306,7 @@ def scrub_hidden(text: str) -> str:
     - **Exotic spaces are normalised to U+0020**, including NBSP and the ideographic space U+3000.
       Width-encoded steganography uses exactly those codepoints, so the channel is closed by
       rewriting rather than deleting — the text still reads the same, but U+00A0 loses its
-      non-breaking behaviour and CJK U+3000 becomes a plain space. See ``_EXOTIC_SPACE``.
+      non-breaking behaviour and CJK U+3000 becomes a plain space. See ``fold_unicode_spaces``.
     - **Soft hyphens (U+00AD) are removed** as invisible carriers, so a typographic line-break hint
       does not survive.
 
@@ -311,7 +315,7 @@ def scrub_hidden(text: str) -> str:
     and RLE/PDF and FSI/PDI pairs, all survive unchanged; an RLM between two ASCII words does not.
     """
     text = _WATERMARK_CHARS.sub("", text)
-    text = _EXOTIC_SPACE.sub(" ", text)
+    text = fold_unicode_spaces(text)
     # After the space class, so a Zl/Zp separator becomes a real line break rather than
     # being collapsed into a space by the line above.
     text = _LINE_SEPARATORS.sub(chr(10), text)

@@ -25,21 +25,9 @@ import os
 import re
 
 from .base import clamp01
+from .llm_judge import _JUDGE_PROMPT
 
 _NUM = re.compile(r"\d*\.\d+|\d+")
-
-_JUDGE_PROMPT = (
-    "You are an expert AI-text detector. Rate how likely the text below was written by an AI language "
-    "model, from 0.00 (clearly a human wrote it) to 1.00 (clearly AI-generated). Weigh the overall "
-    "read, not any single word, and consider the known AI tells: em-dashes; AI vocabulary (delve, "
-    "leverage, robust, seamless, tapestry, testament, pivotal, underscore, multifaceted, meticulous); "
-    "formulaic transitions (Moreover, Furthermore, Overall, In conclusion); rule-of-three / tricolons; "
-    "negated contrast (\"not X, it's Y\"); participial trailers (\"..., underscoring its importance\"); "
-    "inflated copula (serves as, boasts); vague attribution (\"studies show\"); uniform sentence length "
-    "(low burstiness); promotional register; sycophancy; over-structured markdown. "
-    "Ignore opaque sentinel tokens like ⟦HZ0003⟧ — treat them as neutral placeholders. "
-    "Respond with ONLY the number, e.g. 0.73"
-)
 
 # Two model sizes this prompt has been used with. `HEAVY_MODEL` is not a default and never has
 # been — it is the value to put in `$UNTELL_JUDGE_MODEL` if you have the VRAM and want the larger
