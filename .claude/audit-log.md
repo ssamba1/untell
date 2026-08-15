@@ -867,3 +867,6 @@ permanently.
 | 738 | L2 | untell/scripts/io_utils.py | clean | 5781 | 5781 | - | L2 io_utils.py re-audit (10th): 37 tests green incl. binary-stdin + isatty-fallback kills. |
 | 739 | L2 | untell/scripts/verify.py | clean | 5781 | 5781 | - | L2 verify.py re-audit (10th): pass-505 contention artifact documented; survivors 174/368 killed. |
 | 740 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 740. |
+| 741 | L1 | T05 | clean | 5781 | 5781 | - | T05 re-audit (10th): pass-552 verified. No change. |
+| 742 | L1 | T06 | clean | 5781 | 5781 | - | T06 re-audit (10th): tells separation verified. |
+| 743 | L2 | untell/languages.py | clean | 5781 | 5781 | - | L2 languages.py re-audit (10th): 12/12 ranges. |
