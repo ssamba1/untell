@@ -2470,3 +2470,5 @@ permanently.
 | 2318 | L9 | relaxed-sim-0.20 | clean | 5785 | 5785 | - | L9 relaxed-sim-0.20 re-audit: pass-2198 verified, already MEASURED. |
 | 2319 | L2 | untell/scripts/verify.py | clean | 5785 | 5785 | - | L2 verify.py re-audit (39th): pass-2267 verified. |
 | 2320 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2320. |
+| 2321 | L1 | T03 | clean | 5785 | 5785 | - | T03 re-audit (37th): pass-2257 verified. |
+| 2322 | L1 | T04 | clean | 5785 | 5785 | - | T04 re-audit (38th): pass-2262 verified. |
