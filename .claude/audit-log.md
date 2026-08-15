@@ -1185,3 +1185,7 @@ permanently.
 | 1030 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (14th): pass-922 verified. |
 | 1031 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (16th): kill tests green. |
 | 1032 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1033 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (15th): tells separation verified. |
+| 1034 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (14th): fully pinned. |
+| 1035 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (15th): killing tests green. |
+| 1036 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
