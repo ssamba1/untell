@@ -861,3 +861,5 @@ permanently.
 | 584 | L4 | style param | clean | 5800 | 5800 | 168e816 | L4 style parameter end-to-end (2nd): casual/academic/blunt all run the loop at tier lite with valid non-empty finals (style is a hint for prompt-based rewriters; composite ignores it gracefully); invalid style 'nonexistent-style' ALSO runs without crashing (tolerant, not fatal — consistent with the prompt builder's style lookup). Style parameter never breaks the loop. |
 | 733 | L1 | T04 | clean | 5781 | 5781 | - | T04 re-audit (10th): pass-546 verified 5/5 oriented, zero drift across 8 audits. |
 | 734 | L2 | untell/scripts/scrub.py | clean | 5781 | 5781 | - | L2 scrub.py re-audit (11th): 4/4 killed post pass-495, binary-stdin guard holds. |
+| 735 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (10th): 33/33 live. |
+| 736 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. Delegated README-numbers agent in flight. |
