@@ -2671,3 +2671,4 @@ permanently.
 | 2519 | L2 | untell/scripts/preserve.py | clean | 5787 | 5787 | - | L2 preserve.py re-audit (43rd): NER fix holds. |
 | 2520 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2520. |
 | 2521 | L1 | T08 | clean | 5787 | 5787 | - | T08 re-audit (42nd): _MERGE_WEIGHTS unchanged. |
+| 2522 | L1 | T09 | clean | 5787 | 5787 | - | T09 re-audit (41st): pass-2462 verified. |
