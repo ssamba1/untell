@@ -254,7 +254,7 @@ def _strip_mark_stacks(text: str, keep: int = _MAX_MARK_STACK) -> str:
     for ch in text:
         if unicodedata.category(ch) in ("Mn", "Me"):
             run += 1
-            if run > keep:
+            if run >= keep:
                 continue
         else:
             run = 0

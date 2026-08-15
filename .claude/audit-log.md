@@ -2346,3 +2346,5 @@ permanently.
 | 2191 | L2 | untell/attacks/back_translation.py | clean | 5784 | 5784 | - | L2 back_translation.py FIRST AUDIT: baseline green (108), 8/8 mutations killed, 0 survivors - FULLY PINNED on first audit (fleet's test_back_translation_mutation_kills.py comprehensive). |
 | 2192 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2193 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (33rd): pass-2133 verified 36 rows consistent. |
+| 2194 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (38th): 4/4 killed. |
+| 2195 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (37th): 33/33 live. |
