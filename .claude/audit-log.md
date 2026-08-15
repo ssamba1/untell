@@ -2539,3 +2539,5 @@ permanently.
 | 2387 | L2 | untell/_retry.py | clean | 5785 | 5785 | - | L2 _retry.py re-audit (41st): 128 documented-equivalent remains. |
 | 2388 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2389 | L4 | L4 | clean | 5785 | 5785 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2390 | L1 | T08 | clean | 5785 | 5785 | - | T08 re-audit (40th): _MERGE_WEIGHTS unchanged. |
+| 2391 | L2 | untell/_env.py | clean | 5785 | 5785 | - | L2 _env.py re-audit (39th): fully pinned. |
