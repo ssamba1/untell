@@ -933,3 +933,4 @@ permanently.
 | 797 | L1 | T05 | clean | 5781 | 5781 | - | T05 re-audit (11th): pass-741 verified. No change. |
 | 798 | L2 | untell/layout.py | clean | 5781 | 5781 | - | L2 layout.py re-audit (11th): killing tests green. Pass-628 state (line 156 killed). |
 | 799 | L2 | untell/text_split.py | clean | 5781 | 5781 | - | L2 text_split.py re-audit (11th): 54 chunking tests green. Pass-569 kills hold. |
+| 800 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 800. |
