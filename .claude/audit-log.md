@@ -892,3 +892,6 @@ permanently.
 | 763 | L2 | untell/scripts/sentences.py | clean | 5781 | 5781 | - | L2 sentences.py re-audit (11th): 16 tests green. Pass-630 confirmed kills. |
 | 764 | L1 | T13 | clean | 5781 | 5781 | - | T13 re-audit (9th): 4/4 display-math tests pass. |
 | 585 | L4 | match case | clean | 5800 | 5800 | 3b7cb87 | L4 _match_case (2nd): Robust->Solid (title), ROBUST->SOLID (upper, len>1 guard so single letters don't ALL-CAPS), robust->solid (lower), rObUsT->solid (mixed falls to lower — reasonable), A->Solid (single char title), empty original/replacement handled. The sentence-initial demotion fix ('Furthermore'->'also' lowercase) verified across all casing styles. |
+| 765 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
+| 766 | L1 | T14 | clean | 5781 | 5781 | - | T14 re-audit (10th): pass-704 verified 5/5 transforms. No change. |
+| 767 | L2 | untell/scripts/hedges.py | clean | 5781 | 5781 | - | L2 hedges.py re-audit (12th): 2 documented survivors. |
