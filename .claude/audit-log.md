@@ -1007,3 +1007,4 @@ permanently.
 | 863 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (13th): 18 regression tests green. Sole 376 survivor documented. |
 | 864 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (12th): tells separation verified. |
 | 865 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
+| 866 | L2 | untell/detectors/mage.py | clean | 5775 | 5775 | - | L2 mage.py FIRST AUDIT: baseline green (21), 0/8 killed, 8 survivors: 25/41 lazy-load flags, 64/65 label-config validation (model-config-dependent), 69 num_labels=2, 102/127 window constants (1024/700 words), 112 human_idx guard. Saturation live-verified earlier (0.999987+ on 3 AI texts). All documented model-dependent classes. |
