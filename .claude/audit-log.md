@@ -2189,3 +2189,7 @@ permanently.
 | 2034 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (34th): 12/12 ranges. |
 | 2035 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (34th): 5/5 killed, fully pinned. |
 | 2036 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. L6 lane: 90th worked pass. |
+| 2037 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (32nd): pass-1981 verified. |
+| 2038 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: pass-1898 verified, already MEASURED. |
+| 2039 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (35th): 128 documented-equivalent remains. |
+| 2040 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2040. |
