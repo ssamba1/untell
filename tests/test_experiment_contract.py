@@ -64,7 +64,11 @@ class TestMeasure:
 class TestKnobUnsafe:
     def test_lite_builtin_is_flagged_unsafe(self) -> None:
         assert "lite-builtin" in E.KNOB_UNSAFE, "lite-builtin must be known unsafe"
-        assert "identical" in E.KNOB_UNSAFE["lite-builtin"].lower()
+        assert "identical" not in E.KNOB_UNSAFE["lite-builtin"].lower()
+        # The reason must cite the measured reality: lite-builtin drifts run to run (5-run
+        # post_mean_max spread 0.0096, run 5 an outlier at 0.1259 vs the 0.1163 cluster), so
+        # "identical to 4dp run to run" — the pre-correction claim — is no longer defensible.
+        assert "0.0096" in E.KNOB_UNSAFE["lite-builtin"]
 
 
 class TestVerdict:

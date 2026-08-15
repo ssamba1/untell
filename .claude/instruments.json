@@ -1,13 +1,14 @@
 {
   "lite-builtin": {
-    "deterministic": true,
+    "deterministic": false,
     "run_to_run": {
       "pre_flagged_rate": 0.0,
       "post_flagged_rate": 0.0,
       "pre_mean_max": 0.0,
-      "post_mean_max": 0.0
+      "post_mean_max": 0.0096
     },
-    "reported_spread": 0.017
+    "reported_spread": 0.017,
+    "note": "corrected 2026-08-15: full-history min-max spread across 5 committed runs is 0.0096 (post_mean_max 0.1163/0.1163/0.1163/0.1163/0.1259), not the 0.0 the 2-run calibration reported. Run 5 moved 0.0096 above the cluster, invisible to a last-two comparison. Determinism verdict corrected to false by the calibrate fix (pass 717), same class as the lite-hc3 correction."
   },
   "lite-hc3": {
     "deterministic": false,

@@ -92,8 +92,9 @@ KNOBS: dict[str, dict] = {
 # written. An unattended loop pointed at it would record every knob as "no effect" and be
 # wrong seven times.
 KNOB_UNSAFE = {
-    "lite-builtin": "3 seeded paragraphs: identical to 4dp run to run, so a knob's effect and "
-                    "no effect look the same",
+    "lite-builtin": "3 seeded paragraphs: 5 measured runs show run-to-run drift (post_mean_max "
+                    "spread 0.0096, a 0.1259 outlier vs the 0.1163 cluster) inside the 0.034 band — "
+                    "a knob's effect and no effect look the same",
 }
 
 

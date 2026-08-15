@@ -548,3 +548,21 @@ WHAT   Reproduced `python -m eval.detector_audit --pairs 20 --dataset hc3 --json
        the no-json smoke CLI crashed with KeyError('auroc') at line 495 (radar/local_judge/
        binoculars UNAVAILABLE rows lack an auroc key) — and/or precedence bug, committed with
        6 new render tests.
+
+## 2026-08-15 slice-8 AMBER — lite-builtin determinism record corrected; KNOB_UNSAFE reason text updated (error-message change)
+
+WHAT   instruments.json lite-builtin claimed deterministic=true / run_to_run post_mean_max 0.0 from
+       the original 2-run calibration (716890e). The committed measurements.jsonl now holds 5
+       lite-builtin runs: post_mean_max 0.1163/0.1163/0.1163/0.1163/0.1259 — full-history spread
+       0.0096 (run 5, committed 084785f Aug 14, predates the last instruments.json edit c53cb58
+       Aug 15). Same defect class as the lite-hc3 correction 6ddcc9e; per the code's own rule
+       (research.py:404-413, deterministic = all full-history spread == 0) lite-builtin is NOT
+       deterministic. Fixed instruments.json (deterministic: false, post_mean_max 0.0096, note).
+       Experiment.py KNOB_UNSAFE reason still said "identical to 4dp run to run" — a claim the
+       ledger contradicts — so its TEXT was updated (error-message change => AMBER) and the test
+       pinning the stale "identical" wording was updated to pin the measured spread instead.
+RAN    python .claude/research.py report; json parse of measurements.jsonl + git blame of rows
+SAW    lite-builtin post_mean_max seq [0.1163 x4, 0.1259]; spread 0.0096; instruments said 0.0
+WHY    AMBER: error-message/exit-code change (KNOB_UNSAFE refusal reason text) in experiment.py
+NEXT   None required. The refusal itself is unchanged (lite-builtin still KNOB_UNSAFE); only the
+       cited reason was corrected to the measured numbers.
