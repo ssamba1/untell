@@ -2369,3 +2369,5 @@ permanently.
 | 2214 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (37th): 5/5 killed, fully pinned. |
 | 2215 | L6 | L6 | clean | 5784 | 5784 | - | L6: SKILL.md:163-164 claim text unchanged ('Only 7 of the 19 tests passed' pair, sim 0.951/contra 0.011/entail 0.007) - no text drift; numbers match pass-536 live verification. |
 | 2216 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. L6 lane: 100th worked pass, zero regressions. |
+| 2217 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (36th): pass-2162 verified. |
+| 2218 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: pass-2098 verified, already MEASURED. |
