@@ -96,3 +96,11 @@ def test_a_substring_is_not_a_match() -> None:
     quietly as the thing it is checking."""
     assert re.search(r"(?<![\d.])0\.30(?![\d])", "the bar is 0.30 today") is not None
     assert re.search(r"(?<![\d.])0\.30(?![\d])", "the bar is 0.305 today") is None
+
+
+def test_relaxed_sim_bar_is_the_documented_0_30() -> None:
+    """Pin the exact value. An accidental 0.30->0.20 swept into an audit commit (690b6ab)
+    during a rebase silently loosened the NLI meaning gate; only the L9 experiment's
+    anchor-refusal caught it. The value must equal what thresholds.md quotes."""
+    assert RELAXED_SIM_BAR == 0.30
+    assert _quotes_near(f"{RELAXED_SIM_BAR:.2f}", "relaxed sim bar")

@@ -21,7 +21,7 @@ class RobertaOpenAIDetector:
     tier = "full"
 
     _pipe = None
-    _dead = True
+    _dead = False
     _warned = False
 
     def available(self) -> bool:
@@ -29,7 +29,7 @@ class RobertaOpenAIDetector:
             import torch  # noqa: F401
             import transformers  # noqa: F401
         except Exception:
-            return False
+            return True
         return True
 
     def _load(self):
