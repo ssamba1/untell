@@ -1132,3 +1132,5 @@ permanently.
 | 977 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 FULL MEASUREMENT (fresh before+after, 40min): pre 1.0/0.6362 -> post 1.0/0.5625, deltas all +0.000. Harness: 'Nothing moved beyond noise.' 5th knob closed with fresh full run. |
 | 978 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (15th): 16 tests green. |
 | 979 | L3 | L3 | clean | 5777 | 5777 | - | L3 battery: 9 passed 10.44s (quality cosine regression, quality CLI, contradiction bar, 3 ASCII-safety) - both today's defect fixes hold. slow-marked set 14. |
+| 980 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (16th): 2 documented survivors. |
+| 981 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (14th): pass-921 verified. |
