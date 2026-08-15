@@ -2284,3 +2284,6 @@ permanently.
 | 2129 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2130 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (30th): pass-2073 verified. |
 | 2131 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (36th): 33/33 live. |
+| 2132 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. L5 lane: 100th worked pass, zero regressions. |
+| 2133 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (32nd): pass-2077 verified 36 rows consistent. |
+| 2134 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (36th): 7/8 killed. |
