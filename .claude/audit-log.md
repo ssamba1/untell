@@ -1160,3 +1160,4 @@ permanently.
 | 1005 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Defect-fix batteries green. |
 | 1006 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (14th): pass-957 verified. |
 | 1007 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (15th): 7/8 killed. |
+| 1008 | L3 | L3 | clean | 5784 | 5784 | - | L3: lite-detector battery 31 passed 18.07s post ppl-weight restore - 0.55 consistent with contract/exact-cut/tell tests. |
