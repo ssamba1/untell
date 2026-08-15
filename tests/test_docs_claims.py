@@ -131,6 +131,9 @@ def test_every_declared_version_agrees():
     market = json.loads((REPO / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
     found[".claude-plugin/marketplace.json"] = market["plugins"][0]["version"]
 
+    api = (REPO / "untell" / "api_server.py").read_text(encoding="utf-8")
+    found["untell/api_server.py APP_VERSION"] = re.search(r'APP_VERSION = "([^"]+)"', api).group(1)
+
     disagree = {k: v for k, v in found.items() if v != expected}
     assert not disagree, f"version is {expected} in pyproject.toml but {disagree}"
 

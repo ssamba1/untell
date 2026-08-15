@@ -2745,3 +2745,4 @@ permanently.
 | 2588 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2589 | L4 | L4 | clean | 5787 | 5787 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2589 | L2 | untell/api_server.py | coverage-closed | 5874 | 5875 | 159f814bb2bc07d537cd250fae3a7eace2f59ec9 | L2 api_server.py: KILLED the line-428 rate-bucket cap survivor (<= -> <). Exactly 4096 buckets (one stale) -> original no-op (stale bucket survives, len stays 4096); mutant runs eviction, drops ALL stale buckets (len 0). The cap boundary is exactly observable. Red on mutation, green on original. |
+| 2591 | L2 | untell/scripts/scrub.py | clean | 5787 | 5787 | - | L2 scrub.py re-audit (45th): 4/4 killed. |
