@@ -2406,3 +2406,6 @@ permanently.
 | 2251 | L2 | eval/holdout.py | clean | 5784 | 5784 | - | L2 eval/holdout.py FIRST AUDIT: baseline green (4), 2/8 killed (fleet's guards), 6 survivors all holdout-size/threshold boundaries (89 n=10, 172/201/202/208 >= thresholds, 278 2-split) - measurement constants. Documented class. |
 | 2252 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (33rd): pass-2187 verified. |
 | 2253 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (35th): pass-2202 verified. |
+| 2254 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (39th): 4/4 killed. |
+| 2255 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (38th): 33/33 live. |
+| 2256 | L2 | eval/datasets.py | clean | 5784 | 5784 | - | L2 eval/datasets.py FIRST AUDIT: baseline green (4), 2/8 killed (fleet's 30->31 min-length kills confirmed at 350/364), 6 survivors: 136 fallback logic, 221 n=50, 247 cleaning, 353 boundary, 360/373 warn flags - dataset-loading logic/constants. Documented class. |
