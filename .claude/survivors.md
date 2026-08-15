@@ -249,7 +249,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/mage.py | 25 | constant: False -> True | `_warned = False` | UNKILLABLE: module flag initializer, reset by every test setup
 | untell/detectors/mage.py | 26 | constant: False -> True | `_dead = False  # set once a load fails so we never re-attempt the heavy import p` | UNKILLABLE: _dead initializer; tests set it explicitly so class default is masked
 | untell/detectors/mage.py | 41 | constant: False -> True | `return False` | UNKILLABLE: torch-import branch needs a torch-less env
-| untell/detectors/mage.py | 64 | logic: or -> and | `i2l = raw.get("id2label") or {}` | UNKILLABLE: id2label config parse, needs live snapshot_download
+| untell/detectors/mage.py | 64 | logic: or -> and | `i2l = raw.get("id2label") or {}` | KILLED by tests/test_valid_id2label_is_preserved.py: config with valid id2label {"0":"AI","1":"human"} -> original preserves it; mutant (and) yields {} and the loader REWRITES the shipped config to the MAGE convention ("AI"->"machine"). Full load path with mocked snapshot_download + transformers stubs. Prior 'needs live snapshot' note wrong. Red on mutation, green on original. |
 | untell/detectors/mage.py | 65 | logic: and -> or | `if not (i2l and all(isinstance(v, str) for v in i2l.values())):` | UNKILLABLE: config validation, needs live model dir
 | untell/detectors/mage.py | 69 | constant: 2 -> 3 | `raw["num_labels"] = 2` | UNKILLABLE: num_labels rewrite in config fix, needs live load
 | untell/detectors/mage.py | 88 | constant: True -> False | `MageDetector._dead = True` | UNKILLABLE: _dead latch in except path; requires a load failure with live HF

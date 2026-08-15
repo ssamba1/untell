@@ -2818,3 +2818,4 @@ permanently.
 | 2658 | L9 | threshold-0.40 | clean | 5787 | 5787 | - | L9 threshold-0.40 re-audit: calibration-confirmed deterministic (spread 0.0069 max), knob closed. |
 | 2659 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (45th): 7/8 killed. |
 | 2660 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2660. |
+| 2661 | L1 | T07 | clean | 5787 | 5787 | - | T07 re-audit (43rd): spot-check alive. |
