@@ -1653,3 +1653,23 @@ permanently.
 | 1498 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: pass-1358 verified, already MEASURED. |
 | 1499 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (24th): 12/12 ranges. |
 | 1500 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1500 — audit-log milestone. |
+| 1501 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (22nd): pass-1442 verified. |
+| 1502 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (19th): pass-1444 verified. |
+| 1503 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (24th): 5/5 killed, fully pinned. |
+| 1504 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (21st): pass-1446 verified 36 rows consistent. |
+| 1505 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1506 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (20th): pass-1450 verified. |
+| 1507 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (25th): kill tests green. |
+| 1508 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1509 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1510 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (23rd): pass-1453 verified. |
+| 1511 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (23rd): fully pinned. |
+| 1512 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1513 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (22nd): pass-1457 verified. |
+| 1514 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (24th): killing tests green. |
+| 1515 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (24th): aligned-chunks fix holds. |
+| 1516 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1517 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (23rd): pass-1461 verified. |
+| 1518 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-audit: pass-1378 verified, already MEASURED (MOVED). |
+| 1519 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (25th): NER fix holds. |
+| 1520 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1520. |
