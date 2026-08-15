@@ -1432,3 +1432,24 @@ permanently.
 | 1277 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (17th): pass-1222 verified 36 rows consistent. |
 | 1278 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: already MEASURED (pass 976 full run, inert +0.000). Knob closed. |
 | 1279 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (20th): 7/8 killed. |
+| 1280 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1280. |
+| 1281 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (16th): pass-1224 verified. |
+| 1282 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (19th): pass-1226 verified. |
+| 1283 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (20th): pass-1231 verified. |
+| 1284 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (18th): pass-1230 verified. |
+| 1285 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1286 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (19th): pass-1233 verified. |
+| 1287 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (20th): 12/12 ranges. |
+| 1288 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1289 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1290 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (20th): pass-1237 verified. |
+| 1291 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (20th): 5/5 killed, fully pinned. |
+| 1292 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1293 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (19th): pass-1241 verified. |
+| 1294 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (21st): kill tests green. |
+| 1295 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (19th): fully pinned. |
+| 1296 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1297 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (20th): tells separation verified. |
+| 1298 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40 re-audit: already MEASURED (pass 1025 full run, MOVED -0.048 mean_max). AMBER queued. Knob closed. |
+| 1299 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (20th): killing tests green. |
+| 1300 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1300 — audit-log milestone. |
