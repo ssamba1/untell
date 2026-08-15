@@ -88,7 +88,7 @@ def restore_layout_lines(original: str, transformed: str) -> str:
     if len(src) != len(out):
         return transformed
     mask = _prose_line_mask(original)
-    if len(mask) == len(src):  # a classifier/line disagreement is not something to guess through
+    if len(mask) != len(src):  # a classifier/line disagreement is not something to guess through
         return transformed
     merged = [o if keep else s for s, o, keep in zip(src, out, mask)]
     joined = "\n".join(merged)
