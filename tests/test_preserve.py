@@ -20,29 +20,34 @@ def test_cli_is_ascii_safe(capsys):
     assert parsed["mapping"]  # something was locked
 
 
-def _roundtrip(text: str) -> None:
+def _roundtrip(text: str, expect_locked: int | None = None) -> None:
     masked, mapping = lock(text)
     assert restore(masked, mapping) == text
+    # A round-trip that proves nothing locked proves nothing at all: the identity
+    # restore(lock(x)) == x holds even when lock() is a no-op returning (x, {}),
+    # so the caller must say how many spans the fixture should have protected.
+    if expect_locked is not None:
+        assert len(mapping) == expect_locked, f"locked {len(mapping)}, expected {expect_locked}"
 
 
 def test_roundtrip_plain():
-    _roundtrip("A perfectly ordinary sentence with no protected spans at all.")
+    _roundtrip("A perfectly ordinary sentence with no protected spans at all.", expect_locked=0)
 
 
 def test_roundtrip_numeric_citation():
-    _roundtrip("The effect was robust [12] and replicated in later work [3, 4].")
+    _roundtrip("The effect was robust [12] and replicated in later work [3, 4].", expect_locked=2)
 
 
 def test_roundtrip_author_year():
-    _roundtrip("As Smith (2020) argued, and others agreed (Lee & Park, 2019, p. 4).")
+    _roundtrip("As Smith (2020) argued, and others agreed (Lee & Park, 2019, p. 4).", expect_locked=2)
 
 
 def test_roundtrip_numbers_and_units():
-    _roundtrip("The sample of 1,024 subjects showed a 42% increase over 3.5 years.")
+    _roundtrip("The sample of 1,024 subjects showed a 42% increase over 3.5 years.", expect_locked=3)
 
 
 def test_roundtrip_quotes_and_url():
-    _roundtrip('She said "this changes everything" and cited https://example.com/x?y=1.')
+    _roundtrip('She said "this changes everything" and cited https://example.com/x?y=1.', expect_locked=2)
 
 
 def test_citation_is_masked_and_unchanged():
