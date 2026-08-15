@@ -62,7 +62,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/quality.py | 145 | boundary: < -> <= | same | Same test kills the boundary mutation too |
 | untell/scripts/quality.py | 147 | logic: and -> or | `if not ca and not cb:` | Empty-both path: only reachable when both sides tokenize to nothing, test corpus always has tokens |
 | untell/scripts/quality.py | 149 | logic: or -> and | `if not ca or not cb:` | One-empty path: char-bigram fallback only fires for scriptio-continua scripts (CJK) — English test corpus never hits |
-| untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` | normalize_embeddings: cosine of normalized vs raw embeddings differs in practice but tests use tolerant thresholds |
+| untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` | normalize_embeddings: KILLED by tests/test_cosine_uses_normalized_embeddings.py: fake model with [1,1] vs [1,0] -> normalized cosine 0.707 under original, raw dot 1.0 under mutant. The 0.76 gate bar lives on the raw-cosine scale, so the flag is part of the measurement contract — prior 'tests use tolerant thresholds' note wrong. Red on mutation, green on original. |
 | untell/scripts/quality.py | 263 | boundary: >= -> > | `return similarity(a, b) >= bar` | Exact-equality float case: sim == bar is measure-zero with real embeddings, unreachable |
 | untell/scripts/quality.py | 302 | boundary: >= -> > | `"passes": sim >= bar,` | Same: exact boundary unreachable |
 | untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable on Windows cp1252 stdout` | CLI JSON encoding: tests don't check stdout encoding |
