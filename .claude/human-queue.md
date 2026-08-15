@@ -411,3 +411,17 @@ NEXT   Fix calibrate to compare against the FULL run history (min-max spread or 
    get_matching_blocks() is IDENTICAL with autojunk on/off in all cases (CPython
    3.11 implementation resolves popular elements without changing the final
    decomposition). Genuinely equivalent at the observable level. Note verified.
+
+## 2026-08-15 pass 1025 AMBER — ppl-weight-0.40 MOVED (−0.048, beyond band)
+
+WHAT   Full measurement (fresh before+after, ~40min): pre 1.0/0.6362 -> post
+       1.0/0.515 — post_mean_max moved -0.048, outside the +/-0.020 band.
+       THE FIRST L9 KNOB THAT ACTUALLY MOVED. Every other knob measured this
+       session (quality-bar 0.70/0.82, relaxed-sim-0.20, token-bar-0.40,
+       contradiction-bar-0.35) was +0.000.
+WHY    AMBER per harness rule — one experiment at one corpus (lite-hc3) is a
+       reason to look, not a reason to ship. Harness explicitly: "Do NOT
+       adopt the value."
+NEXT   Human decision: the perplexity-burstiness weight genuinely affects the
+       rewrite loop's outcome at lite tier. Candidate for a follow-up
+       experiment sweep (0.3/0.5/0.6) or adoption review. Not adopted.
