@@ -2774,3 +2774,4 @@ permanently.
 | 2616 | L2 | untell/rewriter/structural.py | coverage-closed | 5877 | 5878 | 88f8faf9115982fb2f599f0c0a7228c8c4d30dd3 | L2 structural.py: KILLED the line-2516/2503 opener-budget duplicate-priority survivor (> -> >=). Dup 'The' openers + eligible non-dup 'Zebra': 40-seed sweep -> original 0/40 picks non-dup, mutant 11/40 (count>=1 makes single-occurrence openers budget-eligible). The transform's whole job is fixing duplicate openers; the mutant spends the budget on non-duplicates. Red on mutation, green on original. |
 | 2618 | L9 | quality-bar-0.82 | clean | 5787 | 5787 | - | L9 quality-bar-0.82 re-audit: pass-2438 verified, already MEASURED. |
 | 2619 | L2 | untell/layout.py | clean | 5787 | 5787 | - | L2 layout.py re-audit (43rd): killing tests green (guard double-pinned). |
+| 2620 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2620. |
