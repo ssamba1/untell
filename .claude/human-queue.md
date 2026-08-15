@@ -502,7 +502,7 @@ Files: untell/scripts/explain.py (new), tests/test_explain.py (new, 40 tests), u
 
 docs/why-best-open-repo.md is in the guard's RED_FILES, so the three repairs below are queued (the edits are applied in the working tree, unstaged, for a human to commit after review):
 
-1. Line 154 "Automated tests | ✅ **7530** tests, 483 modules" — STALE. `tests/` has **489** test modules and a lite collection (UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q) collects **7569** tests. This is the exact check `untell-audit` runs; `untell-audit --fix-counts` (the repo's own sanctioned repair) rewrote the cell to "**7569** tests, 489 modules" and the audit then reports OK. Evidence: `tests/` glob count 489; pytest collection 7569 (audit run 2026-08-15); tests/test_docs_claims.py::test_why_best_test_count_is_not_stale passes with the fix.
+1. Line 154 "Automated tests | ✅ **7530** tests, 483 modules" — STALE. This is the exact check `untell-audit` runs; `untell-audit --fix-counts` (the repo's own sanctioned repair) rewrites the cell to the live counts. Refreshed at queue time (2026-08-15): **7693 tests, 498 modules** (a lite collection, UNTELL_LITE_NO_TORCH=1). NOTE: the fleet is adding test modules continuously — the count was 489 at first probe and 498 an hour later, so re-run `untell-audit --fix-counts` immediately before committing. tests/test_docs_claims.py::test_why_best_test_count_is_not_stale passes with the fix.
 
 2. Line 80 "**23** console scripts (... -latex)" — STALE. pyproject.toml [project.scripts] now defines **24** (commit 04e3bb2 added `untell-explain` without updating this page). tests/test_docs_claims.py::test_console_script_count_in_why_best_matches_pyproject FAILS on main; passes with the fix (24 + `-explain` added to the list).
 
