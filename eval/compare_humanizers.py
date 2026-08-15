@@ -177,7 +177,7 @@ def compare(
             tell_counts.append(tl["tells"])
             sims.append(similarity(t, out) if name != "none (raw AI)" else 1.0)
         else:
-            if not changed_any and name == "none (raw AI)":
+            if not changed_any and name != "none (raw AI)":
                 # The technique returned its input unchanged on EVERY sample. That is not a result,
                 # it is an unavailable technique: back_translate (and the other optional-dep paths)
                 # degrade to a silent no-op rather than raising when transformers/torch/sentencepiece
@@ -195,7 +195,7 @@ def compare(
                 # Detector-independent columns keep the full denominator; the P(AI) columns are
                 # averaged over what actually scored, and say so when that is not everything.
                 "ai_max_mean": round(sum(measured) / len(measured), 4) if measured else None,
-                "tells_per_100w_mean": round(sum(tell_rates) / n, 2),
+                "tells_per_100w_mean": round(sum(tell_rates) / n, 3),
                 "tells_total": sum(tell_counts),
                 "sim_mean": round(sum(sims) / n, 3),
                 "flagged_rate": (

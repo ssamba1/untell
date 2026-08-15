@@ -2388,3 +2388,4 @@ permanently.
 | 2233 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (36th): pass-2182 verified. |
 | 2234 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (38th): NER fix holds. |
 | 2235 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (38th): 18 regression tests green. |
+| 2236 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
