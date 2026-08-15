@@ -500,7 +500,7 @@ async def auth_middleware(request: Request, call_next) -> JSONResponse | Respons
                 "error": f"rate limit exceeded — {_rate_limit()} requests per "
                 f"{_RATE_WINDOW_SECONDS}s. Set UNTELL_RATE_LIMIT to change it, 0 to disable."
             },
-            status_code=430,
+            status_code=429,
             headers={"Retry-After": str(retry_after)},
         )
     return await call_next(request)
@@ -679,7 +679,7 @@ _VERIFY_RESPONSES = _obj(
     {
         "configured": {"type": "array", "items": _STR},
         "threshold": _NUM,
-        "results": {"type": "object", "additionalProperties": True},
+        "results": {"type": "object", "additionalProperties": False},
         # `passes_all` is False when NOTHING ran, not only when something failed: it is
         # `bool(names) and all(...)`, which is False for an empty checker set. That is the
         # conservative choice — refusing to report a pass nobody verified — but it means a
