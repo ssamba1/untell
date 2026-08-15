@@ -2414,3 +2414,5 @@ permanently.
 | 2259 | L2 | eval/baselines.py | clean | 5784 | 5784 | - | L2 eval/baselines.py FIRST AUDIT: baseline green, 0/8 killed - 8 survivors all baseline-simulator logic/boundaries (66 merge-period, 78 sentence-merge cond x2, 113 acceptance, 118/190 sim-threshold boundaries x3, 240 best-candidate gate) - no test exercises the baseline candidate loop (needs full detector pipeline). Documented recipe-logic class. |
 | 2260 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2260. |
 | 2261 | L2 | eval/eval_policy.py | clean | 5784 | 5784 | - | L2 eval/eval_policy.py FIRST AUDIT (completes eval/ dir sweep): baseline green (4), 4/8 killed (fleet's guards), 4 survivors: 42 sentinel-guard, 85/104/123 policy constants. EVAL DIRECTORY NOW FULLY FIRST-AUDITED (ceiling, compare_humanizers, tells_auroc, holdout, datasets, baselines, eval_policy). |
+| 2262 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (37th): pass-2146 verified. |
+| 2263 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (38th): 7/8 killed. |

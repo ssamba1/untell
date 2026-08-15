@@ -644,3 +644,4 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/tells_auroc.py | 201 | constant: 2 -> 3 | `"documents": len(pairs) * 2,` |
 | eval/baselines.py | 78 | logic: == -> != | `and i % merge_period == 0` |
 | eval/baselines.py | 78 | logic: and -> or | `and i % merge_period == 0` |
+| eval/eval_policy.py | 42 | identity: is not -> is | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
