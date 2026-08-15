@@ -2854,3 +2854,4 @@ permanently.
 | 2693 | L1 | T17 | clean | 7506 | 7506 | - | T17 re-audit (42nd): pass-2622 verified. |
 | 2693 | L2 | untell/detectors/perplexity_burstiness.py | coverage-closed | 5889 | 5890 | 2208de084743ea368c06bf959c54145b4bd72e76 | L2 perplexity_burstiness.py: KILLED the line-202 tell-density survivor (or -> and). Patched score_tells with tells_per_100w=40 -> original _single_sentence_signal 1.0; mutant and yields 0.0 always (density present -> 0.0), signal collapses to fallback 0.2. Prior 'tuning constant' UNKILLABLE note wrong. Red on mutation, green on original. (Also re-verified 126 and 273 independently — both already killed by worker's test_pb_mutation_guards.) |
 | 2695 | L2 | untell/scripts/preserve.py | clean | 7506 | 7506 | - | L2 preserve.py re-audit (46th): NER fix holds. |
+| 2696 | L6 | L6 | clean | 7506 | 7506 | - | L6 drift: no new drift. |
