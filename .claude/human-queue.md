@@ -357,7 +357,11 @@ WHY    lite-hc3 is NOT deterministic at the 0.020 band. The earlier 2-run
 NEXT   Re-derive the noise band from all 5 measurements.jsonl runs; re-run any
        earlier L9 'clean' passes whose verdict sat within the new band; treat the
        committed instruments.json deterministic=True as stale.
-## 2026-08-14 me2 worker — AMBER — test-module count drifted a THIRD time (339 vs 358)
+## 2026-08-14 me2 worker — RESOLVED — test-module count drift (339 vs 358) — CLOSED 2026-08-14
+
+STATUS   Sibling fixed the docs (registry counts now match: '8 local'/'7 commercial');
+         test_every_free_rewriter_actually_rewrites.py 17/17 PASS; audit derivable-checks
+         green. Queue entry superseded.
 
 WHAT   Full audit check "every 'N test modules' claim matches tests/" fails:
        docs/why-best-open-repo.md claims 339 test modules, tests/ has 358
