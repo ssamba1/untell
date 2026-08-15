@@ -61,7 +61,7 @@ from untell.text_split import fold_unicode_spaces  # noqa: E402
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_THRESHOLD = 0.30
+DEFAULT_THRESHOLD = 0.40
 
 
 # Cap input length to avoid OOM. This used to be justified with "detectors truncate at 512 tokens

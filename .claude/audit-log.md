@@ -1189,3 +1189,9 @@ permanently.
 | 1034 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (14th): fully pinned. |
 | 1035 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (15th): killing tests green. |
 | 1036 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1037 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (15th): spot-check alive. |
+| 1038 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (15th): aligned-chunks fix holds. |
+| 1039 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (16th): NER fix holds. |
+| 1040 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1040. |
+| 1041 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (16th): _MERGE_WEIGHTS unchanged. |
+| 1042 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (15th): pass-941 verified. |
