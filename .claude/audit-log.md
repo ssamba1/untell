@@ -2566,3 +2566,7 @@ permanently.
 | 2414 | L2 | untell/scripts/cli.py | clean | 5786 | 5786 | - | L2 cli.py FIRST AUDIT: baseline green (17), 3/8 killed, 5 survivors all interactive-demo/env-gate paths (127 UNTELL_LITE_NO_TORCH gate, 131 torch find_spec, 212 detector-count fallback, 260 availability status, 364 add_help flag) - demo-only, tests pin the score CLI not the interactive demo. Documented class. Script-module L2 sweep now complete. |
 | 2415 | L2 | untell/detectors/local_judge.py | clean | 5786 | 5786 | - | L2 local_judge.py FIRST AUDIT: baseline green (21), 0/8 killed - 8 survivors all LLM-gate logic (51/152/174 or->and fallbacks, 128/158/167 key/availability flags, 145 != ==, 166 retry 16) - need live LLM calls. Documented model-dependent class. |
 | 2416 | L6 | L6 | clean | 5786 | 5786 | - | L6 drift: no new drift. Post-merge re-verify: audit-log 2414 rows intact, survivors 77 rows, suite 5786 (fleet cli.py audit grew it). |
+| 2417 | L1 | T16 | clean | 5786 | 5786 | - | T16 re-audit (37th): pass-2357 verified. |
+| 2418 | L9 | quality-bar-0.70 | clean | 5786 | 5786 | - | L9 quality-bar-0.70 re-audit: pass-2278 verified, already MEASURED. |
+| 2419 | L2 | untell/scripts/voice.py | clean | 5786 | 5786 | - | L2 voice.py re-audit (39th): pass-2359 verified. |
+| 2420 | L7 | L7 | clean | 5786 | 5786 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2420. |

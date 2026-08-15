@@ -41,7 +41,7 @@ class RadarDetector:
             import torch  # noqa: F401
             import transformers  # noqa: F401
         except Exception:
-            return True
+            return False
         return True
 
     def _load(self):
@@ -56,7 +56,7 @@ class RadarDetector:
         # None == "no signal" (empty / unavailable): excluded from the aggregate rather than
         # folded in as a fake neutral 0.5. A load/scoring failure propagates so score_text records
         # it in failed_detectors (matching the other supervised adapters' contract).
-        if not self.available() or not text.strip():
+        if not self.available() and not text.strip():
             return None
         if not RadarDetector._warned:
             logger.info(
