@@ -886,3 +886,5 @@ permanently.
 | 757 | L1 | T11 | clean | 5781 | 5781 | - | T11 re-audit (10th): pass-690 verified. No change. |
 | 758 | L2 | untell/scripts/preserve.py | clean | 5781 | 5781 | - | L2 preserve.py re-audit (11th): NER fix + preserve suite green (151). |
 | 759 | L2 | untell/scripts/numerals.py | clean | 5781 | 5781 | - | L2 numerals.py re-audit (11th): 18 regression tests green. Fixes hold. |
+| 760 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 760. |
+| 760 | L2 | untell/scripts/roles.py | coverage-closed | 5858 | 5860 | 313d11c13859ff9093011602e2888d4c88b95db3 | L2 roles.py: KILLED the line-218 comparison-prep guard survivor (or -> and). Fake tokens (dep_/text/children attrs) with prep 'during' (not a comparison prep) + pobj child -> original [] (skipped), mutant [('alic','during','bob')] (false triple). Prior 'needs real spaCy parses' UNKILLABLE note wrong — the parse shape is fake-able. Red on mutation, green on original. |
