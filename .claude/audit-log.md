@@ -2797,3 +2797,4 @@ permanently.
 | 2637 | L6 | L6 | clean | 5787 | 5787 | - | L6 drift: no new drift. |
 | 2638 | L2 | eval/detector_audit.py | coverage-closed | 5880 | 5881 | 6810ed11c8348eb7727532c3d83077cba9842001 | L2 eval/detector_audit.py: KILLED the line-495 excusal-guard survivor (and -> or). Sentence detector INVERTED + auroc 0.1 (< bar 0.2) -> original keeps it in broken; mutant or bypasses the AUROC guard, excusing the near-chance detector. Red on mutation, green on original. |
 | 2639 | L9 | relaxed-sim-0.20 | clean | 5787 | 5787 | - | L9 relaxed-sim-0.20 re-audit: pass-2478 verified, already MEASURED. |
+| 2640 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2640. |
