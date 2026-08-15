@@ -2332,3 +2332,5 @@ permanently.
 | 2177 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 2178 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: pass-2038 verified, already MEASURED. |
 | 2179 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit: 5 neutral transforms (case/quote/spacing/whitespace) - verdict identical across all, 0 moved. Verdict stability holds. |
+| 2180 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (38th): 2 documented survivors. |
+| 2181 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (33rd): pass-2117 verified. |
