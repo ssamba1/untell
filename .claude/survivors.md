@@ -440,3 +440,15 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/humanness.py | 372 | boundary: > -> >= | `elif cv > 1.0:` |
 | untell/humanness.py | 605 | boundary: >= -> > | `if detector_max is not None and detector_max >= 0.5:` |
 | untell/humanness.py | 509 | boundary: >= -> > | `if score >= 60:` |
+| untell/rewriter/targeted.py | 93 | < -> <= | KILLED by existing suite |
+| untell/rewriter/targeted.py | 93 | 2 -> 3 | KILLED by existing suite |
+| untell/rewriter/targeted.py | 105 | False -> True | KILLED by existing suite |
+| untell/rewriter/targeted.py | 118 | < -> <= (per-sentence gate) | KILLED by test_targeted_mutation_guards |
+| untell/rewriter/targeted.py | 128 | != -> == | KILLED by existing suite |
+| untell/rewriter/targeted.py | 148 | < -> <= | KILLED by existing suite |
+| untell/rewriter/targeted.py | 148 | and -> or | KILLED by existing suite |
+| untell/rewriter/targeted.py | 151 | True -> False | KILLED by existing suite |
+| untell/rewriter/targeted.py | 157 | == -> != | KILLED by existing suite |
+| untell/rewriter/targeted.py | 210 | < -> <= (single-sentence gate) | KILLED by test_targeted_mutation_guards |
+| untell/rewriter/targeted.py | 216 | != -> == (sentinel integrity) | KILLED by test_targeted_mutation_guards |
+| untell/rewriter/targeted.py | 222 | < -> <= | KILLED by existing suite |
