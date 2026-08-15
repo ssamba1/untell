@@ -166,15 +166,39 @@ WINDOW_WORDS = 320
 
 
 def _split_to_width(sentence: str, width: int) -> list[str]:
-    """``sentence`` as pieces of at most ``width`` words. Usually returns it unchanged.
+    """``sentence`` as pieces of at most ``width`` words — or ``width`` characters when the
+    sentence has no whitespace to cut on.
 
-    Only reached when one sentence is wider than a whole window, which in practice means the text
-    had no sentence terminators for the splitter to find.
+    Only reached when one sentence is wider than a whole window, which in practice means the
+    text had no sentence terminators for the splitter to find. CJK and Thai never get the
+    spaces English does either: a 7200-character CJK paragraph is ONE "word", so the
+    word-based cut below passed it through whole and the adapter's own `truncation=True`
+    discarded everything past ~380 words — the precise failure windowing exists to prevent.
+    For scriptio continua the honest unit is the character (CJK is roughly one token per
+    character), so the width is reinterpreted as characters.
     """
     words = sentence.split()
     if len(words) <= width:
+        if len(words) <= 1 and len(sentence) > width:
+            return [sentence[i : i + width] for i in range(0, len(sentence), width)]
         return [sentence]
     return [" ".join(words[i:i + width]) for i in range(0, len(words), width)]
+
+
+def _piece_weight(piece: str) -> int:
+    """Approximate token count of ``piece`` for window packing.
+
+    Word count for ordinary text. A no-space piece (scriptio continua — CJK, Thai — or one
+    enormous "word") is one token per character to a word-piece tokenizer, so the weight is
+    the character count; the word count of 1 would otherwise pack every such piece into a
+    single window and hand the adapter a document-sized input, truncation and all. The +1
+    reserves the space that ``" ".join(current)`` will insert between pieces, so a window's
+    character count (content + separators) stays inside the cap.
+    """
+    words = piece.split()
+    if len(words) > 1:
+        return len(words)
+    return max(1, len(piece)) + 1
 
 
 def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> float | None:
@@ -216,7 +240,7 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
     # into 889 "words", which re-windows the text as well as corrupting the score.
     text = normalise_for_scoring(text)
 
-    if len(text.split()) <= window_words:
+    if _piece_weight(text) <= window_words:
         return score_window(text)
 
     windows: list[str] = []
@@ -235,7 +259,7 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
         # Each was then read only as far as the adapter's truncation allowed, and scored
         # confidently on that fraction — the exact failure windowing exists to prevent.
         for piece in _split_to_width(sentence, window_words):
-            n = len(piece.split())
+            n = _piece_weight(piece)
             if current and count + n > window_words:
                 windows.append(" ".join(current))
                 current, count = [], 0

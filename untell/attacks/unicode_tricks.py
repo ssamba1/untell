@@ -144,13 +144,24 @@ def _strip_orphan_variation_selectors(text: str) -> str:
 
     which is a rendering change to legitimate content, from a function whose docstring promises
     variation selectors and emoji survive. Found by testing that promise rather than reading it.
+
+    A RUN of selectors shares one base. The neighbour test used to look at the immediately
+    preceding CHARACTER, and variation selectors are themselves in ``_is_emoji_adjacent``'s
+    range (they sit between an emoji base and a ZWJ) — so in ``a\\uFE00\\uFE00b`` the second
+    selector saw the first as an "emoji-adjacent" base and survived, leaving one invisible
+    carrier of two smuggled. MEASURED: ``scrub_hidden('a\\uFE00\\uFE00b')`` returned
+    ``'a\\uFE00b'``. Each selector in the run is judged on the character before the RUN.
     """
     if not _VARIATION_SELECTORS.search(text):
         return text
     out = []
     for i, ch in enumerate(text):
         if _VARIATION_SELECTORS.fullmatch(ch):
-            prev = text[i - 1] if i else ""
+            prev = ""
+            for k in range(i - 1, -1, -1):
+                if not _VARIATION_SELECTORS.fullmatch(text[k]):
+                    prev = text[k]
+                    break
             nxt = text[i + 1] if i + 1 < len(text) else ""
             if not _is_emoji_adjacent(prev) and nxt != _KEYCAP:
                 continue
@@ -319,8 +330,15 @@ def scrub_hidden(text: str) -> str:
     # After the space class, so a Zl/Zp separator becomes a real line break rather than
     # being collapsed into a space by the line above.
     text = _LINE_SEPARATORS.sub(chr(10), text)
-    text = _strip_orphan_zwj(text)
+    # VS BEFORE ZWJ, deliberately. The ZWJ test's "emoji-adjacent" neighbours include the
+    # variation selectors (they sit between an emoji base and the joiner), so a ZWJ whose
+    # neighbours are only VS16s — `a\uFE0F\u200D\uFE0Fb`, a watermark shape — was judged to
+    # be joining emoji and kept, while both selectors were dropped later. MEASURED:
+    # ``scrub_hidden('a\uFE0F\u200D\uFE0Fb')`` returned ``'a\u200db'``, an orphan joiner
+    # that the docstring promises to remove. With the selectors gone first, the ZWJ's
+    # neighbours are the plain letters and it is dropped like any other orphan.
     text = _strip_orphan_variation_selectors(text)
+    text = _strip_orphan_zwj(text)
     text = _strip_orphan_bidi(text)
     text = _DEPRECATED_FORMAT.sub("", text)
     text = _strip_orphan_scripted_marks(text)

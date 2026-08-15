@@ -10,7 +10,9 @@ Nothing downstream catches it. The meaning gate compares meaning, the detectors 
 and the tells catalogue matches phrases; none of them looks at layout. So the damage is invisible
 to every check in the pipeline and obvious to the first person who reads the output.
 
-Stdlib only, and it imports nothing from the package, so any rewriter can use it without a cycle.
+Stdlib only — apart from one shared character class imported from ``untell.text_split``, which
+is itself stdlib-only and imports nothing from the package — so any rewriter can use it without
+a cycle.
 """
 
 from __future__ import annotations
@@ -29,7 +31,18 @@ _FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 # A line ending here finished a sentence, so the newline after it is a boundary the author chose
 # rather than a soft wrap to be absorbed. Closers are allowed after the terminator so a line ending
 # in a quotation, a parenthesis or a bracket still counts. See the branch in `_segments`.
-_SENTENCE_END_RE = re.compile(r"[.!?][\"')\]”’]*[ \t]*$")
+#
+# The terminator class is not ASCII-only: a paragraph-per-line CJK document ends every line in
+# 。！？ and an Arabic one in ؟ ۔, and a line ending in one of those is as much a chosen
+# boundary as one ending in a full stop. MEASURED before this existed, a two-paragraph CJK
+# document came back as ONE block, so the paragraphs were rejoined with spaces when the
+# transform ran.
+#
+# Zero-width carriers may sit between the terminator and the line end (the watermark shape) and
+# must not hide the boundary from `\s*$`; the class is the single source in `untell.text_split`
+# (docs/free-ceiling-measured.md forbids a second copy).
+from untell.text_split import _ZERO_WIDTH_CLASS  # noqa: E402
+_SENTENCE_END_RE = re.compile(r"[.!?。！？؟۔][\"')\]”’" + _ZERO_WIDTH_CLASS + r"]*[ \t]*$")
 
 
 def apply_per_block(text: str, transform: Callable[[str], str]) -> str:

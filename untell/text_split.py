@@ -30,9 +30,59 @@ import re
 # then delete it from the output, so it stays behind the split point.
 # Up to two closers, so a quote nested in a bracket — `(He said "Done.") Next up.` — still ends.
 # Three would be a citation style nobody writes; the fallback for it is the old under-split.
-_CLOSERS = "\"'”’)]}»"
+# CJK corner brackets are closers too — without them a 「quote」 would shed its closer onto the
+# next fragment.
+_CLOSERS = "\"'”’)]}»「」『』"
 _C = re.escape(_CLOSERS)
-_SENT_SPLIT = re.compile(rf"(?<=[.!?])\s+|(?<=[.!?][{_C}])\s+|(?<=[.!?][{_C}][{_C}])\s+")
+
+# Sentence terminators beyond ASCII. CJK prose (。！？) and Arabic/Urdu (؟ ۔) end their
+# sentences with these and, unlike English, run the next clause straight on with no
+# whitespace at all — a `\s+` requirement leaves the whole document as ONE sentence.
+# MEASURED before this existed:
+#
+#     split_sentences('这是第一句。这是第二句！这是第三句？')  ->  ONE sentence
+#     split_sentences('یہ ایک جملہ ہے۔ یہ دوسرا جملہ ہے۔')    ->  ONE sentence
+#     split_sentences('هل أنت متأكد؟ نعم. ثم غادر.')          ->  '؟' not a boundary
+#
+# A single sentence feeds burstiness CV as 0.0 (one length, no variation), makes per-sentence
+# targeting name the whole document, and hands the rewriters one giant unit of work. Hebrew
+# is unaffected: it uses the ASCII period.
+_UNICODE_TERMINATORS = "。！？؟۔"
+_UT = re.escape(_UNICODE_TERMINATORS)
+
+# Zero-width characters that can sit between a sentence terminator and the next word
+# without being seen by `\s`: ZWSP/ZWNJ/ZWJ, word joiner, BOM, the invisible math operators
+# and the variation selectors — the same carrier set `untell.attacks.unicode_tricks`
+# scrubs (no legitimate variation selector follows a full stop). The splitter does NOT
+# remove them — ZWJ is load-bearing inside emoji sequences — it only refuses to let an
+# invisible character hide a boundary the author wrote.
+_ZERO_WIDTH_BETWEEN = (
+    "\u200b\u200c\u200d\u2060\ufeff"  # ZWSP, ZWNJ, ZWJ, word joiner, BOM
+    "\u2061\u2062\u2063\u2064"  # invisible math operators
+    "\ufe00\ufe01\ufe02\ufe03\ufe04\ufe05\ufe06\ufe07\ufe08\ufe09\ufe0a\ufe0b\ufe0c\ufe0d\ufe0e\ufe0f"  # variation selectors
+)
+_ZERO_WIDTH_CLASS = re.escape(_ZERO_WIDTH_BETWEEN)
+
+_SENT_SPLIT = re.compile(
+    rf"(?<=[.!?])\s+"
+    rf"|(?<=[.!?][{_C}])\s+"
+    rf"|(?<=[.!?][{_C}][{_C}])\s+"
+    # Non-ASCII terminators need no following whitespace — CJK runs the next clause on.
+    # A negative lookahead prefers the closer alternative below, so 「好。」 keeps its closer.
+    rf"|(?<=[{_UT}])(?![{_C}])"
+    rf"|(?<=[{_UT}][{_C}])"
+    rf"|(?<=[{_UT}][{_C}][{_C}])"
+    # Zero-width carriers between the terminator and the next word. Up to two, mirroring
+    # the closer bound; a third is a document nobody writes, and the fallback for it is
+    # the old under-split. The same closer-preference applies: "Done.\u200b\"Next" splits
+    # after the quote, not before it — and a single-ZW alternative must not fire before a
+    # two-ZW run ("Done.\u200b\u200bNext" splits after the second carrier, keeping the
+    # pair with the sentence that owns it).
+    rf"|(?<=[.!?][{_ZERO_WIDTH_CLASS}])(?![{_C}{_ZERO_WIDTH_CLASS}])"
+    rf"|(?<=[.!?][{_ZERO_WIDTH_CLASS}][{_ZERO_WIDTH_CLASS}])(?![{_C}])"
+    rf"|(?<=[.!?][{_C}][{_ZERO_WIDTH_CLASS}])"
+    rf"|(?<=[.!?][{_ZERO_WIDTH_CLASS}][{_C}])"
+)
 
 # Abbreviations whose trailing period is not a sentence end.
 _ABBREVIATIONS = {
@@ -48,6 +98,9 @@ _ABBREVIATIONS = {
 def ends_with_abbreviation(fragment: str) -> bool:
     """True when this fragment's final period belongs to an abbreviation or an initial."""
     tail = fragment.rstrip().rsplit(" ", 1)[-1] if fragment.strip() else ""
+    # A zero-width carrier after the period (a watermark shape) must not hide the
+    # abbreviation: "3 p.m.\u200b" is still "p.m." to this test.
+    tail = tail.rstrip(_ZERO_WIDTH_BETWEEN)
     if not tail.endswith("."):
         return False
     word = tail[:-1].strip("([\"'“‘").lower()
@@ -71,7 +124,7 @@ def ends_with_abbreviation(fragment: str) -> bool:
     # Digits still have one legitimate use here: an ordered-list or section marker ("1. First item",
     # "3.5. Methods"), where the number really does not end a sentence. That case is exactly the one
     # where the number is the WHOLE fragment; a sentence-final number always has words before it.
-    return all(p.isdigit() for p in parts) and tail == fragment.strip()
+    return all(p.isdigit() for p in parts) and tail == fragment.strip().rstrip(_ZERO_WIDTH_BETWEEN)
 
 
 # Titles and name prefixes. The capital after one of these is the name, not a new sentence:
@@ -99,6 +152,7 @@ def _ends_in_a_name_prefix(fragment: str) -> bool:
     obligation — the capital after one of those opens a new sentence, decided by the case rule.
     """
     tail = fragment.rstrip().rsplit(" ", 1)[-1] if fragment.strip() else ""
+    tail = tail.rstrip(_ZERO_WIDTH_BETWEEN)
     if not tail.endswith("."):
         return False
     word = tail[:-1].strip("([\"'“‘").lower()
@@ -113,7 +167,7 @@ def _ends_in_a_name_prefix(fragment: str) -> bool:
         and all(p.isalpha() and len(p) == 1 for p in parts)
     ):
         return True
-    return bool(parts) and all(p.isdigit() for p in parts) and tail == fragment.strip()
+    return bool(parts) and all(p.isdigit() for p in parts) and tail == fragment.strip().rstrip(_ZERO_WIDTH_BETWEEN)
 
 
 def _continues_after_abbreviation(previous: str, nxt: str) -> bool:
@@ -152,7 +206,7 @@ def _continues_after_abbreviation(previous: str, nxt: str) -> bool:
 # The test is the NEXT word's case. A genuine sentence after an ellipsis is capitalised
 # ("It works... Mostly."); a continuation is not. Narrow on purpose — a real sentence boundary
 # after an ellipsis still splits.
-_ELLIPSIS_END_RE = re.compile(r"(?:\.{2,}|…)[\"'”’)\]}»]*$")
+_ELLIPSIS_END_RE = re.compile(r"(?:\.{2,}|…)" "[\"'”’)\]}»" + _ZERO_WIDTH_CLASS + r"]*$")
 
 def _first_alpha_is_lower(nxt: str) -> bool:
     """The continuation's first LETTER is lowercase, skipping leading quotes and brackets.
@@ -175,7 +229,12 @@ def _first_alpha_is_lower(nxt: str) -> bool:
 # continuation is decisive: "and left" cannot open a new sentence, so the period-in-quote was
 # mid-sentence. `He said "Done." Then he left.` keeps its split (capital "Then" opens a new
 # sentence). Same shape as the ellipsis rule above — the continuation's case decides.
-_QUOTED_PERIOD_END_RE = re.compile(r'[.!?]["\'”’)}»\]]\s*$')
+# The closer is REQUIRED (one, then any number of closers/zero-width carriers): the rule must
+# not fire on a plain "ten." with a lowercase follow-up, or every ordinary sentence pair
+# would be welded together.
+_QUOTED_PERIOD_END_RE = re.compile(
+    rf'[.!?][\"\'”’)}}\]»](?:[\"\'”’)}}\]»{_ZERO_WIDTH_CLASS}])*\s*$'
+)
 
 
 def _continues_after_ellipsis(previous: str, nxt: str) -> bool:
