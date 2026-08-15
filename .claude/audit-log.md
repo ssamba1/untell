@@ -2875,3 +2875,4 @@ permanently.
 | 607 | L4 | retry backoff | clean | 5804 | 5804 | c505b3d | L4 retry (3rd): max_attempts=0 clamped to 1 (single call), 6 attempts with all delays <= max_delay=5.0 (cap-after-jitter fix: never exceeds the documented ceiling), first-try success sleeps nothing. Backoff base*2^attempt + jitter(0,1) capped at max_delay verified. |
 | 2712 | L5 | L5 | clean | 7506 | 7506 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2713 | L1 | T02 | clean | 7506 | 7506 | - | T02 re-audit (42nd): pass-2644 verified. |
+| 2714 | L2 | untell/scripts/voice.py | clean | 7506 | 7506 | - | L2 voice.py re-audit (44th): pass-2643 verified. |
