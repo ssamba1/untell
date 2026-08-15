@@ -2298,3 +2298,8 @@ permanently.
 | 2143 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (36th): 5/5 killed, fully pinned. |
 | 2144 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (34th): pass-2086 verified. |
 | 2145 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2146 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (35th): pass-2090 verified. |
+| 2147 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (37th): kill tests green. |
+| 2148 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2149 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. L4 lane: 150th worked pass, zero regressions. |
+| 2150 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (34th): pass-2093 verified. |
