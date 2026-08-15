@@ -2741,3 +2741,4 @@ permanently.
 | 2584 | L2 | untell/rewriter/structural.py | coverage-closed | 5872 | 5874 | 560075f5ee0ebb5c993b59b2c06f053a0b98c71f | L2 structural.py: KILLED the line-480 sentinel-window survivor (12 -> 13). before = sentinel + 5 X's (13 chars): 12-char tail loses the opening bracket -> _at_sentence_start False (a locked span 13 chars back is missed); 13-char tail catches it. Red on mutation, green on original. |
 | 2585 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2586 | L1 | T09 | clean | 5787 | 5787 | - | T09 re-audit (42nd): pass-2522 verified. |
+| 2587 | L2 | untell/scripts/quality.py | clean | 5787 | 5787 | - | L2 quality.py re-audit (39th): pass-2535 verified. |
