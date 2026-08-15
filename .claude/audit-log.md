@@ -1115,3 +1115,4 @@ permanently.
 | 960 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (13th): fully pinned. |
 | 961 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (13th): pass-893 verified. |
 | 962 | L6 | L6 | clean | 5775 | 5775 | - | L6 constants verified post-bar-fix: relaxed_sim_bar 0.30, contradiction_bar 0.5 (my 959 fix), entailment_floor 0.005, quality DEFAULT_BAR 0.76 - all match README claims (190/213/214/286). recommended_bar moved out of entailment.py (lives in quality.py as DEFAULT_BAR 0.76). No drift. |
+| 963 | L1 | T18 | clean | 5775 | 5775 | - | T18 re-audit: empty stdin exit 2, missing --file exit 2 naming the file. CLI error paths stable. |
