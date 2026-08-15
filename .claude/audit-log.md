@@ -851,3 +851,5 @@ permanently.
 | 724 | L1 | T01 | clean | 5781 | 5781 | - | T01 re-audit (10th): 4/4 lock+roundtrip incl. NER fix. |
 | 583 | L4 | roster note | clean | 5800 | 5800 | 67aa67c | L4 _short_roster_note (2nd, cross-confirms swarm 726): with UNTELL_DISABLE_MAGE=1 the note fires — 'the full ensemble ran without mage: not installed, not configured, or switched off. max is taken over the detectors...' — the third-way-absent detection (never selected because available() said no, distinct from failed/abstention). lite tier -> None (absent members are the definition of the tier). My first probes failed because mage was AVAILABLE in the plain env — the not d.available() gate is the trigger. Correct. |
 | 725 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
+| 726 | L1 | T02 | clean | 5781 | 5781 | - | T02 re-audit (9th): pass-573 verified. No change. |
+| 727 | L2 | untell/scripts/sentences.py | clean | 5781 | 5781 | - | L2 sentences.py re-audit (10th): 16 tests green. Pass-565 unsupported-language kill holds. |
