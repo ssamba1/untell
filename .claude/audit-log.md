@@ -2387,3 +2387,4 @@ permanently.
 | 2232 | L2 | eval/ceiling.py | clean | 5784 | 5784 | - | L2 eval/ceiling.py FIRST AUDIT: baseline green (12), 0/8 killed with compare/holdout set - 8 survivors all measurement-recipe guards (89 stdev count, 254 rewrote-detection, 338/345/347 pinned-delta logic, 388 git-dirty x2, 564 dataset-unavailable) - distinguishing inputs need live model runs (the L8 lane's own domain; calibration just validated the recipe's output). Documented recipe-logic class. |
 | 2233 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (36th): pass-2182 verified. |
 | 2234 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (38th): NER fix holds. |
+| 2235 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (38th): 18 regression tests green. |

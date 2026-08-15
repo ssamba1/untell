@@ -76,7 +76,7 @@ def _techniques(tier: str, threshold: float):
     def synonym_swap(t: str) -> str:
         from untell.attacks import surgical_substitute
 
-        return surgical_substitute(t, tier=tier, threshold=threshold, max_subs=11)["text"]
+        return surgical_substitute(t, tier=tier, threshold=threshold, max_subs=10)["text"]
 
     def back_translation(t: str) -> str:
         from untell.attacks import back_translate
@@ -177,7 +177,7 @@ def compare(
             tell_counts.append(tl["tells"])
             sims.append(similarity(t, out) if name != "none (raw AI)" else 1.0)
         else:
-            if not changed_any and name != "none (raw AI)":
+            if not changed_any and name == "none (raw AI)":
                 # The technique returned its input unchanged on EVERY sample. That is not a result,
                 # it is an unavailable technique: back_translate (and the other optional-dep paths)
                 # degrade to a silent no-op rather than raising when transformers/torch/sentencepiece
