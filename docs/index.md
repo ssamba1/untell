@@ -47,7 +47,7 @@ untell humanize "Your AI-sounding paragraph here." --rewriter surgical
 ## The measurement log — start here
 
 Most tools in this space publish a benchmark table. This one publishes **[the full measurement
-log](free-ceiling-measured.md)**: 225 numbered results, including every experiment that *failed* and
+log](free-ceiling-measured.md)**: 229 numbered results, including every experiment that *failed* and
 every claim of ours that a later measurement refuted.
 
 A sample of what is in there, because the refutations are the point:
@@ -67,7 +67,7 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **[Quick Start](quickstart.md)** — install and run in 60 seconds
 - **[API Server](api-server.md)** — deploy the REST API
 - **[What each function returns](result-shapes.md)** — the key that carries the answer, per entry point. They differ, and guessing wrong returns a plausible value rather than raising.
-- **[Measured: the free evasion ceiling](free-ceiling-measured.md)** — the full log, 225 results
+- **[Measured: the free evasion ceiling](free-ceiling-measured.md)** — the full log, 229 results
 - **[Summary: the free-ceiling report](free-ceiling-report.md)** — the short version
 - **[Humanizer comparison](humanizer-comparison.md)** — untell vs every free technique
 - **[The 435-repo census](humanizer-census.md)** — what this field is actually made of
