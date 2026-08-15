@@ -984,3 +984,4 @@ permanently.
 | 840 | L2 | untell/languages.py | clean | 5783 | 5783 | - | L2 languages.py re-audit (12th): 12/12 ranges. Survivors 43/89. |
 | 841 | L1 | T17 | clean | 5783 | 5783 | - | T17 re-audit (11th): pass-773 verified. No change. |
 | 842 | L1 | T19 | clean | 5783 | 5783 | - | T19 re-audit (10th): ledger 35 rows consistent. |
+| 843 | L2 | untell/detectors/fast_detectgpt.py | clean | 5775 | 5775 | - | L2 fast_detectgpt.py FIRST AUDIT: baseline green (18), 0/8 killed, 8 survivors ALL class lazy-load state + torch-path constants: _model/_tokenizer/_dead/_warned init flags (63/64/71/72/92/99/102), var epsilon 1e-8 (117) - no test asserts class internal init values; model-dependent. Documented class. |
