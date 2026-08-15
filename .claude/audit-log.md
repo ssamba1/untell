@@ -1044,3 +1044,6 @@ permanently.
 | 900 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 900. |
 | 901 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (12th): pass-841 verified. No change. |
 | 902 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (11th): pass-842 verified 35 rows consistent. |
+| 903 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (12th): fully pinned. |
+| 904 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (11th): pass-846 verified. No change. |
+| 905 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
