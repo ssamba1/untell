@@ -1215,3 +1215,8 @@ permanently.
 | 1060 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1060. |
 | 1061 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (14th): pass-1017 verified. |
 | 1062 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (13th): pass-1021 verified 35 rows consistent. |
+| 1063 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (16th): 33/33 live. |
+| 1064 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (15th): pass-970 verified. |
+| 1065 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1066 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (14th): pass-1022 verified. |
+| 1067 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (16th): 7/8 killed. |
