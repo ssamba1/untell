@@ -1018,3 +1018,7 @@ permanently.
 | 874 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (14th): 2 documented survivors. |
 | 875 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (11th): pass-510 warn-latch kill holds. |
 | 876 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. README-numbers delegation results pending. |
+| 877 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (13th): pass-806 verified. No change. |
+| 878 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (11th): pass-574 rescale kill holds. |
+| 879 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (14th): 4/4 killed. |
+| 880 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 880. |
