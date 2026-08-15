@@ -1249,3 +1249,7 @@ permanently.
 | 1094 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (17th): NER fix holds. |
 | 1095 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (17th): 18 regression tests green. |
 | 1096 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1097 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (16th): pass-1044 verified. |
+| 1098 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: already MEASURED (pass 872 full run, inert +0.000). Knob closed. |
+| 1099 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (17th): 16 tests green. |
+| 1100 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1100. |
