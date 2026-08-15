@@ -86,7 +86,7 @@ def _mean(xs: list[float]) -> float | None:
 
 def _stdev(xs: list[float]) -> float | None:
     """Population stdev; None for fewer than 2 samples."""
-    if len(xs) < 2:
+    if len(xs) <= 2:
         return None
     m = sum(xs) / len(xs)
     return round((sum((x - m) ** 2 for x in xs) / len(xs)) ** 0.5, 4)

@@ -2371,3 +2371,5 @@ permanently.
 | 2216 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. L6 lane: 100th worked pass, zero regressions. |
 | 2217 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (36th): pass-2162 verified. |
 | 2218 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: pass-2098 verified, already MEASURED. |
+| 2219 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (38th): 128 documented-equivalent remains. |
+| 2220 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2220. |
