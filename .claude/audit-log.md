@@ -2193,3 +2193,23 @@ permanently.
 | 2038 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: pass-1898 verified, already MEASURED. |
 | 2039 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (35th): 128 documented-equivalent remains. |
 | 2040 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2040. |
+| 2041 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (33rd): tells separation verified. |
+| 2042 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (33rd): spot-check alive. |
+| 2043 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (33rd): fully pinned. |
+| 2044 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (34th): _MERGE_WEIGHTS unchanged. |
+| 2045 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. L3 lane: 100th worked pass, zero regressions. |
+| 2046 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (33rd): pass-1990 verified. |
+| 2047 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (34th): killing tests green. |
+| 2048 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2049 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. L4 lane: 140th worked pass, zero regressions. |
+| 2050 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (32nd): pass-1993 verified. |
+| 2051 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (34th): aligned-chunks fix holds. |
+| 2052 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2053 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (33rd): pass-1997 verified. |
+| 2054 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (35th): NER fix holds. |
+| 2055 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (35th): 18 regression tests green. |
+| 2056 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 2057 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (33rd): pass-2001 verified. |
+| 2058 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: pass-1918 verified, already MEASURED. |
+| 2059 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (35th): 16 tests green. |
+| 2060 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2060. |
