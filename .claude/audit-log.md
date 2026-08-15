@@ -1170,3 +1170,4 @@ permanently.
 | 1015 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (15th): pass-943 verified. |
 | 1016 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 1017 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (13th): pass-901 verified. |
+| 1018 | L1 | T18 | clean | 5784 | 5784 | - | CLI rewriter validation: bogus rejected at parse (exit 2, 11 choices listed). Full CLI surface matrix now verified: style/threshold/rewriter/tier all parse-validated, consistent with MCP + REST surfaces. |
