@@ -2870,3 +2870,4 @@ permanently.
 | 2708 | L4 | L4 | clean | 7506 | 7506 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2709 | L4 | L4 | clean | 7506 | 7506 | - | L4 structural.py re-verified: 9/9 alive. |
 | 606 | L4 | env load | clean | 5804 | 5804 | 367b384 | L4 load_env (3rd): BOM stripped via utf-8-sig (value123 read from BOM-prefixed file), # inside double AND single quotes kept ('value with # hash'/'single # quote'), real env wins over file (from_env beats from_file). All load_env invariants verified live. |
+| 2710 | L1 | T01 | clean | 7506 | 7506 | - | T01 re-audit (43rd): pass-2642 verified. |
