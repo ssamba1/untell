@@ -2356,3 +2356,5 @@ permanently.
 | 2201 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (35th): pass-2141 verified. |
 | 2202 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (34th): pass-2142 verified. |
 | 2203 | L2 | untell/attacks/unicode_tricks.py | clean | 5784 | 5784 | - | L2 unicode_tricks.py FIRST AUDIT: baseline green (111), 3/8 killed, 5 survivors all Unicode-range/homoglyph boundaries: 108 (variation-selector range), 259 (keep-run length), 368x2 + 377 (homoglyph fold conditions) - edge-codepoint inputs measure-zero in practice, documented class. Completes attacks dir L2 sweep (back_translation 8/8 pinned, word_importance 7 classified). |
+| 2204 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (35th): pass-2150 verified. |
+| 2205 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
