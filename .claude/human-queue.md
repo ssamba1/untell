@@ -389,3 +389,21 @@ IMPACT All L9 'REFUSED - deterministic' passes (18, 38, 64, 78, 98, 118, 138, 15
 NEXT   Fix calibrate to compare against the FULL run history (min-max spread or stdev
        across all runs, min 3-5 runs); re-run the L9 knob passes with the corrected
        band; treat instruments.json deterministic=True as stale until then.
+
+## 2026-08-14 verified-unkillable confirmations (search-backed, fleet should not re-hunt)
+
+1. tells.py:1187 both boundaries (start < c_end -> <=, end > c_start -> >=):
+   Exhaustive search over all 20x19 pattern-pair permutations x 8 separators
+   ('', ' ', ',', ', ', '. ', '\n', '; ', ')', ']') found ZERO touching-span
+   pairs. Every pattern pair is separated by at least a word-boundary/space, so
+   'end == c_start' is unreachable with real regex spans; overlapping spans
+   behave identically under both comparisons. Prior 'no constructible input'
+   note VERIFIED CORRECT by the search.
+2. io_utils.py:180 sniff length (4 -> 5): read(5) also contains every BOM
+   prefix; head.startswith(bom) is identical; non-BOM files don't enter the
+   branch. Genuinely equivalent. Note verified.
+3. text_split.py:146 autojunk (False -> True): 2000 random-sequence trials over
+   varied lengths/alphabets, plus targeted repeated-word constructions: difflib
+   get_matching_blocks() is IDENTICAL with autojunk on/off in all cases (CPython
+   3.11 implementation resolves popular elements without changing the final
+   decomposition). Genuinely equivalent at the observable level. Note verified.
