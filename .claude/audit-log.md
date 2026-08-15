@@ -943,3 +943,4 @@ permanently.
 | 807 | L2 | untell/scripts/numerals.py | clean | 5781 | 5781 | - | L2 numerals.py re-audit (12th): 18 regression tests green. |
 | 808 | L4 | L4 | clean | 5781 | 5781 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 809 | L4 | L4 | clean | 5781 | 5781 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 588 | L4 | abbrev edges | clean | 5801 | 5801 | 75ba70a | L4 ends_with_abbreviation (3rd): Dr./e.g./p.m./Fig./etc. -> True (set), J.R.R. -> True (initials), DR. -> True (case-insensitive), hello/hello. -> False; decimal '3.5' -> False (the digit-fix: 'The mean was 3.5.' now ends the sentence — previously read as abbreviation, merged with the next); section marker '1.' -> True (number as WHOLE fragment). All edge cases verified. |
