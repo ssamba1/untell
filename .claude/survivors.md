@@ -460,7 +460,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 
 | module | line | mutation | status |
 |---|---|---|---|
-| untell/attacks/unicode_tricks.py | 108 | <= -> < (regional-indicator range) | UNKILLABLE: equivalent mutant — U+1F1E6-1F1FF is a strict subset of the pictographic range U+1F000-1FAFF matched by the preceding or-arm; the bound never decides any input |
+| untell/attacks/unicode_tricks.py | 108 | <= -> < (regional-indicator range) | UNKILLABLE: equivalent mutant — U+1F1E6-1F1FF is a strict subset of the pictographic range U+1F000-1FAFF matched by the preceding or-arm; the bound never decides any input. CONFIRMED 6-seed sweep (72 candidates, sole survivor in every seed) |
 | untell/attacks/back_translation.py | 35 | False -> True (available import branch) | UNKILLABLE in this env: only observable if an import fails inside available(); transformers/torch/sentencepiece all import here |
 ## 2026-08-14 me2 worker wave 3: swarm-a unlanded kills materialized + verified (base/ensemble)
 
