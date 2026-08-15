@@ -2562,3 +2562,5 @@ permanently.
 | 2410 | L1 | T14 | clean | 5785 | 5785 | - | T14 re-audit (39th): pass-2350 verified. |
 | 2411 | L2 | untell/scripts/hedges.py | clean | 5785 | 5785 | - | L2 hedges.py re-audit (42nd): 2 documented survivors. |
 | 2412 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2413 | L1 | T15 | clean | 5785 | 5785 | - | T15 re-audit (39th): pass-2353 verified. |
+| 2414 | L2 | untell/scripts/cli.py | clean | 5786 | 5786 | - | L2 cli.py FIRST AUDIT: baseline green (17), 3/8 killed, 5 survivors all interactive-demo/env-gate paths (127 UNTELL_LITE_NO_TORCH gate, 131 torch find_spec, 212 detector-count fallback, 260 availability status, 364 add_help flag) - demo-only, tests pin the score CLI not the interactive demo. Documented class. Script-module L2 sweep now complete. |
