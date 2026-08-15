@@ -439,7 +439,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/humanness.py | 370 | boundary: < -> <= | `elif cv < 0.50:` |
 | untell/humanness.py | 372 | boundary: > -> >= | `elif cv > 1.0:` |
 | untell/humanness.py | 605 | boundary: >= -> > | `if detector_max is not None and detector_max >= 0.5:` |
-| untell/humanness.py | 509 | boundary: >= -> > | `if score >= 60:` |
+| untell/humanness.py | 509 | boundary: >= -> > | `if score >= 60:` | KILLED by tests/test_classification_band_boundaries_inclusive.py: classification(60) -> 'mostly human' under original, 'mixed' under mutant (>= -> > pushes the exact-boundary score down a band). The same test pins the whole band family (75/60/45/30 are all inclusive edges). Red on mutation, green on original. |
 | untell/rewriter/targeted.py | 93 | < -> <= | KILLED by existing suite |
 | untell/rewriter/targeted.py | 93 | 2 -> 3 | KILLED by existing suite |
 | untell/rewriter/targeted.py | 105 | False -> True | KILLED by existing suite |
