@@ -2694,3 +2694,4 @@ permanently.
 | 2542 | L1 | T16 | clean | 5787 | 5787 | - | T16 re-audit (39th): pass-2482 verified. |
 | 2543 | L2 | untell/scripts/latex.py | clean | 5787 | 5787 | - | L2 latex.py re-audit (43rd): 33/33 live. |
 | 2544 | L1 | T17 | clean | 5787 | 5787 | - | T17 re-audit (40th): pass-2485 verified. |
+| 2545 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
