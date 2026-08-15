@@ -2624,3 +2624,4 @@ permanently.
 | 2472 | L5 | L5 | clean | 5786 | 5786 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2473 | L1 | T13 | clean | 5786 | 5786 | - | T13 re-audit (38th): pass-2406 verified. |
 | 2474 | L2 | untell/scripts/hedges.py | clean | 5786 | 5786 | - | L2 hedges.py re-audit (43rd): 2 documented survivors. |
+| 2475 | L2 | untell/scripts/voice.py | clean | 5786 | 5786 | - | L2 voice.py re-audit (40th): pass-2419 verified. |
