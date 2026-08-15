@@ -1058,3 +1058,5 @@ permanently.
 | 912 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
 | 913 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (12th): pass-857 verified. |
 | 594 | L4 | best_of drafts | clean | 5801 | 5801 | f9bd758 | L4 untell_text best_of (2nd): best_of=1 and best_of=3 both run the loop with valid non-empty finals (65 chars, identical with seed=1 — deterministic drafts); no crash. The best-of-N draft selection path verified end-to-end. |
+| 914 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (13th): killing tests green. |
+| 915 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (13th): aligned-chunks fix holds. |
