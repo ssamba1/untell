@@ -2803,3 +2803,4 @@ permanently.
 | 2643 | L2 | untell/scripts/voice.py | clean | 5787 | 5787 | - | L2 voice.py re-audit (43rd): pass-2583 verified. |
 | 2644 | L1 | T02 | clean | 5787 | 5787 | - | T02 re-audit (41st): pass-2561 verified. |
 | 2645 | L2 | eval/detector_audit.py | coverage-closed | 5881 | 5882 | bad08d1c43af65afff5a66bdbfc960714941c180 | L2 eval/detector_audit.py: KILLED the line-284 WEAK-verdict guard survivor (and -> or). Stub detector human [0.1,0.2] / ai [0.7,0.8] -> au 1.0, fpr 0.0: original OK_SEPARATED; mutant or fires whenever au present, downgrading a perfectly-separated detector to WEAK. Red on mutation, green on original. |
+| 2646 | L1 | T03 | clean | 5787 | 5787 | - | T03 re-audit (42nd): pass-2562 verified. |
