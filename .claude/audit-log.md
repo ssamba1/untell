@@ -1341,3 +1341,11 @@ permanently.
 | 1186 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (18th): tells separation verified. |
 | 1187 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (19th): kill tests green. |
 | 1188 | L8 | full-hc3-neural | clean | 5784 | 5784 | - | L8 full-hc3-neural 2nd re-run COMPLETED (~2h): pre 1.0 -> post 0.9991, deltas all +0.000/-0.001 noise. Stable across 2 runs. Family: composite 1.0->1.0, max 1.0->0.9758, neural 1.0->0.9991 — all above 0.45 verdict cut. |
+| 1189 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1190 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (18th): spot-check alive. |
+| 1191 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (17th): fully pinned. |
+| 1192 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1193 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (19th): _MERGE_WEIGHTS unchanged. |
+| 1194 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (18th): killing tests green. |
+| 1195 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (18th): aligned-chunks fix holds. |
+| 1196 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
