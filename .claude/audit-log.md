@@ -2765,3 +2765,4 @@ permanently.
 | 2608 | L4 | L4 | clean | 5787 | 5787 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2609 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2609 | L2 | untell/rewriter/structural.py | coverage-closed | 5876 | 5877 | 1abd4742a32d3f30d1ee97fdd811d2fea7739c34 | L2 structural.py: KILLED the line-2667/2654 comma-split openability survivor (and -> or). Actual line 2654 (comma path). 'the manager said the plan is quite good, and everyone agrees with her today now ok' -> original None (continuation cannot start a sentence, blocked); mutant or short-circuits the chain, bypassing _cannot_start_a_sentence and _orphans_a_subordinate_clause, producing fragments. Red on mutation, green on original. |
+| 2611 | L2 | untell/config.py | clean | 5787 | 5787 | - | L2 config.py re-audit (44th): 5/5 killed, fully pinned. |
