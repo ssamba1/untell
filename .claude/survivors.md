@@ -73,6 +73,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | Gap classification boundary: test corpus never lands exactly on 0.25 |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, ...)` | CLI help: required=True vs False only affects argparse error, tests call function directly |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ..., indent=2))` | JSON indent: tests don't check formatting |
+<<<<<<< Updated upstream
 | untell/detectors/local_judge.py | 51 | logic: or -> and | `_DEFAULT_MODEL = os.environ.get("UNTELL_JUDGE_MODEL") or LIGHT_MODEL` |
 | untell/detectors/local_judge.py | 128 | constant: True -> False | `return True` |
 | untell/detectors/local_judge.py | 145 | logic: != -> == | `dtype=torch.bfloat16 if device != "cpu" else torch.float32,` |
@@ -131,3 +132,5 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/structural.py | 2667 | logic: and -> or | `and not _inside_quotes(words, pos + 1)` | KILLED by tests/test_comma_split_respects_openability_guard.py: actual line is 2654 (comma path; 2683 is the conjunction path). 'the manager said the plan is quite good, and everyone agrees with her today now ok' -> original None (continuation cannot start a sentence, correctly blocked); mutant or short-circuits the chain, bypassing _cannot_start_a_sentence and _orphans_a_subordinate_clause, and splits into fragments. Red on mutation, green on original. |
 | untell/rewriter/structural.py | 2843 | constant: True -> False | `"contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0,` |
 | untell/rewriter/structural.py | 2887 | constant: False -> True | `"conversational_openers": False},` |
+=======
+>>>>>>> Stashed changes

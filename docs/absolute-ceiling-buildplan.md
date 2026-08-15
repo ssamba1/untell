@@ -86,7 +86,7 @@ spot-check every 50 GRPO steps that aborts if `mean_real − mean_surrogate > 0.
 exists but lacks checkpoint/resume/hub flags. [`local_policy.py`](https://github.com/ssamba1/untell/blob/main/untell/rewriter/local_policy.py) integration
 is **already correct** — set `UNTELL_POLICY_DIR` and `get_rewriter()` picks it up (base.py:135), HF-Hub IDs work directly.
 
-**Confirmed blocker:** [`mage.py`](https://github.com/ssamba1/untell/blob/main/untell/detectors/mage.py) is **dead in this env** (`_dead=True` at :63) — numpy 2.5.0 + transformers 5.12.1 reject MAGE's int-keyed `id2label` via `pipeline()`. Since MAGE is the single hardest detector (AUROC 0.89 floor) and the highest-value reward addition, fixing it is Task 1.
+**Blocker resolved (this plan predates the fix):** [`mage.py`](https://github.com/ssamba1/untell/blob/main/untell/detectors/mage.py) previously **dead in this env** (`_dead=True` at :63) — numpy 2.5.0 + transformers 5.12.1 rejected MAGE's int-keyed `id2label` via `pipeline()`. The proposed Task-1 fix below is **already shipped** (mage.py:44-76): the loader snapshots the repo, rewrites `config.json`'s `id2label` to str->str, and loads directly — MAGE now runs (live-verified, scores 0.9999+ on clean text, consistent with the measured saturation in free-ceiling-measured.md:191-194). Task 1 below is historical, not outstanding.
 
 | # | Task | File:line | Change | Time |
 |---|---|---|---|---|
