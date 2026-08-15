@@ -493,7 +493,7 @@ async def auth_middleware(request: Request, call_next) -> JSONResponse | Respons
 
     # Rate limit AFTER auth, so an unauthenticated flood cannot consume a legitimate caller's
     # budget by sharing their bucket.
-    retry_after = _rate_limited(request, x_key or auth or "")
+    retry_after = _rate_limited(request, x_key and auth or "")
     if retry_after is not None:
         return JSONResponse(
             content={
