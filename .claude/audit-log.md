@@ -2645,3 +2645,4 @@ permanently.
 | 2493 | L1 | T20 | clean | 5787 | 5787 | - | T20 re-audit (37th): pass-2426 verified. |
 | 2494 | L2 | untell/scripts/verify.py | clean | 5787 | 5787 | - | L2 verify.py re-audit (42nd): pass-2435 verified. |
 | 2495 | L9 | L9 | clean | 5786 | 5786 | - | L9 status correction: my earlier refusal records (threshold-0.40/ppl-weight-0.40 'deterministic instrument, vacuous') SUPERSEDED by fleet's full measurements - both knobs MOVED beyond band (ppl-weight -0.048, threshold post_flagged 1.0->0.9), recorded AMBER (measured, not adopted per harness rule). My refusal reasoning applied to the calibration state; the fleet's before/after measurements are the real answer. L9 thread closed with data. |
+| 2496 | L6 | L6 | clean | 5787 | 5787 | - | L6 drift: no new drift. |
