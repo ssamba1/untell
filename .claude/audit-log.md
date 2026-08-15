@@ -2885,3 +2885,4 @@ permanently.
 | 2721 | L1 | T04 | clean | 7506 | 7506 | - | T04 re-audit (44th): pass-2650 verified. |
 | 2722 | L1 | T05 | clean | 7506 | 7506 | - | T05 re-audit (43rd): pass-2653 verified. |
 | 2723 | L2 | untell/scripts/latex.py | clean | 7506 | 7506 | - | L2 latex.py re-audit (46th): 33/33 live. |
+| 2724 | L1 | T06 | clean | 7506 | 7506 | - | T06 re-audit (44th): tells separation verified. |
