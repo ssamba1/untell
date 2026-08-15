@@ -1330,3 +1330,11 @@ permanently.
 | 1175 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (18th): pass-1123 verified. |
 | 1176 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 1177 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (16th): pass-1122 verified. |
+| 1178 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: already MEASURED (pass 794 full run, inert +0.000). Knob closed. |
+| 1179 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (18th): 12/12 ranges. |
+| 1180 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1180. |
+| 1181 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (17th): pass-1124 verified. |
+| 1182 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (18th): pass-1126 verified. |
+| 1183 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (18th): 5/5 killed, fully pinned. |
+| 1184 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (17th): pass-1130 verified. |
+| 1185 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
