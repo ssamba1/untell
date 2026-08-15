@@ -2435,3 +2435,5 @@ permanently.
 | 2280 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2280. |
 | 2281 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (36th): pass-2221 verified. |
 | 2282 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (37th): pass-2222 verified. |
+| 2283 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (38th): killing tests green. |
+| 2284 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (37th): pass-2224 verified. |
