@@ -39,6 +39,24 @@ COMMANDS = [
 ]
 
 
+def test_compare_rejects_out_of_range_args():
+    """The head-to-head artifact must not be quotable from a nonsense configuration."""
+    for argv in BAD_ARGS:
+        proc = subprocess.run(
+            [str(PY), "-m", "eval.compare_humanizers", *argv, "--tier", "lite"],
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=60,
+            env=env,
+            stdin=subprocess.DEVNULL,
+        )
+        assert "Traceback" not in (proc.stderr or ""), f"{argv} leaked traceback"
+        assert proc.returncode == 2, (
+            f"{argv} expected exit 2, got {proc.returncode} — silent run"
+        )
+
+
 def test_ceiling_rejects_out_of_range_args():
     for cmd, extra in COMMANDS:
         for argv in BAD_ARGS:
