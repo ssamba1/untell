@@ -1262,3 +1262,7 @@ permanently.
 | 1107 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (15th): pass-1055 verified. |
 | 1108 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
 | 1109 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1110 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (15th): pass-1061 verified. |
+| 1111 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (12th): pass-916 normalize-embeddings kill holds. |
+| 1112 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1113 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (14th): pass-1062 verified. |
