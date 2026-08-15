@@ -1148,3 +1148,4 @@ permanently.
 | 993 | L5 | L5 | clean | 5784 | 5784 | - | L5 ruff: 5 F401 + 1 F841 fixed (my test's unused token_overlap import + fleet's 4 mutation-guard files). ruff clean, tests pass. |
 | 994 | L4 | survivors-table | clean | 5784 | 5784 | - | survivors.md coherence: 501 rows, 481 module rows, 115 KILLED, 0 malformed. Noted: fleet's swarm killed surgical 48/63/96 + mt_pivot 64 (my earlier first-audit classifications superseded - shared-tree reality, rows updated by fleet). |
 | 995 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: mutate.py dry-run (--max 0) restores byte-identical (sha256 match), exit 0. Restore contract holds. |
+| 996 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit: lock/restore round-trip byte-identical (HZ0000 + email), sentinels replace identifiers. NER-free pattern path verified. |
