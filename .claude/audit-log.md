@@ -2748,3 +2748,4 @@ permanently.
 | 2591 | L2 | untell/scripts/scrub.py | clean | 5787 | 5787 | - | L2 scrub.py re-audit (45th): 4/4 killed. |
 | 2592 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2593 | L1 | T10 | clean | 5787 | 5787 | - | T10 re-audit (41st): pass-2524 verified. |
+| 2594 | L2 | untell/scripts/latex.py | clean | 5787 | 5787 | - | L2 latex.py re-audit (44th): 33/33 live. |
