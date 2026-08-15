@@ -854,3 +854,6 @@ permanently.
 | 726 | L1 | T02 | clean | 5781 | 5781 | - | T02 re-audit (9th): pass-573 verified. No change. |
 | 727 | L2 | untell/scripts/sentences.py | clean | 5781 | 5781 | - | L2 sentences.py re-audit (10th): 16 tests green. Pass-565 unsupported-language kill holds. |
 | 728 | L2 | untell/scripts/entailment.py | coverage-closed | 5852 | 5855 | c611097c31fe7031f89a4a8012044967f03d727e | L2 entailment.py: KILLED the line-500 deletion-allowance boundary survivor (> -> >=). 120-word source -> allowance exactly 12.0 (0.1*120, share branch dominates); candidate dropping exactly 12 words hits the boundary: original 12 > 12.0 = False (faithful rewrite passes), mutant >= = True (rejected). Prior 'fractional allowance makes equality unreachable' UNKILLABLE note wrong — 0.1*n is an exact integer when n is a multiple of 10. Deterministic kill via patched polarity/available + sim arg. Red on mutation, green on original. |
+| 729 | L4 | L4 | clean | 5781 | 5781 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 730 | L1 | T03 | clean | 5781 | 5781 | - | T03 re-audit (10th): NLI gate sound. |
+| 731 | L2 | untell/scripts/hedges.py | clean | 5781 | 5781 | - | L2 hedges.py re-audit (11th): 2 documented survivors (148/328). |
