@@ -2416,3 +2416,5 @@ permanently.
 | 2261 | L2 | eval/eval_policy.py | clean | 5784 | 5784 | - | L2 eval/eval_policy.py FIRST AUDIT (completes eval/ dir sweep): baseline green (4), 4/8 killed (fleet's guards), 4 survivors: 42 sentinel-guard, 85/104/123 policy constants. EVAL DIRECTORY NOW FULLY FIRST-AUDITED (ceiling, compare_humanizers, tells_auroc, holdout, datasets, baselines, eval_policy). |
 | 2262 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (37th): pass-2146 verified. |
 | 2263 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (38th): 7/8 killed. |
+| 2264 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (36th): pass-2204 verified. |
+| 2265 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
