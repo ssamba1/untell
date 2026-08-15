@@ -874,3 +874,4 @@ permanently.
 | 745 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
 | 746 | L1 | T08 | clean | 5781 | 5781 | - | T08 re-audit (11th): _MERGE_WEIGHTS unchanged (pass-557 200k draws). |
 | 747 | L2 | untell/config.py | clean | 5781 | 5781 | - | L2 config.py re-audit (10th): 5/5 killed, fully pinned (9th consecutive). |
+| 748 | L2 | untell/scripts/score.py | coverage-closed | 5857 | 5858 | 326be973568f25d38be631fd4b096804586716ce | L2 score.py: KILLED the line-751/744 per-detector rounding survivor (4 -> 5). Detector returning 0.000045 + another at 0.0 -> original reports tiny=0.0 and max=0.0 (4dp collapse), mutant keeps 5e-05 and max becomes 0.0001. Prior '4dp dominates, 5dp invisible' UNKILLABLE note wrong — the collapse is exactly the observable. Red on mutation, green on original. |
