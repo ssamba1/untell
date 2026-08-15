@@ -80,18 +80,13 @@ def main() -> int:
                 dest = RECORDS / rf.name
                 dest.write_text(rf.read_text(encoding="utf-8"), encoding="utf-8")
                 print(f"  swarm{i}: queued row {rf.name}")
-        r = subprocess.run(["git", "merge", "--no-commit", "--no-ff", branch],
+        r = subprocess.run(["git", "merge", "--no-ff", "--no-edit", branch],
                            cwd=ROOT, capture_output=True, text=True)
         if r.returncode != 0:
             subprocess.run(["git", "merge", "--abort"], cwd=ROOT, capture_output=True)
             conflicted.append(branch)
             print(f"  swarm{i}: CONFLICT left on {branch}")
             continue
-        # Unstage everything so only our committed log lands in the record commit;
-        # the merge itself is committed separately below.
-        subprocess.run(["git", "reset", "-q"], cwd=ROOT)
-        subprocess.run(["git", "commit", "-q", "--no-edit", "-m", f"merge: fleet round (swarm{i})"],
-                       cwd=ROOT)
         merged.append(branch)
         print(f"  swarm{i}: merged {ahead} commit(s)")
 
