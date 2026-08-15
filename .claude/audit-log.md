@@ -2486,3 +2486,5 @@ permanently.
 | 2334 | L2 | untell/_env.py | clean | 5785 | 5785 | - | L2 _env.py re-audit (38th): fully pinned. |
 | 2335 | L2 | untell/layout.py | clean | 5785 | 5785 | - | L2 layout.py re-audit (39th): killing tests green. |
 | 2336 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
+| 2337 | L1 | T09 | clean | 5785 | 5785 | - | T09 re-audit (38th): pass-2277 verified. |
+| 2338 | L9 | threshold-0.40 | clean | 5785 | 5785 | - | L9 threshold-0.40 re-audit: pass-2078 verified, already MEASURED (MOVED). |
