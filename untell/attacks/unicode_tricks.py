@@ -363,7 +363,7 @@ def _unhomoglyph(text: str) -> str:
     # Cyrillic, and a raw ratio then reads 7/12 ASCII and declares the document mixed-script.
     # Native letters — the ones with no ASCII lookalike — are what actually distinguishes Russian
     # prose from Latin prose wearing a costume.
-    evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() and ch not in _UNHOMOGLYPH)]
+    evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UNHOMOGLYPH)]
     mostly_ascii = bool(evidence) and sum(ch.isascii() for ch in evidence) / len(evidence) >= 0.8
 
     def fold(match: re.Match) -> str:
@@ -371,7 +371,7 @@ def _unhomoglyph(text: str) -> str:
         alpha = [ch for ch in word if ch.isalpha()]
         if not any(ch in _UNHOMOGLYPH for ch in word):
             return word
-        native = any(ch.isalpha() and not ch.isascii() and ch not in _UNHOMOGLYPH for ch in word)
+        native = any(ch.isalpha() and not ch.isascii() and ch in _UNHOMOGLYPH for ch in word)
         if any(ch.isascii() and ch.isalpha() for ch in word) and not native:
             return "".join(_UNHOMOGLYPH.get(ch, ch) for ch in word)
         if mostly_ascii and alpha and all(ch in _UNHOMOGLYPH for ch in alpha):

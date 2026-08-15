@@ -2350,3 +2350,5 @@ permanently.
 | 2195 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (37th): 33/33 live. |
 | 2196 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 2197 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (32nd): pass-2137 verified. |
+| 2198 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: pass-2058 verified, already MEASURED. |
+| 2199 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (37th): 7/8 killed. |
