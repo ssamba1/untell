@@ -1349,3 +1349,7 @@ permanently.
 | 1194 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (18th): killing tests green. |
 | 1195 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (18th): aligned-chunks fix holds. |
 | 1196 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1197 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (18th): pass-1142 verified. |
+| 1198 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: already MEASURED (pass 829 full run, inert +0.000). Knob closed. |
+| 1199 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (19th): NER fix holds. |
+| 1200 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1200 — audit-log milestone. |
