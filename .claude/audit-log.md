@@ -2713,3 +2713,4 @@ permanently.
 | 2561 | L1 | T02 | clean | 5787 | 5787 | - | T02 re-audit (40th): pass-2502 verified. |
 | 2562 | L1 | T03 | clean | 5787 | 5787 | - | T03 re-audit (41st): pass-2504 verified. |
 | 2563 | L2 | untell/_env.py | clean | 5787 | 5787 | - | L2 _env.py re-audit (42nd): fully pinned. |
+| 2564 | L1 | T04 | clean | 5787 | 5787 | - | T04 re-audit (42nd): pass-2506 verified. |
