@@ -1124,3 +1124,7 @@ permanently.
 | 969 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (12th): pass-904 verified. |
 | 970 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (14th): pass-906 verified. |
 | 971 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (14th): aligned-chunks fix holds. |
+| 972 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 973 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (13th): pass-917 verified. |
+| 974 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (15th): NER fix holds. |
+| 975 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (15th): 18 regression tests green. |
