@@ -236,6 +236,34 @@ def aligned_chunks(a: str, b: str) -> list[tuple[str, str]]:
     if k == 1 or len(aw) < 2 or len(bw) < 2:
         return [(a, b)]
 
+    # IDENTICAL WORD LISTS never need the exact matcher at all. SequenceMatcher on identical
+    # input returns ONE full block, so `map_index` is the identity and the output is exactly
+    # the proportional cuts below — but only after paying O(n*m) to discover that. MEASURED on
+    # identical input, where the current code is quadratic:
+    #
+    #     words   1000    2000    4000    6000
+    #     time    0.42s   1.81s   7.44s   20.06s
+    #
+    # Identical pairs are a real call path, not a benchmark artifact — `contradiction_score(doc,
+    # doc)` (measured 0.6091 on a 301-word RAID abstract, see entailment.py) and the
+    # `similarity(t, t)` recursion both land here, and every chunk short-circuits the model call
+    # (`ca == cb`), so the alignment IS the whole cost of scoring a document against itself.
+    # The threshold keeps the mutation guards (100/181-word identical fixtures) on the difflib
+    # path; below 1000 words the exact matcher is under half a second and the guard coverage is
+    # worth it.
+    _IDENTICAL_FAST_PATH_MIN = 1000
+    if aw == bw and len(aw) >= _IDENTICAL_FAST_PATH_MIN:
+        cuts_a = [round(len(aw) * n / k) for n in range(1, k)]
+        bounds_a = [0, *cuts_a, len(aw)]
+        bounds_b = [0, *cuts_a, len(bw)]
+        out: list[tuple[str, str]] = []
+        for n in range(k):
+            ca = " ".join(aw[bounds_a[n] : bounds_a[n + 1]])
+            cb = " ".join(bw[bounds_b[n] : bounds_b[n + 1]])
+            if ca.strip() and cb.strip():
+                out.append((ca, cb))
+        return out or [(a, b)]
+
     # difflib's SequenceMatcher is worst-case O(n*m). Measured on identical inputs it
     # doubles ~4.1x per doubling: 1k words 0.56s, 2k 2.12s, 4k 8.77s, 8k 36.1s — a 40k-word
     # document (~900s) would pin an API worker. Past this size the exact matcher costs more
