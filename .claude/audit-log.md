@@ -2824,3 +2824,4 @@ permanently.
 | 2664 | L1 | T09 | clean | 5787 | 5787 | - | T09 re-audit (43rd): pass-2586 verified. |
 | 2665 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2666 | L1 | T10 | clean | 5787 | 5787 | - | T10 re-audit (42nd): pass-2593 verified. |
+| 2667 | L2 | untell/detectors/mage.py | coverage-closed | 5884 | 5886 | 8b8dd61123416fe39fa75b2cd7fadb579798da5a | L2 mage.py: KILLED the id2label config-surgery trio (64 or->and, 65 and->or, 69 2->3) with TWO tests (test_valid_id2label_is_preserved, test_empty_id2label_is_rewritten) via the mocked snapshot_download + transformers-stub seam. 64: valid id2label clobbered to MAGE convention. 65: empty id2label rewrite skipped (config stays broken). 69: num_labels=3 for a 2-label map. Prior 'needs live snapshot/model dir' UNKILLABLE notes wrong. Red on mutation, green on original. |
