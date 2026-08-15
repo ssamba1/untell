@@ -1253,3 +1253,7 @@ permanently.
 | 1098 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: already MEASURED (pass 872 full run, inert +0.000). Knob closed. |
 | 1099 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (17th): 16 tests green. |
 | 1100 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1100. |
+| 1101 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (14th): pass-1046 verified. |
+| 1102 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (16th): pass-1050 verified. |
+| 1103 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (18th): 2 documented survivors. |
+| 1104 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (16th): pass-1053 verified. |
