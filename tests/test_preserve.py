@@ -412,7 +412,9 @@ class TestFactsLockedWholeNotInPieces:
         _, m = lock("The meeting starts at 9:30 AM and ends at 4:15 PM.")
         assert set(m.values()) == {"9:30 AM", "4:15 PM"}
         _, m2 = lock("It runs 8:00 a.m. to 5:00 p.m. daily.")
-        assert set(m2.values()) == {"8:00 a.m.", "5:00 p.m."}
+        # The "to" connector is part of the range fact: a rewrite must not be able to turn
+        # "8:00 a.m. to 5:00 p.m." into "8:00 a.m. and 5:00 p.m.", so the whole range is one lock.
+        assert set(m2.values()) == {"8:00 a.m. to 5:00 p.m."}
 
     def test_locking_pm_does_not_eat_the_sentence_terminator(self):
         r"""`[Mm]\.?` swallowed the full stop after "PM", leaving the masked text unterminated and

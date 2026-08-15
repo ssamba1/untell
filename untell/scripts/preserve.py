@@ -90,21 +90,34 @@ _UNIT = (
     # time (longest first)
     r"|centuries|century|decades?|months?|weeks?|days?|hours?|minutes?|seconds?"
     r"|msec|µs|us|ns|ms|hrs?|mins?|secs?|yrs?|years?"
+    # prose meridiem: "5 p.m.", "9 a.m.", "3 pm". Without these, "5 p.m." locked
+    # NOTHING (single digit, no colon) — a time fact fully rewritable. The dotted
+    # forms come first so "p.m" is taken whole; the `(?!\w)` terminator keeps the
+    # sentence-final full stop OUTSIDE the lock.
+    r"|a\.m|p\.m|[Aa][Mm]|[Pp][Mm]"
     # data
     r"|Gbps|Mbps|kbps|bps|GHz|MHz|kHz|Hz|GB|MB|KB|TB|PB|Gb|Mb|kb"
-    # mass / volume
-    r"|tonnes?|kcal|cal|kJ|kg|mg|µg|ug|lbs?|oz|mL|ml|dL|gal|mol|nmol|µmol"
-    # distance / speed
+    # mass / volume — the compound concentration units MUST precede the bare
+    # units they contain ("kg/m³" before "kg", "µg/mL" before "µg" and "mL"),
+    # or "5 kg/m³" locks as "5 kg" and leaves "/m³" rewritable — the partial
+    # lock this list's ordering comment calls the worst possible outcome.
+    r"|kg/m³|mg/m³|µg/mL|mg/L|g/L|mol/L|nmol/L|µmol/L|tonnes?|kcal|cal|kJ|kg|mg|µg|ug|lbs?|oz|mL|ml|dL|gal|mol|nmol|µmol"
+    # distance / speed — compound and squared forms before their bare prefixes
+    # ("m/s²" before "m/s" before "m", "m²/g" before "m²").
     r"|kilometres|kilometers|metres|meters|miles|inches|yards|feet"
-    r"|km/h|kph|mph|rpm|km|cm|mm|nm|µm|ft|yd|mi"
-    # energy / electrical
-    r"|kWh|MW|kW|mW|mV|mA|kV|W|V|A|J"
+    r"|m/s²|m/s|km/s|m²/g|m²/s|m²|m³|cm²|cm³|mm²|mm³|km²|km³|g/cm³|km/h|kph|mph|rpm|km|cm|mm|nm|µm|ft|yd|mi"
+    # energy / electrical — W/m² (irradiance) and the dB family are real units;
+    # each compound precedes its bare form.
+    r"|W/m²|kWh|MW|kW|mW|mV|mA|kV|W|V|A|J|dBm|dB"
     # temperature (bare ° and °C/°F)
     r"|°[CF]?|K"
     # magnitudes / currency codes
     r"|trillion|billion|million|thousand|bn|USD|EUR|GBP|JPY"
-    # bare SI singles last: they prefix nothing, and each is a real unit in prose ("100 m", "30 s")
-    r"|kg|g|L|m|s|x|×"
+    # bare SI singles last: they prefix nothing, and each is a real unit in prose ("100 m", "30 s").
+    # Capital M is million-or-molar: "3.5M" and "5 M HCl" are facts whose letter
+    # carries the magnitude, and both locked NOTHING before this (the decimal's
+    # trailing \b failed before the letter). Case-sensitive, so "5 m" is untouched.
+    r"|kg|g|L|m|M|s|x|×"
 )
 
 # Month + weekday names: a date is a fact, but "March 15, 2024" locked only "15" and "2024",
@@ -270,8 +283,14 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     ),
     # Narrative author-year: Smith (2020), Smith et al. (2019)
     ("citation", re.compile(r"[A-Z][A-Za-z'’.-]+(?:\s+et al\.?)?\s+\(\d{4}[a-z]?\)")),
-    # DOIs and URLs
-    ("url", re.compile(r"https?://\S+|doi:\s*\S+", re.IGNORECASE)),
+    # DOIs and URLs. The trailing lookbehind keeps the match from swallowing the
+    # sentence's own full stop: `\S+` greedily took "https://example.com." whole,
+    # so the masked text lost its terminator and sentence splitting downstream
+    # under-counted — the same shape the phone rule documents for a trailing
+    # SPACE, one character class over. A URL that genuinely ends in "." is rare
+    # enough that the round trip (period restored as free text) is the safer
+    # reading; the two can be told apart only by a parser, not a regex.
+    ("url", re.compile(r"https?://\S+(?<![.,;:!?])|doi:\s*\S+(?<![.,;:!?])", re.IGNORECASE)),
     # Quoted spans (straight or curly double quotes)
     ("quote", re.compile(r"[\"“][^\"”]{1,400}[\"”]")),
     # Single-quoted spans. British and academic house styles quote this way as a matter of course,
@@ -349,8 +368,9 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         re.compile(
             # Windows path with a drive letter, or any slash-separated path with a file extension.
             # Requires a separator AND an extension, so ordinary prose ("and/or", "he said/she
-            # said") cannot match.
-            r"\b[A-Za-z]:\\[^\s\"']+"
+            # said") cannot match. The trailing lookbehind keeps a sentence-final full stop out of
+            # the lock, the same guard the URL rule carries.
+            r"\b[A-Za-z]:\\[^\s\"']+(?<![.,;:!?])"
             r"|(?<![\w/])(?:\.{0,2}/)?(?:[\w.-]+/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,7}\b"
         ),
     ),
@@ -374,6 +394,12 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"\bv\d+(?:\.\d+)+\b"  # semantic version: v2.1.3
             r"|\b\d{4}-\d{2}-\d{2}\b"  # ISO date: 2024-03-15
             r"|\b\d+(?:\.\d+)?[eE][+-]?\d+\b"  # scientific notation: 1.5e10
+            # Caret and superscript exponents. "1.5 × 10^9" locked "1.5 ×" and "10"
+            # separately and left "^9" — the magnitude carrier — rewritable, and
+            # "10⁹" locked nothing at all. The base is included with an optional
+            # "× 10" prefix, so the whole magnitude is one span.
+            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?\s*\^+\s*[-−]?\d+\b"  # 10^9, 2^31, 1.5 × 10^9
+            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]*\b"  # 10⁹, 10⁻⁹
             # Slash date BEFORE the fraction rule, which would otherwise take "03/04" and leave
             # "/2021" as free text: measured, "03/04/2021" masked to "⟦HZ0000⟧/⟦HZ0001⟧" with the
             # separator rewritable and the day/month pair severed from its year.
@@ -387,8 +413,22 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # The `\b` belongs to the UNDOTTED branch only: after "a.m." the next character is a
             # space, so a trailing \b can never match and the dotted form would fall through to the
             # bare-time rule below, leaving the meridiem outside the lock again.
-            r"|\b\d{1,3}:\d{1,3}(?::\d{2})?\s*(?:[AaPp]\.[Mm]\.|[AaPp][Mm]\b)"  # 9:30 AM, 4:15 p.m.
-            r"|\b\d{1,3}:\d{1,3}(?::\d{2})?\b"  # time or ratio: 9:30, 3:1, 1:02:33
+            #
+            # The dotted form's final dot is ALSO the sentence terminator when the time ends the
+            # sentence ("12:30 p.m. Then we left."). Absorbing it produced masked text with no
+            # boundary at all; `\.?(?!\s+[A-Z]|$)` keeps the dot outside the lock when a
+            # capitalised sentence follows (or the text ends), and still absorbs it mid-sentence
+            # ("4:15 p.m. and left."), where it belongs to the abbreviation.
+            #
+            # Time RANGES are matched before the bare-time branch: "9:30–10:30 AM" locked "9:30"
+            # and "10:30 AM" with the dash free (and "9:30-10:30" mis-locked "-10" as a negative
+            # number) because the range branch sits later in the alternation and finditer never
+            # re-visits the gap after the first time matches. The "to" connector is included too:
+            # "9:30 to 10:30" is a range fact, and "8:00 a.m. to 5:00 p.m." must not have its "to"
+            # rewritten into "and".
+            r"|\b\d{1,3}:\d{1,3}(?::\d{2})?\s*(?:[AaPp]\.[Mm]\.?(?!\s+[A-Z]|$)|[AaPp][Mm]\b)(?:\s*[-–—]\s*|\s+to\s+)\b\d{1,3}:\d{1,3}(?::\d{2})?\s*(?:[AaPp]\.[Mm]\.?(?!\s+[A-Z]|$)|[AaPp][Mm]\b)"  # 9:30 AM – 10:30 AM, 8:00 a.m. to 5:00 p.m.
+            r"|\b\d{1,3}:\d{1,3}(?::\d{2})?(?:\s*[-–—]\s*\b\d{1,3}:\d{1,3}(?::\d{2})?|\s+to\s+\b\d{1,3}:\d{1,3}(?::\d{2})?)?\s*(?:[AaPp]\.[Mm]\.?(?!\s+[A-Z]|$)|[AaPp][Mm]\b)"  # 9:30–10:30 AM, 9:30 AM
+            r"|\b\d{1,3}:\d{1,3}(?::\d{2})?(?:\s*[-–—]\s*\b\d{1,3}:\d{1,3}(?::\d{2})?|\s+to\s+\b\d{1,3}:\d{1,3}(?::\d{2})?)?\b"  # time or ratio: 9:30, 9:30-10:30, 3:1
             r"|\b\d+\s*/\s*\d+\b"  # fraction: 2/3
             # Comparison against a number: p<0.05, n >= 30. The operator must be inside the lock or a
             # rewrite can invert the assertion while the sentinel survives intact.
@@ -401,7 +441,11 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # which never happens in prose. That made "5%" match nothing at all and "42%" lock only
             # its digits.
             r"|[-−]?\b\d[\d,]*(?:\.\d+)?\s*(?:" + _UNIT + r")(?!\w)"
-            r"|\b\d+\s*[-–—]\s*\d+\b"  # numeric range: 10-20
+            # Numeric range, with an OPTIONAL trailing unit. "5–10%" locked "5–10" and left "%"
+            # free: the range branch matched first, finditer resumed after it, and the unit branch
+            # could never see the "%" it had already consumed past. The unit has to ride INSIDE
+            # this branch. "10-20 miles" was already whole (span merging); "5–10%" was not.
+            r"|\b\d[\d,]*(?:\.\d+)?\s*[-–—]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
             r"|[-−]\d[\d,]*(?:\.\d+)?\b"  # negative number: -15, -3.2
             r"|\b\d[\d,]*\.\d+\b"  # decimals
             r"|\b\d{1,3}(?:,\d{3})+\b"  # comma-grouped thousands
@@ -419,6 +463,11 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"|\b\d{1,2}(?:st|nd|rd|th)?\s+(?:" + _MONTH + r"),?\s*\d{4}"
             r"|\b(?:" + _MONTH + r")\s+\d{4}\b"
             r"|\b(?:" + _MONTH + r")\s+\d{1,2}(?:st|nd|rd|th)\b"
+            # Month + day WITHOUT a year or ordinal: "March 15" locked "15" and left the MONTH
+            # free — the exact gap the year forms above were written to close, still open for
+            # "The deadline is March 15." A month name followed by 1-2 digits is a date in every
+            # register; the year forms are earlier in the alternation, so they still match whole.
+            r"|\b(?:" + _MONTH + r")\s+\d{1,2}\b"
             r"|\b\d{1,2}(?:st|nd|rd|th)\s+of\s+(?:" + _MONTH + r")\b"
             # Bare weekday. This pattern carries re.IGNORECASE and the three-letter abbreviations
             # are ordinary English words, so measured: "She **sat** on the bench", "The **sun** was
@@ -511,15 +560,21 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     ),
     # Phone numbers: international E.164, national formats, extensions. A rewrite that changes a
     # phone number while the sentinel survives intact is the worst possible outcome.
-    # (?<! ) prevents the pattern from consuming a trailing space — without it, the match would
-    # include the space and the sentinel would restore with an extra trailing space.
+    # (?<![.]) prevents the pattern from consuming a trailing full stop (the sentence's own
+    # terminator: "Call +1-555-123-4567. Then leave." became "Call ⟦HZ0000⟧ Then leave." — no
+    # boundary at all), and (?<! ) the trailing space; the char class admits spaces and
+    # parentheses so the spaced international form "+44 20 7946 0958" and "+1 (555) 123-4567"
+    # lock as ONE span instead of four separate digit groups a rewrite could reassemble.
+    # The 0-branch takes a 3-4 digit middle ("020 7946 0958", "0300 123 4567"), the national
+    # branches admit spaces, and a parenthesised area code is its own branch.
     (
         "phone",
         re.compile(
-            r"\+[0-9][0-9.-]{7,20}(?<! )"
-            r"|\b0[0-9]{2}[.\s-]?[0-9]{3}[.\s-]?[0-9]{4}\b"
-            r"|\b1[-.]?[0-9]{3}[-.]?[0-9]{3}[-.]?[0-9]{4}\b"
-            r"|\b[0-9]{3}[-.]?[0-9]{3}[-.]?[0-9]{4}\b"
+            r"\+[0-9][0-9\s().-]{7,20}(?<![\s.])"
+            r"|\b0[0-9]{2,3}[.\s-]?[0-9]{3,4}[.\s-]?[0-9]{4}\b"
+            r"|\b1[-.\s]?[0-9]{3}[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b"
+            r"|\b[0-9]{3}[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b"
+            r"|\([0-9]{3}\)\s*[0-9]{3}[-.\s]?[0-9]{4}\b"
         ),
     ),
     # Short hex literals: C-style `0xFF`, `\x1B`, and URL percent-encoding `%2F`. These are facts
@@ -567,12 +622,14 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         ),
     ),
     # Tolerance and approximation markers. "12 ± 3" locked only "12"; "~500" locked only "500",
-    # dropping the "about" and asserting an exact figure.
+    # dropping the "about" and asserting an exact figure. A LEADING ± was still free: "±5%"
+    # masked to "±⟦HZ0000⟧", so a rewrite could drop the sign and assert an exact value. The
+    # sign is now in the class, and the optional trailing unit keeps "±5%" and "± 2.5 °C" whole.
     (
         "number",
         re.compile(
             r"\d[\d,]*(?:\.\d+)?\s*(?:±|\+/-|\+-)\s*\d[\d,]*(?:\.\d+)?"
-            r"|[~≈≃]\s*[-−]?\d[\d,]*(?:\.\d+)?"
+            r"|[±∓~≈≃]\s*[-−]?\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
         ),
     ),
     # Numbered cross-references and legal citations. "Section 3.2" locked "3.2" alone, so the label
@@ -706,6 +763,11 @@ def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
             "august", "jack", "max", "sam", "pat", "rob", "tom", "sue",
             "article", "comments", "feedback", "status", "update", "support",
             "contact", "security", "terms", "privacy", "search", "settings",
+            # Measured on en_core_web_sm, sentence-initial: 'Insert', 'Map',
+            # 'Mode' are tagged PERSON, and 'Lunch is at 12:30 p.m.' locked
+            # 'Lunch' as a person. Each is an ordinary word the rewriter must
+            # stay free to touch; none is a name the register would capitalise.
+            "insert", "lunch", "map", "mode",
         }
     )
     return [
