@@ -36,3 +36,20 @@ def test_aligned_chunks_still_correct_on_normal_docs():
     assert result
     total_a = sum(len(x.split()) for x, _ in result)
     assert total_a == len(a.split()), f"chunks lost words: {total_a} != {len(a.split())}"
+
+
+def test_aligned_chunks_cover_both_sides_when_nothing_matches():
+    """A fully disjoint pair (the 'replaced a whole sentence with unrelated text' case) has NO
+    difflib blocks, so every cut mapped through the sentinel to len(b) — the first chunk took the
+    source's first window against ALL of the target, dropping the rest of the source. MEASURED
+    before the fix: a 300-word source vs a 300-word disjoint target produced ONE chunk of 75
+    source words vs 300 target words. Both sides must still be chunked proportionally and fully
+    covered."""
+    a = " ".join(f"alpha{i}" for i in range(300))
+    b = " ".join(f"beta{i}" for i in range(300))
+    result = aligned_chunks(a, b)
+    assert len(result) > 1, "disjoint pair collapsed to one chunk"
+    assert sum(len(x.split()) for x, _ in result) == len(a.split()), "source not fully covered"
+    assert sum(len(y.split()) for _, y in result) == len(b.split()), "target not fully covered"
+    for x, y in result:
+        assert len(x.split()) <= 90 and len(y.split()) <= 90, "a chunk exceeded the token budget"
