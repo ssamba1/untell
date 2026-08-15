@@ -19,10 +19,10 @@ from __future__ import annotations
 from untell.attacks.unicode_tricks import (
     _affected_chars,
     _compose_legitimate,
+    _strip_mark_stacks,
     _strip_orphan_scripted_marks,
     _strip_orphan_variation_selectors,
     _strip_orphan_zwj,
-    _strip_mark_stacks,
     _unhomoglyph,
     count_hidden,
     homoglyph_substitute,

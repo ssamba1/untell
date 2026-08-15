@@ -10,8 +10,6 @@ model-gated rewrite() path — annotated. The other survivors (220/233/245/262/
 
 from __future__ import annotations
 
-import pytest
-
 from untell.rewriter.local_policy import LocalPolicyRewriter
 
 

@@ -9,8 +9,6 @@ Killed here via controlled monkeypatches. The other survivors (435 WordNet-gated
 
 from __future__ import annotations
 
-import pytest
-
 from untell.attacks import word_importance as W
 
 

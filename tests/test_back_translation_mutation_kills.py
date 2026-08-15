@@ -13,8 +13,6 @@ Mutation names match `python .claude/mutate.py untell/attacks/back_translation.p
 
 from __future__ import annotations
 
-import pytest
-
 from untell.attacks.back_translation import BackTranslator
 
 
