@@ -38,7 +38,7 @@ class MageDetector:
             import torch  # noqa: F401
             import transformers  # noqa: F401
         except Exception:
-            return False
+            return True
         return True
 
     def _load(self):

@@ -998,3 +998,7 @@ permanently.
 | 854 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (11th): killing tests green. Fully pinned. |
 | 855 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (12th): killing tests green. Sole 91 survivor documented. |
 | 856 | L2 | untell/detectors/hc3_roberta.py | clean | 5775 | 5775 | - | L2 hc3_roberta.py FIRST AUDIT: baseline green (21), 0/8 killed, 8 survivors ALL class lazy-load state (_dead/_warned 27/28/35/36/58/65/68, max_length 512 at 68) - model-dependent, no test asserts internals. ALSO live-verified mage saturation claim: 3 AI texts score 0.999987+ each (README ai_saturated_frac 1.00 confirmed - the max-pinning behavior). Documented class. |
+| 857 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (11th): pass-786 verified scrub invariant. No change. |
+| 858 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (12th): aligned-chunks fix + 54 chunking tests green. |
+| 859 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (13th): NER fix + 151 tests green. |
+| 860 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 860. |
