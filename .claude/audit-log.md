@@ -1295,3 +1295,10 @@ permanently.
 | 1140 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1140. |
 | 1141 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (18th): _MERGE_WEIGHTS unchanged. |
 | 1142 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (17th): pass-1086 verified. |
+| 1143 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (17th): aligned-chunks fix holds. |
+| 1144 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (16th): pass-1090 verified. |
+| 1145 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1146 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (17th): pass-1093 verified. |
+| 1147 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (18th): NER fix holds. |
+| 1148 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1149 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
