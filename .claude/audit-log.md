@@ -994,3 +994,6 @@ permanently.
 | 850 | L2 | untell/detectors/roberta_openai.py | clean | 5775 | 5775 | - | L2 roberta_openai.py FIRST AUDIT: baseline green (21), 0/8 killed, 8 survivors ALL class lazy-load state + model constants (_dead/_warned flags 24/25/32/33/58/65, max_length 512 at 44) - no test asserts class internals; model-dependent. Label-parsing fallback (1-P(real), 0.5 default) read: correct. Documented class. |
 | 851 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (13th): kill tests green (8). |
 | 852 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
+| 853 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (12th): 4/4 lock+roundtrip. |
+| 854 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (11th): killing tests green. Fully pinned. |
+| 855 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (12th): killing tests green. Sole 91 survivor documented. |

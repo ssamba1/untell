@@ -33,7 +33,7 @@ class HC3RobertaDetector:
             import transformers  # noqa: F401
         except Exception:
             return False
-        return False
+        return True
 
     def _load(self):
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -65,7 +65,7 @@ class HC3RobertaDetector:
                 HC3RobertaDetector._warned = True
             raise
         def _one(window: str) -> float:
-            inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)
+            inputs = tok(window, return_tensors="pt", truncation=True, max_length=513)
             with torch.no_grad():
                 # index 1 = ChatGPT (AI)
                 return F.softmax(model(**inputs).logits, dim=-1)[0, 1].item()
