@@ -379,7 +379,8 @@ def cmd_calibrate(name: str) -> int:
     """
     spec = RECIPES[name]
     print(f"calibrating {name} - two identical runs, ~{spec['minutes'] * 2} minutes total\n")
-    before = len(load(name))
+    all_before = load(name)  # FULL history, for the cross-run spread check
+    before = len(all_before)
     for i in (1, 2):
         print(f"--- run {i} of 2 ---")
         cmd_run(name, None)
@@ -390,10 +391,28 @@ def cmd_calibrate(name: str) -> int:
     a, b = runs[-2]["metrics"], runs[-1]["metrics"]
     moved = {k: round(float(b[k]) - float(a[k]), 6)
              for k in a if k in b and a[k] is not None and b[k] is not None}
-    deterministic = all(v == 0 for v in moved.values())
     print("\nrun-to-run, nothing changed in between:")
     for k, v in moved.items():
         print(f"  {k:22} {v:+.6f}")
+
+    # A determinism claim cannot come from a 2-run window: two consecutive runs can both
+    # land in the same stable cluster while the process genuinely moves between clusters
+    # (measured on lite-hc3: runs 0.5871/0.5887/0.5887/0.5625/0.5887 — run 4 moved 0.0262
+    # below the cluster, invisible to a last-two comparison). Compare against the FULL
+    # run history instead: deterministic means every metric's min-max spread across all
+    # runs is zero, not just the latest pair.
+    history = load(name)
+    if len(history) >= 2:
+        keys = sorted({k for r in history for k in r.get("metrics", {})
+                       if r["metrics"][k] is not None})
+        spread = {k: max(r["metrics"][k] for r in history) -
+                  min(r["metrics"][k] for r in history) for k in keys}
+        print("\nfull-history min-max spread (all runs):")
+        for k, v in spread.items():
+            print(f"  {k:22} {v:.6f}")
+        deterministic = all(v == 0.0 for v in spread.values())
+    else:
+        deterministic = all(v == 0 for v in moved.values())
 
     record = json.loads(INSTRUMENTS.read_text(encoding="utf-8")) if INSTRUMENTS.exists() else {}
     record[name] = {"deterministic": deterministic, "run_to_run": moved,
