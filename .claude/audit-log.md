@@ -2431,3 +2431,5 @@ permanently.
 | 2276 | L2 | untell/detectors/commercial.py | clean | 5784 | 5784 | - | L2 commercial.py FIRST AUDIT (completes detectors dir incl commercial): baseline green (17), 0/8 killed - 8 survivors all key-gating/API-wrapper logic (78 retry 3, 127/186/249 key flags, 180/203/258 or->and fallbacks, 262 timeout 20) - need live API calls to distinguish. Documented API-dependent class. detectors dir FULLY audited (8 modules + commercial). |
 | 2277 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (37th): pass-2217 verified. |
 | 2278 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: pass-2158 verified, already MEASURED. |
+| 2279 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (37th): fully pinned. |
+| 2280 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2280. |
