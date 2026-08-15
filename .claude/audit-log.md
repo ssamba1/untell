@@ -1309,3 +1309,10 @@ permanently.
 | 1154 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (18th): 16 tests green. |
 | 1155 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (19th): 2 documented survivors. |
 | 1156 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1157 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (17th): pass-1102 verified. |
+| 1158 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: already MEASURED (pass 976 full run, inert +0.000). Knob closed. |
+| 1159 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (16th): pass-1107 verified. |
+| 1160 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1160. |
+| 1161 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (17th): pass-1104 verified. |
+| 1162 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (15th): pass-1106 verified. |
+| 1163 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (13th): pass-1111 verified. |
