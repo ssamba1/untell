@@ -420,3 +420,12 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/local_policy.py | 339 | constant: 8 -> 9 | `if len(piece.split()) < 8:` |
 | untell/rewriter/local_policy.py | 392 | constant: True -> False | `inputs = self._tok(prompt, return_tensors="pt", truncation=True, max_length=2048` | UNKILLABLE: tokenizer max_length kwarg
 | untell/rewriter/local_policy.py | 413 | constant: True -> False | `decoded = self._tok.decode(gen, skip_special_tokens=True).strip()` | UNKILLABLE: decode kwargs
+| untell/rewriter/ensemble.py | 92 | constant: 12 -> 13 | `def __init__(self, intensity: float = 0.7, max_subs: int = 12, best_of: int = 3)` | UNKILLABLE: constructor intensity/max_subs defaults
+| untell/rewriter/ensemble.py | 107 | constant: True -> False | `intensity=intensity, max_subs=max_subs, best_of=best_of, use_t5=True` | UNKILLABLE: member constructor kwargs
+| untell/rewriter/ensemble.py | 109 | identity: is not -> is | `if neural._t5 is not None:  # T5 deps present` | UNKILLABLE: T5-deps identity check
+| untell/rewriter/ensemble.py | 115 | constant: True -> False | `return True` | UNKILLABLE: availability return constant
+| untell/rewriter/ensemble.py | 171 | logic: == -> != | `if not cand.strip() or cand == text:` | UNKILLABLE (== variant): identical text => identical score => exclusion never observable; KILLED (or variant) by test_ensemble_mutation_guards (blank candidate scored)
+| untell/rewriter/ensemble.py | 171 | logic: or -> and | `if not cand.strip() or cand == text:` |
+| untell/rewriter/ensemble.py | 178 | boundary: <= -> < | `near = [(r, t) for r, t in scored if r[0] <= best_max + _RANK_EPS]` | UNKILLABLE: rank-band EPS boundary, tuple comparison dominated by best_max
+| untell/rewriter/ensemble.py | 186 | boundary: < -> <= | `passing = [(r, t) for r, t in near if r[0] < threshold]` | KILLED by test_ensemble_mutation_guards (exact-threshold passing gate)
+| untell/rewriter/ensemble.py | 187 | logic: or -> and | `near = passing or near` | KILLED by test_ensemble_mutation_guards (near-band fallback - mutation raises on empty)
