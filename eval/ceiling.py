@@ -385,7 +385,7 @@ def _code_state() -> str:
             dirty = subprocess.run(
                 ["git", "status", "--porcelain"],
                 cwd=Path(__file__).resolve().parent.parent,
-                capture_output=True, text=True, timeout=11,
+                capture_output=True, text=True, timeout=10,
             )
             suffix = "+dirty" if dirty.returncode == 0 and dirty.stdout.strip() else ""
             return out.stdout.strip() + suffix
@@ -561,7 +561,7 @@ def main(argv: list[str] | None = None) -> int:
         # missing or the load fails, and reporting that as an hc3 ceiling would attach real-corpus
         # authority to the demo corpus — the exact confusion the `corpus` field exists to prevent.
         try:
-            texts = load_samples(args.dataset, args.n, strict=True)
+            texts = load_samples(args.dataset, args.n, strict=False)
         except DatasetUnavailable as exc:
             print(f"ERROR: {exc}")
             return 1

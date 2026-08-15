@@ -2380,3 +2380,5 @@ permanently.
 | 2225 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
 | 2226 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (34th): pass-2181 verified. |
 | 2227 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (37th): killing tests green. |
+| 2228 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2229 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
