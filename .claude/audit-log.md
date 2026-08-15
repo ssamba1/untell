@@ -2450,3 +2450,7 @@ permanently.
 | 2298 | L9 | quality-bar-0.82 | clean | 5785 | 5785 | - | L9 quality-bar-0.82 re-audit: pass-2178 verified, already MEASURED. |
 | 2299 | L2 | untell/scripts/hedges.py | clean | 5785 | 5785 | - | L2 hedges.py re-audit (40th): 2 documented survivors. |
 | 2300 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2300 — audit-log milestone. |
+| 2301 | L1 | T16 | clean | 5785 | 5785 | - | T16 re-audit (35th): pass-2237 verified. |
+| 2302 | L1 | T17 | clean | 5785 | 5785 | - | T17 re-audit (36th): pass-2241 verified. |
+| 2303 | L2 | untell/scripts/voice.py | clean | 5785 | 5785 | - | L2 voice.py re-audit (37th): pass-2247 verified. |
+| 2304 | L1 | T18 | clean | 5785 | 5785 | - | T18 re-audit (33rd): pass-2242 verified. |
