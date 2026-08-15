@@ -465,3 +465,15 @@ No divergent path exists with the current data. Verified by scanning both
 tables for words with >=2 _SYN entries: zero found. The row stays UNKILLABLE
 for a data-shaped reason, not an assumed one. If _SYN ever gains a multi-syn
 gerund word, re-open.
+
+## 2026-08-15 subagent-swarm L6 findings (RED-band, human edit required)
+
+1. README.md:824-825 — "mage is always null, auto-excluded". STALE: mage.py:44-76 normalizes id2label and loads directly; live-verified MAGE runs (score 0.9999+ on clean text). free-ceiling-measured.md:191-194 confirms "MAGE runs".
+
+2. README.md:787 — bind default "127.0.0.1:8000". STALE: api_server.py:1053 default host is 0.0.0.0 (UNTELL_HOST env fallback), port 8000. docs/api-server.md:21 correctly says 0.0.0.0. Security-relevant (all interfaces vs localhost).
+
+3. docs/why-best-open-repo.md:148 — "Multiple real detectors in the loop (14)". STALE: 15 registered (all_detectors() returns 15; the doc's own line 77 says 8 local + 7 commercial = 15).
+
+4. docs/free-ceiling-measured.md:440 — "_CAL_MID = -0.03, _CAL_SCALE = 0.12". STALE: actual untell/detectors/fast_detectgpt.py:53-54 = _CAL_MID 0.20, _CAL_SCALE 0.08; the doc's own Result 8 table (:599-600) lists the correct values and the file self-corrects at :7649.
+
+5. README.md:538 — "flags 65% of HUMAN text" (lite at 0.30). STALE: project's own re-measurement found 60% (free-ceiling-measured.md Result 24, "60
