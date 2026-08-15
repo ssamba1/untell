@@ -2863,3 +2863,5 @@ permanently.
 | 2702 | L1 | T18 | clean | 7506 | 7506 | - | T18 re-audit (39th): pass-2624 verified. |
 | 2703 | L2 | untell/scripts/sentences.py | clean | 7506 | 7506 | - | L2 sentences.py re-audit (46th): 16 tests green. |
 | 2704 | L1 | T19 | clean | 7506 | 7506 | - | T19 re-audit (41st): pass-2630 verified 36 rows consistent. |
+| 2705 | L3 | L3 | clean | 7506 | 7506 | - | L3: no new slow tests. |
+| 605 | L9 | audit.py merge markers | defect-fixed | 5803 | 5804 | 43625ab | DEFECT FIXED: fleet stash-pop merge (aee3d2e) left <<<<<<</span>/=======/>>>>>>> markers inside audit.py's _git_tracked_py_files, making the module unparseable (SyntaxError 579) — every AST check silently skipped the file. Same merge also reverted quality.py's cosine condition (finding #11). Resolved to the documented side startswith('tests/'); fleet commit 43625ab converged on the same fix. Audit 0 failures restored. |
