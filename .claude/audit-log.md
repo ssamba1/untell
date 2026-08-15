@@ -2819,3 +2819,4 @@ permanently.
 | 2659 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (45th): 7/8 killed. |
 | 2660 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2660. |
 | 2661 | L1 | T07 | clean | 5787 | 5787 | - | T07 re-audit (43rd): spot-check alive. |
+| 2662 | L1 | T08 | clean | 5787 | 5787 | - | T08 re-audit (44th): _MERGE_WEIGHTS unchanged. |
