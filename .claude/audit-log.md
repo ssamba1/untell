@@ -2857,3 +2857,4 @@ permanently.
 | 2696 | L6 | L6 | clean | 7506 | 7506 | - | L6 drift: no new drift. |
 | 2697 | L8 | full-hc3-structural | clean | 7530 | 7530 | - | L8 full-hc3-structural COMPLETED (FINAL CELL - full-hc3 matrix now 100% complete): pre 1.0 -> post 1.0 flagged, mean_max 1.0->1.0 (stdev 0.0), rewrote 18/18, mean_sim 0.9846 min 0.9391 (most aggressive). FULL-HC3 MATRIX: composite/max/neural/surgical/structural ALL post 1.0 flagged at full tier - five rewriters, one saturation wall. HC3 full-tier un-evadable by ANY rewriter. Confirms corpus-tier-matrix synthesis (pass 2691): corpus dominates tier. |
 | 2698 | L9 | contradiction-bar-0.35 | clean | 7506 | 7506 | - | L9 contradiction-bar-0.35 re-audit: pass-2538 verified, already MEASURED. |
+| 2699 | L2 | untell/scripts/numerals.py | clean | 7506 | 7506 | - | L2 numerals.py re-audit (46th): 18 regression tests green. |
