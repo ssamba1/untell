@@ -2742,3 +2742,6 @@ permanently.
 | 2585 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2586 | L1 | T09 | clean | 5787 | 5787 | - | T09 re-audit (42nd): pass-2522 verified. |
 | 2587 | L2 | untell/scripts/quality.py | clean | 5787 | 5787 | - | L2 quality.py re-audit (39th): pass-2535 verified. |
+| 2588 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2589 | L4 | L4 | clean | 5787 | 5787 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2589 | L2 | untell/api_server.py | coverage-closed | 5874 | 5875 | 159f814bb2bc07d537cd250fae3a7eace2f59ec9 | L2 api_server.py: KILLED the line-428 rate-bucket cap survivor (<= -> <). Exactly 4096 buckets (one stale) -> original no-op (stale bucket survives, len stays 4096); mutant runs eviction, drops ALL stale buckets (len 0). The cap boundary is exactly observable. Red on mutation, green on original. |
