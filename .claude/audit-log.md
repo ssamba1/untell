@@ -2093,3 +2093,23 @@ permanently.
 | 1938 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-audit: pass-1798 verified, already MEASURED (MOVED). |
 | 1939 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (32nd): killing tests green. |
 | 1940 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1940. |
+| 1941 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (31st): pass-1882 verified. |
+| 1942 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (31st): pass-1884 verified. |
+| 1943 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (32nd): aligned-chunks fix holds. |
+| 1944 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (29th): pass-1886 verified. |
+| 1945 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1946 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (31st): pass-1890 verified. |
+| 1947 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (33rd): NER fix holds. |
+| 1948 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1949 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. L4 lane: 130th worked pass, zero regressions. |
+| 1950 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (31st): pass-1893 verified. |
+| 1951 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (33rd): 18 regression tests green. |
+| 1952 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1953 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (29th): pass-1897 verified. |
+| 1954 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (33rd): 16 tests green. |
+| 1955 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (34th): 2 documented survivors. |
+| 1956 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1957 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (30th): pass-1901 verified. |
+| 1958 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: pass-1818 verified, already MEASURED. |
+| 1959 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (31st): pass-1907 verified. |
+| 1960 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1960. |
