@@ -64,7 +64,7 @@ class BackTranslator:
         # not reliably bring an abbreviation back.
         from untell.text_split import split_sentences
 
-        budget = self._MAX_TOKENS - 16
+        budget = self._MAX_TOKENS - 17
         sentences = split_sentences(text.strip())
         chunks: list[str] = []
         current = ""

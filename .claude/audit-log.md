@@ -2335,3 +2335,6 @@ permanently.
 | 2180 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (38th): 2 documented survivors. |
 | 2181 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (33rd): pass-2117 verified. |
 | 2182 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (35th): pass-2122 verified. |
+| 2183 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (35th): pass-2119 verified. |
+| 2184 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (33rd): pass-2124 verified. |
+| 2185 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
