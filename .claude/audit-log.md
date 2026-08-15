@@ -1142,3 +1142,6 @@ permanently.
 | 987 | L3 | L3 | clean | 5784 | 5784 | - | L3: quality+entailment regression area 44 passed 42.96s (test_quality, cosine-condition regression, CLI exact-bar, contradiction-at-bar, swapped-conditional) - both defect fixes hold under full battery. |
 | 988 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit: MCP registry 8/8 tools incl compare (fleet pass-606 dead-tool fix holds), _TOOL_NAMES == help == README list. |
 | 989 | L4 | eval/tells_auroc.py | clean | 5784 | 5784 | - | L4 cross-verification: fleet's UNKILLABLE claim for tells_auroc.py:133 INDEPENDENTLY CONFIRMED - 0 exact-0.5 wilson CI widths in 1..100 x 1..300 sweep (same equivalence class as composite.py 1e-9 proof). Fleet's math sound. |
+| 990 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (14th): pass-942 verified. |
+| 991 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (13th): pass-931 verified. |
+| 992 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |

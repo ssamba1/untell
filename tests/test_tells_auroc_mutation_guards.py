@@ -10,10 +10,6 @@ Other survivors are rounding/CLI constants — annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
-from eval.tells_auroc import precision_table
-
 
 class TestDirectionNoteGate:
     """Survivor tells_auroc.py:271 — `not informative and direction and p<=0.05` -> `or`.
@@ -34,6 +30,6 @@ class TestDirectionNoteGate:
         monkeypatch.setattr("eval.datasets.load_pairs", _pairs)
         from eval.tells_auroc import main
 
-        rc = main(["--precision", "--dataset", "raid", "--pairs", "10"])
+        main(["--precision", "--dataset", "raid", "--pairs", "10"])
         out = capsys.readouterr().out
         assert "direction holds" not in out, f"informative row must not get direction note:\n{out}"

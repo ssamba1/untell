@@ -10,8 +10,6 @@ are constants — annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
 from eval import eval_policy as E
 
 

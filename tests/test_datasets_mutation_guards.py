@@ -11,8 +11,6 @@ or network-path-dependent — annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
 from eval import datasets as D
 
 

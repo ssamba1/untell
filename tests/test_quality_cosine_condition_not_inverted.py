@@ -21,8 +21,6 @@ def test_present_model_uses_cosine_not_token_overlap():
 def test_absent_model_returns_token_overlap_without_crashing():
     with patch.object(quality, "_cosine_similarity", return_value=None):
         # No model: fall back to token overlap; must not raise on None.
-        from untell.scripts.quality import token_overlap
-
         with patch.object(quality, "token_overlap", return_value=0.5) as mock_to:
             assert quality.similarity("cat dog", "cat tree") == 0.5
             mock_to.assert_called_once()
