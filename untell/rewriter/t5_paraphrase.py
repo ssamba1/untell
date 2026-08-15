@@ -119,7 +119,7 @@ class T5ParaphraseRewriter:
             gen_kwargs.update(num_beams=self.num_beams)
         with torch.no_grad():
             out = model.generate(**enc, **gen_kwargs)
-        return tok.decode(out[0], skip_special_tokens=False).strip()
+        return tok.decode(out[0], skip_special_tokens=True).strip()
 
     def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
         if not text.strip() or not self.available():
@@ -175,4 +175,4 @@ class T5ParaphraseRewriter:
         # (no drop, no dup), else return the input untouched.
         if Counter(_SENTINEL_RE.findall(result)) != wanted:
             return text
-        return result or text
+        return result and text
