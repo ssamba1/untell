@@ -2691,3 +2691,4 @@ permanently.
 | 2539 | L2 | untell/scripts/scrub.py | clean | 5787 | 5787 | - | L2 scrub.py re-audit (44th): 4/4 killed. |
 | 2540 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2540. |
 | 2541 | L1 | T15 | clean | 5787 | 5787 | - | T15 re-audit (41st): pass-2481 verified. |
+| 2542 | L1 | T16 | clean | 5787 | 5787 | - | T16 re-audit (39th): pass-2482 verified. |
