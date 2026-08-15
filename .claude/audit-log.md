@@ -2483,3 +2483,6 @@ permanently.
 | 2331 | L2 | untell/_retry.py | clean | 5785 | 5785 | - | L2 _retry.py re-audit (40th): kill tests green. |
 | 2332 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2333 | L1 | T08 | clean | 5785 | 5785 | - | T08 re-audit (39th): _MERGE_WEIGHTS unchanged. |
+| 2334 | L2 | untell/_env.py | clean | 5785 | 5785 | - | L2 _env.py re-audit (38th): fully pinned. |
+| 2335 | L2 | untell/layout.py | clean | 5785 | 5785 | - | L2 layout.py re-audit (39th): killing tests green. |
+| 2336 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
