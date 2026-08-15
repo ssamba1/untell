@@ -81,3 +81,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/local_judge.py | 166 | constant: 16 -> 17 | `max_new_tokens=16,` |
 | untell/detectors/local_judge.py | 167 | constant: False -> True | `do_sample=False,` |
 | untell/detectors/local_judge.py | 174 | logic: or -> and | `m = _NUM.search(reply or "")` |
+| untell/detectors/radar.py | 35 | constant: False -> True | `_warned = False` |
+| untell/detectors/radar.py | 38 | logic: or -> and | `if not (os.environ.get("UNTELL_ENABLE_RADAR") or os.environ.get("HUMANIZE_ENABLE` |
+| untell/detectors/radar.py | 39 | constant: False -> True | `return False  # opt-in only (non-commercial license)` |
+| untell/detectors/radar.py | 44 | constant: False -> True | `return False` |
+| untell/detectors/radar.py | 45 | constant: True -> False | `return True` |
+| untell/detectors/radar.py | 59 | logic: or -> and | `if not self.available() or not text.strip():` |
+| untell/detectors/radar.py | 66 | constant: True -> False | `RadarDetector._warned = True` |
+| untell/detectors/radar.py | 73 | constant: 512 -> 513 | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` |

@@ -70,7 +70,7 @@ class RadarDetector:
         tok, model = self._load()
 
         def _one(window: str) -> float:
-            inputs = tok(window, return_tensors="pt", truncation=True, max_length=513)
+            inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)
             with torch.no_grad():
                 return F.softmax(model(**inputs).logits, dim=-1)[0, 0].item()  # index 0 = AI
 
