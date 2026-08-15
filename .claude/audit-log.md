@@ -2463,3 +2463,5 @@ permanently.
 | 2311 | L2 | untell/scripts/scrub.py | clean | 5785 | 5785 | - | L2 scrub.py re-audit (40th): 4/4 killed. |
 | 2312 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2313 | L1 | T01 | clean | 5785 | 5785 | - | T01 re-audit (37th): pass-2250 verified. |
+| 2314 | L2 | untell/scripts/latex.py | clean | 5785 | 5785 | - | L2 latex.py re-audit (39th): 33/33 live. |
+| 2315 | L2 | untell/scripts/io_utils.py | clean | 5785 | 5785 | - | L2 io_utils.py re-audit (39th): 7/8 killed. |
