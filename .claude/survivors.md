@@ -481,3 +481,9 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/t5_paraphrase.py | 117 | constant: True -> False | `gen_kwargs.update(do_sample=True, top_p=self.top_p, temperature=self.temperature` |
 | untell/rewriter/t5_paraphrase.py | 122 | constant: True -> False | `return tok.decode(out[0], skip_special_tokens=True).strip()` |
 | untell/rewriter/t5_paraphrase.py | 178 | logic: or -> and | `return result or text` |
+| untell/detectors/perplexity_burstiness.py | 126 | boundary: > -> >= | `lengths = [n for n in lengths if n > 0]` |
+| untell/detectors/perplexity_burstiness.py | 273 | constant: 2 -> 3 | `if len(nonempty) < 2:` |
+| untell/detectors/perplexity_burstiness.py | 383 | constant: False -> True | `enc = tok(text, return_tensors="pt", return_offsets_mapping=True, verbose=False)` |
+| untell/detectors/perplexity_burstiness.py | 386 | constant: 2 -> 3 | `if total < 2:` |
+| untell/detectors/perplexity_burstiness.py | 409 | boundary: > -> >= | `nll = torch.cat(chunks) if len(chunks) > 1 else chunks[0]` |
+| untell/detectors/perplexity_burstiness.py | 442 | boundary: < -> <= | `if idx < 0:` |

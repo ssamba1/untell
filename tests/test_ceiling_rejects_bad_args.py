@@ -33,19 +33,26 @@ BAD_ARGS = [
 ]
 
 
+COMMANDS = [
+    (["-m", "eval.ceiling"], ["--tier", "lite"]),
+    (["-m", "eval.compare_humanizers"], ["--tier", "lite"]),
+]
+
+
 def test_ceiling_rejects_out_of_range_args():
-    for argv in BAD_ARGS:
-        proc = subprocess.run(
-            [str(PY), "-m", "eval.ceiling", *argv, "--tier", "lite"],
-            capture_output=True,
-            text=True,
-            errors="replace",
-            timeout=60,
-            env=env,
-            stdin=subprocess.DEVNULL,
-        )
-        assert "Traceback" not in (proc.stderr or ""), f"{argv} leaked traceback"
-        assert proc.returncode == 2, (
-            f"{argv} expected exit 2 (argparse range rejection), got {proc.returncode} — "
-            f"it silently ran a measurement"
-        )
+    for cmd, extra in COMMANDS:
+        for argv in BAD_ARGS:
+            proc = subprocess.run(
+                [str(PY), *cmd, *argv, *extra],
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=60,
+                env=env,
+                stdin=subprocess.DEVNULL,
+            )
+            assert "Traceback" not in (proc.stderr or ""), f"{cmd} {argv} leaked traceback"
+            assert proc.returncode == 2, (
+                f"{cmd} {argv} expected exit 2 (argparse range rejection), got {proc.returncode} — "
+                f"it silently ran a measurement"
+            )

@@ -269,6 +269,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--threshold", "-t", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
+    # Same validation as untell-ceiling (eval/ceiling.py _validate): --n 0 / --threshold 2.5
+    # silently run a comparison with degenerate settings — measured exit 0 with a threshold
+    # where nothing can ever flag. Reject here so the head-to-head artifact cannot be quoted
+    # from a nonsense configuration.
+    if args.n <= 0:
+        parser.error(f"--n must be >= 1, got {args.n}")
+    if not 0.0 <= args.threshold <= 1.0:
+        parser.error(f"--threshold must be in [0, 1], got {args.threshold}")
 
     if args.file:
         texts = _read_corpus(args.file)
