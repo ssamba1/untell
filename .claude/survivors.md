@@ -73,3 +73,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | Gap classification boundary: test corpus never lands exactly on 0.25 |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, ...)` | CLI help: required=True vs False only affects argparse error, tests call function directly |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ..., indent=2))` | JSON indent: tests don't check formatting |
+| untell/detectors/local_judge.py | 51 | logic: or -> and | `_DEFAULT_MODEL = os.environ.get("UNTELL_JUDGE_MODEL") or LIGHT_MODEL` |
+| untell/detectors/local_judge.py | 128 | constant: True -> False | `return True` |
+| untell/detectors/local_judge.py | 145 | logic: != -> == | `dtype=torch.bfloat16 if device != "cpu" else torch.float32,` |
+| untell/detectors/local_judge.py | 152 | logic: or -> and | `if not self.available() or not text.strip():` |
+| untell/detectors/local_judge.py | 158 | constant: True -> False | `input_text = tok.apply_chat_template(messages, tokenize=False, add_generation_pr` |
+| untell/detectors/local_judge.py | 166 | constant: 16 -> 17 | `max_new_tokens=16,` |
+| untell/detectors/local_judge.py | 167 | constant: False -> True | `do_sample=False,` |
+| untell/detectors/local_judge.py | 174 | logic: or -> and | `m = _NUM.search(reply or "")` |
