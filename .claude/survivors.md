@@ -113,3 +113,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/prove.py | 141 | constant: 2 -> 3 | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
 | eval/prove.py | 141 | constant: True -> False | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
 | eval/prove.py | 155 | constant: 2 -> 3 | `return 2` |
+| eval/detector_audit.py | 218 | constant: 1000 -> 1001 | `return 1000 * t.count("\n") / max(len(_WORD_RE.findall(t)), 1)` |
+| eval/detector_audit.py | 284 | logic: and -> or | `elif au is not None and au < WEAK_AUROC:` |
+| eval/detector_audit.py | 303 | constant: 4 -> 5 | `"range": round(rng, 4),` |
+| eval/detector_audit.py | 304 | constant: 4 -> 5 | `"auroc": round(au, 4) if au is not None else None,` |
+| eval/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
+| eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
+| eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` |
+| eval/detector_audit.py | 495 | logic: and -> or | `and r["auroc"] > SENTENCE_BROKEN_AUROC` |
