@@ -2681,3 +2681,4 @@ permanently.
 | 2529 | L4 | L4 | clean | 5787 | 5787 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2530 | L1 | T12 | clean | 5787 | 5787 | - | T12 re-audit (41st): pass-2470 verified. |
 | 2531 | L2 | untell/scripts/hedges.py | clean | 5787 | 5787 | - | L2 hedges.py re-audit (44th): 2 documented survivors. |
+| 2532 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
