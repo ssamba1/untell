@@ -2613,3 +2613,4 @@ permanently.
 | 2461 | L2 | untell/rewriter/structural.py | clean | 5786 | 5786 | - | L2 structural.py FIRST MUTATION AUDIT (3254-line module, targeted guard set): baseline green (7), 2/8 killed (fleet guards), 6 survivors: 480 sentinel-tail, 1691 gerund-object, 2516 first-word order, 2667 bracket-island, 2843/2887 style-profile flags - edge linguistic inputs. Documented class. UNTELL PACKAGE L2 COVERAGE NOW COMPLETE (every .py module audited). |
 | 2462 | L1 | T09 | clean | 5786 | 5786 | - | T09 re-audit (40th): pass-2393 verified. |
 | 2463 | L2 | untell/scripts/preserve.py | clean | 5786 | 5786 | - | L2 preserve.py re-audit (42nd): NER fix holds. |
+| 2464 | L1 | T10 | clean | 5786 | 5786 | - | T10 re-audit (39th): pass-2397 verified. |
