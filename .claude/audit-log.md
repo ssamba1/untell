@@ -1167,3 +1167,6 @@ permanently.
 | 1012 | L1 | T18 | clean | 5784 | 5784 | - | CLI arg validation: invalid --style rejected at parse (exit 2, names 14 valid choices) - the CLI-side of the unknown-style contract. Surface-consistent with MCP validation. |
 | 1013 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (14th): pass-961 verified. |
 | 1014 | L1 | T18 | clean | 5784 | 5784 | - | CLI threshold range: 1.5 rejected at parse (exit 2, 'between 0.0 and 1.0') - matches MCP _bad_args contract. Surface-consistent. |
+| 1015 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (15th): pass-943 verified. |
+| 1016 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1017 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (13th): pass-901 verified. |
