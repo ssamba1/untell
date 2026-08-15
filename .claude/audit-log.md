@@ -1223,3 +1223,6 @@ permanently.
 | 1068 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 1069 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
 | 1070 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (15th): pass-1024 verified. |
+| 1071 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (16th): pass-1015 verified. |
+| 1072 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1073 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (16th): pass-1026 verified. |

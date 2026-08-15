@@ -9,8 +9,6 @@ Killed here via _ai_max and compare() with monkeypatched deps. Other survivors
 
 from __future__ import annotations
 
-import pytest
-
 from eval import compare_humanizers as C
 
 

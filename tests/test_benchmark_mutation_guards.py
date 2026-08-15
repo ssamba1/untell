@@ -7,8 +7,6 @@ Killed here. 42 (--n default) is an unkillable CLI constant.
 
 from __future__ import annotations
 
-import pytest
-
 from eval import benchmark as B
 
 
