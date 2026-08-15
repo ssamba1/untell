@@ -2366,3 +2366,4 @@ permanently.
 | 2211 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (37th): 12/12 ranges. |
 | 2212 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2213 | L6 | L6 | clean | 5784 | 5784 | - | L6: version consistency pyproject 0.3.0 == untell.__version__ 0.3.0; detector registry 15 (1 lite/5 full/2 heavy/7 commercial) matches audit check '8 local 7 commercial'; package API = submodules only (documented). |
+| 2214 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (37th): 5/5 killed, fully pinned. |
