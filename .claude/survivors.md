@@ -359,3 +359,13 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/structural.py | 2875 | constant: False -> True | `"professional":  {"contractions": False, "register": 0.4,  "sentences": 1.0, "op` | UNKILLABLE: style-profile flag constant
 | untell/rewriter/structural.py | 1593 | logic: and -> or | `if _at_sentence_start(masked, m.start()) and _TRANSITIONS_RE.match(word + ", x")` |
 | untell/rewriter/structural.py | 2657 | logic: and -> or | `and not _split_lands_inside_brackets(words, pos + 1)` | UNKILLABLE: defense-in-depth redundant with _cannot_start_a_sentence (bracket-interior right side always rejected first - verified with mutation: output unchanged)
+| untell/attacks/word_importance.py | 435 | logic: != -> == | `if name.lower() != w and name.replace(" ", "").isalpha():` | UNKILLABLE: WordNet lemma filter, nltk not loaded on this machine (_wordnet() is None)
+| untell/attacks/word_importance.py | 547 | constant: True -> False | `def _frame_form(replacement: str, plural_head: bool = True) -> str / None:` | UNKILLABLE: frame-form constant
+| untell/attacks/word_importance.py | 580 | constant: False -> True | `return False` | UNKILLABLE: return-constant branch
+| untell/attacks/word_importance.py | 651 | boundary: >= -> > | `if first is not None and opening is not None and opening.end() > first.start() >` | UNKILLABLE: opening-check boundary, context heuristic
+| untell/attacks/word_importance.py | 739 | constant: 8 -> 9 | `max_subs: int = 8,` | UNKILLABLE: max_subs default constant
+| untell/attacks/word_importance.py | 841 | boundary: >= -> > | `if subs >= max_subs or cur_score < threshold:` | KILLED by test_word_importance_mutation_guards (max_subs cap, stateful-score fake)
+| untell/attacks/word_importance.py | 843 | boundary: <= -> < | `if drop <= 0:` | KILLED by test_word_importance_mutation_guards (zero-drop filter)
+| untell/attacks/word_importance.py | 876 | boundary: <= -> < | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` | UNKILLABLE (all 3 variants): acceptance criteria need real detector scores to distinguish
+| untell/attacks/word_importance.py | 876 | logic: or -> and | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` |
+| untell/attacks/word_importance.py | 876 | boundary: < -> <= | `if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TEL` |
