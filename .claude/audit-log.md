@@ -2823,3 +2823,4 @@ permanently.
 | 2663 | L2 | untell/scripts/verify.py | clean | 5787 | 5787 | - | L2 verify.py re-audit (45th): pass-2603 verified. |
 | 2664 | L1 | T09 | clean | 5787 | 5787 | - | T09 re-audit (43rd): pass-2586 verified. |
 | 2665 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
+| 2666 | L1 | T10 | clean | 5787 | 5787 | - | T10 re-audit (42nd): pass-2593 verified. |
