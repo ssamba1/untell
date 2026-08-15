@@ -1204,3 +1204,5 @@ permanently.
 | 1049 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 1050 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (15th): pass-1006 verified. |
 | 1051 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 FULL MEASUREMENT: post_flagged_rate 1.0->0.9 (-0.10 MOVED beyond band); mean_max unchanged. SECOND moving knob (with ppl-weight -0.048). Harness: 'Never adopt from one run — this one moves every claim.' AMBER queued. Knob restored. |
+| 1052 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1053 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (15th): pass-1013 verified. |

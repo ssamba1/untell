@@ -9,8 +9,6 @@ annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
 from eval import prove as P
 
 
