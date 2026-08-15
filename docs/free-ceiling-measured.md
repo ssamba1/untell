@@ -11178,3 +11178,51 @@ the explanation.** Three ranking functions, two controls, three seeds, two rewri
 that will not move. Whatever untell is doing to the detectors it optimises against, it is not doing
 the thing those detectors are supposed to stand for — and that is now a measurement rather than the
 caveat the README carries.
+
+## Result 229
+
+**The strongest in-sample configuration measured, and it buys nothing out of sample.**
+
+Result 228 tested the ranking *function* and found it was not the limit. It left the obvious thing
+untested: `ensemble`, the shipped per-input selector, which runs composite + mt_pivot + neural and
+keeps the detector-lowest. Result 212's oracle showed per-document selection reaching 0.2377 with 1
+of 10 flagged, so this is the test of whether that is reachable using the signal the loop actually
+has.
+
+RAID n=10, three seeds, held-out RADAR, against the composite numbers from the same corpus:
+
+```
+             in-sample           held-out            held-out spread
+ensemble     0.3028 (1.7/10)     0.4900 (4.3/10)     0.1187
+composite    0.4211 (3.0/10)     0.4802 (4.0/10)     0.0644
+
+in-sample gain  +0.1182      held-out gain  -0.0098
+```
+
+**`ensemble` posts the best in-sample number in this document** — 0.2597 and 1 of 10 flagged on its
+best seed, against composite's 0.4063 and 2 of 10 — and is *worse* held out, with double the
+variance and mean similarity 0.87 against 0.97. A 0.118 in-sample improvement returns -0.010 out of
+sample.
+
+**It is also the direct test of Result 212's oracle, and the oracle does not survive contact with a
+real selector.** Picking per document using the holdout gave 0.2377 and 1 of 10; picking per document
+using the tier gives 0.4900 and 4.3 of 10. Same selection structure, different signal. The signal is
+the whole difference, which is what Result 163 claimed and what nothing until now had tested.
+
+**Two seeds said something the third refuted, again.** Seeds 0 and 1 both put `ensemble` at 5 of 10
+held-out against composite's 4, and that was reported here as a clean pattern. Seed 2 came back at 3
+of 10 — better than composite. Fifth single-seed-or-two artefact in this run of work, after the
+conviction split, doc 3, the unseeded torch stream and `dropout`'s seed-0 lead.
+
+**Seed 2 crashed the first time and the crash was real.** `similarity()` recursed until the stack
+died, leaving a 185KB traceback of one line. It splits a long pair and recurses on each piece gated
+on `len(chunks) > 1` — a count of pieces, not a measure of them — so a piece the size of its parent
+recurses forever. The triggering input was never isolated: 4000 synthetic shapes and 3000
+small-vocabulary pairs reproduced no cycle. Fixed by guarding the invariant instead of the input,
+descending only into strictly smaller pieces, which terminates whatever the splitter does. That
+function is on every code path including the zero-dependency one.
+
+Worth keeping: **the in-sample number is now known to be movable at will and known not to carry.**
+Three rewriters, three ranking functions, two controls, and the only configuration that dramatically
+improved the quantity this project has optimised for four sessions moved the held-out quantity by
+-0.01.
