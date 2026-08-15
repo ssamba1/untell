@@ -2271,3 +2271,5 @@ permanently.
 | 2116 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 2117 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (32nd): pass-2061 verified. |
 | 2118 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: pass-1978 verified, already MEASURED. |
+| 2119 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (34th): pass-2067 verified. |
+| 2120 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2120. |
