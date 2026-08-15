@@ -197,9 +197,9 @@ def compare(
                 "ai_max_mean": round(sum(measured) / len(measured), 4) if measured else None,
                 "tells_per_100w_mean": round(sum(tell_rates) / n, 2),
                 "tells_total": sum(tell_counts),
-                "sim_mean": round(sum(sims) / n, 4),
+                "sim_mean": round(sum(sims) / n, 3),
                 "flagged_rate": (
-                    round(sum(1 for s in measured if s >= threshold) / len(measured), 3)
+                    round(sum(1 for s in measured if s > threshold) / len(measured), 3)
                     if measured else None
                 ),
                 "unscored": n - len(measured),

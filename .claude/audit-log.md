@@ -2391,3 +2391,5 @@ permanently.
 | 2236 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 2237 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (34th): pass-2184 verified. |
 | 2238 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: pass-2118 verified, already MEASURED. |
+| 2239 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (38th): 16 tests green. |
+| 2240 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2240. |
