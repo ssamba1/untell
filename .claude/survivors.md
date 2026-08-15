@@ -452,3 +452,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/targeted.py | 210 | < -> <= (single-sentence gate) | KILLED by test_targeted_mutation_guards |
 | untell/rewriter/targeted.py | 216 | != -> == (sentinel integrity) | KILLED by test_targeted_mutation_guards |
 | untell/rewriter/targeted.py | 222 | < -> <= | KILLED by existing suite |
+| untell/rewriter/ensemble.py | 178 | boundary: <= -> < | `near = [(r, t) ... if r[0] <= best_max + _RANK_EPS]` | KILLED by test_ensemble_mutation_guards::TestBandInclusiveEdge (exact best_max+EPS edge stays in band; corrected 2026-08-14 after swarm-a diff-proved it killable)
+| untell/rewriter/composite.py | 33 | <= -> < (n<=1 guard) | KILLED by test_composite_mutation_guards (n=1 -> ZeroDivisionError) |
+| untell/rewriter/composite.py | 37 | 2 -> 3 (fan-out span) | KILLED by test_composite_mutation_guards (n=4: [0.4,0.7,0.8,1.0] vs [0.4,0.7,1.0,1.0]) |

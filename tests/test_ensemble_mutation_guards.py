@@ -10,6 +10,8 @@ constants — annotated in survivors.md.
 
 from __future__ import annotations
 
+import pytest
+
 from untell.rewriter.ensemble import EnsembleRewriter
 
 
@@ -98,3 +100,28 @@ class TestNearBandFallback:
         )
         out = rw.rewrite("original text", {"tier": "lite"}, threshold=0.30)
         assert isinstance(out, str)  # near-band fallback returns something, no crash
+
+
+class TestBandInclusiveEdge:
+    """Survivor ensemble.py:178 — `r[0] <= best_max + _RANK_EPS` mutated to `<`.
+
+    A candidate whose max sits EXACTLY at best_max + EPS stays in the noise band
+    (inclusive upper bound). With `<` it falls out, and the mean tie-break
+    selects a different (worse) candidate."""
+
+    def test_exact_band_edge_stays_in_band(self, monkeypatch) -> None:
+        rw = EnsembleRewriter()
+        # base: max 0.32, mean 0.05 — sits exactly at best_max + 0.02
+        # candidate: max 0.30 (better), mean 0.90 (much worse)
+        # With <= (original): base is in the band, wins on mean.
+        # With < (mutation): base falls out, candidate wins despite its bad mean.
+        rw._members = [("fake", _FakeMember("candidate text"))]
+
+        def _score(text, tier):
+            if text == "candidate text":
+                return {"max": 0.30, "mean": 0.90, "tier": tier}
+            return {"max": 0.32, "mean": 0.05, "tier": tier}
+
+        monkeypatch.setattr("untell.scripts.score.score_text", _score)
+        out = rw.rewrite("original text", {"tier": "lite"}, threshold=0.30)
+        assert out == "original text", f"band edge must stay inclusive: {out!r}"
