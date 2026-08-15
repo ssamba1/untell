@@ -119,8 +119,24 @@ def main() -> int:
             sh("git", "add", ".claude/audit-log.md", ".claude/human-queue.md")
             sh("git", "commit", "-m", "chore(loop): collect fleet round rows")
 
-    # 4. Push.
-    sh("git", "push", "origin", "main")
+    # 4. Push with retry: the concurrent main agent pushes every ~30s, so a
+    # non-fast-forward rejection is the common case, not the exception.
+    for attempt in range(5):
+        r = subprocess.run(["git", "push", "origin", "main"], cwd=ROOT,
+                           capture_output=True, text=True)
+        if r.returncode == 0:
+            print("push ok")
+            break
+        print(f"  push rejected (attempt {attempt+1}): {r.stderr.strip()[-200:]}")
+        subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT,
+                       capture_output=True, text=True)
+        rr = subprocess.run(["git", "merge", "origin/main", "--no-edit"], cwd=ROOT,
+                            capture_output=True, text=True)
+        if rr.returncode != 0:
+            print("  merge of origin/main after rejected push FAILED, aborting")
+            subprocess.run(["git", "merge", "--abort"], cwd=ROOT, capture_output=True)
+            break
+
     if conflicted:
         with QUEUE.open("a", encoding="utf-8") as f:
             f.write(f"\n## fleet AMBER - swarm merge conflicts ({len(conflicted)})\n\n"
