@@ -2399,3 +2399,5 @@ permanently.
 | 2244 | L2 | eval/compare_humanizers.py | clean | 5784 | 5784 | - | L2 eval/compare_humanizers.py FIRST AUDIT: baseline green (12), 1/8 killed, 7 survivors all comparison-table constants/boundaries (79 n=10 sample, 198/200 column thresholds, 202 >= boundary, 267 row cap, 276 width, 303) - display constants, no test asserts exact table dims. Documented class. |
 | 2245 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (34th): pass-2193 verified 36 rows consistent. |
 | 2246 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (33rd): pass-2197 verified. |
+| 2247 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (36th): pass-2183 verified. |
+| 2248 | L2 | eval/tells_auroc.py | clean | 5784 | 5784 | - | L2 eval/tells_auroc.py FIRST AUDIT: baseline green (3), 0/8 killed - survivors: 63 (auroc-tie ==), 136 (informative-gate or), 6 sample/significance constants (145 n=100, 198/199 seeds=4, 201 tail=2, 241 n=200, 260) - measurement constants, no test asserts exact sizes. Fleet's 133 UNKILLABLE claim stands (verified earlier). Documented class. |
