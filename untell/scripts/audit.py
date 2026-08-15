@@ -574,19 +574,13 @@ def _tracked_text_files() -> list[str]:
         line
         for line in result.stdout.splitlines()
         if line and Path(line).suffix in suffixes
-<<<<<<< Updated upstream
-                # Tests intentionally contain control characters as test data (e.g. \x01 in
-                # test_no_hidden_character_survives_a_scrub.py), so exclude the whole tests/ tree.
-                # `git ls-files` emits repo-relative paths WITHOUT a leading slash, so "/tests/" never
+        # Tests intentionally contain control characters as test data (e.g. \x01 in
+        # test_no_hidden_character_survives_a_scrub.py), so exclude the whole tests/ tree.
+        # `git ls-files` emits repo-relative paths WITHOUT a leading slash, so "/tests/" never
         # appears in them — the exclusion must match the path prefix. MEASURED: the old
         # `"/tests/" not in line` matched 0 of 330 test files and the check kept reporting the
         # intentional \x01 as a FAIL.
         and not line.startswith("tests/")
-=======
-        # Tests intentionally contain control characters as test data (e.g. \x01 in
-        # test_no_hidden_character_survives_a_scrub.py), so exclude the whole tests/ tree.
-        and "/tests/" not in line
->>>>>>> Stashed changes
     ]
 
 
