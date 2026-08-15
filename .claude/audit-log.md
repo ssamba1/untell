@@ -2433,3 +2433,5 @@ permanently.
 | 2278 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: pass-2158 verified, already MEASURED. |
 | 2279 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (37th): fully pinned. |
 | 2280 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2280. |
+| 2281 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (36th): pass-2221 verified. |
+| 2282 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (37th): pass-2222 verified. |
