@@ -2448,3 +2448,5 @@ permanently.
 | 2296 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
 | 2297 | L1 | T15 | clean | 5785 | 5785 | - | T15 re-audit (37th): pass-2233 verified. |
 | 2298 | L9 | quality-bar-0.82 | clean | 5785 | 5785 | - | L9 quality-bar-0.82 re-audit: pass-2178 verified, already MEASURED. |
+| 2299 | L2 | untell/scripts/hedges.py | clean | 5785 | 5785 | - | L2 hedges.py re-audit (40th): 2 documented survivors. |
+| 2300 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2300 — audit-log milestone. |
