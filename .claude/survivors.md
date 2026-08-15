@@ -658,3 +658,8 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/base.py | 113 | logic: or -> and | `return (resp.choices[0].message.content or "").strip()` |
 | untell/rewriter/base.py | 181 | logic: == -> != | `if prefer == "mt_pivot":` |
 | untell/rewriter/base.py | 241 | logic: and -> or | `if isinstance(v, (int, float)) and not isinstance(v, bool)` |
+| untell/scripts/cli.py | 127 | logic: != -> == | `if os.environ.get("UNTELL_LITE_NO_TORCH") != "1":` |
+| untell/scripts/cli.py | 131 | identity: is not -> is | `if importlib.util.find_spec("torch") is not None:` |
+| untell/scripts/cli.py | 212 | logic: or -> and | `ran = len(pre.get("detectors", {})) or 1` |
+| untell/scripts/cli.py | 260 | logic: and -> or | `status = "✓" if rw and rw.available() else "✗"` |
+| untell/scripts/cli.py | 364 | constant: False -> True | `parser = argparse.ArgumentParser(prog="untell", add_help=False, description="AI-` |
