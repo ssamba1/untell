@@ -242,7 +242,7 @@ class LocalPolicyRewriter:
         return True
 
     def _load(self) -> None:
-        if self._model is not None:
+        if self._model is None:
             return
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer

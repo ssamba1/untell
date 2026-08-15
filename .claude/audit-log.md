@@ -881,3 +881,6 @@ permanently.
 | 752 | L5 | L5 | clean | 5781 | 5781 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
 | 753 | L1 | T10 | clean | 5781 | 5781 | - | T10 re-audit (10th): pass-561 verified. No change. |
 | 754 | L2 | untell/layout.py | clean | 5781 | 5781 | - | L2 layout.py re-audit (10th): killing tests green. 3 documented survivors. |
+| 755 | L2 | untell/text_split.py | clean | 5781 | 5781 | - | L2 text_split.py re-audit (10th): aligned-chunks fix + chunk-return kill hold (54 chunking tests green). |
+| 756 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. README-numbers agent in flight. |
+| 757 | L1 | T11 | clean | 5781 | 5781 | - | T11 re-audit (10th): pass-690 verified. No change. |
