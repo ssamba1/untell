@@ -1316,3 +1316,10 @@ permanently.
 | 1161 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (17th): pass-1104 verified. |
 | 1162 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (15th): pass-1106 verified. |
 | 1163 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (13th): pass-1111 verified. |
+| 1164 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (16th): pass-1110 verified. |
+| 1165 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1166 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (15th): pass-1113 verified. |
+| 1167 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (19th): 4/4 killed. |
+| 1168 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1169 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1170 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (14th): pass-1117 verified. |
