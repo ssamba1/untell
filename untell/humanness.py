@@ -602,7 +602,7 @@ def _dominant_signal(text: str, tier: str) -> str | None:
     if strong:
         return max(strong, key=lambda c: c[0])[1]
 
-    if detector_max is not None and detector_max > 0.5:
+    if detector_max is not None and detector_max >= 0.5:
         return (f"driven by the detector ensemble ({detector_max:.2f} max) rather than by any "
                 f"catalogued tell — nothing mechanical to fix here, which is the honest answer "
                 f"rather than a to-do list")

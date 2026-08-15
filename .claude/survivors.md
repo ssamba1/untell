@@ -433,3 +433,9 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/base.py | 67 | True -> False (available) | UNKILLABLE: anthropic-import branch |
 | untell/rewriter/base.py | 78 | 2048 -> 2049 (max_tokens) | UNKILLABLE: API payload constant, key-gated |
 | untell/rewriter/base.py | 79 | 3 -> 4 (max_attempts) | KILLED by existing tests (retry count pinned) |
+| untell/humanness.py | 75 | constant: True -> False | `_WARNED_TOO_SHORT = True` |
+| untell/humanness.py | 214 | logic: or -> and | `if not text or not text.strip():` |
+| untell/humanness.py | 368 | boundary: < -> <= | `if cv < 0.35:` |
+| untell/humanness.py | 370 | boundary: < -> <= | `elif cv < 0.50:` |
+| untell/humanness.py | 372 | boundary: > -> >= | `elif cv > 1.0:` |
+| untell/humanness.py | 605 | boundary: >= -> > | `if detector_max is not None and detector_max >= 0.5:` |

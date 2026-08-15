@@ -936,3 +936,6 @@ permanently.
 | 800 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 800. |
 | 801 | L1 | T06 | clean | 5781 | 5781 | - | T06 re-audit (11th): tells separation verified. |
 | 802 | L1 | T07 | clean | 5781 | 5781 | - | T07 re-audit (12th): spot-check alive. |
+| 803 | L2 | untell/scripts/preserve.py | clean | 5781 | 5781 | - | L2 preserve.py re-audit (12th): NER fix + 151 preserve tests green. |
+| 804 | L1 | T08 | clean | 5781 | 5781 | - | T08 re-audit (12th): _MERGE_WEIGHTS unchanged. |
+| 805 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
