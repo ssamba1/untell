@@ -1118,3 +1118,6 @@ permanently.
 | 963 | L1 | T18 | clean | 5775 | 5775 | - | T18 re-audit: empty stdin exit 2, missing --file exit 2 naming the file. CLI error paths stable. |
 | 964 | L1 | T13 | clean | 5775 | 5775 | - | T13 re-audit: layout round-trip correct - math blocks untouched, list MARKERS (- ) preserved with content transformed, prose transformed. Initial probe 'list preserved False' was probe error (checked lowercase original instead of marker). |
 | 965 | L1 | T07 | clean | 5775 | 5775 | - | T07 re-audit: 12/12 patterns fire with grammar-built carriers (AI_VOCAB, transition-opener, steer, negated-contrast, vague-attribution, participial-trailer). Earlier 6/12 was probe-carrier error (missing sentence-start anchors + sentence-final [.!?]); corrected carriers all fire. No defect. |
+| 966 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (12th): pass-897 verified. |
+| 967 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (14th): killing tests green. |
+| 968 | L1 | T05 | clean | 5775 | 5775 | - | T05 re-audit: verdict-cut FP 0/20 on clean text (0.45 cut, stdlib lite path). No false flags. |
