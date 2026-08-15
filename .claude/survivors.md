@@ -174,7 +174,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/humanness.py | 288 | KILLED by test_humanness_mutation_guards (empty-text guard) logic: or -> and | `if not text or not text.strip():` |
 | untell/humanness.py | 368 | UNKILLABLE: CV bands are continuous at every edge (mid-band formula equals neighbour at 0.35) boundary: < -> <= | `if cv < 0.35:` |
 | untell/humanness.py | 370 | UNKILLABLE: CV bands continuous at 0.50 (formula gives 0 penalty) boundary: < -> <= | `elif cv < 0.50:` |
-| untell/humanness.py | 372 | UNKILLABLE: CV bands continuous at 1.00 (no penalty either side) boundary: > -> >= | `elif cv > 1.0:` |
+| untell/humanness.py | 372 | UNKILLABLE: CV bands continuous at 1.00 (no penalty either side) boundary: > -> >= | `elif cv > 1.0:` | KILLED by tests/test_cv_at_one_is_not_erratic.py: cv exactly 1.0 -> original 1.0 > 1.0 = False, score 100.0 (no erratic penalty); mutant >= fires, score 97.0 (MAX_BURSTY_PENALTY*0.5 applied at the boundary). Prior 'bands continuous at 1.00' note wrong — the boundary is where the penalty STARTS. Red on mutation, green on original. |
 | untell/humanness.py | 605 | KILLED by test_humanness_mutation_guards (detector_max exactly 0.5) boundary: >= -> > | `if detector_max is not None and detector_max >= 0.5:` |
 | untell/scripts/cli.py | 127 | KILLED by test_cli_mutation_guards (torch-notice gate) logic: != -> == | `if os.environ.get("UNTELL_LITE_NO_TORCH") != "1":` |
 | untell/scripts/cli.py | 131 | UNKILLABLE: torch-presence check needs env with/without torch (env-dependent) identity: is not -> is | `if importlib.util.find_spec("torch") is not None:` |
@@ -439,3 +439,4 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/humanness.py | 370 | boundary: < -> <= | `elif cv < 0.50:` |
 | untell/humanness.py | 372 | boundary: > -> >= | `elif cv > 1.0:` |
 | untell/humanness.py | 605 | boundary: >= -> > | `if detector_max is not None and detector_max >= 0.5:` |
+| untell/humanness.py | 509 | boundary: >= -> > | `if score >= 60:` |
