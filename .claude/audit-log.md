@@ -970,3 +970,4 @@ permanently.
 | 826 | L1 | T14 | clean | 5782 | 5782 | - | T14 re-audit (11th): pass-766 verified. No change. |
 | 827 | L2 | untell/scripts/latex.py | clean | 5782 | 5782 | - | L2 latex.py re-audit (12th): 33/33 live. |
 | 828 | L4 | L4 | clean | 5782 | 5782 | - | L4 structural.py re-verified: 9/9 alive. |
+| 829 | L9 | quality-bar-0.82 | clean | 5782 | 5782 | - | L9 quality-bar-0.82 FULL MEASUREMENT (fresh before+after, 40min): pre 1.0/0.6362 -> post 1.0/0.5625, deltas all +0.000. Harness: 'Nothing moved beyond noise. This knob does not do what it looks like it does at this corpus and tier.' Knob untouched. Both quality-bar knobs now closed with fresh full runs (0.70 pass 794, 0.82 pass 830). |
