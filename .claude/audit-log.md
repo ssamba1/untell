@@ -2620,3 +2620,4 @@ permanently.
 | 2468 | L4 | L4 | clean | 5786 | 5786 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2469 | L4 | L4 | clean | 5786 | 5786 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2470 | L1 | T12 | clean | 5786 | 5786 | - | T12 re-audit (40th): pass-2404 verified. |
+| 2471 | L2 | untell/scripts/sentences.py | clean | 5786 | 5786 | - | L2 sentences.py re-audit (42nd): 16 tests green. |
