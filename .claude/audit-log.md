@@ -905,3 +905,5 @@ permanently.
 | 773 | L1 | T17 | clean | 5781 | 5781 | - | T17 re-audit (10th): pass-551 verified concurrency clean. No change. |
 | 774 | L2 | untell/scripts/scrub.py | clean | 5781 | 5781 | - | L2 scrub.py re-audit (12th): 4/4 killed, no survivors. |
 | 775 | L2 | untell/scripts/latex.py | clean | 5781 | 5781 | - | L2 latex.py re-audit (11th): 33/33 live. |
+| 772 | L4 | chunks/meaning relaxed | clean | 5800 | 5800 | cb525fba1319b2e1671888fe66f67868aa90fdbc | L4 aligned_chunks + meaning_preserved relaxed (2nd): aligned_chunks on 300w/300w pair -> 4 chunks (k=ceil(300/90)=4), total_a=300 total_b=300 exact coverage, ordered pairs (chunk-word reconstruction equals source sequence on both sides); short 5-word pair -> 1 chunk. meaning_preserved with live NLI (cross-encoder/nli-distilroberta-base, available=True): faithful register-shift sim=0.4167 below strict 0.76, con=0.0026 ent=0.1394 -> True (relaxed bar 0.30 admits what strict rejects); role swap sim=1.0000 con=0.0089 ent=0.9814 -> False via roles predicate-argument veto (NLI blind to role permutations, as documented); unrelated sim=0.0000 con=0.9188 -> False (contradiction veto + below relaxed bar).
+
