@@ -151,7 +151,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/score.py | 338 | KILLED by test_score_mutation_guards (scoring-set equality) logic: != -> == | `if scoring != {"perplexity_burstiness"}:` |
 | untell/scripts/score.py | 664 | UNKILLABLE: gpt2-mode short-circuit needs live torch runtime logic: or -> and | `if (modes or {}).get("perplexity_burstiness") == "gpt2":` |
 | untell/scripts/score.py | 677 | KILLED by test_score_mutation_guards (2-sentence boundary) constant: 2 -> 3 | `if len([s for s in split_sentences(text) if s.strip()]) >= 2:` |
-| untell/scripts/score.py | 751 | UNKILLABLE: per-detector round(...,4) at line 739 dominates max; 4dp vs 5dp invisible constant: 4 -> 5 | `"max": round(mx, 4),` |
+| untell/scripts/score.py | 751 | UNKILLABLE: per-detector round(...,4) at line 739 dominates max; 4dp vs 5dp invisible constant: 4 -> 5 | `"max": round(mx, 4),` | KILLED by tests/test_tiny_signal_not_collapsed_to_zero.py: per-detector round is at line 744 (scores[d.name]=round(clamped,4)); detector returning 0.000045 + another at 0.0 -> original reports tiny=0.0 and max=0.0 (collapsed), mutant keeps 5e-05 and max becomes 0.0001. Prior '4dp vs 5dp invisible' UNKILLABLE note wrong — the collapse IS the observable. Red on mutation, green on original. |
 | untell/scripts/score.py | 762 | KILLED by test_score_mutation_guards (exact-threshold flag) boundary: >= -> > | `result["flagged"] = bool(numeric) and mx >= verdict_threshold` |
 | untell/scripts/score.py | 1129 | UNKILLABLE: detector-load guard needs specific failure shapes logic: and -> or | `and d.name not in scores` |
 | untell/scripts/score.py | 1129 | membership: not in -> in | `and d.name not in scores` |
