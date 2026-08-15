@@ -1953,3 +1953,23 @@ permanently.
 | 1798 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-audit: pass-1658 verified, already MEASURED (MOVED). |
 | 1799 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (28th): pass-1747 verified. |
 | 1800 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1800 — audit-log milestone. |
+| 1801 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (27th): pass-1742 verified. |
+| 1802 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (28th): pass-1744 verified. |
+| 1803 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (25th): pass-1751 verified. |
+| 1804 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (29th): pass-1746 verified. |
+| 1805 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1806 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (28th): pass-1750 verified. |
+| 1807 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (31st): 4/4 killed. |
+| 1808 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1809 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1810 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (29th): tells separation verified. |
+| 1811 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (30th): 33/33 live. |
+| 1812 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1813 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (29th): spot-check alive. |
+| 1814 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (30th): 7/8 killed. |
+| 1815 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (30th): pass-1763 verified. |
+| 1816 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1817 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (30th): _MERGE_WEIGHTS unchanged. |
+| 1818 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: pass-1678 verified, already MEASURED. |
+| 1819 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (30th): 12/12 ranges. |
+| 1820 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1820. |
