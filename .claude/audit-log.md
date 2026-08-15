@@ -2708,3 +2708,4 @@ permanently.
 | 2556 | L6 | L6 | clean | 5787 | 5787 | - | L6 drift: no new drift. |
 | 2557 | L1 | T01 | clean | 5787 | 5787 | - | T01 re-audit (41st): pass-2501 verified. |
 | 2558 | L9 | ppl-weight-0.40 | clean | 5787 | 5787 | - | L9 ppl-weight-0.40 re-audit: pass-2398 verified, already MEASURED (MOVED). |
+| 2559 | L2 | untell/_retry.py | clean | 5787 | 5787 | - | L2 _retry.py re-audit (44th): 128 documented-equivalent remains. |
