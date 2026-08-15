@@ -2674,3 +2674,4 @@ permanently.
 | 2522 | L1 | T09 | clean | 5787 | 5787 | - | T09 re-audit (41st): pass-2462 verified. |
 | 2523 | L2 | untell/scripts/numerals.py | clean | 5787 | 5787 | - | L2 numerals.py re-audit (43rd): 18 regression tests green. |
 | 2524 | L1 | T10 | clean | 5787 | 5787 | - | T10 re-audit (40th): pass-2464 verified. |
+| 2525 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
