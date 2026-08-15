@@ -2579,3 +2579,5 @@ permanently.
 | 2427 | L2 | untell/scripts/scrub.py | clean | 5786 | 5786 | - | L2 scrub.py re-audit (42nd): 4/4 killed. |
 | 2428 | L4 | L4 | clean | 5786 | 5786 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2429 | L4 | L4 | clean | 5786 | 5786 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2430 | L1 | T01 | clean | 5786 | 5786 | - | T01 re-audit (39th): pass-2370 verified. |
+| 2431 | L2 | untell/scripts/latex.py | clean | 5786 | 5786 | - | L2 latex.py re-audit (41st): 33/33 live. |
