@@ -493,3 +493,13 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/base.py | 242 | logic: and -> or | `if current and count + n > window_words:` |
 | untell/detectors/base.py | 242 | boundary: > -> >= | `if current and count + n > window_words:` |
 | untell/detectors/base.py | 274 | constant: 99 -> 100 | `return _TIER_RANK.get(detector_tier, 99) <= _TIER_RANK.get(requested, 0)` |
+## 2026-08-14 me2 worker eval sweep wave 1: ceiling.py (harness timeout at 6/16, baseline 2:54)
+
+| module | line | mutation | status |
+|---|---|---|---|
+| eval/ceiling.py | 89 | < -> <= | KILLED by existing suite |
+| eval/ceiling.py | 148 | or -> and (parallel gate) | KILLED by test_ceiling_mutation_guards (workers=1 must stay serial) |
+| eval/ceiling.py | 148 | > -> >= (boundary) | UNKILLABLE: TIMEOUT — mutant loops forever on degenerate input; not a behavior difference |
+| eval/ceiling.py | 239 | is-not -> is (scored flag) | KILLED by test_ceiling_mutation_guards (scored=True must be included in run_post_means) |
+| eval/ceiling.py | 254 | or -> and | KILLED by existing suite |
+| eval/ceiling.py | 265 | >= -> > | KILLED by existing suite |
