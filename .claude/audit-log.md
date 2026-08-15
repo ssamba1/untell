@@ -2891,3 +2891,4 @@ permanently.
 | 2727 | L2 | untell/scripts/io_utils.py | clean | 7506 | 7506 | - | L2 io_utils.py re-audit (46th): 7/8 killed. |
 | 2728 | L4 | L4 | clean | 7506 | 7506 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2729 | L4 | L4 | clean | 7506 | 7506 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2730 | L1 | T08 | clean | 7506 | 7506 | - | T08 re-audit (45th): _MERGE_WEIGHTS unchanged. |
