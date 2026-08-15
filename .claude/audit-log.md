@@ -2534,3 +2534,6 @@ permanently.
 | 2382 | L1 | T05 | clean | 5785 | 5785 | - | T05 re-audit (38th): pass-2324 verified. |
 | 2383 | L2 | untell/config.py | clean | 5785 | 5785 | - | L2 config.py re-audit (40th): 5/5 killed, fully pinned. |
 | 2384 | L1 | T06 | clean | 5785 | 5785 | - | T06 re-audit (39th): tells separation verified. |
+| 2385 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
+| 2386 | L1 | T07 | clean | 5785 | 5785 | - | T07 re-audit (39th): spot-check alive. |
+| 2387 | L2 | untell/_retry.py | clean | 5785 | 5785 | - | L2 _retry.py re-audit (41st): 128 documented-equivalent remains. |
