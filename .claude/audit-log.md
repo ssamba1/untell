@@ -1013,3 +1013,4 @@ permanently.
 | 869 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 870 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (13th): spot-check alive. |
 | 871 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (13th): 16 tests green. |
+| 872 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 FULL MEASUREMENT (fresh before+after, 40min): pre 1.0/0.6362 -> post 1.0/0.5625, deltas all +0.000 beyond noise. Harness: 'Nothing moved beyond noise.' Entailment.py restored to 0.30 correctly after. All three L9 knobs now closed with fresh full runs (quality-bar 0.70/0.82 + relaxed-sim). |
