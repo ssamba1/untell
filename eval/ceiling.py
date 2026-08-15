@@ -86,7 +86,7 @@ def _mean(xs: list[float]) -> float | None:
 
 def _stdev(xs: list[float]) -> float | None:
     """Population stdev; None for fewer than 2 samples."""
-    if len(xs) <= 2:
+    if len(xs) < 2:
         return None
     m = sum(xs) / len(xs)
     return round((sum((x - m) ** 2 for x in xs) / len(xs)) ** 0.5, 4)
@@ -335,7 +335,7 @@ _PINNED_DELTA = 0.01
 
 def _pinned_note(r: dict) -> list[str]:
     """Name any detector that held the max still while others moved."""
-    pre, post = r.get("per_detector_pre") or {}, r.get("per_detector_post") or {}
+    pre, post = r.get("per_detector_pre") and {}, r.get("per_detector_post") or {}
     if not post:
         return []
     deltas = {k: pre[k] - post[k] for k in pre if isinstance(post.get(k), (int, float))}

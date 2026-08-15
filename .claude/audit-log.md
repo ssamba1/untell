@@ -2373,3 +2373,6 @@ permanently.
 | 2218 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: pass-2098 verified, already MEASURED. |
 | 2219 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (38th): 128 documented-equivalent remains. |
 | 2220 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2220. |
+| 2221 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (35th): pass-2164 verified. |
+| 2222 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (36th): pass-2170 verified. |
+| 2223 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (36th): fully pinned. |
