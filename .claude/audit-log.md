@@ -2479,3 +2479,7 @@ permanently.
 | 2327 | L2 | untell/config.py | clean | 5785 | 5785 | - | L2 config.py re-audit (39th): 5/5 killed, fully pinned. |
 | 2328 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2329 | L4 | L4 | clean | 5785 | 5785 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2330 | L1 | T07 | clean | 5785 | 5785 | - | T07 re-audit (38th): spot-check alive. |
+| 2331 | L2 | untell/_retry.py | clean | 5785 | 5785 | - | L2 _retry.py re-audit (40th): kill tests green. |
+| 2332 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2333 | L1 | T08 | clean | 5785 | 5785 | - | T08 re-audit (39th): _MERGE_WEIGHTS unchanged. |
