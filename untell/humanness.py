@@ -506,7 +506,7 @@ def classification(score: float) -> str:
     """
     if score >= 75:
         return "human"
-    if score >= 61:
+    if score > 60:
         return "mostly human"
     if score >= 45:
         return "mixed"

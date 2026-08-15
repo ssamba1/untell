@@ -930,3 +930,6 @@ permanently.
 | 794 | L9 | quality-bar-0.70 | clean | 5781 | 5781 | - | L9 quality-bar-0.70 FULL MEASUREMENT (fresh before+after, 40min): pre 1.0/0.6362 -> post 1.0/0.5625, deltas all +0.000 beyond noise. Harness: 'Nothing moved beyond noise. This knob does not do what it looks like it does at this corpus and tier.' Knob untouched (restored). Deterministic refusal now backed by a fresh full run. |
 | 795 | L2 | untell/_env.py | clean | 5781 | 5781 | - | L2 _env.py re-audit (10th): killing tests green. Fully pinned. |
 | 796 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. |
+| 797 | L1 | T05 | clean | 5781 | 5781 | - | T05 re-audit (11th): pass-741 verified. No change. |
+| 798 | L2 | untell/layout.py | clean | 5781 | 5781 | - | L2 layout.py re-audit (11th): killing tests green. Pass-628 state (line 156 killed). |
+| 799 | L2 | untell/text_split.py | clean | 5781 | 5781 | - | L2 text_split.py re-audit (11th): 54 chunking tests green. Pass-569 kills hold. |
