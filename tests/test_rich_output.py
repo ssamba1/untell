@@ -65,6 +65,25 @@ def test_uniform_burstiness_row_is_not_hidden_by_falsy_zero(monkeypatch, capsys)
     )
 
 
+def test_a_none_max_score_does_not_crash_the_report(monkeypatch, capsys):
+    """An abstention score dict carries `max: None` (every detector errored); the report must
+    render a 0 baseline rather than crash on `None - None`."""
+    printed = []
+    monkeypatch.setattr(rich_output, "_RICH", True)
+    monkeypatch.setattr(
+        rich_output, "_CONSOLE", type("C", (), {"print": lambda self, *a, **k: printed.append(a)})()
+    )
+    rich_output.print_humanize_result(
+        original="The system reads the file.",
+        final="The system reads the file and processes it.",
+        pre_score={"max": None, "tier": "lite"},
+        post_score={"max": 0.42, "tier": "lite"},
+        iterations=2, stopped="passed",
+    )
+    # The bug was a crash (None - None). With the fix, the report prints its table.
+    assert printed, "nothing was printed"
+
+
 def test_undefined_burstiness_row_is_still_omitted(monkeypatch):
     """None means undefined (fewer than two sentences) and must stay hidden — the fix is about
     zero, not about printing a row for a value that does not exist."""

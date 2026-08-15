@@ -198,8 +198,8 @@ def print_humanize_result(
     table.add_column("After")
     table.add_column("Delta")
 
-    before_max = pre_score.get("max", 0)
-    after_max = post_score.get("max", 0)
+    before_max = pre_score.get("max") or 0.0
+    after_max = post_score.get("max") or 0.0
     delta = after_max - before_max
     delta_str = f"{delta:+.2f}" if abs(delta) > 0.001 else "—"
     delta_style = "green" if delta < 0 else ("red" if delta > 0 else "white")
