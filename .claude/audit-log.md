@@ -2496,3 +2496,6 @@ permanently.
 | 2344 | L1 | T12 | clean | 5785 | 5785 | - | T12 re-audit (38th): pass-2284 verified. |
 | 2345 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
 | 2346 | L1 | T13 | clean | 5785 | 5785 | - | T13 re-audit (36th): pass-2290 verified. |
+| 2347 | L2 | untell/scripts/numerals.py | clean | 5785 | 5785 | - | L2 numerals.py re-audit (40th): 18 regression tests green. |
+| 2348 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2349 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
