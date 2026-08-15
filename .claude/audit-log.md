@@ -2555,3 +2555,4 @@ permanently.
 | 2403 | L2 | untell/scripts/numerals.py | clean | 5785 | 5785 | - | L2 numerals.py re-audit (41st): 18 regression tests green. |
 | 2404 | L1 | T12 | clean | 5785 | 5785 | - | T12 re-audit (39th): pass-2344 verified. |
 | 2405 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
+| 2406 | L1 | T13 | clean | 5785 | 5785 | - | T13 re-audit (37th): pass-2346 verified. |
