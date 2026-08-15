@@ -2816,3 +2816,4 @@ permanently.
 | 2656 | L2 | untell/scripts/latex.py | clean | 5787 | 5787 | - | L2 latex.py re-audit (45th): 33/33 live. |
 | 2657 | L1 | T06 | clean | 5787 | 5787 | - | T06 re-audit (43rd): tells separation verified. |
 | 2658 | L9 | threshold-0.40 | clean | 5787 | 5787 | - | L9 threshold-0.40 re-audit: calibration-confirmed deterministic (spread 0.0069 max), knob closed. |
+| 2659 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (45th): 7/8 killed. |
