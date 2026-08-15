@@ -2669,3 +2669,4 @@ permanently.
 | 2517 | L1 | T07 | clean | 5787 | 5787 | - | T07 re-audit (41st): spot-check alive. |
 | 2518 | L9 | token-bar-0.40 | clean | 5787 | 5787 | - | L9 token-bar-0.40 re-audit: pass-2358 verified, already MEASURED. |
 | 2519 | L2 | untell/scripts/preserve.py | clean | 5787 | 5787 | - | L2 preserve.py re-audit (43rd): NER fix holds. |
+| 2520 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2520. |
