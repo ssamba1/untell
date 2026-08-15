@@ -1068,3 +1068,4 @@ permanently.
 | 921 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (13th): pass-861 verified. |
 | 922 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (13th): pass-862 verified. |
 | 923 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (14th): 16 tests green. |
+| 924 | L2 | untell/attacks/word_importance.py | clean | 5775 | 5775 | - | L2 word_importance.py re-audit (1st full): baseline green (168), 1/8 killed, 7 survivors: 435 (synonym self-exclusion), 580 (an-before-consonant flag), 651 (opener position boundary), 739 (max_subs=8 default), 841/843 (loop-exit boundaries), 876 (documented 3-variant acceptance-criteria survivor, persists). All documented classes. |
