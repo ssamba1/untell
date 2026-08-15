@@ -2348,3 +2348,5 @@ permanently.
 | 2193 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (33rd): pass-2133 verified 36 rows consistent. |
 | 2194 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (38th): 4/4 killed. |
 | 2195 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (37th): 33/33 live. |
+| 2196 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 2197 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (32nd): pass-2137 verified. |

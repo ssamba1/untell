@@ -254,7 +254,7 @@ def _strip_mark_stacks(text: str, keep: int = _MAX_MARK_STACK) -> str:
     for ch in text:
         if unicodedata.category(ch) in ("Mn", "Me"):
             run += 1
-            if run >= keep:
+            if run > keep:
                 continue
         else:
             run = 0
@@ -363,7 +363,7 @@ def _unhomoglyph(text: str) -> str:
     # Cyrillic, and a raw ratio then reads 7/12 ASCII and declares the document mixed-script.
     # Native letters — the ones with no ASCII lookalike — are what actually distinguishes Russian
     # prose from Latin prose wearing a costume.
-    evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UNHOMOGLYPH)]
+    evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() and ch not in _UNHOMOGLYPH)]
     mostly_ascii = bool(evidence) and sum(ch.isascii() for ch in evidence) / len(evidence) >= 0.8
 
     def fold(match: re.Match) -> str:
