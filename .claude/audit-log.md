@@ -2290,3 +2290,6 @@ permanently.
 | 2135 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (36th): pass-2083 verified. |
 | 2136 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 2137 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (31st): pass-2081 verified. |
+| 2138 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40 re-audit: pass-1998 verified, already MEASURED (MOVED). |
+| 2139 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (36th): 12/12 ranges. |
+| 2140 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2140. |
