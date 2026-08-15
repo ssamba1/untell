@@ -2608,3 +2608,5 @@ permanently.
 | 2456 | L6 | L6 | clean | 5786 | 5786 | - | L6 drift: no new drift. |
 | 2457 | L1 | T08 | clean | 5786 | 5786 | - | T08 re-audit (41st): _MERGE_WEIGHTS unchanged. |
 | 2458 | L2 | untell/api_server.py | clean | 5786 | 5786 | - | L2 api_server.py FIRST AUDIT: baseline green (147), 4/8 killed (fleet guards), 4 survivors: 428 (rate-bucket soft cap), 496 (rate-limit or->and), 682/715 (OpenAPI schema flags) - rate-limit internals need timed requests, schema constants untested. Documented class. |
+| 2459 | L2 | untell/text_split.py | clean | 5786 | 5786 | - | L2 text_split.py re-audit (41st): aligned-chunks fix holds. |
+| 2460 | L7 | L7 | clean | 5786 | 5786 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2460. |

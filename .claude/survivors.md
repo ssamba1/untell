@@ -125,3 +125,9 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/api_server.py | 496 | logic: or -> and | `retry_after = _rate_limited(request, x_key or auth or "")` |
 | untell/api_server.py | 682 | constant: True -> False | `"results": {"type": "object", "additionalProperties": True},` |
 | untell/api_server.py | 715 | constant: True -> False | `"pre": {"type": "object", "additionalProperties": True, "description": "score be` |
+| untell/rewriter/structural.py | 480 | constant: 12 -> 13 | `tail = before[-12:]` |
+| untell/rewriter/structural.py | 1691 | logic: or -> and | `usable = [o for o in (fresh or options) if o.lower() not in unsafe]` |
+| untell/rewriter/structural.py | 2516 | boundary: > -> >= | `key=lambda i: (0 if counts.get(first_words[i], 0) > 1 else 1, random.random()),` |
+| untell/rewriter/structural.py | 2667 | logic: and -> or | `and not _inside_quotes(words, pos + 1)` |
+| untell/rewriter/structural.py | 2843 | constant: True -> False | `"contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0,` |
+| untell/rewriter/structural.py | 2887 | constant: False -> True | `"conversational_openers": False},` |
