@@ -2564,3 +2564,4 @@ permanently.
 | 2412 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2413 | L1 | T15 | clean | 5785 | 5785 | - | T15 re-audit (39th): pass-2353 verified. |
 | 2414 | L2 | untell/scripts/cli.py | clean | 5786 | 5786 | - | L2 cli.py FIRST AUDIT: baseline green (17), 3/8 killed, 5 survivors all interactive-demo/env-gate paths (127 UNTELL_LITE_NO_TORCH gate, 131 torch find_spec, 212 detector-count fallback, 260 availability status, 364 add_help flag) - demo-only, tests pin the score CLI not the interactive demo. Documented class. Script-module L2 sweep now complete. |
+| 2415 | L2 | untell/detectors/local_judge.py | clean | 5786 | 5786 | - | L2 local_judge.py FIRST AUDIT: baseline green (21), 0/8 killed - 8 survivors all LLM-gate logic (51/152/174 or->and fallbacks, 128/158/167 key/availability flags, 145 != ==, 166 retry 16) - need live LLM calls. Documented model-dependent class. |
