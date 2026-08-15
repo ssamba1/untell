@@ -1048,3 +1048,6 @@ permanently.
 | 904 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (11th): pass-846 verified. No change. |
 | 905 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
 | 593 | L4 | cross-surface | clean | 5801 | 5801 | f1db74a | L4 cross-surface consistency (3rd): same AI text through all three surfaces — CLI tells rc=0 with count, REST /tells 200 (tells=2), MCP _bad_args refuses threshold='abc' (dict refusal) and accepts 0.3 (None). The (value, kind) tuple contract verified; my probe bugs (positional, bare kwarg) documented — code right each time. Three surfaces agree. |
+| 907 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (13th): pass-853 verified. |
+| 908 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 908 | L2 | untell/humanness.py | coverage-closed | 5862 | 5863 | e8411dc14c1663566520ccb8f9835bed424a8d62 | L2 humanness.py: KILLED the line-75 warning-latch survivor (True -> False). _WARNED_TOO_SHORT must latch after the first too-short warning; mutant never sets it, so the second call warns again (log spam). Prior 'no observable output change' UNKILLABLE note wrong — the latch IS the observable, same class as the voice.py:187 warn-once kill. Red on mutation, green on original. |
