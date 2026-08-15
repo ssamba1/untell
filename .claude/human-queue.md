@@ -440,12 +440,13 @@ NEXT   Human decision: threshold sensitivity is real. The 0.30 shipped value
        Not adopted.
 
 ## 2026-08-15 pass (L6/full-suite) AMBER — docs/why-best-open-repo.md:154 count stale
-line 154: "Automated tests | ✅ **7418** tests, 445 modules"
-MEASURED: tests/ has 456 modules (ls count), 7436 tests collected (pytest --co, 16.42s).
-Stale by 18 tests + 11 modules — exceeds the _MODULE_DRIFT=5 window the derivable-check allows.
-RED-band file: human edit required (guard blocks unattended loop).
+RESOLVED + CORRECTED (my count was wrong): tests/ has 458 test_*.py modules
+(460 .py total incl __init__.py + conftest.py). The doc's "7436 tests, 458 modules"
+is CORRECT — git-tracked .py = 460, audit sees understatement by 2, within
+_MODULE_DRIFT=5. My earlier "456" was ls tests/test_*.py missing 2 files.
+Fleet's edit was right; audit derivable-checks pass (0 failures). No drift.
 
 ## 2026-08-15 full-suite pass — docs/why-best-open-repo.md:154 STILL WRONG (overstated)
-fleet edited to "7436 tests, 458 modules" but tests/ has 456 modules (ls count).
-Overstating by 2 = claims coverage that does not exist (check treats >actual as always-defect).
-Correct value: 7436 tests, 456 modules. RED-band: human edit required.
+SUPERSEDED by the correction above: 458 modules is the correct on-disk count.
+The fleet's number was right; my queue entries were based on an incomplete ls.
+Audit.run() shows 0 failures. Entry closed.
