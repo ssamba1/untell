@@ -1173,3 +1173,7 @@ permanently.
 | 1018 | L1 | T18 | clean | 5784 | 5784 | - | CLI rewriter validation: bogus rejected at parse (exit 2, 11 choices listed). Full CLI surface matrix now verified: style/threshold/rewriter/tier all parse-validated, consistent with MCP + REST surfaces. |
 | 1019 | L1 | T18 | clean | 5784 | 5784 | - | CLI file handling: missing --file -> exit 2 'no such file: <path>'. Error paths complete and consistent. |
 | 1020 | L1 | T20 | clean | 5784 | 5784 | - | REST surface: threshold=50 -> 422 (_Probability field), 0.5 -> 200. THREE-surface consistency complete: CLI (parse error), MCP (_bad_args refusal), REST (422) all reject out-of-range threshold identically. |
+| 1021 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (12th): pass-902 verified. |
+| 1022 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (13th): pass-913 verified. |
+| 1023 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (15th): 12/12 ranges. |
+| 1024 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (14th): RELAXED_SIM_BAR restore + pin verified. |
