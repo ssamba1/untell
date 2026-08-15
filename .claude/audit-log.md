@@ -2557,3 +2557,5 @@ permanently.
 | 2405 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
 | 2406 | L1 | T13 | clean | 5785 | 5785 | - | T13 re-audit (37th): pass-2346 verified. |
 | 2407 | L2 | untell/scripts/sentences.py | clean | 5785 | 5785 | - | L2 sentences.py re-audit (41st): 16 tests green. |
+| 2408 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2409 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
