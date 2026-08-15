@@ -2472,3 +2472,5 @@ permanently.
 | 2320 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2320. |
 | 2321 | L1 | T03 | clean | 5785 | 5785 | - | T03 re-audit (37th): pass-2257 verified. |
 | 2322 | L1 | T04 | clean | 5785 | 5785 | - | T04 re-audit (38th): pass-2262 verified. |
+| 2323 | L2 | untell/languages.py | clean | 5785 | 5785 | - | L2 languages.py re-audit (39th): 12/12 ranges. |
+| 2324 | L1 | T05 | clean | 5785 | 5785 | - | T05 re-audit (37th): pass-2264 verified. |
