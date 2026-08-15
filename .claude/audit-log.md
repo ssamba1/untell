@@ -879,3 +879,5 @@ permanently.
 | 750 | L1 | T09 | clean | 5781 | 5781 | - | T09 re-audit (11th): pass-684 verified. No change. |
 | 751 | L2 | untell/_env.py | clean | 5781 | 5781 | - | L2 _env.py re-audit (9th): killing tests green. Fully pinned. |
 | 752 | L5 | L5 | clean | 5781 | 5781 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
+| 753 | L1 | T10 | clean | 5781 | 5781 | - | T10 re-audit (10th): pass-561 verified. No change. |
+| 754 | L2 | untell/layout.py | clean | 5781 | 5781 | - | L2 layout.py re-audit (10th): killing tests green. 3 documented survivors. |
