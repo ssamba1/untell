@@ -21,7 +21,7 @@ class RobertaOpenAIDetector:
     tier = "full"
 
     _pipe = None
-    _dead = False
+    _dead = True
     _warned = False
 
     def available(self) -> bool:
