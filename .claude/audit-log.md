@@ -1206,3 +1206,6 @@ permanently.
 | 1051 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 FULL MEASUREMENT: post_flagged_rate 1.0->0.9 (-0.10 MOVED beyond band); mean_max unchanged. SECOND moving knob (with ppl-weight -0.048). Harness: 'Never adopt from one run — this one moves every claim.' AMBER queued. Knob restored. |
 | 1052 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 1053 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (15th): pass-1013 verified. |
+| 1054 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (17th): 2 documented survivors. |
+| 1055 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (14th): pass-991 verified. |
+| 1056 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. Constants match README. |
