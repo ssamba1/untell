@@ -642,3 +642,5 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/compare_humanizers.py | 303 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
 | eval/tells_auroc.py | 63 | logic: == -> != | `return sum((a > h) + 0.5 * (a == h) for a in ai for h in human) / (len(ai) * len` |
 | eval/tells_auroc.py | 201 | constant: 2 -> 3 | `"documents": len(pairs) * 2,` |
+| eval/baselines.py | 78 | logic: == -> != | `and i % merge_period == 0` |
+| eval/baselines.py | 78 | logic: and -> or | `and i % merge_period == 0` |
