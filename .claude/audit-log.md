@@ -915,3 +915,4 @@ permanently.
 | 779 | L2 | untell/scripts/verify.py | clean | 5781 | 5781 | - | L2 verify.py re-audit (11th): pass-545 NaN kill verified. |
 | 780 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 780. |
 | 781 | L2 | untell/rewriter/local_policy.py | clean | 5775 | 5775 | - | L2 local_policy.py FIRST AUDIT (corrected set incl test_local_policy_mutation_guards.py): baseline green (32), 6/8 killed, 2 survivors: 245 (model lazy-load guard, torch-dependent), 339 (fragment <8-word boundary - 8-word-exact piece distinguishes, not in test corpus). 294/300 confirmed KILLED by fleet's test_local_policy_mutation_guards (identical-candidate + length-band). |
+| 782 | L1 | T20 | clean | 5781 | 5781 | - | T20 re-audit (9th): pass-710 verified. No change. |
