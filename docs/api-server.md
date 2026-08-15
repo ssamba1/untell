@@ -45,7 +45,7 @@ Health check. Returns version, detector tier, and available detectors.
 ```json
 {
   "status": "ok",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "detector_tier": "full",
   "detector_count": 5,
   "detectors": ["perplexity_burstiness", "roberta_openai", ...]
@@ -151,7 +151,8 @@ Measure the free evasion ceiling.
 
 ## Authentication
 
-If `UNTELL_API_KEY` is set, every request (except `/health` and `/docs`) must include the key:
+If `UNTELL_API_KEY` is set, every request (except `/health`, `/docs`, `/openapi.json` and
+`/redoc`) must include the key:
 
 ```
 Authorization: Bearer <key>

@@ -223,9 +223,10 @@ def similarity(a: str, b: str) -> float:
     #
     # This is the same failure the module docstring already records for cosine similarity, which is
     # why the NLI gate exists. BERTScore has it too, and being a stronger metric does not help: the
-    # thing being measured is the wrong thing. `_bert_score_similarity` is kept and reported by
-    # `untell-quality --json`, because recall against a reference is a genuinely useful number —
-    # just not a meaning gate.
+    # thing being measured is the wrong thing. `_bert_score_similarity` is kept for direct API
+    # callers and its tests (recall against a reference is a genuinely useful number — just not a
+    # meaning gate), but no CLI command reports it: there is no `untell-quality` script, and this
+    # module's own CLI emits only similarity/method/confidence/bar/passes.
     cos = _cosine_similarity(a, b)
     if cos is not None:
         # Clamp raw cosine into [0, 1]; the 0.76 bar lives on this raw-cosine scale.

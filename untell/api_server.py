@@ -19,12 +19,14 @@ Endpoints:
 - ``POST /score``               — score text with the local detector ensemble
 - ``POST /humanize``            — run the closed-loop humanizer
 - ``POST /tells``               — count AI writing tells
+- ``POST /scrub``               — strip hidden watermark, zero-width and homoglyph characters
 - ``POST /sentences``           — per-sentence AI flags
 - ``POST /verify``              — pass/fail vs every configured checker
 - ``POST /ceiling``             — measure the free evasion ceiling
 
-All ``POST`` endpoints accept JSON with ``text`` (required) plus optional params.
-See the ``/docs`` page for full schemas.
+Every ``POST`` endpoint except ``/ceiling`` takes JSON with ``text`` (required) plus
+optional params; ``/ceiling`` takes the measurement settings and samples its own
+corpus. See the ``/docs`` page for full schemas.
 """
 
 from __future__ import annotations
@@ -884,8 +886,8 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
     """Run the closed-loop humanizer. Returns the humanized text + before/after stats.
 
     The ``rewriter`` field controls which rewriting backend to use:
-    - ``\"auto\"`` (default) — uses a hosted LLM if an API key is configured, else fails
-    - ``\"composite\"`` — free structural + surgical chain ($0, no key)
+    - ``\"composite\"`` (default) — free structural + surgical chain ($0, no key)
+    - ``\"auto\"`` — a hosted LLM if an API key is configured, else the free composite path
     - ``\"neural\"`` — free T5 paraphrase + structural + surgical (needs .[full]; strongest free path)
     - ``\"surgical\"`` / ``\"structural\"`` / ``\"t5_paraphrase\"`` / ``\"mt_pivot\"`` — individual free backends
     """
