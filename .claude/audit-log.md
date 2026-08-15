@@ -2324,3 +2324,5 @@ permanently.
 | 2169 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2170 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (35th): pass-2110 verified. |
 | 2171 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (9th): 20/20 inversions vetoed, 20/20 paraphrases admitted, NLI live. Meaning gate fully functional. |
+| 2172 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2173 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (35th): pass-2113 verified. |
