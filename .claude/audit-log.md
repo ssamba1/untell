@@ -884,3 +884,5 @@ permanently.
 | 755 | L2 | untell/text_split.py | clean | 5781 | 5781 | - | L2 text_split.py re-audit (10th): aligned-chunks fix + chunk-return kill hold (54 chunking tests green). |
 | 756 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. README-numbers agent in flight. |
 | 757 | L1 | T11 | clean | 5781 | 5781 | - | T11 re-audit (10th): pass-690 verified. No change. |
+| 758 | L2 | untell/scripts/preserve.py | clean | 5781 | 5781 | - | L2 preserve.py re-audit (11th): NER fix + preserve suite green (151). |
+| 759 | L2 | untell/scripts/numerals.py | clean | 5781 | 5781 | - | L2 numerals.py re-audit (11th): 18 regression tests green. Fixes hold. |
