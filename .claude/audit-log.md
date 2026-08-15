@@ -2465,3 +2465,6 @@ permanently.
 | 2313 | L1 | T01 | clean | 5785 | 5785 | - | T01 re-audit (37th): pass-2250 verified. |
 | 2314 | L2 | untell/scripts/latex.py | clean | 5785 | 5785 | - | L2 latex.py re-audit (39th): 33/33 live. |
 | 2315 | L2 | untell/scripts/io_utils.py | clean | 5785 | 5785 | - | L2 io_utils.py re-audit (39th): 7/8 killed. |
+| 2316 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
+| 2317 | L1 | T02 | clean | 5785 | 5785 | - | T02 re-audit (36th): pass-2253 verified. |
+| 2318 | L9 | relaxed-sim-0.20 | clean | 5785 | 5785 | - | L9 relaxed-sim-0.20 re-audit: pass-2198 verified, already MEASURED. |
