@@ -2815,3 +2815,4 @@ permanently.
 | 2655 | L2 | untell/detectors/commercial.py | coverage-closed | 5883 | 5884 | b0e4523ed424b57f44f8263c9014dcd2183e9ab7 | L2 commercial.py: KILLED the line-233 expired-token survivor (and -> or). Cached token + expired timestamp -> original re-auths via _post_json spy (fresh token); mutant or returns the stale token with no call — a 48h token used past life 401s every scan. Prior row mixed two mutations; the <= boundary variant stays (race), the or variant now killed. Red on mutation, green on original. |
 | 2656 | L2 | untell/scripts/latex.py | clean | 5787 | 5787 | - | L2 latex.py re-audit (45th): 33/33 live. |
 | 2657 | L1 | T06 | clean | 5787 | 5787 | - | T06 re-audit (43rd): tells separation verified. |
+| 2658 | L9 | threshold-0.40 | clean | 5787 | 5787 | - | L9 threshold-0.40 re-audit: calibration-confirmed deterministic (spread 0.0069 max), knob closed. |

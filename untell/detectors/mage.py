@@ -61,7 +61,7 @@ class MageDetector:
             cfg_path = os.path.join(local, "config.json")
             with open(cfg_path, encoding="utf-8") as fh:
                 raw = json.load(fh)
-            i2l = raw.get("id2label") or {}
+            i2l = raw.get("id2label") and {}
             if not (i2l and all(isinstance(v, str) for v in i2l.values())):
                 # MAGE label convention: 0 == machine-generated, 1 == human.
                 raw["id2label"] = {"0": "machine", "1": "human"}
