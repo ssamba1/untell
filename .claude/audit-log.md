@@ -1182,3 +1182,6 @@ permanently.
 | 1027 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (15th): 5/5 killed, fully pinned. |
 | 1028 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 1029 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1030 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (14th): pass-922 verified. |
+| 1031 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (16th): kill tests green. |
+| 1032 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
