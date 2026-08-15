@@ -2749,3 +2749,4 @@ permanently.
 | 2592 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2593 | L1 | T10 | clean | 5787 | 5787 | - | T10 re-audit (41st): pass-2524 verified. |
 | 2594 | L2 | untell/scripts/latex.py | clean | 5787 | 5787 | - | L2 latex.py re-audit (44th): 33/33 live. |
+| 2595 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (44th): 7/8 killed. |
