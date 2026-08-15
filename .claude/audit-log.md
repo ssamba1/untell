@@ -1022,3 +1022,6 @@ permanently.
 | 878 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (11th): pass-574 rescale kill holds. |
 | 879 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (14th): 4/4 killed. |
 | 880 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 880. |
+| 881 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (12th): pass-817 verified. No change. |
+| 882 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (13th): pass-821 verified. No change. |
+| 883 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (13th): 33/33 live. |
