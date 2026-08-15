@@ -2358,3 +2358,7 @@ permanently.
 | 2203 | L2 | untell/attacks/unicode_tricks.py | clean | 5784 | 5784 | - | L2 unicode_tricks.py FIRST AUDIT: baseline green (111), 3/8 killed, 5 survivors all Unicode-range/homoglyph boundaries: 108 (variation-selector range), 259 (keep-run length), 368x2 + 377 (homoglyph fold conditions) - edge-codepoint inputs measure-zero in practice, documented class. Completes attacks dir L2 sweep (back_translation 8/8 pinned, word_importance 7 classified). |
 | 2204 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (35th): pass-2150 verified. |
 | 2205 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2206 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (36th): spot-check alive. |
+| 2207 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (37th): pass-2135 verified. |
+| 2208 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2209 | L3 | L3 | clean | 5784 | 5784 | - | L3 FULL-SUITE MILESTONE: first run past the historical ~2% contention region - 789 passed, 3 xfailed before -x stopped at test_the_repository_currently_passes_its_derivable_checks. Failure = REAL doc drift (why-best-open-repo 7418/445 vs 7436/456 measured) - queued to human-queue (RED-band). NOT environmental - the curly-quote region passed on the free box. Full-suite-to-completion record broken (contention was the blocker). |
