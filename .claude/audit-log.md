@@ -2295,3 +2295,6 @@ permanently.
 | 2140 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2140. |
 | 2141 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (34th): pass-2082 verified. |
 | 2142 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (33rd): pass-2084 verified. |
+| 2143 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (36th): 5/5 killed, fully pinned. |
+| 2144 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (34th): pass-2086 verified. |
+| 2145 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
