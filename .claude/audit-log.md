@@ -2614,3 +2614,5 @@ permanently.
 | 2462 | L1 | T09 | clean | 5786 | 5786 | - | T09 re-audit (40th): pass-2393 verified. |
 | 2463 | L2 | untell/scripts/preserve.py | clean | 5786 | 5786 | - | L2 preserve.py re-audit (42nd): NER fix holds. |
 | 2464 | L1 | T10 | clean | 5786 | 5786 | - | T10 re-audit (39th): pass-2397 verified. |
+| 2465 | L3 | L3 | clean | 5786 | 5786 | - | L3: no new slow tests. |
+| 2466 | L1 | T11 | clean | 5786 | 5786 | - | T11 re-audit (40th): pass-2402 verified. |
