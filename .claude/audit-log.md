@@ -2695,3 +2695,4 @@ permanently.
 | 2543 | L2 | untell/scripts/latex.py | clean | 5787 | 5787 | - | L2 latex.py re-audit (43rd): 33/33 live. |
 | 2544 | L1 | T17 | clean | 5787 | 5787 | - | T17 re-audit (40th): pass-2485 verified. |
 | 2545 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
+| 2546 | L1 | T18 | clean | 5787 | 5787 | - | T18 re-audit (37th): pass-2486 verified. |
