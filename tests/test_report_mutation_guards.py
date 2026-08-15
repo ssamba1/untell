@@ -11,9 +11,7 @@ Killed here with synthetic results through the real summarize/render.
 
 from __future__ import annotations
 
-import pytest
-
-from eval.report import summarize, render, _bypass_rate, _per_detector
+from eval.report import _per_detector, render
 
 
 class _R:
@@ -99,5 +97,5 @@ class TestHardestFallback:
             _per_detector([_R(0.5, 0.1, {"d1": 0.5, "d2": 0.6}, {"d1": 0.1, "d2": 0.2})], 0.5)
         )
         assert hardest is not None
-        row = [l for l in out.splitlines() if l.startswith("| full_loop") and "->" in l][0]
+        row = [ln for ln in out.splitlines() if ln.startswith("| full_loop") and "->" in ln][0]
         assert row.rstrip().endswith(f"| {hardest} |"), f"hardest column must name {hardest}: {row}"
