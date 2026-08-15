@@ -2499,3 +2499,5 @@ permanently.
 | 2347 | L2 | untell/scripts/numerals.py | clean | 5785 | 5785 | - | L2 numerals.py re-audit (40th): 18 regression tests green. |
 | 2348 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2349 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2350 | L1 | T14 | clean | 5785 | 5785 | - | T14 re-audit (38th): pass-2293 verified. |
+| 2351 | L2 | untell/scripts/sentences.py | clean | 5785 | 5785 | - | L2 sentences.py re-audit (40th): 16 tests green. |
