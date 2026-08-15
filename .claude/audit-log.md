@@ -2784,3 +2784,4 @@ permanently.
 | 2624 | L1 | T18 | clean | 5787 | 5787 | - | T18 re-audit (38th): pass-2546 verified. |
 | 2625 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2625 | L2 | eval/detector_audit.py | coverage-closed | 5878 | 5879 | 1cd8733991fc580cae5bd728ac85fd8904dcd23f | L2 eval/detector_audit.py: KILLED the line-398 sentence-probe boundary survivor (>= -> >). Paragraph of exactly-10-word sentences -> sentence pass (10,10) derived probes under original; mutant yields 0, falls back to 6 packaged probes. Pinned via audit_detector spy (same pattern as suite test). Red on mutation, green on original. |
+| 2627 | L2 | untell/scripts/numerals.py | clean | 5787 | 5787 | - | L2 numerals.py re-audit (45th): 18 regression tests green. |
