@@ -2528,3 +2528,5 @@ permanently.
 | 2376 | L2 | untell/scripts/verify.py | clean | 5785 | 5785 | - | L2 verify.py re-audit (40th): pass-2319 verified. |
 | 2377 | L1 | T03 | clean | 5785 | 5785 | - | T03 re-audit (38th): pass-2321 verified. |
 | 2378 | L9 | contradiction-bar-0.35 | clean | 5785 | 5785 | - | L9 contradiction-bar-0.35 re-audit: pass-2238 verified, already MEASURED. |
+| 2379 | L2 | untell/languages.py | clean | 5785 | 5785 | - | L2 languages.py re-audit (40th): 12/12 ranges. |
+| 2380 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2380. |
