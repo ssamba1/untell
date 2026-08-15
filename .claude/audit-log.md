@@ -1051,3 +1051,4 @@ permanently.
 | 907 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (13th): pass-853 verified. |
 | 908 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 908 | L2 | untell/humanness.py | coverage-closed | 5862 | 5863 | e8411dc14c1663566520ccb8f9835bed424a8d62 | L2 humanness.py: KILLED the line-75 warning-latch survivor (True -> False). _WARNED_TOO_SHORT must latch after the first too-short warning; mutant never sets it, so the second call warns again (log spam). Prior 'no observable output change' UNKILLABLE note wrong — the latch IS the observable, same class as the voice.py:187 warn-once kill. Red on mutation, green on original. |
+| 910 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
