@@ -2589,3 +2589,4 @@ permanently.
 | 2437 | L6 | L6 | clean | 5786 | 5786 | - | L6 drift: no new drift. |
 | 2438 | L9 | quality-bar-0.82 | clean | 5786 | 5786 | - | L9 quality-bar-0.82 re-audit: pass-2298 verified, already MEASURED. |
 | 2439 | L2 | untell/languages.py | clean | 5786 | 5786 | - | L2 languages.py re-audit (41st): 12/12 ranges. |
+| 2440 | L2 | untell/browser_check.py | clean | 5786 | 5786 | - | L2 browser_check.py FIRST AUDIT: baseline green (68), 8/8 mutations killed, 0 survivors - FULLY PINNED on first audit (test_browser_check.py comprehensive: 55% AI parsing, human ratios). |
