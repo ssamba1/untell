@@ -2382,3 +2382,6 @@ permanently.
 | 2227 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (37th): killing tests green. |
 | 2228 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2229 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2230 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (36th): pass-2121 verified. |
+| 2231 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (37th): aligned-chunks fix holds. |
+| 2232 | L2 | eval/ceiling.py | clean | 5784 | 5784 | - | L2 eval/ceiling.py FIRST AUDIT: baseline green (12), 0/8 killed with compare/holdout set - 8 survivors all measurement-recipe guards (89 stdev count, 254 rewrote-detection, 338/345/347 pinned-delta logic, 388 git-dirty x2, 564 dataset-unavailable) - distinguishing inputs need live model runs (the L8 lane's own domain; calibration just validated the recipe's output). Documented recipe-logic class. |
