@@ -34,7 +34,7 @@ from untell.text_split import aligned_chunks  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_BAR = 0.70  # semantic-cosine bar (P-SP threshold); only meaningful for the embedding metric
+DEFAULT_BAR = 0.76  # semantic-cosine bar (P-SP threshold); only meaningful for the embedding metric
 TOKEN_BAR = 0.50  # token-overlap (Dice) bar; faithful paraphrases reword heavily and score lower
 BERTSCORE_BAR = 0.88  # BERTScore-F1 bar (rescaled-with-baseline); faithful paraphrases land ~0.88-0.92
 # Unicode-aware: the ASCII-only [A-Za-z0-9']+ tokenised every non-Latin script to nothing, and
