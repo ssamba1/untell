@@ -2492,3 +2492,5 @@ permanently.
 | 2340 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2340. |
 | 2341 | L1 | T10 | clean | 5785 | 5785 | - | T10 re-audit (37th): pass-2281 verified. |
 | 2342 | L1 | T11 | clean | 5785 | 5785 | - | T11 re-audit (38th): pass-2282 verified. |
+| 2343 | L2 | untell/scripts/preserve.py | clean | 5785 | 5785 | - | L2 preserve.py re-audit (40th): NER fix holds. |
+| 2344 | L1 | T12 | clean | 5785 | 5785 | - | T12 re-audit (38th): pass-2284 verified. |
