@@ -105,3 +105,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/report.py | 172 | logic: == -> != | `n_cell = str(st["n"]) if st["n_scored"] == st["n"] else f"{st['n_scored']}/{st['` |
 | eval/report.py | 201 | logic: or -> and | `if not pd or not pd.get("n"):` |
 | eval/report.py | 215 | logic: and -> or | `if hd and hd in best["per_detector"]:` |
+| eval/prove.py | 34 | constant: 5 -> 6 | `max_iters: int = 5,` |
+| eval/prove.py | 41 | constant: 3 -> 4 | `best_of: int = 3,` |
+| eval/prove.py | 108 | constant: 5 -> 6 | `parser.add_argument("--max-iters", type=int, default=5)` |
+| eval/prove.py | 110 | constant: 3 -> 4 | `"--best-of", type=int, default=3,` |
+| eval/prove.py | 135 | constant: 2 -> 3 | `return 2` |
+| eval/prove.py | 141 | constant: 2 -> 3 | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| eval/prove.py | 141 | constant: True -> False | `print(json.dumps(v, ensure_ascii=True, indent=2) if args.json else _render(v))` |
+| eval/prove.py | 155 | constant: 2 -> 3 | `return 2` |
