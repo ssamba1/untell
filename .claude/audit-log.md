@@ -2342,3 +2342,5 @@ permanently.
 | 2187 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (32nd): pass-2123 verified. |
 | 2188 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2189 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2190 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (31st): pass-2130 verified. |
+| 2191 | L2 | untell/attacks/back_translation.py | clean | 5784 | 5784 | - | L2 back_translation.py FIRST AUDIT: baseline green (108), 8/8 mutations killed, 0 survivors - FULLY PINNED on first audit (fleet's test_back_translation_mutation_kills.py comprehensive). |
