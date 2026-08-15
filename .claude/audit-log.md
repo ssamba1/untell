@@ -1302,3 +1302,10 @@ permanently.
 | 1147 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (18th): NER fix holds. |
 | 1148 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 1149 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1150 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (17th): pass-1097 verified. |
+| 1151 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (18th): 18 regression tests green. |
+| 1152 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1153 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (15th): pass-1101 verified. |
+| 1154 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (18th): 16 tests green. |
+| 1155 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (19th): 2 documented survivors. |
+| 1156 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
