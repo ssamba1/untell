@@ -1226,3 +1226,6 @@ permanently.
 | 1071 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (16th): pass-1015 verified. |
 | 1072 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 1073 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (16th): pass-1026 verified. |
+| 1074 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (16th): 12/12 ranges. |
+| 1075 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (16th): 5/5 killed, fully pinned. |
+| 1076 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
