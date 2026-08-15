@@ -291,12 +291,21 @@ def read_stdin_or_none() -> str | None:
     if interactive:
         return None
     try:
-        return sys.stdin.read()
+        text = sys.stdin.read()
     except UnicodeDecodeError:
         # Binary/undecodable stdin (a piped binary file, curl output). The command's contract is
-        # a clean "no input" exit 2, not a Python traceback: same path as empty stdin. MEASURED:
+        # a clean "no input" exit 2, not a Python traceback. Same path as empty stdin. MEASURED:
         # b'\x00\x01\x02\xff' piped to untell-score leaked UnicodeDecodeError before this guard.
         return None
+    if "\x00" in text:
+        # Same policy as `_reject_if_binary` for files: real text contains no NUL at all, so one
+        # means the content is binary. This guard exists because some codecs (Windows cp1252 /
+        # latin-1 pipes) decode NUL bytes instead of raising, which let a piped binary file
+        # through to be scored and "humanized" as prose with exit 0. MEASURED on this host:
+        # `untell humanize` on piped b'\x00\x01\x02\xff' reported "humanization complete".
+        # Callers already turn None into their clean "no input" exit 2.
+        return None
+    return text
 
 
 def configure_utf8_io() -> None:
