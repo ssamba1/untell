@@ -624,3 +624,8 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
 | eval/detector_audit.py | 433 | logic: or -> and | `or r.get("auroc") is None` |
 | eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` |
+| untell/attacks/unicode_tricks.py | 108 | boundary: <= -> < | `or 0x1F1E6 <= o <= 0x1F1FF     # regional indicators (flags)` |
+| untell/attacks/unicode_tricks.py | 259 | boundary: > -> >= | `if run > keep:` |
+| untell/attacks/unicode_tricks.py | 368 | logic: or -> and | `evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UN` |
+| untell/attacks/unicode_tricks.py | 368 | logic: and -> or | `evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UN` |
+| untell/attacks/unicode_tricks.py | 377 | logic: and -> or | `if any(ch.isascii() and ch.isalpha() for ch in word) and not native:` |

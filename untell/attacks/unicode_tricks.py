@@ -372,7 +372,7 @@ def _unhomoglyph(text: str) -> str:
         if not any(ch in _UNHOMOGLYPH for ch in word):
             return word
         native = any(ch.isalpha() and not ch.isascii() and ch not in _UNHOMOGLYPH for ch in word)
-        if any(ch.isascii() or ch.isalpha() for ch in word) and not native:
+        if any(ch.isascii() and ch.isalpha() for ch in word) and not native:
             return "".join(_UNHOMOGLYPH.get(ch, ch) for ch in word)
         if mostly_ascii and alpha and all(ch in _UNHOMOGLYPH for ch in alpha):
             return "".join(_UNHOMOGLYPH.get(ch, ch) for ch in word)
