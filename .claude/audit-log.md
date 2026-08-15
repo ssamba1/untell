@@ -2443,3 +2443,8 @@ permanently.
 | 2291 | L2 | untell/scripts/preserve.py | clean | 5785 | 5785 | - | L2 preserve.py re-audit (39th): NER fix holds. |
 | 2292 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2293 | L1 | T14 | clean | 5785 | 5785 | - | T14 re-audit (37th): pass-2230 verified. |
+| 2294 | L2 | untell/scripts/numerals.py | clean | 5785 | 5785 | - | L2 numerals.py re-audit (39th): 18 regression tests green. |
+| 2295 | L2 | untell/scripts/sentences.py | clean | 5785 | 5785 | - | L2 sentences.py re-audit (39th): 16 tests green. |
+| 2296 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
+| 2297 | L1 | T15 | clean | 5785 | 5785 | - | T15 re-audit (37th): pass-2233 verified. |
+| 2298 | L9 | quality-bar-0.82 | clean | 5785 | 5785 | - | L9 quality-bar-0.82 re-audit: pass-2178 verified, already MEASURED. |
