@@ -1220,3 +1220,6 @@ permanently.
 | 1065 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
 | 1066 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (14th): pass-1022 verified. |
 | 1067 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (16th): 7/8 killed. |
+| 1068 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1069 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1070 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (15th): pass-1024 verified. |
