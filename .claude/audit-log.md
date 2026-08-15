@@ -2541,3 +2541,6 @@ permanently.
 | 2389 | L4 | L4 | clean | 5785 | 5785 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2390 | L1 | T08 | clean | 5785 | 5785 | - | T08 re-audit (40th): _MERGE_WEIGHTS unchanged. |
 | 2391 | L2 | untell/_env.py | clean | 5785 | 5785 | - | L2 _env.py re-audit (39th): fully pinned. |
+| 2392 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2393 | L1 | T09 | clean | 5785 | 5785 | - | T09 re-audit (39th): pass-2337 verified. |
+| 2394 | L2 | untell/rewriter/prompts.py | clean | 5786 | 5786 | - | L2 prompts.py FIRST AUDIT: baseline green (260), 0/7 killed - 7 survivors all prompt-template constants/conditions (75 worst-detectors k=3, 77 numeric filter x2, 78 reverse sort, 96 style-in-STYLES, 99 flagged fallback, 101 [:8] sentence cap) - no test asserts exact prompt text (tests pin rewriter behavior). Documented template class. |
