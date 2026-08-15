@@ -2754,3 +2754,4 @@ permanently.
 | 2597 | L1 | T11 | clean | 5787 | 5787 | - | T11 re-audit (42nd): pass-2526 verified. |
 | 2598 | L9 | quality-bar-0.70 | clean | 5787 | 5787 | - | L9 quality-bar-0.70 re-audit: pass-2418 verified, already MEASURED. |
 | 2599 | L2 | untell/api_server.py | coverage-closed | 5875 | 5876 | a7c3d33f6adb077eec124a6665dfbe09506dcad6 | L2 api_server.py: KILLED the line-496 rate-limit bucket-keying survivor (or -> and). Captured credential passed to _rate_limited is 'secret' (caller's X-API-Key) under original; mutant x_key and auth and '' always yields '' — all credentialed callers share the anonymous bucket, so one client's flood throttles everyone. Red on mutation, green on original. |
+| 2600 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2600 — audit-log milestone. |

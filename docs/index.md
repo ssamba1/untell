@@ -47,7 +47,7 @@ untell humanize "Your AI-sounding paragraph here." --rewriter surgical
 ## The measurement log — start here
 
 Most tools in this space publish a benchmark table. This one publishes **[the full measurement
-log](free-ceiling-measured.md)**: 24 numbered results, including every experiment that *failed* and
+log](free-ceiling-measured.md)**: 225 numbered results, including every experiment that *failed* and
 every claim of ours that a later measurement refuted.
 
 A sample of what is in there, because the refutations are the point:
