@@ -121,7 +121,7 @@ def summarize(by_strategy: dict[str, list], threshold: float) -> dict:
         # so a reader never has to guess whether a pass came from the informative one.
         similarity_ok = fl["mean_similarity"] >= sp["mean_similarity"] - 0.02
         if fl["bypass_rate"] != sp["bypass_rate"]:
-            better, basis = fl["bypass_rate"] >= sp["bypass_rate"], "bypass_rate"
+            better, basis = fl["bypass_rate"] > sp["bypass_rate"], "bypass_rate"
         else:
             better, basis = fl["mean_post_max"] < sp["mean_post_max"], "mean_post_max (bypass tied)"
         # And it has to beat DOING NOTHING. `single_pass` is a deliberate stand-in for a naive

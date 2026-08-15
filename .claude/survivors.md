@@ -97,3 +97,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/llm_judge.py | 87 | constant: 8 -> 9 | `"max_tokens": 8,` |
 | untell/detectors/llm_judge.py | 98 | logic: or -> and | `m = _NUM.search(out or "")` |
 | untell/detectors/llm_judge.py | 102 | boundary: >= -> > | `if val >= 2.0:  # answered as a percentage (e.g. "73"). Values in (1.0, 2.0) are` |
+| eval/report.py | 15 | identity: is not -> is | `scored = [r for r in results if r.post.get("scored") is not False]` |
+| eval/report.py | 88 | constant: False -> True | `scored = [r for r in results if r.post.get("scored") is not False]` |
+| eval/report.py | 110 | logic: and -> or | `comparable = fl["n_scored"] == fl["n"] and sp["n_scored"] == sp["n"]` |
+| eval/report.py | 123 | logic: != -> == | `if fl["bypass_rate"] != sp["bypass_rate"]:` |
+| eval/report.py | 124 | boundary: > -> >= | `better, basis = fl["bypass_rate"] > sp["bypass_rate"], "bypass_rate"` |
+| eval/report.py | 172 | logic: == -> != | `n_cell = str(st["n"]) if st["n_scored"] == st["n"] else f"{st['n_scored']}/{st['` |
+| eval/report.py | 201 | logic: or -> and | `if not pd or not pd.get("n"):` |
+| eval/report.py | 215 | logic: and -> or | `if hd and hd in best["per_detector"]:` |

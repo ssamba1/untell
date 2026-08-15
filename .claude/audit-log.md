@@ -2592,3 +2592,4 @@ permanently.
 | 2440 | L2 | untell/browser_check.py | clean | 5786 | 5786 | - | L2 browser_check.py FIRST AUDIT: baseline green (68), 8/8 mutations killed, 0 survivors - FULLY PINNED on first audit (test_browser_check.py comprehensive: 55% AI parsing, human ratios). |
 | 2441 | L7 | L7 | clean | 5786 | 5786 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2440. |
 | 2442 | L2 | eval/report.py | clean | 5786 | 5786 | - | L2 eval/report.py FIRST AUDIT: baseline green (4), 0/8 killed - 8 survivors all report-generation logic (15 identity, 88 flag, 110/201/215 logic gates, 123/124/172 thresholds) - holdout tests don't reach the report renderer. Documented report-logic class. |
+| 2443 | L1 | T03 | clean | 5786 | 5786 | - | T03 re-audit (39th): pass-2377 verified. |
