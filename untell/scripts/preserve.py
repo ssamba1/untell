@@ -496,7 +496,18 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         #
         # The \b→\. form checks "not abbreviation followed by a literal dot" — the right condition.
         # (?i:...) makes the check case-insensitive. The \. is the only fix; the rest is unchanged.
-        re.compile(rf"\b(?!(?i:{_ABBR_DOTTED})\.)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"),
+        #
+        # (?<![\w.]) closes a hole the exclusion cannot reach by itself: the negative lookahead
+        # only guards the START of a match, so a THREE-component abbreviation such as "u.s.a." —
+        # added to the splitter's dictionary alongside "u.s.a"-style forms — still lost its tail:
+        # the rule matched "s.a" inside it, producing "u.⟦HZ0000⟧." — a sentinel before a bare
+        # period, exactly the shape this rule exists to prevent. Requiring a non-word, non-dot
+        # character before the match start means an interior component of a longer dotted word is
+        # never locked on its own; the whole word either matches from its first letter or is
+        # excluded verbatim.
+        re.compile(
+            rf"\b(?<![\w.])(?!(?i:{_ABBR_DOTTED})\.)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"
+        ),
     ),
     # Phone numbers: international E.164, national formats, extensions. A rewrite that changes a
     # phone number while the sentinel survives intact is the worst possible outcome.

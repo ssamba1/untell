@@ -41,7 +41,7 @@ _ABBREVIATIONS = {
     "fig", "figs", "eq", "no", "nos", "vol", "vols", "ch", "chap", "sec", "pp", "ed", "eds",
     "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
     "mon", "tue", "wed", "thu", "fri", "sat", "sun",
-    "e.g", "i.e", "a.m", "p.m", "u.s", "u.k", "ph.d", "m.d", "b.a", "m.a", "d.c",
+    "e.g", "i.e", "a.m", "p.m", "u.s", "u.k", "u.s.a", "u.s.s.r", "ph.d", "m.d", "b.a", "m.a", "d.c",
 }
 
 
@@ -54,9 +54,9 @@ def ends_with_abbreviation(fragment: str) -> bool:
     if word in _ABBREVIATIONS:
         return True
     parts = [p for p in word.split(".") if p]
-    if not word or len(word.replace(".", "")) > 3 or any(len(p) > 1 for p in parts):
+    if not word or len(word.replace(".", "")) > 4 or any(len(p) > 1 for p in parts):
         return False
-    # A single letter, or dotted initials: "J.", "J.R.R.", "U.S.A."
+    # A single letter, or dotted initials: "J.", "J.R.R.", "U.S.A.", "U.S.S.R."
     if all(p.isalpha() for p in parts):
         return True
     # All-digit, e.g. "1." or "3.5.". The old test was length-only, and "3.5" satisfies "every
@@ -72,6 +72,70 @@ def ends_with_abbreviation(fragment: str) -> bool:
     # "3.5. Methods"), where the number really does not end a sentence. That case is exactly the one
     # where the number is the WHOLE fragment; a sentence-final number always has words before it.
     return all(p.isdigit() for p in parts) and tail == fragment.strip()
+
+
+# Titles and name prefixes. The capital after one of these is the name, not a new sentence:
+# "Dr. Smith arrived." must stay one sentence. `jr`/`sr` are deliberately absent — "John Smith
+# Jr. He left." is two sentences, and "Jr." is followed by a lowercase verb in the common case
+# ("John Smith Jr. is a doctor."), which merges under the case rule anyway.
+_TITLE_PREFIXES = frozenset(
+    {"dr", "mr", "mrs", "ms", "prof", "st", "rev", "hon", "gen", "col", "sgt", "lt"}
+)
+
+
+def _ends_in_a_name_prefix(fragment: str) -> bool:
+    """True when the fragment's final abbreviation is followed by a name, not a sentence.
+
+    Four shapes keep the unconditional merge the abbreviation rule has always had:
+
+    - a lone initial (``J.`` in ``J. R. R. Tolkien``) — the capital after it is the surname;
+    - a compact dotted initialism (``J.R.R.``, ``U.S.S.R.``, ``N.A.T.O.``) — same; the old
+      3-character cap cut ``The U.S.S.R. collapsed.`` into ``The U.S.S.R.`` + ``collapsed.``,
+      a dangling fragment followed by a lowercase fragment that cannot open a sentence;
+    - a title from the dictionary (``Dr.``, ``Prof.``) — the capital after it is the name;
+    - a digit marker (``1.``, ``3.5.``) — a list or section number whose item follows.
+
+    A multi-character dictionary abbreviation (``p.m.``, ``U.S.A.``, ``et al.``) has no such
+    obligation — the capital after one of those opens a new sentence, decided by the case rule.
+    """
+    tail = fragment.rstrip().rsplit(" ", 1)[-1] if fragment.strip() else ""
+    if not tail.endswith("."):
+        return False
+    word = tail[:-1].strip("([\"'“‘").lower()
+    if word in _TITLE_PREFIXES:
+        return True
+    if len(word.replace(".", "")) <= 1:
+        return True
+    parts = [p for p in word.split(".") if p]
+    if (
+        word not in _ABBREVIATIONS
+        and parts
+        and all(p.isalpha() and len(p) == 1 for p in parts)
+    ):
+        return True
+    return bool(parts) and all(p.isdigit() for p in parts) and tail == fragment.strip()
+
+
+def _continues_after_abbreviation(previous: str, nxt: str) -> bool:
+    """The fragment ends in an abbreviation: merge the next piece unless it clearly starts a sentence.
+
+    ``The meeting is at 3 p.m. Then we left.`` used to come back as ONE sentence. The splitter's
+    abbreviation rule is what caused it: ``p.m.`` is in the dictionary, so the merge that protects
+    ``Dr. Smith`` and ``e.g. hammers`` also swallowed a real boundary — the period after ``p.m.``
+    ended the sentence, and the capital ``Then`` opens the next one. Same for ``U.S.A.``,
+    ``et al.`` and every other multi-character abbreviation: on the HC3 register the capital after
+    one of those is a new sentence, and the under-count feeds burstiness CV, per-sentence scoring
+    and the targeted rewriter's unit of work.
+
+    Name prefixes (``Dr.``, ``J.R.R.``, ``1.``) are exempt — see :func:`_ends_in_a_name_prefix`.
+    Everything else merges only when the continuation cannot open a sentence — lowercase, or a
+    non-letter start (``et al. (2020)``, ``et al. 2020`` are citations, not sentences).
+    """
+    if not ends_with_abbreviation(previous):
+        return False
+    if _ends_in_a_name_prefix(previous):
+        return True
+    return not nxt.lstrip()[:1].isupper()
 
 
 # An ellipsis is a pause, not a terminator. `_SENT_SPLIT` looks behind for `[.!?]`, so the last dot
@@ -90,9 +154,20 @@ def ends_with_abbreviation(fragment: str) -> bool:
 # after an ellipsis still splits.
 _ELLIPSIS_END_RE = re.compile(r"(?:\.{2,}|…)[\"'”’)\]}»]*$")
 
+def _first_alpha_is_lower(nxt: str) -> bool:
+    """The continuation's first LETTER is lowercase, skipping leading quotes and brackets.
 
-def _continues_after_ellipsis(previous: str, nxt: str) -> bool:
-    return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()
+    ``He paused... "and continued."`` put the opening quote before the first word, so the plain
+    ``nxt.lstrip()[:1].islower()`` test saw ``"`` — not a letter, so ``islower()`` is False — and
+    treated the lowercase continuation as a new sentence. The quote is not the signal; the first
+    word is. A digit still counts as sentence-opening, so ``... 5 minutes later.`` is unchanged.
+    """
+    for ch in nxt.lstrip():
+        if ch.isalpha():
+            return ch.islower()
+        if ch.isdigit():
+            return False
+    return False
 
 
 # A period inside a closing quote: `He said "stop." and left.` — the quote's period is a REAL
@@ -103,8 +178,12 @@ def _continues_after_ellipsis(previous: str, nxt: str) -> bool:
 _QUOTED_PERIOD_END_RE = re.compile(r'[.!?]["\'”’)}»\]]\s*$')
 
 
+def _continues_after_ellipsis(previous: str, nxt: str) -> bool:
+    return bool(_ELLIPSIS_END_RE.search(previous.rstrip())) and _first_alpha_is_lower(nxt)
+
+
 def _continues_after_a_quoted_period(previous: str, nxt: str) -> bool:
-    return bool(_QUOTED_PERIOD_END_RE.search(previous.rstrip())) and nxt.lstrip()[:1].islower()
+    return bool(_QUOTED_PERIOD_END_RE.search(previous.rstrip())) and _first_alpha_is_lower(nxt)
 
 
 def split_sentences(text: str) -> list[str]:
@@ -113,7 +192,8 @@ def split_sentences(text: str) -> list[str]:
     merged: list[str] = []
     for part in parts:
         if merged and (
-            ends_with_abbreviation(merged[-1]) or _continues_after_ellipsis(merged[-1], part)
+            _continues_after_abbreviation(merged[-1], part)
+            or _continues_after_ellipsis(merged[-1], part)
             or _continues_after_a_quoted_period(merged[-1], part)
         ):
             merged[-1] = f"{merged[-1].rstrip()} {part.strip()}"

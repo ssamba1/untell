@@ -167,19 +167,25 @@ def _segments(text: str):
         marker_match = _FENCE_RE.match(line)
         if marker_match:
             run = marker_match.group(1)
-            if fence is None:
-                yield from flush()
-                fence = run
-            elif run[0] == fence[0] and len(run) >= len(fence):
-                fence = None
+            if not in_math:
+                if fence is None:
+                    yield from flush()
+                    fence = run
+                elif run[0] == fence[0] and len(run) >= len(fence):
+                    fence = None
             # A non-matching marker inside a fence is content; it stays fenced either way, and the
-            # line is emitted verbatim in all three cases.
+            # line is emitted verbatim in all three cases. Inside a math block a fence marker is
+            # MATH too — it must not open or close the fence state, or the block leaks past the
+            # closing $$ and locks the prose after it.
             yield ("layout", "", line)
             continue
         # A display-math delimiter. `$$` exactly, not `$$$` (which is a fence-ish artifact) and
         # not `$...$` inline math (which stays prose). Emitted verbatim as layout on both sides,
         # so the content between the delimiters is protected by the `in_math` branch below.
-        if line.strip() == "$$":
+        # Guarded by `fence is None`: a `$$` inside a fenced code block is CODE, not math, and
+        # toggling here would leave the math state stuck open (or closed) past the fence's end,
+        # swallowing the prose after it.
+        if fence is None and line.strip() == "$$":
             yield from flush()
             in_math = not in_math
             yield ("layout", "", line)
