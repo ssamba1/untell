@@ -2722,3 +2722,4 @@ permanently.
 | 2570 | L1 | T06 | clean | 5787 | 5787 | - | T06 re-audit (42nd): tells separation verified. |
 | 2571 | L2 | untell/text_split.py | clean | 5787 | 5787 | - | L2 text_split.py re-audit (43rd): aligned-chunks fix holds. |
 | 599 | L4 | tier downgrade | clean | 5802 | 5802 | 1ed7703 | L4 score tier downgrade (2nd): tier='heavy' with UNTELL_LITE_NO_TORCH=1 -> effective tier 'full' (reflected in result tier), tier_requested='heavy' preserved, warning present (short-text caveat for 11-word probe; downgrade note in the chain). No crash, honest tier reporting. |
+| 2572 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
