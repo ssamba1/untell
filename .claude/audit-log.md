@@ -2626,3 +2626,4 @@ permanently.
 | 2474 | L2 | untell/scripts/hedges.py | clean | 5786 | 5786 | - | L2 hedges.py re-audit (43rd): 2 documented survivors. |
 | 2475 | L2 | untell/scripts/voice.py | clean | 5786 | 5786 | - | L2 voice.py re-audit (40th): pass-2419 verified. |
 | 2476 | L6 | L6 | clean | 5786 | 5786 | - | L6 drift: no new drift. |
+| 2477 | L1 | T14 | clean | 5786 | 5786 | - | T14 re-audit (40th): pass-2410 verified. |
