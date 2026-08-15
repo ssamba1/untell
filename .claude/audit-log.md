@@ -896,3 +896,8 @@ permanently.
 | 766 | L1 | T14 | clean | 5781 | 5781 | - | T14 re-audit (10th): pass-704 verified 5/5 transforms. No change. |
 | 767 | L2 | untell/scripts/hedges.py | clean | 5781 | 5781 | - | L2 hedges.py re-audit (12th): 2 documented survivors. |
 | 586 | L4 | synonym map | clean | 5800 | 5800 | 18197eb | L4 _SYN map (2nd): 226 entries, leverage -> [use, lean on, tap into], utilize -> [use], ZERO self-references (no word maps to itself — no no-op substitutions; the earlier 4-self-referential-synonyms defect class is clean). synonyms() resolves from the map. Map health verified. |
+| 768 | L4 | L4 | clean | 5781 | 5781 | - | L4 structural.py re-verified: 9/9 alive. |
+| 769 | L4 | L4 | clean | 5781 | 5781 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 770 | L1 | T15 | clean | 5781 | 5781 | - | T15 re-audit (10th): pass-650 verified. No change. |
+| 771 | L2 | untell/scripts/quality.py | clean | 5781 | 5781 | - | L2 quality.py re-audit (9th): two-word-boundary test green. Pass-558 exit-code kill holds. |
+| 772 | L5 | L5 | clean | 5781 | 5781 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
