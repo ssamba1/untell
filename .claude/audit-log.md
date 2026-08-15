@@ -1009,3 +1009,7 @@ permanently.
 | 865 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
 | 866 | L2 | untell/detectors/mage.py | clean | 5775 | 5775 | - | L2 mage.py FIRST AUDIT: baseline green (21), 0/8 killed, 8 survivors: 25/41 lazy-load flags, 64/65 label-config validation (model-config-dependent), 69 num_labels=2, 102/127 window constants (1024/700 words), 112 human_idx guard. Saturation live-verified earlier (0.999987+ on 3 AI texts). All documented model-dependent classes. |
 | 867 | L2 | untell/detectors/binoculars.py | clean | 5775 | 5775 | - | L2 binoculars.py FIRST AUDIT (completes detectors dir sweep): baseline green (15), 0/7 killed, survivors all lazy-load flags + model constants (38/43 _dead/_warned, 67 or->and guard, 83 512-window, 85 boundary, 101 batch 8). DETECTORS DIRECTORY NOW FULLY FIRST-AUDITED (base, perplexity_burstiness, fast_detectgpt, roberta_openai, hc3_roberta, mage, binoculars). Documented model-dependent classes. |
+| 868 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 869 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 870 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (13th): spot-check alive. |
+| 871 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (13th): 16 tests green. |
