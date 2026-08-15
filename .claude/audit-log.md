@@ -2308,3 +2308,7 @@ permanently.
 | 2153 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (35th): tells separation verified. |
 | 2154 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (36th): killing tests green. |
 | 2155 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (36th): aligned-chunks fix holds. |
+| 2156 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 2157 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (35th): spot-check alive. |
+| 2158 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: pass-2018 verified, already MEASURED. |
+| 2159 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (37th): NER fix holds. |
