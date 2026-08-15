@@ -1353,3 +1353,7 @@ permanently.
 | 1198 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: already MEASURED (pass 829 full run, inert +0.000). Knob closed. |
 | 1199 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (19th): NER fix holds. |
 | 1200 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1200 — audit-log milestone. |
+| 1201 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (17th): pass-1144 verified. |
+| 1202 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (18th): pass-1146 verified. |
+| 1203 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (19th): 18 regression tests green. |
+| 1204 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (18th): pass-1150 verified. |
