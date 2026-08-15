@@ -2363,3 +2363,6 @@ permanently.
 | 2208 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2209 | L3 | L3 | clean | 5784 | 5784 | - | L3 FULL-SUITE MILESTONE: first run past the historical ~2% contention region - 789 passed, 3 xfailed before -x stopped at test_the_repository_currently_passes_its_derivable_checks. Failure = REAL doc drift (why-best-open-repo 7418/445 vs 7436/456 measured) - queued to human-queue (RED-band). NOT environmental - the curly-quote region passed on the free box. Full-suite-to-completion record broken (contention was the blocker). |
 | 2210 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (37th): _MERGE_WEIGHTS unchanged. |
+| 2211 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (37th): 12/12 ranges. |
+| 2212 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2213 | L6 | L6 | clean | 5784 | 5784 | - | L6: version consistency pyproject 0.3.0 == untell.__version__ 0.3.0; detector registry 15 (1 lite/5 full/2 heavy/7 commercial) matches audit check '8 local 7 commercial'; package API = submodules only (documented). |
