@@ -2622,3 +2622,4 @@ permanently.
 | 2470 | L1 | T12 | clean | 5786 | 5786 | - | T12 re-audit (40th): pass-2404 verified. |
 | 2471 | L2 | untell/scripts/sentences.py | clean | 5786 | 5786 | - | L2 sentences.py re-audit (42nd): 16 tests green. |
 | 2472 | L5 | L5 | clean | 5786 | 5786 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2473 | L1 | T13 | clean | 5786 | 5786 | - | T13 re-audit (38th): pass-2406 verified. |
