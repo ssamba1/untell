@@ -10,8 +10,6 @@ cosmetic constants (619/623/715/720/724/759/859/878/882/1154/1193/1312/1346/1474
 
 from __future__ import annotations
 
-import pytest
-
 from untell.scripts import audit as A
 
 
