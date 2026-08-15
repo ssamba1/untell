@@ -2326,3 +2326,4 @@ permanently.
 | 2171 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (9th): 20/20 inversions vetoed, 20/20 paraphrases admitted, NLI live. Meaning gate fully functional. |
 | 2172 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2173 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (35th): pass-2113 verified. |
+| 2174 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (9th): 5/5 detectors oriented correctly (roberta 0.084/0.996, hc3_roberta 0.165/0.999, mage 0.578/1.0, fdg 0.079/0.618, ppl 0.183/0.641) - IDENTICAL to pass-284 reference, zero drift. |
