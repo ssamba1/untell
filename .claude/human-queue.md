@@ -484,3 +484,7 @@ docs/why-best-open-repo.md:154 claims "7436 tests, 458 modules". Live probe (202
 - pytest --collect-only collects **7527** tests — +91 over the claim
 - `python -m untell.scripts.audit --json` → check "every 'N test modules' claim matches tests/" FAILS
 - Same defect class as the 3 prior drifts (356→358, 339→358, and the "test modules" phrase fix): the count is a RED-file constant that drifts as guard tests accumulate. RED file, human-owned — needs a doc edit. Suggest the doc either drop the exact count or the audit recipe be run before docs edits.
+
+## 2026-08-15 me2 worker — AMBER — lite-hc3-ensemble 4th kill: EXIT 124 at 1750s, output froze after 3rd model load (105/105)
+
+Fresh measured evidence (2026-08-15, solo, no contention): ensemble lite measurement killed by the 1750s harness timeout at EXIT 124. Output shows 3 backend models loaded (256/256, 257/257, 105/105 layers) with the file frozen at 1387 bytes for the remainder — the run was still in model-loading phase when killed. This is the 4th killed attempt (90m, 90m, 180m, 29m+); each confirms the ensemble's ~8 sequential backend loads make the true measurement >2.5h on this machine. The 150m estimate is now CONFIRMED conservative, not just corrected. Recipe shrink (n=6 or repeats=2) or overnight fleet run still required — human decision.
