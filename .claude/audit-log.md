@@ -2656,3 +2656,4 @@ permanently.
 | 2504 | L1 | T03 | clean | 5787 | 5787 | - | T03 re-audit (40th): pass-2442 verified. |
 | 2505 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2506 | L1 | T04 | clean | 5787 | 5787 | - | T04 re-audit (41st): pass-2444 verified. |
+| 2507 | L2 | untell/config.py | clean | 5787 | 5787 | - | L2 config.py re-audit (42nd): 5/5 killed, fully pinned. |
