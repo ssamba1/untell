@@ -607,3 +607,17 @@ WHY    RED per guard policy (README.md is human-owned); edits are doc drift, NOT
        MCP extra comment (AMBER-warned, committed).
 NEXT   Human call: apply the two row fixes above, or reject. Note the pyproject comment already
        landed with the corrected list.
+
+## 2026-08-15 fanout salvage — census count drift (derivable check failing, docs are RED)
+
+WHAT   audit derivable check fails: docs/humanizer-census.md claims 6930 tests; pytest
+       collects 7986 (UNTELL_LITE_NO_TORCH lite collection). The count grew because the
+       fanout campaign added ~180 tests (text_split 68, coverage 45, explain 40, ...).
+RAN    `.venv/Scripts/python.exe -m untell.scripts.audit` → 1 remaining failure
+SAW    "docs/humanizer-census.md: claims 6930 tests, pytest collects 7986"
+WHY    RED per guard policy (published numbers in docs/); the repo's own repair is
+       `untell-audit --fix-counts`, which also rewrites README/ROADMAP/why-best counts —
+       human-owned. why-best-open-repo.md already queued in wave 1 (991e9ff/4a34d4d).
+NEXT   Human call: run `.venv/Scripts/python.exe -m untell.scripts.audit --fix-counts`
+       outside the agent (it also un-stales why-best + README + ROADMAP counts in one pass),
+       or reject.

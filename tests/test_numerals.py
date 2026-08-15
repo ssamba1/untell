@@ -145,7 +145,7 @@ class TestListMarkersAreNotQuantities:
         assert "2024" in missing_numbers(src, "That was the turning point.")
 
 
-class TestNumbersCLI:
+class TestNumbersCLIUsage:
     def test_help_names_the_untell_command(self, capsys):
         """The help advertised `numerals.py` — a filename, not a command on PATH — and did not
         even document that `-h`/`--help` exist. Name the command as the other subcommands do."""
