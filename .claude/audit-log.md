@@ -2865,3 +2865,4 @@ permanently.
 | 2704 | L1 | T19 | clean | 7506 | 7506 | - | T19 re-audit (41st): pass-2630 verified 36 rows consistent. |
 | 2705 | L3 | L3 | clean | 7506 | 7506 | - | L3: no new slow tests. |
 | 605 | L9 | audit.py merge markers | defect-fixed | 5803 | 5804 | 43625ab | DEFECT FIXED: fleet stash-pop merge (aee3d2e) left <<<<<<</span>/=======/>>>>>>> markers inside audit.py's _git_tracked_py_files, making the module unparseable (SyntaxError 579) — every AST check silently skipped the file. Same merge also reverted quality.py's cosine condition (finding #11). Resolved to the documented side startswith('tests/'); fleet commit 43625ab converged on the same fix. Audit 0 failures restored. |
+| 2706 | L1 | T20 | clean | 7506 | 7506 | - | T20 re-audit (40th): pass-2641 verified. |
