@@ -2697,3 +2697,5 @@ permanently.
 | 2545 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2546 | L1 | T18 | clean | 5787 | 5787 | - | T18 re-audit (37th): pass-2486 verified. |
 | 2547 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (43rd): 7/8 killed. |
+| 2548 | L4 | L4 | clean | 5787 | 5787 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2549 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
