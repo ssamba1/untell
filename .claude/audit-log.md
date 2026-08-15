@@ -1164,3 +1164,4 @@ permanently.
 | 1009 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: thin-note refusal fires (note without numbers refused). R2 check holds. |
 | 1010 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit: untell-score stdin -> exit 0, valid JSON (tier/detectors/max 0.25/flagged False on clean text). Earlier -m untell.scripts.run exit 2 was probe entry-point error (interactive demo); real CLI correct. |
 | 1011 | L1 | T18 | clean | 5784 | 5784 | - | untell-loop --help surface: tiers lite/full/heavy/commercial, 11 rewriters (auto..base), 14 styles - matches registries verified earlier (MCP _TIERS, rewriter list). |
+| 1012 | L1 | T18 | clean | 5784 | 5784 | - | CLI arg validation: invalid --style rejected at parse (exit 2, names 14 valid choices) - the CLI-side of the unknown-style contract. Surface-consistent with MCP validation. |
