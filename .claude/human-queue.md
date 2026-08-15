@@ -368,3 +368,24 @@ SAW    every 'N test modules' claim matches tests/: FAILED
 NEXT   Fix the RED doc count (sibling/human). Longer-term: the check could accept
        a "last verified" date or the docs could state a range — but that changes
        the check's semantics, which is a human decision.
+
+## 2026-08-14 L9 band re-derived from 5 runs — instrument defect in calibrate
+
+WHAT   5-run analysis of measurements.jsonl lite-hc3 (all committed):
+       post_mean_max: run1 0.5871, run2 0.5887, run3 0.5887, run4 0.5625, run5 0.5887
+       -> spread 0.0262, stdev 0.0116. pre_mean_max: 0.6362 in ALL 5 runs (spread 0.0000).
+       The harness's +/-0.020 band = 2x the wider per-run internal stdev (~0.0014-0.0016),
+       which measures WITHIN-run repeat, not run-to-run stability. Run 4 moved 0.0262
+       below the cluster — the band understated movement ~10x.
+WHY    ROOT CAUSE (research.py calibrate): deterministic = all(v==0) comparing the LAST
+       TWO runs only (line 393). Two consecutive runs can both land in the same stable
+       cluster (0.5871/0.5887) while the process genuinely moves between clusters (run 4).
+       A 'deterministic=True' verdict from a 2-run window is coincidence-prone; the
+       instrument's flag is now known-false for lite-hc3.
+IMPACT All L9 'REFUSED - deterministic' passes (18, 38, 64, 78, 98, 118, 138, 158, 178,
+       198, 238, 258, 276, 278) refused on a stale premise. post_mean_max CAN move
+       (0.5625 vs 0.5887), so knob effects at that scale ARE observable -> L9 knob lane
+       is re-openable with a corrected band (use 5-run stdev, not last-2 delta).
+NEXT   Fix calibrate to compare against the FULL run history (min-max spread or stdev
+       across all runs, min 3-5 runs); re-run the L9 knob passes with the corrected
+       band; treat instruments.json deterministic=True as stale until then.
