@@ -86,7 +86,7 @@ class T5ParaphraseRewriter:
             import torch  # noqa: F401
             import transformers  # noqa: F401
         except Exception:
-            return True
+            return False
         return True
 
     def _load(self):
@@ -111,7 +111,7 @@ class T5ParaphraseRewriter:
             max_length=self.max_length,
             num_return_sequences=1,
             repetition_penalty=1.2,
-            no_repeat_ngram_size=3,
+            no_repeat_ngram_size=4,
         )
         if self.sample:
             gen_kwargs.update(do_sample=True, top_p=self.top_p, temperature=self.temperature)

@@ -515,12 +515,37 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _validate(ns: argparse.Namespace, parser: argparse.ArgumentParser) -> argparse.Namespace:
+    """Reject out-of-range numeric args before a measurement starts.
+
+    Every other CLI (untell/score/loop/verify) rejects out-of-range numeric args at parse.
+    This one shipped without checks: MEASURED --n 0 silently ran the default 3-sample
+    builtin (exit 0), --threshold 2.5 ran with a threshold where nothing can ever flag
+    (pre_flagged_rate 0.0), --repeats 0/-1 and --best-of 0 all silently ran a measurement.
+    A number quoted from such a run would be produced by a degenerate configuration.
+    Reject here so the measurements engine cannot be asked to measure with nonsense.
+    """
+    if ns.n <= 0:
+        parser.error(f"--n must be >= 1, got {ns.n}")
+    if ns.repeats <= 0:
+        parser.error(f"--repeats must be >= 1 (the help says use >=3 before quoting a number), got {ns.repeats}")
+    if ns.max_iters <= 0:
+        parser.error(f"--max-iters must be >= 1, got {ns.max_iters}")
+    if ns.best_of <= 0:
+        parser.error(f"--best-of must be >= 1, got {ns.best_of}")
+    if ns.workers <= 0:
+        parser.error(f"--workers must be >= 1, got {ns.workers}")
+    if not 0.0 <= ns.threshold <= 1.0:
+        parser.error(f"--threshold must be in [0, 1], got {ns.threshold}")
+    return ns
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
     from untell.scripts.io_utils import configure_utf8_io
 
     configure_utf8_io()
-    args = build_parser().parse_args(argv)
+    args = _validate(build_parser().parse_args(argv), build_parser())
 
     from untell._env import load_env
 
