@@ -2073,3 +2073,23 @@ permanently.
 | 1918 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 re-audit: pass-1778 verified, already MEASURED. |
 | 1919 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (32nd): 7/8 killed. |
 | 1920 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1920. |
+| 1921 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (31st): pass-1862 verified. |
+| 1922 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (30th): pass-1864 verified. |
+| 1923 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (32nd): pass-1871 verified. |
+| 1924 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (31st): tells separation verified. |
+| 1925 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1926 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (31st): spot-check alive. |
+| 1927 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (32nd): 12/12 ranges. |
+| 1928 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1929 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1930 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (32nd): _MERGE_WEIGHTS unchanged. |
+| 1931 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (32nd): 5/5 killed, fully pinned. |
+| 1932 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1933 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (31st): pass-1877 verified. |
+| 1934 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (33rd): kill tests green. |
+| 1935 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (31st): fully pinned. |
+| 1936 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1937 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (30th): pass-1881 verified. |
+| 1938 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-audit: pass-1798 verified, already MEASURED (MOVED). |
+| 1939 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (32nd): killing tests green. |
+| 1940 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1940. |
