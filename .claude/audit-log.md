@@ -2313,3 +2313,8 @@ permanently.
 | 2158 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: pass-2018 verified, already MEASURED. |
 | 2159 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (37th): NER fix holds. |
 | 2160 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2160. |
+| 2161 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (36th): _MERGE_WEIGHTS unchanged. |
+| 2162 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (35th): pass-2104 verified. |
+| 2163 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (37th): 18 regression tests green. |
+| 2164 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (34th): pass-2106 verified. |
+| 2165 | L8 | lite-hc3-ensemble | clean | 5784 | 5784 | - | L8 CALIBRATION COMPLETE (attempt 4, quiet box): 2 runs finished, exit 0. pre_flagged 1.0 -> post 0.7667; pre_mean_max 0.6362 -> post 0.5412. Run-to-run deltas all +0.000 (post_mean_max +0.0069); full-history spread max 0.0069 - instrument deterministic. L9 unblock: knob experiments must clear 0.0069 band. |
