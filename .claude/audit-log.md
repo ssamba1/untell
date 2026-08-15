@@ -1165,3 +1165,5 @@ permanently.
 | 1010 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit: untell-score stdin -> exit 0, valid JSON (tier/detectors/max 0.25/flagged False on clean text). Earlier -m untell.scripts.run exit 2 was probe entry-point error (interactive demo); real CLI correct. |
 | 1011 | L1 | T18 | clean | 5784 | 5784 | - | untell-loop --help surface: tiers lite/full/heavy/commercial, 11 rewriters (auto..base), 14 styles - matches registries verified earlier (MCP _TIERS, rewriter list). |
 | 1012 | L1 | T18 | clean | 5784 | 5784 | - | CLI arg validation: invalid --style rejected at parse (exit 2, names 14 valid choices) - the CLI-side of the unknown-style contract. Surface-consistent with MCP validation. |
+| 1013 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (14th): pass-961 verified. |
+| 1014 | L1 | T18 | clean | 5784 | 5784 | - | CLI threshold range: 1.5 rejected at parse (exit 2, 'between 0.0 and 1.0') - matches MCP _bad_args contract. Surface-consistent. |
