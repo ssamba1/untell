@@ -62,7 +62,7 @@ class TestCompare:
     def test_missing_history_reports_first_run(self, tmp_path, monkeypatch) -> None:
         self._ledger(tmp_path, monkeypatch, [])
         lines = R.compare("lite-builtin", {"pre_flagged_rate": 0.5, "post_flagged_rate": 0.1})
-        assert any("first run" in l for l in lines), lines
+        assert any("first run" in ln for ln in lines), lines
 
     def test_matching_value_is_noise(self, tmp_path, monkeypatch) -> None:
         self._ledger(tmp_path, monkeypatch, [{
@@ -74,7 +74,7 @@ class TestCompare:
             "pre_flagged_rate": 0.5, "post_flagged_rate": 0.1,
             "post_mean_max_stdev": 0.01,
         })
-        assert all("noise" in l for l in lines if "->" in l), lines
+        assert all("noise" in ln for ln in lines if "->" in ln), lines
 
     def test_big_delta_is_moved(self, tmp_path, monkeypatch) -> None:
         self._ledger(tmp_path, monkeypatch, [{
@@ -86,7 +86,7 @@ class TestCompare:
             "pre_flagged_rate": 0.1, "post_flagged_rate": 0.1,
             "post_mean_max_stdev": 0.01,
         })
-        assert any("MOVED" in l for l in lines), lines
+        assert any("MOVED" in ln for ln in lines), lines
 
     def test_delta_within_two_x_spread_is_noise(self, tmp_path, monkeypatch) -> None:
         """Survivor research.py:297 — `band = 2 * max(...)` -> `3 *`.
@@ -105,7 +105,7 @@ class TestCompare:
             "pre_flagged_rate": 0.525, "post_flagged_rate": 0.525,
             "post_mean_max_stdev": 0.01,
         })
-        assert any("MOVED" in l for l in lines), lines
+        assert any("MOVED" in ln for ln in lines), lines
 
     def test_missing_metric_skipped(self, tmp_path, monkeypatch) -> None:
         """Survivor research.py:303 — `now is None or was is None` -> `and`.
@@ -123,4 +123,4 @@ class TestCompare:
             "post_mean_max_stdev": 0.01,
         })
         # post_flagged_rate is missing on the prev side -> skipped, not compared
-        assert not any("post_flagged_rate" in l and "->" in l for l in lines), lines
+        assert not any("post_flagged_rate" in ln and "->" in ln for ln in lines), lines
