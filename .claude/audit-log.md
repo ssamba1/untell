@@ -1209,3 +1209,9 @@ permanently.
 | 1054 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (17th): 2 documented survivors. |
 | 1055 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (14th): pass-991 verified. |
 | 1056 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. Constants match README. |
+| 1057 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (13th): pass-966 verified. |
+| 1058 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: already MEASURED (pass 794 full run, inert +0.000). No re-measure needed; knob closed. |
+| 1059 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (17th): 4/4 killed. |
+| 1060 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1060. |
+| 1061 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (14th): pass-1017 verified. |
+| 1062 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (13th): pass-1021 verified 35 rows consistent. |
