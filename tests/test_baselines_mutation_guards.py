@@ -10,8 +10,6 @@ Killed here via monkeypatched rewrite/score_text/similarity. Other survivors
 
 from __future__ import annotations
 
-import pytest
-
 from eval import baselines as B
 
 
