@@ -2799,3 +2799,4 @@ permanently.
 | 2639 | L9 | relaxed-sim-0.20 | clean | 5787 | 5787 | - | L9 relaxed-sim-0.20 re-audit: pass-2478 verified, already MEASURED. |
 | 2640 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2640. |
 | 2641 | L1 | T20 | clean | 5787 | 5787 | - | T20 re-audit (39th): pass-2553 verified. |
+| 2642 | L1 | T01 | clean | 5787 | 5787 | - | T01 re-audit (42nd): pass-2557 verified. |
