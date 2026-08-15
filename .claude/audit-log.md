@@ -2684,3 +2684,4 @@ permanently.
 | 2532 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2533 | L1 | T13 | clean | 5787 | 5787 | - | T13 re-audit (39th): pass-2473 verified. |
 | 2534 | L2 | untell/scripts/voice.py | clean | 5787 | 5787 | - | L2 voice.py re-audit (41st): pass-2475 verified. |
+| 2535 | L2 | untell/scripts/quality.py | clean | 5787 | 5787 | - | L2 quality.py re-audit (38th): pass-2479 verified. |
