@@ -444,3 +444,8 @@ line 154: "Automated tests | ✅ **7418** tests, 445 modules"
 MEASURED: tests/ has 456 modules (ls count), 7436 tests collected (pytest --co, 16.42s).
 Stale by 18 tests + 11 modules — exceeds the _MODULE_DRIFT=5 window the derivable-check allows.
 RED-band file: human edit required (guard blocks unattended loop).
+
+## 2026-08-15 full-suite pass — docs/why-best-open-repo.md:154 STILL WRONG (overstated)
+fleet edited to "7436 tests, 458 modules" but tests/ has 456 modules (ls count).
+Overstating by 2 = claims coverage that does not exist (check treats >actual as always-defect).
+Correct value: 7436 tests, 456 modules. RED-band: human edit required.
