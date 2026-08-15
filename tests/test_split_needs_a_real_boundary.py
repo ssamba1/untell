@@ -94,6 +94,23 @@ def test_a_comma_closing_a_quotation_is_visible_to_the_search() -> None:
     assert _split_counts(COMMA_INSIDE_QUOTES, max_words=20, rate=1.0) == {1}
 
 
+# A comma NEAREST the midpoint that precedes a conjunction used to kill the whole split: the
+# search picked it, the cannot-start guard rejected it, and the sentence was rejoined — the other,
+# perfectly good comma earlier in the sentence was never tried. `_split_one` already skipped
+# cannot-start commas inside its own search, so the same sentence split under one function and not
+# the other. The clean comma at word 7 must still win once the conjunction comma at word 24 is
+# skipped.
+CONJUNCTION_TRAP = (
+    "The entire data pipeline reads the incoming file, the parser then processes every single "
+    "record in the correct order for later analysis by the analytics team, and the checker "
+    "validates the final result."
+)
+
+
+def test_a_conjunction_trap_comma_does_not_kill_a_clean_split() -> None:
+    assert max(_split_counts(CONJUNCTION_TRAP, max_words=20, rate=1.0)) > 1
+
+
 SERIAL_LIST = (
     "The paper is the result of a collaborative effort between academia, industry, and regulatory "
     "bodies to address the ethical, social, and technical challenges associated with the use of AI "

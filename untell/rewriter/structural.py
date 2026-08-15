@@ -1203,6 +1203,19 @@ def _split_long_sentences(sentences: list[str], max_words: int = 28, rate: float
                         0 < pos < len(words)
                         and words[pos].rstrip("\"')]”’").endswith(",")
                         and not _split_lands_inside_brackets(words, pos + 1)
+                        # The right half must be able to open a sentence. Without this check the
+                        # search picks the comma NEAREST the midpoint first, and when that comma
+                        # precedes a conjunction ("..., and the checker validates ...") the guard
+                        # below rejects the whole split and REJOINS — never trying the other,
+                        # perfectly good comma that the same sentence's `_split_one` finds.
+                        # MEASURED: a 33-word sentence with a clean comma at word 7 and a
+                        # conjunction comma at word 24 stayed 1 sentence under
+                        # `_split_long_sentences` while `_split_one` split it cleanly at word 7.
+                        # `_split_one` already checks this inside its search; this copy had the
+                        # identical divergence and the failed-split counts proved it.
+                        and not _cannot_start_a_sentence(
+                            " ".join(words[pos + 1:]), " ".join(words[:pos + 1])
+                        )
                     ):
                         split_at = pos + 1
                         break
