@@ -2429,3 +2429,5 @@ permanently.
 | 2274 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (38th): 5/5 killed, fully pinned. |
 | 2275 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (39th): kill tests green. |
 | 2276 | L2 | untell/detectors/commercial.py | clean | 5784 | 5784 | - | L2 commercial.py FIRST AUDIT (completes detectors dir incl commercial): baseline green (17), 0/8 killed - 8 survivors all key-gating/API-wrapper logic (78 retry 3, 127/186/249 key flags, 180/203/258 or->and fallbacks, 262 timeout 20) - need live API calls to distinguish. Documented API-dependent class. detectors dir FULLY audited (8 modules + commercial). |
+| 2277 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (37th): pass-2217 verified. |
+| 2278 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: pass-2158 verified, already MEASURED. |
