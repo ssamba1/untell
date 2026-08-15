@@ -1195,3 +1195,7 @@ permanently.
 | 1040 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1040. |
 | 1041 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (16th): _MERGE_WEIGHTS unchanged. |
 | 1042 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (15th): pass-941 verified. |
+| 1043 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (16th): 18 regression tests green. |
+| 1044 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (15th): pass-950 verified. |
+| 1045 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Defect-fix batteries green. |
+| 1046 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (13th): pass-953 verified. |
