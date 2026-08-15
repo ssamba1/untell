@@ -1064,3 +1064,7 @@ permanently.
 | 917 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (12th): pass-844 verified (RELAXED_SIM_BAR restore holds). |
 | 918 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (14th): NER fix holds. |
 | 919 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (14th): 18 regression tests green. |
+| 920 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 920. |
+| 921 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (13th): pass-861 verified. |
+| 922 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (13th): pass-862 verified. |
+| 923 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (14th): 16 tests green. |

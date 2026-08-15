@@ -840,7 +840,7 @@ def surgical_substitute(
     for word, drop in word_ranks:
         if subs >= max_subs or cur_score < threshold:
             break
-        if drop < 0:
+        if drop <= 0:
             continue
         # Generate all synonym candidates for this word and batch-score them.
         candidates = []
