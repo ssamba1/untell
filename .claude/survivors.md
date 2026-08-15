@@ -118,7 +118,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/detector_audit.py | 284 | logic: and -> or | `elif au is not None and au < WEAK_AUROC:` |
 | eval/detector_audit.py | 303 | constant: 4 -> 5 | `"range": round(rng, 4),` |
 | eval/detector_audit.py | 304 | constant: 4 -> 5 | `"auroc": round(au, 4) if au is not None else None,` |
-| eval/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
+| eval/detector_audit.py | 398 | constant: 10 -> 11 | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` | KILLED by tests/test_ten_word_sentences_become_probes.py: paragraph of exactly-10-word sentences -> sentence pass gets (10,10) derived probes under original; mutant >= -> > yields 0 derived, falls back to the 6 packaged probes (sentence pass (6,6) or none). Pinned via the audit_detector spy. Red on mutation, green on original. |
 | eval/detector_audit.py | 398 | boundary: >= -> > | `out += [s for s in split_sentences(para) if len(s.split()) >= 10]` |
 | eval/detector_audit.py | 477 | identity: is not -> is | `tpr = f"{r['tpr']:6.0%}" if r.get("tpr") is not None else "     -"` |
 | eval/detector_audit.py | 495 | logic: and -> or | `and r["auroc"] > SENTENCE_BROKEN_AUROC` |

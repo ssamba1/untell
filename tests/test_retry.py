@@ -79,8 +79,15 @@ def test_retry_max_attempts_one_disables_retry():
 
 
 def test_retry_zero_attempts_does_one_anyway():
-    retry(lambda: 1, max_attempts=0)
+    calls = []
+
+    def count():
+        calls.append(1)
+        return 42
+
+    assert retry(count, max_attempts=0) == 42
     # Should still attempt the call at least once
+    assert len(calls) == 1
 
 
 def test_retry_kwargs_passed_through():

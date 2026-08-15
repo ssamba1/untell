@@ -16,7 +16,6 @@ def test_no_args_runs_demo_and_exits_zero(capsys):
         assert rc == 0
     finally:
         _sys.argv = orig
-    assert True
 
 
 def test_help_flag_prints_usage(capsys):
