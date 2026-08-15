@@ -2770,3 +2770,4 @@ permanently.
 | 2613 | L1 | T15 | clean | 5787 | 5787 | - | T15 re-audit (42nd): pass-2541 verified. |
 | 2614 | L2 | untell/_retry.py | clean | 5787 | 5787 | - | L2 _retry.py re-audit (45th): kill tests green. |
 | 2615 | L2 | untell/_env.py | clean | 5787 | 5787 | - | L2 _env.py re-audit (43rd): fully pinned. |
+| 2616 | L8 | full-raid | clean | 7465 | 7465 | - | L8 full-raid COMPLETED (FIRST-EVER full-tier RAID measurement, fills corpus x tier matrix): pre_flagged 1.0 -> post_flagged 0.5, pre_mean_max 1.0 -> post_mean_max 0.5564, 3 repeats [0.5941, 0.446, 0.6291] stdev 0.0794, rewrote 18/18, mean_sim 0.8587 min 0.7778. ALL 5 detectors moved (mage 1.0->0.4632, roberta 0.3332->0.0227, fdg 0.4908->0.2123, ppl 0.4552->0.2603, hc3_roberta 0.3496->0.2041). CONTRAST: full-hc3 post_flagged stays 1.0 (0.9999 max) - RAID full-tier is measurably EASIER to evade than HC3 (post 0.5 vs 1.0). Novel corpus-level finding. |
