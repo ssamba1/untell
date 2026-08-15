@@ -561,7 +561,7 @@ def main(argv: list[str] | None = None) -> int:
         # missing or the load fails, and reporting that as an hc3 ceiling would attach real-corpus
         # authority to the demo corpus — the exact confusion the `corpus` field exists to prevent.
         try:
-            texts = load_samples(args.dataset, args.n, strict=False)
+            texts = load_samples(args.dataset, args.n, strict=True)
         except DatasetUnavailable as exc:
             print(f"ERROR: {exc}")
             return 1

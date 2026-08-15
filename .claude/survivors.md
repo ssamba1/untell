@@ -629,3 +629,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/attacks/unicode_tricks.py | 368 | logic: or -> and | `evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UN` |
 | untell/attacks/unicode_tricks.py | 368 | logic: and -> or | `evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UN` |
 | untell/attacks/unicode_tricks.py | 377 | logic: and -> or | `if any(ch.isascii() and ch.isalpha() for ch in word) and not native:` |
+| eval/ceiling.py | 89 | boundary: < -> <= | `if len(xs) < 2:` |
+| eval/ceiling.py | 254 | logic: or -> and | `if res.get("rewrites") or res.get("final", _source) != _source:` |
+| eval/ceiling.py | 338 | logic: or -> and | `pre, post = r.get("per_detector_pre") or {}, r.get("per_detector_post") or {}` |
+| eval/ceiling.py | 345 | boundary: >= -> > | `if deltas.get(top, 0.0) >= _PINNED_DELTA:` |
+| eval/ceiling.py | 347 | boundary: >= -> > | `movers = [k for k, d in deltas.items() if d >= _PINNED_DELTA]` |
+| eval/ceiling.py | 388 | constant: 10 -> 11 | `capture_output=True, text=True, timeout=10,` |
+| eval/ceiling.py | 388 | constant: True -> False | `capture_output=True, text=True, timeout=10,` |
+| eval/ceiling.py | 564 | constant: True -> False | `texts = load_samples(args.dataset, args.n, strict=True)` |
