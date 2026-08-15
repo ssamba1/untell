@@ -872,3 +872,5 @@ permanently.
 | 743 | L2 | untell/languages.py | clean | 5781 | 5781 | - | L2 languages.py re-audit (10th): 12/12 ranges. |
 | 744 | L1 | T07 | clean | 5781 | 5781 | - | T07 re-audit (11th): 4/4 alive. |
 | 745 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
+| 746 | L1 | T08 | clean | 5781 | 5781 | - | T08 re-audit (11th): _MERGE_WEIGHTS unchanged (pass-557 200k draws). |
+| 747 | L2 | untell/config.py | clean | 5781 | 5781 | - | L2 config.py re-audit (10th): 5/5 killed, fully pinned (9th consecutive). |
