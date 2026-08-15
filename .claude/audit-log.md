@@ -2715,3 +2715,4 @@ permanently.
 | 2563 | L2 | untell/_env.py | clean | 5787 | 5787 | - | L2 _env.py re-audit (42nd): fully pinned. |
 | 2564 | L1 | T04 | clean | 5787 | 5787 | - | T04 re-audit (42nd): pass-2506 verified. |
 | 2565 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
+| 2566 | L1 | T05 | clean | 5787 | 5787 | - | T05 re-audit (41st): pass-2510 verified. |
