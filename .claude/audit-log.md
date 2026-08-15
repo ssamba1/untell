@@ -974,3 +974,5 @@ permanently.
 | 830 | L1 | T15 | clean | 5782 | 5782 | - | T15 re-audit (11th): pass-770 verified. No change. |
 | 831 | L2 | untell/scripts/io_utils.py | clean | 5782 | 5782 | - | L2 io_utils.py re-audit (12th): 7/8 killed, 180 documented-equivalent. No new. |
 | 832 | L5 | L5 | clean | 5782 | 5782 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
+| 833 | L1 | T16 | clean | 5782 | 5782 | - | T16 re-audit (10th): pass-723 verified rate-limiter + auth + API. No change. |
+| 834 | L2 | untell/rewriter/t5_paraphrase.py | clean | 5775 | 5775 | - | L2 t5_paraphrase.py FIRST AUDIT: baseline green (177), 0/8 killed, 8 survivors ALL generation-hyperparameter constants (num_beams 4, max_length 128, sample False, top_p 0.95, temperature 1.2, no_repeat_ngram 3, repetition_penalty 1.2, fallback or->and at 178) - tuning params no test asserts exact values; determinism property test (sample False -> deterministic True) passes regardless. Documented tuning-constant class, model-dependent. |
