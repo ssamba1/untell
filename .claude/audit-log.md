@@ -1410,3 +1410,25 @@ permanently.
 | 1255 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (20th): 18 regression tests green. |
 | 1256 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 1257 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (19th): pass-1202 verified. |
+| 1258 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: already MEASURED (pass 933 full run, inert +0.000). Knob closed. |
+| 1259 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (20th): 16 tests green. |
+| 1260 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1260. |
+| 1261 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (19th): pass-1204 verified. |
+| 1262 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (17th): pass-1206 verified. |
+| 1263 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (21st): 2 documented survivors. |
+| 1264 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (19th): pass-1210 verified. |
+| 1265 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1266 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (19th): pass-1213 verified. |
+| 1267 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (18th): pass-1214 verified. |
+| 1268 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1269 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1270 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (17th): pass-1217 verified. |
+| 1271 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (15th): pass-1215 verified. |
+| 1272 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1273 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (18th): pass-1221 verified. |
+| 1274 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (21st): 4/4 killed. |
+| 1275 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (20th): 33/33 live. |
+| 1276 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1277 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (17th): pass-1222 verified 36 rows consistent. |
+| 1278 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: already MEASURED (pass 976 full run, inert +0.000). Knob closed. |
+| 1279 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (20th): 7/8 killed. |
