@@ -2287,3 +2287,6 @@ permanently.
 | 2132 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. L5 lane: 100th worked pass, zero regressions. |
 | 2133 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (32nd): pass-2077 verified 36 rows consistent. |
 | 2134 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (36th): 7/8 killed. |
+| 2135 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (36th): pass-2083 verified. |
+| 2136 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 2137 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (31st): pass-2081 verified. |
