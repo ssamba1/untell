@@ -2319,3 +2319,4 @@ permanently.
 | 2164 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (34th): pass-2106 verified. |
 | 2165 | L8 | lite-hc3-ensemble | clean | 5784 | 5784 | - | L8 CALIBRATION COMPLETE (attempt 4, quiet box): 2 runs finished, exit 0. pre_flagged 1.0 -> post 0.7667; pre_mean_max 0.6362 -> post 0.5412. Run-to-run deltas all +0.000 (post_mean_max +0.0069); full-history spread max 0.0069 - instrument deterministic. L9 unblock: knob experiments must clear 0.0069 band. |
 | 2166 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2167 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-evaluated post-calibration: calibration CONFIRMS instrument deterministic (run-to-run +0.000, full-history spread 0.0069 max). Refusal stands with measured evidence: knob change on deterministic instrument is vacuous (measures code delta, not calibration insight). Calibration done, refusal now calibration-grounded not pending. |
