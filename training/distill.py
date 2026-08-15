@@ -119,7 +119,21 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    # Same degenerate-config refusal every other CLI in this repo ships: a threshold outside
+    # [0, 1] (including NaN/Infinity from float("nan")/float("inf")) can never be reached by a
+    # probability, so --threshold nan silently ran the WHOLE distillation with a gate nothing
+    # could pass — MEASURED on the crash slice: the command ran for minutes instead of
+    # refusing. This script builds a TRAINING SET, so a nonsense gate quietly biases it.
+    if not 0.0 <= args.threshold <= 1.0:
+        parser.error(f"--threshold must be in [0, 1], got {args.threshold}")
+    if not 0.0 <= args.margin <= 1.0:
+        parser.error(f"--margin must be in [0, 1], got {args.margin}")
+    if args.n < 1:
+        parser.error(f"--n must be >= 1, got {args.n}")
+    if args.best_of < 1:
+        parser.error(f"--best-of must be >= 1, got {args.best_of}")
 
     from untell._env import load_env
 
