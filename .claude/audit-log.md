@@ -2418,3 +2418,5 @@ permanently.
 | 2263 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (38th): 7/8 killed. |
 | 2264 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (36th): pass-2204 verified. |
 | 2265 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2266 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (37th): tells separation verified. |
+| 2267 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (38th): pass-2207 verified. |
