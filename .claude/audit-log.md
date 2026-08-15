@@ -2871,3 +2871,5 @@ permanently.
 | 2709 | L4 | L4 | clean | 7506 | 7506 | - | L4 structural.py re-verified: 9/9 alive. |
 | 606 | L4 | env load | clean | 5804 | 5804 | 367b384 | L4 load_env (3rd): BOM stripped via utf-8-sig (value123 read from BOM-prefixed file), # inside double AND single quotes kept ('value with # hash'/'single # quote'), real env wins over file (from_env beats from_file). All load_env invariants verified live. |
 | 2710 | L1 | T01 | clean | 7506 | 7506 | - | T01 re-audit (43rd): pass-2642 verified. |
+| 2711 | L2 | untell/scripts/hedges.py | clean | 7506 | 7506 | - | L2 hedges.py re-audit (47th): 2 documented survivors. |
+| 607 | L4 | retry backoff | clean | 5804 | 5804 | c505b3d | L4 retry (3rd): max_attempts=0 clamped to 1 (single call), 6 attempts with all delays <= max_delay=5.0 (cap-after-jitter fix: never exceeds the documented ceiling), first-try success sleeps nothing. Backoff base*2^attempt + jitter(0,1) capped at max_delay verified. |
