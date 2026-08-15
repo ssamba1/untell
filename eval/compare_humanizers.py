@@ -76,7 +76,7 @@ def _techniques(tier: str, threshold: float):
     def synonym_swap(t: str) -> str:
         from untell.attacks import surgical_substitute
 
-        return surgical_substitute(t, tier=tier, threshold=threshold, max_subs=10)["text"]
+        return surgical_substitute(t, tier=tier, threshold=threshold, max_subs=11)["text"]
 
     def back_translation(t: str) -> str:
         from untell.attacks import back_translate
