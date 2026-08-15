@@ -1277,3 +1277,8 @@ permanently.
 | 1122 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (15th): pass-1022 verified. Fleet state-change documented (pass 950). |
 | 1123 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (17th): pass-1071 verified. |
 | 1124 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (16th): pass-1070 verified. |
+| 1125 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1126 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (17th): pass-1073 verified. |
+| 1127 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (17th): 12/12 ranges. |
+| 1128 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1129 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
