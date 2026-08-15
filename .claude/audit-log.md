@@ -2665,3 +2665,4 @@ permanently.
 | 2513 | L1 | T06 | clean | 5787 | 5787 | - | T06 re-audit (41st): tells separation verified. |
 | 2514 | L2 | untell/_env.py | clean | 5787 | 5787 | - | L2 _env.py re-audit (41st): fully pinned. |
 | 2515 | L2 | untell/text_split.py | clean | 5787 | 5787 | - | L2 text_split.py re-audit (42nd): aligned-chunks fix holds. |
+| 2516 | L6 | L6 | clean | 5787 | 5787 | - | L6 drift: no new drift. |
