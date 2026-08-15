@@ -1157,3 +1157,6 @@ permanently.
 | 1002 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit: structural rewriter emits full sentences (no fragments) - 15-word output on 17-word input. |
 | 1003 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit: semantic cosine RESTORED post-fix - paraphrases score 0.627/0.562 (embedding path, not token-overlap ~0.3). Gate accepts meaning-preserving rewrites. Cosine inversion fix confirmed in production path. |
 | 1004 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40: THIRD silent constant caught this window - uncommitted working-tree change _PPL_WEIGHT 0.55->0.40 (the L9-refused knob applied as a source edit; passes 178/358/533/696 all refused it as deterministic-instrument vacuous). Restored 0.55 (calibrated, AUROC 0.999 note). Tree now clean (diff empty). Same defect class as entailment bar 0.35 + quality cosine inversion. |
+| 1005 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Defect-fix batteries green. |
+| 1006 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (14th): pass-957 verified. |
+| 1007 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (15th): 7/8 killed. |
