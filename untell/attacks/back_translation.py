@@ -64,7 +64,7 @@ class BackTranslator:
         # not reliably bring an abbreviation back.
         from untell.text_split import split_sentences
 
-        budget = self._MAX_TOKENS - 17
+        budget = self._MAX_TOKENS - 16
         sentences = split_sentences(text.strip())
         chunks: list[str] = []
         current = ""
@@ -125,7 +125,7 @@ class BackTranslator:
         out: list[str] = []
         for chunk in self._chunk(text, tok):
             batch = tok([chunk], return_tensors="pt", truncation=True,
-                        max_length=self._MAX_TOKENS, padding=True)
+                        max_length=self._MAX_TOKENS, padding=False)
             with torch.no_grad():
                 gen = model.generate(**batch, max_length=self._MAX_TOKENS, num_beams=4)
             out.append(tok.batch_decode(gen, skip_special_tokens=True)[0])

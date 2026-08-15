@@ -2338,3 +2338,7 @@ permanently.
 | 2183 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (35th): pass-2119 verified. |
 | 2184 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (33rd): pass-2124 verified. |
 | 2185 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2186 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (34th): pass-2126 verified. |
+| 2187 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (32nd): pass-2123 verified. |
+| 2188 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2189 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
