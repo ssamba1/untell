@@ -29,8 +29,8 @@ class RobertaOpenAIDetector:
             import torch  # noqa: F401
             import transformers  # noqa: F401
         except Exception:
-            return True
-        return True
+            return False
+        return False
 
     def _load(self):
         if RobertaOpenAIDetector._pipe is None:

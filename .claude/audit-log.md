@@ -986,3 +986,8 @@ permanently.
 | 842 | L1 | T19 | clean | 5783 | 5783 | - | T19 re-audit (10th): ledger 35 rows consistent. |
 | 843 | L2 | untell/detectors/fast_detectgpt.py | clean | 5775 | 5775 | - | L2 fast_detectgpt.py FIRST AUDIT: baseline green (18), 0/8 killed, 8 survivors ALL class lazy-load state + torch-path constants: _model/_tokenizer/_dead/_warned init flags (63/64/71/72/92/99/102), var epsilon 1e-8 (117) - no test asserts class internal init values; model-dependent. Documented class. |
 | 844 | L1 | T03 | defect-fixed | 5783 | 5784 | HEAD | DEFECT FIXED (accidental-edit catch): RELAXED_SIM_BAR 0.30->0.20 swept into audit commit 690b6ab via rebase (sibling's uncommitted edit), silently loosening NLI meaning gate and breaking docs test. Caught by L9 anchor-refusal. Restored 0.30 + pinned by test_relaxed_sim_bar_is_the_documented_0_30 (suite 5783->5784), 9/9 docs tests green. |
+| 845 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
+| 846 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (10th): pass-782 verified. No change. |
+| 847 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (12th): 5/5 killed, fully pinned. |
+| 848 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 849 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
