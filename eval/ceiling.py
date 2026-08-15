@@ -335,7 +335,7 @@ _PINNED_DELTA = 0.01
 
 def _pinned_note(r: dict) -> list[str]:
     """Name any detector that held the max still while others moved."""
-    pre, post = r.get("per_detector_pre") and {}, r.get("per_detector_post") or {}
+    pre, post = r.get("per_detector_pre") or {}, r.get("per_detector_post") or {}
     if not post:
         return []
     deltas = {k: pre[k] - post[k] for k in pre if isinstance(post.get(k), (int, float))}
@@ -344,7 +344,7 @@ def _pinned_note(r: dict) -> list[str]:
     top = max(pre, key=lambda k: pre[k])
     if deltas.get(top, 0.0) >= _PINNED_DELTA:
         return []
-    movers = [k for k, d in deltas.items() if d >= _PINNED_DELTA]
+    movers = [k for k, d in deltas.items() if d > _PINNED_DELTA]
     if not movers:
         return []
     best = max(movers, key=lambda k: deltas[k])
