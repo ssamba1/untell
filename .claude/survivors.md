@@ -134,3 +134,55 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/structural.py | 2887 | constant: False -> True | `"conversational_openers": False},` |
 =======
 >>>>>>> Stashed changes
+| .claude/verify.py | 33 | constant: True -> False | `capture_output=True,` |
+| .claude/verify.py | 39 | constant: False -> True | `return False, "TIMEOUT"` |
+| .claude/verify.py | 40 | logic: == -> != | `return p.returncode == 0, next(iter(reversed((p.stdout or "").strip().splitlines` |
+| .claude/verify.py | 40 | logic: or -> and | `return p.returncode == 0, next(iter(reversed((p.stdout or "").strip().splitlines` |
+| .claude/verify.py | 46 | constant: True -> False | `stream.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)` |
+| .claude/verify.py | 49 | constant: True -> False | `ap.add_argument("--fix", required=True, help="the source file holding the fix un` |
+| .claude/verify.py | 50 | constant: 900 -> 901 | `ap.add_argument("--timeout", type=int, default=900)` |
+| .claude/verify.py | 61 | constant: True -> False | `capture_output=True,` |
+| .claude/verify.py | 65 | logic: != -> == | `if head.returncode != 0:` |
+| .claude/verify.py | 68 | logic: == -> != | `if head.stdout == fixed:` |
+| .claude/verify.py | 76 | constant: 2 -> 3 | `return 2` |
+| .claude/verify.py | 90 | constant: 2 -> 3 | `return 2` |
+| .claude/research.py | 97 | constant: 25 -> 26 | `"minutes": 25,` |
+| .claude/research.py | 196 | constant: 20 -> 21 | `"minutes": 20,` |
+| .claude/research.py | 229 | constant: 30 -> 31 | `"minutes": 30,` |
+| .claude/research.py | 297 | constant: 2 -> 3 | `band = 2 * max(spread, prev_spread, 0.01)` |
+| .claude/research.py | 303 | logic: or -> and | `if now is None or was is None:` |
+| .claude/research.py | 357 | constant: 2 -> 3 | `if len(failed) >= 2 and failed[-2:] == [queue[i - 2], name]:` |
+| .claude/research.py | 387 | constant: 2 -> 3 | `if len(runs) < 2:` |
+| .claude/research.py | 387 | boundary: < -> <= | `if len(runs) < 2:` |
+| .claude/research.py | 393 | logic: == -> != | `deterministic = all(v == 0 for v in moved.values())` |
+| .claude/research.py | 485 | constant: True -> False | `capture_output=True,` |
+| .claude/research.py | 494 | logic: != -> == | `if p.returncode != 0:` |
+| .claude/research.py | 499 | logic: or -> and | `text = (p.stdout or "").strip()` |
+| .claude/research.py | 568 | logic: == -> != | `if a.cmd == "calibrate":` |
+| .claude/research.py | 570 | logic: == -> != | `if a.cmd == "report":` |
+| .claude/research.py | 584 | logic: == -> != | `if a.cmd == "table":` |
+| .claude/guard.py | 81 | constant: True -> False | `capture_output=True,` |
+| .claude/guard.py | 86 | logic: or -> and | `or ""` |
+| .claude/guard.py | 140 | constant: 4000 -> 4001 | `if DEP.match(line) and "pyproject" in diff[: diff.index(line)][-4000:]:` |
+| .claude/guard.py | 145 | membership: not in -> in | `if amber and QUEUE not in [f.replace("\\", "/") for f in files]:` |
+| .claude/guard.py | 145 | logic: and -> or | `if amber and QUEUE not in [f.replace("\\", "/") for f in files]:` |
+| .claude/mutate.py | 74 | constant: False -> True | `in_doc = False` |
+| .claude/mutate.py | 104 | constant: False -> True | `esc = False` |
+| .claude/mutate.py | 105 | logic: == -> != | `elif ch == "\\":` |
+| .claude/mutate.py | 107 | logic: == -> != | `elif ch == quote:` |
+| .claude/mutate.py | 159 | membership: not in -> in | `fresh = [s for s in survivors if f"/ {module} / {s[0]} / {s[1]} /" not in seen]` |
+| .claude/mutate.py | 195 | constant: True -> False | `capture_output=True,` |
+| .claude/mutate.py | 255 | boundary: > -> >= | `if len(tests) > 6:` |
+| .claude/mutate.py | 285 | logic: == -> != | `verdict = "TIMEOUT " if tail == "TIMEOUT" else ("killed  " if not killed else "S` |
+| .claude/mutate.py | 287 | logic: and -> or | `if killed and tail != "TIMEOUT":` |
+| .claude/mutate.py | 303 | constant: True -> False | `backup.unlink(missing_ok=True)` |
+| .claude/corpus.py | 31 | constant: 60 -> 61 | `"short": (60, 150, "openings only - what a detector sees of anything"),` |
+| .claude/corpus.py | 34 | constant: 60 -> 61 | `"human": (60, 10_000, "human text alone, for the false-positive rate at the ship` |
+| .claude/corpus.py | 44 | constant: 40 -> 41 | `pairs = load_pairs(dataset, n=max(n * 40, 200), min_words=low)` |
+| .claude/corpus.py | 50 | boundary: <= -> < | `if not (low <= words < high) or text in seen:` |
+| .claude/corpus.py | 50 | logic: or -> and | `if not (low <= words < high) or text in seen:` |
+| .claude/corpus.py | 50 | boundary: < -> <= | `if not (low <= words < high) or text in seen:` |
+| .claude/corpus.py | 69 | boundary: < -> <= | `if len(texts) < n:` |
+| .claude/corpus.py | 80 | constant: True -> False | `stream.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)` |
+| .claude/corpus.py | 85 | constant: True -> False | `b.add_argument("--bucket", required=True, choices=sorted(BUCKETS))` |
+| .claude/corpus.py | 90 | logic: == -> != | `if a.cmd == "build":` |
