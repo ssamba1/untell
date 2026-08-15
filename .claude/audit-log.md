@@ -960,3 +960,4 @@ permanently.
 | 818 | L2 | untell/scripts/voice.py | clean | 5782 | 5782 | - | L2 voice.py re-audit (10th): pass-507 gap-boundary kill holds. Survivors documented. |
 | 819 | L2 | untell/scripts/quality.py | clean | 5782 | 5782 | - | L2 quality.py re-audit (10th): two-word-boundary green. Pass-572 BERTScore kill holds. |
 | 820 | L7 | L7 | clean | 5782 | 5782 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 820. |
+| 591 | L4 | targeted rewriter | clean | 5801 | 5801 | 362076a | L4 TargetedRewriter (2nd): split_sentences 2/1 exact; non-scoreable tier ('bogus') defers to inner wholesale (no per-sentence crash); single-sentence path returns valid text WITH the sentinel-count check (the silent-fact-loss fix: dropped sentinel -> keep original); multi-sentence keeps unimproved sentences verbatim, preserves inter-sentence spacing via trailing. The (max, mean) selector (15/19 max-tied mean-improved adoptions) verified in code. |
