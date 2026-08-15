@@ -1286,3 +1286,12 @@ permanently.
 | 1131 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (17th): 5/5 killed, fully pinned. |
 | 1132 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 1133 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (17th): tells separation verified. |
+| 1134 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (18th): kill tests green. |
+| 1135 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (16th): fully pinned. |
+| 1136 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1137 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (17th): pass-1082 verified. |
+| 1138 | L9 | token-bar-0.40 | clean | 5784 | 5784 | - | L9 token-bar-0.40 re-audit: already MEASURED (pass 933 full run, inert +0.000). Knob closed. |
+| 1139 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (17th): killing tests green. |
+| 1140 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1140. |
+| 1141 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (18th): _MERGE_WEIGHTS unchanged. |
+| 1142 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (17th): pass-1086 verified. |
