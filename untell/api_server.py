@@ -59,6 +59,7 @@ except ModuleNotFoundError as _exc:  # pragma: no cover - exercised only on a ba
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from untell import _api_bounds
 from untell._env import load_env
 from untell.rewriter.prompts import STYLE_NAMES
 from untell.scripts.run import untell_text
@@ -244,23 +245,27 @@ _Style = Enum("_Style", {name: name for name in STYLE_NAMES}, type=str)
 # The bounds are the ones the flags already imply, enforced at the edge like `_TIER` and `_Style`.
 # `threshold` is a probability. The upper limits on the counts are deliberately generous — they
 # exist to stop a runaway, not to second-guess a caller.
-_Probability = Annotated[float, Field(ge=0.0, le=1.0)]
-_Iters = Annotated[int, Field(ge=1, le=100)]
-_BestOf = Annotated[int, Field(ge=1, le=32)]
-_Confirm = Annotated[int, Field(ge=0, le=32)]
+# The bounds are defined once, in `untell/_api_bounds.py` (stdlib-only), and consumed here as
+# pydantic Field constraints AND by `untell.scripts.run` as argparse bounds. The CLI cannot
+# import this module to read them: this module imports FastAPI at top level, which would cost
+# every `untell humanize` invocation a full REST-stack import. See `_api_bounds` docstring.
+_Probability = Annotated[float, Field(ge=_api_bounds._Probability[0], le=_api_bounds._Probability[1])]
+_Iters = Annotated[int, Field(ge=_api_bounds._Iters[0], le=_api_bounds._Iters[1])]
+_BestOf = Annotated[int, Field(ge=_api_bounds._BestOf[0], le=_api_bounds._BestOf[1])]
+_Confirm = Annotated[int, Field(ge=_api_bounds._Confirm[0], le=_api_bounds._Confirm[1])]
 # A seed names a stream, so two different seeds must be two different streams. CPython's
 # `random.seed()` takes the ABSOLUTE value of an int, which makes -1 and 1 the same one: measured
 # byte-identical output for both, where 0, 2, 7 and 12345 each differed. The upper bound is the
 # range of the text-derived default (blake2b, 8 bytes), so a request can name any stream the
 # service would pick on its own.
-_Seed = Annotated[int, Field(ge=0, le=2**64 - 1)]
+_Seed = Annotated[int, Field(ge=_api_bounds._Seed[0], le=_api_bounds._Seed[1])]
 # `--top` on the sentences CLI, which had no twin here at all. It decides WHICH sentences come
 # back flagged — the entire output of that operation -- so a REST caller could not ask the
 # question the CLI answers, and got the worst-third default whatever they meant. 0 is a meaning
 # ("flag none"); the high bound is above any reachable sentence count, since MAX_INPUT_CHARS caps
 # a document near 650 sentences. A bare int made `order[:top]` a negative slice: measured, -1
 # flagged 2 of 3 sentences, more than `--top 1`.
-_Top = Annotated[int, Field(ge=0, le=10_000)]
+_Top = Annotated[int, Field(ge=_api_bounds._Top[0], le=_api_bounds._Top[1])]
 _SampleN = Annotated[int, Field(ge=1, le=1000)]
 
 # The CLI validates --rewriter against this list; this field was a bare `str`. An unknown name

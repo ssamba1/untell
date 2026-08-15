@@ -1659,33 +1659,27 @@ def _config_defaults() -> dict[str, object]:
 #     --max-iters -5      exit 0 — the loop runs no iterations and reports a pass
 #     --best-of 10000     ran until it was killed at 200s, genuinely generating candidates
 #
-# None of those are things a person means. The bounds are read off `untell.api_server` rather than
+# None of those are things a person means. The bounds are read off `untell._api_bounds` rather than
 # repeated here, because two copies of a range is how the surfaces drifted in the first place —
 # `tests/test_surface_parity.py` compares defaults and vocabularies and did not think to compare
-# ranges, which is exactly why this survived.
+# ranges, which is exactly why this survived. They used to be read off `untell.api_server` until
+# that module imported FastAPI at top level, which cost every CLI run a full REST-stack import
+# (MEASURED: `import untell.scripts.run` 0.757s -> 0.23s after moving the values to the
+# stdlib-only `untell/_api_bounds.py`); the API's pydantic fields now consume the same tuples.
 def _bounds(name: str, fallback: tuple[float, float]) -> tuple[float, float]:
     try:
-        from untell import api_server
+        from untell import _api_bounds
 
-        # Annotated[float, Field(ge=..., le=...)] stores the bounds inside the FieldInfo's own
-        # `metadata` list, as annotated_types.Ge / Le objects — NOT as `.ge` / `.le` on the
-        # FieldInfo. Reading them the obvious way raises AttributeError, which this function then
-        # swallowed into `fallback`, so the "shared with the API" indirection quietly did nothing
-        # and the CLI validated against its own hardcoded copy. Caught by the test that exists to
-        # check the indirection is real rather than decorative.
-        low = high = None
         # Kept in the type the API declared rather than cast to float. A float cannot hold an int
-        # above 2**53, and `_Seed` is bounded at 2**64 - 1: casting rounded it UP to 2**64, so the
+        # above 2**53, and `_Seed` is bounded at 2**64 - 1: casting it rounded it UP to 2**64, so the
         # CLI advertised "between 0 and 18446744073709551616" — a bound one past the one the REST
         # surface enforces, and a number that is not the one anybody wrote. Probability bounds are
         # declared as floats and stay floats, so nothing else moves.
-        for constraint in getattr(api_server, name).__metadata__[0].metadata:
-            low = getattr(constraint, "ge", low)
-            high = getattr(constraint, "le", high)
+        low, high = getattr(_api_bounds, name)
         if low is None or high is None:
             return fallback
         return low, high
-    except Exception:  # noqa: BLE001 — the server extra is optional; the CLI must still run
+    except Exception:  # noqa: BLE001 — the bounds module is stdlib-only; any failure means the CLI must still run
         return fallback
 
 
