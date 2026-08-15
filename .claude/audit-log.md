@@ -1257,3 +1257,8 @@ permanently.
 | 1102 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (16th): pass-1050 verified. |
 | 1103 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (18th): 2 documented survivors. |
 | 1104 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (16th): pass-1053 verified. |
+| 1105 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1106 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (14th): pass-1057 verified. |
+| 1107 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (15th): pass-1055 verified. |
+| 1108 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1109 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
