@@ -111,10 +111,10 @@ class T5ParaphraseRewriter:
             max_length=self.max_length,
             num_return_sequences=1,
             repetition_penalty=1.2,
-            no_repeat_ngram_size=4,
+            no_repeat_ngram_size=3,
         )
         if self.sample:
-            gen_kwargs.update(do_sample=True, top_p=self.top_p, temperature=self.temperature)
+            gen_kwargs.update(do_sample=False, top_p=self.top_p, temperature=self.temperature)
         else:
             gen_kwargs.update(num_beams=self.num_beams)
         with torch.no_grad():
