@@ -2514,3 +2514,5 @@ permanently.
 | 2362 | L1 | T18 | clean | 5785 | 5785 | - | T18 re-audit (34th): pass-2304 verified. |
 | 2363 | L2 | untell/scripts/quality.py | clean | 5785 | 5785 | - | L2 quality.py re-audit (35th): pass-2307 verified. |
 | 2364 | L1 | T19 | clean | 5785 | 5785 | - | T19 re-audit (36th): pass-2306 verified 36 rows consistent. |
+| 2365 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
+| 2366 | L1 | T20 | clean | 5785 | 5785 | - | T20 re-audit (35th): pass-2310 verified. |
