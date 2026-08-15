@@ -256,8 +256,10 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # target already carved up. A real LaTeX command never follows a letter, digit or colon.
     ("latex_cmd", re.compile(r"(?<![A-Za-z0-9:])\\[a-zA-Z@]+(?:\[[^\]]*\])*\{[^{}]{0,300}\}")),
     ("latex_cmd", re.compile(r"(?<![A-Za-z0-9:])\\[a-zA-Z@]+\*?")),
-    # Bracketed numeric citations: [12], [3, 4], [1-5]
-    ("citation", re.compile(r"\[\d+(?:\s*[-,]\s*\d+)*\]")),
+    # Bracketed numeric citations: [12], [3, 4], [1-5], [12; 15]. The separator
+        # class admits ';' too — "[12; 15]" locked "12" and "15" with the separator
+        # free, so a rewrite could turn the semi-colon into a comma or a sentence end.
+        ("citation", re.compile(r"\[\d+(?:\s*[-,;]\s*\d+)*\]")),
     # Parenthetical author-year (APA/MLA): (Smith, 2020), (Smith & Lee, 2019, p. 4),
     # (see Smith, 2019), (Smith 2019; Jones 2020), (cf. Smith 2019; Jones 2020, p. 4).
     #
@@ -399,8 +401,15 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # "10⁹" locked nothing at all. The base is included with an optional
             # "× 10" prefix, so the whole magnitude is one span.
             r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?\s*\^+\s*[-−]?\d+\b"  # 10^9, 2^31, 1.5 × 10^9
-            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]*\b"  # 10⁹, 10⁻⁹
-            # Slash date BEFORE the fraction rule, which would otherwise take "03/04" and leave
+                        r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]*\b"  # 10⁹, 10⁻⁹
+                        # Dimensions "10×5 cm" and feet-inches heights "5'10\"". "10x5 cm"
+                        # locked NOTHING before this — the 'x' blocks the \b on both sides,
+                        # so neither number could match — and "5'10\"" locked only the "10".
+                        # Placed AFTER the caret branches so "1.5 × 10^9" is still claimed
+                        # whole by the exponent rule, not split by the dimension rule.
+                        r"|\b\d[\d,]*(?:\.\d+)?\s*[×x]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # 10×5 cm
+                        r"|\b\d+(?:\.\d+)?\s*['′]\s*\d+(?:\.\d+)?\s*(?:\"|″|′′)(?!\w)"  # 5'10", 6'2"
+                        # Slash date BEFORE the fraction rule, which would otherwise take "03/04" and leave
             # "/2021" as free text: measured, "03/04/2021" masked to "⟦HZ0000⟧/⟦HZ0001⟧" with the
             # separator rewritable and the day/month pair severed from its year.
             r"|\b\d{1,2}\s*/\s*\d{1,2}\s*/\s*\d{2,4}\b"  # slash date: 03/04/2021

@@ -247,6 +247,41 @@ class TestNerDoesNotLockNewlyObservedCommonWords:
         assert word in masked, f"lock() masked common word {word!r}: {masked!r}"
 
 
+class TestHeightsAndDimensionsLockWhole:
+    """'5'10"' locked only the '10' (the feet part free) and '10x5 cm' locked
+    NOTHING — the 'x' sits between the numbers and blocks the \b both sides
+    need. Both are measurements whose parts must move together."""
+
+    @pytest.mark.parametrize(
+        "text,fact",
+        [
+            ('He is 5\'10" tall.', "5'10\""),
+            ('She is 6\'2".', "6'2\""),
+            ("The child is 4'6.5\" now.", "4'6.5\""),
+            ("The box is 10\u00d75 cm.", "10\u00d75 cm"),
+            ("The box is 10x5 cm.", "10x5 cm"),
+            ("The room is 3\u00d74 m.", "3\u00d74 m"),
+        ],
+    )
+    def test_measurement_is_one_sentinel(self, text, fact):
+        masked, mapping = lock(text)
+        assert any(fact in v for v in mapping.values()), f"{fact!r} not whole in {mapping}"
+
+    def test_apostrophes_and_possessives_are_not_heights(self):
+        masked, _ = lock("Count the 5's and 6's in the list. The team's plan worked.")
+        assert "5's" in masked and "6's" in masked, masked
+
+
+class TestSemicolonNumericCitationLocksWhole:
+    """'[12; 15]' locked '12' and '15' with the ';' free — the bracketed-citation
+    separator class only admitted ',' and '-'."""
+
+    def test_semicolon_separated_bracketed_citation(self):
+        masked, mapping = lock("Prior work [12; 15] supports this.")
+        assert any("[12; 15]" in v for v in mapping.values()), mapping
+        assert "; " not in masked.replace(HZ, "").split("[", 1)[-1].split("]", 1)[0], masked
+
+
 ROUNDTRIP_TEXTS = [
     "See https://example.com. Then we left.",
     "See https://example.com/path?q=1. Then we left.",
@@ -284,6 +319,13 @@ ROUNDTRIP_TEXTS = [
     "Call (555) 123-4567 now.",
     "Call +1 (555) 123-4567 now.",
     "Call +1-555-123-4567. Then leave.",
+    'He is 5\'10" tall.',
+    'She is 6\'2".',
+    "The child is 4'6.5\" now.",
+    "The box is 10\u00d75 cm.",
+    "The box is 10x5 cm.",
+    "The room is 3\u00d74 m.",
+    "Prior work [12; 15] supports this.",
 ]
 
 
