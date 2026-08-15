@@ -1154,3 +1154,4 @@ permanently.
 | 999 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (15th): 33/33 live. |
 | 1000 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit: windowed_max reaches document TAIL - AI text only at end of 30-sentence human doc scores 0.99 (8 windows, max over all). Tail-visibility fix holds. |
 | 1001 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1000 — audit-log milestone. |
+| 1002 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit: structural rewriter emits full sentences (no fragments) - 15-word output on 17-word input. |
