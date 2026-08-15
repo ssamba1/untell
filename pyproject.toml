@@ -144,6 +144,7 @@ untell-humanness = "untell.humanness:main"
 untell-scrub = "untell.scripts.scrub:main"
 untell-numbers = "untell.scripts.numerals:main"
 untell-hedges = "untell.scripts.hedges:main"
+untell-explain = "untell.scripts.explain:main"
 
 [tool.setuptools]
 packages = [

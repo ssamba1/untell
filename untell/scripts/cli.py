@@ -52,6 +52,7 @@ _COMMANDS: dict[str, str] = {
     "scrub": "untell.scripts.scrub:main",
     "numbers": "untell.scripts.numerals:main",
     "hedges": "untell.scripts.hedges:main",
+    "explain": "untell.scripts.explain:main",
 }
 
 # Console scripts this project ships that are NOT subcommands of `untell`. Typing one of these
@@ -76,6 +77,7 @@ _ONE_LINER = {
     "scrub": "strip hidden watermark chars (zero-width, tag, bidi, homoglyph)",
     "numbers": "check every number in the original survives a rewrite",
     "hedges": "check a rewrite does not state more firmly than the original",
+    "explain": "show why the preserve lock freezes each span (rule + rationale)",
 }
 
 

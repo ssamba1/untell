@@ -82,6 +82,16 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    `⟦HZ0003⟧` — **never modify, translate, split, or drop a sentinel**; carry each one through
    every rewrite exactly as-is.
 
+   **To see WHY a span is locked** — which rule matched it and what it protects — ask the lock
+   itself before rewriting:
+   ```bash
+   python scripts/explain.py "<ORIG>"
+   ```
+   Every span `preserve.py` will freeze is listed with its rule(s) and rationale. Use it to
+   confirm a suspicious span (a common word, a stray token) is NOT frozen — over-locking is the
+   expensive failure: frozen prose is prose the rewriter can never improve. Or explain to the
+   user why their citation, number or URL came back verbatim.
+
    **If the input is LaTeX**, check it first and again at the end:
    ```bash
    python scripts/latex.py <file>.tex --bib refs.bib          # every \cite key must resolve

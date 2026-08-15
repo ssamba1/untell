@@ -709,14 +709,26 @@ def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
     ]
 
 
-def _collect_spans(text: str) -> list[tuple[int, int]]:
-    spans: list[tuple[int, int]] = []
-    for _label, pat in _PATTERNS:
+def _collect_labeled_spans(text: str) -> list[tuple[str, int, int]]:
+    """Return (label, start, end) triples for every pattern match, label kept.
+
+    The unlabelled :func:`_collect_spans` delegates here and drops the labels, so
+    the explainer (`untell explain`) and the locker can never disagree about what
+    matched — the same single-source-of-truth argument this file makes for
+    `_LINE_MARKER_RE` and for `SENTINEL_RE`. If the set of patterns changes, both
+    the mask and the explanation change together.
+    """
+    spans: list[tuple[str, int, int]] = []
+    for label, pat in _PATTERNS:
         for m in pat.finditer(text):
             if m.start() != m.end():
-                spans.append((m.start(), m.end()))
-    spans.extend(_spacy_entity_spans(text))
+                spans.append((label, m.start(), m.end()))
+    spans.extend(("entity", start, end) for start, end in _spacy_entity_spans(text))
     return spans
+
+
+def _collect_spans(text: str) -> list[tuple[int, int]]:
+    return [(start, end) for _label, start, end in _collect_labeled_spans(text)]
 
 
 def _merge(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:

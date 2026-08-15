@@ -489,3 +489,11 @@ docs/why-best-open-repo.md:154 claims "7436 tests, 458 modules". Live probe (202
 
 
 Fresh measured evidence (2026-08-15, solo, no contention): ensemble lite measurement killed by the 1750s harness timeout at EXIT 124. Output shows 3 backend models loaded (256/256, 257/257, 105/105 layers) with the file frozen at 1387 bytes for the remainder — the run was still in model-loading phase when killed. This is the 4th killed attempt (90m, 90m, 180m, 29m+); each confirms the ensemble's ~8 sequential backend loads make the true measurement >2.5h on this machine. The 150m estimate is now CONFIRMED conservative, not just corrected. Recipe shrink (n=6 or repeats=2) or overnight fleet run still required — human decision.
+
+## 2026-08-15 slice-14 worker — AMBER — new `untell explain` subcommand (new CLI surface + pyproject.toml + SKILL.md touched)
+
+New capability shipped: `untell explain "text"` (also `untell-explain`, `python -m untell.scripts.explain`) reports every span the preserve-lock would freeze, which rule(s) locked it, and the documented rationale — the inspection surface the opaque mask never had. Over-locking ("a frozen span is prose the rewriter cannot improve, silently, forever") is now checkable before a rewrite.
+
+Envelope note: this is a NEW CLI surface (subcommand + console script entry in pyproject.toml) and touches untell/SKILL.md, so it is AMBER — queued here in the same commit per the envelope. No existing command, flag, exit code, error message, or signature changed; `lock()`/`restore()` behavior is byte-identical (pinned by tests). Internal refactor: `preserve._collect_spans` now delegates to the new `_collect_labeled_spans` so lock and explain share one source of truth.
+
+Files: untell/scripts/explain.py (new), tests/test_explain.py (new, 40 tests), untell/scripts/preserve.py (labeled-collector refactor), untell/scripts/cli.py (subcommand + one-liner), pyproject.toml (untell-explain entry), untell/SKILL.md (usage note after preserve-lock step).
