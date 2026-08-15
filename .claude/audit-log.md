@@ -1155,3 +1155,4 @@ permanently.
 | 1000 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit: windowed_max reaches document TAIL - AI text only at end of 30-sentence human doc scores 0.99 (8 windows, max over all). Tail-visibility fix holds. |
 | 1001 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1000 — audit-log milestone. |
 | 1002 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit: structural rewriter emits full sentences (no fragments) - 15-word output on 17-word input. |
+| 1003 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit: semantic cosine RESTORED post-fix - paraphrases score 0.627/0.562 (embedding path, not token-overlap ~0.3). Gate accepts meaning-preserving rewrites. Cosine inversion fix confirmed in production path. |
