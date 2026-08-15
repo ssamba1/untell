@@ -425,3 +425,16 @@ WHY    AMBER per harness rule — one experiment at one corpus (lite-hc3) is a
 NEXT   Human decision: the perplexity-burstiness weight genuinely affects the
        rewrite loop's outcome at lite tier. Candidate for a follow-up
        experiment sweep (0.3/0.5/0.6) or adoption review. Not adopted.
+
+## 2026-08-15 pass 1051 AMBER — threshold-0.40 MOVED (post_flagged 1.0->0.9)
+
+WHAT   Full measurement: threshold 0.30->0.40. post_flagged_rate 1.0->0.9
+       (-0.10, beyond band); pre/post_mean_max unchanged (0.6362/0.5625).
+       SECOND moving knob this session (after ppl-weight-0.40 -0.048).
+WHY    AMBER per harness: "Never adopt from one run — this one moves every
+       claim." The shipped threshold is load-bearing: raising it to 0.40
+       changes the rewrite loop's stopping behavior (10% of AI text stays
+       flagged after rewriting).
+NEXT   Human decision: threshold sensitivity is real. The 0.30 shipped value
+       was calibrated; a sweep (0.25/0.35/0.40) would map the tradeoff.
+       Not adopted.
