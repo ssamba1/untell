@@ -2634,3 +2634,5 @@ permanently.
 | 2482 | L1 | T16 | clean | 5787 | 5787 | - | T16 re-audit (38th): pass-2417 verified. |
 | 2483 | L2 | untell/scripts/scrub.py | clean | 5787 | 5787 | - | L2 scrub.py re-audit (43rd): 4/4 killed. |
 | 2484 | L3 | test_the_loop_still_works_past_the_scoring_cap | clean | 5786 | 5786 | - | scoring-cap ROOT CAUSE COMPLETE (test-vs-measurement mismatch): fixture 160+ paras -> max pinned across ~100 windows (windowed_max), best_of=3 candidates substitute a few words -> max immovable -> adopted=0 always. Aug-13 measurement (33-46%) does NOT reproduce at ANY size today (160/200/240 paras all adopted=0, seed=3). Verified: single-sentence substitution moves lite score 0.6991->0.25, but 50k doc max stays pinned. Fails identically pre/post layout fix. The test pins a measurement that no longer holds - fixture's windowed-max structure makes the assertion unsatisfiable by construction. |
+| 2485 | L1 | T17 | clean | 5787 | 5787 | - | T17 re-audit (39th): pass-2421 verified. |
+| 2486 | L1 | T18 | clean | 5787 | 5787 | - | T18 re-audit (36th): pass-2422 verified. |
