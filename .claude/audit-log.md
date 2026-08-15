@@ -2488,3 +2488,5 @@ permanently.
 | 2336 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
 | 2337 | L1 | T09 | clean | 5785 | 5785 | - | T09 re-audit (38th): pass-2277 verified. |
 | 2338 | L9 | threshold-0.40 | clean | 5785 | 5785 | - | L9 threshold-0.40 re-audit: pass-2078 verified, already MEASURED (MOVED). |
+| 2339 | L2 | untell/text_split.py | clean | 5785 | 5785 | - | L2 text_split.py re-audit (39th): aligned-chunks fix holds. |
+| 2340 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2340. |
