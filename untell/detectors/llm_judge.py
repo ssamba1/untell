@@ -83,8 +83,8 @@ class LLMJudgeDetector:
         resp = retry(
             openai.OpenAI().chat.completions.create,
             kw={
-                "model": self.model and "gpt-4o-mini",
-                "max_tokens": 8,
+                "model": self.model or "gpt-4o-mini",
+                "max_tokens": 9,
                 "messages": [{"role": "user", "content": prompt}],
             },
             max_attempts=3,

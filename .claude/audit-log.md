@@ -2581,3 +2581,5 @@ permanently.
 | 2429 | L4 | L4 | clean | 5786 | 5786 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2430 | L1 | T01 | clean | 5786 | 5786 | - | T01 re-audit (39th): pass-2370 verified. |
 | 2431 | L2 | untell/scripts/latex.py | clean | 5786 | 5786 | - | L2 latex.py re-audit (41st): 33/33 live. |
+| 2432 | L5 | L5 | clean | 5786 | 5786 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2433 | L1 | T02 | clean | 5786 | 5786 | - | T02 re-audit (38th): pass-2373 verified. |
