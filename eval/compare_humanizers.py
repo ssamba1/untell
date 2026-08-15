@@ -244,8 +244,13 @@ def _render(r: dict) -> str:
 
 
 def _read_corpus(path: str) -> list[str]:
-    with open(path, encoding="utf-8", errors="replace") as fh:
-        blocks = [b.strip() for b in fh.read().split("\n\n")]
+    # Same conversion as eval/ceiling.py: a mistyped path used to surface as a raw
+    # FileNotFoundError / PermissionError traceback (exit 1) — MEASURED on this slice.
+    # read_file_or_exit prints one line and exits 2, matching the repo convention.
+    from untell.scripts.io_utils import read_file_or_exit
+
+    raw = read_file_or_exit(path)
+    blocks = [b.strip() for b in raw.split("\n\n")]
     return [b for b in blocks if b]
 
 

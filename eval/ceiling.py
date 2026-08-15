@@ -456,8 +456,13 @@ def _render(r: dict) -> str:
 
 
 def _read_corpus(path: str) -> list[str]:
-    with open(path, encoding="utf-8", errors="replace") as fh:
-        raw = fh.read()
+    # The same conversion every document-reading command uses: a mistyped path or a directory
+    # used to surface as a raw FileNotFoundError / PermissionError traceback with exit 1 —
+    # MEASURED on this slice. read_file_or_exit prints one line and exits 2, matching the
+    # repo's convention for a usage error.
+    from untell.scripts.io_utils import read_file_or_exit
+
+    raw = read_file_or_exit(path)
     blocks = [b.strip() for b in raw.split("\n\n")]
     return [b for b in blocks if b]
 
