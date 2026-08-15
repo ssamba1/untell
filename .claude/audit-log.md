@@ -1029,3 +1029,5 @@ permanently.
 | 885 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
 | 886 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (11th): pass-824 verified. No change. |
 | 887 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (13th): 7/8 killed, 180 documented. |
+| 888 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 889 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
