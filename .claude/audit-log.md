@@ -2849,3 +2849,5 @@ permanently.
 | 2689 | L4 | L4 | clean | 7506 | 7506 | - | L4 local_policy.py re-verified: 2/2 alive. L4 lane: 200th worked pass, zero regressions. |
 | 2690 | L1 | T16 | clean | 7506 | 7506 | - | T16 re-audit (41st): pass-2621 verified. |
 | 2691 | L8 | corpus-tier-matrix | clean | 7506 | 7506 | - | L8 MATRIX SYNTHESIS (corpus x tier, composite rewriter): HC3-lite 1.0->1.0 flagged (0.6362->0.5625); HC3-full 1.0->1.0 (1.0->0.9999, all 4 rewriters); RAID-lite 0.9->0.2 (83% cleared); RAID-full 1.0->0.5 (50% cleared). CORPUS DOMINATES TIER: HC3 is un-evadable at both tiers, RAID clears a majority at both - the corpus effect exceeds the tier effect. The free evasion ceiling is corpus-bound, not detector-bound. Novel cross-measurement finding. |
+| 2691 | L2 | untell/text_split.py | clean | 7506 | 7506 | - | L2 text_split.py re-audit (44th): aligned-chunks fix holds. |
+| 2692 | L5 | L5 | clean | 7506 | 7506 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
