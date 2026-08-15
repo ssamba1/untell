@@ -2570,3 +2570,6 @@ permanently.
 | 2418 | L9 | quality-bar-0.70 | clean | 5786 | 5786 | - | L9 quality-bar-0.70 re-audit: pass-2278 verified, already MEASURED. |
 | 2419 | L2 | untell/scripts/voice.py | clean | 5786 | 5786 | - | L2 voice.py re-audit (39th): pass-2359 verified. |
 | 2420 | L7 | L7 | clean | 5786 | 5786 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2420. |
+| 2421 | L1 | T17 | clean | 5786 | 5786 | - | T17 re-audit (38th): pass-2361 verified. |
+| 2422 | L1 | T18 | clean | 5786 | 5786 | - | T18 re-audit (35th): pass-2362 verified. |
+| 2423 | L2 | untell/scripts/quality.py | clean | 5786 | 5786 | - | L2 quality.py re-audit (36th): pass-2363 verified. |

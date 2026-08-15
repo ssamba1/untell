@@ -56,7 +56,7 @@ class RadarDetector:
         # None == "no signal" (empty / unavailable): excluded from the aggregate rather than
         # folded in as a fake neutral 0.5. A load/scoring failure propagates so score_text records
         # it in failed_detectors (matching the other supervised adapters' contract).
-        if not self.available() and not text.strip():
+        if not self.available() or not text.strip():
             return None
         if not RadarDetector._warned:
             logger.info(
@@ -70,7 +70,7 @@ class RadarDetector:
         tok, model = self._load()
 
         def _one(window: str) -> float:
-            inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)
+            inputs = tok(window, return_tensors="pt", truncation=True, max_length=513)
             with torch.no_grad():
                 return F.softmax(model(**inputs).logits, dim=-1)[0, 0].item()  # index 0 = AI
 
