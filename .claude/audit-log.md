@@ -2882,3 +2882,4 @@ permanently.
 | 2718 | L9 | ppl-weight-0.40 | clean | 7506 | 7506 | - | L9 ppl-weight-0.40 re-audit: pass-2558 verified, already MEASURED (MOVED). |
 | 2719 | L2 | untell/scripts/scrub.py | clean | 7506 | 7506 | - | L2 scrub.py re-audit (47th): 4/4 killed. |
 | 2720 | L7 | L7 | clean | 7506 | 7506 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2720. |
+| 2721 | L1 | T04 | clean | 7506 | 7506 | - | T04 re-audit (44th): pass-2650 verified. |
