@@ -2606,3 +2606,5 @@ permanently.
 | 2454 | L2 | untell/_env.py | clean | 5786 | 5786 | - | L2 _env.py re-audit (40th): fully pinned. |
 | 2455 | L2 | untell/layout.py | clean | 5786 | 5786 | - | L2 layout.py re-audit (40th): killing tests green. |
 | 2456 | L6 | L6 | clean | 5786 | 5786 | - | L6 drift: no new drift. |
+| 2457 | L1 | T08 | clean | 5786 | 5786 | - | T08 re-audit (41st): _MERGE_WEIGHTS unchanged. |
+| 2458 | L2 | untell/api_server.py | clean | 5786 | 5786 | - | L2 api_server.py FIRST AUDIT: baseline green (147), 4/8 killed (fleet guards), 4 survivors: 428 (rate-bucket soft cap), 496 (rate-limit or->and), 682/715 (OpenAPI schema flags) - rate-limit internals need timed requests, schema constants untested. Documented class. |
