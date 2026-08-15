@@ -79,7 +79,10 @@ def _bad_args(**checks) -> dict | None:
                     float(value)
                 else:
                     int(value)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
+                # OverflowError is real: int(float('inf')) raises it, and a JSON client can
+                # send 1e999, which Python's json parses as inf. The three exceptions are the
+                # full set int()/float() can raise on a non-whole argument.
                 return {"error": f"{name}={value!r} is not a number; expected a "
                                  f"{'probability in [0, 1]' if kind == 'probability' else 'whole number'}."}
         if kind == "probability" and not (0.0 <= float(value) <= 1.0):
