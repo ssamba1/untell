@@ -455,3 +455,10 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/ensemble.py | 178 | boundary: <= -> < | `near = [(r, t) ... if r[0] <= best_max + _RANK_EPS]` | KILLED by test_ensemble_mutation_guards::TestBandInclusiveEdge (exact best_max+EPS edge stays in band; corrected 2026-08-14 after swarm-a diff-proved it killable)
 | untell/rewriter/composite.py | 33 | <= -> < (n<=1 guard) | KILLED by test_composite_mutation_guards (n=1 -> ZeroDivisionError) |
 | untell/rewriter/composite.py | 37 | 2 -> 3 (fan-out span) | KILLED by test_composite_mutation_guards (n=4: [0.4,0.7,0.8,1.0] vs [0.4,0.7,1.0,1.0]) |
+
+## 2026-08-14 swarm-b unkillable proofs (from batch report, verified design)
+
+| module | line | mutation | status |
+|---|---|---|---|
+| untell/attacks/unicode_tricks.py | 108 | <= -> < (regional-indicator range) | UNKILLABLE: equivalent mutant — U+1F1E6-1F1FF is a strict subset of the pictographic range U+1F000-1FAFF matched by the preceding or-arm; the bound never decides any input |
+| untell/attacks/back_translation.py | 35 | False -> True (available import branch) | UNKILLABLE in this env: only observable if an import fails inside available(); transformers/torch/sentencepiece all import here |
