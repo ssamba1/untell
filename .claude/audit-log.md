@@ -1242,3 +1242,10 @@ permanently.
 | 1087 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (16th): killing tests green. |
 | 1088 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 1089 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 1090 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (15th): pass-990 verified. |
+| 1091 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (16th): aligned-chunks fix holds. |
+| 1092 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1093 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (16th): pass-997 verified. |
+| 1094 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (17th): NER fix holds. |
+| 1095 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (17th): 18 regression tests green. |
+| 1096 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
