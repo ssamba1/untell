@@ -1266,3 +1266,7 @@ permanently.
 | 1111 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (12th): pass-916 normalize-embeddings kill holds. |
 | 1112 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 1113 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (14th): pass-1062 verified. |
+| 1114 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (18th): 4/4 killed. |
+| 1115 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (17th): 33/33 live. |
+| 1116 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1117 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (13th): pass-1070 verified. |
