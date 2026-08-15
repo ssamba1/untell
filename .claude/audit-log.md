@@ -1136,3 +1136,6 @@ permanently.
 | 981 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (14th): pass-921 verified. |
 | 982 | L1 | T16 | clean | 5777 | 5777 | - | T16 re-audit: score_text + untell_text both reject bytes with clean TypeError naming str contract. Fleet pass-571 fix holds. |
 | 983 | L1 | T09 | clean | 5777 | 5777 | - | T09 re-audit: max_iters=0 inert budget - changed=False, rewrites=0, iters=None (documented no-iteration shape). No rewrite attempted. |
+| 984 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (14th): tells separation verified. |
+| 985 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 986 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (15th): _MERGE_WEIGHTS unchanged. |
