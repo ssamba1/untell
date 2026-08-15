@@ -1128,3 +1128,4 @@ permanently.
 | 973 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (13th): pass-917 verified. |
 | 974 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (15th): NER fix holds. |
 | 975 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (15th): 18 regression tests green. |
+| 976 | L2 | untell/scripts/quality.py | defect-fixed | 5775 | 5777 | 31c671f24f6eb7abb7750fbcf692e95e88b535cf | DEFECT FIXED: fleet abb5688 inverted 'if cos is not None' to 'is None'. Model-present path silently returned token_overlap (semantic gate degraded), model-absent crashed max(0.0,min(1.0,None)) TypeError (2 CLI tests red). Restored + NEW regression test test_quality_cosine_condition_not_inverted.py (2 tests, red on mutation 2 failed / green on original). Verified both branches: present->cosine 0.5949 on paraphrase (token_overlap <0.5 control), absent->0.5 no crash. Suite 5775->5777. |
