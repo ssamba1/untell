@@ -870,3 +870,5 @@ permanently.
 | 741 | L1 | T05 | clean | 5781 | 5781 | - | T05 re-audit (10th): pass-552 verified. No change. |
 | 742 | L1 | T06 | clean | 5781 | 5781 | - | T06 re-audit (10th): tells separation verified. |
 | 743 | L2 | untell/languages.py | clean | 5781 | 5781 | - | L2 languages.py re-audit (10th): 12/12 ranges. |
+| 744 | L1 | T07 | clean | 5781 | 5781 | - | T07 re-audit (11th): 4/4 alive. |
+| 745 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
