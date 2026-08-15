@@ -2587,3 +2587,5 @@ permanently.
 | 2435 | L2 | untell/scripts/verify.py | clean | 5786 | 5786 | - | L2 verify.py re-audit (41st): pass-2376 verified. |
 | 2436 | L2 | untell/detectors/llm_judge.py | clean | 5786 | 5786 | - | L2 llm_judge.py FIRST AUDIT: baseline green (21), 0/8 killed - 8 survivors all LLM-gate logic (51/74/86/98 flags+or->and, 70 identity, 78 retry 3, 87 timeout 8, 102 threshold) - need live LLM. Documented class. DETECTORS DIRECTORY FULLY L2-AUDITED (10 modules + commercial, all classes documented). |
 | 2437 | L6 | L6 | clean | 5786 | 5786 | - | L6 drift: no new drift. |
+| 2438 | L9 | quality-bar-0.82 | clean | 5786 | 5786 | - | L9 quality-bar-0.82 re-audit: pass-2298 verified, already MEASURED. |
+| 2439 | L2 | untell/languages.py | clean | 5786 | 5786 | - | L2 languages.py re-audit (41st): 12/12 ranges. |
