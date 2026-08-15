@@ -344,7 +344,7 @@ def _pinned_note(r: dict) -> list[str]:
     top = max(pre, key=lambda k: pre[k])
     if deltas.get(top, 0.0) >= _PINNED_DELTA:
         return []
-    movers = [k for k, d in deltas.items() if d > _PINNED_DELTA]
+    movers = [k for k, d in deltas.items() if d >= _PINNED_DELTA]
     if not movers:
         return []
     best = max(movers, key=lambda k: deltas[k])
@@ -385,7 +385,7 @@ def _code_state() -> str:
             dirty = subprocess.run(
                 ["git", "status", "--porcelain"],
                 cwd=Path(__file__).resolve().parent.parent,
-                capture_output=True, text=True, timeout=10,
+                capture_output=True, text=True, timeout=11,
             )
             suffix = "+dirty" if dirty.returncode == 0 and dirty.stdout.strip() else ""
             return out.stdout.strip() + suffix
