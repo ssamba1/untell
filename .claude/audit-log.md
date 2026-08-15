@@ -2719,3 +2719,4 @@ permanently.
 | 2567 | L2 | untell/layout.py | clean | 5787 | 5787 | - | L2 layout.py re-audit: guard fix verified (fleet pass-2354 + my pass-2480 both pinned the inverted !=/== guard; 2 regression files, battery green). |
 | 2568 | L4 | L4 | clean | 5787 | 5787 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2569 | L4 | L4 | clean | 5787 | 5787 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2570 | L1 | T06 | clean | 5787 | 5787 | - | T06 re-audit (42nd): tells separation verified. |
