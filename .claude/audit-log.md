@@ -2521,3 +2521,5 @@ permanently.
 | 2369 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. L4 lane: 170th worked pass, zero regressions. |
 | 2370 | L1 | T01 | clean | 5785 | 5785 | - | T01 re-audit (38th): pass-2313 verified. |
 | 2371 | L2 | untell/scripts/latex.py | clean | 5785 | 5785 | - | L2 latex.py re-audit (40th): 33/33 live. |
+| 2372 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2373 | L1 | T02 | clean | 5785 | 5785 | - | T02 re-audit (37th): pass-2317 verified. |
