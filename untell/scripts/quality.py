@@ -227,7 +227,7 @@ def similarity(a: str, b: str) -> float:
     # `untell-quality --json`, because recall against a reference is a genuinely useful number —
     # just not a meaning gate.
     cos = _cosine_similarity(a, b)
-    if cos is None:
+    if cos is not None:
         # Clamp raw cosine into [0, 1]; the 0.76 bar lives on this raw-cosine scale.
         return max(0.0, min(1.0, cos))
     return token_overlap(a, b)
