@@ -865,3 +865,5 @@ permanently.
 | 736 | L6 | L6 | clean | 5781 | 5781 | - | L6 drift: no new drift. Delegated README-numbers agent in flight. |
 | 737 | L2 | untell/scripts/entailment.py | coverage-closed | 5855 | 5857 | fb89ded13ad947622e7f8dfdd07eac29a43d51e7 | L2 entailment.py: KILLED the line-511 contradiction-at-bar boundary survivor (< -> <=). contradiction_score pinned to exactly 0.5 == DEFAULT_CONTRADICTION_BAR -> original returns False (contradiction at the bar is a contradiction, gate rejects), mutant True (<= flips to a pass). Prior 'model artifact boundary unreachable' UNKILLABLE note wrong — the score is a pinable call. Red on mutation, green on original. |
 | 738 | L2 | untell/scripts/io_utils.py | clean | 5781 | 5781 | - | L2 io_utils.py re-audit (10th): 37 tests green incl. binary-stdin + isatty-fallback kills. |
+| 739 | L2 | untell/scripts/verify.py | clean | 5781 | 5781 | - | L2 verify.py re-audit (10th): pass-505 contention artifact documented; survivors 174/368 killed. |
+| 740 | L7 | L7 | clean | 5781 | 5781 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 740. |
