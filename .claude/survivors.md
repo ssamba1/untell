@@ -653,3 +653,8 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/prompts.py | 96 | logic: and -> or | `if style and style in STYLES:` |
 | untell/rewriter/prompts.py | 99 | logic: or -> and | `flagged_sentences = score_result.get("flagged_sentences") or []` |
 | untell/rewriter/prompts.py | 101 | constant: 8 -> 9 | `listed = "\n".join(f"  - {s}" for s in flagged_sentences[:8])` |
+| untell/rewriter/base.py | 66 | constant: False -> True | `return False` |
+| untell/rewriter/base.py | 111 | constant: 3 -> 4 | `max_attempts=3,` |
+| untell/rewriter/base.py | 113 | logic: or -> and | `return (resp.choices[0].message.content or "").strip()` |
+| untell/rewriter/base.py | 181 | logic: == -> != | `if prefer == "mt_pivot":` |
+| untell/rewriter/base.py | 241 | logic: and -> or | `if isinstance(v, (int, float)) and not isinstance(v, bool)` |

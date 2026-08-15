@@ -2549,3 +2549,4 @@ permanently.
 | 2397 | L1 | T10 | clean | 5785 | 5785 | - | T10 re-audit (38th): pass-2341 verified. |
 | 2398 | L9 | ppl-weight-0.40 | clean | 5785 | 5785 | - | L9 ppl-weight-0.40 re-audit: pass-2258 verified, already MEASURED (MOVED). |
 | 2399 | L2 | untell/scripts/preserve.py | clean | 5785 | 5785 | - | L2 preserve.py re-audit (41st): NER fix holds. |
+| 2400 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2400 — audit-log milestone. |
