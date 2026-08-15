@@ -2828,3 +2828,4 @@ permanently.
 | 2668 | L4 | L4 | clean | 5787 | 5787 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2669 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2670 | L1 | T11 | clean | 5787 | 5787 | - | T11 re-audit (43rd): pass-2597 verified. |
+| 2671 | L2 | untell/languages.py | clean | 5787 | 5787 | - | L2 languages.py re-audit (45th): 12/12 ranges. |
