@@ -2676,3 +2676,4 @@ permanently.
 | 2524 | L1 | T10 | clean | 5787 | 5787 | - | T10 re-audit (40th): pass-2464 verified. |
 | 2525 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2526 | L1 | T11 | clean | 5787 | 5787 | - | T11 re-audit (41st): pass-2466 verified. |
+| 2527 | L2 | untell/scripts/sentences.py | clean | 5787 | 5787 | - | L2 sentences.py re-audit (43rd): 16 tests green. |
