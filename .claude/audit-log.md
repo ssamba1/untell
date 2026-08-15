@@ -1112,3 +1112,5 @@ permanently.
 | 957 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (13th): pass-890 verified. |
 | 958 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (15th): kill tests green. |
 | 959 | L2 | untell/scripts/entailment.py | red-fixed | 5775 | 5775 | 871f2ef1da9099c3fdfd6e7ea8f20b8964f73e53 | RED FIXED: uncommitted DEFAULT_CONTRADICTION_BAR 0.5->0.35 (fleet wip/mutation remnant) broke test_contradiction_just_below_bar_passes (0.49>=0.35 wrongly vetoed, 1 failed). Restored 0.5 = measured value (pass 577 inversions >=0.996, bar in empty gap) + fleet pass-737 kill pins it. Regression already covered by test_contradiction_at_bar_is_rejected.py (no new test needed - existing pins 0.49-passes). Verified 2 passed + 11 entailment battery green. |
+| 960 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (13th): fully pinned. |
+| 961 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (13th): pass-893 verified. |
