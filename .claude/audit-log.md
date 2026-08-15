@@ -1035,3 +1035,4 @@ permanently.
 | 891 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (13th): pass-838 verified. |
 | 892 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
 | 893 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (12th): pass-830 verified. No change. |
+| 894 | L1 | aligned_chunks | clean | 5775 | 5775 | - | aligned_chunks live probe: short inputs single chunk, 300-word identical sides -> 4 aligned chunks of 75 words, 0 misaligned (>=0.9 overlap all pairs). difflib-anchored correspondence verified (docstring's anti-false-veto design holds). |
