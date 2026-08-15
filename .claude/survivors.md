@@ -686,3 +686,94 @@ unkillable with the reason. Written by `mutate.py --record`.
 | .claude/experiment.py | 198 | boundary: > -> >= | `if any(abs(d) > band for d in deltas.values()):` |
 | .claude/experiment.py | 211 | constant: True -> False | `stream.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)` |
 | .claude/experiment.py | 220 | logic: == -> != | `if a.cmd == "run":` |
+| eval/baselines.py | 78 | logic: == -> != | `and i % merge_period == 0` |
+| eval/baselines.py | 78 | logic: and -> or | `and i % merge_period == 0` |
+| eval/ceiling.py | 254 | logic: or -> and | `if res.get("rewrites") or res.get("final", _source) != _source:` |
+| eval/ceiling.py | 338 | logic: or -> and | `pre, post = r.get("per_detector_pre") or {}, r.get("per_detector_post") or {}` |
+| eval/ceiling.py | 345 | boundary: >= -> > | `if deltas.get(top, 0.0) >= _PINNED_DELTA:` |
+| eval/ceiling.py | 347 | boundary: >= -> > | `movers = [k for k, d in deltas.items() if d >= _PINNED_DELTA]` |
+| eval/ceiling.py | 388 | constant: 10 -> 11 | `capture_output=True, text=True, timeout=10,` |
+| eval/ceiling.py | 388 | constant: True -> False | `capture_output=True, text=True, timeout=10,` |
+| eval/ceiling.py | 564 | constant: True -> False | `texts = load_samples(args.dataset, args.n, strict=True)` |
+| eval/ceiling.py | 89 | boundary: < -> <= | `if len(xs) < 2:` |
+| eval/compare_humanizers.py | 202 | boundary: >= -> > | `round(sum(1 for s in measured if s >= threshold) / len(measured), 3)` |
+| eval/compare_humanizers.py | 276 | boundary: <= -> < | `if args.n <= 0:` |
+| eval/compare_humanizers.py | 303 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
+| eval/eval_policy.py | 42 | identity: is not -> is | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
+| eval/tells_auroc.py | 201 | constant: 2 -> 3 | `"documents": len(pairs) * 2,` |
+| eval/tells_auroc.py | 63 | logic: == -> != | `return sum((a > h) + 0.5 * (a == h) for a in ai for h in human) / (len(ai) * len` |
+| untell/attacks/back_translation.py | 35 | False -> True (available import branch) | UNKILLABLE in this env: only observable if an import fails inside available(); transformers/torch/sentencepiece all import here |
+| untell/attacks/back_translation.py | 50 | 512->513 (_MAX_TOKENS) | KILLED by swarm test_back_translation_mutation_kills |
+| untell/attacks/back_translation.py | 67 | 16->17 (budget margin) | KILLED by swarm (exact-fill stays one piece) |
+| untell/attacks/back_translation.py | 79 | > -> >= (pack loop) | KILLED by swarm (exact-fill merge; independently re-verified) |
+| untell/attacks/back_translation.py | 86 | or -> and (fallback) | KILLED by swarm (whitespace returns input) |
+| untell/attacks/unicode_tricks.py | 104-112 | emoji-adjacency boundaries | KILLED by swarm test_unicode_tricks_mutation_kills (44 tests) |
+| untell/attacks/unicode_tricks.py | 108 | <= -> < (regional-indicator range) | UNKILLABLE: equivalent mutant — U+1F1E6-1F1FF is a strict subset of the pictographic range U+1F000-1FAFF matched by the preceding or-arm; the bound never decides any input. CONFIRMED 6-seed sweep (72 candidates, sole survivor in every seed) |
+| untell/attacks/unicode_tricks.py | 108 | boundary: <= -> < | `or 0x1F1E6 <= o <= 0x1F1FF     # regional indicators (flags)` |
+| untell/attacks/unicode_tricks.py | 259 | boundary: > -> >= | `if run > keep:` |
+| untell/attacks/unicode_tricks.py | 368 | logic: and -> or | `evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UN` |
+| untell/attacks/unicode_tricks.py | 368 | logic: or -> and | `evidence = [ch for ch in text if ch.isalpha() and (ch.isascii() or ch not in _UN` |
+| untell/attacks/unicode_tricks.py | 377 | logic: and -> or | `if any(ch.isascii() and ch.isalpha() for ch in word) and not native:` |
+| untell/detectors/base.py | 178 | boundary: <= -> < | `if len(words) <= width:` |
+| untell/detectors/base.py | 228 | logic: or -> and | `for sentence in split_sentences(text) or [text]:` |
+| untell/detectors/base.py | 242 | boundary: > -> >= | `if current and count + n > window_words:` |
+| untell/detectors/base.py | 242 | logic: and -> or | `if current and count + n > window_words:` |
+| untell/detectors/base.py | 274 | constant: 99 -> 100 | `return _TIER_RANK.get(detector_tier, 99) <= _TIER_RANK.get(requested, 0)` |
+| untell/detectors/base.py | 39 | logic: != -> == | `if x != x:  # NaN` |
+| untell/detectors/commercial.py | 121 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 144 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 180 | logic: or -> and | `if not self.available() or not text.strip():` |
+| untell/detectors/commercial.py | 203 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 233 | boundary: < -> <= | `if _CL_TOKEN["token"] and time.time() < _CL_TOKEN["exp"]:` | UNKILLABLE (<= variant): exact-expiry instant is a race; KILLED (or variant) by test_commercial_mutation_guards
+| untell/detectors/commercial.py | 258 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 98 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True (keys present)
+| untell/detectors/perplexity_burstiness.py | 126 | boundary: > -> >= | `lengths = [n for n in lengths if n > 0]` |
+| untell/detectors/perplexity_burstiness.py | 273 | constant: 2 -> 3 | `if len(nonempty) < 2:` |
+| untell/detectors/perplexity_burstiness.py | 383 | constant: False -> True | `enc = tok(text, return_tensors="pt", return_offsets_mapping=True, verbose=False)` |
+| untell/detectors/perplexity_burstiness.py | 386 | constant: 2 -> 3 | `if total < 2:` |
+| untell/detectors/perplexity_burstiness.py | 409 | boundary: > -> >= | `nll = torch.cat(chunks) if len(chunks) > 1 else chunks[0]` |
+| untell/detectors/perplexity_burstiness.py | 442 | boundary: < -> <= | `if idx < 0:` |
+| untell/humanness.py | 214 | logic: or -> and | `if not text or not text.strip():` |
+| untell/humanness.py | 368 | boundary: < -> <= | `if cv < 0.35:` |
+| untell/humanness.py | 370 | boundary: < -> <= | `elif cv < 0.50:` |
+| untell/humanness.py | 372 | boundary: > -> >= | `elif cv > 1.0:` |
+| untell/humanness.py | 372 | UNKILLABLE: CV bands continuous at 1.00 (no penalty either side) boundary: > -> >= | `elif cv > 1.0:` | KILLED by tests/test_cv_at_one_is_not_erratic.py: cv exactly 1.0 -> original 1.0 > 1.0 = False, score 100.0 (no erratic penalty); mutant >= fires, score 97.0 (MAX_BURSTY_PENALTY*0.5 applied at the boundary). Prior 'bands continuous at 1.00' note wrong — the boundary is where the penalty STARTS. Red on mutation, green on original. |
+| untell/humanness.py | 509 | boundary: >= -> > | `if score >= 60:` | KILLED by tests/test_classification_band_boundaries_inclusive.py: classification(60) -> 'mostly human' under original, 'mixed' under mutant (>= -> > pushes the exact-boundary score down a band). The same test pins the whole band family (75/60/45/30 are all inclusive edges). Red on mutation, green on original. |
+| untell/humanness.py | 605 | boundary: >= -> > | `if detector_max is not None and detector_max >= 0.5:` |
+| untell/humanness.py | 75 | constant: True -> False | `_WARNED_TOO_SHORT = True` |
+| untell/humanness.py | 75 | UNKILLABLE: warning latch, no observable output change constant: True -> False | `_WARNED_TOO_SHORT = True` | KILLED by tests/test_too_short_warns_only_once.py: the flag latches after the first too-short warning; mutant never sets it, so the second call warns again (log spam). Prior 'no observable output change' UNKILLABLE note wrong — the latch IS the observable, same class as the voice.py:187 warn-once kill. Red on mutation, green on original. |
+| untell/rewriter/composite.py | 194 | identity: is not -> is | `if use_t5 and self._t5 is not None:` |
+| untell/rewriter/composite.py | 217 | logic: and -> or | `if para.strip() and para != text:` |
+| untell/rewriter/composite.py | 43 | boundary: < -> <= | `if not any(abs(v - base) < 1e-9 for v in out):` | EQUIVALENT-in-practice (verified 2000-base scan, 0 exact 1e-9 deltas): sweep arithmetic is rational multiples of span 0.15, never lands exactly on 1e-9; 1e-16 float noise caught by both variants |
+| untell/rewriter/composite.py | 71 | boundary: > -> >= | `step = min((hi - lo) / (run_len + 1), 1e-3) if hi > lo else 1e-3` |
+| untell/rewriter/composite.py | 83 | boundary: < -> <= | `elif pos < base_slot:` |
+| untell/rewriter/composite.py | 90 | boundary: <= -> < | `if hi <= base + 1e-6:` |
+| untell/rewriter/ensemble.py | 178 | boundary: <= -> < | `near = [(r, t) for r, t in scored if r[0] <= best_max + _RANK_EPS]` | UNKILLABLE: rank-band EPS boundary, tuple comparison dominated by best_max
+| untell/rewriter/mt_pivot.py | 54 | deterministic True->False | KILLED by swarm test_mt_pivot_mutation_guards |
+| untell/rewriter/mt_pivot.py | 64 | or -> and (guard) | KILLED by swarm (backend never consulted when unavailable) |
+| untell/rewriter/prompts.py | 101 | [:8] -> [:9] | KILLED by swarm (only first 8 listed) |
+| untell/rewriter/prompts.py | 75 | k 3->4 | KILLED by swarm test_prompts_mutation_guards (exactly top 3) |
+| untell/rewriter/prompts.py | 77 | and -> or (numeric filter) | KILLED by swarm (error-suffixed row stays out) |
+| untell/rewriter/prompts.py | 77 | not in -> in (__error) | KILLED by swarm (normal detector still named) |
+| untell/rewriter/prompts.py | 78 | reverse True->False | KILLED by swarm (worst named first) |
+| untell/rewriter/prompts.py | 96 | style and -> or | KILLED by swarm (unknown style skipped not crashed) |
+| untell/rewriter/prompts.py | 99 | or [] -> and [] | KILLED by swarm (flagged sentences listed) |
+| untell/rewriter/surgical.py | 46 | deterministic True->False | KILLED by swarm test_surgical_rewriter_mutation_guards |
+| untell/rewriter/surgical.py | 48 | max_subs 12->13 | KILLED by swarm (constructor default pin) |
+| untell/rewriter/surgical.py | 63 | tier not in -> in | KILLED by swarm (composite tier normalization spy) |
+| untell/rewriter/surgical.py | 96 | prefer_tells True->False | KILLED by swarm (tell-removal objective spy) |
+| untell/rewriter/t5_paraphrase.py | 114 | constant: 3 -> 4 | `no_repeat_ngram_size=3,` |
+| untell/rewriter/t5_paraphrase.py | 117 | constant: True -> False | `gen_kwargs.update(do_sample=True, top_p=self.top_p, temperature=self.temperature` |
+| untell/rewriter/t5_paraphrase.py | 122 | constant: True -> False | `return tok.decode(out[0], skip_special_tokens=True).strip()` |
+| untell/rewriter/t5_paraphrase.py | 178 | logic: or -> and | `return result or text` |
+| untell/rewriter/t5_paraphrase.py | 40 | constant: 4 -> 5 | `num_beams: int = 4,` |
+| untell/rewriter/t5_paraphrase.py | 42 | constant: False -> True | `sample: bool = False,` |
+| untell/rewriter/t5_paraphrase.py | 89 | constant: False -> True | `return False` |
+| untell/rewriter/t5_paraphrase.py | 90 | constant: True -> False | `return True` |
+| untell/scripts/entailment.py | 500 | UNKILLABLE: allowance is 10 + 10% of words (fractional); words_lost is int; > vs >= equality unreachable boundary: > -> >= | `if words_lost(source, candidate) > deletion_allowance(source):` | KILLED by tests/test_deletion_at_allowance_is_faithful.py: 120-word source -> allowance exactly 12.0 (0.1*120); candidate dropping exactly 12 words hits the boundary; original 12 > 12.0 = False (faithful), mutant >= = True (rejected). Prior 'fractional makes equality unreachable' note wrong — 0.1*n is an exact integer when n is a multiple of 10. Red on mutation, green on original. |
+| untell/scripts/entailment.py | 511 | UNKILLABLE: contradiction scores are live model calls; exact 0.5 bar is a model artifact boundary: < -> <= | `if not (sim >= relaxed_sim_bar and con < contradiction_bar and ent >= entailment` | KILLED by tests/test_contradiction_at_bar_is_rejected.py: contradiction_score pinned to exactly 0.5 == DEFAULT_CONTRADICTION_BAR -> original returns False (contradiction at the bar is a contradiction), mutant True (<= flips it to a pass). Prior 'model artifact boundary unreachable' note wrong — the score is a pinable call. Red on mutation, green on original. |
+| untell/scripts/quality.py | 162 | constant: True -> False | `emb = model.encode([a, b], normalize_embeddings=True)` | normalize_embeddings: KILLED by tests/test_cosine_uses_normalized_embeddings.py: fake model with [1,1] vs [1,0] -> normalized cosine 0.707 under original, raw dot 1.0 under mutant. The 0.76 gate bar lives on the raw-cosine scale, so the flag is part of the measurement contract — prior 'tests use tolerant thresholds' note wrong. Red on mutation, green on original. |
+| untell/scripts/quality.py | 304 | constant: True -> False | `ensure_ascii=True,  # portable: never crash on a non-UTF-8 (e.g. Windows cp1252)` | KILLED by tests/test_quality_cli_json_is_ascii_safe.py: patched method() returning 'héllo' -> original emits \u00e9 (ASCII-safe, the portability contract), mutant emits raw é (crashes a cp1252 stdout). Actual line is 320. Red on mutation, green on original. |
+| untell/scripts/roles.py | 218 | UNKILLABLE: spaCy parse-shape mutation; existing model-gated tests pin real parses logic: or -> and | `if tok.dep_ != "prep" or tok.text.lower() not in _COMPARISON_PREPS:` | KILLED by tests/test_non_comparison_prep_emits_no_triple.py: fake tokens (dep_/text/children attrs) with prep 'during' (not a comparison prep) + pobj child -> original [] (skipped), mutant [('alic','during','bob')] (false triple). Prior 'needs real spaCy parses' note wrong — the shape is fake-able. Red on mutation, green on original. |
+| untell/scripts/roles.py | 269 | UNKILLABLE: spaCy parse-shape mutation; existing model-gated tests pin real parses membership: not in -> in | `if antecedent.pos_ not in ("VERB", "AUX") and antecedent.dep_ != "advcl":` | KILLED by tests/test_verb_pos_antecedent_is_kept.py: fake _load returning a doc with mark token headed by a VERB-pos csubj token -> original ('restart','is'), mutant (None,None) (the comment's exact 'tagger unreliable' case: POS must not gate alone). Prior 'needs real spaCy parses' note wrong — _load is patchable. Red on mutation, green on original. |
+| untell/scripts/score.py | 751 | UNKILLABLE: per-detector round(...,4) at line 739 dominates max; 4dp vs 5dp invisible constant: 4 -> 5 | `"max": round(mx, 4),` | KILLED by tests/test_tiny_signal_not_collapsed_to_zero.py: per-detector round is at line 744 (scores[d.name]=round(clamped,4)); detector returning 0.000045 + another at 0.0 -> original reports tiny=0.0 and max=0.0 (collapsed), mutant keeps 5e-05 and max becomes 0.0001. Prior '4dp vs 5dp invisible' UNKILLABLE note wrong — the collapse IS the observable. Red on mutation, green on original. |
