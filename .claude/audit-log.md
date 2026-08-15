@@ -2273,3 +2273,10 @@ permanently.
 | 2118 | L9 | contradiction-bar-0.35 | clean | 5784 | 5784 | - | L9 contradiction-bar-0.35 re-audit: pass-1978 verified, already MEASURED. |
 | 2119 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (34th): pass-2067 verified. |
 | 2120 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2120. |
+| 2121 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (34th): pass-2062 verified. |
+| 2122 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (34th): pass-2064 verified. |
+| 2123 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (31st): pass-2071 verified. |
+| 2124 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (32nd): pass-2066 verified. |
+| 2125 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 2126 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (33rd): pass-2070 verified. |
+| 2127 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (37th): 4/4 killed. |
