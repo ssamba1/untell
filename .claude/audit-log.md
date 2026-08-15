@@ -1109,3 +1109,4 @@ permanently.
 | 954 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (14th): 12/12 ranges. |
 | 955 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (14th): 5/5 killed, fully pinned. |
 | 956 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 957 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (13th): pass-890 verified. |
