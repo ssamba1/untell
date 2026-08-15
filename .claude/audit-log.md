@@ -2551,3 +2551,4 @@ permanently.
 | 2399 | L2 | untell/scripts/preserve.py | clean | 5785 | 5785 | - | L2 preserve.py re-audit (41st): NER fix holds. |
 | 2400 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2400 — audit-log milestone. |
 | 2401 | L2 | untell/rewriter/base.py | clean | 5786 | 5786 | - | L2 base.py FIRST AUDIT: baseline green (173), 3/8 killed, 5 survivors: 66 (backend flag), 111 (k=3), 113 (availability or->and), 181 (rewriter-name dispatch ==->!=, no test routes mt_pivot through base), 241 (mean/max aggregate and->or, needs real detector values). Documented classes. |
+| 2402 | L1 | T11 | clean | 5785 | 5785 | - | T11 re-audit (39th): pass-2342 verified. |
