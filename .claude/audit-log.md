@@ -961,3 +961,6 @@ permanently.
 | 819 | L2 | untell/scripts/quality.py | clean | 5782 | 5782 | - | L2 quality.py re-audit (10th): two-word-boundary green. Pass-572 BERTScore kill holds. |
 | 820 | L7 | L7 | clean | 5782 | 5782 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 820. |
 | 591 | L4 | targeted rewriter | clean | 5801 | 5801 | 362076a | L4 TargetedRewriter (2nd): split_sentences 2/1 exact; non-scoreable tier ('bogus') defers to inner wholesale (no per-sentence crash); single-sentence path returns valid text WITH the sentinel-count check (the silent-fact-loss fix: dropped sentinel -> keep original); multi-sentence keeps unimproved sentences verbatim, preserves inter-sentence spacing via trailing. The (max, mean) selector (15/19 max-tied mean-improved adoptions) verified in code. |
+| 821 | L1 | T11 | clean | 5782 | 5782 | - | T11 re-audit (12th): pass-757 verified. No change. |
+| 822 | L1 | T12 | clean | 5782 | 5782 | - | T12 re-audit (12th): pass-762 verified. No change. |
+| 823 | L2 | untell/scripts/scrub.py | clean | 5782 | 5782 | - | L2 scrub.py re-audit (13th): 4/4 killed, zero survivors. |
