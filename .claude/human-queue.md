@@ -450,3 +450,18 @@ Fleet's edit was right; audit derivable-checks pass (0 failures). No drift.
 SUPERSEDED by the correction above: 458 modules is the correct on-disk count.
 The fleet's number was right; my queue entries were based on an incomplete ls.
 Audit.run() shows 0 failures. Entry closed.
+
+## 2026-08-14 structural.py:1691 (fresh or options -> and) verified-unkillable
+
+Data check: the gerund-unsafe tables (_GERUND_UNSAFE, _GERUND_OBJECT_UNSAFE)
+contain ONLY single-synonym _SYN words ('involves'->1 syn, 'requires'->['needing']).
+With a single synonym, fresh is either [syn] (unspent) or [] (spent), and
+`(fresh or options)` === `(fresh and options)` in every case:
+  - fresh=[syn]: both iterate [syn]
+  - fresh=[]: or -> options=[syn] (usable after filter), and -> fresh=[] (empty
+    -> return original) — but the single syn is always either usable (same
+    result) or in unsafe (both empty -> both return original).
+No divergent path exists with the current data. Verified by scanning both
+tables for words with >=2 _SYN entries: zero found. The row stays UNKILLABLE
+for a data-shaped reason, not an assumed one. If _SYN ever gains a multi-syn
+gerund word, re-open.
