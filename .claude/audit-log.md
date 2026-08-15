@@ -2888,3 +2888,4 @@ permanently.
 | 2724 | L1 | T06 | clean | 7506 | 7506 | - | T06 re-audit (44th): tells separation verified. |
 | 2725 | L3 | L3 | clean | 7506 | 7506 | - | L3: no new slow tests. |
 | 2726 | L1 | T07 | clean | 7506 | 7506 | - | T07 re-audit (44th): spot-check alive. |
+| 2727 | L2 | untell/scripts/io_utils.py | clean | 7506 | 7506 | - | L2 io_utils.py re-audit (46th): 7/8 killed. |
