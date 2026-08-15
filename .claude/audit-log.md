@@ -1140,3 +1140,4 @@ permanently.
 | 985 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
 | 986 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (15th): _MERGE_WEIGHTS unchanged. |
 | 987 | L3 | L3 | clean | 5784 | 5784 | - | L3: quality+entailment regression area 44 passed 42.96s (test_quality, cosine-condition regression, CLI exact-bar, contradiction-at-bar, swapped-conditional) - both defect fixes hold under full battery. |
+| 988 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit: MCP registry 8/8 tools incl compare (fleet pass-606 dead-tool fix holds), _TOOL_NAMES == help == README list. |
