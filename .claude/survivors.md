@@ -232,7 +232,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/base.py | 239 | `>` -> `>=` (flush) | KILLED by test_base_mutation_guards (320+1 packing) |
 | untell/detectors/base.py | 242 | `and` -> `or` (flush guard) | UNKILLABLE: only appends empty window that `if w.strip()` drops |
 | untell/detectors/perplexity_burstiness.py | 126 | KILLED by test_pb_mutation_guards (zero-word CV exclusion) boundary: > -> >= | `lengths = [n for n in lengths if n > 0]` |
-| untell/detectors/perplexity_burstiness.py | 202 | UNKILLABLE: tell-density tuning constant logic: or -> and | `density = float(score_tells(text).get("tells_per_100w") or 0.0)` |
+| untell/detectors/perplexity_burstiness.py | 202 | UNKILLABLE: tell-density tuning constant logic: or -> and | `density = float(score_tells(text).get("tells_per_100w") or 0.0)` | KILLED by tests/test_tell_density_feeds_signal.py: patched score_tells with tells_per_100w=40 -> original _single_sentence_signal 1.0 (density feeds the signal); mutant and yields 0.0 always (density present -> 0.0), signal collapses to the fallback 0.2. Prior 'tuning constant' UNKILLABLE note wrong. Red on mutation, green on original. |
 | untell/detectors/perplexity_burstiness.py | 211 | UNKILLABLE: TTR window tuning constant constant: 100 -> 101 | `_TTR_WINDOW = 100` |
 | untell/detectors/perplexity_burstiness.py | 252 | UNKILLABLE: whitespace guard; MIN-words guard catches same inputs logic: or -> and | `if not text or not text.strip():` |
 | untell/detectors/perplexity_burstiness.py | 273 | KILLED by test_pb_mutation_guards (2-sentence path) constant: 2 -> 3 | `if len(nonempty) < 2:` |
