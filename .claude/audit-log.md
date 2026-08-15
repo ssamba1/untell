@@ -2700,3 +2700,4 @@ permanently.
 | 2548 | L4 | L4 | clean | 5787 | 5787 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2549 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2550 | L1 | T19 | clean | 5787 | 5787 | - | T19 re-audit (39th): pass-2490 verified 36 rows consistent. |
+| 2551 | L2 | untell/scripts/verify.py | clean | 5787 | 5787 | - | L2 verify.py re-audit (43rd): pass-2494 verified. |
