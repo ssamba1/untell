@@ -1149,3 +1149,7 @@ permanently.
 | 994 | L4 | survivors-table | clean | 5784 | 5784 | - | survivors.md coherence: 501 rows, 481 module rows, 115 KILLED, 0 malformed. Noted: fleet's swarm killed surgical 48/63/96 + mt_pivot 64 (my earlier first-audit classifications superseded - shared-tree reality, rows updated by fleet). |
 | 995 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: mutate.py dry-run (--max 0) restores byte-identical (sha256 match), exit 0. Restore contract holds. |
 | 996 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit: lock/restore round-trip byte-identical (HZ0000 + email), sentinels replace identifiers. NER-free pattern path verified. |
+| 997 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (15th): pass-944 verified. |
+| 998 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (16th): 4/4 killed. |
+| 999 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (15th): 33/33 live. |
+| 1000 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit: windowed_max reaches document TAIL - AI text only at end of 30-sentence human doc scores 0.99 (8 windows, max over all). Tail-visibility fix holds. |
