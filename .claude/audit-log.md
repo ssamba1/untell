@@ -41,6 +41,7 @@ permanently.
 | 28 | L8 | detector-audit | clean | 5749 | 5749 | - | L8 detector-audit: recipe REFUSED to record (exit 1, mage reported 'broken' in eval). mage works standalone (score 0.99997). Eval-script load-order issue, not shipped-code defect. Harness correctly refused partial numbers. |
 | 29 | L4 | L4 | clean | 5749 | 5749 | - | L4 extended: hedges.py 6/6 classes live (modality, evidential, frequency, quantifier, degree, intention). numerals.py patterns live ('twenty-four'->24, '5 million'->5000000, 'seventeen'->17, 'a thousand'->1000). 'one'->[] is INTENDED (ambiguous in 'one of the reasons', documented line 82-86). No dead patterns. |
 | 30 | L1 | T12 | clean | 5749 | 5749 | - | T12: tail-reachability verified. 826-word/14-para doc: 14/14 paragraphs rewritten, last change at index 13 (final para). aligned_chunks aligns whole doc — last pair contains both tails. 4680-word doc too heavy for 600s budget (rewriter cost scales with length), but the 14-para run proves changes reach the end. |
+<<<<<<< Updated upstream
 | 31 | L2 | untell/scripts/quality.py | clean | 5749 | 5751 | - | L2 quality.py: 10 survivors analyzed. Line 145 KILLED by new test_quality_two_word_boundary.py (verified: passes on original, fails on <-><= mutation at exactly-2-token boundary). Others: lazy-load guard, BERTScore-not-gate, empty-token paths, normalize_embeddings, exact-boundary floats (measure-zero), CLI encoding. Survivors.md updated. |
 | 32 | L5 | L5 | clean | 5751 | 5751 | - | L5 hygiene re-run: 5 ruff errors found (my test files: unused pytest import, io.open, ==False, unsorted imports). All fixed with ruff --fix + manual patch. All 3 CLIs launch. ruff now clean, 11 affected tests pass. |
 | 33 | L1 | T13 | defect-fixed | 5751 | 5755 | HEAD | T13: DEFECT FIXED — display-math $$...$$ blocks classified as prose, equation content rewritten (verified: \int_0^1 x dx became \INT_0^1 X DX). Added $$ toggle to _segments (in_math state, separate from code fences). New tests/test_layout_display_math.py: 4 tests, 2 fail pre-fix, all pass post-fix. All 9 constructs now round-trip byte-identical, prose rewrites. |
@@ -1100,3 +1101,11 @@ permanently.
 | 949 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
 | 950 | L1 | T02 | clean | 5775 | 5775 | - | T02 re-audit: FLEET STATE-CHANGE - count_hidden now NFC-composes legitimate accents FIRST (docstring: raw counting reported 10 hidden on ordinary accented English = false positive; baseline restores per-character distinction). Verified: ZWSP x2=2, NBSP=1, homoglyph=1, accents=0, orphan bidi=1, balanced bidi=0, mixed=1 - all consistent with preservation design. Pass-464 expectation (stack=2) STALE, superseded by correct compose-first. |
 | 951 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (14th): pass-884 verified. |
+=======
+>>>>>>> Stashed changes
+| 952 | L1 | T19 | clean | 5775 | 5775 | - | T19 re-audit: 35 ledger rows, pre/post pairs consistent, no anomalies. |
+| 953 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (12th): pass-886 verified. |
+| 598 | L9 | CLI tells matches | defect-fixed | 5801 | 5802 | 446a2e9 | DEFECT FIXED (swarm found, I verified): untell tells --matches plain output was byte-identical to no-flag (silent no-op against 'include the matched substrings' help) — spans only appeared via --json. Fix landed in fleet 446a2e9 (swept from swarm agent): --matches now prints spans (Moreover/important to note verified live), differs from no-flag, rc=0 both. 122 tells tests pass incl. test_tells_matches_flag_prints_spans.py regression pin. |
+| 954 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (14th): 12/12 ranges. |
+| 955 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (14th): 5/5 killed, fully pinned. |
+| 956 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
