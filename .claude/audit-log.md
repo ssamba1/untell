@@ -2617,3 +2617,5 @@ permanently.
 | 2465 | L3 | L3 | clean | 5786 | 5786 | - | L3: no new slow tests. |
 | 2466 | L1 | T11 | clean | 5786 | 5786 | - | T11 re-audit (40th): pass-2402 verified. |
 | 2467 | L2 | untell/scripts/numerals.py | clean | 5786 | 5786 | - | L2 numerals.py re-audit (42nd): 18 regression tests green. |
+| 2468 | L4 | L4 | clean | 5786 | 5786 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2469 | L4 | L4 | clean | 5786 | 5786 | - | L4 local_policy.py re-verified: 2/2 alive. |
