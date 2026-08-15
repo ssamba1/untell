@@ -19,5 +19,15 @@
     },
     "reported_spread": 0.0014,
     "note": "corrected 2026-08-14: full-history min-max spread across 5 committed runs is 0.0262 (post_mean_max 0.5871/0.5887/0.5887/0.5625/0.5887), not the 0.0014 the 2-run calibration reported. Run 4 moved 0.0262 below the cluster, invisible to a last-two comparison. Determinism verdict corrected to false by the calibrate fix (pass 717)."
+  },
+  "lite-hc3-ensemble": {
+    "deterministic": false,
+    "run_to_run": {
+      "pre_flagged_rate": 0.0,
+      "post_flagged_rate": 0.0,
+      "pre_mean_max": 0.0,
+      "post_mean_max": 0.0069
+    },
+    "reported_spread": 0.0239
   }
 }
