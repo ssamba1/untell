@@ -2831,3 +2831,4 @@ permanently.
 | 2671 | L2 | untell/languages.py | clean | 5787 | 5787 | - | L2 languages.py re-audit (45th): 12/12 ranges. |
 | 2672 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2673 | L1 | T12 | clean | 5787 | 5787 | - | T12 re-audit (43rd): pass-2601 verified. |
+| 2674 | L2 | untell/config.py | clean | 5787 | 5787 | - | L2 config.py re-audit (45th): 5/5 killed, fully pinned. |
