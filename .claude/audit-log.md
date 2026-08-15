@@ -2173,3 +2173,19 @@ permanently.
 | 2018 | L9 | quality-bar-0.70 | clean | 5784 | 5784 | - | L9 quality-bar-0.70 re-audit: pass-1878 verified, already MEASURED. |
 | 2019 | L2 | untell/scripts/scrub.py | clean | 5784 | 5784 | - | L2 scrub.py re-audit (35th): 4/4 killed. |
 | 2020 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2020. |
+| 2021 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (30th): pass-1962 verified 36 rows consistent. |
+| 2022 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (29th): pass-1964 verified. |
+| 2023 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (34th): 33/33 live. |
+| 2024 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (32nd): pass-1966 verified. |
+| 2025 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. L3 lane: 99th worked pass. |
+| 2026 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (31st): pass-1970 verified. |
+| 2027 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (34th): 7/8 killed. |
+| 2028 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2029 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2030 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (32nd): pass-1973 verified. |
+| 2031 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (34th): pass-1975 verified. |
+| 2032 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2033 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (33rd): pass-1977 verified. |
+| 2034 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (34th): 12/12 ranges. |
+| 2035 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (34th): 5/5 killed, fully pinned. |
+| 2036 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. L6 lane: 90th worked pass. |
