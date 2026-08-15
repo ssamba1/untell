@@ -2792,3 +2792,4 @@ permanently.
 | 2632 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2633 | L2 | eval/detector_audit.py | coverage-closed | 5879 | 5880 | 3ad68a79e73abb3e49c0890beab5f0d877de6a46 | L2 eval/detector_audit.py: KILLED the line-477 TPR placeholder survivor (is not -> is). Row with tpr=0.75 -> original renders '75%', mutant hides the value ('     -'). The FPR/TPR columns caught two real scale-miscalibrated detectors at AUROC 0.999+ (per comment). Red on mutation, green on original. |
 | 2634 | L2 | untell/scripts/sentences.py | clean | 5787 | 5787 | - | L2 sentences.py re-audit (45th): 16 tests green. |
+| 2635 | L2 | untell/scripts/hedges.py | clean | 5787 | 5787 | - | L2 hedges.py re-audit (46th): 2 documented survivors. |
