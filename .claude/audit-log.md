@@ -2546,3 +2546,5 @@ permanently.
 | 2394 | L2 | untell/rewriter/prompts.py | clean | 5786 | 5786 | - | L2 prompts.py FIRST AUDIT: baseline green (260), 0/7 killed - 7 survivors all prompt-template constants/conditions (75 worst-detectors k=3, 77 numeric filter x2, 78 reverse sort, 96 style-in-STYLES, 99 flagged fallback, 101 [:8] sentence cap) - no test asserts exact prompt text (tests pin rewriter behavior). Documented template class. |
 | 2395 | L2 | untell/text_split.py | clean | 5785 | 5785 | - | L2 text_split.py re-audit (40th): aligned-chunks fix holds. |
 | 2396 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
+| 2397 | L1 | T10 | clean | 5785 | 5785 | - | T10 re-audit (38th): pass-2341 verified. |
+| 2398 | L9 | ppl-weight-0.40 | clean | 5785 | 5785 | - | L9 ppl-weight-0.40 re-audit: pass-2258 verified, already MEASURED (MOVED). |
