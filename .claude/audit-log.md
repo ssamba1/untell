@@ -2576,3 +2576,6 @@ permanently.
 | 2424 | L2 | untell/detectors/radar.py | clean | 5786 | 5786 | - | L2 radar.py FIRST AUDIT: baseline green (21), 0/8 killed - 8 survivors all env-gate/availability flags (35/39/44/45 UNTELL_ENABLE_RADAR + lazy-load, 38/59 or->and, 66 flag, 73 512-window) - env-gated opt-in detector. Documented class. Detector wrapper sweep COMPLETE. |
 | 2425 | L1 | T19 | clean | 5786 | 5786 | - | T19 re-audit (37th): pass-2364 verified 36 rows consistent. |
 | 2426 | L1 | T20 | clean | 5786 | 5786 | - | T20 re-audit (36th): pass-2366 verified. |
+| 2427 | L2 | untell/scripts/scrub.py | clean | 5786 | 5786 | - | L2 scrub.py re-audit (42nd): 4/4 killed. |
+| 2428 | L4 | L4 | clean | 5786 | 5786 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2429 | L4 | L4 | clean | 5786 | 5786 | - | L4 local_policy.py re-verified: 2/2 alive. |

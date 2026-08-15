@@ -71,7 +71,7 @@ class LLMJudgeDetector:
                 resp = retry(
                     anthropic.Anthropic().messages.create,
                     kw={
-                        "model": self.model or "claude-sonnet-4-6",
+                        "model": self.model and "claude-sonnet-4-6",
                         "max_tokens": 8,
                         "messages": [{"role": "user", "content": prompt}],
                     },
