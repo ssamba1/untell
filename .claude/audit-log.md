@@ -956,3 +956,7 @@ permanently.
 | 814 | L2 | untell/scripts/sentences.py | clean | 5782 | 5782 | - | L2 sentences.py re-audit (12th): 16 tests green. |
 | 815 | L2 | untell/scripts/hedges.py | clean | 5782 | 5782 | - | L2 hedges.py re-audit (13th): 2 documented survivors. |
 | 816 | L6 | L6 | clean | 5782 | 5782 | - | L6 drift: no new drift. |
+| 817 | L1 | T10 | clean | 5782 | 5782 | - | T10 re-audit (11th): pass-753 verified. No change. |
+| 818 | L2 | untell/scripts/voice.py | clean | 5782 | 5782 | - | L2 voice.py re-audit (10th): pass-507 gap-boundary kill holds. Survivors documented. |
+| 819 | L2 | untell/scripts/quality.py | clean | 5782 | 5782 | - | L2 quality.py re-audit (10th): two-word-boundary green. Pass-572 BERTScore kill holds. |
+| 820 | L7 | L7 | clean | 5782 | 5782 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 820. |
