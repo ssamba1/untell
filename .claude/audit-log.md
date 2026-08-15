@@ -2516,3 +2516,6 @@ permanently.
 | 2364 | L1 | T19 | clean | 5785 | 5785 | - | T19 re-audit (36th): pass-2306 verified 36 rows consistent. |
 | 2365 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
 | 2366 | L1 | T20 | clean | 5785 | 5785 | - | T20 re-audit (35th): pass-2310 verified. |
+| 2367 | L2 | untell/scripts/scrub.py | clean | 5785 | 5785 | - | L2 scrub.py re-audit (41st): 4/4 killed. |
+| 2368 | L4 | L4 | clean | 5785 | 5785 | - | L4 structural.py re-verified: 9/9 alive. |
+| 2369 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. L4 lane: 170th worked pass, zero regressions. |
