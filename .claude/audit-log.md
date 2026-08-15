@@ -2510,3 +2510,5 @@ permanently.
 | 2358 | L9 | token-bar-0.40 | clean | 5785 | 5785 | - | L9 token-bar-0.40 re-audit: pass-2218 verified, already MEASURED. |
 | 2359 | L2 | untell/scripts/voice.py | clean | 5785 | 5785 | - | L2 voice.py re-audit (38th): pass-2303 verified. |
 | 2360 | L7 | L7 | clean | 5785 | 5785 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2360. |
+| 2361 | L1 | T17 | clean | 5785 | 5785 | - | T17 re-audit (37th): pass-2302 verified. |
+| 2362 | L1 | T18 | clean | 5785 | 5785 | - | T18 re-audit (34th): pass-2304 verified. |
