@@ -2663,3 +2663,4 @@ permanently.
 | 2511 | L2 | untell/_retry.py | clean | 5787 | 5787 | - | L2 _retry.py re-audit (43rd): kill tests green. |
 | 2512 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2513 | L1 | T06 | clean | 5787 | 5787 | - | T06 re-audit (41st): tells separation verified. |
+| 2514 | L2 | untell/_env.py | clean | 5787 | 5787 | - | L2 _env.py re-audit (41st): fully pinned. |
