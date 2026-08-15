@@ -2412,3 +2412,4 @@ permanently.
 | 2257 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (36th): pass-2144 verified. |
 | 2258 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40 re-audit: pass-2138 verified, already MEASURED (MOVED). |
 | 2259 | L2 | eval/baselines.py | clean | 5784 | 5784 | - | L2 eval/baselines.py FIRST AUDIT: baseline green, 0/8 killed - 8 survivors all baseline-simulator logic/boundaries (66 merge-period, 78 sentence-merge cond x2, 113 acceptance, 118/190 sim-threshold boundaries x3, 240 best-candidate gate) - no test exercises the baseline candidate loop (needs full detector pipeline). Documented recipe-logic class. |
+| 2260 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2260. |
