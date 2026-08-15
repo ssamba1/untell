@@ -509,3 +509,42 @@ docs/why-best-open-repo.md is in the guard's RED_FILES, so the three repairs bel
 3. Line 148 "Multiple real detectors in the loop | ✅ (14)" — STALE. all_detectors() registers **15** (8 local incl. opt-in radar/binoculars/local_judge + 7 commercial: LLM-judge plus 6 key-gated adapters; the page's own line 77 says "8 local + 7 commercial" = 15). Already flagged by a prior queue entry; re-verified live 2026-08-15. The (14)→(15) cell edit is NOT applied in the working tree — included here for the human to do in the same pass.
 
 Suggested commit (human): docs(why-best): refresh test/console/detector counts to the live surface — then `python -m untell.scripts.audit` and tests/test_docs_claims.py both pass.
+
+
+## 2026-08-15 slice-6 (re-run) — RED — audit_next.py record accepts non-hash commit cells; 15 rows unverifiable
+
+WHAT   .claude/audit-log.md has 15 rows whose commit column is not a hash: 14 cite the literal
+       string HEAD (passes 33, 90, 502, 503, 520, 524, 531, 571, 634, 813, 837, 844, 2286, 2480),
+       1 cites the literal placeholder COMMIT (pass 714), and 1 (pass 316) cites 2f56d1052f8f...
+       which git cat-file -e says does not exist. audit_next.py record validates the commit
+       cell only as non-empty, so a defect-fixed row can be recorded with an unverifiable commit.
+       Counted at baseline: 2730 rows, 55 duplicate pass numbers (one-row-per-pass violated),
+       28 file-order decreases, 0 suite-shrink rows (that guard held).
+NEXT   In audit_next.py cmd_record, require [0-9a-f]{7,40} for NEEDS_EVIDENCE verdicts; backfill
+       the 15 HEAD/COMMIT rows with real hashes (most fixes are locatable from note text, e.g.
+       aligned_chunks -> 1c1482c, restore_layout_lines -> dd034d8). audit_next.py is RED_SELF
+       (guard-blocked) so this is a human edit.
+
+## 2026-08-15 slice-6 (re-run) — RED — why-best test/module count stale AGAIN: 7712/500 vs 7693/498
+
+WHAT   Fresh measurement 2026-08-15 (PYTHONPATH cleared, UNTELL_LITE_NO_TORCH=1):
+       pytest --collect-only -q -> 7712 tests collected in 33.49s (EXIT=0); tests/test_*.py = 500
+       files. docs/why-best-open-repo.md:154 currently claims 7693 tests / 498 modules (restored
+       by slice-19 queue work and 4a34d4d). Stale by +19 tests / +2 modules at measurement time;
+       the fleet adds test modules continuously (500 -> 510 within the hour), so re-run
+       `python -m untell.scripts.audit --fix-counts` immediately before committing. Doc is RED +
+       carries a human-owned uncommitted edit; not touched here.
+
+## 2026-08-15 slice-6 (re-run) — AMBER — detector-audit exit-1 root cause CONFIRMED with fresh evidence; companion CLI crash FIXED
+
+WHAT   Reproduced `python -m eval.detector_audit --pairs 20 --dataset hc3 --json` (PYTHONPATH
+       cleared, full JSON teed): EXIT=1, broken=["mage"], mage MISCALIBRATED human_mean 0.3477
+       ai_mean 1.0 AUROC 1.0 FPR 0.35 > MAX_FPR 0.20 at DEFAULT_THRESHOLD 0.30, TPR 1.0 — numbers
+       identical to the me2 entry. Cause chain: mage's genuine calibration on HC3 (README
+       documents 33% HC3 false positives; raw-logits probe proves the adapter convention is
+       correct) -> detector_audit.main returns 1 by design (line 530) -> research.py refuses to
+       record, discarding a complete JSON measurement. Remedy remains me2's human call (a)
+       record-a-finding vs (b) RAID corpus; not implemented here. Separately FIXED this session:
+       the no-json smoke CLI crashed with KeyError('auroc') at line 495 (radar/local_judge/
+       binoculars UNAVAILABLE rows lack an auroc key) — and/or precedence bug, committed with
+       6 new render tests.

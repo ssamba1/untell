@@ -492,7 +492,7 @@ def render(report: dict) -> str:
         if r.get("granularity") == "sentence"
         and r["verdict"] in ("DEAD", "INVERTED", "MISCALIBRATED")
         and r.get("auroc") is not None
-        or r["auroc"] > SENTENCE_BROKEN_AUROC
+        and r["auroc"] > SENTENCE_BROKEN_AUROC
     ]
     if report["broken"]:
         lines.append(f"BROKEN (dead or inverted): {', '.join(report['broken'])}")
