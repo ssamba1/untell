@@ -1338,3 +1338,6 @@ permanently.
 | 1183 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (18th): 5/5 killed, fully pinned. |
 | 1184 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (17th): pass-1130 verified. |
 | 1185 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. |
+| 1186 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (18th): tells separation verified. |
+| 1187 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (19th): kill tests green. |
+| 1188 | L8 | full-hc3-neural | clean | 5784 | 5784 | - | L8 full-hc3-neural 2nd re-run COMPLETED (~2h): pre 1.0 -> post 0.9991, deltas all +0.000/-0.001 noise. Stable across 2 runs. Family: composite 1.0->1.0, max 1.0->0.9758, neural 1.0->0.9991 — all above 0.45 verdict cut. |
