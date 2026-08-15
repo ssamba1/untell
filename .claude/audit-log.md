@@ -1282,3 +1282,7 @@ permanently.
 | 1127 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (17th): 12/12 ranges. |
 | 1128 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 1129 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 1130 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (16th): pass-1077 verified. |
+| 1131 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (17th): 5/5 killed, fully pinned. |
+| 1132 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 1133 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (17th): tells separation verified. |

@@ -9,10 +9,6 @@ constants/boundaries — annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
-from eval import detector_audit as D
-
 
 class TestBrokenClassification:
     """Survivor detector_audit.py:433 — `or r.get("auroc") is None` -> `and`.
