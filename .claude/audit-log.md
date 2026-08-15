@@ -1235,3 +1235,7 @@ permanently.
 | 1080 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1080. |
 | 1081 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (16th): tells separation verified. |
 | 1082 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (16th): spot-check alive. |
+| 1083 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (15th): fully pinned. |
+| 1084 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (17th): _MERGE_WEIGHTS unchanged. |
+| 1085 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Lite battery green post ppl-weight restore. |
+| 1086 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (16th): pass-1042 verified. |
