@@ -497,3 +497,15 @@ New capability shipped: `untell explain "text"` (also `untell-explain`, `python 
 Envelope note: this is a NEW CLI surface (subcommand + console script entry in pyproject.toml) and touches untell/SKILL.md, so it is AMBER — queued here in the same commit per the envelope. No existing command, flag, exit code, error message, or signature changed; `lock()`/`restore()` behavior is byte-identical (pinned by tests). Internal refactor: `preserve._collect_spans` now delegates to the new `_collect_labeled_spans` so lock and explain share one source of truth.
 
 Files: untell/scripts/explain.py (new), tests/test_explain.py (new, 40 tests), untell/scripts/preserve.py (labeled-collector refactor), untell/scripts/cli.py (subcommand + one-liner), pyproject.toml (untell-explain entry), untell/SKILL.md (usage note after preserve-lock step).
+
+## 2026-08-15 slice-19 worker — RED — docs/why-best-open-repo.md drift: test count, console-script count, detector count (guard-blocked, edits sit in working tree)
+
+docs/why-best-open-repo.md is in the guard's RED_FILES, so the three repairs below are queued (the edits are applied in the working tree, unstaged, for a human to commit after review):
+
+1. Line 154 "Automated tests | ✅ **7530** tests, 483 modules" — STALE. `tests/` has **489** test modules and a lite collection (UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q) collects **7569** tests. This is the exact check `untell-audit` runs; `untell-audit --fix-counts` (the repo's own sanctioned repair) rewrote the cell to "**7569** tests, 489 modules" and the audit then reports OK. Evidence: `tests/` glob count 489; pytest collection 7569 (audit run 2026-08-15); tests/test_docs_claims.py::test_why_best_test_count_is_not_stale passes with the fix.
+
+2. Line 80 "**23** console scripts (... -latex)" — STALE. pyproject.toml [project.scripts] now defines **24** (commit 04e3bb2 added `untell-explain` without updating this page). tests/test_docs_claims.py::test_console_script_count_in_why_best_matches_pyproject FAILS on main; passes with the fix (24 + `-explain` added to the list).
+
+3. Line 148 "Multiple real detectors in the loop | ✅ (14)" — STALE. all_detectors() registers **15** (8 local incl. opt-in radar/binoculars/local_judge + LLM-judge + 6 commercial; the page's own line 77 says "8 local + 7 commercial" = 15). Already flagged by a prior queue entry; re-verified live 2026-08-15. The (14)→(15) cell edit is NOT applied in the working tree — included here for the human to do in the same pass.
+
+Suggested commit (human): docs(why-best): refresh test/console/detector counts to the live surface — then `python -m untell.scripts.audit` and tests/test_docs_claims.py both pass.
