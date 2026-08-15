@@ -2737,3 +2737,4 @@ permanently.
 | 2581 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2580. |
 | 2582 | L1 | T08 | clean | 5787 | 5787 | - | T08 re-audit (43rd): _MERGE_WEIGHTS unchanged. |
 | 601 | L9 | quality cosine condition | defect-fixed | 5802 | 5803 | a1cc775 | DEFECT FIXED: quality.py 'if cos is None' regression (reintroduced by fleet stash-pop merge aee3d2e after abb5688's original fix) — max(0.0, min(1.0, None)) raised TypeError, token-overlap fallback unreachable, similarity() crashed for no-embedding-backend (UNTELL_LITE_NO_TORCH=1 / lightweight training env). Broke humanness_reward end-to-end. Fixed to 'is not None'; reward gate verified (identical 0.8889, paraphrase 0.7879 NLI-admitted, off-topic/empty/None -1.0); 33 quality tests pass incl. fleet's own pin. |
+| 2583 | L2 | untell/scripts/voice.py | clean | 5787 | 5787 | - | L2 voice.py re-audit (42nd): pass-2534 verified. |
