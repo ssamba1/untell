@@ -648,7 +648,7 @@ def substitute_once(text: str, word: str, replacement: str) -> str:
         )
         first = re.search(rf"\b{re.escape(word)}\b", text, re.IGNORECASE)
         opening = opener.search(text)
-        if first is not None and opening is not None and opening.end() > first.start() > opening.start():
+        if first is not None and opening is not None and opening.end() > first.start() >= opening.start():
             return text
 
     if replacement.lower() in _COMMA_LESS_OPENERS:
@@ -840,7 +840,7 @@ def surgical_substitute(
     for word, drop in word_ranks:
         if subs >= max_subs or cur_score < threshold:
             break
-        if drop <= 0:
+        if drop < 0:
             continue
         # Generate all synonym candidates for this word and batch-score them.
         candidates = []

@@ -1061,3 +1061,6 @@ permanently.
 | 914 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (13th): killing tests green. |
 | 915 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (13th): aligned-chunks fix holds. |
 | 916 | L2 | untell/scripts/quality.py | coverage-closed | 5868 | 5869 | ad2f8a29e6932c6b023c63fe04133e16d594b937 | L2 quality.py: KILLED the line-162 normalize_embeddings survivor (True -> False). Fake model with [1,1] vs [1,0] -> normalized cosine 0.707 under original, raw dot 1.0 under mutant. The 0.76 gate bar lives on the raw-cosine scale, so the flag is part of the measurement contract. Prior 'tests use tolerant thresholds' note wrong — exact value pins it. Red on mutation, green on original. |
+| 917 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (12th): pass-844 verified (RELAXED_SIM_BAR restore holds). |
+| 918 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (14th): NER fix holds. |
+| 919 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (14th): 18 regression tests green. |

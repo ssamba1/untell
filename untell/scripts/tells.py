@@ -1323,6 +1323,14 @@ def _render(r: dict) -> str:
     # 7.320 presented without qualification.
     if r.get("warning"):
         lines.append(f"WARNING: {r['warning']}")
+    # `--matches` promises the substrings in its help text, and the result dict always carried
+    # them (as did --json), but the plain renderer dropped them — `untell tells --matches <text>`
+    # printed byte-identical output to the no-flag call, a silent no-op in the default mode.
+    # The matches are the detail under the category counts, so they print right after them.
+    if r.get("matches"):
+        lines.append("matched spans:")
+        for k, v in sorted(r["matches"].items(), key=lambda kv: -len(kv[1])):
+            lines.append(f"  {k:22} " + ", ".join(f'"{s}"' for s in v))
     return "\n".join(lines)
 
 
