@@ -320,17 +320,17 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/detectors/radar.py | 73 | constant: 512 -> 513 | `inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)` |
 | untell/detectors/commercial.py | 78 | constant: 3 -> 4 | `return retry(_once, max_attempts=3)` | UNKILLABLE: retry count, needs live API call
 | untell/detectors/commercial.py | 86 | constant: False -> True | `return False` | UNKILLABLE: available() key-gated branch
-| untell/detectors/commercial.py | 98 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True (keys present)
-| untell/detectors/commercial.py | 121 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 98 | logic: or -> and | `if not self.available() or not text.strip():` | KILLED by tests/test_whitespace_never_reaches_commercial_api.py: available patched True + fake key + _post_json spy -> score('   ') returns None with NO post call under original; mutant (and) falls through and CALLS the API with whitespace (0.9). Prior 'needs keys present' note wrong — the guard is spy-testable, deterministic, no real key. Same pattern pins 121/144/203/258. Red on mutation, green on original. |
+| untell/detectors/commercial.py | 121 | logic: or -> and | `if not self.available() or not text.strip():` | KILLED by tests/test_whitespace_never_reaches_commercial_api.py (same or -> and guard pattern as row 98; spy-verified, no real key needed)
 | untell/detectors/commercial.py | 127 | constant: False -> True | `{"text": text, "sentences": False, "language": "auto"},` | UNKILLABLE: API response structure, key-gated
-| untell/detectors/commercial.py | 144 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 144 | logic: or -> and | `if not self.available() or not text.strip():` | KILLED by tests/test_whitespace_never_reaches_commercial_api.py (same or -> and guard pattern as row 98; spy-verified, no real key needed)
 | untell/detectors/commercial.py | 186 | constant: False -> True | `{"key": os.environ["SAPLING_API_KEY"], "text": text, "sent_scores": False},` | UNKILLABLE: API request payload, key-gated
-| untell/detectors/commercial.py | 203 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 203 | logic: or -> and | `if not self.available() or not text.strip():` | KILLED by tests/test_whitespace_never_reaches_commercial_api.py (same or -> and guard pattern as row 98; spy-verified, no real key needed)
 | untell/detectors/commercial.py | 233 | boundary: < -> <= | `if _CL_TOKEN["token"] and time.time() < _CL_TOKEN["exp"]:` | UNKILLABLE (<= variant): exact-expiry instant is a race; KILLED (or variant) by test_commercial_mutation_guards
 | untell/detectors/commercial.py | 233 | logic: and -> or | `if _CL_TOKEN["token"] and time.time() < _CL_TOKEN["exp"]:` |
 | untell/detectors/commercial.py | 241 | constant: 40 -> 41 | `_CL_TOKEN["exp"] = time.time() + 40 * 3600  # token lives 48h; refresh well insi` | KILLED by test_commercial_mutation_guards (refresh window 40h)
 | untell/detectors/commercial.py | 249 | constant: False -> True | `def __init__(self, sandbox: bool = False):` | UNKILLABLE: sandbox default, key-gated
-| untell/detectors/commercial.py | 258 | logic: or -> and | `if not self.available() or not text.strip():` | UNKILLABLE: text guard needs available()=True
+| untell/detectors/commercial.py | 258 | logic: or -> and | `if not self.available() or not text.strip():` | KILLED by tests/test_whitespace_never_reaches_commercial_api.py (same or -> and guard pattern as row 98; spy-verified, no real key needed)
 | untell/detectors/commercial.py | 262 | constant: 20 -> 21 | `scan_id = "hz" + hashlib.sha1(text.encode("utf-8")).hexdigest()[:20]` | UNKILLABLE: scan_id hash length, cosmetic
 | untell/detectors/local_judge.py | 96 | logic: or -> and | `self.model_id = model_id or _DEFAULT_MODEL` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
 | untell/detectors/local_judge.py | 127 | constant: False -> True | `return False` | UNKILLABLE: model/kwargs-dependent (device/dtype/template/generate kwargs)
