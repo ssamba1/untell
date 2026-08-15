@@ -857,3 +857,4 @@ permanently.
 | 729 | L4 | L4 | clean | 5781 | 5781 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 730 | L1 | T03 | clean | 5781 | 5781 | - | T03 re-audit (10th): NLI gate sound. |
 | 731 | L2 | untell/scripts/hedges.py | clean | 5781 | 5781 | - | L2 hedges.py re-audit (11th): 2 documented survivors (148/328). |
+| 732 | L5 | L5 | clean | 5781 | 5781 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
