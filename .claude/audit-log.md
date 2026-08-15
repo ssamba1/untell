@@ -2781,3 +2781,4 @@ permanently.
 | 2621 | L1 | T16 | clean | 5787 | 5787 | - | T16 re-audit (40th): pass-2542 verified. |
 | 2622 | L1 | T17 | clean | 5787 | 5787 | - | T17 re-audit (41st): pass-2544 verified. |
 | 2623 | L2 | untell/scripts/preserve.py | clean | 5787 | 5787 | - | L2 preserve.py re-audit (45th): NER fix holds. |
+| 2624 | L1 | T18 | clean | 5787 | 5787 | - | T18 re-audit (38th): pass-2546 verified. |

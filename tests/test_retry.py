@@ -99,13 +99,17 @@ def test_retry_kwargs_passed_through():
 
 def test_retry_detects_api_keywords_in_message():
     """Rate-limit-like messages should be retried."""
+    calls = []
 
     def flaky():
+        calls.append(1)
         raise RuntimeError("429 Too Many Requests")
 
     with pytest.raises(RuntimeError):  # re-raised after exhausting retries
         retry(flaky, max_attempts=2, base_delay=0.01)
-
+    # The 429 status code must be recognised as retryable: without detection the
+    # first attempt re-raises immediately and the loop never runs twice.
+    assert len(calls) == 2
 
 def test_rate_limited_response_is_retried(monkeypatch):
     """A 429 comes back as a perfectly successful requests.post with a 429 status.
