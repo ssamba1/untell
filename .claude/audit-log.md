@@ -1270,3 +1270,10 @@ permanently.
 | 1115 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (17th): 33/33 live. |
 | 1116 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 1117 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (13th): pass-1070 verified. |
+| 1118 | L9 | threshold-0.40 | clean | 5784 | 5784 | - | L9 threshold-0.40 re-audit: already MEASURED (pass 1051 full run, MOVED -0.10 post_flagged). AMBER queued. Knob closed. |
+| 1119 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (17th): 7/8 killed. |
+| 1120 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1120. |
+| 1121 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (16th): pass-1064 verified. |
+| 1122 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (15th): pass-1022 verified. Fleet state-change documented (pass 950). |
+| 1123 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (17th): pass-1071 verified. |
+| 1124 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (16th): pass-1070 verified. |
