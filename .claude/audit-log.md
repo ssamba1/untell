@@ -2649,3 +2649,4 @@ permanently.
 | 2497 | L6 | L6 | clean | 5786 | 5786 | - | L6 cross-verify: fleet's threshold-0.40 MOVED measurement (post_flagged 1.0->0.9 on lite-hc3) CONFIRMS score.py:180-188 docstring - stdlib sub-path optimum is 0.40-0.45 (FP 27%/17% at the optimum vs 60% at 0.30), shipped 0.30 is the gpt2 optimum. The live measurement matches the documented analysis exactly. No drift. |
 | 2498 | L9 | threshold-0.40 | clean | 5787 | 5787 | - | L9 threshold-0.40 re-audit: pass-2338 verified, already MEASURED (MOVED). |
 | 2499 | L2 | untell/languages.py | clean | 5787 | 5787 | - | L2 languages.py re-audit (42nd): 12/12 ranges. |
+| 2500 | L7 | L7 | clean | 5787 | 5787 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 2500 — audit-log milestone. |
