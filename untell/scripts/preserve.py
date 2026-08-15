@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 import re
+from functools import lru_cache
 
 # The environments whose content must not be rewritten, defined once in `latex` and imported here
 # so the mask and the prose extractor cannot drift apart. `latex` imports nothing from this module,
@@ -682,6 +683,15 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"\b(?!(?i:ph\.d|p\.m|u\.s|u\.k|d\.c|m\.d|e\.g|i\.e|a\.m|b\.a|m\.a)\.)"  # exclusions
             r"[\w.-]+(?:/[\w.-]+)+\.\w{1,6}\b"  # src/main.py
             r"|(?!(?i:ph\.d|p\.m|u\.s|u\.k|d\.c|m\.d|e\.g|i\.e|a\.m|b\.a|m\.a)\.)"  # exclusions
+            # MEASURED quadratic: this branch was the ONLY one of the six without a leading \b,
+            # so `[\w-]+` was attempted at EVERY character — on a 100k-char run of one letter it
+            # scans the rest of the run and backtracks through it per position (25k chars 5.5s,
+            # 50k 21.9s, 100k ~88s), which froze lock()/score_text on wide lines and long
+            # unbroken runs. The \b the path branch above already carries is what makes it linear:
+            # only real word starts attempt the match. Anchoring cannot change what it locks in
+            # prose — a bare "main.py" is always preceded by a non-word char — but it stops the
+            # engine from paying O(n) per position.
+            r"|\b(?!(?i:ph\.d|p\.m|u\.s|u\.k|d\.c|m\.d|e\.g|i\.e|a\.m|b\.a|m\.a)\.)"  # exclusions
             r"[\w-]+\.(?:py|js|ts|tsx|jsx|json|ya?ml|md|txt|csv|tsv|html?|css|sh|ps1|toml|ini|cfg|xml|sql|go|rs|java|rb|php|c|cpp|hpp|swift|kt)\b"  # main.py
             r"|\b[A-Za-z_]\w*\(\)"  # parse_json()
             r"|\b[a-z]+(?:_[a-z0-9]+)+\b"  # snake_case_identifier
@@ -701,6 +711,9 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
 
 
 _WARNED_NO_NER = False
+# One-time warning gate for the >1MB NER skip (spaCy's hard E088 cap). Separate flag: the
+# "model missing" message and the "text too long" message name different problems.
+_WARNED_SPACY_CAP = False
 
 
 def _warn_no_ner() -> None:
@@ -715,8 +728,34 @@ def _warn_no_ner() -> None:
         _WARNED_NO_NER = True
 
 
+# Cached NER: `lock()` runs from the scoring path too (`_mostly_locked_warning` re-locks the text
+# on every detector pass), so the same document is spaCy'd repeatedly — MEASURED on a 309-word
+# flagged doc: 53 lock() calls in one loop run, 28 of them on texts already seen, ~0.11s per pass.
+# The spans are a pure function of the text and the (cached) pipeline, so repeat calls return
+# byte-identical spans; the LRU just stops paying for them twice.
+#
+# Bounded by length: past the scoring truncation cap (50k chars) the per-character cost is the
+# point and repeat hits are rare, so caching would pin multi-hundred-KB strings in the LRU for
+# almost nothing. Kept deliberately small: the loop's working set is a handful of near-identical
+# candidates plus their sentences.
+_SPACY_CACHE_MAX_CHARS = 50_000
+_SPACY_CACHE_MAXSIZE = 128
+
+
 def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
     """Return (start, end) spans for named entities via spaCy, or [] if spaCy is absent."""
+    if len(text) > _SPACY_CACHE_MAX_CHARS:
+        return _spacy_entity_spans_impl(text)
+    return list(_spacy_entity_spans_cached(text))
+
+
+@lru_cache(maxsize=_SPACY_CACHE_MAXSIZE)
+def _spacy_entity_spans_cached(text: str) -> tuple[tuple[int, int], ...]:
+    return tuple(_spacy_entity_spans_impl(text))
+
+
+def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
+    """Uncached NER pass; see :func:`_spacy_entity_spans` for the caching wrapper."""
     try:
         nlp = _spacy_entity_spans._nlp  # type: ignore[attr-defined]
     except AttributeError:
@@ -750,6 +789,37 @@ def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
         _spacy_entity_spans._nlp = nlp  # type: ignore[attr-defined]
     if nlp is None:  # cached "unavailable" — don't retry the failed load per call
         return []
+    # spaCy refuses text over 1,000,000 chars (E088: "Text of length N exceeds maximum of
+    # 1000000") and RAISES instead of truncating. No caller guards this: the rewrite loop locks
+    # the whole document before scoring, so a >1MB file crashed `untell_text` outright (REST is
+    # protected by MAX_INPUT_CHARS=50k; the CLI/library path is not). MEASURED: lock() on a
+    # 1,050,000-char document raised E088 after ~40s of work. Past the cap, skip the NER pass —
+    # the regex locks (citations, numbers, quotes, URLs) still apply and are the bulk of the
+    # value — and say once that entity locking is off for oversized input.
+    if len(text) > 1_000_000:
+        global _WARNED_SPACY_CAP
+        if not _WARNED_SPACY_CAP:
+            logger.warning(
+                "text over 1,000,000 chars — spaCy refuses to process it, so named entities "
+                "(people, organisations, places) are NOT being locked for this input; "
+                "citations, numbers, quotes and URLs still are."
+            )
+            _WARNED_SPACY_CAP = True
+        return []
+    try:
+        # A lone surrogate (U+D800..U+DFFF) crashes spaCy's tokenizer: it utf-8-encodes each
+        # token to hash it, and a surrogate has no UTF-8 form -> UnicodeEncodeError escapes as
+        # HTTP 500 from /humanize when the text arrived as JSON ("\ud800" escapes), or as a raw
+        # traceback from a library caller. MEASURED: POST /humanize with one surrogate in the
+        # text returned 500 Internal Server Error; `untell explain` on the same text exited 1
+        # with a spacy traceback. UTF-8 stdin/files/argv can never carry one (validated
+        # elsewhere), but a JSON body can. Replace each surrogate with U+FFFD BEFORE the NER
+        # pass: both are single characters, so every entity offset stays valid against the
+        # ORIGINAL text, and the locked spans below are sliced from the original — the caller's
+        # text is never altered, only what the model sees.
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        text = text.encode("utf-8", "replace").decode("utf-8")
     try:
         doc = nlp(text)
     except (ImportError, OSError):
@@ -830,6 +900,17 @@ def _merge(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
 
 def lock(text: str) -> tuple[str, dict[str, str]]:
     """Replace protected spans with sentinels. Returns (masked_text, mapping)."""
+    if not isinstance(text, str):
+        # Fuzz-found: lock(bytes)/lock(None) leaked "cannot use a string pattern on a
+        # bytes-like object" / "expected string or bytes-like object, got NoneType" from
+        # deep inside the regex passes — name the contract like score_text does.
+        raise TypeError(f"text must be str, got {type(text).__name__}")
+    # Lone surrogates are invalid Unicode that arrives from broken file encodings. spaCy
+    # raises UnicodeEncodeError on them (tokenizer), so a lock() call on such text crashed
+    # outright; run.py already sanitises before calling, but lock() is public API. Replace
+    # (not strip) so positions and word counts stay aligned with the caller's text.
+    if any(0xD800 <= ord(ch) <= 0xDFFF for ch in text):
+        text = text.encode("utf-8", errors="replace").decode("utf-8")
     spans = _merge(_collect_spans(text))
     mapping: dict[str, str] = {}
     out: list[str] = []
@@ -884,6 +965,9 @@ def restore(masked: str, mapping: dict[str, str]) -> str:
     So a sentinel that lands at a sentence start has its span capitalised, and only when that is
     unambiguously safe — see `_PLAIN_LOWERCASE_WORD`.
     """
+    if not isinstance(masked, str):
+        raise TypeError(f"masked text must be str, got {type(masked).__name__}")
+
     def _sub(m: re.Match) -> str:
         return mapping.get(m.group(0), m.group(0))
 

@@ -165,6 +165,17 @@ def _json_safe(value):
         if value == float("-inf"):
             return "-Infinity"
         return value
+    if isinstance(value, str):
+        # The same crash, one type over: a lone surrogate (a JSON "\ud800" escape) is
+        # rejected by pydantic as `string_unicode`, but the echoed input value in the 422
+        # detail still cannot be utf-8-encoded by JSONResponse — MEASURED, POST /humanize
+        # with one surrogate in the text -> 500. Replace the surrogate so the refusal
+        # renders; the detail is a diagnostic, and the field name is what matters.
+        try:
+            value.encode("utf-8")
+            return value
+        except UnicodeEncodeError:
+            return value.encode("utf-8", "replace").decode("utf-8")
     if isinstance(value, dict):
         return {k: _json_safe(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
