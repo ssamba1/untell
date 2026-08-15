@@ -10,8 +10,6 @@ were caught by the existing targeted suite.
 
 from __future__ import annotations
 
-import pytest
-
 from untell.rewriter.targeted import TargetedRewriter
 
 

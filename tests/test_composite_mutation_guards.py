@@ -17,8 +17,6 @@ stay annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
 from untell.rewriter.composite import _intensity_sweep
 
 

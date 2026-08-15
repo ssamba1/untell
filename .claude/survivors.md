@@ -473,3 +473,11 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/ensemble.py | 178 | <= -> < (rank band edge) | KILLED by test_ensemble_mutation_guards (exact best_max+EPS stays in band) |
 | untell/rewriter/composite.py | 33 | <= -> < (n<=1 guard) | KILLED by test_composite_mutation_guards (n=1 ZeroDivisionError) |
 | untell/rewriter/composite.py | 37 | 2 -> 3 (fan-out span) | KILLED by test_composite_mutation_guards (n=4 3rd draw differs) |
+| untell/rewriter/t5_paraphrase.py | 40 | constant: 4 -> 5 | `num_beams: int = 4,` |
+| untell/rewriter/t5_paraphrase.py | 42 | constant: False -> True | `sample: bool = False,` |
+| untell/rewriter/t5_paraphrase.py | 89 | constant: False -> True | `return False` |
+| untell/rewriter/t5_paraphrase.py | 90 | constant: True -> False | `return True` |
+| untell/rewriter/t5_paraphrase.py | 114 | constant: 3 -> 4 | `no_repeat_ngram_size=3,` |
+| untell/rewriter/t5_paraphrase.py | 117 | constant: True -> False | `gen_kwargs.update(do_sample=True, top_p=self.top_p, temperature=self.temperature` |
+| untell/rewriter/t5_paraphrase.py | 122 | constant: True -> False | `return tok.decode(out[0], skip_special_tokens=True).strip()` |
+| untell/rewriter/t5_paraphrase.py | 178 | logic: or -> and | `return result or text` |

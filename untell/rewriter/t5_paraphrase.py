@@ -175,4 +175,4 @@ class T5ParaphraseRewriter:
         # (no drop, no dup), else return the input untouched.
         if Counter(_SENTINEL_RE.findall(result)) != wanted:
             return text
-        return result and text
+        return result or text

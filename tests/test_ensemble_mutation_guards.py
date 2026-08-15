@@ -10,8 +10,6 @@ constants — annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
 from untell.rewriter.ensemble import EnsembleRewriter
 
 
