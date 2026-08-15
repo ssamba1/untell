@@ -1031,3 +1031,7 @@ permanently.
 | 887 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (13th): 7/8 killed, 180 documented. |
 | 888 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 889 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. |
+| 890 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit (12th): pass-826 verified. No change. |
+| 891 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (13th): pass-838 verified. |
+| 892 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean on untell+tests+eval, 3 CLIs launch. |
+| 893 | L1 | T15 | clean | 5784 | 5784 | - | T15 re-audit (12th): pass-830 verified. No change. |

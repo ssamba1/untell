@@ -9,9 +9,7 @@ input, 254/265 killed by suite, 89 killed by suite) annotated in survivors.md.
 
 from __future__ import annotations
 
-import pytest
-
-from eval.ceiling import _each_text, measure_ceiling
+from eval.ceiling import _each_text
 
 
 class TestParallelGate:
