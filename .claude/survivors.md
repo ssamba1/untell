@@ -637,3 +637,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/ceiling.py | 388 | constant: 10 -> 11 | `capture_output=True, text=True, timeout=10,` |
 | eval/ceiling.py | 388 | constant: True -> False | `capture_output=True, text=True, timeout=10,` |
 | eval/ceiling.py | 564 | constant: True -> False | `texts = load_samples(args.dataset, args.n, strict=True)` |
+| eval/compare_humanizers.py | 202 | boundary: >= -> > | `round(sum(1 for s in measured if s >= threshold) / len(measured), 3)` |
+| eval/compare_humanizers.py | 276 | boundary: <= -> < | `if args.n <= 0:` |
+| eval/compare_humanizers.py | 303 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |

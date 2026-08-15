@@ -300,7 +300,7 @@ def main(argv: list[str] | None = None) -> int:
     # from a demo corpus, so a comparison that does not name its own is unquotable. Passed in
     # rather than assigned afterwards, so a library caller gets the same guarantee the CLI does.
     result = compare(texts, tier=args.tier, threshold=args.threshold, corpus=corpus)
-    print(json.dumps(result, ensure_ascii=True, indent=3) if args.json else _render(result))
+    print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(result))
     return 0
 
 
