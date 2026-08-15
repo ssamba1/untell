@@ -2877,3 +2877,4 @@ permanently.
 | 2713 | L1 | T02 | clean | 7506 | 7506 | - | T02 re-audit (42nd): pass-2644 verified. |
 | 2714 | L2 | untell/scripts/voice.py | clean | 7506 | 7506 | - | L2 voice.py re-audit (44th): pass-2643 verified. |
 | 2715 | L2 | untell/scripts/sentences.py | coverage-closed | 5892 | 5894 | a3d206b4e8971c95ba6036ce27134f17a3b46406 | L2 sentences.py: KILLED the spread-bar boundary pair. 165: exact float spread 0.05 (0.0 to 0.05) -> original False (rankable, not strictly below bar), mutant <= True. 163: exactly 3 rows with spread 0.049 -> original True (proceeds to spread check), mutant <= short-circuits False. Prior 'corpus doesn't cross boundary' UNKILLABLE notes wrong — rows is a direct parameter, exact float boundary constructible. Red on mutation, green on original. |
+| 2716 | L2 | untell/scripts/quality.py | clean | 7506 | 7506 | - | L2 quality.py re-audit (41st): pass-2647 verified. |
