@@ -1178,3 +1178,7 @@ permanently.
 | 1023 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (15th): 12/12 ranges. |
 | 1024 | L1 | T03 | clean | 5784 | 5784 | - | T03 re-audit (14th): RELAXED_SIM_BAR restore + pin verified. |
 | 1025 | L9 | ppl-weight-0.40 | clean | 5784 | 5784 | - | L9 ppl-weight-0.40 FULL MEASUREMENT: post_mean_max 0.562->0.515 (-0.048, MOVED beyond +/-0.020 band) — FIRST knob that moved. Harness: 'Do NOT adopt — one experiment is a reason to look.' AMBER queued to human-queue. Knob restored (experiment auto-restore). |
+| 1026 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (15th): pass-981 verified. |
+| 1027 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (15th): 5/5 killed, fully pinned. |
+| 1028 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 1029 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
