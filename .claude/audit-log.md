@@ -2396,3 +2396,4 @@ permanently.
 | 2241 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (35th): pass-2186 verified. |
 | 2242 | L1 | T18 | clean | 5784 | 5784 | - | T18 re-audit (32nd): pass-2190 verified. |
 | 2243 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (39th): 2 documented survivors. |
+| 2244 | L2 | eval/compare_humanizers.py | clean | 5784 | 5784 | - | L2 eval/compare_humanizers.py FIRST AUDIT: baseline green (12), 1/8 killed, 7 survivors all comparison-table constants/boundaries (79 n=10 sample, 198/200 column thresholds, 202 >= boundary, 267 row cap, 276 width, 303) - display constants, no test asserts exact table dims. Documented class. |
