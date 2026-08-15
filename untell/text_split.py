@@ -54,9 +54,9 @@ def ends_with_abbreviation(fragment: str) -> bool:
     if word in _ABBREVIATIONS:
         return True
     parts = [p for p in word.split(".") if p]
-    if not word or len(word.replace(".", "")) > 4 or any(len(p) > 1 for p in parts):
+    if not word or len(word.replace(".", "")) > 6 or any(len(p) > 1 for p in parts):
         return False
-    # A single letter, or dotted initials: "J.", "J.R.R.", "U.S.A.", "U.S.S.R."
+    # A single letter, or dotted initials: "J.", "J.R.R.", "U.S.A.", "U.S.S.R.", "U.N.E.S.C.O."
     if all(p.isalpha() for p in parts):
         return True
     # All-digit, e.g. "1." or "3.5.". The old test was length-only, and "3.5" satisfies "every

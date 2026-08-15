@@ -1,4 +1,4 @@
-"""A four-letter dotted initialism is an abbreviation, not three sentence fragments.
+"""A dotted initialism is an abbreviation, not three sentence fragments.
 
 The initials test was capped at three characters, and "U.S.S.R." is four — so ``The U.S.S.R.
 collapsed.`` split into ``The U.S.S.R.`` + ``collapsed.``, a dangling fragment followed by a
@@ -8,7 +8,8 @@ scoring and the targeted rewriter's unit of work, so the miscount propagated int
 The cap exists to keep a sentence-final number (``The mean was 3.5.``) from reading as an
 abbreviation; the dotted-initialism branch and the digit branch are separate, so the cap applies
 to letters only — ``3.5`` still ends its sentence, and ``3.5.`` as a whole-fragment section
-marker still does not.
+marker still does not. The cap is six letters: ``U.N.E.S.C.O.`` is six, and nothing real is
+longer.
 """
 
 from __future__ import annotations
@@ -21,6 +22,10 @@ _CASES = [
     ("U.S.S.R. mid-sentence", "The U.S.S.R. collapsed. It was 1991.", 2),
     ("N.A.T.O. mid-sentence", "N.A.T.O. was founded. It still exists.", 2),
     ("A.B.C.D. mid-sentence", "A.B.C.D. stands for four things. That is all.", 2),
+    ("U.N.E.S.C.O. mid-sentence", "U.N.E.S.C.O. was founded. It still exists.", 2),
+    ("U.N.I.C.E.F. mid-sentence", "U.N.I.C.E.F. helps children. That is its mission.", 2),
+    ("A.B.C.D.E. mid-sentence", "A.B.C.D.E. is five letters. That is long.", 2),
+    ("U.N.E.S.C.O. alone", "U.N.E.S.C.O. was founded.", 1),
     ("U.S.S.R. alone", "The U.S.S.R. collapsed.", 1),
     ("regression: J.R.R. name", "It was J.R.R. Tolkien. Everyone knows it.", 2),
     ("regression: spaced initials", "J. R. R. Tolkien wrote it. Lewis did too.", 2),
