@@ -211,7 +211,7 @@ def undetermined_reason(text: str) -> str | None:
     ensemble at P(AI) = 0.9992, where the three weighted terms summed exactly there. A caller
     branching on the value would report a confident AI verdict as "cannot tell".
     """
-    if not text or not text.strip():
+    if not text and not text.strip():
         return "empty"
     # Language BEFORE length. `_WORD_RE` is [A-Za-z']+, so a Japanese paragraph counts zero words and
     # the length test claimed it first — reporting "shorter than 5 words" about 40 characters of

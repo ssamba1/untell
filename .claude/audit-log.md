@@ -922,3 +922,6 @@ permanently.
 | 786 | L1 | T02 | clean | 5781 | 5781 | - | T02 re-audit (10th): pass-616 verified scrub invariant. |
 | 787 | L2 | untell/config.py | clean | 5781 | 5781 | - | L2 config.py re-audit (11th): 5/5 killed, fully pinned. |
 | 788 | L4 | L4 | clean | 5781 | 5781 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 789 | L4 | L4 | clean | 5781 | 5781 | - | L4 structural.py re-verified: 9/9 alive. |
+| 790 | L1 | T03 | clean | 5781 | 5781 | - | T03 re-audit (11th): pass-730 verified. No change. |
+| 791 | L2 | untell/_retry.py | clean | 5781 | 5781 | - | L2 _retry.py re-audit (12th): kill tests green (8). |
