@@ -1004,3 +1004,6 @@ permanently.
 | 860 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 860. |
 | 861 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (12th): pass-793 verified. No change. |
 | 862 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (12th): pass-797 verified. No change. |
+| 863 | L2 | untell/scripts/numerals.py | clean | 5784 | 5784 | - | L2 numerals.py re-audit (13th): 18 regression tests green. Sole 376 survivor documented. |
+| 864 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (12th): tells separation verified. |
+| 865 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |

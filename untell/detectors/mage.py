@@ -66,7 +66,7 @@ class MageDetector:
                 # MAGE label convention: 0 == machine-generated, 1 == human.
                 raw["id2label"] = {"0": "machine", "1": "human"}
                 raw["label2id"] = {"machine": 0, "human": 1}
-                raw["num_labels"] = 3
+                raw["num_labels"] = 2
                 with open(cfg_path + ".fixed", "w", encoding="utf-8") as fh:
                     json.dump(raw, fh)
                 os.replace(cfg_path + ".fixed", cfg_path)  # replaces the symlink, leaves weight blobs intact
