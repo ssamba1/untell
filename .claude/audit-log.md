@@ -2833,3 +2833,4 @@ permanently.
 | 2673 | L1 | T12 | clean | 5787 | 5787 | - | T12 re-audit (43rd): pass-2601 verified. |
 | 2674 | L2 | untell/config.py | clean | 5787 | 5787 | - | L2 config.py re-audit (45th): 5/5 killed, fully pinned. |
 | 2675 | L2 | untell/_retry.py | clean | 5787 | 5787 | - | L2 _retry.py re-audit (46th): kill tests green. |
+| 602 | L4 | distill gate | clean | 5803 | 5803 | f074288 | L4 distill SFT gate (3rd, post-#5-fix): distill(dataset=sample, n=2, tier=lite) keeps 2/2 (both NLI meaning-gated), rows carry filled prompt + humanized, {text} placeholder substituted. Backend-adaptive sim_bar (recommended_bar) + meaning_preserved conjunction verified — the 0.664-0.704 faithful-paraphrase exclusion defect stays fixed. |
