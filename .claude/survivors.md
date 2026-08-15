@@ -384,3 +384,26 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/t5_paraphrase.py | 41 | 128 -> 129 (max_length) | UNKILLABLE: generation parameter |
 | untell/rewriter/t5_paraphrase.py | 89 | False -> True (available) | UNKILLABLE: torch-import branch |
 | untell/rewriter/t5_paraphrase.py | 42/90/107 | availability/return constants | KILLED by existing tests (test_the_t5_rewriter_reports...) |
+
+## 2026-08-14 swarm sweep (3 subagents, parallel worktrees) - all kills RED/GREEN proven
+
+| module | line | mutation | status |
+|---|---|---|---|
+| untell/rewriter/surgical.py | 46 | deterministic True->False | KILLED by swarm test_surgical_rewriter_mutation_guards |
+| untell/rewriter/surgical.py | 48 | max_subs 12->13 | KILLED by swarm (constructor default pin) |
+| untell/rewriter/surgical.py | 63 | tier not in -> in | KILLED by swarm (composite tier normalization spy) |
+| untell/rewriter/surgical.py | 96 | prefer_tells True->False | KILLED by swarm (tell-removal objective spy) |
+| untell/rewriter/mt_pivot.py | 54 | deterministic True->False | KILLED by swarm test_mt_pivot_mutation_guards |
+| untell/rewriter/mt_pivot.py | 64 | or -> and (guard) | KILLED by swarm (backend never consulted when unavailable) |
+| untell/rewriter/prompts.py | 75 | k 3->4 | KILLED by swarm test_prompts_mutation_guards (exactly top 3) |
+| untell/rewriter/prompts.py | 77 | and -> or (numeric filter) | KILLED by swarm (error-suffixed row stays out) |
+| untell/rewriter/prompts.py | 77 | not in -> in (__error) | KILLED by swarm (normal detector still named) |
+| untell/rewriter/prompts.py | 78 | reverse True->False | KILLED by swarm (worst named first) |
+| untell/rewriter/prompts.py | 96 | style and -> or | KILLED by swarm (unknown style skipped not crashed) |
+| untell/rewriter/prompts.py | 99 | or [] -> and [] | KILLED by swarm (flagged sentences listed) |
+| untell/rewriter/prompts.py | 101 | [:8] -> [:9] | KILLED by swarm (only first 8 listed) |
+| untell/attacks/back_translation.py | 50 | 512->513 (_MAX_TOKENS) | KILLED by swarm test_back_translation_mutation_kills |
+| untell/attacks/back_translation.py | 67 | 16->17 (budget margin) | KILLED by swarm (exact-fill stays one piece) |
+| untell/attacks/back_translation.py | 79 | > -> >= (pack loop) | KILLED by swarm (exact-fill merge; independently re-verified) |
+| untell/attacks/back_translation.py | 86 | or -> and (fallback) | KILLED by swarm (whitespace returns input) |
+| untell/attacks/unicode_tricks.py | 104-112 | emoji-adjacency boundaries | KILLED by swarm test_unicode_tricks_mutation_kills (44 tests) |
