@@ -2537,3 +2537,5 @@ permanently.
 | 2385 | L3 | L3 | clean | 5785 | 5785 | - | L3: no new slow tests. |
 | 2386 | L1 | T07 | clean | 5785 | 5785 | - | T07 re-audit (39th): spot-check alive. |
 | 2387 | L2 | untell/_retry.py | clean | 5785 | 5785 | - | L2 _retry.py re-audit (41st): 128 documented-equivalent remains. |
+| 2388 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
+| 2389 | L4 | L4 | clean | 5785 | 5785 | - | L4 structural.py re-verified: 9/9 alive. |
