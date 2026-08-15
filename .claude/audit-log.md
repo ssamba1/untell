@@ -2331,3 +2331,4 @@ permanently.
 | 2176 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (15th): human tells 0.00 mean, separation holds. Zero drift from pass 473. |
 | 2177 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 2178 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: pass-2038 verified, already MEASURED. |
+| 2179 | L1 | T14 | clean | 5784 | 5784 | - | T14 re-audit: 5 neutral transforms (case/quote/spacing/whitespace) - verdict identical across all, 0 moved. Verdict stability holds. |
