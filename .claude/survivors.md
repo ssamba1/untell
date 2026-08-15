@@ -60,7 +60,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | English-only test corpus: AND->OR has no effect |
 | untell/scripts/sentences.py | 327 | constant: 2 -> 3 | `print(json.dumps(..., indent=2))` | JSON indent: test doesn't check formatting |
 | untell/scripts/sentences.py | 345 | constant: 2 -> 3 | `return 2` | Tuning constant (rank or indent): test corpus doesn't exercise exact boundary |
-<<<<<<< Updated upstream
 | untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` |
 | untell/scripts/quality.py | 78 | constant: True -> False | `_bs_model = BERTScorer(lang="en", rescale_with_baseline=True)` |
 | untell/scripts/quality.py | 145 | constant: 2 -> 3 | `if sum(ca.values()) < 2 or sum(cb.values()) < 2:` |
@@ -126,22 +125,12 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 156 | constant: 4 -> 5 | `"burst": round(st.pstdev(lengths) / mean_len, 4) if mean_len else 0.0,` |
 | untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` |
 | untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` |
-=======
-| untell/scripts/hedges.py | 148 | constant: True -> False | `name: re.compile(r"(?<!\w)(?:" + "/".join(re.escape(t) for t in sorted(terms, ke` |
-| untell/scripts/hedges.py | 328 | constant: True -> False | `print(json.dumps({"dropped": dropped, "kept": not dropped}, ensure_ascii=True))` |
-| untell/scripts/voice.py | 154 | constant: 4 -> 5 | `"sent_len": round(mean_len, 4),` |
-| untell/scripts/voice.py | 156 | constant: 4 -> 5 | `"burst": round(st.pstdev(lengths) / mean_len, 4) if mean_len else 0.0,` |
-| untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` |
-| untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` |
-| untell/scripts/voice.py | 167 | constant: 4 -> 5 | `return {k: round((b[k] - a[k]) / _SCALE[k], 4) for k in _SCALE}` |
->>>>>>> Stashed changes
 | untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` |
 | untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` |
 | untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` |
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, help="file of YOUR writing (120+ words` |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ensure_ascii=True, indent=2))` |
-<<<<<<< Updated upstream
 | untell/scripts/verify.py | 139 | constant: False -> True | `results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"` |
 | untell/scripts/verify.py | 172 | constant: 4 -> 5 | `"ai": round(ai, 4),` |
 | untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
@@ -636,8 +625,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/text_split.py | 122 | constant: 90 -> 91 | `CHUNK_WORDS = 90` | KILLED by tests/test_chunk_words_boundary_181.py: 181 words -> 3 chunks under 90 (ceil(181/90)), 2 under 91 (ceil(181/91)) — the bound the constant exists to enforce is exceeded. Actual line is 135. Red on mutation, green on original. |
 | untell/scripts/voice.py | 154 | constant: 4 -> 5 | `"sent_len": round(mean_len, 4),` |
 | untell/scripts/voice.py | 167 | constant: 4 -> 5 | `return {k: round((b[k] - a[k]) / _SCALE[k], 4) for k in _SCALE}` |
-=======
->>>>>>> Stashed changes
 | untell/scripts/voice.py | 154 | constant: 4 -> 5 | `round(mean_len, 4)` | Rounding precision: test corpus values don't differ at 4 vs 5 digits |
 | untell/scripts/voice.py | 156 | constant: 4 -> 5 | `round(st.pstdev(lengths) / mean_len, 4)` | Same — burst precision tuning |
 | untell/scripts/voice.py | 157 | constant: 100 -> 101 | `round(text.count(",") / n_words * 100, 4)` | Per-100w denominator: 100 vs 101 imperceptible in tests |
@@ -649,7 +636,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | Gap classification boundary: test corpus never lands exactly on 0.25 |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, ...)` | CLI help: required=True vs False only affects argparse error, tests call function directly |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ..., indent=2))` | JSON indent: tests don't check formatting |
-<<<<<<< Updated upstream
 | untell/detectors/local_judge.py | 51 | logic: or -> and | `_DEFAULT_MODEL = os.environ.get("UNTELL_JUDGE_MODEL") or LIGHT_MODEL` |
 | untell/detectors/local_judge.py | 152 | logic: or -> and | `if not self.available() or not text.strip():` |
 | untell/detectors/llm_judge.py | 98 | logic: or -> and | `m = _NUM.search(out or "")` |
@@ -678,27 +664,3 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/structural.py | 2667 | logic: and -> or | `and not _inside_quotes(words, pos + 1)` | KILLED by tests/test_comma_split_respects_openability_guard.py: actual line is 2654 (comma path; 2683 is the conjunction path). 'the manager said the plan is quite good, and everyone agrees with her today now ok' -> original None (continuation cannot start a sentence, correctly blocked); mutant or short-circuits the chain, bypassing _cannot_start_a_sentence and _orphans_a_subordinate_clause, and splits into fragments. Red on mutation, green on original. |
 | untell/rewriter/structural.py | 2843 | constant: True -> False | `"contractions": True, "register": 1.0, "sentences": 1.0, "openers": 1.0,` |
 | untell/rewriter/structural.py | 2887 | constant: False -> True | `"conversational_openers": False},` |
-=======
->>>>>>> Stashed changes
-| .claude/audit_next.py | 129 | logic: == -> != | `if lane == "L1":` |
-| .claude/audit_next.py | 133 | logic: == -> != | `elif lane == "L8":` |
-| .claude/audit_next.py | 147 | logic: == -> != | `prior = [r for r in history if r["target"] == target]` |
-| .claude/audit_next.py | 162 | logic: == -> != | `elif lane == "L2":` |
-| .claude/audit_next.py | 164 | logic: == -> != | `elif lane == "L8":` |
-| .claude/audit_next.py | 181 | logic: == -> != | `if not a.commit or a.commit == "-":` |
-| .claude/audit_next.py | 181 | logic: or -> and | `if not a.commit or a.commit == "-":` |
-| .claude/audit_next.py | 188 | boundary: < -> <= | `if a.tests_after < a.tests_before:` |
-| .claude/audit_next.py | 194 | boundary: < -> <= | `if len(note) < 20:` |
-| .claude/audit_next.py | 207 | constant: True -> False | `RECORDS.mkdir(parents=True, exist_ok=True)` |
-| .claude/audit_next.py | 237 | constant: True -> False | `r.add_argument("--verdict", required=True, choices=VERDICTS)` |
-| .claude/audit_next.py | 248 | logic: == -> != | `return cmd_record(a) if a.cmd == "record" else cmd_next(a.offset)` |
-| .claude/experiment.py | 102 | constant: True -> False | `["git", *args], cwd=ROOT, capture_output=True, encoding="utf-8",` |
-| .claude/experiment.py | 112 | constant: True -> False | `cwd=ROOT, capture_output=True, encoding="utf-8", errors="replace",` |
-| .claude/experiment.py | 113 | constant: 120 -> 121 | `timeout=spec["minutes"] * 120,` |
-| .claude/experiment.py | 134 | logic: and -> or | `if known and known.get("deterministic"):` |
-| .claude/experiment.py | 177 | constant: 2 -> 3 | `band = 2 * max(float(before.get(spread_key) or 0), float(after.get(spread_key) o` |
-| .claude/experiment.py | 177 | logic: or -> and | `band = 2 * max(float(before.get(spread_key) or 0), float(after.get(spread_key) o` |
-| .claude/experiment.py | 182 | logic: or -> and | `if b is None or a is None:` |
-| .claude/experiment.py | 198 | boundary: > -> >= | `if any(abs(d) > band for d in deltas.values()):` |
-| .claude/experiment.py | 211 | constant: True -> False | `stream.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)` |
-| .claude/experiment.py | 220 | logic: == -> != | `if a.cmd == "run":` |
