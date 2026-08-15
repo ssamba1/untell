@@ -2560,3 +2560,5 @@ permanently.
 | 2408 | L4 | L4 | clean | 5785 | 5785 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2409 | L4 | L4 | clean | 5785 | 5785 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2410 | L1 | T14 | clean | 5785 | 5785 | - | T14 re-audit (39th): pass-2350 verified. |
+| 2411 | L2 | untell/scripts/hedges.py | clean | 5785 | 5785 | - | L2 hedges.py re-audit (42nd): 2 documented survivors. |
+| 2412 | L5 | L5 | clean | 5785 | 5785 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
