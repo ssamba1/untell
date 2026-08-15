@@ -2506,3 +2506,5 @@ permanently.
 | 2354 | L2 | untell/layout.py | defect-fixed | 5784 | 5786 | 4d23256b3212a02bc60cbfb486b671668a89c5d3 | DEFECT FIXED (found by FIRST full-suite-to-completion run): restore_layout_lines guard INVERTED - '== len(src)' returned unprotected transformed text exactly when alignment made protection possible; surgical/composite/targeted rewrote identifiers inside indented code (72-test battery was red). Same inverted-condition class as quality.py:230. Fixed to != + NEW test_layout_restore_aligned_guard.py (2 tests, red on mutation / green on original). Verified: 74 passed (battery + regression). Suite 5784->5786. |
 | 2355 | L2 | untell/scripts/hedges.py | clean | 5785 | 5785 | - | L2 hedges.py re-audit (41st): 2 documented survivors. |
 | 2356 | L6 | L6 | clean | 5785 | 5785 | - | L6 drift: no new drift. |
+| 2357 | L1 | T16 | clean | 5785 | 5785 | - | T16 re-audit (36th): pass-2301 verified. |
+| 2358 | L9 | token-bar-0.40 | clean | 5785 | 5785 | - | L9 token-bar-0.40 re-audit: pass-2218 verified, already MEASURED. |
