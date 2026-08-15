@@ -32,3 +32,25 @@ class TestPortFromEnv:
     def test_valid_port_is_parsed(self, monkeypatch) -> None:
         monkeypatch.setenv("UNTELL_PORT", "8123")
         assert A._port_from_env() == 8123
+
+
+class TestHostFromEnv:
+    """Survivor api_server.py:1090 — `os.environ.get("UNTELL_HOST", "0.0.0.0")`.
+
+    The README's env-var table, api_server.py's own CORS comment and the CORS tests all document
+    `untell-server` as binding 127.0.0.1 by default; the code bound 0.0.0.0, putting a server that
+    ships an optional-auth path on the LAN under the documented quick start. Uvicorn's default is
+    127.0.0.1 too. The default must stay localhost, and the env override must keep working.
+    """
+
+    def test_default_host_is_localhost(self, monkeypatch) -> None:
+        monkeypatch.delenv("UNTELL_HOST", raising=False)
+        assert A._host_from_env() == "127.0.0.1"
+
+    def test_empty_host_falls_back_to_localhost(self, monkeypatch) -> None:
+        monkeypatch.setenv("UNTELL_HOST", "  ")
+        assert A._host_from_env() == "127.0.0.1"
+
+    def test_env_override_wins(self, monkeypatch) -> None:
+        monkeypatch.setenv("UNTELL_HOST", "0.0.0.0")
+        assert A._host_from_env() == "0.0.0.0"

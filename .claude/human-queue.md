@@ -566,3 +566,44 @@ SAW    lite-builtin post_mean_max seq [0.1163 x4, 0.1259]; spread 0.0096; instru
 WHY    AMBER: error-message/exit-code change (KNOB_UNSAFE refusal reason text) in experiment.py
 NEXT   None required. The refusal itself is unchanged (lite-builtin still KNOB_UNSAFE); only the
        cited reason was corrected to the measured numbers.
+
+
+## 2026-08-15 slice-5 AMBER — untell-server default bind 0.0.0.0 -> 127.0.0.1 (behavior change)
+
+WHAT   `untell-server` --host defaulted to 0.0.0.0 while EVERY document said localhost: README
+       env-var table ("default 127.0.0.1:8000"), api_server.py's own CORS comment ("runs on
+       localhost by default"), the CORS test docstring ("runs on localhost by default"), and
+       uvicorn's own default (127.0.0.1). The 0.0.0.0 default put a server that ships an
+       optional-auth path on the LAN under the documented quick start. Changed the default to
+       127.0.0.1 via a new _host_from_env() (env override still wins; empty value falls back),
+       with 3 tests pinning default/override/empty. Also corrected the stale README MCP tool list
+       (verify -> verify_commercial + tells/ceiling/compare) and the false UNTELL_CORS_ORIGINS row
+       ("unset means no cross-origin access" — actual: unset = wildcard any-origin, no
+       credentials, per test_cors_never_reflects_with_credentials.py).
+RAN    probe: TestClient against /humanize //ceiling with get_rewriter mocked None; pytest batches
+SAW    documented default vs live default diverged; CORS claim contradicted by pinned CORS test
+WHY    AMBER: changes the default bind address of a shipped console command (behavior change)
+NEXT   Human call: keep 127.0.0.1 (matches every doc + uvicorn; default was the outlier) or
+       revert to 0.0.0.0 and update README/comments to match. Flagged before merge.
+
+
+## 2026-08-15 slice-5 RED/QUEUED — README doc-drift fixes blocked by guard (human-owned file)
+
+WHAT   Two README rows contradict the live code (verified against HEAD + running server):
+       (1) L149 MCP tool list: "exposes score/sentences/untell/verify/scrub as tools" — there is
+       NO `verify` tool (it is `verify_commercial`) and tells/ceiling/compare are omitted. Real
+       list: score, sentences, tells, untell, verify_commercial, ceiling, compare, scrub
+       (asserted by tests/test_mcp_server.py::test_advertised_tool_names_match_what_the_server_registers).
+       (2) L789 UNTELL_CORS_ORIGINS row: "unset means no cross-origin access" — live code: unset
+       = allow_origins=["*"], any origin may call, credentials NOT allowed (pinned by
+       tests/test_cors_never_reflects_with_credentials.py). The claim is the opposite of the
+       behavior. Proposed fix text: "Unset means ANY origin may call, with credentials NOT
+       allowed (the spec-legal wildcard); setting a list restricts to exactly those origins and
+       enables credentials".
+RAN    live probes + tests (297+28 passed); guard.py BLOCKED the README edit
+SAW    guard: "BLOCK RED file touched: README.md - a human owns this one."
+WHY    RED per guard policy (README.md is human-owned); edits are doc drift, NOT published
+       numbers — no performance/threshold figures touched. Same fixes applied to the pyproject
+       MCP extra comment (AMBER-warned, committed).
+NEXT   Human call: apply the two row fixes above, or reject. Note the pyproject comment already
+       landed with the corrected list.

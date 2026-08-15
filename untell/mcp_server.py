@@ -336,14 +336,29 @@ def _server():
         Args:
             text: Text to check.
             threshold: Max P(AI) to pass.
-            tier: Local detector tier to include (default full; pass 'commercial' for API-only).
+            tier: Local detector tier to include (default full; pass 'commercial' or '' for API-only).
             sandbox: Use Copyleaks free mock mode (not real scores).
             browser: Comma-separated free-web-UI checkers (e.g. 'zerogpt').
         """
+        # The one tool _bad_args was written for and never wired into. MEASURED before this guard:
+        # threshold=50 returned passes_all=True with only a warning string saying nothing could
+        # ever fail, and tier='bogus' ran the lite tier and said so only inside a warning. REST
+        # /verify rejects both with 422 (its threshold is a pydantic [0,1] probability and its tier
+        # a Literal) and the CLI rejects the tier at parse time. A VERIFICATION tool answering
+        # "passes_all: True" to an impossible threshold is the worst place to be lenient — the
+        # whole job of this tool is an honest verdict.
+        if tier not in _TIERS and tier != "":
+            return {
+                "error": f"unknown tier {tier!r} — valid: {', '.join(_TIERS)} (or '' for "
+                         "commercial-only, which skips the local ensemble). It would have silently "
+                         "fallen back to the lite heuristic."
+            }
+        bad = _bad_args(threshold=(threshold, "probability"))
+        if bad:
+            return bad
         browser_list = [s.strip() for s in browser.split(",")] if browser else None
         tier_arg: str | None = None if (tier or "").lower() in ("commercial", "") else tier
         return verify(text, threshold=threshold, sandbox=sandbox, browser=browser_list, tier=tier_arg)
-
     @server.tool()
     def ceiling(
         tier: str = "full",

@@ -9,11 +9,27 @@ Pinned by capturing the credential passed to _rate_limited.
 """
 import os
 
+import pytest
 from fastapi.testclient import TestClient
 
-os.environ["UNTELL_API_KEY"] = "secret"
-
 import untell.api_server as api_server  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _api_key_env():
+    """Set the key for this test and REMOVE it afterwards.
+
+    The key used to be set at MODULE level, which runs at collection time — before any test in
+    the process — and nothing removed it. MEASURED: running this file alongside
+    test_the_openapi_schema_matches_the_response.py failed 14 of that file's tests (every keyless
+    request got 401: `AssertionError: /tells -> 401`), and alongside the error-path file every
+    endpoint answered 401 instead of its 4xx. Order-dependent suite failures are the worst kind:
+    green alone, red together. `_api_key()` is read per request, so nothing here needs the
+    variable at import time.
+    """
+    os.environ["UNTELL_API_KEY"] = "secret"
+    yield
+    os.environ.pop("UNTELL_API_KEY", None)
 
 
 def test_rate_limit_keyed_by_api_key():

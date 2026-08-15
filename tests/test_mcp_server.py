@@ -256,6 +256,63 @@ class TestMcpRejectsOutOfRangeArguments:
         assert "unknown tier" in tools["score"](text, tier="fulll").get("error", "")
         assert "outside 1..100" in tools["untell"](text, tier="lite", max_iters=0).get("error", "")
 
+    def test_non_numeric_garbage_is_refused_not_a_traceback(self):
+        """The conversions inside _bad_args used to raise ValueError on garbage (MEASURED before:
+        _bad_args(threshold=("abc", "probability")) raised instead of refusing). An MCP client
+        can send ANYTHING, and a traceback is what this validator exists to prevent."""
+        from untell.mcp_server import _bad_args
+
+        for name, kind in (("threshold", "probability"), ("margin", "probability"),
+                           ("max_iters", "count"), ("best_of", "count"),
+                           ("confirm", "count_or_zero"), ("top", "top"), ("seed", "seed")):
+            err = _bad_args(**{name: ("abc", kind)})
+            assert err and "is not a number" in err["error"], (name, err)
+
+
+class TestVerifyCommercialValidatesArguments:
+    """The one tool `_bad_args` was written for and never wired into.
+
+    MEASURED before the guard: threshold=50 returned passes_all=True (a warning string was the
+    only signal that nothing could ever fail) and tier='bogus' ran the lite tier and said so only
+    inside a warning. REST /verify rejects both with 422; the CLI rejects the tier at parse time.
+    A verification tool must not answer PASS to an impossible threshold.
+    """
+
+    def test_an_unknown_tier_is_refused(self):
+        fn = _mcp_tools()["verify_commercial"]
+        err = fn(text="This is a test sentence.", tier="bogus").get("error", "")
+        assert "unknown tier" in err and "bogus" in err
+
+    def test_a_threshold_above_one_is_refused(self):
+        fn = _mcp_tools()["verify_commercial"]
+        err = fn(text="This is a test sentence.", threshold=50).get("error", "")
+        assert "outside [0, 1]" in err
+
+    def test_a_negative_threshold_is_refused(self):
+        fn = _mcp_tools()["verify_commercial"]
+        err = fn(text="This is a test sentence.", threshold=-0.5).get("error", "")
+        assert "outside [0, 1]" in err
+
+    def test_a_non_numeric_threshold_is_refused(self):
+        fn = _mcp_tools()["verify_commercial"]
+        err = fn(text="This is a test sentence.", threshold="abc").get("error", "")
+        assert "is not a number" in err
+
+    @pytest.mark.parametrize("tier", ["", "commercial"])
+    def test_the_api_only_tiers_still_run(self, tier):
+        """'' and 'commercial' mean commercial-only (local ensemble skipped) on every surface;
+        the guard must not refuse the documented vocabulary."""
+        fn = _mcp_tools()["verify_commercial"]
+        result = fn(text="This is a test sentence.", tier=tier)
+        assert "error" not in result, result
+        assert result["n_configured"] == 0  # no commercial keys configured in CI
+
+    def test_the_valid_default_still_runs(self):
+        fn = _mcp_tools()["verify_commercial"]
+        result = fn(text="This is a test sentence.", tier="lite")
+        assert "error" not in result, result
+        assert "passes_all" in result
+
 
 def test_advertised_tool_names_match_what_the_server_registers():
     """`--help` and `--list-tools` print a literal list, because they must work on an install

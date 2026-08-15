@@ -73,7 +73,7 @@ docs = [
     "python-docx>=1.1",
     "pypdf>=4.0",
 ]
-# MCP server (exposes untell/score/verify as tools to Claude Desktop & other MCP clients).
+# MCP server (exposes score/sentences/tells/untell/verify_commercial/ceiling/compare/scrub as tools to Claude Desktop & other MCP clients).
 # The MCP SDK requires Python >=3.10, but the base package supports 3.9 — gate the extra with an
 # environment marker so `.[mcp]` installs nothing (instead of failing to resolve) on 3.9.
 mcp = [

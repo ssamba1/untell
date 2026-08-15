@@ -51,6 +51,7 @@ from typing import Annotated, Literal
 # should get the exception its `try` expects, not a `SystemExit` that takes their process down.
 try:
     from fastapi import FastAPI, Request
+    from fastapi.exceptions import RequestValidationError
     from fastapi.middleware.cors import CORSMiddleware
 except ModuleNotFoundError as _exc:  # pragma: no cover - exercised only on a base install
     raise ImportError(
@@ -129,6 +130,58 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=APP_TITLE, version=APP_VERSION, description=APP_DESC, lifespan=lifespan)
+
+# ---------------------------------------------------------------------------
+# Validation-error rendering
+# ---------------------------------------------------------------------------
+# A JSON number like `1e309` is VALID JSON that Python's json module parses to
+# `inf` — and pydantic rejects it (ge/le fail), which is correct. But then
+# FastAPI's default RequestValidationError handler tries to serialize the
+# offending input value (`inf`) into the 422 detail, and Starlette's
+# JSONResponse renders with allow_nan=False — so the 422 itself crashed with
+# ValueError, and the client got HTTP 500 for a malformed body. MEASURED:
+# POST /score {"threshold": 1e309} -> 500 on HEAD. The same went for Infinity,
+# -Infinity and NaN in every numeric field of every endpoint.
+#
+# A custom handler that renders the same detail with non-finite floats turned
+# into their string form keeps the documented contract: "invalid input is
+# refused with 422 rather than [a traceback]".
+def _json_safe(value):
+    """Non-finite floats -> their string form; everything else passes through.
+
+    Recurses into the nested dict/list shapes pydantic's `errors()` produces.
+    """
+    if isinstance(value, bytes):
+        # FastAPI hands the raw body to pydantic when the content-type is not JSON, and the
+        # error detail echoes it as `input`. json.dumps cannot render bytes — MEASURED: POST
+        # /score with a text/plain body raised TypeError: Object of type bytes is not JSON
+        # serializable inside this handler and the client got HTTP 500 for a malformed payload.
+        return value.decode("utf-8", errors="replace")
+    if isinstance(value, float):
+        if value != value:
+            return "NaN"
+        if value == float("inf"):
+            return "Infinity"
+        if value == float("-inf"):
+            return "-Infinity"
+        return value
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    return value
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error(request: Request, exc) -> JSONResponse:
+    """422 whose detail survives JSON rendering even when pydantic quotes an
+    out-of-range numeric input (`1e309` arrives as `inf` and must not crash the
+    error response itself)."""
+    return JSONResponse(
+        status_code=422,
+        content={"detail": _json_safe(exc.errors())},
+    )
+
 
 # CORS. `allow_origins=["*"]` WITH `allow_credentials=True` is the combination the CORS spec
 # forbids, and Starlette implements the forbidden case by REFLECTING the request's Origin header
@@ -899,6 +952,25 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
     # free-listed. "auto" still means "let it choose", so that one keeps passing None.
     if body.rewriter in _FREE_REWRITERS:
         rw = get_rewriter(prefer=body.rewriter)
+        if rw is None:
+            # The requested FREE backend is not installed, and passing None down would make
+            # untell_text auto-select — the hosted rewriter when a key is set. MEASURED with a
+            # get_rewriter spy: HTTP 200, NO rewriter_warning, and get_rewriter() called with
+            # prefer=None, i.e. the paid backend was selected with nothing in the response
+            # to say the requested one never ran. The MCP untell tool refuses this exact
+            # case ("refusing to silently fall back to a paid rewriter"); this surface was
+            # the asymmetry.
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": f"rewriter {body.rewriter!r} is unavailable — it needs the '.[full]' "
+                             f"extra (pip install -e '.[full]'). Refusing to silently fall back to "
+                             f"a paid rewriter; pass rewriter='composite' for the "
+                             f"zero-dependency free path.",
+                    "hint": "'t5_paraphrase' and 'mt_pivot' are the ones the '.[full]' extra "
+                            "supplies; 'neural'/'ensemble'/'max' compose them.",
+                },
+            )
     else:
         rw = None if body.rewriter == "auto" else body.rewriter
     result = await _offload(
@@ -984,6 +1056,21 @@ async def ceiling(body: CeilingRequest) -> dict:
             },
         )
     rw = get_rewriter(prefer=body.rewriter) if body.rewriter in _FREE_REWRITERS else None
+    if body.rewriter in _FREE_REWRITERS and rw is None:
+        # Same hazard as /humanize, on a MEASUREMENT tool: rewriter=None would auto-select the
+        # hosted backend when a key is set, and the measured numbers would be attributed to the
+        # requested free technique. The MCP ceiling tool refuses this case already.
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": f"rewriter {body.rewriter!r} is unavailable — it needs the '.[full]' "
+                         f"extra (pip install -e '.[full]'). Refusing to silently fall back to a "
+                         f"paid rewriter; pass rewriter='composite' for the zero-dependency free "
+                         f"path.",
+                "hint": "the measurement would otherwise auto-select a configured hosted backend "
+                        "and bill it while reporting the requested name.",
+            },
+        )
     # `n` was in the request schema but never used: passing texts=None ran the whole built-in
     # sample regardless, so a caller asking for one fast sample paid for all of them. Capped by
     # the sample size, and the response echoes the count actually measured.
@@ -1057,7 +1144,18 @@ def main(argv: list[str] | None = None) -> int:
     import uvicorn
 
     parser = argparse.ArgumentParser(prog="untell-server")
-    parser.add_argument("--host", default=os.environ.get("UNTELL_HOST", "0.0.0.0"))
+def _host_from_env() -> str:
+    """`UNTELL_HOST`, defaulting to localhost.
+
+    The README's env-var table, this module's own CORS comment and the CORS tests all document
+    `untell-server` as binding 127.0.0.1 by default; the code bound 0.0.0.0, which put a server
+    that ships an optional-auth path on the LAN the moment anyone ran the documented quick start.
+    Uvicorn's own default is 127.0.0.1; match it and the docs.
+    """
+    return os.environ.get("UNTELL_HOST", "127.0.0.1").strip() or "127.0.0.1"
+
+
+    parser.add_argument("--host", default=_host_from_env())
     parser.add_argument("--port", type=int, default=_port_from_env())
     parser.add_argument("--reload", action="store_true", help="auto-reload on file changes (dev)")
     args = parser.parse_args(argv)
