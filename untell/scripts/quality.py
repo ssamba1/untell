@@ -227,9 +227,14 @@ def similarity(a: str, b: str) -> float:
     # `untell-quality --json`, because recall against a reference is a genuinely useful number —
     # just not a meaning gate.
     cos = _cosine_similarity(a, b)
-    if cos is None:
+    if cos is not None:
         # Clamp raw cosine into [0, 1]; the 0.76 bar lives on this raw-cosine scale.
         return max(0.0, min(1.0, cos))
+    # No embedding backend (the lightweight training environment reward.py describes, or
+    # UNTELL_LITE_NO_TORCH=1): fall back to token overlap. The inverted `is None` branch was
+    # reintroduced by a stash-pop conflict merge (aee3d2e) and made this line UNREACHABLE —
+    # `max(0.0, min(1.0, None))` raises TypeError, so the documented fallback crashed instead
+    # of running.
     return token_overlap(a, b)
 
 
