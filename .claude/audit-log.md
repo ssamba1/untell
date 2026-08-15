@@ -2761,3 +2761,4 @@ permanently.
 | 2604 | L1 | T13 | clean | 5787 | 5787 | - | T13 re-audit (40th): pass-2533 verified. |
 | 2605 | L3 | L3 | clean | 5787 | 5787 | - | L3: no new slow tests. |
 | 2606 | L1 | T14 | clean | 5787 | 5787 | - | T14 re-audit (42nd): pass-2537 verified. |
+| 2607 | L2 | untell/languages.py | clean | 5787 | 5787 | - | L2 languages.py re-audit (44th): 12/12 ranges. |
