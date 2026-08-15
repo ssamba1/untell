@@ -1087,3 +1087,8 @@ permanently.
 | 937 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (14th): _MERGE_WEIGHTS unchanged. |
 | 938 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (14th): 33/33 live. |
 | 939 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (14th): 7/8 killed, 180 documented. |
+| 940 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 940. |
+| 941 | L1 | T09 | clean | 5784 | 5784 | - | T09 re-audit (14th): pass-877 verified. |
+| 942 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (13th): pass-881 verified. |
+| 943 | L2 | untell/scripts/verify.py | clean | 5784 | 5784 | - | L2 verify.py re-audit (14th): pass-891 verified. |
+| 944 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (14th): pass-882 verified. |
