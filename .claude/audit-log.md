@@ -1014,3 +1014,7 @@ permanently.
 | 870 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (13th): spot-check alive. |
 | 871 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (13th): 16 tests green. |
 | 872 | L9 | relaxed-sim-0.20 | clean | 5784 | 5784 | - | L9 relaxed-sim-0.20 FULL MEASUREMENT (fresh before+after, 40min): pre 1.0/0.6362 -> post 1.0/0.5625, deltas all +0.000 beyond noise. Harness: 'Nothing moved beyond noise.' Entailment.py restored to 0.30 correctly after. All three L9 knobs now closed with fresh full runs (quality-bar 0.70/0.82 + relaxed-sim). |
+| 873 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (13th): _MERGE_WEIGHTS unchanged. |
+| 874 | L2 | untell/scripts/hedges.py | clean | 5784 | 5784 | - | L2 hedges.py re-audit (14th): 2 documented survivors. |
+| 875 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (11th): pass-510 warn-latch kill holds. |
+| 876 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. README-numbers delegation results pending. |
