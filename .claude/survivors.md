@@ -646,3 +646,10 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/baselines.py | 78 | logic: and -> or | `and i % merge_period == 0` |
 | eval/eval_policy.py | 42 | identity: is not -> is | `"scored": pre_r.get("scored") is not False and post_r.get("scored") is not False` |
 | untell/detectors/commercial.py | 180 | logic: or -> and | `if not self.available() or not text.strip():` |
+| untell/rewriter/prompts.py | 75 | constant: 3 -> 4 | `def _worst_detectors(score_result: dict, k: int = 3) -> list[tuple[str, float]]:` |
+| untell/rewriter/prompts.py | 77 | logic: and -> or | `numeric = [(n, v) for n, v in dets.items() if isinstance(v, (int, float)) and "_` |
+| untell/rewriter/prompts.py | 77 | membership: not in -> in | `numeric = [(n, v) for n, v in dets.items() if isinstance(v, (int, float)) and "_` |
+| untell/rewriter/prompts.py | 78 | constant: True -> False | `return sorted(numeric, key=lambda kv: kv[1], reverse=True)[:k]` |
+| untell/rewriter/prompts.py | 96 | logic: and -> or | `if style and style in STYLES:` |
+| untell/rewriter/prompts.py | 99 | logic: or -> and | `flagged_sentences = score_result.get("flagged_sentences") or []` |
+| untell/rewriter/prompts.py | 101 | constant: 8 -> 9 | `listed = "\n".join(f"  - {s}" for s in flagged_sentences[:8])` |
