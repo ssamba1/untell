@@ -1025,3 +1025,7 @@ permanently.
 | 881 | L1 | T10 | clean | 5784 | 5784 | - | T10 re-audit (12th): pass-817 verified. No change. |
 | 882 | L1 | T11 | clean | 5784 | 5784 | - | T11 re-audit (13th): pass-821 verified. No change. |
 | 883 | L2 | untell/scripts/latex.py | clean | 5784 | 5784 | - | L2 latex.py re-audit (13th): 33/33 live. |
+| 884 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (13th): pass-822 verified. No change. |
+| 885 | L3 | L3 | clean | 5784 | 5784 | - | L3: no new slow tests. Slow-marked set stable. |
+| 886 | L1 | T13 | clean | 5784 | 5784 | - | T13 re-audit (11th): pass-824 verified. No change. |
+| 887 | L2 | untell/scripts/io_utils.py | clean | 5784 | 5784 | - | L2 io_utils.py re-audit (13th): 7/8 killed, 180 documented. |
