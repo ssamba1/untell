@@ -1040,3 +1040,5 @@ permanently.
 | 896 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
 | 897 | L1 | T16 | clean | 5784 | 5784 | - | T16 re-audit (11th): pass-833 verified incl. my bytes-TypeError fix (pass 571). |
 | 898 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (13th): 5/5 killed, fully pinned. |
+| 899 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (14th): 128 documented-equivalent remains. |
+| 900 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 900. |
