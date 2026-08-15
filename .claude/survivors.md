@@ -169,7 +169,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/run.py | 1676 | KILLED by test_run_mutation_guards (argparse boundary) boundary: <= -> < | `if not (low <= value <= high):` |
 | untell/scripts/run.py | 1883 | UNKILLABLE: --rewriter base dispatch needs torch install logic: == -> != | `elif args.rewriter == "base":` |
 | untell/scripts/run.py | 1886 | UNKILLABLE: adapter flag needs torch install constant: False -> True | `rewriter = LocalPolicyRewriter(use_adapter=False)` |
-| untell/humanness.py | 75 | UNKILLABLE: warning latch, no observable output change constant: True -> False | `_WARNED_TOO_SHORT = True` |
+| untell/humanness.py | 75 | UNKILLABLE: warning latch, no observable output change constant: True -> False | `_WARNED_TOO_SHORT = True` | KILLED by tests/test_too_short_warns_only_once.py: the flag latches after the first too-short warning; mutant never sets it, so the second call warns again (log spam). Prior 'no observable output change' UNKILLABLE note wrong — the latch IS the observable, same class as the voice.py:187 warn-once kill. Red on mutation, green on original. |
 | untell/humanness.py | 214 | KILLED by test_humanness_mutation_guards (empty-text guard) logic: or -> and | `if not text or not text.strip():` |
 | untell/humanness.py | 288 | KILLED by test_humanness_mutation_guards (empty-text guard) logic: or -> and | `if not text or not text.strip():` |
 | untell/humanness.py | 368 | UNKILLABLE: CV bands are continuous at every edge (mid-band formula equals neighbour at 0.35) boundary: < -> <= | `if cv < 0.35:` |
