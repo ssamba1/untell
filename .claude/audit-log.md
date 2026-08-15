@@ -2401,3 +2401,5 @@ permanently.
 | 2246 | L1 | T20 | clean | 5784 | 5784 | - | T20 re-audit (33rd): pass-2197 verified. |
 | 2247 | L2 | untell/scripts/voice.py | clean | 5784 | 5784 | - | L2 voice.py re-audit (36th): pass-2183 verified. |
 | 2248 | L2 | eval/tells_auroc.py | clean | 5784 | 5784 | - | L2 eval/tells_auroc.py FIRST AUDIT: baseline green (3), 0/8 killed - survivors: 63 (auroc-tie ==), 136 (informative-gate or), 6 sample/significance constants (145 n=100, 198/199 seeds=4, 201 tail=2, 241 n=200, 260) - measurement constants, no test asserts exact sizes. Fleet's 133 UNKILLABLE claim stands (verified earlier). Documented class. |
+| 2249 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 2250 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (36th): pass-2201 verified. |

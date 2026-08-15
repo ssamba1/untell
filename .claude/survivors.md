@@ -640,3 +640,5 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/compare_humanizers.py | 202 | boundary: >= -> > | `round(sum(1 for s in measured if s >= threshold) / len(measured), 3)` |
 | eval/compare_humanizers.py | 276 | boundary: <= -> < | `if args.n <= 0:` |
 | eval/compare_humanizers.py | 303 | constant: 2 -> 3 | `print(json.dumps(result, ensure_ascii=True, indent=2) if args.json else _render(` |
+| eval/tells_auroc.py | 63 | logic: == -> != | `return sum((a > h) + 0.5 * (a == h) for a in ai for h in human) / (len(ai) * len` |
+| eval/tells_auroc.py | 201 | constant: 2 -> 3 | `"documents": len(pairs) * 2,` |
