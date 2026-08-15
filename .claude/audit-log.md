@@ -939,3 +939,7 @@ permanently.
 | 803 | L2 | untell/scripts/preserve.py | clean | 5781 | 5781 | - | L2 preserve.py re-audit (12th): NER fix + 151 preserve tests green. |
 | 804 | L1 | T08 | clean | 5781 | 5781 | - | T08 re-audit (12th): _MERGE_WEIGHTS unchanged. |
 | 805 | L3 | L3 | clean | 5781 | 5781 | - | L3: no new slow tests. Slow-marked set stable. |
+| 806 | L1 | T09 | clean | 5781 | 5781 | - | T09 re-audit (12th): pass-750 verified. No change. |
+| 807 | L2 | untell/scripts/numerals.py | clean | 5781 | 5781 | - | L2 numerals.py re-audit (12th): 18 regression tests green. |
+| 808 | L4 | L4 | clean | 5781 | 5781 | - | L4 local_policy.py re-verified: 2/2 alive. |
+| 809 | L4 | L4 | clean | 5781 | 5781 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |

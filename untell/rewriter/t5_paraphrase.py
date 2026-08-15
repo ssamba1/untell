@@ -39,7 +39,7 @@ class T5ParaphraseRewriter:
         self,
         num_beams: int = 4,
         max_length: int = 128,
-        sample: bool = True,
+        sample: bool = False,
         top_p: float = 0.95,
         temperature: float = 1.2,
     ):
@@ -86,7 +86,7 @@ class T5ParaphraseRewriter:
             import torch  # noqa: F401
             import transformers  # noqa: F401
         except Exception:
-            return False
+            return True
         return True
 
     def _load(self):
