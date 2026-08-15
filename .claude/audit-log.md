@@ -997,3 +997,4 @@ permanently.
 | 853 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (12th): 4/4 lock+roundtrip. |
 | 854 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (11th): killing tests green. Fully pinned. |
 | 855 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (12th): killing tests green. Sole 91 survivor documented. |
+| 856 | L2 | untell/detectors/hc3_roberta.py | clean | 5775 | 5775 | - | L2 hc3_roberta.py FIRST AUDIT: baseline green (21), 0/8 killed, 8 survivors ALL class lazy-load state (_dead/_warned 27/28/35/36/58/65/68, max_length 512 at 68) - model-dependent, no test asserts internals. ALSO live-verified mage saturation claim: 3 AI texts score 0.999987+ each (README ai_saturated_frac 1.00 confirmed - the max-pinning behavior). Documented class. |
