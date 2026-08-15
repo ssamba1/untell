@@ -1229,3 +1229,9 @@ permanently.
 | 1074 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (16th): 12/12 ranges. |
 | 1075 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (16th): 5/5 killed, fully pinned. |
 | 1076 | L6 | L6 | clean | 5784 | 5784 | - | L6 drift: no new drift. |
+| 1077 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (15th): pass-1030 verified. |
+| 1078 | L9 | quality-bar-0.82 | clean | 5784 | 5784 | - | L9 quality-bar-0.82 re-audit: already MEASURED (pass 829 full run, inert +0.000). Knob closed. |
+| 1079 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (17th): 128 documented-equivalent remains. |
+| 1080 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 1080. |
+| 1081 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (16th): tells separation verified. |
+| 1082 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (16th): spot-check alive. |
