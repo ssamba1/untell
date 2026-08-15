@@ -2844,3 +2844,5 @@ permanently.
 | 2682 | L1 | T13 | clean | 7506 | 7506 | - | T13 re-audit (41st): pass-2604 verified. |
 | 604 | L4 | score guards | clean | 5803 | 5803 | a9fc3c1 | L4 _score_with_detectors defensive layers (3rd): raising detector -> None + '__error: boom' (no crash); out-of-range 8500.0 -> clamped 1.0, raw surfaced via out_of_range_raw/out_of_range_detectors (probe looked at wrong keys — contract verified); NaN -> excluded + 'detector returned NaN' error (no NaN poisoning of max/mean/flagged); non-numeric -> excluded + 'non-numeric score' error. All four defensive layers live-verified. |
 | 2683 | L2 | untell/layout.py | clean | 7506 | 7506 | - | L2 layout.py re-audit (44th): guard double-pinned (fleet+me), battery green. |
+| 2684 | L1 | T14 | clean | 7506 | 7506 | - | T14 re-audit (43rd): pass-2606 verified. |
+| 2685 | L3 | L3 | clean | 7506 | 7506 | - | L3: no new slow tests. |
