@@ -242,7 +242,7 @@ class LocalPolicyRewriter:
         return True
 
     def _load(self) -> None:
-        if self._model is None:
+        if self._model is not None:
             return
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -336,7 +336,7 @@ class LocalPolicyRewriter:
         for piece in pieces:
             # Short fragments are headings, list markers and stubs; a 1.5B model asked to make one
             # "read as human" invents a sentence around it.
-            if len(piece.split()) < 8:
+            if len(piece.split()) <= 8:
                 out.append(piece)
                 continue
             shielded, back = _shield_sentinels(piece)

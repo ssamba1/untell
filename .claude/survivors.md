@@ -429,3 +429,7 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/rewriter/ensemble.py | 178 | boundary: <= -> < | `near = [(r, t) for r, t in scored if r[0] <= best_max + _RANK_EPS]` | UNKILLABLE: rank-band EPS boundary, tuple comparison dominated by best_max
 | untell/rewriter/ensemble.py | 186 | boundary: < -> <= | `passing = [(r, t) for r, t in near if r[0] < threshold]` | KILLED by test_ensemble_mutation_guards (exact-threshold passing gate)
 | untell/rewriter/ensemble.py | 187 | logic: or -> and | `near = passing or near` | KILLED by test_ensemble_mutation_guards (near-band fallback - mutation raises on empty)
+| untell/rewriter/base.py | 66 | False -> True (available) | UNKILLABLE: ANTHROPIC_API_KEY gate, key-gated |
+| untell/rewriter/base.py | 67 | True -> False (available) | UNKILLABLE: anthropic-import branch |
+| untell/rewriter/base.py | 78 | 2048 -> 2049 (max_tokens) | UNKILLABLE: API payload constant, key-gated |
+| untell/rewriter/base.py | 79 | 3 -> 4 (max_attempts) | KILLED by existing tests (retry count pinned) |
