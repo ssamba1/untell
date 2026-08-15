@@ -2424,3 +2424,5 @@ permanently.
 | 2269 | L4 | L4 | clean | 5784 | 5784 | - | L4 structural.py re-verified: 9/9 alive. L4 lane: 160th worked pass, zero regressions. |
 | 2270 | L1 | T07 | clean | 5784 | 5784 | - | T07 re-audit (37th): spot-check alive. |
 | 2271 | L2 | untell/languages.py | clean | 5784 | 5784 | - | L2 languages.py re-audit (38th): 12/12 ranges. |
+| 2272 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2273 | L1 | T08 | clean | 5784 | 5784 | - | T08 re-audit (38th): _MERGE_WEIGHTS unchanged. |
