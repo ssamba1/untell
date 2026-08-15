@@ -2768,3 +2768,4 @@ permanently.
 | 2611 | L2 | untell/config.py | clean | 5787 | 5787 | - | L2 config.py re-audit (44th): 5/5 killed, fully pinned. |
 | 2612 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2613 | L1 | T15 | clean | 5787 | 5787 | - | T15 re-audit (42nd): pass-2541 verified. |
+| 2614 | L2 | untell/_retry.py | clean | 5787 | 5787 | - | L2 _retry.py re-audit (45th): kill tests green. |
