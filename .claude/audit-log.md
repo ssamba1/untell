@@ -2821,3 +2821,4 @@ permanently.
 | 2661 | L1 | T07 | clean | 5787 | 5787 | - | T07 re-audit (43rd): spot-check alive. |
 | 2662 | L1 | T08 | clean | 5787 | 5787 | - | T08 re-audit (44th): _MERGE_WEIGHTS unchanged. |
 | 2663 | L2 | untell/scripts/verify.py | clean | 5787 | 5787 | - | L2 verify.py re-audit (45th): pass-2603 verified. |
+| 2664 | L1 | T09 | clean | 5787 | 5787 | - | T09 re-audit (43rd): pass-2586 verified. |
