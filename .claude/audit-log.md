@@ -2641,3 +2641,4 @@ permanently.
 | 2489 | L4 | L4 | clean | 5787 | 5787 | - | L4 structural.py re-verified: 9/9 alive. |
 | 2490 | L1 | T19 | clean | 5787 | 5787 | - | T19 re-audit (38th): pass-2425 verified 36 rows consistent. |
 | 2491 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (42nd): 7/8 killed. |
+| 2492 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
