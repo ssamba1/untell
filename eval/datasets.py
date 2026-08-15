@@ -133,7 +133,7 @@ def _raid_pairs(n: int, min_words: int, scan_cap: int = 60000) -> list[tuple[str
     pairs: list[tuple[str, str]] = []
     seen: set[str] = set()
     for i, row in enumerate(ds):
-        if i >= scan_cap or len(pairs) >= n:
+        if i >= scan_cap and len(pairs) >= n:
             break
         if (row.get("attack") or "none") != "none":
             continue

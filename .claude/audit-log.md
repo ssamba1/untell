@@ -2404,3 +2404,5 @@ permanently.
 | 2249 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2250 | L1 | T01 | clean | 5784 | 5784 | - | T01 re-audit (36th): pass-2201 verified. |
 | 2251 | L2 | eval/holdout.py | clean | 5784 | 5784 | - | L2 eval/holdout.py FIRST AUDIT: baseline green (4), 2/8 killed (fleet's guards), 6 survivors all holdout-size/threshold boundaries (89 n=10, 172/201/202/208 >= thresholds, 278 2-split) - measurement constants. Documented class. |
+| 2252 | L2 | untell/scripts/quality.py | clean | 5784 | 5784 | - | L2 quality.py re-audit (33rd): pass-2187 verified. |
+| 2253 | L1 | T02 | clean | 5784 | 5784 | - | T02 re-audit (35th): pass-2202 verified. |

@@ -205,7 +205,7 @@ def run(
             "mean_pre": statistics.fmean(r["holdout_pre"] for r in scored),
             "mean_post": statistics.fmean(r["holdout_post"] for r in scored),
             "flagged_pre": sum(r["holdout_pre"] >= FLAG_BAR for r in scored),
-            "flagged_post": sum(r["holdout_post"] > FLAG_BAR for r in scored),
+            "flagged_post": sum(r["holdout_post"] >= FLAG_BAR for r in scored),
             "improved_on": sum(r["holdout_post"] < r["holdout_pre"] for r in scored),
         },
         "by_conviction": by_conviction,
