@@ -1042,3 +1042,5 @@ permanently.
 | 898 | L2 | untell/config.py | clean | 5784 | 5784 | - | L2 config.py re-audit (13th): 5/5 killed, fully pinned. |
 | 899 | L2 | untell/_retry.py | clean | 5784 | 5784 | - | L2 _retry.py re-audit (14th): 128 documented-equivalent remains. |
 | 900 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 900. |
+| 901 | L1 | T17 | clean | 5784 | 5784 | - | T17 re-audit (12th): pass-841 verified. No change. |
+| 902 | L1 | T19 | clean | 5784 | 5784 | - | T19 re-audit (11th): pass-842 verified 35 rows consistent. |
