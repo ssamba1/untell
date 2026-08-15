@@ -2303,3 +2303,8 @@ permanently.
 | 2148 | L4 | L4 | clean | 5784 | 5784 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2149 | L4 | L4 | clean | 5784 | 5784 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. L4 lane: 150th worked pass, zero regressions. |
 | 2150 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (34th): pass-2093 verified. |
+| 2151 | L2 | untell/_env.py | clean | 5784 | 5784 | - | L2 _env.py re-audit (35th): fully pinned. |
+| 2152 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
+| 2153 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (35th): tells separation verified. |
+| 2154 | L2 | untell/layout.py | clean | 5784 | 5784 | - | L2 layout.py re-audit (36th): killing tests green. |
+| 2155 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (36th): aligned-chunks fix holds. |
