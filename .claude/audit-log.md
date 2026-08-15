@@ -1002,3 +1002,5 @@ permanently.
 | 858 | L2 | untell/text_split.py | clean | 5784 | 5784 | - | L2 text_split.py re-audit (12th): aligned-chunks fix + 54 chunking tests green. |
 | 859 | L2 | untell/scripts/preserve.py | clean | 5784 | 5784 | - | L2 preserve.py re-audit (13th): NER fix + 151 tests green. |
 | 860 | L7 | L7 | clean | 5784 | 5784 | - | L7 harness: shrink refusal verified. Tree clean. Sound at pass 860. |
+| 861 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (12th): pass-793 verified. No change. |
+| 862 | L1 | T05 | clean | 5784 | 5784 | - | T05 re-audit (12th): pass-797 verified. No change. |
