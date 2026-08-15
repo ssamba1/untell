@@ -46,7 +46,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/sentences.py | 265 | logic: and -> or | `if text.strip() and looks_non_english(text):` | English-only test corpus: AND->OR has no effect |
 | untell/scripts/sentences.py | 327 | constant: 2 -> 3 | `print(json.dumps(..., indent=2))` | JSON indent: test doesn't check formatting |
 | untell/scripts/sentences.py | 345 | constant: 2 -> 3 | `return 2` | Tuning constant (rank or indent): test corpus doesn't exercise exact boundary |
-<<<<<<< Updated upstream
 | untell/scripts/quality.py | 71 | identity: is not -> is | `if _bs_model is not _UNSET:` |
 | untell/scripts/quality.py | 78 | constant: True -> False | `_bs_model = BERTScorer(lang="en", rescale_with_baseline=True)` |
 | untell/scripts/quality.py | 145 | constant: 2 -> 3 | `if sum(ca.values()) < 2 or sum(cb.values()) < 2:` |
@@ -112,7 +111,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 156 | constant: 4 -> 5 | `"burst": round(st.pstdev(lengths) / mean_len, 4) if mean_len else 0.0,` |
 | untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` |
 | untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` |
-=======
 | untell/scripts/hedges.py | 148 | constant: True -> False | `name: re.compile(r"(?<!\w)(?:" + "/".join(re.escape(t) for t in sorted(terms, ke` |
 | untell/scripts/hedges.py | 328 | constant: True -> False | `print(json.dumps({"dropped": dropped, "kept": not dropped}, ensure_ascii=True))` |
 | untell/scripts/voice.py | 154 | constant: 4 -> 5 | `"sent_len": round(mean_len, 4),` |
@@ -120,14 +118,12 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 157 | constant: 100 -> 101 | `"comma_per_100w": round(text.count(",") / n_words * 100, 4),` |
 | untell/scripts/voice.py | 160 | constant: 100 -> 101 | `"first_person_per_100w": round(len(_FIRST_PERSON.findall(text)) / n_words * 100,` |
 | untell/scripts/voice.py | 167 | constant: 4 -> 5 | `return {k: round((b[k] - a[k]) / _SCALE[k], 4) for k in _SCALE}` |
->>>>>>> Stashed changes
 | untell/scripts/voice.py | 185 | logic: or -> and | `if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:` |
 | untell/scripts/voice.py | 187 | constant: True -> False | `_WARNED_THIN_SAMPLE = True` |
 | untell/scripts/voice.py | 218 | boundary: < -> <= | `if sample_words < MIN_SAMPLE_WORDS:` |
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, help="file of YOUR writing (120+ words` |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ensure_ascii=True, indent=2))` |
-<<<<<<< Updated upstream
 | untell/scripts/verify.py | 139 | constant: False -> True | `results[d.name] = {"ai": None, "passes": False, "error": "detector returned NaN"` |
 | untell/scripts/verify.py | 172 | constant: 4 -> 5 | `"ai": round(ai, 4),` |
 | untell/scripts/verify.py | 177 | constant: False -> True | `results[key] = {"ai": None, "passes": False, "error": str(exc)[:160]}` |
@@ -514,7 +510,6 @@ unkillable with the reason. Written by `mutate.py --record`.
 | eval/ceiling.py | 239 | is-not -> is (scored flag) | KILLED by test_ceiling_mutation_guards (scored=True must be included in run_post_means) |
 | eval/ceiling.py | 254 | or -> and | KILLED by existing suite |
 | eval/ceiling.py | 265 | >= -> > | KILLED by existing suite |
-=======
 | untell/scripts/voice.py | 154 | constant: 4 -> 5 | `round(mean_len, 4)` | Rounding precision: test corpus values don't differ at 4 vs 5 digits |
 | untell/scripts/voice.py | 156 | constant: 4 -> 5 | `round(st.pstdev(lengths) / mean_len, 4)` | Same — burst precision tuning |
 | untell/scripts/voice.py | 157 | constant: 100 -> 101 | `round(text.count(",") / n_words * 100, 4)` | Per-100w denominator: 100 vs 101 imperceptible in tests |
@@ -526,4 +521,3 @@ unkillable with the reason. Written by `mutate.py --record`.
 | untell/scripts/voice.py | 228 | boundary: < -> <= | `if abs(gap) < 0.25:` | Gap classification boundary: test corpus never lands exactly on 0.25 |
 | untell/scripts/voice.py | 253 | constant: True -> False | `p.add_argument("--sample", required=True, ...)` | CLI help: required=True vs False only affects argparse error, tests call function directly |
 | untell/scripts/voice.py | 265 | constant: 2 -> 3 | `print(json.dumps(report, ..., indent=2))` | JSON indent: tests don't check formatting |
->>>>>>> Stashed changes
