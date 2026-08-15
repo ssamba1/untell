@@ -2327,3 +2327,5 @@ permanently.
 | 2172 | L5 | L5 | clean | 5784 | 5784 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2173 | L1 | T12 | clean | 5784 | 5784 | - | T12 re-audit (35th): pass-2113 verified. |
 | 2174 | L1 | T04 | clean | 5784 | 5784 | - | T04 re-audit (9th): 5/5 detectors oriented correctly (roberta 0.084/0.996, hc3_roberta 0.165/0.999, mage 0.578/1.0, fdg 0.079/0.618, ppl 0.183/0.641) - IDENTICAL to pass-284 reference, zero drift. |
+| 2175 | L2 | untell/scripts/sentences.py | clean | 5784 | 5784 | - | L2 sentences.py re-audit (37th): 16 tests green. |
+| 2176 | L1 | T06 | clean | 5784 | 5784 | - | T06 re-audit (15th): human tells 0.00 mean, separation holds. Zero drift from pass 473. |
