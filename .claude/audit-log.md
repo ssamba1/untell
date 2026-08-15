@@ -2643,3 +2643,4 @@ permanently.
 | 2491 | L2 | untell/scripts/io_utils.py | clean | 5787 | 5787 | - | L2 io_utils.py re-audit (42nd): 7/8 killed. |
 | 2492 | L5 | L5 | clean | 5787 | 5787 | - | L5 hygiene: ruff clean, 3 CLIs launch. |
 | 2493 | L1 | T20 | clean | 5787 | 5787 | - | T20 re-audit (37th): pass-2426 verified. |
+| 2494 | L2 | untell/scripts/verify.py | clean | 5787 | 5787 | - | L2 verify.py re-audit (42nd): pass-2435 verified. |
