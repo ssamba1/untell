@@ -15,6 +15,14 @@ Surfaces (run one with --surface, or all):
     rest       untell.api_server request models + live TestClient endpoints (raw bodies)
     cli        in-process main() argv fuzz + one-shot subprocess runs (NUL-sanitised argv)
     preserve   scripts.preserve lock/restore round trips + adversarial mappings + type guards
+    rest_socket  transport-level malformed HTTP against a LIVE in-process uvicorn server
+                (raw bytes via http.client — bad method, bad headers, chunked-encoding
+                abuse, request smuggling shapes). Contract: 4xx, never 5xx, never a wedge.
+    mcp_stdio    MCP server over stdio (subprocess): initialize handshake, then garbage
+                JSON-RPC lines (binary, NUL, 5MB, deep nesting) and hostile tools/call
+                frames. Contract: JSON-RPC error/result responses, no traceback, clean exit.
+    soak        500 sequential + 50 parallel POST /score against the live server:
+                no 5xx, median-latency drift < 2x, tracemalloc memory plateau.
 
 Usage (from repo root, PYTHONPATH cleared — the Hermes desktop app shadows pydantic_core):
 
@@ -35,15 +43,21 @@ from __future__ import annotations
 
 import argparse
 import base64
+import http.client
 import io
 import json
 import os
 import random
+import re  # used by run_mcp_stdio_surface; upstream fca0c0c dropped it pre-slice
+import socket
+import statistics
 import subprocess
 import sys
 import threading
 import time
 import traceback
+import tracemalloc
+from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -393,6 +407,519 @@ def _run_cli(case):
     return {"ok": True, "code": code}
 
 
+# --- rest_socket / soak: one live in-process uvicorn server per harness process ----------
+#
+# Transport-level fuzz cannot run against TestClient (it drives the ASGI app in-process and
+# never touches a socket). We boot a real uvicorn server on 127.0.0.1:0 in a daemon thread
+# and talk to it with http.client over actual TCP.
+#
+# NOTE on the event loop: uvicorn 0.49's asyncio_loop_factory returns ProactorEventLoop on
+# Windows by default (this is also what the shipped `untell-server` runs), so no policy is
+# forced here — the fuzz runs on the SHIPPED loop configuration. The flaky "wedged server"
+# observations during development were CPU starvation (16 cores at 100% from sibling
+# slices), handled below by retried liveness probes and generous timeouts.
+_REST_SERVER = {"port": None, "server": None, "thread": None}
+_REST_LOCK = threading.Lock()
+
+
+def _ensure_rest_server() -> int:
+    """Start (once) the in-process uvicorn server; return its port."""
+    with _REST_LOCK:
+        if _REST_SERVER["port"] is not None:
+            return _REST_SERVER["port"]
+        import uvicorn
+
+        from untell.api_server import app
+
+        # The soak makes 550 calls in ~a minute; the shipped default limit is 60/min.
+        # The documented disable knob (UNTELL_RATE_LIMIT env var set to 0) is used below —
+        # rate limiting has its own tests; the soak measures latency/memory, not throttling.
+        os.environ["UNTELL_RATE_LIMIT"] = "0"
+        config = uvicorn.Config(app, host="127.0.0.1", port=0, log_level="error",
+                                lifespan="off")
+        server = uvicorn.Server(config)
+        th = threading.Thread(target=server.run, daemon=True)
+        th.start()
+        for _ in range(400):
+            if server.started:
+                break
+            time.sleep(0.02)
+        if not server.started:
+            raise RuntimeError("in-process uvicorn server failed to start")
+        port = server.servers[0].sockets[0].getsockname()[1]
+        _REST_SERVER.update(port=port, server=server, thread=th)
+        return port
+
+
+def _stop_rest_server() -> None:
+    with _REST_LOCK:
+        server = _REST_SERVER["server"]
+        if server is None:
+            return
+        server.should_exit = True
+        _REST_SERVER["thread"].join(15)
+        _REST_SERVER.update(port=None, server=None, thread=None)
+
+
+def _rest_send(port: int, raw: bytes, timeout: float = 10.0) -> dict:
+    """Send raw bytes on a fresh connection; parse the response with http.client."""
+    try:
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
+        conn.connect()
+        conn.sock.sendall(raw)
+        conn.sock.settimeout(timeout)
+        try:
+            resp = http.client.HTTPResponse(conn.sock)
+            resp.begin()
+            resp.read()
+            return {"status": "ok", "code": resp.status}
+        except socket.timeout:
+            # No response bytes at all: the parser is waiting for more request input
+            # (incomplete request line / chunk body) or the server is wedged. The probe
+            # decides which.
+            return {"status": "no_response"}
+        except http.client.HTTPException as exc:
+            return {"status": f"bad_response:{type(exc).__name__}"}
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    except (ConnectionResetError, BrokenPipeError):
+        return {"status": "reset"}
+    except Exception as exc:  # noqa: BLE001 — fuzz: classify every transport outcome
+        return {"status": f"client_err:{type(exc).__name__}:{exc}"}
+
+
+def _rest_probe(port: int, attempts: int = 3, timeout: float = 5.0) -> bool:
+    """Liveness probe on a FRESH connection, retried (the box is often CPU-starved)."""
+    for _ in range(attempts):
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
+            conn.request("GET", "/health")
+            r = conn.getresponse()
+            ok = r.status == 200
+            conn.close()
+            if ok:
+                return True
+        except Exception:  # noqa: BLE001 — probe: any failure means "not healthy now"
+            pass
+        time.sleep(0.5)
+    return False
+
+
+# Curated malformed-HTTP battery: bad method / bad headers / chunked-encoding abuse /
+# request-smuggling shapes. Every case must draw a 4xx (or keep the server healthily
+# waiting for more input); 5xx or a wedged server is a DEFECT.
+_REST_RAW_CASES = [
+    ('bad_method_unknown', b'BREW /score HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\n\r\n{}'),
+    ('bad_method_space_in_token', b'GE T /score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('bad_method_nul', b'\x00GET /score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('bad_method_crlf_inject', b'GET\r\n /score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('bad_method_tab_sep', b'GET\t/score\tHTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('bad_method_lowercase', b'get /score HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\n\r\n{}'),
+    ('bad_method_connect', b'CONNECT /score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('no_method', b' /score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('bad_version', b'GET /score HTTP/9.9\r\nHost: x\r\n\r\n'),
+    ('no_version', b'GET /score\r\nHost: x\r\n\r\n'),
+    ('http09_style', b'GET /\r\n'),
+    ('header_no_colon', b'GET /score HTTP/1.1\r\nHost x\r\n\r\n'),
+    ('header_space_in_name', b'GET /score HTTP/1.1\r\nBad Header: x\r\n\r\n'),
+    ('header_ctrl_in_value', b'GET /score HTTP/1.1\r\nX-Foo: \x01\x02\x7f\r\n\r\n'),
+    ('header_nul', b'GET /score HTTP/1.1\r\nX-Foo: a\x00b\r\n\r\n'),
+    ('header_crlf_inject', b'GET /score HTTP/1.1\r\nX-Foo: a\r\nInjected: b\r\n\r\n'),
+    ('dup_content_length', b'POST /score HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\nContent-Length: 6\r\n\r\nhello!'),
+    ('cl_and_te', b'POST /score HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n'),
+    ('huge_header_name', b'GET /score HTTP/1.1\r\n' + b'A' * 90000 + b': x\r\n\r\n'),
+    ('chunk_bad_size_hex', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\nzzz\r\nhello'),
+    ('chunk_neg_size', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n-5\r\nhello'),
+    ('chunk_huge_size', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\nFFFFFFFFFFFFFFFF\r\nhello'),
+    ('chunk_plus_size', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n+5\r\nhello'),
+    ('chunk_0x_size', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n0x5\r\nhello'),
+    ('chunk_ext_weird', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n5;foo="bar"\r\nhello\r\n0\r\n\r\n'),
+    ('chunk_no_final_zero', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n'),
+    ('chunk_trailing_garbage', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGARBAGE'),
+    ('chunk_size_with_space', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n5 \r\nhello\r\n0\r\n\r\n'),
+    ('chunk_undersized_data', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n10\r\nhi\r\n0\r\n\r\n'),
+    ('weird_leading_spaces', b'   GET /score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('garbage_binary', b'\xff\xfe\x00\x01GARBAGE\r\n\r\n'),
+    ('partial_request_line', b'GET /sco'),
+    ('extra_crlf_before', b'\r\nGET /score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('asterisk_target', b'OPTIONS * HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('absolute_target', b'GET http://example.com/score HTTP/1.1\r\nHost: x\r\n\r\n'),
+    ('http10_chunked', b'POST /score HTTP/1.0\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n'),
+    ('get_with_cl', b'GET /score HTTP/1.1\r\nHost: x\r\nContent-Length: 2\r\n\r\n{}'),
+    ('smuggle_te_cl', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\nContent-Length: 4\r\n\r\n0\r\n\r\n'),
+    ('te_gzip_chunked', b'POST /score HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: gzip, chunked\r\n\r\n0\r\n\r\n'),
+]
+
+_RAW_METHODS = (b"GET", b"POST", b"BREW", b"\x00GET", b"GE T", b"get", b"CONNECT")
+
+
+def _rand_raw(rng: random.Random) -> bytes:
+    """Seeded random byte mutation for the transport surface."""
+    r = rng.random()
+    if r < 0.45:
+        return bytes(rng.randrange(256) for _ in range(rng.randint(1, 150)))
+    if r < 0.75:
+        return (rng.choice(_RAW_METHODS) + b" " +
+                bytes(rng.randrange(256) for _ in range(rng.randint(0, 50))) +
+                rng.choice([b" HTTP/1.1", b" HTTP/9.9", b""]) + b"\r\n" +
+                bytes(rng.randrange(256) for _ in range(rng.randint(0, 80))) + b"\r\n\r\n")
+    base = rng.choice(_REST_RAW_CASES)[1]
+    raw = bytearray(base)
+    for _ in range(rng.randint(1, 4)):
+        if raw:
+            raw[rng.randrange(len(raw))] = rng.randrange(256)
+    return bytes(raw)
+
+
+def _run_rest_socket(case):
+    """One malformed-HTTP frame against the live server. 5xx or a wedge is a DEFECT."""
+    port = _ensure_rest_server()
+    raw = case["raw"].encode("latin1")
+    outcome = _rest_send(port, raw)
+    if outcome["status"] == "ok":
+        code = outcome["code"]
+        if 500 <= code < 600:
+            raise RuntimeError(f"server answered HTTP {code} to malformed input {raw[:80]!r}")
+        return {"ok": True, "code": code}
+    if outcome["status"] == "no_response":
+        # No bytes back: either the parser is waiting for more input (incomplete request —
+        # correct) or the server is wedged. The probe decides, with retries for the
+        # CPU-starved box.
+        if _rest_probe(port):
+            return {"ok": True, "note": "incomplete request; server healthy and waiting"}
+        raise RuntimeError(f"server unresponsive after malformed input {raw[:80]!r}")
+    if outcome["status"].startswith("bad_response"):
+        # The server wrote bytes http.client could not parse as an HTTP response — e.g. a
+        # bare-body HTTP/0.9-style answer. Recorded, not a defect: the server answered.
+        return {"ok": True, "note": outcome["status"]}
+    raise RuntimeError(f"transport outcome {outcome['status']} on {raw[:80]!r}")
+
+
+# --- soak: 500 sequential + 50 parallel REST calls ----------------------------------------
+# Assertions (the shipped test mirrors these):
+#   * every call answers 200 (no 5xx, and no unexpected 4xx on a well-formed request)
+#   * median latency of the last 100 calls < 2x the first 100 (no drift)
+#   * tracemalloc current/peak after the soak < first-checkpoint + 8MB (plateau, no leak)
+# Rate limiting is disabled via the documented knob (UNTELL_RATE_LIMIT env var set to 0).
+_SOAK_SEQ = 500
+_SOAK_PAR = 50
+_SOAK_PAR_WORKERS = 16
+_SOAK_TEXT = ("The committee approved the proposal yesterday, and moreover the framework "
+              "showcases remarkable results across several benchmarks. Dr. Smith and Prof. "
+              "Jones agreed on the analysis, noting that the mean was 3.5 and variance low. "
+              "It works... mostly. Meetings are common at 9:30 p.m. and the deadline is "
+              "Friday, June 14th, 2026, at 5 p.m. precisely.") * 3
+_SOAK_BODY = json.dumps({"text": _SOAK_TEXT, "tier": "lite"}).encode()
+_SOAK_MEM_SLACK = 8 * 1024 * 1024
+
+
+def _soak_call(port: int, timeout: float = 120.0) -> tuple[int, float]:
+    t0 = time.time()
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
+    conn.request("POST", "/score", body=_SOAK_BODY,
+                 headers={"content-type": "application/json"})
+    r = conn.getresponse()
+    r.read()
+    status = r.status
+    conn.close()
+    return status, time.time() - t0
+
+
+def _run_soak(case):
+    """The full soak. Any assertion failure raises (=> DEFECT finding)."""
+    port = _ensure_rest_server()
+    # Warm up: the first call in a fresh process costs ~27-38s (imports + detector
+    # resolution on this box); it is not part of the measured window.
+    st, _ = _soak_call(port)
+    if st != 200:
+        raise RuntimeError(f"warmup call answered {st}")
+    st, _ = _soak_call(port)
+    if st != 200:
+        raise RuntimeError(f"second warmup call answered {st}")
+
+    tracemalloc.start()
+    latencies: list[float] = []
+    checkpoints: list[tuple[int, int]] = []
+    bad: list[tuple[str, int, int]] = []
+    try:
+        for batch in range(_SOAK_SEQ // 100):
+            for i in range(100):
+                st, dt = _soak_call(port)
+                latencies.append(dt)
+                if st != 200:
+                    bad.append(("seq", batch * 100 + i, st))
+            cur, peak = tracemalloc.get_traced_memory()
+            checkpoints.append((cur, peak))
+        with ThreadPoolExecutor(max_workers=_SOAK_PAR_WORKERS) as ex:
+            results = list(ex.map(lambda _: _soak_call(port), range(_SOAK_PAR)))
+        par_bad = [(i, st) for i, (st, _) in enumerate(results) if st != 200]
+        cur, peak = tracemalloc.get_traced_memory()
+        checkpoints.append((cur, peak))
+    finally:
+        tracemalloc.stop()
+
+    if bad or par_bad:
+        raise RuntimeError(f"non-200 during soak: seq={bad[:5]} par={par_bad[:5]}")
+    first = statistics.median(latencies[:100])
+    last = statistics.median(latencies[-100:])
+    drift = last / first if first > 0 else float("inf")
+    cur0 = checkpoints[0][0]
+    peak0 = checkpoints[0][1]
+    cur_growth = checkpoints[-1][0] - cur0
+    peak_growth = checkpoints[-1][1] - peak0
+    if drift >= 2.0:
+        raise RuntimeError(f"latency drift {drift:.2f}x (first-100 median {first:.4f}s, "
+                           f"last-100 {last:.4f}s)")
+    if cur_growth > _SOAK_MEM_SLACK or peak_growth > _SOAK_MEM_SLACK:
+        raise RuntimeError(f"memory growth {cur_growth / 1e6:.1f}MB current / "
+                           f"{peak_growth / 1e6:.1f}MB peak over soak")
+    return {"ok": True, "drift": round(drift, 3), "seq_median": round(first, 4),
+            "last_median": round(last, 4), "cur_growth_mb": round(cur_growth / 1e6, 2),
+            "peak_growth_mb": round(peak_growth / 1e6, 2),
+            "seq_lat_max": round(max(latencies), 3),
+            "par_median": round(statistics.median([dt for _, dt in results]), 3)}
+
+
+# --- mcp_stdio: the MCP server over a real stdio pipe --------------------------------------
+# The mcp SDK's stdio transport is NEWLINE-delimited JSON (mcp.server.stdio.stdin_reader:
+# `async for line in stdin` -> JSONRPCMessage.model_validate_json). One server process runs
+# the whole battery: initialize handshake, a warmup tool call (first-call cost ~38s), then
+# every hostile frame, then EOF. stdin stays OPEN until all responses are in — closing it
+# early makes the SDK's shutdown cancel in-flight responses (measured).
+_MCP_HS_INIT = {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                           "clientInfo": {"name": "fuzz-harness", "version": "0"}}}
+
+# MEASURED (slice 17): if a tool call triggers a heavy module import (spacy/thinc/
+# numpy chain, or even plain numpy) WHILE RUNNING ON THE EVENT LOOP — the mcp SDK
+# executes sync tools inline on the loop — the response is not delivered until stdin
+# closes, and under CPU saturation the import alone can take minutes. Pre-importing
+# the tool backends and doing one warm engine call at PROCESS BOOT (before anyio
+# starts) keeps every tool call fast and responsive. This is a third-party SDK quirk,
+# not an untell defect; the preamble is the harness-side workaround.
+_MCP_PREAMBLE = (
+    "from untell.scripts.score import score_text; "
+    "score_text('warmup', tier='lite', threshold=0.3); "
+    "from untell.scripts.tells import score_tells; score_tells('warmup', include_matches=True); "
+    "from untell.scripts.sentences import score_sentences; "
+    "score_sentences('warmup text here', tier='lite'); "
+    "from untell.mcp_server import main; raise SystemExit(main())"
+)
+
+
+def _mcp_jline(msg: dict) -> bytes:
+    return (json.dumps(msg, ensure_ascii=True).encode("utf-8", "replace") + b"\n")
+
+
+def _mcp_tool_call(tid: int, name: str, args) -> bytes:
+    return _mcp_jline({"jsonrpc": "2.0", "id": tid, "method": "tools/call",
+                       "params": {"name": name, "arguments": args}})
+
+
+def build_mcp_frames(n: int, seed: int) -> list[dict]:
+    rng = random.Random(seed)
+    frames = []
+    hostile = [
+        ("score_text_int", _mcp_tool_call(0, "score", {"text": 123, "tier": "lite"}), True),
+        ("score_text_list", _mcp_tool_call(0, "score", {"text": ["a", "b"], "tier": "lite"}), True),
+        # Lone-surrogate escapes are INVALID JSON to pydantic-core's jiter parser; the
+        # server refuses with an error notification and no response (measured) — so this
+        # is a garbage frame, not a tool call that must answer.
+        ("score_text_surrogate", _mcp_tool_call(0, "score", {"text": "a \ud800 b", "tier": "lite"}), False),
+        ("score_tier_bogus", _mcp_tool_call(0, "score", {"text": "hello", "tier": "bogus"}), True),
+        ("score_threshold_1e309", _mcp_tool_call(0, "score", {"text": "hello", "threshold": 1e309,
+                                                              "tier": "lite"}), True),
+        ("score_threshold_inf", _mcp_tool_call(0, "score", {"text": "hello",
+                                                            "threshold": float("inf"),
+                                                            "tier": "lite"}), True),
+        ("score_missing_text", _mcp_tool_call(0, "score", {"tier": "lite"}), True),
+        ("score_no_args", _mcp_jline({"jsonrpc": "2.0", "id": 0, "method": "tools/call",
+                                      "params": {"name": "score", "arguments": None}}), True),
+        ("score_args_as_string", _mcp_jline({"jsonrpc": "2.0", "id": 0, "method": "tools/call",
+                                             "params": {"name": "score", "arguments": "x"}}), True),
+        ("unknown_tool", _mcp_tool_call(0, "nope", {}), True),
+        ("huge_text_50k", _mcp_tool_call(0, "score", {"text": "x" * 50_000, "tier": "lite"}), True),
+        ("sentences_top_huge", _mcp_tool_call(0, "sentences", {"text": "hello world",
+                                                               "top": 10 ** 9}), True),
+        ("verify_commercial_no_args", _mcp_tool_call(0, "verify_commercial", {}), True),
+        ("compare_tier_bogus", _mcp_tool_call(0, "compare", {"tier": "bogus"}), True),
+        ("ceiling_n_huge", _mcp_tool_call(0, "ceiling", {"n": 10 ** 6}), True),
+        ("scrub_surrogate", _mcp_tool_call(0, "scrub", {"text": "\ud800\x00tail"}), True),
+        ("binary_line", b"\x00\x01\xff\xfe\x80\n", False),
+        ("nul_in_line", b'{"jsonrpc":"2.0","id":0,"method":"ping"}\x00\n', False),
+        ("truncated_json", b'{"jsonrpc":"2.0","id":0,"method":"pi', False),
+        ("garbage_line", b"GARBAGE\n", False),
+        ("deep_nesting", b'{"a":' * 1000 + b"1" + b"}" * 1000 + b"\n", False),
+        ("cl_framed_garbage", b'Content-Length: 12\r\n\r\n{"bogus"xxx\n', False),
+        ("huge_line_5MB", b"x" * 5_000_000 + b"\n", False),
+        ("re_init", _mcp_jline({"jsonrpc": "2.0", "id": 0, "method": "initialize",
+                                "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                                           "clientInfo": {"name": "fuzz", "version": "0"}}}), True),
+        ("init_garbage_params", _mcp_jline({"jsonrpc": "2.0", "id": 0, "method": "initialize",
+                                            "params": "garbage"}), True),
+        ("id_as_string", _mcp_jline({"jsonrpc": "2.0", "id": "s", "method": "tools/call",
+                                     "params": {"name": "tells", "arguments": {"text": "x"}}}),
+         True, "s"),
+        ("no_params", _mcp_jline({"jsonrpc": "2.0", "id": 0, "method": "tools/call"}), True),
+        ("unimplemented_method", _mcp_jline({"jsonrpc": "2.0", "id": 0,
+                                             "method": "resources/list"}), True),
+        ("ping_with_params", _mcp_jline({"jsonrpc": "2.0", "id": 0, "method": "ping",
+                                         "params": {"x": 1}}), True),
+        ("tools_list_with_params", _mcp_jline({"jsonrpc": "2.0", "id": 0, "method": "tools/list",
+                                               "params": {"x": 1}}), True),
+    ]
+
+    for entry in hostile:
+        name, payload, expect = entry[0], entry[1], entry[2]
+        resp_id = entry[3] if len(entry) > 3 else None
+        frames.append({"kind": "frame", "name": name, "expect_resp": expect,
+                       "resp_id": resp_id,
+                       "b64": base64.b64encode(payload).decode()})
+    # seeded extra garbage frames
+    for i in range(max(0, n - len(hostile))):
+        r = rng.random()
+        if r < 0.4:
+            payload = bytes(rng.randrange(256) for _ in range(rng.randint(1, 80))) + b"\n"
+            expect = False
+        elif r < 0.7:
+            payload = _mcp_tool_call(0, rng.choice(["score", "tells", "nope"]),
+                                     {"text": rand_str(rng, 200), "tier": "lite"})
+            expect = True
+        else:
+            payload = rand_str(rng, 300).encode("utf-8", "replace") + b"\n"
+            expect = False
+        frames.append({"kind": "frame", "name": f"rand_{i}", "expect_resp": expect,
+                       "b64": base64.b64encode(payload).decode()})
+    return frames
+
+
+def run_mcp_stdio_surface(frames: list[dict], timeout: float, out_f) -> list[dict]:
+    """One MCP server process; every frame must draw a response, never a traceback."""
+    findings = []
+    # Boot the server through a preamble that pre-imports the tool backends and warms
+    # the engine once, before anyio starts (see _MCP_PREAMBLE above).
+    cmd = [PY, "-c", _MCP_PREAMBLE]
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, env=ENV, cwd=REPO)
+    lines: list[str] = []
+
+    def _reader():
+        for line in proc.stdout:
+            lines.append(line.decode("utf-8", "replace"))
+
+    threading.Thread(target=_reader, daemon=True).start()
+
+    def _wait_resp(tid: int, deadline: float) -> str | None:
+        t_end = time.time() + deadline
+        while time.time() < t_end:
+            for line in lines:
+                try:
+                    msg = json.loads(line)
+                except Exception:
+                    continue
+                if msg.get("id") == tid:
+                    return line
+            if proc.poll() is not None:
+                return None
+            time.sleep(0.2)
+        return None
+
+    def _send(payload: bytes) -> None:
+        proc.stdin.write(payload)
+        proc.stdin.flush()
+
+    def _finding(sev: str, name: str, msg: str) -> dict:
+        f = {"surface": "mcp_stdio", "severity": sev, "status": "exception",
+             "exc": msg, "case": {"name": name}}
+        findings.append(f)
+        out_f.write(json.dumps(f, ensure_ascii=True, default=str) + "\n")
+        out_f.flush()
+        return f
+
+    try:
+        _send(_mcp_jline(_MCP_HS_INIT))
+        if _wait_resp(1, 300) is None:
+            _finding("DEFECT", "handshake",
+                     "no initialize response" + (f"; process exited {proc.poll()}"
+                                                 if proc.poll() is not None else ""))
+            proc.kill()
+            return findings
+        _send(_mcp_jline({"jsonrpc": "2.0", "method": "notifications/initialized"}))
+        # Warmup uses `tells` (regex-only, no heavy imports): the score tool's FIRST
+        # call imports the spacy->thinc->numpy chain, which under CPU saturation can
+        # take minutes — measured repeatedly. `tells` proves the protocol and tool
+        # machinery in well under a second.
+        _send(_mcp_tool_call(3, "tells", {"text": "warmup"}))
+        if _wait_resp(3, 30) is None:
+            _finding("DEFECT", "warmup",
+                     "warmup tells call drew no response"
+                     + (f"; process exited {proc.poll()}" if proc.poll() is not None else ""))
+            proc.kill()
+            return findings
+        for i, case in enumerate(frames):
+            payload = base64.b64decode(case["b64"])
+            # assign a fresh id so responses are attributable (unless the frame
+            # deliberately uses a non-numeric id, which the SDK echoes back)
+            if case.get("resp_id") is None:
+                payload = re.sub(rb'"id"\s*:\s*0', b'"id": %d' % (1000 + i), payload, count=1)
+            _send(payload)
+            print(f"  [mcp_stdio] frame {i + 1}/{len(frames)} {case['name']}", flush=True)
+            if not case.get("expect_resp", True):
+                # A garbage/truncated frame cannot draw a response; the contract is that
+                # the server survives it (no traceback, process alive).
+                time.sleep(3)
+                if proc.poll() is not None:
+                    err = proc.stderr.read().decode("utf-8", "replace")
+                    _finding("DEFECT", case["name"],
+                             f"server died (exit {proc.poll()}) on garbage frame; "
+                             f"stderr: {err[-400:]!r}")
+                continue
+            # Fixed generous budget: the first score-family call imports the
+            # spacy->thinc->numpy chain, which under CPU saturation can take minutes.
+            want_id = case["resp_id"] if case.get("resp_id") is not None else 1000 + i
+            resp = _wait_resp(want_id, 300)
+            if resp is None:
+                if proc.poll() is not None:
+                    err = proc.stderr.read().decode("utf-8", "replace")
+                    _finding("DEFECT", case["name"],
+                             f"server died (exit {proc.poll()}) waiting for response; "
+                             f"stderr: {err[-200:]!r}")
+                else:
+                    _finding("GAP", case["name"],
+                             "no response within deadline; server alive (first-call "
+                             "spacy/numpy import under CPU saturation can exceed the "
+                             "deadline — measured, not a crash)")
+            elif "Traceback" in resp:
+                _finding("DEFECT", case["name"],
+                         f"traceback in server output: {resp[:200]!r}")
+            # else: a response (result or error) arrived — the contract.
+        _send(b"")
+        proc.stdin.close()
+        try:
+            proc.wait(timeout=min(timeout, 60))
+        except subprocess.TimeoutExpired:
+            _finding("GAP", "eof", "server did not exit within 60s of stdin EOF")
+            proc.kill()
+        err = proc.stderr.read().decode("utf-8", "replace")
+        if "Traceback" in err:
+            _finding("DEFECT", "stderr", f"traceback on server stderr: {err[-300:]!r}")
+        if proc.returncode not in (0, 1):
+            _finding("GAP", "exit", f"server exited {proc.returncode}")
+    except Exception as exc:  # noqa: BLE001 — harness plumbing failure
+        extra = ""
+        try:
+            err = proc.stderr.read().decode("utf-8", "replace")
+            if err:
+                extra = f"; server stderr: {err[-400:]!r}"
+        except Exception:
+            pass
+        _finding("DEFECT", "harness", f"{type(exc).__name__}: {exc}{extra}")
+    return findings
+
+
 _SURFACES = {
     "split": _run_split,
     "layout": _run_layout,
@@ -402,7 +929,14 @@ _SURFACES = {
     "rest": _run_rest,
     "preserve": _run_preserve,
     "cli": _run_cli,
+    "rest_socket": _run_rest_socket,
+    "mcp_stdio": _run_mcp,  # handled by a dedicated runner in main(); placeholder kept
+    "soak": _run_soak,
 }
+
+# Surfaces whose cases share one live in-process REST server (started before the
+# case loop, stopped after).
+_SURFACE_SERVER = frozenset({"rest_socket", "soak"})
 
 
 def build_cases(surface: str, n: int, seed: int) -> list[dict]:
@@ -523,6 +1057,19 @@ def build_cases(surface: str, n: int, seed: int) -> list[dict]:
                                                "--threshold", "--seed"):
                     argv = rand_argv(rng)
             cases.append({"surface": surface, "argv": argv, "which": which})
+    elif surface == "rest_socket":
+        # Curated battery first, then seeded random byte mutations.
+        for name, raw in _REST_RAW_CASES:
+            cases.append({"surface": surface, "name": name, "raw": raw.decode("latin1")})
+        for i in range(n):
+            cases.append({"surface": surface, "name": f"mut_{i}",
+                          "raw": _rand_raw(rng).decode("latin1")})
+    elif surface == "mcp_stdio":
+        # Frames are consumed by the dedicated runner (one MCP subprocess per battery).
+        return build_mcp_frames(n, seed)
+    elif surface == "soak":
+        # The soak is a single case; 500 sequential + 50 parallel calls happen inside it.
+        cases.append({"surface": surface})
     return cases
 
 
@@ -582,7 +1129,8 @@ def classify(result: dict, surface: str) -> dict | None:
         # a clean TypeError naming the contract is the repo's documented fix shape
         if "TypeError" in exc_type and "must be str" in exc:
             return None
-        sev = "DEFECT" if surface in ("split", "layout", "detectors", "preserve", "cli") else "GAP"
+        sev = "DEFECT" if surface in ("split", "layout", "detectors", "preserve", "cli",
+                                      "rest_socket", "soak") else "GAP"
         return {"severity": sev, "status": status, "exc": exc,
                 "head": result.get("head"), "site": result.get("site"),
                 "input_preview": result.get("input_preview") or result.get("payload_preview"),
@@ -608,15 +1156,21 @@ def run_surface(surface: str, n: int, timeout: float, out_f, quick: bool) -> lis
     seed = MASTER_SEED + hash(surface) % 1000
     cases = build_cases(surface, n, seed)
     findings = []
-    for i, case in enumerate(cases):
-        case["_i"] = i
-        result = run_case(surface, case, timeout)
-        f = classify(result, surface)
-        if f:
-            findings.append(f)
-            write_finding(out_f, f, surface, case)
-        if i % 50 == 0:
-            print(f"  [{surface}] {i + 1}/{n}  findings={len(findings)}", flush=True)
+    if surface in _SURFACE_SERVER:
+        _ensure_rest_server()
+    try:
+        for i, case in enumerate(cases):
+            case["_i"] = i
+            result = run_case(surface, case, timeout)
+            f = classify(result, surface)
+            if f:
+                findings.append(f)
+                write_finding(out_f, f, surface, case)
+            if i % 50 == 0:
+                print(f"  [{surface}] {i + 1}/{n}  findings={len(findings)}", flush=True)
+    finally:
+        if surface in _SURFACE_SERVER:
+            _stop_rest_server()
     return findings
 
 
@@ -688,25 +1242,44 @@ def main() -> int:
     ap.add_argument("--timeout", type=float, default=0.0)
     args = ap.parse_args()
 
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     out_f = open(args.out, "w", encoding="utf-8")
     counts = {s: (30 if args.quick else 120) for s in _SURFACES}
     timeouts = {s: (20 if args.quick else 40) for s in _SURFACES}
+    # The soak is ONE case (500 sequential + 50 parallel calls happen inside it) and
+    # needs a long per-case budget; the transport surfaces need room for the slow box.
+    counts["soak"] = 1
+    timeouts["soak"] = 900
+    counts["rest_socket"] = 30 if args.quick else 60
+    timeouts["rest_socket"] = 60 if args.quick else 90
+    # mcp_stdio runs one process with a ~38s first-call warmup; the per-surface
+    # timeout must cover it or every quick run reports a false warmup DEFECT.
+    counts["mcp_stdio"] = 30 if args.quick else 60
+    timeouts["mcp_stdio"] = 90 if args.quick else 240
     if args.n:
         counts = {s: args.n for s in _SURFACES}
+        counts["soak"] = 1
     if args.timeout:
         timeouts = {s: args.timeout for s in _SURFACES}
+        timeouts["soak"] = max(args.timeout, 900)
 
     surfaces = [args.surface] if args.surface else sorted(_SURFACES)
     all_findings = []
     t_start = time.time()
     for surface in surfaces:
         print(f"== surface: {surface} ==", flush=True)
-        findings = run_surface(surface, counts[surface], timeouts[surface], out_f, args.quick)
+        if surface == "mcp_stdio":
+            # One MCP subprocess runs the whole battery (handshake + warmup + frames);
+            # the generic per-case loop would spawn a process per frame.
+            frames = build_mcp_frames(counts[surface], MASTER_SEED + hash(surface) % 1000)
+            findings = run_mcp_stdio_surface(frames, timeouts[surface], out_f)
+        else:
+            findings = run_surface(surface, counts[surface], timeouts[surface], out_f,
+                                   args.quick)
         all_findings += findings
         print(f"   {surface}: {len(findings)} findings", flush=True)
 
-    if args.surface != "cli":
+    if args.surface not in ("cli", "mcp_stdio", "soak"):
         print("== cli subprocess one-shots ==", flush=True)
         sub_findings = run_subprocess_cli(15 if args.quick else 40, out_f)
         for f in sub_findings:

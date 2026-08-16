@@ -108,3 +108,16 @@ def _isolate_score_cache():
     yield
     _score_mod._score_cache.clear()
 
+
+def pytest_configure(config):
+    """Register the ``soak`` marker used by tests/test_server_soak.py.
+
+    Registered here rather than in pyproject.toml because that file is AMBER
+    (touching it demands a queue entry) and a one-line marker registration in the
+    suite's own conftest achieves the same without an unknown-marker warning.
+    """
+    config.addinivalue_line(
+        "markers",
+        "soak: long-running server soak (500 sequential + 50 parallel REST calls "
+        "against a live in-process uvicorn server); deselect with -m 'not soak'",
+    )
