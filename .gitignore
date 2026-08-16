@@ -36,22 +36,39 @@ _private/
 audit_report*.md
 delegation-*
 
+# Root-scratch policy (issues #38, #42). One-off diagnostic scratch at the repo root
+# is throwaway by definition and ignored, per the committed-probes convention above.
+# Anchored to the root so similar-looking `.claude/probes/` files (e.g.
+# `.claude/probes/_fuzz_*.jsonl`, `.claude/probes/sliceN_*.py`) stay tracked.
+/_mem_probe*/
+/audit_tmp.json
+/_fix_*.py
+/_probe*.py
+/slice[0-9]*_*
+
 # Captured command output. Fourteen of these were committed by accident: a redirect to
 # an absolute Windows scratchpad path was taken literally, so `C:\...\foo_err.log` became
 # a single file in the repo root, and `git add -A` swept it in across five commits. No
 # log belongs in version control, so ignore the extension rather than the one spelling.
 *.log
 
-# Agent scratch. Nothing under `.claude/` is tracked — the shipped plugin manifest is
-# in `.claude-plugin/`. Named rather than ignoring the whole directory so that adding
-# something shareable there later is a deliberate act, not a silent one.
-#
-# These lived in .git/info/exclude, which is per-clone: it protected exactly one
+# Agent scratch. `.claude/worktrees/`, `.claude/tasks/` and `.claude/records/` are
+# per-run working state, ignored by name (not by directory) so that adding something
+# shareable under `.claude/` later is a deliberate act, not a silent one. These
+# entries lived in .git/info/exclude, which is per-clone: it protected exactly one
 # machine, and a detached worktree would have shown up as untracked for everyone else.
 .claude/worktrees/
 .claude/tasks/
 # Per-worker rows, collected into the log by the fleet runner and then deleted.
 .claude/records/
+
+# Committed-probes convention (issues #38, #42). Probe scripts AND their outputs live
+# in `.claude/probes/` and are committed — `.claude/probes/sliceN_*.py` plus their
+# .jsonl/.txt outputs (314 tracked files at wave 4). `.claude/probes/` is therefore
+# deliberately NOT ignored wholesale; the only ignores that apply there are generic
+# ones like `*.log` / `__pycache__/`. Scratch that is not meant to be kept lives
+# OUTSIDE the repo (e.g. the OS temp dir); anything scratch-named that does appear at
+# the repo root matches a root-scratch pattern below and stays untracked-and-ignored.
 
 # mkdocs build output. `mkdocs build --strict` is part of the gate suite, so this
 # directory appears after every verification run; `git add -A` would commit the whole

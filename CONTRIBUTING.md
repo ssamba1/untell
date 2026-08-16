@@ -34,6 +34,17 @@ pytest -q          # tests (must be green; lite tier needs zero ML)
 CI runs the same checks on Python 3.9 / 3.11 / 3.12 plus a full-tier job that loads the real torch
 detectors. A PR that's green locally should be green in CI.
 
+## Probe & scratch policy
+
+- Probe scripts and their outputs (`.jsonl`/`.txt` artifacts, `sliceN_*.py`) live in
+  [`.claude/probes/`](.claude/probes/) and **are committed** — they are the audit trail.
+- Scratch that is not meant to be kept (memory harnesses, `audit_tmp.json`, one-off
+  `_fix_*.py` / `_probe*.py` / `sliceN_*` files) lives **outside the repo** (e.g. the OS
+  temp dir). If it must appear at the repo root, it matches a root-scratch pattern in
+  [`.gitignore`](.gitignore) and stays untracked-and-ignored.
+- Stage explicit paths only — never `git add -A` — and end every work session with a
+  `git status` showing only intentional files.
+
 ## Good first contributions
 
 - **A new free web-detector selector** — add an entry to a `browser_sites.json` (see
