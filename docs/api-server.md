@@ -18,7 +18,7 @@ Open **http://localhost:8000/docs** for the interactive API documentation.
 |---|---|---|
 | `UNTELL_API_KEY` | *(none)* | API key for auth. Unset = open access. |
 | `UNTELL_RATE_LIMIT` | `60` | Requests per 60s per caller. `0` disables. |
-| `UNTELL_HOST` | `0.0.0.0` | Bind address |
+| `UNTELL_HOST` | `127.0.0.1` | Bind address |
 | `UNTELL_PORT` | `8000` | Port |
 
 ### Rate limiting
@@ -155,10 +155,14 @@ If `UNTELL_API_KEY` is set, every request (except `/health`, `/docs`, `/openapi.
 `/redoc`) must include the key:
 
 ```
-Authorization: Bearer <key>
+Authorization: Bearer ***
 # or
-X-API-Key: <key>
+X-API-Key: ***
 ```
+
+CORS preflight requests (`OPTIONS`) are exempt too — browsers never attach credentials to a
+preflight by spec; the real request carries the key. The `/openapi.json` schema declares both
+schemes, so a client generated from it knows to send one.
 
 ## Deployment
 
