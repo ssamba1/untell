@@ -12,6 +12,20 @@ UNTELL_API_KEY=my-secret-key untell-server
 
 Open **http://localhost:8000/docs** for the interactive API documentation.
 
+### Hosted-LLM rewriters
+
+The `/humanize` endpoint can delegate rewriting to a hosted LLM — `rewriter: "anthropic"` or
+`rewriter: "openai"` — instead of the bundled local backends. Those providers are optional and
+install with the `api` extra:
+
+```bash
+pip install "untell[api]"
+```
+
+The adapters are key-gated at runtime: set `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`) and the
+rewriter becomes available; `rewriter: "auto"` picks a hosted provider automatically when a key is
+set and falls back to a local backend otherwise.
+
 ## Configuration
 
 | Env var | Default | Description |

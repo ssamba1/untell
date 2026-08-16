@@ -109,11 +109,13 @@ def test_thresholds_reference_documents_every_gate_the_loop_runs():
 
 
 def test_every_declared_version_agrees():
-    """One version, four declarations. They had already drifted.
+    """One version, five declarations. They had already drifted.
 
     `pyproject.toml` and `untell/__init__.py` said 0.3.0 while both plugin manifests said 0.1.0, so
     anyone installing via the Claude Code marketplace saw a version two minor releases behind the
-    package they were getting. Nothing compared them.
+    package they were getting. Nothing compared them. CITATION.cff was added to the pin after issue
+    #15: the paper-facing citation is the one place a stale version is invisible until someone cites
+    it.
     """
     import json
 
@@ -134,8 +136,33 @@ def test_every_declared_version_agrees():
     api = (REPO / "untell" / "api_server.py").read_text(encoding="utf-8")
     found["untell/api_server.py APP_VERSION"] = re.search(r'APP_VERSION = "([^"]+)"', api).group(1)
 
+    cff = (REPO / "CITATION.cff").read_text(encoding="utf-8")
+    found["CITATION.cff"] = re.search(r'^version:\s*"?([^"\s]+)"?', cff, re.M).group(1)
+
     disagree = {k: v for k, v in found.items() if v != expected}
     assert not disagree, f"version is {expected} in pyproject.toml but {disagree}"
+
+
+def test_the_api_extra_is_named_by_a_pip_install_line():
+    """The `[api]` extra (hosted-LLM rewriters) is the only one users could not install by doc.
+
+    Slice-19's scan found all 13 extras declared in pyproject but `api` never named by
+    pip-install syntax anywhere in README/docs/SKILL.md — its feature (the anthropic/openai
+    rewriters behind `/humanize`) was documented while the way to install it was not. README is
+    human-owned, so the pip line lives in docs/api-server.md; this test pins the pair together.
+    """
+    pyproject = (REPO / "pyproject.toml").read_text(encoding="utf-8")
+    block = pyproject[pyproject.index("[project.optional-dependencies]") :]
+    end = block.find("\n[", 1)
+    block = block[:end] if end != -1 else block
+    extras = set(re.findall(r"^(\w+) = \[", block, re.M))
+    assert "api" in extras, "the [api] extra is no longer declared in pyproject.toml"
+
+    doc = (REPO / "docs" / "api-server.md").read_text(encoding="utf-8")
+    assert "untell[api]" in doc, (
+        "no pip-install line names the [api] extra in docs/api-server.md — users cannot install "
+        "the hosted-LLM rewriters the doc describes"
+    )
 
 
 class TestTheDemoUiOffersWhatTheToolShips:
