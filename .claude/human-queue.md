@@ -1059,3 +1059,26 @@ NEXT   Decide the semantics: a negation-count drop should be vetoed only when a 
        drop inside a chunk whose word loss is within its deletion allowance; or check per sentence
        that every candidate sentence's polarity is present among the source sentences. Needs a
        probe set of real flips (did not reduce -> reduced) to re-verify the flip catch still fires.
+
+## 2026-08-15 slice 12 — RED — composite burns 12 no-op draws per document after iteration 1
+
+WHAT   CompositeRewriter is flagged non-deterministic, so the loop's stall detection never fires
+       for it. MEASURED over 10 HC3 docs (slice-12 study, max_iters=5, best_of=3): composite ran
+       15 draws on every doc; on all 7 docs where it adopted, the adoption happened in iteration
+       1 and iterations 2-5 drew candidates byte-identical to their input (the structural stage
+       returns the already-rewritten text unchanged at every intensity). 12 wasted draws per doc,
+       each paying a full NLI gate pass (~20-40s) — the largest single wall-clock cost measured
+       (~40% of composite's runtime). On the 3 docs where iteration 1 adopted nothing, no later
+       iteration adopted either. No adoption was ever observed after iteration 1 in this sample.
+RAN     SLICE12_TIER=lite SLICE12_DOCS=6,4 ./.venv/Scripts/python.exe C:/Users/Admin/goals/results/slice12_harness.py
+        (draw records in slice12_track4_data.jsonl; iterate inputs per draw == iteration inputs)
+SAW    per-doc (adopted, iters): (1,5)x4, (2,5), (3,5), (0,5)x3, (1,5); every adoption in iter 1;
+       iters 2-5: all 12 draws per doc unchanged text, gate passed, score tie -> not adopted
+WHY    RED-adjacent: a stop-condition change for stochastic rewriters alters loop behavior for
+       every LLM/policy rewriter too (their draws are genuinely diverse across iterations, so a
+       blanket "stop after a no-op iteration" would be wrong for them). The fix must be scoped to
+       rule-based rewriters or driven by an observed no-op draw pattern.
+NEXT   Smallest candidate: after an iteration whose every draw left the input text unchanged AND
+       nothing was adopted, stop with stopped="stalled_noop" for rewriters whose draws are
+       deterministic given (input, RNG state) — but verify on RAID + a policy/LLM rewriter that
+       no later-iteration adoption is lost. Needs a probe over more corpora before shipping.
