@@ -1,0 +1,5 @@
+CHUNK=A3_EXPLAIN_IO FILES=tests/test_explain.py tests/test_io_utils.py tests/test_io_utils_decrypt_guard.py tests/test_read_file_or_exit_exits_two.py tests/test_broken_isatty_still_reads_piped_stdin.py 
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+C:\Users\Admin\Humanize\.venv\Lib\site-packages\coverage\inorout.py:558: CoverageWarning: Module untell.humanness was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.15.4/messages.html#warning-module-not-imported
+  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
+CHUNK_DONE=A3_EXPLAIN_IO
