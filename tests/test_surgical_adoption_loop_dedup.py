@@ -81,13 +81,20 @@ def test_deduped_adoption_loop_changes_no_decisions(text: str) -> None:
     assert wi.surgical_substitute(text, **kwargs) == _reference_substitute(text, **kwargs)
 
 
-def test_dedup_removes_the_duplicate_tell_passes() -> None:
+def test_dedup_removes_the_duplicate_tell_passes(stdlib_lite) -> None:
     """The deduped loop must call `_tell_count` fewer times than the pre-dedup one, with
     identical output.
 
     The pre-dedup loop counted every candidate twice (sort key + accept test); the deduped one
     counts each once. The cleanest observable from outside is the total number of full-text
     tell passes over the whole call, compared against the reference implementation.
+
+    `stdlib_lite` pins UNTELL_LITE_NO_TORCH=1 for the test: on the model-backed path the
+    detector IS sensitive to synonym substitution, so `score < cur_score` short-circuits the
+    accept test, the old loop's second `_tell_count` never runs, and the two totals are equal
+    (the differential collapses). The stdlib path is the one the dedup was measured on — and
+    the fixture's cache_clear also isolates the content-addressed score cache, whose warm
+    entries from earlier tests in a long session can shift candidate scores.
     """
     calls_new: dict[str, int] = {}
     calls_old: dict[str, int] = {}
