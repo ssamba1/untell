@@ -90,3 +90,21 @@ def stdlib_lite(monkeypatch):
         fn = getattr(score_mod, name, None)
         if hasattr(fn, "cache_clear"):
             fn.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_score_cache():
+    """The per-text score cache must not leak scores between tests.
+
+    The cache is keyed on (text, detector names, tier, threshold), so two tests scoring
+    the same string with the same NAMED fake detectors would otherwise share an entry —
+    and a fake that changes behaviour between tests (the same name, a different value)
+    would silently read the other test's result. Clearing per test keeps every scoring
+    test hermetic; the cache is an optimisation, never a contract.
+    """
+    from untell.scripts import score as _score_mod
+
+    _score_mod._score_cache.clear()
+    yield
+    _score_mod._score_cache.clear()
+

@@ -940,3 +940,17 @@ WHY    RED per the envelope: README is human-owned (guard.py blocks it).
 NEXT   Change the README row to: "path to a JSON file of custom free-web-detector site
        configs for `--browser` (see `untell/browser_check.py`); unset falls back to
        `./browser_sites.json`".
+## 2026-08-15 wave3 slice 7 — AMBER — +8 tests stale the RED count claims again
+
+WHAT   fix(perf) landed a bounded per-text detector-score cache in
+       untell/scripts/score.py (loop-level caching round 2: unchanged sentences
+       hit, rewritten sentences miss) with 8 new tests in
+       tests/test_score_cache_is_content_addressed.py. The suite total moves, so
+       the published counts are stale again: 7530/483 (why-best-open-repo.md
+       line 154) and 6930 (humanizer-census.md) — both RED, both already known
+       to drift on every test landing.
+RAN    C:/Users/Admin/Humanize/.venv/Scripts/python.exe C:/Users/Admin/goals/results/s7_pytest.py tests/test_score_cache_is_content_addressed.py -q
+SAW    8 passed
+WHY    RED files carry published numbers; the human runs untell-audit --fix-counts.
+NEXT   Run `untell-audit --fix-counts` at merge time (or the next batch); the
+       count moves every time a test lands, so one fix per wave suffices.

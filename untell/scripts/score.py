@@ -35,6 +35,8 @@ import json
 import logging
 import re
 import sys
+import threading
+from collections import OrderedDict
 
 # RUN DIRECTLY (`python .../untell/scripts/score.py`) rather than imported as part of the package,
 # put the directory that *contains* the package on sys.path so `import untell` resolves regardless
@@ -699,6 +701,95 @@ def _single_sentence_warning(text: str, detectors: list, modes: dict | None = No
 
 
 def _score_with_detectors(
+    detectors: list,
+    text: str,
+    tier: str = "full",
+    threshold: float = DEFAULT_THRESHOLD,
+) -> dict:
+    """Score ``text`` against a *pre-loaded* detector list (avoids re-initialisation).
+
+    Wraps the raw aggregation in a bounded per-text cache. The rewrite loop re-scores text
+    that has not changed between iterations — the per-iteration targeting pass re-scores
+    EVERY sentence of the current best on every iteration, and only the sentences the
+    rewriter actually changed differ from the previous iteration. MEASURED on a 19-sentence
+    HC3 document at the model-backed lite tier: one `score_sentences` pass is ~70 s, and
+    the loop pays it up to `max_iters` times, so a 5-iteration run spends ~350 s re-scoring
+    byte-identical sentences. The cache is content-addressed: a rewritten sentence is a new
+    string and therefore a new key, so 'invalidation on rewrite' is automatic — unchanged
+    sentences hit, changed sentences miss and re-score. Cache entries are pure functions of
+    the input (detectors are deterministic on identical input — verified: two identical
+    calls return JSON-identical results — and hold their models at class level), so a hit
+    and a miss cannot diverge. Results that record a detector failure (`__error` keys or
+    ``scored=False``) are deliberately NOT cached: a transient failure must not be frozen
+    for the life of the process. See `_score_with_detectors_uncached` for the aggregation.
+    """
+    cacheable = len(text) <= _SCORE_CACHE_MAX_CHARS
+    key = None
+    if cacheable:
+        key = (text, tuple(sorted(d.name for d in detectors)), tier, threshold)
+        with _score_cache_lock:
+            hit = _score_cache.get(key)
+            if hit is not None:
+                _score_cache.move_to_end(key)
+                return _copy_scored_result(hit)
+    result = _score_with_detectors_uncached(detectors, text, tier, threshold)
+    if cacheable and _score_result_is_cacheable(result):
+        with _score_cache_lock:
+            _score_cache[key] = result
+            _score_cache.move_to_end(key)
+            while len(_score_cache) > _SCORE_CACHE_SIZE:
+                _score_cache.popitem(last=False)
+        return _copy_scored_result(result)
+    return result
+
+
+# --- per-text score cache ----------------------------------------------------------------
+# Sits at `_score_with_detectors` so EVERY scoring path inherits it: score_text (single
+# texts — the loop's per-candidate `score()` and `targeted.py`'s per-sentence before/after),
+# batch_score_texts (the loop's per-iteration `score_sentences` targeting pass), and the
+# confirm/polish re-scores of the final text. One cache, one invalidation rule (the key).
+#
+# Caps keep memory bounded: entries are whole texts up to 10k chars, and the LRU holds at
+# most 1024 of them (~tens of MB worst case; typical sentences are a few hundred chars, so
+# real loops stay near 1-2 MB). Texts past the cap bypass the cache entirely, matching the
+# round-1 spaCy NER cache pattern (`preserve._SPACY_CACHE_MAX_CHARS`).
+_SCORE_CACHE_MAX_CHARS = 10_000
+_SCORE_CACHE_SIZE = 1024
+_score_cache_lock = threading.Lock()
+_score_cache: OrderedDict = OrderedDict()
+
+
+def _score_result_is_cacheable(result: dict) -> bool:
+    """Only pure, healthy results are cached.
+
+    ``scored=False`` (every detector failed) and any ``__error`` detector entry mean the
+    result records a failure. Failures can be transient (a flaky network detector, a
+    one-off OOM), and caching them would freeze the failure for the process lifetime —
+    the retry that used to succeed would keep reading the cached error. Healthy results
+    are deterministic, so caching them changes nothing observable.
+    """
+    if result.get("scored") is False:
+        return False
+    return not any(str(k).endswith("__error") for k in result.get("detectors", {}))
+
+
+def _copy_scored_result(result: dict) -> dict:
+    """Defensive copy so a cached dict is never aliased into caller hands.
+
+    `score_text` and `batch_score_texts` MUTATE the result they receive (`result["warning"]
+    = ...`). If the stored entry were handed out directly, the second caller's warning would
+    corrupt the entry for every later caller. The nested dicts are copied too for the same
+    reason — `detectors`, `detector_modes` and `out_of_range_raw` are small (<= ~20 keys).
+    """
+    out = dict(result)
+    for k in ("detectors", "detector_modes", "out_of_range_raw"):
+        v = out.get(k)
+        if isinstance(v, dict):
+            out[k] = dict(v)
+    return out
+
+
+def _score_with_detectors_uncached(
     detectors: list,
     text: str,
     tier: str = "full",
