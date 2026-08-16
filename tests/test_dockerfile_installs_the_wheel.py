@@ -54,6 +54,21 @@ def test_the_temporary_wheel_is_cleaned_up() -> None:
     assert "rm /tmp/untell-*.whl" in _DOCKERFILE
 
 
+def test_healthcheck_probes_the_unauthenticated_health_endpoint() -> None:
+    """The image must health-check `/health` — the one endpoint auth and rate limiting exempt.
+
+    A probe hitting a protected endpoint would 401 (and 429 at high frequency) itself into a
+    restart loop the moment UNTELL_API_KEY is set at runtime; /health is the cheap exemption.
+    urllib is stdlib: `curl` is not in python:3.11-slim and the image installs only
+    ca-certificates.
+    """
+    m = re.search(r"HEALTHCHECK\s+.*?CMD\s+(.*)$", _DOCKERFILE, re.M)
+    assert m, "no HEALTHCHECK instruction in the Dockerfile"
+    cmd = m.group(1).rstrip()
+    assert "127.0.0.1:8000/health" in cmd, f"HEALTHCHECK does not probe /health: {cmd!r}"
+    assert "timeout=3" in cmd, f"HEALTHCHECK lacks a timeout: {cmd!r}"
+
+
 # --- .dockerignore must not strip the wheel's inputs -------------------------
 # The builder stage is `COPY . .` then `python -m build`, so the build context IS the sdist
 # input. It shipped ignoring `eval/`, `training/` and every `*.md`; the first made the build

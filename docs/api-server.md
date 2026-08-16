@@ -1,7 +1,7 @@
 # API Server
 
 untell ships a production-grade REST API server built with **FastAPI** — auto-generated OpenAPI docs,
-API-key auth, CORS support, and every endpoint from the CLI.
+API-key auth, CORS support, and the full scoring, analysis and rewriting surface from the CLI.
 
 ## Quick start
 
@@ -14,26 +14,28 @@ Open **http://localhost:8000/docs** for the interactive API documentation.
 
 ### Hosted-LLM rewriters
 
-The `/humanize` endpoint can delegate rewriting to a hosted LLM — `rewriter: "anthropic"` or
-`rewriter: "openai"` — instead of the bundled local backends. Those providers are optional and
-install with the `api` extra:
+The `/humanize` endpoint can delegate rewriting to a hosted LLM (Anthropic or OpenAI) instead of
+the bundled local backends. Those providers are optional and install with the `api` extra:
 
 ```bash
 pip install "untell[api]"
 ```
 
 The adapters are key-gated at runtime: set `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`) and the
-rewriter becomes available; `rewriter: "auto"` picks a hosted provider automatically when a key is
-set and falls back to a local backend otherwise.
+rewriter becomes available. The request model only accepts the CLI's rewriter names, so a hosted
+provider is reached through `rewriter: "auto"` — it picks a hosted provider automatically when a
+key is set and falls back to the free local composite path otherwise. (`rewriter: "anthropic"` /
+`"openai"` themselves are rejected with `422` at the edge.)
 
 ## Configuration
 
 | Env var | Default | Description |
 |---|---|---|
-| `UNTELL_API_KEY` | *(none)* | API key for auth. Unset = open access. |
+| `UNTELL_API_KEY` | *(none)* | API key for auth. Unset **or empty** = open access. |
 | `UNTELL_RATE_LIMIT` | `60` | Requests per 60s per caller. `0` disables. |
 | `UNTELL_HOST` | `127.0.0.1` | Bind address |
 | `UNTELL_PORT` | `8000` | Port |
+| `UNTELL_CORS_ORIGINS` | *(none)* | Comma-separated origins allowed cross-origin **with credentials**. Unset = any origin may call, credentials NOT allowed (the spec-legal wildcard); setting a list restricts to exactly those origins and enables credentials. |
 
 ### Rate limiting
 
@@ -85,12 +87,12 @@ Run the closed-loop humanizer.
 ```json
 {
   "text": "Your AI-sounding text here",
-  "tier": "lite",
+  "tier": "full",
   "threshold": 0.30,
   "style": "casual",
   "max_iters": 5,
-  "rewriter": "surgical",
-  "best_of": 1,
+  "rewriter": "composite",
+  "best_of": 3,
   "margin": 0.0,
   "polish": false
 }
@@ -182,12 +184,21 @@ schemes, so a client generated from it knows to send one.
 
 ### Docker
 
+The repo ships a [Dockerfile](../Dockerfile) that builds the wheel from source and installs the
+`server` extra; the image health-checks `/health` and binds all interfaces:
+
 ```dockerfile
 FROM python:3.11-slim
 RUN pip install "untell[full,server]"
 EXPOSE 8000
-CMD ["untell-server"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
+CMD ["untell-server", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
+`/health` is exempt from auth and rate limiting, so a probe can never 401 or 429 itself into a
+restart loop. The default bind is `127.0.0.1`, which is unreachable from outside a container —
+pass `--host 0.0.0.0` (as above) when the container must answer on the network.
 
 ### Production
 

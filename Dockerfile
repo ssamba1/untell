@@ -25,6 +25,14 @@ RUN WHEEL="$(ls /tmp/untell-*.whl)" \
 
 EXPOSE 8000
 
+# Cheap liveness probe for orchestrators. `/health` is exempt from auth and rate limiting (see
+# api_server.py), so a probe can never 401 or 429 itself into a restart loop, and the endpoint is
+# offloaded off the event loop so it answers promptly while a rewrite is running. `urllib` is
+# stdlib — `curl` is not in python:3.11-slim and this image installs only ca-certificates. The
+# server refuses to accept connections until lifespan's detector warm-up completes, so a probe
+# either gets no connection (startup; covered by --start-period) or a fast answer.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
+
 # Empty means NO AUTH, not "a key is configured". The server treats unset and empty the same
 # way and serves every endpoint openly — verified: 200 without a header when this is "" or
 # absent, 401 without and with a wrong header once it holds a value. Declared here so the

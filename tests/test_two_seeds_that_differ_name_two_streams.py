@@ -127,9 +127,16 @@ class TestTheOtherSurfacesRefuseIt:
         assert bad is not None and "absolute value" in bad["error"]
 
 
-def test_distinct_seeds_still_give_distinct_runs():
+def test_distinct_seeds_still_give_distinct_runs(stdlib_lite):
     """The property the bound protects. Without it the flag would be pointless; with it every
-    accepted value has to still mean something."""
+    accepted value has to still mean something.
+
+    `stdlib_lite` pins UNTELL_LITE_NO_TORCH=1 (issue #18): on the torch/gpt2 path this text
+    scores 0.214 < the 0.30 default threshold, so the loop answers `stopped: passed,
+    iterations: 0` at every seed and all three runs return the input — the test then fails
+    for the wrong reason. The distinct-stream property is about the RNG, not about the
+    scoring path, so it must not depend on what the ambient environment set.
+    """
     from untell.scripts.run import untell_text
 
     text = (
