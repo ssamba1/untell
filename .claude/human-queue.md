@@ -1030,3 +1030,32 @@ NEXT   Human decisions, all RED or queued:
           sentences at 0.30): excused from `broken` by the 36-pair rule even when probes
           are 30/class derived; the bar's rationale does not apply at 900 pairs — decide
           whether sentence rows should count at derived sample sizes.
+
+## 2026-08-15 slice 12 — RED — polarity gate vetoes composite's de-duplication on the corpus's most repetitive doc
+
+WHAT   `polarity_kept` compares negation_count(source) == negation_count(candidate) exactly. The
+       composite's restatement-drop removes DUPLICATED negative clauses, so a legitimate
+       de-duplication lowers the count and the whole rewrite is vetoed. MEASURED on long#1
+       (hc3-long.txt doc 1, 424w, 176 tells — the 5x-repeated "you don't do anything" binary
+       answer): every one of 15 composite draws was polarity-vetoed (negation count 9 -> 6 from
+       dropping 3 of the 5 identical clauses; the surviving claims keep their polarity) and the
+       run returned the input unchanged. The docstring's "0 of 30 HC3 + 0 of 30 RAID" measurement
+       predates restatement-drop firing at full budget on a doc with repeated negated clauses;
+       the set of distinct negation markers is unchanged (src-only == cand-only == empty) — the
+       veto is count arithmetic, not a claim flip. Same family: on long#2 the deletion gate vetoed
+       15/15 composite draws (restatement drops removed 62w vs a 39.4w allowance) — that one is
+       the gate conservatively doing its job; the polarity one is a false positive.
+RAN     SLICE12_TIER=lite SLICE12_DOCS=6,4 ./.venv/Scripts/python.exe C:/Users/Admin/goals/results/slice12_harness.py
+        (per-draw gate records in slice12_track4_data.jsonl); reproduced with
+        polarity_kept(strip_scaffolding(input), strip_scaffolding(candidate)) on draw 0 of long#1
+SAW    long#1 composite: draws=15 gate_pass=0 vetoes={'polarity': 15}; adopted=0, sim=1.0
+       negation counts: src 9 (five "don't" + four "not"), cand 6 (two "n't" + four "not")
+       distinct markers src-only: set() cand-only: set()
+WHY    RED-adjacent: changing what the meaning gate admits alters which rewrites ship and makes
+       the gate's own docstring measurement stale; the fix is a design decision (clause-aligned
+       polarity vs count-with-deletion-allowance), not a one-liner.
+NEXT   Decide the semantics: a negation-count drop should be vetoed only when a SURVIVING claim
+       flipped. Smallest candidate: run the count comparison per aligned_chunks pair and allow a
+       drop inside a chunk whose word loss is within its deletion allowance; or check per sentence
+       that every candidate sentence's polarity is present among the source sentences. Needs a
+       probe set of real flips (did not reduce -> reduced) to re-verify the flip catch still fires.
