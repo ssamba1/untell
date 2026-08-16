@@ -1852,7 +1852,30 @@ def build_parser() -> argparse.ArgumentParser:
         "anything, since two runs that differ only by chance look exactly like a flag that works.",
     )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
+    parser.add_argument(
+        "--diff",
+        action="store_true",
+        help="print a unified-style before/after of the humanization, showing only changed "
+        "lines (deletions red, additions green). With --json, emit the machine-readable "
+        "hunk payload instead. Built on the preserve-lock explainer: the payload also "
+        "reports how many locked spans survived the rewrite byte-for-byte.",
+    )
     return parser
+
+
+def _diff_payload(text: str, result: dict) -> dict:
+    """The `--diff` payload: a line diff of original vs final, annotated by the lock explainer.
+
+    Building on the explain machinery rather than only difflib: `explain_spans` is the
+    single source of truth `lock()` itself uses (pinned by test_explain.py), so the
+    spans reported here are exactly the spans the loop froze. `locks_preserved` then
+    checks the restore contract — every frozen span must survive byte-for-byte — on
+    the surface a reader looks at to see what changed.
+    """
+    from untell.rich_output import humanize_diff
+    from untell.scripts.explain import explain_spans
+
+    return humanize_diff(text, result.get("final", ""), locked_spans=explain_spans(text))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1973,9 +1996,29 @@ def main(argv: list[str] | None = None) -> int:
         voice_sample=voice_sample,
         seed=args.seed,
         # Only on the human-facing path: --json must stay parseable, so a progress line printed to
-        # stdout ahead of the payload would corrupt it for every scripted caller.
+        # stdout ahead of the payload would corrupt it for every scripted caller. `--diff --json`
+        # is a scripted caller too — same rule, same flag.
         progress=not args.json,
     )
+    if args.diff:
+        if "error" in result:
+            # Same contract as every other error this command can return: under `--diff --json`
+            # stdout is JSON, because a caller parsing stdout cannot special-case one branch.
+            if args.json:
+                print(json.dumps(result, ensure_ascii=True, indent=2))
+            else:
+                print(f"ERROR: {result['error']}")
+            return 1
+        payload = _diff_payload(text, result)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=True, indent=2))
+        else:
+            # No ImportError guard needed: rich_output imports unconditionally and degrades
+            # to plain text internally when rich is absent (the `_RICH` flag).
+            from untell.rich_output import print_humanize_diff
+
+            print_humanize_diff(payload)
+        return 0
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))
     elif "error" in result:

@@ -6,6 +6,8 @@ when ``rich`` is not installed.
 
 from __future__ import annotations
 
+import difflib
+
 # Lazy import so the module is always importable.
 _RICH: bool = False
 
@@ -90,6 +92,161 @@ def _diff_words(a: str, b: str) -> str:
             # answer.
             result.append(" ".join(a_words[i1:i2]) + " ", style="dim strike")
     return result
+
+
+def _unified_range(start: int, stop: int) -> str:
+    """A unified-diff range column, in difflib's own format.
+
+    ``difflib._format_range_unified`` renders a single-line range as just the line
+    number and an empty range as ``start,0``. Replicating that keeps the header a
+    human sees here identical to what ``difflib.unified_diff`` would print.
+    """
+    length = stop - start
+    beginning = start + 1
+    if length == 1:
+        return str(beginning)
+    if not length:
+        beginning -= 1
+    return f"{beginning},{length}"
+
+
+def humanize_diff(original: str, final: str, locked_spans: list[dict] | None = None) -> dict:
+    """Unified-style diff of ONLY the changed lines between ``original`` and ``final``.
+
+    The payload behind ``untell humanize --diff`` (human renderer) and
+    ``--diff --json`` (this dict, verbatim, ASCII-escaped). A LINE diff, not the
+    word diff ``_diff_words`` paints inline: the humanizer rewrites at sentence
+    granularity, and a reader checking "what did the loop actually change" wants
+    the changed sentences, not a colour wash over the whole paragraph.
+
+    Returns a JSON-serialisable dict:
+
+        format           "untell-diff"
+        version          1
+        changed          whether any line differs at all
+        hunks            ordered changed regions, no context lines, each with
+                           start_original / count_original  0-based span in original
+                           start_final     / count_final     0-based span in final
+                           lines          [{"kind": "-"|"+", "text": line}, ...]
+        added_lines      count of "+" lines
+        removed_lines    count of "-" lines
+        locked_spans     (when locked_spans is passed) the explain/lock rows
+        locks_preserved  how many of those spans survive byte-for-byte in ``final``
+
+    ``autojunk=False`` on the matcher is load-bearing, not a default:
+    ``SequenceMatcher`` treats any element making up more than 1% of a long
+    sequence (200+ elements) as junk and matches AROUND it. Real humanizer input
+    is full of repeated lines — blank lines between paragraphs, a refrain — and
+    junking them makes the diff report the WRONG lines as changed. MEASURED: two
+    100-line blocks swapped order (sentence reordering is a documented structural
+    transform), 201 lines; the default matcher reported the whole 200-line block
+    as one giant replace, while ``autojunk=False`` reported the true minimal edit
+    (100 lines inserted, 100 deleted).
+    """
+    a = original.splitlines()
+    b = final.splitlines()
+    matcher = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    hunks: list[dict] = []
+    added = removed = 0
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        added += j2 - j1
+        removed += i2 - i1
+        hunks.append(
+            {
+                "start_original": i1,
+                "count_original": i2 - i1,
+                "start_final": j1,
+                "count_final": j2 - j1,
+                "lines": (
+                    [{"kind": "-", "text": line} for line in a[i1:i2]]
+                    + [{"kind": "+", "text": line} for line in b[j1:j2]]
+                ),
+            }
+        )
+    payload: dict = {
+        "format": "untell-diff",
+        "version": 1,
+        "changed": bool(hunks),
+        "hunks": hunks,
+        "added_lines": added,
+        "removed_lines": removed,
+    }
+    if locked_spans is not None:
+        payload["locked_spans"] = locked_spans
+        payload["locks_preserved"] = sum(1 for row in locked_spans if row["span"] in final)
+    return payload
+
+
+def _hunk_header(hunk: dict) -> str:
+    """The ``@@ -a,b +c,d @@`` line for a hunk, in difflib's own range format."""
+    a = _unified_range(hunk["start_original"], hunk["start_original"] + hunk["count_original"])
+    b = _unified_range(hunk["start_final"], hunk["start_final"] + hunk["count_final"])
+    return f"@@ -{a} +{b} @@"
+
+
+def print_humanize_diff(diff: dict) -> None:
+    """Print the ``humanize_diff`` payload as a unified-style listing of changed lines.
+
+    Same conventions as :func:`print_humanize_result`: a cyan panel header, user
+    lines rendered through ``_Text`` so brackets in the text cannot be parsed as
+    rich markup, and a plain-text fallback when rich is not installed. Deletions
+    are red, additions green, hunk headers dim — the classic unified-diff colours.
+
+    The lock note is this view's tie to the explain machinery: when the payload
+    carries locked spans, the reader is told how many survived byte-for-byte. A
+    locked span that did NOT survive is exactly the failure the lock exists to
+    prevent, and it is painted red here rather than hidden.
+    """
+    added = diff.get("added_lines", 0)
+    removed = diff.get("removed_lines", 0)
+    plural_a = "" if added == 1 else "s"
+    plural_r = "" if removed == 1 else "s"
+    title = f"untell — humanization diff: {added} added line{plural_a}, {removed} removed line{plural_r}"
+
+    note = "" if diff.get("changed") else "No lines changed — the loop returned the original unmodified."
+
+    lock_note = ""
+    if "locked_spans" in diff:
+        total = len(diff["locked_spans"])
+        kept = diff.get("locks_preserved", 0)
+        if total and kept < total:
+            lock_note = (
+                f"{total - kept} of {total} locked span(s) did NOT survive the rewrite "
+                "byte-for-byte — restore is supposed to make that impossible."
+            )
+        elif total:
+            lock_note = (
+                f"{total} locked span(s) preserved verbatim — citations, numbers and other "
+                "protected facts survived unchanged."
+            )
+
+    if not _RICH:
+        print(title)
+        if note:
+            print(note)
+        for hunk in diff.get("hunks", []):
+            print(_hunk_header(hunk))
+            for line in hunk["lines"]:
+                print(f"{line['kind']} {line['text']}")
+        if lock_note:
+            print(lock_note)
+        return
+
+    _CONSOLE.print()
+    _CONSOLE.print(_Panel(_Text(title), style="cyan"))
+    if note:
+        _CONSOLE.print(f"[yellow]{note}[/]")
+    for hunk in diff.get("hunks", []):
+        _CONSOLE.print(f"[dim]{_hunk_header(hunk)}[/]")
+        for line in hunk["lines"]:
+            style = "green" if line["kind"] == "+" else "red"
+            _CONSOLE.print(_Text(f"{line['kind']} {line['text']}", style=style))
+    if lock_note:
+        style = "red" if "did NOT survive" in lock_note else "dim"
+        _CONSOLE.print(f"[{style}]{lock_note}[/]")
+    _CONSOLE.print()
 
 
 def print_humanize_result(
