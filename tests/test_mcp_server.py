@@ -26,6 +26,7 @@ def test_server_tools_registered():
         "mcp.server": fake_mcp_server,
         "mcp.server.fastmcp": fake_fastmcp_module,
     }
+    saved_modules = {"untell.mcp_server": sys.modules.get("untell.mcp_server")}
 
     with patch.dict(sys.modules, patches, clear=False):
         if "untell.mcp_server" in sys.modules:
@@ -39,6 +40,16 @@ def test_server_tools_registered():
             f"Expected at least 5 tools registered, got {len(mock_fastmcp_instance.tool.call_args_list)}"
         )
         assert result is mock_fastmcp_instance
+
+        # The re-import above replaced the module in sys.modules AND on the `untell` package
+        # attribute; patch.dict only restores the mcp.* keys it patched, so the two end up
+        # pointing at DIFFERENT copies — a stale-copy desync that surfaced as an identity
+        # failure in a later test. Restore the original module so the registry is coherent.
+        if "untell.mcp_server" in saved_modules:
+            sys.modules["untell.mcp_server"] = saved_modules["untell.mcp_server"]
+            import untell as _untell_pkg
+
+            _untell_pkg.mcp_server = saved_modules["untell.mcp_server"]
 
 
 def test_mcp_advertises_every_style_the_cli_accepts():
@@ -164,6 +175,27 @@ class TestMcpToolsActuallyRun:
         reporting the result as the requested one."""
         result = _mcp_tools()["untell"](text=self.TEXT, tier="lite", rewriter="does_not_exist")
         assert "does_not_exist" in result.get("error", "")
+
+    def test_an_unknown_rewriter_is_a_clean_refusal_not_a_success_with_original_text(self):
+        """MEASURED (this slice, real engine): untell(rewriter='does_not_exist') returned
+        {"error": ..., "final": <the UNCHANGED input>, "seed": ...} — a successful-looking
+        result whose `final` is exactly the text the caller asked to be rewritten.
+
+        `untell_text` refuses the name (nothing is rewritten; run.py returns
+        {"error": ..., "final": text} immediately), but the tool passed that dict through
+        untouched, so a client that reads `final` — the key this tool's own docstring
+        advertises as "the humanized text" — saw the original passed back as if the loop had
+        run. The CLI refuses the same name at parse time and REST answers 422; on MCP there
+        is no status code, so the refusal must be the pure error dict every other guard on
+        this surface returns (tier, style, ceiling-rewriter). An unchanged original must
+        never be able to pass for a rewrite.
+        """
+        result = _mcp_tools()["untell"](
+            text=self.TEXT, tier="lite", max_iters=1, rewriter="does_not_exist"
+        )
+        assert "error" in result and "does_not_exist" in result["error"]
+        assert "final" not in result, "a refusal must not present the unchanged text as `final`"
+        assert "seed" not in result
 
 
 def test_best_of_default_matches_the_cli_on_every_surface():
@@ -351,6 +383,32 @@ def test_list_tools_flag_exits_without_starting_the_server(capsys):
     assert main(["--list-tools"]) == 0
     printed = capsys.readouterr().out.split()
     assert printed == list(_TOOL_NAMES)
+
+
+def test_pyproject_entry_point_wires_this_module_and_its_tool_list():
+    """The console-script wiring is part of the tool-name registry: if `untell-mcp` were
+    repointed at another module, `--list-tools` would still print a literal list and nothing
+    would notice the server no longer runs the tools the README advertises. Pin the
+    pyproject [project.scripts] mapping to this module's `main`, and `main`'s literal list
+    to what the server registers (the existing registration test pins the latter)."""
+    import importlib
+    from pathlib import Path
+
+    import tomllib
+
+    mcp_module = importlib.import_module("untell.mcp_server")
+
+    pyproject = tomllib.loads(
+        (Path(mcp_module.__file__).resolve().parents[1] / "pyproject.toml").read_text("utf-8")
+    )
+    scripts = pyproject["project"]["scripts"]
+    assert scripts["untell-mcp"] == "untell.mcp_server:main", scripts
+    module_name, _, attr = scripts["untell-mcp"].partition(":")
+    # Both sides go through importlib so they read the same sys.modules entry — a bare
+    # `import untell.mcp_server as mcp` here bound the parent-package attribute instead,
+    # which test_server_tools_registered leaves pointing at a stale re-imported copy.
+    assert importlib.import_module(module_name) is mcp_module
+    assert getattr(mcp_module, attr)(["--list-tools"]) == 0
 
 
 def test_an_unknown_flag_is_rejected_rather_than_ignored():

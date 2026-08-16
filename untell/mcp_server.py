@@ -333,7 +333,7 @@ def _server():
                 }
         # `pre` and `post` are score dicts of their own, so they carry the same `name__error`
         # sidecars — two per response, on the surface a client is most likely to read numerically.
-        return split_detector_errors(untell_text(
+        result = split_detector_errors(untell_text(
             text,
             tier=tier,
             threshold=threshold,
@@ -348,6 +348,19 @@ def _server():
             confirm=confirm,
             detector_thresholds=detector_thresholds,
         ))
+        # untell_text answers an unknown/unavailable rewriter with {"error": ..., "final":
+        # <original UNCHANGED>, "seed": ...} (run.py returns that dict before the loop runs).
+        # Nothing was rewritten, but the shape reads as a successful humanization to a client
+        # that checks `final` — the key this tool's own docstring advertises as "the humanized
+        # text". MEASURED before this guard: untell(rewriter='does_not_exist') came back with
+        # the caller's text verbatim in `final`. The CLI refuses the name at parse time
+        # (argparse choices) and REST answers 422; on MCP there is no status code, so the
+        # refusal must be the pure error dict every other guard on this surface returns
+        # (_bad_args, style, ceiling-rewriter) — an unchanged original must never pass for a
+        # rewrite, and `seed` on a refusal is meaningless.
+        if "error" in result:
+            return {"error": result["error"]}
+        return result
 
     # Put the real style list into the tool's advertised description. Generated, not restated, so
     # it cannot drift out of sync with `--style` the way the hand-written list did.

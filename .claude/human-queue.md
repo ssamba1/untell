@@ -954,3 +954,25 @@ SAW    8 passed
 WHY    RED files carry published numbers; the human runs untell-audit --fix-counts.
 NEXT   Run `untell-audit --fix-counts` at merge time (or the next batch); the
        count moves every time a test lands, so one fix per wave suffices.
+
+## 2026-08-15 slice 10 (wave 3) — AMBER — MCP untell: unknown-rewriter refusal no longer carries a misleading `final`
+
+WHAT   `untell(rewriter=<unknown name>)` returned a SUCCESS-shaped dict
+       `{"error": "...", "final": <the UNCHANGED input text>, "seed": ...}`. untell_text
+       refuses the name before the loop (run.py returns {"error": ..., "final": text}), but
+       the MCP tool passed it through, so a client reading `final` — the key the tool's own
+       docstring advertises as "the humanized text" — saw the caller's text returned as if
+       the loop had run. On MCP there is no status code (unlike REST's 422), so the shape
+       IS the verdict. Now returns the pure `{"error": ...}` dict, the same shape as every
+       other refusal on this surface (tier/style/ceiling-rewriter).
+WHY    AMBER per the envelope: return-shape change on a shipped surface (a key that used to
+       be present — `final` — is now absent on this one refusal path) and error-message
+       surface change.
+RAN    tests/test_mcp_server.py (37), tests/test_mcp_refusal_matrix.py (38),
+       tests/test_mcp_lifecycle.py (5), plus full MCP suite (11 files). New tests RED
+       before the fix (`assert "final" not in result` failed with the original text in
+       `final`), GREEN after.
+NEXT   Human: confirm the refusal vocabulary ("rewriter 'X' is not available — check the
+       name (see `untell --check` for the installed list) or install its extra"). Note
+       `untell_text` (library level) intentionally keeps `final`=scrubbed-original on its
+       error path — only the MCP tool now strips it.
