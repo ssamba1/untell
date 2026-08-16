@@ -976,3 +976,57 @@ NEXT   Human: confirm the refusal vocabulary ("rewriter 'X' is not available —
        name (see `untell --check` for the installed list) or install its extra"). Note
        `untell_text` (library level) intentionally keeps `final`=scrubbed-original on its
        error path — only the MCP tool now strips it.
+
+## 2026-08-15 slice 11 (wave 3, track 4) — AMBER — detector calibration study: all README numbers reproduce except mage-on-RAID 0%
+
+WHAT   Ran the queued calibration end to end: per-detector TPR/FPR at the SHIPPED 0.30
+       threshold on HC3 human vs AI pairs, calibration gaps (threshold that would bring
+       FPR to 20%), and a three-corpus check of the README's mage claims. Also fixed two
+       render() defects in the audit's own summary (GREEN, committed here).
+RAN    python -m eval.detector_audit --pairs 20 --dataset hc3 --json   (EXIT=1, expected)
+       + calibration_sweep/verify_claims companion scripts (worktree at HEAD 0d368e9)
+SAW    HC3 20 pairs (n=20, layout collapsed):
+         detector               AUROC  human  ai    FPR@0.30 TPR@0.30
+         perplexity_burstiness  1.000  0.159  0.656  0.00    1.00
+         roberta_openai         0.993  0.051  0.966  0.05    1.00
+         hc3_roberta            1.000  0.099  0.999  0.10    1.00
+         fast_detectgpt         1.000  0.070  0.635  0.00    1.00
+         mage                   1.000  0.348  1.000  0.35    1.00   <- MISCALIBRATED
+       ENSEMBLE max (the product's aggregation): human_flagged 0.40, ai_flagged 1.00
+       -> README's "40% over 20 HC3 pairs" reproduces exactly.
+       Sentence granularity (30 derived sentences/class): 4 of 5 detectors MISCALIBRATED
+       (roberta_openai FPR 0.40, hc3_roberta 0.37, fast_detectgpt 0.33, mage 0.57) —
+       this is the granularity the rewrite loop actually scores spans at.
+       Calibration gaps (threshold for FPR<=0.20): pb 0.219, roberta 0.002, hc3_roberta
+       0.002, fdg 0.112, mage 0.999. mage's shipped cut sits INSIDE the human upper mode
+       (7/20 human docs 0.83-1.0); all 20 AI docs are exactly 1.0, so TPR holds at 1.00
+       even at 0.999 but the AI-side margin above the threshold is zero.
+       Three-corpus mage FPR@0.30 (30 pairs each): HC3 0.3333 (=README 33.3%), MAGE
+       0.0333 (=README 3.3%), RAID 0.1667 (README says 0% — DOES NOT REPRODUCE; 5/30
+       human docs flagged, all deep-learning/image-segmentation abstracts, MAGE's
+       training genre; layout collapse predates the claim (02756ca 2026-08-10), upstream
+       RAID snapshot unchanged since 2024). hc3_roberta on MAGE: AUROC 0.5311, TPR 0.267
+       (=README 0.531/0.267, chance-level confirmed).
+WHY    AMBER: measurements + recommendations only; the two candidates for action are
+       RED (threshold moves) and the RAID 0% figure is a published number in README
+       (RED). The committed GREEN fix is render() honesty: the "Not counted" footnote
+       hard-coded "six probes per class is 36 pairs" even on --pairs runs whose table
+       showed n=30 derived probes (summary contradicting its own table), and the BROKEN
+       label said "dead or inverted" for a MISCALIBRATED mage row. Both fixed + 4 tests.
+NEXT   Human decisions, all RED or queued:
+       1) mage threshold/calibration: 0.30 ships inside mage's human upper mode on HC3;
+          FPR<=20% needs cut ~0.999. Global raise is wrong (other detectors' AI scores
+          top out at 0.65-0.97, so 0.999 would clear every AI text those catch); a
+          per-detector logistic/scale refit or verdict_threshold-style split is the
+          shape of a fix. README documents 33% as "HC3-specific"; with RAID at 16.7%
+          that framing is now "worst on HC3", not "only HC3".
+       2) README heavy-tier "RAID 0%" figure: re-measure or re-scope (3ba9d02). Measured
+          0.1667 at HEAD on the same loader. The audit can now record this honestly.
+       3) The queued (a)/(b) from 2026-08-13 me2 entry still stands: detector-audit
+          exits 1 while mage is MISCALIBRATED, so research.py refuses to record it.
+          With the render fix the JSON already carries the finding; (a) one line in
+          research.py to record non-zero-exit JSON findings remains the smallest fix.
+       4) Sentence-granularity MISCALIBRATED (4 of 5 detectors, FPR 33-57% on human
+          sentences at 0.30): excused from `broken` by the 36-pair rule even when probes
+          are 30/class derived; the bar's rationale does not apply at 900 pairs — decide
+          whether sentence rows should count at derived sample sizes.

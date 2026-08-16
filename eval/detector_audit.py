@@ -495,16 +495,43 @@ def render(report: dict) -> str:
         and r["auroc"] > SENTENCE_BROKEN_AUROC
     ]
     if report["broken"]:
-        lines.append(f"BROKEN (dead or inverted): {', '.join(report['broken'])}")
+        # The label must name what is actually in the list. MISCALIBRATED is a real member
+        # (mage ships that way on HC3), and printing "dead or inverted" beside a table whose
+        # mage row says MISCALIBRATED is the same summary-contradicts-table defect the
+        # footnote below was written to prevent.
+        if any(r.get("verdict") == "MISCALIBRATED" for r in report["results"]
+               if r["detector"] in report["broken"]):
+            lines.append(f"BROKEN (dead, inverted, or miscalibrated): {', '.join(report['broken'])}")
+        else:
+            lines.append(f"BROKEN (dead or inverted): {', '.join(report['broken'])}")
     else:
         lines.append("BROKEN: none — every available detector responds in the correct direction.")
     if excused:
-        lines.append(
-            f"  Not counted: {', '.join(excused)} — a bad verdict at sentence granularity needs "
-            f"AUROC <= {SENTENCE_BROKEN_AUROC} to count, because six probes per class is 36 pairs "
-            "and a value near chance is noise. Re-measured on 40 real HC3 sentence pairs, these "
-            "score 0.9+."
+        # The probe count the bar is justified by must be the count this run actually used.
+        # With the packaged probes that is six per class (36 pairs); with --pairs the sentence
+        # probes are DERIVED from the labelled corpus (up to _MAX_SENTENCE_PROBES per class),
+        # so "six probes per class is 36 pairs" printed beside a table whose sentence rows
+        # show n=30 is a contradiction the reader cannot resolve without opening the source.
+        n = next(
+            (r.get("n") for r in report["results"]
+             if r.get("granularity") == "sentence" and r.get("n")),
+            None,
         )
+        if n is not None and n > len(SENTENCE_HUMAN_PROBES):
+            lines.append(
+                f"  Not counted: {', '.join(excused)} — a bad verdict at sentence granularity "
+                f"needs AUROC <= {SENTENCE_BROKEN_AUROC} to count, and the small-sample bar was "
+                f"set for six probes per class. These probes were DERIVED from the labelled "
+                f"corpus ({n} per class, {n * n} pairs), so the verdicts above are real "
+                "measurements at sentence granularity, not 36-pair noise."
+            )
+        else:
+            lines.append(
+                f"  Not counted: {', '.join(excused)} — a bad verdict at sentence granularity needs "
+                f"AUROC <= {SENTENCE_BROKEN_AUROC} to count, because six probes per class is 36 pairs "
+                "and a value near chance is noise. Re-measured on 40 real HC3 sentence pairs, these "
+                "score 0.9+."
+            )
     return "\n".join(lines)
 
 
