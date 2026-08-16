@@ -18,9 +18,12 @@ Env:
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # The single source of truth for the training prompt: rl_humanizer, dpo_humanizer and distill all
 # import it from here. It used to be re-typed as a literal in two of them, so a change here would
@@ -201,6 +204,40 @@ def _strip_preamble(text: str) -> str:
     if len(text) > 1 and text[0] == text[-1] == '"':
         text = text[1:-1].strip()
     return text
+
+
+def _env_max_new_tokens(source_tokens: int, use_adapter: bool) -> int:
+    """The token budget for one generation: ``UNTELL_POLICY_MAXTOK`` if set, else the default.
+
+    The env value used to be handed straight to ``int()`` inside ``_generate_once``, so
+    ``UNTELL_POLICY_MAXTOK=abc`` died mid-generation with a bare ``ValueError`` — the one
+    env var documented (README) as a token cap that could crash on a typo. Same treatment
+    as ``UNTELL_RATE_LIMIT`` in the API server: warn and fall back to the computed default.
+
+    A value that parses but is not positive is refused the same way: ``max_new_tokens=0``
+    makes the model emit nothing, and a negative value is a transformers-side error that
+    names neither the variable nor the fix.
+    """
+    budget = os.environ.get("UNTELL_POLICY_MAXTOK")
+    if budget is None or budget.strip() == "":
+        return max(512, int(source_tokens * 1.6)) if not use_adapter else 512
+    try:
+        n = int(budget)
+    except ValueError:
+        logger.warning(
+            "ignoring UNTELL_POLICY_MAXTOK=%r: expected a whole number of tokens; "
+            "using the default budget instead.",
+            budget,
+        )
+        return max(512, int(source_tokens * 1.6)) if not use_adapter else 512
+    if n <= 0:
+        logger.warning(
+            "ignoring UNTELL_POLICY_MAXTOK=%r: must be a positive number of tokens; "
+            "using the default budget instead.",
+            budget,
+        )
+        return max(512, int(source_tokens * 1.6)) if not use_adapter else 512
+    return n
 
 
 class LocalPolicyRewriter:
@@ -396,10 +433,7 @@ class LocalPolicyRewriter:
         # the output needs, so the untuned path budgets from it. An explicit env value still wins —
         # the trained policy is single-pass and short by design, so its default is untouched.
         source_tokens = len(self._tok(text)["input_ids"])
-        budget = os.environ.get("UNTELL_POLICY_MAXTOK")
-        max_new = int(budget) if budget else (
-            max(512, int(source_tokens * 1.6)) if not self.use_adapter else 512
-        )
+        max_new = _env_max_new_tokens(source_tokens, self.use_adapter)
         with torch.no_grad():
             out = self._model.generate(
                 **inputs,

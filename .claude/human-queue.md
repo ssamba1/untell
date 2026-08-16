@@ -665,3 +665,150 @@ NEXT   Either add ".claude" to [tool.ruff] extend-exclude in pyproject.toml (one
        keeps CI meaningful for shipped code) or move probes out of the tracked tree;
        then `ruff check .` passes. Also confirm the text_split slice's commit fixed the
        W605 at untell/text_split.py:230.
+
+## 2026-08-15 slice 15 (wave 3) — AMBER — new `--diff` output mode on the humanize path
+
+WHAT   `untell humanize --diff` ships: a unified-diff-style before/after of the
+       humanization showing ONLY changed lines (deletions red, additions green, hunk
+       headers dim; rich panel + plain fallback, `_Text`-escaped so brackets in user
+       text cannot be swallowed as markup). `--diff --json` emits a machine-readable
+       payload (format "untell-diff", hunks with 0-based spans and no context lines,
+       added/removed counts). Built on the explain/lock machinery: the payload carries
+       the locked spans (the same spans `lock()` freezes) and `locks_preserved` — how
+       many survived byte-for-byte; the human view prints that count, red if any lock
+       did not survive. `difflib.SequenceMatcher(autojunk=False)` is load-bearing:
+       the default junk heuristic reported a 100+100-line block swap as one 200-line
+       replace (MEASURED). Result-dict contract untouched; `untell explain` untouched.
+RAN    `.venv/Scripts/python.exe -m pytest tests/test_humanize_diff.py` in an isolated
+       worktree (sibling slices were mid-edit on text_split.py in the shared tree) —
+       21 passed. Surrounding families (rich_output*, the-diff-report, explain,
+       json-mode error paths, numeric-flag bounds, cli_dispatch) also green. Live CLI
+       demo: composite rewriter, lite tier, 4-line paragraph → 4 added/4 removed,
+       "2 locked span(s) preserved verbatim".
+SAW    @@ -1,4 +1,4 @@  with -/+ pairs and the lock note; --diff --json parsed with
+       hunks + locked_spans [Smith (2020), 47%], locks_preserved 2 of 2.
+WHY    AMBER per the task envelope: a new CLI flag is an interface addition a human
+       should sign off on (flag name, JSON shape). No RED touched.
+NEXT   Human: confirm the flag name / payload shape; nothing else pending. The queue
+       entry travelled in the same commit as the flag (per the envelope).
+
+## 2026-08-15 slice-20 AMBER — UNTELL_POLICY_MAXTOK invalid value: traceback -> warning
+
+WHAT   UNTELL_POLICY_MAXTOK=abc previously raised a bare ValueError inside
+       local_policy._generate_once (`int(budget)` on the raw env string) — the one
+       documented env var that crashed on a typo. Fixed: new _env_max_new_tokens()
+       parses defensively; non-int or non-positive values now log a warning naming the
+       variable and fall back to the computed default (512, or max(512, 1.6x source
+       tokens) on the untuned path). Explicit valid values (incl. whitespace-padded)
+       still win. Pinned by tests/test_env_var_consistency_matrix.py.
+RAN    helper probes (abc/0/-5/700/None), 23-test matrix file, 62-test config/port/
+       local_policy regression batch, test_detector_contract (15)
+SAW    ValueError traceback before; warning + default after
+WHY    AMBER per the envelope: an error-path behavior change (crash -> message). No
+       RED touched; no published number, threshold, or dependency involved.
+NEXT   Human: no action needed unless the fallback default should be something else.
+
+## 2026-08-15 wave3 slice13 — RED — lite tier still loads spaCy NER (and torch, via thinc) under UNTELL_LITE_NO_TORCH=1
+
+WHAT   The env var is documented as "force the pure-stdlib lite path even when torch is installed".
+       This pass fixed the two model-backed MEANING GATES that ignored it (NLI veto + roles veto:
+       entailment.available()/roles.available()/parser_available()/role_swap now honor the var —
+       meaning_preserved dropped 72.1s -> 0.19s cold on a torch+spacy install, and the loop now
+       reports "similarity-only (NLI unavailable)" under the var). One torch-loading path was left
+       alone because it is a correctness feature, not a gate: preserve.py's spaCy NER lock.
+RAN    score_text(tier="lite") / untell_text(tier="lite") with UNTELL_LITE_NO_TORCH=1, import-hook
+       probe of first heavy import, component timing (best of 3 fresh subprocesses).
+SAW    score_text(tier='lite') 10.4s, loads spacy+torch; preserve._spacy_entity_spans first call
+       17.9s (spacy ~0.5s import, torch ~3.6s dragged in by thinc.compat, en_core_web_sm load, parse).
+       load_detectors('lite') is NOT the cost: 0.14s, loads nothing (tier filter short-circuits
+       available() probes — earlier hypothesis retracted after direct measurement).
+WHY    RED: gating NER off on the lite tier (or moving it to full) removes the README's
+       "entities are locked byte-for-byte" guarantee on the most common install; there is no
+       other switch for it. A composition decision for a human, not a bug fix.
+NEXT   Decide among: (a) leave NER on all tiers (correctness wins; lite stays ~10-18s on spacy
+       installs), (b) honor UNTELL_LITE_NO_TORCH in _spacy_entity_spans_impl, (c) add a
+       UNTELL_DISABLE_NER switch. Also: the suite count in docs/why-best-open-repo.md is now stale
+       by +6 tests (this pass); the human runs `untell-audit --fix-counts` per the established
+       process. Without the env var, NLI/roles behavior is byte-identical to before.
+
+## 2026-08-15 slice 19 RED — CHANGELOG [Unreleased] unrecorded since b37cb02 (2026-08-13)
+
+WHAT   CHANGELOG.md's [Unreleased] section has no entries for anything after b37cb02
+       ("eleven more user-visible changes were unrecorded", 2026-08-13). Since then the log
+       carries ~114 fix/feat commits; ~30 are user-visible and unrecorded: untell batch CLI
+       (af37909), untell explain (04e3bb2), NUL stdin refusal (7a0c925), distill degenerate
+       args (e1391d4), ceiling/compare bad --file (5fb4c5c), fuzz-found type guards (5b38d76),
+       CJK/RTL terminators + zero-width bypass + scriptio-continua (0315a14), lone surrogates
+       (bb87f87), lite env gate + spaCy NER cache + quadratic anchor (9e02182), free-rewriter
+       refusal + MCP verify_commercial + localhost bind (694f786), instruments determinism
+       (e1d558c), detector-audit and/or (607621a), feet-inches/dimensions/semicolon cites
+       (b91932f), compound units/time ranges/exponents/spaced phones (1162504), MCP _bad_args
+       infinite counts (d57026c), rich bar clamp (e2c18b2), panels markup escape (2e02bb3),
+       judge-prompt dedupe (4b1ce4d), initialism cap 6 (0a82920), sentence-final abbreviations
+       (180fc97), untell-server no-op (b1ed8d2), emoji tag sequences (b5b0856), NaN/Inf 422
+       pin (9b31709), run.py FastAPI-import removal (be9b15d), dockerignore wheel-inputs fix
+       (75be76a).
+RAN    git log --format='%h %s' b37cb02..HEAD --grep='^fix\|^feat' | wc -l  (114);
+       git log --oneline -6 -- CHANGELOG.md  (newest = b37cb02)
+SAW    b37cb02 2026-08-13 docs(changelog): eleven more user-visible changes were unrecorded
+       (no changelog commit after it)
+WHY    RED: CHANGELOG.md is a guard-RED file (`^CHANGELOG\.md$` in RED_FILES); a changelog is
+       exactly the "published record" band. tests/test_changelog.py is green (ties the newest
+       heading to the shipped version, which still holds).
+NEXT   A human records the user-visible subset under [Unreleased] (fleet-internal commits —
+       audit-log restores, survivors notes, queue closes — are not changelog material). Keep
+       the Keep-a-Changelog shape; do not split by release since 0.3.0 shipped.
+
+## 2026-08-15 slice 19 RED — ROADMAP.md claims 80 attributed claims; audit measures 158
+
+WHAT   ROADMAP.md line 158 says "Currently: 80 claims attributed, 0 unattributed." The audit
+       it describes has grown: 158 claims attributed, 0 unattributed.
+RAN    python -m untell.scripts.audit --json  (venv python, PYTHONPATH cleared)
+SAW    "attributed_claims": 158, "unattributed_claims": []
+WHY    RED: a published measured number in a doc. The 80 was accurate at ship (2026-08-08);
+       the audit gained checks since.
+NEXT   Update ROADMAP.md §2 line 158 to the measured 158 (or state "as of <date>"), ideally
+       in the same commit as the census count fix so the audit goes green once.
+
+## 2026-08-15 slice 19 RED — census test count stale (6930 vs 8066 collected) — audit is red
+
+WHAT   `untell-audit` fails its "every 'N tests' claim is close to what pytest collects" check:
+       docs/humanizer-census.md claims 6930 tests, pytest collects 8066 (this venv, tree at
+       fca0c0c + in-flight sibling tests). Because this check fails, the whole audit exits 1
+       and CI's "Audit documented claims" step is red. The 2026-08-13 queue entry about
+       UNTELL_POLICY_WHOLE_DOC is resolved (no longer listed); this is the only failing check
+       of 40.
+RAN    python -m untell.scripts.audit --json
+SAW    "- every 'N tests' claim is close to what pytest collects
+         docs/humanizer-census.md: claims 6930 tests, pytest collects 8066"
+WHY    RED: docs/humanizer-census.md is a guard-RED file; counts are published numbers. The
+       collected count moves as sibling slices land tests, so re-measure at fix time.
+NEXT   The human runs `untell-audit --fix-counts` (established process) to refresh the census
+       number, then re-runs the audit to confirm 40/40.
+
+## 2026-08-15 slice 19 AMBER — pyproject "4 - Beta" vs SECURITY.md "alpha research project"
+
+WHAT   pyproject.toml classifier says "Development Status :: 4 - Beta"; SECURITY.md §Supported
+       versions says "This is an alpha research project". Same project, two statuses.
+RAN    grep -n -i 'alpha\|beta' README.md SECURITY.md pyproject.toml
+SAW    pyproject.toml:15 "Development Status :: 4 - Beta"; SECURITY.md:53 "This is an alpha
+       research project"; README.md: no alpha/beta self-description at all
+WHY    AMBER: pyproject.toml is an AMBER file and this is a published-metadata judgment call —
+       which status is intended is a human decision, not a mechanical fix.
+NEXT   Pick one: bump the classifier to "3 - Alpha" (matches SECURITY.md and the 0.x version)
+       or soften SECURITY.md's "alpha" wording; keep the two consistent.
+
+## 2026-08-15 slice 19 AMBER — the [api] extra exists but no doc names `pip install untell[api]`
+
+WHAT   pyproject declares an `api` extra (anthropic>=0.40, openai>=1.0) for hosted-LLM
+       rewriters. It is the ONLY one of the 13 extras never named by pip-install syntax in
+       README/docs/SKILL.md. Its feature IS documented: docs/api-server.md lists the
+       anthropic/openai rewriters and untell/rewriter/base.py implements both adapters.
+RAN    python scan of every `[extra]` mention in README.md + docs/*.md + untell/SKILL.md
+       vs pyproject optional-dependencies (13 declared, 12 mentioned, 0 phantom)
+SAW    'declared but never mentioned anywhere: ['api']'
+WHY    AMBER: doc gap in a published surface; README.md is RED so the natural home for the
+       pip line is docs/api-server.md (not guard-RED), but a sibling slice was mid-edit on it
+       and the fix is cosmetic.
+NEXT   Add one line near the rewriter options in docs/api-server.md:
+       `pip install "untell[api]"` — then every declared extra is reachable from the docs.
