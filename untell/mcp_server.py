@@ -112,6 +112,33 @@ def _bad_args(**checks) -> dict | None:
     return None
 
 
+def _text_too_long(text: str, name: str = "text") -> dict | None:
+    """Refuse an oversized text the way the REST surface refuses it with 422.
+
+    MEASURED through the real engine: `tells` accepted a 1,018,136-character payload and
+    occupied the worker for 230 s before returning. REST rejects the same shape at the
+    edge — every request model bounds `text` at MAX_INPUT_CHARS, and api_server.py's
+    comment explains why: "Rejecting at the edge turns an unbounded request into a 422
+    instead of a tied-up worker". MCP is equally a network surface with an untrusted
+    caller, and the mcp SDK runs sync tool functions DIRECTLY in the event loop, so an
+    unbounded payload blocks every other call and cannot be interrupted by a client
+    disconnect — the megabyte case is not a slow answer, it is a wedged server.
+
+    The bound is the SAME constant REST imports (untell.scripts.score.MAX_INPUT_CHARS),
+    so the two surfaces cannot drift apart; the CLI truncates with a warning instead,
+    because it is not a network surface (documented in api_server.py).
+    """
+    from untell.scripts.score import MAX_INPUT_CHARS
+
+    if len(text) > MAX_INPUT_CHARS:
+        return {
+            "error": f"{name} is {len(text)} characters; the maximum is {MAX_INPUT_CHARS}. "
+                     "The REST API rejects the same input with 422 — an unbounded text ties "
+                     "up the worker (measured: 230 s for a 1 MB tells call)."
+        }
+    return None
+
+
 def _server():
     from mcp.server.fastmcp import FastMCP
 
@@ -136,6 +163,7 @@ def _server():
         caller could not ask the question they meant to ask.
         """
         bad = _bad_args(tier=(tier, "tier"), threshold=(threshold, "probability"))
+        bad = bad or _text_too_long(text)
         # Same normalisation the REST surface applies: a failed detector's message travels in
         # `detector_errors` rather than inside `detectors`, where it makes a map of numbers hold a
         # string. MEASURED with three detectors broken, this surface returned
@@ -160,13 +188,13 @@ def _server():
         bad = _bad_args(
             tier=(tier, "tier"), threshold=(threshold, "probability"), top=(top, "top")
         )
-        return bad or score_sentences(text, tier=tier, threshold=threshold, top=top)
+        return bad or _text_too_long(text) or score_sentences(text, tier=tier, threshold=threshold, top=top)
 
     @server.tool()
     def tells(text: str, include_matches: bool = False) -> dict:
         """Count AI writing tells (the machine-writing catalog). Lower is more human-reading.
         Returns tells total, tells_per_100w, burstiness_cv, and per-category breakdown."""
-        return score_tells(text, include_matches=include_matches)
+        return _text_too_long(text) or score_tells(text, include_matches=include_matches)
 
     # NOT decorated inline: `server.tool()` snapshots __doc__ as the advertised description at
     # registration time, so patching the style list in afterwards had no effect on what a client
@@ -263,6 +291,13 @@ def _server():
         )
         if bad:
             return bad
+        bad = _text_too_long(text)
+        if voice_sample:
+            # The REST /humanize body bounds voice_sample at the same MAX_INPUT_CHARS; a
+            # megabyte "sample" would otherwise sit in memory through the whole loop.
+            bad = bad or _text_too_long(voice_sample, "voice_sample")
+        if bad:
+            return bad
 
         # An unknown style is looked up in the STYLES dict, missed, and silently ignored — so a
         # caller asked for a voice and got a rewrite with no style applied and nothing saying so.
@@ -354,6 +389,7 @@ def _server():
                          "fallen back to the lite heuristic."
             }
         bad = _bad_args(threshold=(threshold, "probability"))
+        bad = bad or _text_too_long(text)
         if bad:
             return bad
         browser_list = [s.strip() for s in browser.split(",")] if browser else None
@@ -403,14 +439,23 @@ def _server():
         if bad:
             return bad
 
-        rw = None
         if rewriter not in _FREE_REWRITERS and rewriter != "auto":
-            # An unknown name fell through as None and was then silently auto-selected, so a typo
-            # ran a DIFFERENT technique and the result was reported as if it were the requested
-            # one. untell_text resolves names itself now and refuses to substitute, so hand it
-            # the name and let it produce a clear error.
-            rw = rewriter
-        elif rewriter in _FREE_REWRITERS:
+            # MEASURED: this used to hand the name to measure_ceiling, whose aggregation DROPS
+            # the per-text `{"error": ...}` dicts untell_text returns for an unknown name
+            # (eval/ceiling.py: `if "error" not in res and "post" in res`). The result then
+            # reported `"rewriter": "wat"` — a name that does not exist — as the rewriter that
+            # produced the numbers, after running the whole measurement (106 s on full tier).
+            # The CLI refuses the same name at parse time (argparse `choices`) and REST answers
+            # 422 "unknown rewriter {name}"; this was the hole.
+            return {
+                "error": f"unknown rewriter {rewriter!r} — it would have run a full measurement "
+                         "that reports a rewriter by that name while nothing by that name ran "
+                         f"(per-text refusals are dropped in the aggregation). Valid: "
+                         f"{', '.join(sorted(_FREE_REWRITERS))}, auto."
+            }
+
+        rw = None
+        if rewriter in _FREE_REWRITERS:
             rw = get_rewriter(prefer=rewriter)
             if rw is None:
                 return {"error": f"{rewriter} rewriter unavailable (needs .[full] extra)"}
@@ -459,7 +504,9 @@ def _server():
     def scrub(text: str) -> dict:
         """Strip hidden watermark / zero-width / homoglyph characters from text, returning
         the cleaned text and the count of characters removed."""
-        return {"clean": scrub_hidden(text), "hidden_chars_removed": count_hidden(text)}
+        return _text_too_long(text) or {
+            "clean": scrub_hidden(text), "hidden_chars_removed": count_hidden(text)
+        }
 
     return server
 

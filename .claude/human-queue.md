@@ -866,3 +866,28 @@ SAW    "docs/why-best-open-repo.md: says 518 test modules, tests/ has 533 — st
 WHY    RED per guard policy (published numbers in docs/why-best-*); file is human-owned.
 NEXT   Human: run `.venv/Scripts/python.exe -m untell.scripts.audit --fix-counts`
        (also fixes the census 6930-vs-8292 count in the same pass), or reject.
+
+## 2026-08-15 slice 10 (wave 3) — AMBER — MCP surface: text-length edge guard + ceiling unknown-rewriter refusal
+
+WHAT   Two MCP refusals added, matching surfaces that already refuse the same inputs.
+       1) Every text-taking MCP tool (score/sentences/tells/untell/verify_commercial/scrub)
+       now refuses text over MAX_INPUT_CHARS (50,000, the SAME constant REST /score bounds
+       every request model with, 422) with an error dict. MEASURED before: `tells` accepted
+       a 1,018,136-char payload and occupied the worker 230 s; the mcp SDK runs sync tool
+       fns directly in the event loop, so a megabyte payload wedges the whole server and a
+       client disconnect cannot interrupt it. untell's voice_sample is bounded too (REST
+       bounds it at the same constant). 2) `ceiling(rewriter=<unknown name>)` now refuses
+       with an error dict listing the valid vocabulary. MEASURED before: `rewriter="wat"`
+       ran the FULL measurement (106 s) and returned `"rewriter": "wat"` — a name that does
+       not exist — as the rewriter that produced the numbers; measure_ceiling's aggregation
+       drops the per-text error dicts untell_text returns. The CLI refuses the same name at
+       parse time (argparse choices) and REST answers 422 "unknown rewriter {name}".
+WHY    AMBER per the envelope: both are return-shape changes (new refusal dict where a
+       result used to come back) and new error messages on a shipped surface.
+RAN    tests/test_mcp_text_guard.py (12), tests/test_mcp_ceiling_rewriter_guard.py (5),
+       tests/test_mcp_concurrency.py (13), plus the pre-existing MCP files: 100 passed
+       with the guard files RED before the fix (ImportError / 2 failed). Ruff clean.
+NEXT   Human: confirm both refusal vocabularies. The README:149 tool-list staleness this
+       slice re-verified is already queued (pass 531) — not re-queued. Also note: sync MCP
+       tools block the event loop for any long VALID input (SDK property, not fixed here);
+       the guard removes the pathological megabyte case.
