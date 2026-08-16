@@ -150,16 +150,17 @@ _ABBR_DOTTED = "|".join(
 _CITE_PREFIX = (
     r"(?:see\s+also|but\s+see|see|cf\.?|e\.g\.?|i\.e\.?|compare|reviewed\s+in|as\s+in|after)\s*,?"
 )
-# Author names with accents: the letter class is Latin-1 supplement PLUS the combining marks,
+# Author names with accents: the letter class is the Latin blocks PLUS the combining marks,
 # so "(García, 2020)" and its NFD-decomposed twin "(Garci\u0301a, 2020)" lock the SAME span.
 # MEASURED before this: NFC "García" locked only because spaCy happened to tag it as a PERSON,
 # and the NFD form locked nothing at all — same fact, different protection depending on
 # normalization. A combining mark is not a letter but it is part of the name. The leading
 # uppercase is kept (authors are capitalised); it is widened to the accented capitals too,
-# or "Álvarez (2020)" fails the same way "García" did.
-_CITE_LETTER = r"A-Za-zÀ-ÖØ-öø-ÿ\u0300-\u036f'’.-"
+# or "Álvarez (2020)" fails the same way "García" did. Latin Extended-A/B is included —
+# "Łódź (2019)" would otherwise fail exactly like "García" did, one block over.
+_CITE_LETTER = r"A-Za-zÀ-ÖØ-öø-ÿ\u0100-\u024f\u0300-\u036f'’.-"
 _CITE_ENTRY = (
-    rf"[A-ZÀ-ÖØ-Þ][{_CITE_LETTER}]+(?:\s+(?:&|and|et al\.?)\s*[{_CITE_LETTER}]*)*"
+    rf"[A-ZÀ-ÖØ-Þ\u0100-\u017f][{_CITE_LETTER}]+(?:\s+(?:&|and|et al\.?)\s*[{_CITE_LETTER}]*)*"
     rf",?\s*\d{{4}}[a-z]?(?:,\s*pp?\.?\s*\d+(?:\s*[-–]\s*\d+)?)?"
 )
 
@@ -296,7 +297,7 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # Narrative author-year: Smith (2020), Smith et al. (2019). Same accented-letter
     # widening as _CITE_ENTRY: "García (2020)" locked only via NER, and the NFD form
     # locked nothing at all — see the MEASURED note at _CITE_LETTER.
-    ("citation", re.compile(rf"[A-ZÀ-ÖØ-Þ][{_CITE_LETTER}]+(?:\s+et al\.?)?\s+\(\d{{4}}[a-z]?\)")),
+    ("citation", re.compile(rf"[A-ZÀ-ÖØ-Þ\u0100-\u017f][{_CITE_LETTER}]+(?:\s+et al\.?)?\s+\(\d{{4}}[a-z]?\)")),
     # DOIs and URLs. The trailing lookbehind keeps the match from swallowing the
     # sentence's own full stop: `\S+` greedily took "https://example.com." whole,
     # so the masked text lost its terminator and sentence splitting downstream
