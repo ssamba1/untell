@@ -145,6 +145,7 @@ untell-scrub = "untell.scripts.scrub:main"
 untell-numbers = "untell.scripts.numerals:main"
 untell-hedges = "untell.scripts.hedges:main"
 untell-explain = "untell.scripts.explain:main"
+untell-batch = "untell.scripts.batch:main"
 
 [tool.setuptools]
 packages = [

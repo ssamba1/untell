@@ -621,3 +621,28 @@ WHY    RED per guard policy (published numbers in docs/); the repo's own repair 
 NEXT   Human call: run `.venv/Scripts/python.exe -m untell.scripts.audit --fix-counts`
        outside the agent (it also un-stales why-best + README + ROADMAP counts in one pass),
        or reject.
+
+## 2026-08-15 slice 14 wave 3 — AMBER — new CLI subcommand `untell batch`
+
+WHAT   Shipped a NEW capability: `untell batch <dir>` humanizes every .txt/.md
+       file in a directory tree, mirrors structure into <dir>_humanized, and
+       writes manifest.json (input path, status ok/skipped/failed, pre/post
+       scores, rewrote flag) plus a summary line. Supports --out, --tier,
+       --threshold, --rewriter, --max-iters, --best-of, --dry-run, --limit,
+       --json. Binary files skipped cleanly (NUL sniff + io_utils guard);
+       per-file failures reported without aborting; exit 1 if any file failed.
+       New console script untell-batch registered in pyproject.toml (AMBER
+       file) and cli.py _COMMANDS; tests in tests/test_batch_cli.py (19 pass).
+RAN    UNTELL_LITE_NO_TORCH=1 UNTELL_DISABLE_NLI=1 ./.venv/Scripts/untell.exe
+       batch C:/Users/Admin/AppData/Local/Temp/untell_batch_demo
+SAW    batch: 5 files, 3 humanized (2 rewrote), 2 skipped, 0 failed — manifest:
+       ...untell_batch_demo_humanized/manifest.json   (exit 0)
+       With a permission-denied file: "failed denied.txt: cannot read:
+       Permission denied" and exit 1; dry-run writes nothing, exit 0.
+WHY    AMBER by the envelope: a new CLI subcommand/flag, plus pyproject.toml
+       (an AMBER file) gained a console-script entry. Nothing RED: no published
+       numbers, thresholds, deps, or test deletions were touched.
+NEXT   Optional human review: the README's "every subcommand is also a
+       standalone untell-<name> script" claim now also holds for batch; docs
+       otherwise list no subcommand counts, so no count fix is needed. Run
+       `untell batch --help` to see the new command's options.

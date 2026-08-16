@@ -11,6 +11,7 @@ Instead of remembering ``untell-*`` scripts, run ``untell <subcommand> ...``:
     untell ceiling --rewriter surgical # measure free evasion ceiling
     untell sentences "text"            # which sentences read as AI
     untell prove "text"                # verify -> loop -> re-verify (commercial tier)
+    untell batch ./drafts             # humanize every .txt/.md in a directory tree
     untell --check                     # verify installation and available components
     untell --demo                      # run a guided demo on built-in samples
 
@@ -53,6 +54,7 @@ _COMMANDS: dict[str, str] = {
     "numbers": "untell.scripts.numerals:main",
     "hedges": "untell.scripts.hedges:main",
     "explain": "untell.scripts.explain:main",
+    "batch": "untell.scripts.batch:main",
 }
 
 # Console scripts this project ships that are NOT subcommands of `untell`. Typing one of these
@@ -78,6 +80,7 @@ _ONE_LINER = {
     "numbers": "check every number in the original survives a rewrite",
     "hedges": "check a rewrite does not state more firmly than the original",
     "explain": "show why the preserve lock freezes each span (rule + rationale)",
+    "batch": "humanize every .txt/.md file in a directory tree (manifest + summary)",
 }
 
 
