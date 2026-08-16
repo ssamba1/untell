@@ -1,7 +1,7 @@
 """The trailing code pattern must not be quadratic on long unbroken runs.
 
 MEASURED before the fix: the bare-filename branch of the trailing "code" pattern
-was the only one of its six alternatives without a leading `\b`, so `[\w-]+`
+was the only one of its six alternatives without a leading `\b`, so `[\\w-]+`
 was attempted at EVERY character. On a 100k-char run of one letter it scanned
 the rest of the run and backtracked through it per position — 25k chars 5.5s,
 50k 21.9s, 100k ~88s — which froze `lock()` (and therefore `score_text`, whose

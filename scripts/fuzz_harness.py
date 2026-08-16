@@ -39,8 +39,6 @@ import io
 import json
 import os
 import random
-import re
-import string
 import subprocess
 import sys
 import threading
@@ -232,7 +230,7 @@ def _run_layout(case):
     text = case["text"]
     b = blocks(text)
     r1 = apply_per_block(text, lambda s: s.upper())
-    r2 = apply_per_block(text, lambda s: s.replace("the", "a"))
+    apply_per_block(text, lambda s: s.replace("the", "a"))
     restore_layout_lines(text, r1)
     restore_layout_lines(text, "x\ny\nz")
     # a block transform must never drop a non-prose line
@@ -295,8 +293,14 @@ _REST_MODELS = {}
 
 def _rest_model(name: str):
     if not _REST_MODELS:
-        from untell.api_server import (CeilingRequest, HumanizeRequest, ScoreRequest,
-                                       SentencesRequest, TellsRequest, VerifyRequest)
+        from untell.api_server import (
+            CeilingRequest,
+            HumanizeRequest,
+            ScoreRequest,
+            SentencesRequest,
+            TellsRequest,
+            VerifyRequest,
+        )
         _REST_MODELS.update({"ScoreRequest": ScoreRequest,
                              "HumanizeRequest": HumanizeRequest,
                              "SentencesRequest": SentencesRequest,
@@ -528,7 +532,7 @@ def _capture_exc() -> tuple[str, str]:
     tb = traceback.format_exc()
     lines = tb.splitlines()
     head = lines[0] if lines else "?"
-    site = [l for l in lines if "untell" in l and "site-packages" not in l]
+    site = [ln for ln in lines if "untell" in ln and "site-packages" not in ln]
     return head, "\n".join(site[:8])
 
 

@@ -9,8 +9,6 @@ vector, not a display. The bar must stay exactly ``bar_len`` wide whatever the i
 
 from __future__ import annotations
 
-import math
-
 from untell import rich_output
 
 

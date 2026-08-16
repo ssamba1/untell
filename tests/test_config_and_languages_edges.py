@@ -8,7 +8,6 @@ that has no Unicode name at all (a lone surrogate).
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 from untell.config import _try_yaml
 from untell.languages import dominant_script

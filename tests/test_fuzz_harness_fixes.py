@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -276,11 +275,9 @@ class TestCliPrintingSurvivesSurrogates:
     UnicodeEncodeError on HEAD — scrub's output path and argparse's stderr path."""
 
     def test_configure_utf8_io_uses_replace_errors(self):
-        import io
 
         from untell.scripts.io_utils import configure_utf8_io
 
-        buf = io.StringIO()
         # StringIO.reconfigure accepts errors=; verify the function sets replace
         # semantics by checking it does not raise and the stream tolerates surrogates
         configure_utf8_io()

@@ -20,8 +20,6 @@ worth it.
 import time
 from unittest.mock import patch
 
-import pytest
-
 from untell.text_split import aligned_chunks
 
 

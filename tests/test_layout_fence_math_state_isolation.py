@@ -14,8 +14,6 @@ code to a rewriter.
 
 from __future__ import annotations
 
-import pytest
-
 from untell.layout import apply_per_block, blocks
 
 TRANSFORM = lambda s: s.replace("prose here", "PROSE HERE")  # noqa: E731

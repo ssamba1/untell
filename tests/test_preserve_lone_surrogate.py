@@ -21,7 +21,6 @@ import pytest
 from untell.scripts import preserve
 from untell.scripts.explain import explain_spans
 
-
 SURROGATE_TEXT = "Furthermore, AI \ud800 transforms industries. See Smith (2020); it cost $500."
 
 

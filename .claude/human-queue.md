@@ -646,3 +646,22 @@ NEXT   Optional human review: the README's "every subcommand is also a
        standalone untell-<name> script" claim now also holds for batch; docs
        otherwise list no subcommand counts, so no count fix is needed. Run
        `untell batch --help` to see the new command's options.
+
+## 2026-08-15 slice 9 RED — tracked .claude/ probe scripts fail the CI ruff step
+
+WHAT   ci.yml's Lint step (`ruff check .`) cannot pass at HEAD: the fanout campaign
+       committed 259 probe scripts under .claude/**/*.py carrying ~705 ruff errors
+       (I001/E401/F401/E402/E702/E701/B007/W292/F841/F821/W605/B023/E741/F541).
+       The 28 lint errors in shipped code were fixed this wave; the .claude set is
+       a structural decision, not a fix. .claude is NOT gitignored, so ruff — which
+       respects .gitignore, not intent — checks it.
+RAN    ruff check .  (HEAD archive 0d368e9, ruff 0.15.20, the version `ruff>=0.4`
+       resolves to today) -> 733 errors: ~705 in .claude, 28 in shipped code.
+SAW    untell/text_split.py:230 W605 (`\]` in a non-raw segment) is the sole shipped-code
+       leftover — that file is being rewritten by the parallel text_split slice.
+WHY    RED per the slice-9 brief ("flag mismatches (queue RED)"). Fixing it means either
+       changing CI scope (extend-exclude .claude) or removing 259 probe files — a human call.
+NEXT   Either add ".claude" to [tool.ruff] extend-exclude in pyproject.toml (one line;
+       keeps CI meaningful for shipped code) or move probes out of the tracked tree;
+       then `ruff check .` passes. Also confirm the text_split slice's commit fixed the
+       W605 at untell/text_split.py:230.
