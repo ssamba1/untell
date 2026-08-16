@@ -21,6 +21,7 @@ verbatim instead of being rewritten by ``restore`` (asserted in tests).
 from __future__ import annotations
 
 import logging
+import os
 import re
 from functools import lru_cache
 
@@ -41,7 +42,7 @@ if __package__ in (None, ""):
             break
 
 from untell.scripts.latex import ENV_ALTERNATION as _LATEX_ENV_ALTERNATION
-from untell.text_split import _ABBREVIATIONS  # noqa: E402
+from untell.text_split import _ABBREVIATIONS, _ZERO_WIDTH_BETWEEN  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +150,17 @@ _ABBR_DOTTED = "|".join(
 _CITE_PREFIX = (
     r"(?:see\s+also|but\s+see|see|cf\.?|e\.g\.?|i\.e\.?|compare|reviewed\s+in|as\s+in|after)\s*,?"
 )
+# Author names with accents: the letter class is Latin-1 supplement PLUS the combining marks,
+# so "(García, 2020)" and its NFD-decomposed twin "(Garci\u0301a, 2020)" lock the SAME span.
+# MEASURED before this: NFC "García" locked only because spaCy happened to tag it as a PERSON,
+# and the NFD form locked nothing at all — same fact, different protection depending on
+# normalization. A combining mark is not a letter but it is part of the name. The leading
+# uppercase is kept (authors are capitalised); it is widened to the accented capitals too,
+# or "Álvarez (2020)" fails the same way "García" did.
+_CITE_LETTER = r"A-Za-zÀ-ÖØ-öø-ÿ\u0300-\u036f'’.-"
 _CITE_ENTRY = (
-    r"[A-Z][A-Za-z'’.-]+(?:\s+(?:&|and|et al\.?)\s*[A-Za-z'’.-]*)*"
-    r",?\s*\d{4}[a-z]?(?:,\s*pp?\.?\s*\d+(?:\s*[-–]\s*\d+)?)?"
+    rf"[A-ZÀ-ÖØ-Þ][{_CITE_LETTER}]+(?:\s+(?:&|and|et al\.?)\s*[{_CITE_LETTER}]*)*"
+    rf",?\s*\d{{4}}[a-z]?(?:,\s*pp?\.?\s*\d+(?:\s*[-–]\s*\d+)?)?"
 )
 
 # Ordered patterns. Every match from every pattern is collected and OVERLAPPING/ADJACENT spans are
@@ -284,8 +293,10 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             + r"(?:\s*;\s*(?:" + _CITE_PREFIX + r"\s*)?" + _CITE_ENTRY + r")*\s*\)"
         ),
     ),
-    # Narrative author-year: Smith (2020), Smith et al. (2019)
-    ("citation", re.compile(r"[A-Z][A-Za-z'’.-]+(?:\s+et al\.?)?\s+\(\d{4}[a-z]?\)")),
+    # Narrative author-year: Smith (2020), Smith et al. (2019). Same accented-letter
+    # widening as _CITE_ENTRY: "García (2020)" locked only via NER, and the NFD form
+    # locked nothing at all — see the MEASURED note at _CITE_LETTER.
+    ("citation", re.compile(rf"[A-ZÀ-ÖØ-Þ][{_CITE_LETTER}]+(?:\s+et al\.?)?\s+\(\d{{4}}[a-z]?\)")),
     # DOIs and URLs. The trailing lookbehind keeps the match from swallowing the
     # sentence's own full stop: `\S+` greedily took "https://example.com." whole,
     # so the masked text lost its terminator and sentence splitting downstream
@@ -362,8 +373,12 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         re.compile(
             # Dependency specifier with its package name: untell==0.2.0, numpy>=1.24, x ~= 2.1
             r"\b[A-Za-z_][\w.-]*\s*(?:==|>=|<=|~=|!=|<|>)\s*\d[\w.*+-]*"
-            # Full version, with any pre-release or build metadata: v1.2.3-rc4, 1.2.3+build.99
-            r"|\bv?\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)+\b"
+            # Full version, with any pre-release or build metadata: v1.2.3-rc4, 1.2.3+build.99.
+            # PEP 440 ALSO allows the hyphenless pre-release forms — a1, b2, rc1, dev1, .dev1,
+            # .post1 — and "Python 3.12.0rc1" masked to "⟦HZ0000⟧.0rc1" without them: the release
+            # segment stayed free while the sentinel survived intact. The lookahead keeps the alpha
+            # suffix off "1.2.3e-5", which is scientific notation, not a version.
+            r"|\bv?\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*|[a-z][0-9a-z]*(?![0-9a-z-])|\.[a-z][0-9a-z]*)+"
         ),
     ),
     (
@@ -395,14 +410,26 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         "number",
         re.compile(
             r"\bv\d+(?:\.\d+)+\b"  # semantic version: v2.1.3
-            r"|\b\d{4}-\d{2}-\d{2}\b"  # ISO date: 2024-03-15
-            r"|\b\d+(?:\.\d+)?[eE][+-]?\d+\b"  # scientific notation: 1.5e10
+            # ISO 8601 date AND datetime. The date alone locked whole, but the
+            # `\b` after the day failed the moment a "T" followed, so
+            # "2024-03-15T10:30:00Z" fragmented to "⟦HZ0000⟧-15T10:⟦HZ0001⟧:00Z"
+            # — the T and the timezone designator, the load-bearing parts, both
+            # free. The optional time rides inside the same lock: `[T ]` admits
+            # the space-separated form, `(?:[.,]\d+)?` fractional seconds, and
+            # `Z` or a ±hh:mm / ±hhmm offset as the UTC designator.
+            r"|\b\d{4}-\d{2}-\d{2}(?:[T ]\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?\b"
+            # Scientific notation. "1.2e-3 m" locked "1.2e-3" and left the UNIT
+            # free, so a rewrite could change the exponent's magnitude; the
+            # tight form "1.2e-3m" was worse — the exponent \b failed on "m",
+            # "-3m" locked as a unit number and the "1.2e" mantissa stayed free.
+            # The unit suffix and (?!\w) terminator mirror the number+unit rule.
+            r"|\b\d+(?:\.\d+)?[eE][+-]?\d+(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # scientific notation: 1.5e10, 1.2e-3 m
             # Caret and superscript exponents. "1.5 × 10^9" locked "1.5 ×" and "10"
             # separately and left "^9" — the magnitude carrier — rewritable, and
             # "10⁹" locked nothing at all. The base is included with an optional
             # "× 10" prefix, so the whole magnitude is one span.
-            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?\s*\^+\s*[-−]?\d+\b"  # 10^9, 2^31, 1.5 × 10^9
-                        r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]*\b"  # 10⁹, 10⁻⁹
+            r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?\s*\^+\s*[-−+]?\d+(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # 10^9, 2^31, 1.5 × 10^9 m
+                        r"|\b\d+(?:\.\d+)?(?:\s*[×x]\s*10)?[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]*(?:\s*(?:" + _UNIT + r"))?(?!\w)"  # 10⁹, 10⁻⁹ m
                         # Dimensions "10×5 cm" and feet-inches heights "5'10\"". "10x5 cm"
                         # locked NOTHING before this — the 'x' blocks the \b on both sides,
                         # so neither number could match — and "5'10\"" locked only the "10".
@@ -442,24 +469,38 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"|\b\d+\s*/\s*\d+\b"  # fraction: 2/3
             # Comparison against a number: p<0.05, n >= 30. The operator must be inside the lock or a
             # rewrite can invert the assertion while the sentinel survives intact.
-            r"|\b[A-Za-z]{1,3}\s*[<>≤≥]=?\s*[-−]?\d[\d,]*(?:\.\d+)?"
-            r"|[<>≤≥]=?\s*[-−]?\d[\d,]*(?:\.\d+)?"
-            r"|[-−]?[$€£]\s?\d[\d,]*(?:\.\d+)?"  # currency, optionally negative
-            # Number + unit, allowing a decimal and a leading sign. The terminator is (?!\w), NOT \b:
-            # `\b` requires a word character on one side, and "%" / bare "°" are non-word, so a
-            # trailing `\b` could only succeed when the symbol was followed by a letter or digit —
-            # which never happens in prose. That made "5%" match nothing at all and "42%" lock only
-            # its digits.
-            r"|[-−]?\b\d[\d,]*(?:\.\d+)?\s*(?:" + _UNIT + r")(?!\w)"
+            r"|\b[A-Za-z]{1,3}\s*[<>≤≥]=?\s*[-−+]?\d[\d,]*(?:\.\d+)?"
+            r"|[<>≤≥]=?\s*[-−+]?\d[\d,]*(?:\.\d+)?"
+            # Currency. The class was [$€£] only, so "¥1,200" locked "1,200" and
+            # left the yen sign — which carries the denomination — free, and a
+            # rewrite could re-denominate any non-$ price with every sentinel
+            # intact. "US$12" and "HK$80" locked "$12"/"$80" with the currency
+            # CODE free for the same reason, so an optional 1-3 letter prefix
+            # rides inside the lock. The magnitude word ("€5.5bn", "$3.2
+            # trillion", "£5m", "$2k") had the same hole as the units: the
+            # amount locked and "bn" stayed free — three orders of magnitude
+            # rewritable. The trailing (?!\w) keeps "$5." sentence-final intact.
+            r"|[-−+]?(?:[A-Z]{1,3}\s*)?[$€£¥₹₩₽₺₫₱₦₴₪₡฿₿]\s?\d[\d,]*(?:\.\d+)?(?:\s*(?:million|billion|trillion|thousand|bn|[MmKkB]|mn))?(?!\w)"  # currency: US$12, ¥1,200, €5.5bn, -$5
             # Numeric range, with an OPTIONAL trailing unit. "5–10%" locked "5–10" and left "%"
             # free: the range branch matched first, finditer resumed after it, and the unit branch
             # could never see the "%" it had already consumed past. The unit has to ride INSIDE
             # this branch. "10-20 miles" was already whole (span merging); "5–10%" was not.
-            r"|\b\d[\d,]*(?:\.\d+)?\s*[-–—]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
+            # The FIRST endpoint takes a unit too, or "20°C–25°C" splits at the dash — the
+            # number+unit branch would otherwise claim "20°C" before the range branch ever sees
+            # the pair, exactly the "5–10%" shape with the unit on the wrong side. This branch
+            # must therefore sit BEFORE number+unit; it declines anything without a dash.
+            r"|\b\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?\s*[-–—]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
+            # Number + unit, allowing a decimal and a leading sign. The terminator is (?!\w), NOT \b:
+            # `\b` requires a word character on one side, and "%" / bare "°" are non-word, so a
+            # trailing `\b` could only succeed when the symbol was followed by a letter or digit —
+            # which never happens in prose. That made "5%" match nothing at all and "42%" lock only
+            # its digits. A leading PLUS was also outside the class [-−], so "+5%" masked to
+            # "+⟦HZ0000⟧" and a rewrite could flip the sign; the class is [-−+] now.
+            r"|[-−+]?\b\d[\d,]*(?:\.\d+)?\s*(?:" + _UNIT + r")(?!\w)"
             r"|[-−]\d[\d,]*(?:\.\d+)?\b"  # negative number: -15, -3.2
-            r"|\b\d[\d,]*\.\d+\b"  # decimals
+            r"|[-−+]?\b\d[\d,]*\.\d+\b"  # decimals, optionally signed: +0.5
             r"|\b\d{1,3}(?:,\d{3})+\b"  # comma-grouped thousands
-            r"|\b\d{2,}\b"  # standalone integers of 2+ digits
+            r"|[-−+]?\b\d{2,}\b"  # standalone integers of 2+ digits, optionally signed: +15
         ),
     ),
     # Calendar dates written with a month or weekday NAME. The name carries as much of the fact as
@@ -478,7 +519,7 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             # "The deadline is March 15." A month name followed by 1-2 digits is a date in every
             # register; the year forms are earlier in the alternation, so they still match whole.
             r"|\b(?:" + _MONTH + r")\s+\d{1,2}\b"
-            r"|\b\d{1,2}(?:st|nd|rd|th)\s+of\s+(?:" + _MONTH + r")\b"
+            r"|\b\d{1,2}(?:st|nd|rd|th)\s+of\s+(?:" + _MONTH + r")(?:,?\s*\d{4})?\b"
             # Bare weekday. This pattern carries re.IGNORECASE and the three-letter abbreviations
             # are ordinary English words, so measured: "She **sat** on the bench", "The **sun** was
             # bright" and "the **wed**ding" all locked as date facts — pinning ordinary prose the
@@ -489,6 +530,17 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
             r"|(?-i:\b(?:" + _WEEKDAY_ABBR + r")\b)"
             r"|\b[QH][1-4]\s*(?:of\s+)?(?:FY)?\d{2,4}\b"  # Q3 2024, H1 FY25
             r"|\bFY\s?\d{2,4}\b"
+            # Century ordinals: "21st century" masked to "⟦HZ0000⟧ century" — the ordinal locked
+            # and the UNIT OF TIME free, the "5 mg" worst case with a time unit. The era marker
+            # rides inside too: "5th century BC" must not have its BC severed. Placed before the
+            # bare-ordinal branch, which would otherwise claim "21st" alone.
+            r"|\b\d{1,2}(?:st|nd|rd|th)[\s-]+century(?:\s*(?-i:(?:BC|BCE|CE|AD)))?\b"
+            # Era markers with a year: "753 BC" masked to "⟦HZ0000⟧ ⟦HZ0001⟧" — the year locked
+            # and BC free, so a rewrite could turn BC into AD with every sentinel intact. "AD
+            # 2024" locked whole only by an accident of the identifier rule; "2024 CE" locked
+            # nothing at all. (?-i:...) keeps "bc" and "ad" (ordinary words) out of the lock.
+            r"|(?-i:\b\d{1,4}\s*(?:BC|BCE|CE)\b)"
+            r"|(?-i:\b(?:AD|CE)\s*\d{1,4}\b)"
             r"|\b\d+(?:st|nd|rd|th)\b",  # bare ordinal: the 3rd
             re.IGNORECASE,
         ),
@@ -513,9 +565,14 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # Components are unbounded in length. A first attempt capped each at four digits, and a real
     # Windows build number — 10.0.19045.3803 — split at the 5-digit component into "10.0" and
     # "19045.3803", reproducing the exact defect this entry fixes.
+    #
+    # An optional `:port` suffix rides inside the lock: "192.168.1.24:8080" masked to
+    # "⟦HZ0000⟧:⟦HZ0001⟧" — the colon free, so a rewrite could detach the port from the address
+    # or merge it into the prose. The port is only ever a colon+digits directly after the dotted
+    # identifier, and `\d+` admits single-digit ports.
     (
         "dotted",
-        re.compile(r"\b\d+(?:\.\d+){2,}\b"),
+        re.compile(r"\b\d+(?:\.\d+){2,}(?::\d+)?\b"),
     ),
     # Two-component dotted identifiers: `word.number` where the second component has a non-digit
     # character (`np.float64`, `untell.score`, `os.path`). The 3+ numeric-component pattern above
@@ -566,6 +623,22 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         # excluded verbatim.
         re.compile(
             rf"\b(?<![\w.])(?!(?i:{_ABBR_DOTTED})\.)[A-Za-z_][\w.-]*\.\d*[A-Za-z][\w.-]*\b"
+        ),
+    ),
+    # Coordinates: "37.7749° N" masked to "⟦HZ0000⟧ N" — the degree value locked and the
+    # HEMISPHERE letter free, so a rewrite could flip N to S and move the point to the other side
+    # of the equator with every sentinel intact. The tight form ("37.7749°N") left the degree sign
+    # outside too (the decimal rule claimed the bare number), and DMS minutes/seconds
+    # ("51°30′N 0°7′W") locked only the leading "51" and "30" — "0°7′W" locked nothing at all,
+    # because a single digit followed by ° and a digit defeats the (?!\w) terminator of the unit
+    # rule. The hemisphere is an optional single letter or the spelled-out word; the terminator is
+    # (?!\w), which is what makes "20°C" fall through to the unit rule untouched — "C" is not a
+    # hemisphere letter. A leading N/S form ("N 37.7749°") is its own branch.
+    (
+        "coordinate",
+        re.compile(
+            r"[-−+]?\b\d{1,3}(?:\.\d+)?\s*°(?:\s*\d{1,2}(?:\.\d+)?\s*['′]\s*)?(?:\s*\d{1,2}(?:\.\d+)?\s*(?:\"|″)\s*)?(?:\s*[NSEW]|\s*(?i:north|south|east|west))?(?!\w)"
+            r"|\b[NSEW]\s*\d{1,3}(?:\.\d+)?\s*°(?!\w)"
         ),
     ),
     # Phone numbers: international E.164, national formats, extensions. A rewrite that changes a
@@ -638,8 +711,15 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     (
         "number",
         re.compile(
-            r"\d[\d,]*(?:\.\d+)?\s*(?:±|\+/-|\+-)\s*\d[\d,]*(?:\.\d+)?"
-            r"|[±∓~≈≃]\s*[-−]?\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
+            # "12 ± 3" locked only "12"; "~500" locked only "500",
+            # dropping the "about" and asserting an exact figure. A LEADING ± was still free: "±5%"
+            # masked to "±⟦HZ0000⟧", so a rewrite could drop the sign and assert an exact value. The
+            # sign is now in the class, and the optional trailing unit keeps "±5%" and "± 2.5 °C"
+            # whole. "5% ± 2%" was the remaining split: both endpoints carried units, the first
+            # branch matched the bare numbers and the ± stayed free — so each endpoint takes its
+            # own optional unit, and the first branch now claims the whole tolerance.
+            r"\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?\s*(?:±|\+/-|\+-)\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
+            r"|(?:[±∓~≈≃]|\+/-)\s*[-−+]?\d[\d,]*(?:\.\d+)?(?:\s*(?:" + _UNIT + r"))?(?!\w)"
         ),
     ),
     # Numbered cross-references and legal citations. "Section 3.2" locked "3.2" alone, so the label
@@ -661,6 +741,16 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
         "identifier",
         re.compile(
             r"#[0-9A-Fa-f]{3,8}\b"
+            # Subscripted and superscripted chemical formulae: CO₂, H₂O, CaCO₃, SO₄²⁻, Fe³⁺.
+            # Subscript digits (U+2080-2089) are NOT \d, so "CO₂ levels rose." locked NOTHING —
+            # the plain branches below all require an ASCII digit and the whole formula stayed
+            # free for the rewriter, while the same formula in ASCII ("CO2") locked whole. The
+            # superscript set must list ¹²³ explicitly (U+00B9/B2/B3) alongside the U+2070 range.
+            # The leading `\d*` carries a coefficient ("2H₂O"). The terminator is (?!\w), NOT \b:
+            # superscript/subscript DIGITS are Unicode word characters, but the charge signs ⁺⁻ are
+            # not, and \b cannot sit between two non-word characters — "SO₄²⁻" matched "SO₄²" and
+            # left the minus free.
+            r"|\b\d*[A-Z][A-Za-z]*(?:[₀-₉]|[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻])[A-Za-z₀-₉⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻₊₋]*(?!\w)"
             # The +/- variants come FIRST: alternation is first-match-wins, so the plain rules
             # below would otherwise take "CD4" and leave the sign outside the lock.
             #
@@ -711,7 +801,7 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
 
 
 def _word_char_share(text: str) -> float:
-    """Fraction of characters that are word characters (regex \w, Unicode-aware)."""
+    r"""Fraction of characters that are word characters (regex \w, Unicode-aware)."""
     if not text:
         return 0.0
     return len(_WORD_CHAR_RE.findall(text)) / len(text)
@@ -721,6 +811,9 @@ _WARNED_NO_NER = False
 # One-time warning gate for the >1MB NER skip (spaCy's hard E088 cap). Separate flag: the
 # "model missing" message and the "text too long" message name different problems.
 _WARNED_SPACY_CAP = False
+# One-time warning gate for the UNTELL_LITE_NO_TORCH NER skip. Separate flag: that skip is a
+# deliberate configuration choice (the env var's documented contract), not a missing model.
+_WARNED_NO_NER_ENV = False
 
 
 def _warn_no_ner() -> None:
@@ -733,6 +826,24 @@ def _warn_no_ner() -> None:
             "quotes and URLs are. Enable it with: python -m spacy download en_core_web_sm"
         )
         _WARNED_NO_NER = True
+
+
+def _warn_no_ner_env() -> None:
+    """Say once that UNTELL_LITE_NO_TORCH=1 skips the NER pass.
+
+    Separate message from `_warn_no_ner`: that one names a missing model, this one names the
+    configuration choice that turned the pass off. The env var is documented (README env table)
+    as "force the pure-stdlib lite path", and `import spacy` pulls torch through thinc — so a
+    run pinned stdlib-only was paying torch's ~20s import anyway, via a warning heuristic.
+    """
+    global _WARNED_NO_NER_ENV
+    if not _WARNED_NO_NER_ENV:
+        logger.warning(
+            "UNTELL_LITE_NO_TORCH=1 skips the spaCy NER pass (spaCy imports torch through "
+            "thinc), so NAMED ENTITIES (people, organisations, places) are NOT being locked — "
+            "only citations, numbers, quotes and URLs are. Unset it to lock entities."
+        )
+        _WARNED_NO_NER_ENV = True
 
 
 # Cached NER: `lock()` runs from the scoring path too (`_mostly_locked_warning` re-locks the text
@@ -767,15 +878,29 @@ _WORD_CHAR_RE = re.compile(r"\w")
 _MIN_WORD_CHAR_SHARE = 0.10
 
 
+def _torch_gated() -> bool:
+    """True when UNTELL_LITE_NO_TORCH=1 pins the pure-stdlib path (see _spacy_entity_spans_impl).
+
+    Read at call time so a test or harness can flip it without reloading the module, and so
+    the NER cache below can key on it: the env gate makes the result a function of the
+    configuration, not just of the text.
+    """
+    return os.environ.get("UNTELL_LITE_NO_TORCH") == "1"
+
+
 def _spacy_entity_spans(text: str) -> list[tuple[int, int]]:
     """Return (start, end) spans for named entities via spaCy, or [] if spaCy is absent."""
     if len(text) > _SPACY_CACHE_MAX_CHARS:
         return _spacy_entity_spans_impl(text)
-    return list(_spacy_entity_spans_cached(text))
+    # The cache key carries the env-gate state: an env-gated run must not populate (or read)
+    # entries computed by a real NER pass, and vice versa. Without the key, a CI run pinned
+    # stdlib-only would cache [] for every text and a later non-gated call (or test) with the
+    # same text would silently get the gated answer.
+    return list(_spacy_entity_spans_cached(text, _torch_gated=_torch_gated()))
 
 
 @lru_cache(maxsize=_SPACY_CACHE_MAXSIZE)
-def _spacy_entity_spans_cached(text: str) -> tuple[tuple[int, int], ...]:
+def _spacy_entity_spans_cached(text: str, _torch_gated: bool) -> tuple[tuple[int, int], ...]:
     return tuple(_spacy_entity_spans_impl(text))
 
 
@@ -787,6 +912,18 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
     # model passes on 10k "$" tokens). Skipping here also avoids the ~5s model import/load for
     # inputs that would never use it.
     if _DEGENERATE_RUN_RE.search(text) or _word_char_share(text) < _MIN_WORD_CHAR_SHARE:
+        return []
+    # UNTELL_LITE_NO_TORCH=1 must keep torch out of the process, not just out of the scoring
+    # math. `import spacy` pulls torch in through thinc (`thinc.compat` imports torch when
+    # installed) — MEASURED at ~22s of module imports on a `.[full]` box, paid by every lite
+    # scoring call (`_mostly_locked_warning` re-locks the text) and by `untell humanize`
+    # under the env var. The same gate already exists in `entailment.available()` and
+    # `roles.available()` (test_lite_env_var_gates_nli_and_roles.py); the NER pass was the
+    # remaining torch importer on the stdlib path. Skip it, say so once.
+    import os
+
+    if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+        _warn_no_ner_env()
         return []
     try:
         nlp = _spacy_entity_spans._nlp  # type: ignore[attr-defined]
@@ -882,7 +1019,7 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
         }
     )
     return [
-        (e.start_char, e.end_char)
+        (e.start_char, _strip_trailing_sentence_punct(text, e.start_char, e.end_char))
         for e in getattr(doc, "ents", [])
         if e.label_ in keep
         and not (
@@ -891,6 +1028,29 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
             and e.text.lower() in _COMMON_WORD_PERSONS
         )
     ]
+
+
+# A sentence's own full stop must stay OUTSIDE an entity lock, the same guard every regex rule in
+# this file carries as a trailing lookbehind. Measured: "Water is H2O. And CO2 rose." locked
+# "H2O." — the model's entity span included the period, so the masked text lost its terminator and
+# sentence splitting downstream under-counted. The period stays in the masked text as free text, so
+# the round trip is untouched; only the lock shrinks.
+#
+# The strip is CONTEXT-SENSITIVE because an abbreviation's own dot is not a terminator: "u.s. small
+# samples" must keep "u.s." whole (a sentinel before a bare dot misleads every guard downstream),
+# while "H2O. And" must keep the full stop outside. The only cases where the trailing punctuation
+# is a sentence end are end-of-text and whitespace + a capital — a new sentence.
+_SENTENCE_PUNCT = set(".,;:!?…")
+_SENTENCE_END_AFTER = re.compile(r"\s+[A-Z]")
+
+
+def _strip_trailing_sentence_punct(text: str, start: int, end: int) -> int:
+    rest = text[end:]
+    if rest and not _SENTENCE_END_AFTER.match(rest):
+        return end  # the punctuation is the entity's own (e.g. "u.s.", "Inc.") — keep it inside
+    while end > start and text[end - 1] in _SENTENCE_PUNCT:
+        end -= 1
+    return end
 
 
 def _collect_labeled_spans(text: str) -> list[tuple[str, int, int]]:
@@ -911,8 +1071,65 @@ def _collect_labeled_spans(text: str) -> list[tuple[str, int, int]]:
     return spans
 
 
+# Invisible carriers that can sit between the components of a fact without changing what
+# the fact is: "5 mg" and "5\u200Fmg" are the same dose, "9:30 AM" and "9:30\u200EAM" the
+# same time. The fact patterns join components with `\s*`, and an invisible carrier is
+# not whitespace — so a bidi control between a number and its unit severed the span.
+# MEASURED before this existed:
+#
+#     "The dose is 5\u200Fmg"                 ->  nothing locked (unit fully rewritable)
+#     "The meeting is at 9:30\u200EAM"        ->  locked "9:30" only, "AM" free
+#     "The rate rose to 42\u200B%"            ->  locked "42" only, "%" free
+#     "The result was p\u200E<0.05"           ->  locked "<0.05" only, "p" free
+#
+# The first two are this file's documented worst case — a sentinel appears, so the span
+# LOOKS protected, while the decision-bearing part stays mutable. This is reachable in
+# the shipped loop: in an RTL document the bidi controls survive scrub_hidden (they are
+# load-bearing there), then lock() runs on the scrubbed text and severs the Latin fact
+# inside it. MEASURED: "الجرعة 5\u200Fملغ والوقت 9:30\u200Fمساءً" masked to "5ملغ"
+# unmasked + "9:30" locked + "مساءً" free.
+#
+# The class is the same carrier set text_split refuses to let hide a sentence boundary
+# (single source, imported above) plus ALM. No variation-selector or tag-character
+# wrinkle applies: inside a fact none of these is load-bearing, so every one of them is
+# transparent to the patterns.
+_CARRIER_BETWEEN = re.compile(
+    "[" + re.escape(_ZERO_WIDTH_BETWEEN + "\u061c") + "]"
+)
+
+
+def _collect_spans_carrier_transparent(text: str) -> list[tuple[int, int]]:
+    """Spans found on a copy of ``text`` with invisible carriers deleted, mapped back.
+
+    The patterns run against the carrier-free view (where "5mg" really is "5mg") and
+    each span is translated back to the ORIGINAL offsets via the position map, so the
+    locked span — and therefore restore() — still carries the exact source characters.
+    The union with the plain-text spans (caller merges) can only WIDEN a lock, never
+    narrow one: a plain-text pass that already locked "9:30" and this pass locking
+    "9:30AM" merge into the full "9:30\u200EAM" span.
+    """
+    if not _CARRIER_BETWEEN.search(text):
+        return []
+    view: list[str] = []
+    orig: list[int] = []
+    for i, ch in enumerate(text):
+        if _CARRIER_BETWEEN.fullmatch(ch):
+            continue
+        view.append(ch)
+        orig.append(i)
+    view_text = "".join(view)
+    out: list[tuple[int, int]] = []
+    for _label, pat in _PATTERNS:
+        for m in pat.finditer(view_text):
+            if m.start() != m.end():
+                out.append((orig[m.start()], orig[m.end() - 1] + 1))
+    return out
+
+
 def _collect_spans(text: str) -> list[tuple[int, int]]:
-    return [(start, end) for _label, start, end in _collect_labeled_spans(text)]
+    spans = [(start, end) for _label, start, end in _collect_labeled_spans(text)]
+    spans.extend(_collect_spans_carrier_transparent(text))
+    return spans
 
 
 def _merge(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
@@ -962,6 +1179,10 @@ def lock(text: str) -> tuple[str, dict[str, str]]:
 # capitals), "e-mail" is fine but "pH" is not. Getting this wrong writes "Doi:10.1000/xyz" into a
 # citation, which is worse than the lowercase sentence it fixes.
 _PLAIN_LOWERCASE_WORD = re.compile(r"^[a-z]+(?=\s|$)")
+# A locked span whose first word is a month or weekday name is a date — only the case-insensitive
+# date rule locks month-led spans — and the date rule captures whatever casing the author used.
+# Capitalising "march 15, 2024" at restore changes the round trip; see _capitalise.
+_MONTH_OR_WEEKDAY_START = re.compile(r"^(?:" + _MONTH + r"|" + _WEEKDAY + r")\b", re.IGNORECASE)
 # Sentinel at the very start, or following a sentence terminator — i.e. where a capital belongs.
 _SENTINEL_AT_SENTENCE_START = re.compile(r"(?:^|(?<=[.!?])\s+)(⟦HZ\d{4,}⟧)")
 # ...except after an ordered-list marker, whose "." is not a sentence terminator. MEASURED on this
@@ -1006,6 +1227,14 @@ def restore(masked: str, mapping: dict[str, str]) -> str:
     def _capitalise(m: re.Match) -> str:
         span = mapping.get(m.group(1))
         if not (span and _PLAIN_LOWERCASE_WORD.match(span)):
+            return m.group(0)
+        # A date the case-insensitive date rule locked ("march 15, 2024", "saturday ...") must not
+        # be capitalised just because it opens the text: restore(lock(t)) would then return a
+        # changed document from a round trip in which nothing was rewritten, the exact failure the
+        # list-marker guard below was written to prevent. The month/weekday name is already the
+        # casing the author wrote, and only a span the rewrite MOVED to a sentence start deserves
+        # the capital — restore cannot tell the two apart, so dates keep their author's casing.
+        if _MONTH_OR_WEEKDAY_START.match(span):
             return m.group(0)
         # The "." of "1." terminates a list marker, not a sentence.
         line_start = m.string.rfind("\n", 0, m.start()) + 1
