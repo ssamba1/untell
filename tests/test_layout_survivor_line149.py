@@ -38,3 +38,22 @@ class TestFrontMatterBoundary:
         # The blank line after --- should be layout
         assert not mask[0], "first line (---) must be layout"
         assert not mask[1], "second line (---) must be layout"
+
+    def test_a_dot_closer_still_closes_front_matter_as_layout(self):
+        """YAML front matter may close with `...` as well as `---`.
+
+        The line-203 `<=` survivor resurfaced after the thematic-break branch landed:
+        a `---` closer now lands in the HR branch and is layout either way, so the
+        empty-front-matter tests cannot distinguish `<=` from `<`. The `...` closer
+        has no other branch — under the mutant it falls through to prose and becomes
+        a transformable block. MEASURED with the mutant applied:
+        blocks('---\\ntitle: X\\n...\\nprose') -> ['...', 'prose'] (mutant) vs
+        ['prose'] (original).
+        """
+        from untell.layout import blocks
+
+        text = "---\ntitle: X\n...\nprose here. More."
+        assert blocks(text) == ["prose here. More."], blocks(text)
+        segs = list(_segments(text))
+        kinds = [kind for kind, _, _ in segs]
+        assert kinds == ["layout", "layout", "layout", "prose"], kinds
