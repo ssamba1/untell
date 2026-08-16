@@ -282,6 +282,40 @@ def lite_score(text: str) -> float | None:
     return clamp01(max(rep, 0.6 * burst_signal + 0.4 * common_signal))
 
 
+def _per_sentence_means(
+    nll, offsets, bounds: list[tuple[int, int]], min_tokens: int = 3
+) -> list[float]:
+    """Mean in-context surprisal per sentence, from the token NLL/offset arrays.
+
+    ``nll[i]`` is the surprisal of the token spanning ``offsets[i]`` (a ``(start,
+    end)`` char pair); ``bounds`` are the sentences' char spans. Only tokens whose
+    span lies INSIDE a sentence contribute to its mean (a token crossing the
+    boundary belongs to neither), and zero-width tokens (``b == a``) never count.
+    Sentences with fewer than ``min_tokens`` tokens produce no value — too little
+    evidence for a mean that feeds a burstiness term.
+
+    The first version of this walked every token for every sentence — O(S*T) —
+    and on a 3,900-token HC3 document with ~150 sentences that measured 2.1 s of
+    pure Python beside a model pass of the same order (slice-5 profile). Token
+    offsets are emitted in document order, so each sentence's tokens form one
+    CONTIGUOUS index range: two binary searches per sentence instead of a full
+    scan, with the same predicate, the same token order and the same float values.
+    """
+    import bisect
+
+    starts = [a for a, _b in offsets]
+    ends = [b for _a, b in offsets]
+    nll_vals = nll.tolist() if hasattr(nll, "tolist") else list(nll)
+    per_sent: list[float] = []
+    for start, end in bounds:
+        lo = bisect.bisect_left(starts, start)  # first token starting at/after the sentence
+        hi = bisect.bisect_right(ends, end)     # first token ending after the sentence
+        vals = [nll_vals[k] for k in range(lo, hi) if ends[k] > starts[k]]
+        if len(vals) >= min_tokens:
+            per_sent.append(sum(vals) / len(vals))
+    return per_sent
+
+
 class PerplexityBurstinessDetector:
     """Adapter: GPT-2 perplexity+burstiness when torch is present, else lite heuristic."""
 
@@ -443,11 +477,7 @@ class PerplexityBurstinessDetector:
                 continue
             bounds.append((idx, idx + len(s)))
             pos = idx + len(s)
-        per_sent: list[float] = []
-        for start, end in bounds:
-            vals = [float(v) for v, (a, b) in zip(nll, offsets) if a >= start and b <= end and b > a]
-            if len(vals) >= 3:
-                per_sent.append(sum(vals) / len(vals))
+        per_sent = _per_sentence_means(nll, offsets, bounds)
         if len(per_sent) >= 2:
             m = sum(per_sent) / len(per_sent)
             spread = math.sqrt(sum((x - m) ** 2 for x in per_sent) / len(per_sent))

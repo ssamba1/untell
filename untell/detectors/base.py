@@ -201,6 +201,71 @@ def _piece_weight(piece: str) -> int:
     return max(1, len(piece)) + 1
 
 
+def _window_parts(text: str, window_words: int = WINDOW_WORDS) -> list[str]:
+    """Split normalised text into scoring windows, sharing ONE packing rule.
+
+    Extracted from ``windowed_max`` so the batched adapters pack windows with
+    exactly the boundaries the per-window path uses — a batched forward must
+    score the SAME windows or ``max`` sees different candidates. Returns
+    ``[text]`` when the text fits one window, preserving the single-call fast
+    path (line structure intact).
+    """
+    from untell.text_split import split_sentences
+
+    if _piece_weight(text) <= window_words:
+        return [text]
+    windows: list[str] = []
+    current: list[str] = []
+    count = 0
+    for sentence in split_sentences(text) or [text]:
+        # A "sentence" wider than the whole window can never be packed into one — the `current and`
+        # guard below skips the size test for it — so it used to pass through whole and the
+        # adapter's own truncation=True discarded everything past ~380 words. That is not an exotic
+        # case: any text without sentence terminators is a single "sentence", which covers
+        # transcripts, bullet lists, headings-only outlines, semicolon run-ons and one very long
+        # sentence. MEASURED before, at a 320-word window:
+        #     1600-word bullet list      -> 1 window of 1600 words
+        #     1200-word transcript       -> 1 window of 1200 words
+        #      900-word run-on sentence  -> 1 window of  900 words
+        # Each was then read only as far as the adapter's truncation allowed, and scored
+        # confidently on that fraction — the exact failure windowing exists to prevent.
+        for piece in _split_to_width(sentence, window_words):
+            n = _piece_weight(piece)
+            if current and count + n > window_words:
+                windows.append(" ".join(current))
+                current, count = [], 0
+            current.append(piece)
+            count += n
+    if current:
+        windows.append(" ".join(current))
+    return windows
+
+
+def batched_windowed_max(
+    text: str,
+    score_batch,
+    window_words: int = WINDOW_WORDS,
+    batch_size: int = 8,
+) -> float | None:
+    """``windowed_max`` for adapters that can score several windows in ONE model call.
+
+    ``score_batch(windows)`` must return one score per window, in order (``None``
+    = no signal for that window, exactly like the per-window scorer). Windows are
+    packed identically to ``windowed_max``; the batched forward must be
+    per-sample identical to the single-sample forward (true for transformer
+    models with an attention mask — no cross-sample interaction), so the returned
+    ``max`` is the same number either way, at a fraction of the model calls.
+    """
+    text = normalise_for_scoring(text)
+    windows = _window_parts(text, window_words)
+    best: float | None = None
+    for i in range(0, len(windows), batch_size):
+        for s in score_batch(windows[i : i + batch_size]):
+            if s is not None and s == s and (best is None or s > best):
+                best = s
+    return best
+
+
 def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> float | None:
     """Score long text in windows and return the HIGHEST window score.
 
@@ -232,42 +297,13 @@ def windowed_max(text: str, score_window, window_words: int = WINDOW_WORDS) -> f
     so the other windows' scores could be cached and reused. Not done here because it needs its own
     correctness check — the ensemble max may come from a window the edit never touched.
     """
-    from untell.text_split import split_sentences
-
     # Normalised HERE because this is the one function every windowing adapter routes its input
     # through, and doing it per adapter is how six get it and the seventh does not. The word count
     # below depends on it too: a soft hyphen between every character turned a 209-word document
     # into 889 "words", which re-windows the text as well as corrupting the score.
     text = normalise_for_scoring(text)
 
-    if _piece_weight(text) <= window_words:
-        return score_window(text)
-
-    windows: list[str] = []
-    current: list[str] = []
-    count = 0
-    for sentence in split_sentences(text) or [text]:
-        # A "sentence" wider than the whole window can never be packed into one — the `current and`
-        # guard below skips the size test for it — so it used to pass through whole and the
-        # adapter's own truncation=True discarded everything past ~380 words. That is not an exotic
-        # case: any text without sentence terminators is a single "sentence", which covers
-        # transcripts, bullet lists, headings-only outlines, semicolon run-ons and one very long
-        # sentence. MEASURED before, at a 320-word window:
-        #     1600-word bullet list      -> 1 window of 1600 words
-        #     1200-word transcript       -> 1 window of 1200 words
-        #      900-word run-on sentence  -> 1 window of  900 words
-        # Each was then read only as far as the adapter's truncation allowed, and scored
-        # confidently on that fraction — the exact failure windowing exists to prevent.
-        for piece in _split_to_width(sentence, window_words):
-            n = _piece_weight(piece)
-            if current and count + n > window_words:
-                windows.append(" ".join(current))
-                current, count = [], 0
-            current.append(piece)
-            count += n
-    if current:
-        windows.append(" ".join(current))
-
+    windows = _window_parts(text, window_words)
     scores = [s for s in (score_window(w) for w in windows if w.strip())
               if s is not None and s == s]  # drop NaN windows: max() with a NaN is order-dependent
     return max(scores) if scores else None

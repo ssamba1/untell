@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import math
 
-from .base import clamp01, windowed_max
+from .base import batched_windowed_max, clamp01
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +76,53 @@ class FastDetectGPTDetector:
 
         if FastDetectGPTDetector._model is None:
             FastDetectGPTDetector._tokenizer = AutoTokenizer.from_pretrained(_SCORING_MODEL)
+            # GPT-Neo ships without a pad token; batched scoring pads with it (its
+            # logits are masked out before any mean, so scores are unaffected).
+            if FastDetectGPTDetector._tokenizer.pad_token is None:
+                FastDetectGPTDetector._tokenizer.pad_token = FastDetectGPTDetector._tokenizer.eos_token
             FastDetectGPTDetector._model = AutoModelForCausalLM.from_pretrained(_SCORING_MODEL).eval()
         return FastDetectGPTDetector._tokenizer, FastDetectGPTDetector._model
+
+    def _score_batch(self, windows: list[str]) -> list[float | None]:
+        """Fast-DetectGPT discrepancy per window from ONE batched forward.
+
+        Windows are tokenised together with per-window truncation at 512 tokens
+        (identical to the single-window path) and padded to the longest in the
+        batch. With the attention mask, every sample's logits are the same as a
+        single-sample forward, so each window's discrepancy is unchanged; padding
+        positions are excluded from the per-window mean.
+        """
+        import torch
+
+        tok, model = self._load()
+        enc = tok(windows, return_tensors="pt", truncation=True, max_length=512,
+                  padding="longest")
+        ids, mask = enc["input_ids"], enc["attention_mask"]
+        valid = [i for i in range(ids.shape[0]) if ids[i].shape[0] >= 2]
+        out: list[float | None] = [None] * len(windows)
+        if not valid:
+            return out
+        # drop <2-token windows from the batch (they abstain, as in the single path)
+        ids = ids[valid]
+        mask = mask[valid]
+        with torch.no_grad():
+            logits = model(ids, attention_mask=mask).logits[:, :-1, :]
+            labels = ids[:, 1:]
+            lprobs = torch.log_softmax(logits, dim=-1)
+            # Log-prob the model assigns to the *actual* next tokens.
+            actual = lprobs.gather(-1, labels.unsqueeze(-1)).squeeze(-1)
+            # Expected log-prob and its variance under the model's own distribution.
+            probs = lprobs.exp()
+            mean_ref = (probs * lprobs).sum(-1)
+            var_ref = (probs * (lprobs - mean_ref.unsqueeze(-1)) ** 2).sum(-1)
+            # Conditional-probability curvature (Fast-DetectGPT discrepancy), per row.
+            disc = (actual - mean_ref) / torch.sqrt(var_ref + 1e-8)
+            lm = mask[:, 1:].to(disc.dtype)  # 1 where a real label exists
+            disc = (disc * lm).sum(-1) / lm.sum(-1).clamp(min=1.0)
+        for j, i in enumerate(valid):
+            # Higher discrepancy => more AI-like; squash to [0, 1].
+            out[i] = 1.0 / (1.0 + math.exp(-(float(disc[j]) - _CAL_MID) / _CAL_SCALE))
+        return out
 
     def score(self, text: str) -> float | None:
         if FastDetectGPTDetector._dead:
@@ -85,9 +130,9 @@ class FastDetectGPTDetector:
         if not text.strip():
             return None
         try:
-            import torch
+            import torch  # noqa: F401
 
-            tok, model = self._load()
+            self._load()
         except Exception as exc:
             FastDetectGPTDetector._dead = True
             if not FastDetectGPTDetector._warned:
@@ -98,26 +143,9 @@ class FastDetectGPTDetector:
                 )
                 FastDetectGPTDetector._warned = True
             raise
-        def _one(window: str) -> float | None:
-            enc = tok(window, return_tensors="pt", truncation=True, max_length=512)
-            ids = enc["input_ids"]
-            if ids.shape[1] < 2:
-                return None
-            with torch.no_grad():
-                logits = model(ids).logits[:, :-1, :]
-                labels = ids[:, 1:]
-                lprobs = torch.log_softmax(logits, dim=-1)
-                # Log-prob the model assigns to the *actual* next tokens.
-                actual = lprobs.gather(-1, labels.unsqueeze(-1)).squeeze(-1)
-                # Expected log-prob and its variance under the model's own distribution.
-                probs = lprobs.exp()
-                mean_ref = (probs * lprobs).sum(-1)
-                var_ref = (probs * (lprobs - mean_ref.unsqueeze(-1)) ** 2).sum(-1)
-                # Conditional-probability curvature (Fast-DetectGPT discrepancy).
-                discrepancy = ((actual - mean_ref) / torch.sqrt(var_ref + 1e-8)).mean().item()
-            # Higher discrepancy => more AI-like; squash to [0, 1].
-            return 1.0 / (1.0 + math.exp(-(discrepancy - _CAL_MID) / _CAL_SCALE))
-
         # Windowed: truncation at 512 tokens made everything past ~380 words invisible.
-        score = windowed_max(text, _one)
+        # batch_size=4: the discrepancy math materialises ~50k-wide probability tensors
+        # per row, so memory grows faster than speed past 4 windows (MEASURED on
+        # hc3-long: 4->10.8s/3.4GB, 8->11.3s/5.1GB); 4 is the elbow.
+        score = batched_windowed_max(text, self._score_batch, batch_size=4)
         return None if score is None else clamp01(score)

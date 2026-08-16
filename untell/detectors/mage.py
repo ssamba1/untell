@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from .base import clamp01, windowed_max
+from .base import batched_windowed_max, clamp01
 
 logger = logging.getLogger(__name__)
 
@@ -75,34 +75,19 @@ class MageDetector:
             MageDetector._tok, MageDetector._model = tok, model.eval()
         return MageDetector._tok, MageDetector._model
 
-    def score(self, text: str) -> float | None:
-        if MageDetector._dead:
-            return None
-        if not text.strip():
-            return None
-        try:
-            tok, model = self._load()
-        except Exception as exc:
-            # Any load failure: disable and EXCLUDE this detector — never fold in a fake neutral 0.5
-            # that would silently pin the ensemble max.
-            MageDetector._dead = True
-            if not MageDetector._warned:
-                logger.warning(
-                    "mage failed to load and was EXCLUDED from the ensemble "
-                    "(%s: %s). Often a NumPy 2.x / huggingface_hub mismatch - see README troubleshooting.",
-                    type(exc).__name__, str(exc)[:140],
-                )
-                MageDetector._warned = True
-            raise
+    def _score_batch(self, windows: list[str]) -> list[float | None]:
+        """MAGE P(AI) per window from ONE batched forward.
+
+        Windows are tokenised with per-window truncation at 1024 tokens (identical
+        to the single-window path) and padded to the longest in the batch; with the
+        attention mask every sample's logits are the same as a single-sample
+        forward. If the tokenizer cannot produce tensors for a batch — e.g. a
+        stubbed seam in a test — scoring falls back to one forward per window,
+        which is exactly the pre-batch behaviour.
+        """
         import torch
 
-        # Windowed at 1024 tokens (~750 words) for the same reason as the other adapters: past its
-        # limit the text was silently discarded, so a long document was scored on its opening.
-        def _probs(window: str):
-            inputs = tok(window, return_tensors="pt", truncation=True, max_length=1024)
-            with torch.no_grad():
-                return torch.softmax(model(**inputs).logits, dim=-1)[0]
-
+        tok, model = self._load()
         id2label = model.config.id2label  # str-keyed after _load()
         # MAGE label convention: "machine-generated" (or LABEL_0 in some exports) == AI.
         ai_idx = next(
@@ -123,8 +108,56 @@ class MageDetector:
                 None,
             )
             if human_idx is None:
-                return None
-            p = windowed_max(text, lambda w: 1.0 - float(_probs(w)[human_idx]), 700)
-            return None if p is None else clamp01(p)
-        p = windowed_max(text, lambda w: float(_probs(w)[ai_idx]), 700)
+                return [None] * len(windows)
+            idx, flip = human_idx, True
+        else:
+            idx, flip = ai_idx, False
+        try:
+            encs = [tok(w, return_tensors="pt", truncation=True, max_length=1024) for w in windows]
+            maxlen = max(e["input_ids"].shape[1] for e in encs)
+            pad = torch.nn.functional.pad
+            ids = torch.cat([pad(e["input_ids"], (0, maxlen - e["input_ids"].shape[1])) for e in encs], dim=0)
+            mask = torch.cat(
+                [pad(torch.ones_like(e["input_ids"]), (0, maxlen - e["input_ids"].shape[1])) for e in encs],
+                dim=0,
+            )
+        except Exception:
+            return [self._score_one(w, idx, flip) for w in windows]
+        with torch.no_grad():
+            probs = torch.softmax(model(ids, attention_mask=mask).logits, dim=-1)
+        p = probs[:, idx] if not flip else 1.0 - probs[:, human_idx]
+        return [float(x) for x in p]
+
+    def _score_one(self, window: str, idx: int, flip: bool) -> float:
+        """Single-window P(AI) — the fallback (and the pre-batch) path."""
+        import torch
+
+        tok, model = self._load()
+        inputs = tok(window, return_tensors="pt", truncation=True, max_length=1024)
+        with torch.no_grad():
+            probs = torch.softmax(model(**inputs).logits, dim=-1)[0]
+        return float(probs[idx]) if not flip else 1.0 - float(probs[idx])
+
+    def score(self, text: str) -> float | None:
+        if MageDetector._dead:
+            return None
+        if not text.strip():
+            return None
+        try:
+            self._load()
+        except Exception as exc:
+            # Any load failure: disable and EXCLUDE this detector — never fold in a fake neutral 0.5
+            # that would silently pin the ensemble max.
+            MageDetector._dead = True
+            if not MageDetector._warned:
+                logger.warning(
+                    "mage failed to load and was EXCLUDED from the ensemble "
+                    "(%s: %s). Often a NumPy 2.x / huggingface_hub mismatch - see README troubleshooting.",
+                    type(exc).__name__, str(exc)[:140],
+                )
+                MageDetector._warned = True
+            raise
+        # Windowed at 1024 tokens (~750 words) for the same reason as the other adapters: past its
+        # limit the text was silently discarded, so a long document was scored on its opening.
+        p = batched_windowed_max(text, self._score_batch, 700)
         return None if p is None else clamp01(p)
