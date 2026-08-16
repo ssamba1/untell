@@ -56,10 +56,26 @@ _UT = re.escape(_UNICODE_TERMINATORS)
 # scrubs (no legitimate variation selector follows a full stop). The splitter does NOT
 # remove them — ZWJ is load-bearing inside emoji sequences — it only refuses to let an
 # invisible character hide a boundary the author wrote.
+#
+# The bidi controls (LRM/RLM/LRE/RLE/PDF/LRO/RLO/LRI/RLI/FSI/PDI) and ALM (U+061C) were
+# missing from that class while scrub_hidden strips every one of them as a carrier in
+# Latin text — the class's own docstring claimed parity with the scrub set and did not
+# deliver it. MEASURED before they were added:
+#
+#     split_sentences('First sentence.\u200FSecond sentence starts here.')  ->  ONE sentence
+#     split_sentences('First sentence.\u2067Second sentence starts here.')  ->  ONE sentence
+#
+# ...while ZWSP in the same position split into two. In RTL text a bidi control after a
+# period is doing LAYOUT work, not hiding the boundary — the author still wrote a period
+# — so splitting is correct in both registers, exactly as the ZWSP rule treats a
+# variation selector: the splitter sees through it without removing it.
 _ZERO_WIDTH_BETWEEN = (
     "\u200b\u200c\u200d\u2060\ufeff"  # ZWSP, ZWNJ, ZWJ, word joiner, BOM
     "\u2061\u2062\u2063\u2064"  # invisible math operators
     "\ufe00\ufe01\ufe02\ufe03\ufe04\ufe05\ufe06\ufe07\ufe08\ufe09\ufe0a\ufe0b\ufe0c\ufe0d\ufe0e\ufe0f"  # variation selectors
+    # bidi controls: LRM RLM, the four embedding overrides LRE/RLE/LRO/RLO + PDF,
+    # the three isolates LRI/RLI/FSI + PDI, and the Arabic Letter Mark.
+    "\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069\u061c"
 )
 _ZERO_WIDTH_CLASS = re.escape(_ZERO_WIDTH_BETWEEN)
 
