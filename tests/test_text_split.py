@@ -186,3 +186,99 @@ class TestSentencesThatEndInsideAQuoteOrBracket:
             '(He said "Done.")',
             "Next up.",
         ]
+
+
+class TestLatinAbbreviationsInOtherRegisters:
+    """`etc.`/`vs.`/`cf.`/`approx.` were in the dictionary; the Latin abbreviations other
+    registers carry were not, and each shred fed a one-word fragment to per-sentence
+    scoring and the targeted rewriter. MEASURED before the fix (probe slice-4):
+
+        "Founded ca. 1850. The city grew fast."  -> 'Founded ca.' + '1850.' + 'The city...'
+        "See Smith, op. cit. p. 4. The claim."   -> 'op.' + 'cit.' + 'p. 4.' + 'The claim.'
+
+    Each case below is now one citation/dating unit plus the sentence that follows.
+    """
+
+    @pytest.mark.parametrize(
+        "text,expected",
+        [
+            ("Founded ca. 1850. The city grew fast.", 2),
+            ("Founded ca. 1850 and still standing. Truly.", 2),
+            ("Three items, viz. alpha, beta, gamma. All were used.", 2),
+            ("NB. the result matters. Read on.", 2),
+            ("See Smith, op. cit. p. 4. The claim holds.", 2),
+            ("Apples, pears, etc. are fruits. Oranges too.", 2),
+        ],
+    )
+    def test_a_latin_abbreviation_unit_stays_together(self, text, expected):
+        out = split_sentences(text)
+        assert len(out) == expected, out
+        assert all(s.strip() for s in out)
+
+    def test_the_new_latin_abbreviations_are_recognised(self):
+        from untell.text_split import ends_with_abbreviation
+
+        for word in ("ca.", "viz.", "nb.", "op.", "cit."):
+            assert ends_with_abbreviation(word), word
+
+
+class TestFootnoteMarkersDoNotHideTheBoundary:
+    """A footnote marker between the terminator and the next sentence is not a closer, so
+    the old splitter read "significant.[1] However" as ONE sentence. MEASURED before the
+    fix (probe slice-4): bracket, superscript and dagger forms all under-split — an
+    under-count that feeds burstiness CV, per-sentence scoring and the rewriter's unit
+    of work. The marker stays with the sentence that ends, and a LOWERCASE continuation
+    merges back (the marker belongs to the first sentence, same as the quoted-period
+    rule); a capitalised continuation keeps the split.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "The result was significant.[1] However, the effect vanished.",
+            "The result was significant.[12] However, the effect vanished.",
+            "The result was significant.¹ However, the effect vanished.",
+            "The result was significant.† However, the effect vanished.",
+            "Both results were significant.[1][2] Yet the story differs.",
+            "The result was significant[1]. However, the effect vanished.",
+        ],
+    )
+    def test_a_footnote_marked_boundary_still_splits(self, text):
+        assert len(split_sentences(text)) == 2, split_sentences(text)
+
+    def test_a_lowercase_continuation_after_a_footnote_merges_back(self):
+        assert split_sentences("The result was significant.[1] but only marginally.") == [
+            "The result was significant.[1] but only marginally."
+        ]
+
+    def test_the_marker_stays_with_the_sentence_that_ends(self):
+        out = split_sentences("The result was significant.[1] However, the effect vanished.")
+        assert out[0] == "The result was significant.[1]"
+        assert out[1] == "However, the effect vanished."
+
+
+class TestNestedQuotes:
+    """A quote inside a quote: the inner period's case rule must see the continuation the
+    OUTER quote frames. A lowercase continuation merges back into one sentence; two
+    sentences inside the quoted speech stay two, with the outer quote markers riding the
+    fragments. Both behaviours were verified by probe before being pinned here.
+    """
+
+    def test_a_lowercase_continuation_after_an_inner_quote_merges(self):
+        assert split_sentences('''He said "She told me 'no.' and left."''') == [
+            '''He said "She told me 'no.' and left."'''
+        ]
+
+    def test_two_sentences_inside_the_quoted_speech_stay_two(self):
+        # The outer quote is still open at the inner boundary, so the closer stays on
+        # the second fragment; the inner closer rides the first fragment.
+        assert split_sentences('''He said "She told me 'no.' Then she left."''') == [
+            """He said "She told me 'no.'""",
+            '''Then she left."''',
+        ]
+
+    def test_an_inner_quote_with_both_closers_splits_after_the_outer_closer(self):
+        assert split_sentences('''He said "She told me 'no.'" Then he left.''') == [
+            '''He said "She told me 'no.'"''',
+            "Then he left.",
+        ]
