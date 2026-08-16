@@ -50,9 +50,12 @@ _UNHOMOGLYPH.update({
 # NOTE: U+200D (ZWJ) and the variation selectors (incl. U+FE0F) are deliberately NOT listed — they
 # are load-bearing in emoji sequences (👨‍👩‍👧‍👦, ❤️) and several scripts, so stripping them would
 # corrupt real user text. Bidi format marks are likewise preserved by the Cf-aware filter below.
+# Unicode tag characters are handled by `_strip_orphan_tags` rather than here: they are the
+# invisible watermark carrier THIS line used to strip, but a tag char inside a complete emoji
+# tag sequence (U+1F3F4 + tags + CANCEL TAG — the England/Scotland/Wales flags) is load-bearing
+# and stripping it corrupts the flag. See the MEASURED note there.
 _WATERMARK_CHARS = re.compile(
     "[​‌⁠﻿]"  # zero-width space / non-joiner / word-joiner / BOM (ZWNBSP)
-    "|[\U000e0000-\U000e007f]"  # Unicode tag chars (used for invisible-tag watermarks)
     # Invisible math operators (U+2061 FUNCTION APPLICATION .. U+2064 INVISIBLE PLUS). These are
     # category Cf, so the "keep Cf for bidi layout" rule below was blanket-preserving them — but
     # unlike bidi marks they have NO legitimate role in prose, only in mathematical markup. They are
@@ -85,6 +88,7 @@ _WATERMARK_CHARS = re.compile(
 # scoring and the tell catalogue already import — this file once carried its own byte-identical
 # copy, which is exactly the "second copy" docs/free-ceiling-measured.md says must not exist.
 from untell.text_split import fold_unicode_spaces  # noqa: E402
+
 # U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR are categories Zl and Zp, not Zs, so they
 # fall through the class above and through score.py's `_INVISIBLE_RE` -- which made them the one
 # whitespace family that survived a scrub AND raised no caveat.
@@ -303,6 +307,43 @@ def _strip_orphan_zwj(text: str) -> str:
     return "".join(out)
 
 
+# Unicode tag characters (U+E0000..U+E007F). A LONE tag char renders as nothing and is the
+# classic invisible watermark carrier — "invisible-tag watermarks". But a tag char inside a
+# COMPLETE emoji tag sequence is load-bearing: UAX #51 tag sequences are how the England,
+# Scotland and Wales flags are written —
+#
+#     🏴󠁧󠁢󠁥󠁮󠁧󠁿  =  U+1F3F4 WAVING BLACK FLAG + tag letters g b e n g + U+E007F CANCEL TAG
+#
+# and stripping the tags turns the flag into a bare black flag. MEASURED before this existed:
+#
+#     scrub_hidden("Team 🏴󠁧󠁢󠁥󠁮󠁧󠁿 won")   ->  "Team 🏴 won"      (England flag destroyed)
+#     scrub_hidden("Team 🏴󠁧󠁢󠁳󠁣󠁴󠁿 won")   ->  "Team 🏴 won"      (Scotland flag destroyed)
+#     count_hidden("Team 🏴󠁧󠁢󠁥󠁮󠁧󠁿 won")  ->  6                 (reported as 6 hidden chars)
+#
+# Same rule as the bidi marks and the scripted marks, one level up: the character is not the
+# problem, the absence of anything for it to act on is. A tag char completing a flag sequence
+# is doing work; the same codepoint in plain Latin prose is payload.
+#
+# A complete tag sequence is: WAVING BLACK FLAG base + one or more tag chars (U+E0020..U+E007E)
+# + the CANCEL TAG (U+E007F). Any tag char outside such a run is stripped. The base itself is
+# a legitimate emoji and always survives.
+_TAG_CHAR_RE = re.compile("[\U000e0000-\U000e007f]")
+_FLAG_TAG_SEQUENCE_RE = re.compile(r"\U0001F3F4[\U000e0020-\U000e007e]+\U000e007f")
+
+
+def _strip_orphan_tags(text: str) -> str:
+    """Drop tag characters unless they are part of a complete emoji tag sequence."""
+    if not _TAG_CHAR_RE.search(text):
+        return text
+    protected: set[int] = set()
+    for m in _FLAG_TAG_SEQUENCE_RE.finditer(text):
+        protected.update(range(m.start(), m.end()))
+    return "".join(
+        ch for i, ch in enumerate(text)
+        if i in protected or not _TAG_CHAR_RE.fullmatch(ch)
+    )
+
+
 def scrub_hidden(text: str) -> str:
     """Remove invisible watermark/steganography characters and normalize confusables to ASCII.
 
@@ -326,6 +367,10 @@ def scrub_hidden(text: str) -> str:
     and RLE/PDF and FSI/PDI pairs, all survive unchanged; an RLM between two ASCII words does not.
     """
     text = _WATERMARK_CHARS.sub("", text)
+    # Tag chars are context-dependent: complete emoji tag sequences (flags) are load-bearing,
+    # lone tag chars are watermark payload. Previously the blanket class above stripped BOTH —
+    # MEASURED: the England flag 🏴󠁧󠁢󠁥󠁮󠁧󠁿 came back as a bare black flag 🏴.
+    text = _strip_orphan_tags(text)
     text = fold_unicode_spaces(text)
     # After the space class, so a Zl/Zp separator becomes a real line break rather than
     # being collapsed into a space by the line above.
