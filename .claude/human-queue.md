@@ -1082,3 +1082,102 @@ NEXT   Smallest candidate: after an iteration whose every draw left the input te
        nothing was adopted, stop with stopped="stalled_noop" for rewriters whose draws are
        deterministic given (input, RNG state) — but verify on RAID + a policy/LLM rewriter that
        no later-iteration adoption is lost. Needs a probe over more corpora before shipping.
+
+## 2026-08-16 wave 4 slice 1 (issue #41) — AMBER — ruff debt resolved: shipped code zero, probes exempted by policy
+
+WHAT   Issue #41's three acceptance points are shipped. (1) Shipped-code gate is green:
+       `ruff check untell/ tests/ scripts/` exits 0. Fixed the 11 errors that remained after
+       fca0c0c: unused imports (tests/test_batched_windowed_max.py math, tests/test_server_soak.py
+       sys, .claude/collect_swarm.py sys), B007 loop vars (batched_windowed_max `w`,
+       cli_conformance_matrix `i`), F541 placeholder-less f-strings (bidi test x2, emoji test x2),
+       W605 in test_carriers docstring `\s` and the long-tracked untell/text_split.py:246 `\]`
+       (non-raw segment made raw; the wave-3 slice-9 NEXT asked to confirm this one), F841 dead
+       assignment (score-cache test `real`). (2) The 718 probe errors across 269 tracked
+       .claude/probes/*.py get a documented per-file exemption policy — the option the issue
+       acceptance explicitly allows: pyproject.toml gains
+       `[tool.ruff.lint.per-file-ignores] ".claude/probes/*.py" = ["ALL"]`; rationale documented
+       in .claude/probes/RUFF-POLICY.md; tests/test_probe_ruff_policy.py asserts the policy lists
+       every exempted file (every *.py under probes matches a pattern, no dead patterns, and
+       `ruff check .` exits 0 when ruff is installed). Chose per-file-ignores over the slice-9
+       NEXT's extend-exclude option so .claude tooling (guard.py, audit_next.py, collect_swarm.py)
+       stays linted and `ruff check .` remains a working tripwire for everything except probes.
+       (3) ci.yml gains a dedicated `ruff` job (runs both `ruff check untell/ tests/ scripts/` and
+       `ruff check .`); the lite job's old `Lint` step moved into it; the pre-commit job comment
+       updated accordingly.
+RAN    ./.venv/Scripts/python.exe -m ruff check untell/ tests/ scripts/ ; -m ruff check . ;
+       pytest tests/test_probe_ruff_policy.py + the 8 touched test files (targeted)
+SAW    ruff check untell/ tests/ scripts/ -> "All checks passed!" (exit 0); ruff check . ->
+       "All checks passed!" (exit 0) with the exemption policy; probe debt left in place
+       (718 errors) but now explicit, documented, and drift-tested.
+WHY    AMBER: >3-file refactor (11 lint fixes + pyproject + new policy doc + new test + ci.yml).
+       No published numbers, dependencies, or test skip/xfail lines touched; probe files
+       themselves untouched (autofixing 581 errors would churn 259 tracked scripts and can change
+       probe behaviour via import side effects — documented in RUFF-POLICY.md).
+NEXT   None required for #41. If the probes debt should ever be FIXED rather than exempted,
+       `ruff check .claude/probes --fix` clears 581 of 718 errors; the remaining ~137 (E402/E701/
+       E702/B007/B023/E731/E741/F841) need per-file manual work — the policy doc records this.
+
+
+## 2026-08-16 wave 4 slice 4 (issue #13) — RED — ROADMAP.md claims 80 attributed claims; audit measures 158
+
+WHAT   ROADMAP.md line 158 says "Currently: 80 claims attributed, 0 unattributed." The audit it
+       describes has grown: 158 claims attributed, 0 unattributed. Verified 2026-08-16 with the
+       exact command the ROADMAP describes. All 12 ROADMAP ✅ done items (status table rows 1-12)
+       verified against live code in this slice (grep + real runs: untell-audit 40 checks,
+       tests/test_everything_registered_can_fire.py 27 passed, latex+languages batch 77 passed,
+       test_roadmap_status.py 9 passed, live Korean/Chinese language-gate probe, untell-latex
+       --help shows --bib/--against, prefers-tells flag present, composite default best_of=3,
+       tells.py 29-pattern catalogue + HC3/RAID measurement header, docs/index.md measurement-log
+       section). Guard does NOT block ROADMAP.md (empirically tested: exit 0 "clean") but the
+       number is a published measured count and the repo's established repair for it is the
+       HUMAN-run `untell-audit --fix-counts`, so the edit is queued rather than made.
+RAN    ./.venv/Scripts/python.exe -m untell.scripts.audit --json   (PYTHONPATH cleared)
+SAW    "attributed_claims": 158, "unattributed_claims": []; 38/40 checks ok. The 2 failures are
+       in guard-RED docs (why-best: 518 vs 555 test modules; census: 6930 vs 8655 tests) and are
+       separately queued — not ROADMAP items.
+WHY    RED: a published measured number in a published claims doc; slice 19 classified the same
+       line RED, and --fix-counts is the human-owned repair path for ROADMAP/README/why-best counts.
+NEXT   Update ROADMAP.md §2 line 158: OLD "Currently: 80 claims attributed, 0 unattributed."
+       NEW "Currently: 158 claims attributed, 0 unattributed (2026-08-16)." Ideally in the same
+       commit as the census count fix so the audit goes green once (per slice-19 NEXT).
+
+## 2026-08-16 wave 4 slice 17 (issue #23) — RED — README must document that stdlib per-sentence targeting is near-chance
+
+WHAT   Issue #23 ("Stdlib per-sentence targeting near-chance, AUROC 0.493 — document limitation
+       or mitigate") is OPEN at HEAD 74f8a8d. Re-measured on the stdlib path
+       (UNTELL_LITE_NO_TORCH=1, detector_modes={'perplexity_burstiness':'stdlib'} on every run):
+       the limitation STANDS, and the proposed mitigation FAILS measurement, so the RED branch of
+       the acceptance is the one left: the README never documents the per-sentence near-chance
+       (comparison table line 505 says "Per-sentence targeting ✅" with no caveat; the lite tier
+       row line 538 documents only the document-level weakness). Measurements: official harness
+       pb [sentence] AUROC 0.4511 (n=30/class, verdict WEAK, gap -0.0067); bootstrap n=100/class
+       detector 0.4875 CI [0.437, 0.537], tells_per_100w 0.4662 CI [0.420, 0.514], tell count
+       0.4690 CI [0.424, 0.515] — the tells-based targeting suggested by the issue ranks WORSE
+       than the detector and every CI straddles 0.5. Mixed-doc worst-third (12 human + 4 AI):
+       detector precision 0.000, tells precision 0.167. Tells fail because sentence-level firing
+       is sparse (16/100 human, 10/100 AI have >=1 tell) and em_dash fires 17x on human, 0x on AI
+       — an anti-signal at sentence granularity. Code-side the path is already honest:
+       score_sentences attaches UNINFORMATIVE_TARGETING_WARNING to every stdlib result and the
+       unrankable flag when within-doc spread < 0.05; TargetedRewriter falls back to whole-text.
+RAN    PYTHONPATH= UNTELL_LITE_NO_TORCH=1 ./.venv/Scripts/python.exe
+       C:/Users/Admin/goals/results/slice17_official.py (and _variants/_behavior/_tellcats.py)
+SAW    official: verdict WEAK, auroc 0.4511, human 0.2501 / ai 0.2434 (negative gap);
+       n=100 bootstrap: detector 0.4875 [0.4373, 0.5373], tells/100w 0.4662 [0.4204, 0.5136],
+       tell count 0.4690 [0.4238, 0.5150]; mixed-doc detector 0/6 AI flagged, tells 1/6;
+       em_dash human 17 / ai 0 fires
+WHY    RED: the acceptance's documented limitation lives in the README, and README measured
+       numbers are RED (published surface). The mitigation was attempted and rejected on
+       measurement, so there is nothing GREEN to ship; issue stays OPEN with evidence attached.
+NEXT   Apply the exact proposed text (also posted as issue #23 comment 2026-08-16):
+       (1) lite tier row (README line ~538), append: "Per-sentence targeting on this path is
+       near-chance: the stdlib heuristic ranks single sentences at AUROC ~0.49 on labelled data
+       (measured 0.451-0.488, HC3, 2026-08-16; issue #23), vs 0.81-0.94 for the model-backed
+       detectors at the same granularity, so 'flagged' sentences are close to arbitrary.
+       `untell-sentences` and `score_sentences` attach a warning to every such result, and
+       `targeted` rewriting falls back to a whole-text rewrite; install `.[full]` for
+       per-sentence targeting that means anything."
+       (2) comparison table (line ~505), change the unqualified ✅ to ◑ with footnote:
+       "*on the lite/stdlib tier per-sentence targeting is near-chance (AUROC ~0.49); the ✅
+       applies to the model-backed tiers."
+       A human may then close #23 (or re-open the mitigation lane with a new signal; em_dash
+       at sentence level is a candidate anti-signal to exclude if tells targeting is retried).
