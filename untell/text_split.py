@@ -63,6 +63,15 @@ _ZERO_WIDTH_BETWEEN = (
 )
 _ZERO_WIDTH_CLASS = re.escape(_ZERO_WIDTH_BETWEEN)
 
+# Footnote/endnote markers that may sit between a sentence terminator and the next
+# sentence: "significant.[1] However" and "significant.¹ However" are boundaries, and
+# the marker belongs to the sentence that ends — it stays behind the split point, the
+# same way a closer does. Superscript digits (¹²³ ⁰⁴⁵⁶⁷⁸⁹) plus the dagger family
+# († ‡ *) and the bracketed form up to three digits — a footnote past [999] is a
+# document nobody writes, and the fallback for it is the old under-split.
+_FOOTNOTE_MARKERS = "\u00b9\u00b2\u00b3\u2070\u2074\u2075\u2076\u2077\u2078\u2079\u2020\u2021*"
+_FN = re.escape(_FOOTNOTE_MARKERS)
+
 _SENT_SPLIT = re.compile(
     rf"(?<=[.!?])\s+"
     rf"|(?<=[.!?][{_C}])\s+"
@@ -82,12 +91,24 @@ _SENT_SPLIT = re.compile(
     rf"|(?<=[.!?][{_ZERO_WIDTH_CLASS}][{_ZERO_WIDTH_CLASS}])(?![{_C}])"
     rf"|(?<=[.!?][{_C}][{_ZERO_WIDTH_CLASS}])"
     rf"|(?<=[.!?][{_ZERO_WIDTH_CLASS}][{_C}])"
+    # Footnote/endnote markers between the terminator and the next sentence. Each shape
+    # is a separate fixed-width lookbehind: bracketed digits (1, 2, 3 wide), a bracketed
+    # pair ("[1][2]"), a marker followed by a closer, and one or two superscript/dagger
+    # markers ("¹", "††").
+    rf"|(?<=[.!?]\[\d\])\s+"
+    rf"|(?<=[.!?]\[\d\d\])\s+"
+    rf"|(?<=[.!?]\[\d\d\d\])\s+"
+    rf"|(?<=[.!?]\[\d\]\[\d\])\s+"
+    rf"|(?<=[.!?]\[\d\][{_C}])\s+"
+    rf"|(?<=[.!?][{_FN}])\s+"
+    rf"|(?<=[.!?][{_FN}][{_FN}])\s+"
 )
 
 # Abbreviations whose trailing period is not a sentence end.
 _ABBREVIATIONS = {
     "dr", "mr", "mrs", "ms", "prof", "sr", "jr", "st", "rev", "hon", "gen", "col", "sgt", "lt",
-    "vs", "etc", "al", "cf", "approx", "est", "dept", "univ", "inc", "ltd", "co", "corp",
+    "vs", "etc", "al", "cf", "approx", "ca", "viz", "nb", "op", "cit", "est", "dept", "univ",
+    "inc", "ltd", "co", "corp",
     "fig", "figs", "eq", "no", "nos", "vol", "vols", "ch", "chap", "sec", "pp", "ed", "eds",
     "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
     "mon", "tue", "wed", "thu", "fri", "sat", "sun",
@@ -245,6 +266,22 @@ def _continues_after_a_quoted_period(previous: str, nxt: str) -> bool:
     return bool(_QUOTED_PERIOD_END_RE.search(previous.rstrip())) and _first_alpha_is_lower(nxt)
 
 
+# A footnote marker between the period and the next fragment: "significant.[1] but only
+# marginally." — the marker belongs to the FIRST sentence, and a lowercase continuation
+# cannot open a new one, so the split must merge back, exactly like the quoted-period
+# rule above. A capitalised continuation ("significant.[1] However") keeps the split.
+# The marker itself is not a closer, which is why the split rule above exists and why a
+# separate end-test is needed here — `_QUOTED_PERIOD_END_RE` looks for a closer right
+# after the terminator and does not see through "[1]".
+_FOOTNOTE_END_RE = re.compile(
+    rf'[.!?](?:\[\d{{1,3}}\]|[{_FN}])+[\"\'’)}}\]{_ZERO_WIDTH_CLASS}]*\s*$'
+)
+
+
+def _continues_after_a_footnote(previous: str, nxt: str) -> bool:
+    return bool(_FOOTNOTE_END_RE.search(previous.rstrip())) and _first_alpha_is_lower(nxt)
+
+
 def split_sentences(text: str) -> list[str]:
     """Split on sentence-final punctuation, keeping abbreviations, initials and ellipses intact."""
     parts = [s for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
@@ -254,6 +291,7 @@ def split_sentences(text: str) -> list[str]:
             _continues_after_abbreviation(merged[-1], part)
             or _continues_after_ellipsis(merged[-1], part)
             or _continues_after_a_quoted_period(merged[-1], part)
+            or _continues_after_a_footnote(merged[-1], part)
         ):
             merged[-1] = f"{merged[-1].rstrip()} {part.strip()}"
         else:

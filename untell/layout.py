@@ -42,7 +42,34 @@ _FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 # must not hide the boundary from `\s*$`; the class is the single source in `untell.text_split`
 # (docs/free-ceiling-measured.md forbids a second copy).
 from untell.text_split import _ZERO_WIDTH_CLASS  # noqa: E402
+
 _SENTENCE_END_RE = re.compile(r"[.!?。！？؟۔][\"')\]”’" + _ZERO_WIDTH_CLASS + r"]*[ \t]*$")
+# A THEMATIC BREAK or SETEXT HEADING UNDERLINE is a whole-line construct: `---`, `===`,
+# `***`, `___` and the spaced `- - -` / `* * *` forms. It is not prose — a merge
+# transform turned "My Heading\\==========" into "My Heading ==========" and welded
+# "---" onto the next paragraph ("--- Para two.") — so it is emitted verbatim like a
+# table row. The SETEXT underline gets the same treatment as the ATX marker: the heading
+# text above it is still prose; the underline itself is layout. Guarded by the fence/
+# math/blank branch above, so a `---` inside fenced code stays code.
+_HR_RE = re.compile(
+    r'^\s*(?:(?:-{3,}|={3,}|\*{3,}|_{3,})|(?:[-*]\s+){2,}[-*])\s*$'
+)
+
+
+def _is_table_row(line: str) -> bool:
+    """True when the line is a markdown table row, including inside a blockquote.
+
+    The leading-pipe test is what every markdown table row has and what ordinary prose
+    never starts with; a table quoted inside a blockquote starts with the quote arrow
+    instead, so peel any number of `>` markers first. Without that, `> | Method |` fell
+    through to the marker branch and the CELL CONTENT was handed to the transform — a
+    column heading got relabeled (Method -> Technique), which nothing downstream can
+    restore. Nested blockquotes (`> > | x |`) peel one arrow at a time.
+    """
+    s = line.lstrip()
+    while s.startswith(">"):
+        s = s[1:].lstrip()
+    return s.startswith("|")
 
 
 def apply_per_block(text: str, transform: Callable[[str], str]) -> str:
@@ -220,7 +247,14 @@ def _segments(text: str):
         #
         # The test is the leading pipe, which is what every markdown table row and delimiter row
         # has and what ordinary prose never starts with.
-        if line.lstrip().startswith("|"):
+        if _is_table_row(line):
+            yield from flush()
+            yield ("layout", "", line)
+            continue
+        # A thematic-break or setext-underline line is layout too (see _HR_RE). Must come
+        # before the marker branch: the spaced form "- - -" otherwise matches the bullet
+        # marker and is treated as a list item.
+        if _HR_RE.match(line):
             yield from flush()
             yield ("layout", "", line)
             continue
