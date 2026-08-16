@@ -605,7 +605,15 @@ def _census_records() -> list[dict]:
     path = REPO / "docs" / "humanizer-census.json"
     if not path.exists():
         return []
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # A census that exists but cannot be parsed must not crash the audit — the
+        # derivable check ("the census raw data parses") already names that failure
+        # with the exception, and every caller here treats [] as "nothing to verify".
+        # MEASURED: before this guard, `untell-audit` on a corrupt census raised
+        # JSONDecodeError from check_census_counts and produced no report at all.
+        return []
 
 
 def _census_says_yes(value: str | None) -> bool:
