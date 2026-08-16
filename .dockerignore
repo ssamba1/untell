@@ -14,9 +14,15 @@ data/
 out/
 .gitignore
 .gitattributes
+# The builder stage runs `python -m build` on this context, so the wheel's inputs must survive:
+# README.md is pyproject's `readme`, untell/SKILL.md + references/ are package data, and eval/
+# + training/ are declared packages — dropping any of them fails the build or ships a wheel
+# missing what the docs promise (verified: 'package directory eval does not exist'; a wheel
+# built without *.md had no SKILL.md, no references/, and an empty long description).
 *.md
+!README.md
+!untell/SKILL.md
+!untell/references/*.md
 docs/
 tests/
-training/
-eval/
 .github/

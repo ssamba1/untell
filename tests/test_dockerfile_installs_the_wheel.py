@@ -52,3 +52,62 @@ def test_the_install_uses_an_expanded_path() -> None:
 
 def test_the_temporary_wheel_is_cleaned_up() -> None:
     assert "rm /tmp/untell-*.whl" in _DOCKERFILE
+
+
+# --- .dockerignore must not strip the wheel's inputs -------------------------
+# The builder stage is `COPY . .` then `python -m build`, so the build context IS the sdist
+# input. It shipped ignoring `eval/`, `training/` and every `*.md`; the first made the build
+# fail outright (`error: package directory 'eval' does not exist`) and the second silently
+# produced a wheel with no SKILL.md, no references/, and an empty long description — the
+# package data this repo's docs promise. Both verified by building from a context filtered
+# exactly as the old ignore list filtered. Docker .dockerignore semantics: patterns apply in
+# order, a later `!` pattern re-includes what an earlier one excluded.
+
+_DOCKERIGNORE = pathlib.Path(".dockerignore").read_text(encoding="utf-8")
+
+
+def _ignored_by_dockerignore(relpath: str) -> bool:
+    import fnmatch
+
+    ignored = False
+    for raw in _DOCKERIGNORE.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        negate = line.startswith("!")
+        pat = line[1:].strip() if negate else line
+        if fnmatch.fnmatch(relpath, pat) or fnmatch.fnmatch(relpath, pat.rstrip("/") + "/*"):
+            ignored = not negate
+    return ignored
+
+
+def test_dockerignore_keeps_every_declared_package() -> None:
+    """pyproject's package list must survive into the build context."""
+    import re
+
+    text = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+    block = text[text.index("[tool.setuptools]") :]
+    packages = re.findall(r'^\s*"([^"]+)"\s*,?$', block, re.M)
+    assert len(packages) >= 6, packages
+    for pkg in packages:
+        assert not _ignored_by_dockerignore(pkg + "/__init__.py"), (
+            f"package {pkg} is excluded from the docker build context; "
+            f"`python -m build` inside the image cannot succeed"
+        )
+
+
+def test_dockerignore_keeps_readme_and_package_data() -> None:
+    """The wheel must ship README (long description), SKILL.md and references/."""
+    assert not _ignored_by_dockerignore("README.md"), (
+        "README.md is pyproject's `readme`; dropping it empties the wheel's long description"
+    )
+    for rel in ("untell/SKILL.md", "untell/references/ai-tells.md", "untell/references/thresholds.md"):
+        assert not _ignored_by_dockerignore(rel), (
+            f"{rel} is package data; dropping it breaks what the docs promise in the wheel"
+        )
+
+
+def test_dockerignore_still_trims_the_context() -> None:
+    """The ignore list is there to keep the context small — it must still exclude the fat."""
+    for rel in ("docs/api-server.md", "tests/test_score.py", ".github/workflows/ci.yml"):
+        assert _ignored_by_dockerignore(rel), f"{rel} should be trimmed from the docker context"
