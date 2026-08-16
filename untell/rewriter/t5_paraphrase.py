@@ -115,6 +115,20 @@ class T5ParaphraseRewriter:
         )
         if self.sample:
             gen_kwargs.update(do_sample=True, top_p=self.top_p, temperature=self.temperature)
+            # `generate(do_sample=True)` draws from torch's global RNG, and nothing else in this
+            # project seeds it: `untell_text` sets `random.seed(effective_seed)` (run.py), which
+            # torch never consults. local_policy.py carries the same fix for the same reason —
+            # MEASURED there before it: the same document, same code, same `seed=0` gave
+            # 0.9591 -> 0.1925 on one run and a byte-identical no-op on the next, so a figure from
+            # the sampled path could not be reproduced by re-running the command that produced it.
+            # The sampled T5 path had the identical defect: two fresh processes, same input, same
+            # `--seed`, drew from OS-entropy-seeded torch RNG and returned different bytes.
+            # Deriving the torch seed from the already-seeded `random` module keeps one source of
+            # randomness: fixed for a given `seed=`, still advancing between draws so best-of-N
+            # samples N different candidates.
+            from untell.rewriter.local_policy import _next_torch_seed
+
+            torch.manual_seed(_next_torch_seed())
         else:
             gen_kwargs.update(num_beams=self.num_beams)
         with torch.no_grad():
