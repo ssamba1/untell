@@ -812,3 +812,57 @@ WHY    AMBER: doc gap in a published surface; README.md is RED so the natural ho
        and the fix is cosmetic.
 NEXT   Add one line near the rewriter options in docs/api-server.md:
        `pip install "untell[api]"` — then every declared extra is reachable from the docs.
+
+## 2026-08-15 slice-18 AMBER — REST OPTIONS preflight now bypasses auth (CORS+auth combo was broken)
+
+WHAT   With UNTELL_API_KEY set, a browser CORS preflight (OPTIONS, no credentials by spec) hit
+       the auth middleware FIRST (it is outermost; added after CORSMiddleware) and got 401 — so
+       the documented CORS support silently stopped working the moment auth was enabled.
+       MEASURED: OPTIONS /score with Origin+ACRM headers, UNTELL_API_KEY=secret -> 401,
+       no allow-origin; same request without a key -> 200 allow-origin: *.
+       Fixed: auth_middleware passes OPTIONS straight to call_next (CORSMiddleware answers the
+       preflight itself; OPTIONS matches no route, so no handler logic is reachable). Also
+       pinned with 8 new tests: preflight-with-key 200 + CORS headers, real requests still 401,
+       non-preflight OPTIONS still 405, .env UNTELL_CORS_ORIGINS honoured (module now calls
+       load_env() at import, same trap _api_key() documents for the key), and /openapi.json now
+       declares HTTPBearer + APIKeyHeader securitySchemes with per-route optional security
+       [{}, {HTTPBearer: []}, {APIKeyHeader: []}] matching the conditional enforcement.
+RAN    TestClient probes + tests/test_cors_preflight_and_openapi_auth.py (8 passed)
+SAW    401->200 for OPTIONS preflight with key set; securitySchemes present in /openapi.json
+WHY    AMBER per envelope: error-code change for one request class (OPTIONS preflight).
+NEXT   No human action needed unless the 401-on-preflight was relied upon; the CORS feature is
+       now actually usable with auth. docs/api-server.md Authentication section updated to
+       match (UNTELL_HOST default also corrected 0.0.0.0 -> 127.0.0.1, was missed by slice-5).
+
+## 2026-08-15 slice-18 note — wave-2 queue re-verification on current HEAD (CORS/bind entries)
+
+WHAT   Re-checked the wave-2 CORS/bind queue entries against HEAD 0d368e9:
+       1. L473 "README.md:787 bind default STALE (api_server.py default 0.0.0.0)" — premise
+          now INVERTED: 694f786 (slice-5) changed the code default to 127.0.0.1, README is
+          correct. The live drift MOVED to docs/api-server.md:21 (still 0.0.0.0); fixed in this
+          slice (docs/api-server.md is not guard-RED).
+       2. L590-609 README L149 MCP tool list "score/sentences/untell/verify/scrub" — STILL
+          STALE at HEAD: README:148 unchanged; real list (mcp_server.py:31 _TOOL_NAMES) is
+          score, sentences, tells, untell, verify_commercial, ceiling, compare, scrub. Entry
+          stays queued (README is RED).
+       3. L597-602 README L789 UNTELL_CORS_ORIGINS "unset means no cross-origin access" — STILL
+          STALE at HEAD: README:789 unchanged; live code unset = allow_origins=["*"] (any
+          origin, credentials NOT allowed), pinned by test_cors_never_reflects_with_credentials.
+          Entry stays queued (README is RED).
+RAN    grep README.md L148/L789 + docs/api-server.md L21; _TOOL_NAMES; live TestClient probes
+SAW    Entries 2 and 3 accurate; entry 1's staleness fixed by 694f786, doc drift relocated.
+WHY    Record-keeping for the human's README edit pass; no guard-RED file touched here.
+NEXT   Human: apply the two README row fixes from entry L590-609 (MCP tool list + CORS row).
+
+## 2026-08-15 slice-20 RED/QUEUED — why-best-open-repo.md "518 test modules" now stale (533)
+
+WHAT   audit derivable check fails: docs/why-best-open-repo.md says "518 test modules",
+       tests/ now has 533 (wave-3 fanout added ~15 test files incl. this slice's
+       test_env_var_consistency_matrix.py). Same repair path as the census count drift
+       entry above: `untell-audit --fix-counts` rewrites why-best counts in one pass.
+RAN    `.venv/Scripts/python.exe -m untell.scripts.audit` after staging
+SAW    "docs/why-best-open-repo.md: says 518 test modules, tests/ has 533 — stale by
+       more than 5"
+WHY    RED per guard policy (published numbers in docs/why-best-*); file is human-owned.
+NEXT   Human: run `.venv/Scripts/python.exe -m untell.scripts.audit --fix-counts`
+       (also fixes the census 6930-vs-8292 count in the same pass), or reject.
