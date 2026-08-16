@@ -96,6 +96,41 @@ class TestNegatedContrastGrammar:
         result = structural_rewrite(text, intensity=1.0)
         assert len(result) > 10
 
+    def test_no_cross_sentence_deletion(self):
+        """The flatten must not swallow sentences between \"it's not\" and a later \"it's\".
+
+        The lazy span used to be `.+?`, so it crossed periods: on real HC3 text (slice-12
+        corpus short#0) \"so it's not possible to have as many HD channels as we have SD
+        channels. This means that if we only had HD channels, some channels might not be
+        available. 3. HD channels also require more expensive equipment to produce, so some
+        TV stations might not be able to afford to upgrade to HD. Overall, it's important to
+        have both SD and HD channels ...\" flattened to just \"It's important to have both
+        ...\" — 54 words gone, an entire numbered list item (the 3rd reason) deleted.
+        MEASURED: the same shape on short#2 deleted 65 words (\"It is not clear ... $40,000
+        figure ... However, it is possible ...\"). A period-separated pair is two sentences;
+        the second is not the contrast's positive half, so nothing may be deleted.
+        """
+        text = (
+            "1. Some people still use older TVs that are not compatible with HD signals. "
+            "2. HD channels take up more bandwidth, so it's not possible to have as many HD "
+            "channels as we have SD channels. This means that some channels might not be "
+            "available. 3. HD channels also require more expensive equipment to produce, so "
+            "some TV stations might not be able to afford to upgrade to HD. Overall, it's "
+            "important to have both SD and HD channels so that everyone can watch TV."
+        )
+        result = structural_rewrite(text, intensity=1.0)
+        # The claim in the later sentence (and the numbered item) must SURVIVE the rewrite.
+        assert "upgrade to HD" in result
+        assert "afford" in result
+
+    def test_period_separated_pair_is_left_alone(self):
+        """\"It's not X. It's Y\" is two sentences — the second is not the positive half."""
+        text = "It is not clear from your question where the $40,000 figure comes from. However, it is possible that someone else paid it."
+        result = structural_rewrite(text, intensity=1.0)
+        assert "$40,000" in result
+        # The uncertainty claim survives (contraction injection may render it "isn't clear").
+        assert "clear" in result.lower()
+
 
 class TestNotOnlyKeepsBothHalves:
     """"not only X but also Y" is not a negated contrast — X and Y are BOTH asserted.

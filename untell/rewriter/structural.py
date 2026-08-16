@@ -314,8 +314,21 @@ _PARTICIPIAL_RE = re.compile(
 # flattened, "It is not that the results are bad, it is that they are incomplete." did not —
 # and the tells catalogue counts both as `negated_contrast`, so the rewriter emitted a tell
 # the detector still scores.
+#
+# The lazy `.+?` in that alternative could cross SENTENCE boundaries: the pattern is
+# "it's not ... it's Y", and nothing excluded the periods a second "it's"/"it is" might sit
+# behind. MEASURED on real HC3 text (slice-12 corpus, short#0): "so it's not possible to have
+# as many HD channels as we have SD channels. This means that if we only had HD channels, some
+# channels might not be available. 3. HD channels also require more expensive equipment to
+# produce, so some TV stations might not be able to afford to upgrade to HD. Overall, it's
+# important to have both ..." — the lazy span swallowed the second sentence AND a numbered list
+# item (54 words, an entire claim) and the flatten returned only "It's important to have
+# both ...". Same shape on short#2 ("It is not clear ... $40,000 figure ... However, it is
+# possible ...", 65 words deleted). The span is now `[^.]*?`, so the match cannot leave the
+# sentence it started in; a period-separated "It's not X. It's Y" is two sentences and the
+# second is not the contrast's positive half, so it is left alone.
 _NEGATED_CONTRAST_RE = re.compile(
-    r"\bit(?:'?s| is) not\s+.+?,?\s+it(?:'?s| is)\s+\w+[^.]*\.?"
+    r"\bit(?:'?s| is) not\s+[^.]*?,?\s+it(?:'?s| is)\s+\w+[^.]*\.?"
     r"|not only\b[^.]{0,60}\bbut also\b"
     r"|isn'?t about\b[^.;]{0,50};?\s+it'?s about\b"
     r"|not\s+just\b[^.]{0,40}\bbut\b",
