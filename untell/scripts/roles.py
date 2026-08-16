@@ -79,6 +79,16 @@ def available() -> bool:
 
     if os.environ.get("UNTELL_DISABLE_ROLES") == "1":
         return False
+    # UNTELL_LITE_NO_TORCH=1 is the documented way to force the pure-stdlib lite path
+    # (README's env table). The predicate-argument veto is a spaCy model backed check,
+    # and spaCy drags torch in through thinc (MEASURED: `import spacy` imports
+    # `thinc.shims.pytorch`), so the same env gate the perplexity detector and the
+    # quality gate honour applies here: a lite run must not pay a ~5s spaCy load (plus
+    # torch) for a check the stdlib path is documented not to run. `role_swap` returns
+    # None for an unavailable parser, so this only ever weakens the check to
+    # "unknown", never to a silent pass.
+    if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+        return False
     return _load() is not None
 
 
@@ -305,6 +315,10 @@ def parser_available() -> bool:
     "this pair had no roles to compare" from "this install cannot compare roles at all" — the
     second is a missing guarantee, the first is an ordinary answer.
     """
+    import os
+
+    if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+        return False
     return _load() is not None
 
 
@@ -313,6 +327,10 @@ def role_swap(a: str, b: str) -> bool | None:
 
     None means "unknown", never "fine": callers must not read it as a pass.
     """
+    import os
+
+    if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+        return None
     nlp = _load()
     if nlp is None or not a.strip() or not b.strip():
         return None

@@ -71,6 +71,16 @@ def available() -> bool:
 
     if os.environ.get("UNTELL_DISABLE_NLI") == "1":
         return False
+    # UNTELL_LITE_NO_TORCH=1 is the documented way to force the pure-stdlib lite path
+    # (README's env table), but it used to gate only the perplexity detector and the
+    # quality gate: the NLI veto still imported torch + transformers and loaded the
+    # ~330MB cross-encoder whenever they were installed, so a "lite" loop ran the
+    # loop's most expensive gate while being documented (and reported via
+    # `meaning_gate`) as the stdlib path. Same defect class quality.py's `_st_model`
+    # fix closed, same remedy. Checked before the import so a test flipping the
+    # variable mid-process still gets the stdlib gate.
+    if os.environ.get("UNTELL_LITE_NO_TORCH") == "1":
+        return False
     try:
         import torch  # noqa: F401
         import transformers  # noqa: F401
