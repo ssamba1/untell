@@ -26,6 +26,18 @@ VERB_FALSE_POSITIVES = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def _real_ner_env(monkeypatch):
+    """This module tests the NER pass itself, so UNTELL_LITE_NO_TORCH must be OFF.
+
+    The env var (README) forces the pure-stdlib path and therefore skips the spaCy NER
+    pass entirely (spaCy imports torch through thinc) — a run pinned stdlib-only cannot
+    lock entities. CI exports the env var, so without clearing it here every assertion
+    in this file would be vacuously true and `test_real_entity_still_locked` would fail.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+
+
 def test_common_word_person_entities_not_locked():
     for text in VERB_FALSE_POSITIVES:
         masked, mapping = lock(text)

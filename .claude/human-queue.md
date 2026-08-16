@@ -891,3 +891,52 @@ NEXT   Human: confirm both refusal vocabularies. The README:149 tool-list stalen
        slice re-verified is already queued (pass 531) — not re-queued. Also note: sync MCP
        tools block the event loop for any long VALID input (SDK property, not fixed here);
        the guard removes the pathological megabyte case.
+
+## 2026-08-15 wave-3 slice-3 — RED — untell-audit exits 1 on two stale doc test-count claims
+
+WHAT   `untell-audit` (no args) exits 1: two claim checks FAIL, both published test counts
+       that have drifted as test files were added. The doc numbers are RED — not edited here.
+RAN    UNTELL_LITE_NO_TORCH=1 ./.venv/Scripts/python.exe -c "import untell.scripts.audit as m; raise SystemExit(m.main([]))"   (195s)
+SAW    FAIL  every 'N test modules' claim matches tests/  (docs/why-best-open-repo.md: says 518 test modules, tests/ has 540 — stale by more than 5)
+       FAIL  every 'N tests' claim is close to what pytest collects  (docs/humanizer-census.md: claims 6930 tests, pytest collects 8485)
+WHY    RED per the envelope: published numbers in docs/why-best-open-repo.md and
+       docs/humanizer-census.md; the human runs `untell-audit --fix-counts`.
+NEXT   Run `untell-audit --fix-counts` (or update both counts by hand), then re-run the audit.
+       Also: tests/ has 540 modules and pytest collects 8485 tests as of this pass; the CLI
+       conformance matrix (tests/test_cli_conformance_matrix.py) asserts the audit's verdict
+       semantics (exit 0 or 1) so it stays green either way.
+
+## 2026-08-15 wave-3 slice-3 — AMBER — distill test's "faithful paraphrase" premise is false on this machine
+
+WHAT   tests/test_training.py::test_distill_keeps_a_faithful_paraphrase_the_loop_admits
+       fails on the PRISTINE tree (verified via git stash): meaning_preserved(orig, faithful,
+       0.32, 0.76) is False, so the test's premise ("the loop admits it") does not hold here.
+RAN    UNTELL_LITE_NO_TORCH=1 ./.venv/Scripts/python.exe -m pytest tests/test_training.py::test_distill_keeps_a_faithful_paraphrase_the_loop_admits -q
+SAW    E AssertionError: assert False
+       E + where False = meaning_preserved('The cat sat on the mat in the warm afternoon sun,
+       perfectly content.', 'The feline rested upon the rug during the sunny afternoon, quite
+       satisfied.', 0.32, 0.76)
+       environment: sentence_transformers+bert_score+torch installed, entailment.available()
+       False (NLI weights not downloaded), similarity() measures the pair at 0.32 — below the
+       0.50 token-overlap bar, let alone the hardcoded 0.76.
+WHY    AMBER: a test asserting loop behaviour that cannot hold in this environment. Not caused
+       by slice 3 (proved pre-existing by stash). Not fixed here: the pair/bar choice is a
+       test-data question, and skip/xfail on a shipped test is RED.
+NEXT   Decide whether the pair should still measure as "faithful" (then similarity/NLI backend
+       is the problem) or the pair/bar should change (then the test's data is stale). Reproduce
+       with the command above; the pair sims 0.32 under the current stack.
+
+## 2026-08-15 wave-3 slice-3 — RED — README documents UNTELL_BROWSER_SITES wrongly
+
+WHAT   README env-table row for UNTELL_BROWSER_SITES says "comma-separated free web
+       detectors for --browser", but the code (untell/browser_check.py:369) reads it as a
+       JSON FILE PATH of custom site configs (legacy alias HUMANIZE_BROWSER_SITES, fallback
+       ./browser_sites.json). Docs drift; the guard blocks README edits (human-owned).
+RAN    grep -n 'BROWSER_SITES' README.md untell/browser_check.py
+SAW    README.md:790: "comma-separated free web detectors for `--browser`"
+       untell/browser_check.py:362: "Load user-defined sites from `$UNTELL_BROWSER_SITES`
+       (a JSON path; ...) or `./browser_sites.json`."
+WHY    RED per the envelope: README is human-owned (guard.py blocks it).
+NEXT   Change the README row to: "path to a JSON file of custom free-web-detector site
+       configs for `--browser` (see `untell/browser_check.py`); unset falls back to
+       `./browser_sites.json`".

@@ -87,7 +87,7 @@ def distill(
 
 def build_parser() -> argparse.ArgumentParser:
     """The distillation CLI's parser, split out of ``main`` so its defaults can be read in tests."""
-    parser = argparse.ArgumentParser(prog="training.distill", description=__doc__)
+    parser = argparse.ArgumentParser(prog="untell-distill", description=__doc__)
     parser.add_argument("--dataset", default="builtin")
     parser.add_argument("--n", type=int, default=200)
     parser.add_argument("--tier", default="full", choices=["lite", "full", "heavy", "commercial"])

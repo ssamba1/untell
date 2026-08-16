@@ -1761,7 +1761,7 @@ def build_parser() -> argparse.ArgumentParser:
     # still wins, because argparse only falls back to `default` when the flag is absent.
     cfg = _config_defaults()
 
-    parser = argparse.ArgumentParser(prog="untell-loop", description="Run the headless untell loop.")
+    parser = argparse.ArgumentParser(prog="untell-humanize", description="Run the headless untell loop.")
     parser.add_argument("text", nargs="?", help="text to untell (or --file / stdin)")
     parser.add_argument("--file", "-f", help="read text from this file")
     parser.add_argument("--tier", default=cfg["tier"], choices=["lite", "full", "heavy", "commercial"])
