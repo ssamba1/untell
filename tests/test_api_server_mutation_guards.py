@@ -54,3 +54,45 @@ class TestHostFromEnv:
     def test_env_override_wins(self, monkeypatch) -> None:
         monkeypatch.setenv("UNTELL_HOST", "0.0.0.0")
         assert A._host_from_env() == "0.0.0.0"
+
+
+class TestMainStartsTheServer:
+    """Killer for the 694f786 extraction botch: `def _host_from_env()` was dedented INSIDE
+    ``main()``, so main() ended at the parser construction and returned None — ``untell-server``
+    printed nothing and exited 0, and the startup code (add_argument/parse_args/uvicorn.run)
+    sat unreachable after _host_from_env's ``return``. Verified at HEAD: `python -m
+    untell.api_server --help` produced zero output. The Dockerfile entrypoint and the CI docker
+    job both depend on main() actually launching uvicorn."""
+
+    def test_main_launches_uvicorn_with_parsed_args(self, monkeypatch) -> None:
+        calls: list[tuple] = []
+        monkeypatch.setattr("uvicorn.run", lambda *a, **k: calls.append((a, k)))
+        rc = A.main(["--host", "127.0.0.1", "--port", "8123"])
+        assert rc == 0
+        assert len(calls) == 1, f"uvicorn.run called {len(calls)} times, not once"
+        (app,), kwargs = calls[0]
+        assert app == "untell.api_server:app"
+        assert kwargs["host"] == "127.0.0.1"
+        assert kwargs["port"] == 8123
+        assert kwargs["reload"] is False
+
+    def test_main_default_host_is_localhost(self, monkeypatch) -> None:
+        monkeypatch.delenv("UNTELL_HOST", raising=False)
+        calls: list[tuple] = []
+        monkeypatch.setattr("uvicorn.run", lambda *a, **k: calls.append((a, k)))
+        A.main([])
+        (_,), kwargs = calls[0]
+        assert kwargs["host"] == "127.0.0.1"
+
+    def test_main_help_prints_usage(self) -> None:
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        result = subprocess.run(
+            [sys.executable, "-m", "untell.api_server", "--help"],
+            capture_output=True, text=True, timeout=120,
+            cwd=Path(__file__).resolve().parent.parent,
+        )
+        assert result.returncode == 0
+        assert "usage: untell-server" in (result.stdout + result.stderr)

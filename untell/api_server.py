@@ -131,6 +131,40 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=APP_TITLE, version=APP_VERSION, description=APP_DESC, lifespan=lifespan)
 
+_original_openapi = app.openapi
+
+
+def _openapi_with_auth() -> dict:
+    """The generated schema, plus the auth the docs promise.
+
+    docs/api-server.md's Authentication section documents two accepted header forms —
+    ``Authorization: Bearer ***`` and ``X-API-Key: ***`` — but the schema FastAPI generated
+    declared neither, so a client generated from /openapi.json had no reason to send a key and
+    the /docs UI showed no Authorize button. The schemes are declared here and each protected
+    route is marked with the *optional* form ``[{}, {scheme}, {scheme}]`` — an empty requirement
+    object means "anonymous allowed", which is exactly the runtime truth when UNTELL_API_KEY is
+    unset (open access) or set (either header). /health stays unsecured like the middleware.
+
+    The route decorators cannot carry this: FastAPI 0.141 rejects a ``security=`` kwarg on
+    ``@app.post``, and ``responses=`` already carries the documented response shapes, so the
+    schema is augmented post-hoc here rather than per-route.
+    """
+    schema = _original_openapi()
+    schema.setdefault("components", {})["securitySchemes"] = {
+        "HTTPBearer": {"type": "http", "scheme": "bearer", "description": "Authorization: Bearer <key>"},
+        "APIKeyHeader": {"type": "apiKey", "in": "header", "name": "X-API-Key"},
+    }
+    for path, ops in schema["paths"].items():
+        for op in ops.values():
+            if path == "/health":
+                op["security"] = []  # exempt from auth, matching the middleware
+            else:
+                op["security"] = [{}, {"HTTPBearer": []}, {"APIKeyHeader": []}]
+    return schema
+
+
+app.openapi = _openapi_with_auth
+
 # ---------------------------------------------------------------------------
 # Validation-error rendering
 # ---------------------------------------------------------------------------
@@ -209,6 +243,12 @@ async def _validation_error(request: Request, exc) -> JSONResponse:
 #
 # The default keeps the server usable from a scratch HTML page or another localhost port, which is
 # what the wildcard was for, without also handing that page the user's credentialed session.
+#
+# Read AFTER load_env() below, not before: `_api_key()` documents the same trap for the auth key —
+# `.env` is the documented place for server config, and a value that lives only there was
+# invisible to a module-level constant evaluated before lifespan's `load_env()` ran. The CORS
+# origins had the same defect; the env is loaded at import so the two config surfaces agree.
+load_env()  # noqa: E402 - must run before the CORS read below; idempotent, real env wins
 _CORS_ORIGINS = [o.strip() for o in os.environ.get("UNTELL_CORS_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
@@ -554,6 +594,13 @@ def _rate_limited(request: Request, credential: str) -> int | None:
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next) -> JSONResponse | Response:
+    if request.method == "OPTIONS":
+        # CORS preflight. Browsers NEVER send credentials on the preflight (that is the point of
+        # preflight — it asks whether the real request MAY carry them), so a key check here would
+        # 401 every cross-origin browser caller the moment UNTELL_API_KEY is set, and the
+        # documented CORS support would silently not work. The CORSMiddleware answers the
+        # preflight itself, so passing it through costs nothing and reveals no data.
+        return await call_next(request)
     if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
         return await call_next(request)
     auth = request.headers.get("authorization")
@@ -1155,6 +1202,14 @@ def main(argv: list[str] | None = None) -> int:
     import uvicorn
 
     parser = argparse.ArgumentParser(prog="untell-server")
+    parser.add_argument("--host", default=_host_from_env())
+    parser.add_argument("--port", type=int, default=_port_from_env())
+    parser.add_argument("--reload", action="store_true", help="auto-reload on file changes (dev)")
+    args = parser.parse_args(argv)
+    uvicorn.run("untell.api_server:app", host=args.host, port=args.port, reload=args.reload)
+    return 0
+
+
 def _host_from_env() -> str:
     """`UNTELL_HOST`, defaulting to localhost.
 
@@ -1164,14 +1219,6 @@ def _host_from_env() -> str:
     Uvicorn's own default is 127.0.0.1; match it and the docs.
     """
     return os.environ.get("UNTELL_HOST", "127.0.0.1").strip() or "127.0.0.1"
-
-
-    parser.add_argument("--host", default=_host_from_env())
-    parser.add_argument("--port", type=int, default=_port_from_env())
-    parser.add_argument("--reload", action="store_true", help="auto-reload on file changes (dev)")
-    args = parser.parse_args(argv)
-    uvicorn.run("untell.api_server:app", host=args.host, port=args.port, reload=args.reload)
-    return 0
 
 
 if __name__ == "__main__":
