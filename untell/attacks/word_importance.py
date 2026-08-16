@@ -860,11 +860,17 @@ def surgical_substitute(
         # adoptions the score-only rule refused. Failing that, take the candidate that removes a
         # tell without moving the score outside the loop's noise band, preferring the one that
         # removes the most tells and then the lowest score, so the choice is deterministic.
+        # Each candidate's tell count is computed ONCE. It used to be counted twice — once in the
+        # sort key and once in the accept test below, for the SAME string — and `_tell_count` is a
+        # full-text catalogue pass, so the duplicate was pure waste. MEASURED on a 51 KB document
+        # (2 ranked words, 3 candidates each): the loop ran ~7 full tell passes per ranked word
+        # (cur_tells + sort + accept recounts); it now runs 4, and the duplicate alone was ~6 s of
+        # the 31.8 s surgical call. On a 1 MB document a single pass is ~10 s, so the waste scales
+        # with the text. Same values, same decisions, one pass per candidate.
         cur_tells = _tell_count(cur)
-        ranked = sorted(
-            zip(candidates, cand_scores), key=lambda cs: (_tell_count(cs[0]), float(cs[1]["max"]))
-        )
-        for cand, s in ranked:
+        triples = [(cand, s, _tell_count(cand)) for cand, s in zip(candidates, cand_scores)]
+        ranked = sorted(triples, key=lambda cs: (cs[2], float(cs[1]["max"])))
+        for cand, s, cand_tells in ranked:
             score = float(s["max"])
             # The noise band is a TOTAL budget measured from the best score reached, not a per-swap
             # allowance. Spending 0.02 per substitution let the score creep by up to max_subs*0.02
@@ -873,7 +879,7 @@ def surgical_substitute(
             # the creep changed which draw won and its tells/100w went the WRONG way, 0.167 -> 0.294,
             # even though surgical alone improved (0.307 -> 0.179). Budgeting against `floor` keeps
             # the whole run inside one noise band, which is what the loop's own tie-break means.
-            if score < cur_score or (_tell_count(cand) < cur_tells and score <= floor + _TELLS_EPS):
+            if score < cur_score or (cand_tells < cur_tells and score <= floor + _TELLS_EPS):
                 cur, subs, cur_score = cand, subs + 1, score
                 floor = min(floor, score)
                 break
