@@ -149,16 +149,20 @@ rewriter never loaded or which rewrote nothing, appends the numbers to
 `.claude/measurements.jsonl`, and compares against the last run of the same recipe using the
 spread each run reports.
 
-**Ledger policy (issue #17, 2026-08-16):** `measurements.jsonl` is append-only and every line
-is one real run — identical lines are retained as recorded, never merged or deleted (deleting
-measurement data is RED; the wave-3 slice-8 precedent). The recorder (`research.py run`)
-appends unconditionally: a byte-identical pair (e.g. the two 64.6s `lite-builtin` rows at
-lines 2-3) is a double-run, and the ledger cannot distinguish a deliberate reproducibility
-re-run from a double-append, so the dedup policy is this explicit note rather than a refusal
-guard. Since 2026-08-17 the recorder *warns* (`WARNING: a byte-identical ... row is already
-in ...`) when the line it is about to append already exists — append-only is unchanged, the
-double-append is just no longer silent (`duplicate_rows()` in `research.py`). A recipe's run
-count (`load()`/`report`) counts every row, including identical ones. `.claude/instruments.json`
+**Ledger policy (issue #17):** `measurements.jsonl` is append-only and every line is one real
+run. The recorder (`research.py run`) appends unconditionally; the ledger cannot distinguish
+a deliberate reproducibility re-run from a double-append, so since 2026-08-17 the recorder
+*warns* (`WARNING: a byte-identical ... row is already in ...`) when the line it is about to
+append already exists — append-only is unchanged, the double-append is just no longer silent
+(`duplicate_rows()` in `research.py`). Identical lines that are recorded are retained as
+recorded (deleting a *real* run is RED; the wave-3 slice-8 precedent). The one known
+byte-identical pair — the two 64.6s `lite-builtin` rows that sat at lines 2-3 since before
+issue #17 was filed — was confirmed by duplicate-row scan to be a byte-identical double-append
+of a single run, and was *deduplicated on 2026-08-17*
+when issue #17 closed (the second, byte-identical line removed; original first occurrence and
+order preserved; 40 → 39 rows). `tests/test_research_contract.py` pins that the ledger now
+holds no byte-identical pair, so any future double-append shows up as a test failure as well
+as a recorder warning. A recipe's run count (`load()`/`report`) counts every retained row.
 keys are a subset of `RECIPES` in `research.py` (pinned by
 `tests/test_claude_instruments_match_recipes.py`); an instrument may only exist for a recipe
 that exists.

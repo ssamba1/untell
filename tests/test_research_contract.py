@@ -155,3 +155,21 @@ class TestDuplicateRows:
         path.write_text(json.dumps(row) + "\n", encoding="utf-8")
         monkeypatch.setattr(R, "LEDGER", path)
         assert R.duplicate_rows(row) == 1
+
+    def test_ledger_holds_no_byte_identical_pair(self) -> None:
+        """Issue #17 close: the real ledger is deduplicated. No byte-identical line appears
+        twice, so a future double-append breaks this test as well as firing the recorder
+        warning. (Ordered first-occurrence scan, exact byte match, appending line count.)"""
+        if not R.LEDGER.exists():
+            return  # ledger not present in this checkout; nothing to assert
+        lines = R.LEDGER.read_text(encoding="utf-8").splitlines()
+        seen: set[str] = set()
+        dupes: list[str] = []
+        for ln in lines:
+            if ln in seen:
+                dupes.append(ln)
+            seen.add(ln)
+        assert not dupes, (
+            "measurements.jsonl holds byte-identical duplicate rows: "
+            + repr([d[:60] for d in dupes])
+        )

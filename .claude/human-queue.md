@@ -1693,3 +1693,33 @@ NEXT   A human applies the per-detector sentence-cut table where sentence scores
        calibration_sweep.py) and the paragraph audit (validation protocol, design point
        6). A RAID sentence sweep is the follow-up before shipping the table as the
        default (curves are HC3-only).
+
+## 2026-08-17 wave-6 slice 7 — issue #17 CLOSED (dedup applied); #20 re-verified GREEN, still OPEN
+
+WHAT   Issue #17 closed on this commit. .claude/measurements.jsonl byte-identical duplicate
+       (lines 2-3, the two 64.6s lite-builtin rows) DEDUPLICATED: second occurrence removed,
+       original first occurrence + order preserved (40 -> 39 rows). Append-only policy and
+       the recorder WARNING guard are unchanged; audit-lanes.md 'Ledger policy (issue #17)'
+       note updated to state the historical pair was removed 2026-08-17 (deleting a *real*
+       distinct run stays RED, per wave-3 slice-8). New pin
+       tests/test_research_contract.py::TestDuplicateRows::test_ledger_holds_no_byte_identical_pair
+       fails if any byte-identical pair reappears (future double-append trips it AND the
+       recorder warning). instruments.json keys {lite-builtin, lite-hc3, lite-hc3-ensemble}
+       remain a pinned subset of RECIPES (test_claude_instruments_match_recipes.py).
+RAN    export PYTHONPATH=; UNTELL_LITE_NO_TORCH=1 pytest tests/test_research_contract.py
+       tests/test_claude_instruments_match_recipes.py (15 passed); .claude/guard.py
+       run before commit.
+SAW    Ledger scan after dedup: 39 lines, 0 duplicate line-keys (was 40 with 1 dup pair).
+       Issue #20 derivable check re-verified GREEN at HEAD in the primary tree:
+       tests/test_audit.py::test_the_repository_currently_passes_its_derivable_checks ->
+       1 passed in 201.13s (EXIT=0) with the count-fix docs unstaged.
+WHY    #17 is GREEN (code + pinned test + verified ledger dedup, no published-number edit):
+       the close commit is 'Closes #17', push auto-closes the issue. #20 stays OPEN: the
+       two count-fix docs (docs/why-best-open-repo.md, docs/humanizer-census.md) are RED,
+       still UNSTAGED in the primary tree, pending the HUMAN commit.
+REVERT git revert of this commit restores the duplicate ledger line (re-append the second
+       64.6s lite-builtin row); the policy note goes back to 'retained as recorded'.
+NEXT   HUMAN (issue #20, the ONLY remaining step for it): cd C:/Users/Admin/Humanize && git
+       add docs/why-best-open-repo.md docs/humanizer-census.md && git commit -m "docs: live
+       counts 8655/559/25 (fix-counts)" && git push origin main. That lands the count-fix and
+       #20 then closes (auto if the message references it, else manually after verifying).
