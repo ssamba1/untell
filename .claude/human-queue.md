@@ -1250,3 +1250,17 @@ SAW    Guard AMBER (workflow file); no RED.
 WHY    AMBER: .github/workflows/ci.yml touched.
 NEXT   Human/CI: watch the next push — the ruff job and fast suite must go green in
        actions; the slow tier runs in the existing full job.
+
+## 2026-08-17 suite-order-dependence fixes — AMBER record (commit 04230a9)
+
+WHAT   56 full-suite failures, three root causes fixed: (1) env-pop fixtures that did not
+       restore prior values (UNTELL_LITE_NO_TORCH / UNTELL_RATE_LIMIT / UNTELL_API_KEY) —
+       late tests ran on the torch path; (2) intra-test score-cache poisoning (fake
+       detector, same name, different behavior); (3) the score-cache mode-key change
+       (eb07c50) left the LRU unit test on the old 4-tuple key.
+RAN    Full fast suite 56 failed -> fixed family 108 passed; targeted pairs reproduced
+       each mechanism before the fix.
+SAW    Guard AMBER on untell/SKILL.md (batch step wired in for test_skill_reachability).
+WHY    AMBER: SKILL.md touched. Queue entry recorded post-commit (04230a9) — the commit
+       predates this entry by one commit; content verified on origin/main.
+NEXT   None — human/CI: the full fast suite must go green on the next sweep.
