@@ -1,10 +1,14 @@
 # Issue #40 — calibration design: per-detector FPR curves at sentence granularity
 
-Status: closes issue #40 (slice 9, wave 5) — curves measured at HEAD `127e782`
+Status: closes issue #40 (slice 17, wave 6) — curves measured at HEAD `127e782`
 (`.claude/probes/evidence/sentence_calibration_20260817_062512.json`; wave-4 run
 `sentence_calibration_20260816_110405.json` reproduced at 3dp), ensemble simulation in
 `.claude/probes/ensemble_calib_sim.py`, recommendation queued in
-`.claude/human-queue.md`. **No thresholds changed** (RED — this document and the queue
+`.claude/human-queue.md`. Wave 6 re-verified the ensemble at HEAD `dd25242`/`2da4d5d`
+(`python .claude/probes/ensemble_calib_sim.py … --target 0.20` reproduces every figure:
+shipped ensemble FPR 0.9000 / TPR 1.0000; per-detector cuts → FPR 0.4667 / TPR 0.9833;
+`max >= 0.50` still FPR 0.8167) — issue #40 CLOSED with this evidence + the queued
+recommendation. **No thresholds changed** (RED — this document and the queue
 entry only).
 
 ## Why sentence granularity is a separate calibration problem
