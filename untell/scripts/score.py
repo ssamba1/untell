@@ -35,6 +35,7 @@ import json
 import logging
 import re
 import sys
+import os
 import threading
 from collections import OrderedDict
 
@@ -726,7 +727,21 @@ def _score_with_detectors(
     cacheable = len(text) <= _SCORE_CACHE_MAX_CHARS
     key = None
     if cacheable:
-        key = (text, tuple(sorted(d.name for d in detectors)), tier, threshold)
+        # The scoring MODE is part of the key, not just the roster: UNTELL_LITE_NO_TORCH and
+        # the UNTELL_DISABLE_*/ENABLE_* switches change how an identically-named detector
+        # scores (perplexity_burstiness is a stdlib heuristic with the var set and GPT-2
+        # without), so the same (text, names, tier, threshold) under two modes must not
+        # collide. MEASURED: the full suite's ambient-env tests flip UNTELL_LITE_NO_TORCH
+        # between tests; without the mode in the key a torch-path test cached a score that
+        # an env-pinned stdlib test then read, and every verdict-threshold assertion after
+        # that collision failed (56 failures in one full-suite run). The mode is a pure
+        # function of these env vars, so reading them here is cheap and exact.
+        mode = tuple(
+            (name, os.environ.get(name))
+            for name in _SCORING_MODE_ENV_VARS
+            if os.environ.get(name)
+        )
+        key = (text, tuple(sorted(d.name for d in detectors)), tier, threshold, mode)
         with _score_cache_lock:
             hit = _score_cache.get(key)
             if hit is not None:
@@ -757,6 +772,17 @@ _SCORE_CACHE_MAX_CHARS = 10_000
 _SCORE_CACHE_SIZE = 1024
 _score_cache_lock = threading.Lock()
 _score_cache: OrderedDict = OrderedDict()
+
+# Env vars that change HOW an identically-named detector scores (as opposed to WHICH
+# detectors load — the roster already keys the cache). Must stay in sync with the vars the
+# detectors read: UNTELL_LITE_NO_TORCH switches perplexity_burstiness between the stdlib
+# heuristic and GPT-2; the DISABLE/ENABLE switches gate mage/radar/local_judge.
+_SCORING_MODE_ENV_VARS = (
+    "UNTELL_LITE_NO_TORCH",
+    "UNTELL_DISABLE_MAGE",
+    "UNTELL_ENABLE_RADAR",
+    "UNTELL_ENABLE_LOCAL_JUDGE",
+)
 
 
 def _score_result_is_cacheable(result: dict) -> bool:
