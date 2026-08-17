@@ -1342,6 +1342,17 @@ NEXT   Human: apply the proposed text below into CHANGELOG.md under `## [Unrelea
        The new test will verify a bumped version's section names its headline
        features on the next release. Draft also posted as issue #12 comment on
        2026-08-17 (gh issue comment 12 --body-file).
+VERIF  Wave-6 slice 18 (2026-08-17, HEAD dd25242): every commit ref in the draft's
+       mapping table (rows A1-A6, C1-C7, F1-F19) and each inline `(commit)` was
+       checked against `git log` — all 82 distinct refs exist, and each subject
+       matches the claim the draft makes for it (no fabrication). The three
+       excluded dev-only commits (518758f ruff/CI, 4efb961 probe-set restriction,
+       8514811 annotation/console-script checkers) are likewise real and correctly
+       excluded as not-user-visible. tests/test_changelog.py, incl.
+       test_shipped_version_section_names_its_headline_features, is GREEN (17
+       passed, PYTHONPATH= UNTELL_LITE_NO_TORCH=1). CHANGELOG.md remains guard-RED:
+       the human merge under `## [Unreleased]` is still the only path to close #12.
+       Issue #12 left OPEN pending that merge.
 
 ### EXACT PROPOSED TEXT (append to `## [Unreleased]` in CHANGELOG.md)
 
@@ -1647,3 +1658,38 @@ RAN    fast suite green (8427 passed) with all changes present; browser tests 75
 SAW    No queue entry in the original commit (discipline slip — repaired here).
 WHY    New CLI surfaces (--browser auto, signals mode) are AMBER per the envelope.
 NEXT   Issue #3 per-rule rubric tests + #2 live-probe e2e evidence: queued for the next wave.
+
+## 2026-08-17 slice 17 (wave 6, issue #40) — AMBER — sentence-granularity calibration designed: per-detector cuts, simulated ensemble FPR 0.9000 -> 0.4667
+
+WHAT   Issue #40: at the granularity the loop scores (sentences) 4/5 detectors fire at
+       FPR 33-57% at the shipped 0.30. Measured per-detector FPR-vs-threshold curves at
+       sentence granularity (HC3, n=60/class, .claude/probes/evidence/
+       sentence_calibration_20260817_062512.json; reproduced at 3dp from the wave-4 run
+       sentence_calibration_20260816_110405.json). The shipped ensemble (max >= 0.30)
+       flags 90% of human sentences (FPR 0.9000, TPR 1.0000). Design
+       (.claude/probes/issue40_calibration_design.md): replace the single global cut with
+       a PER-DETECTOR sentence-granularity cut, OR_d score_d >= cut_d with every cut_d >=
+       0.30; cut_d = smallest t >= 0.30 with FPR <= 0.20 (least TPR-damaging cut):
+         perplexity_burstiness  0.300 (already FPR 0.100 / TPR 0.500 — no move)
+         roberta_openai         0.736 (FPR 0.200 / TPR 0.617)
+         hc3_roberta            0.994 (FPR 0.200 / TPR 0.950)
+         fast_detectgpt         0.371 (FPR 0.200 / TPR 0.850)
+         mage                   exclude from sentence targeting (no cut < 1.0 meets FPR
+                                <= 0.20; human sentence mode 0.7-1.0, sentence TPR 0;
+                                document-level only)
+       Simulated ensemble with those cuts at the shipped threshold: FPR 0.9000 -> 0.4667,
+       TPR 1.0000 -> 0.9833 (targeting FPR nearly halved at 1.7% TPR cost; mage's
+       exclusion dominates). Global floor moves are the wrong shape: max >= 0.50 still
+       FPR 0.8167 (mage's human mode sits at 0.7-1.0), so the fix must be per-detector.
+RAN    python .claude/probes/ensemble_calib_sim.py .claude/probes/evidence/
+       sentence_calibration_20260817_062512.json --target 0.20
+SAW    ENSEMBLE calibrated cuts (OR_d score>=...): FPR=0.4667 TPR=0.9833 (n=60/60);
+       shipped ensemble FPR=0.9000 TPR=1.0000; global max>=0.50 FPR=0.8167.
+WHY    AMBER: evidence + queued design only. Threshold moves are RED — this slice changes
+       no threshold and touches no pub-doc (.claude/ + design doc queue entry only).
+NEXT   A human applies the per-detector sentence-cut table where sentence scores enter
+       the ensemble (untell/scripts/score.py aggregation layer, per the _verdict_threshold
+       precedent in design point 2), then re-runs the sweep (.claude/probes/
+       calibration_sweep.py) and the paragraph audit (validation protocol, design point
+       6). A RAID sentence sweep is the follow-up before shipping the table as the
+       default (curves are HC3-only).
