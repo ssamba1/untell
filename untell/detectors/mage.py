@@ -16,6 +16,67 @@ logger = logging.getLogger(__name__)
 _MODEL_ID = "yaful/MAGE"
 
 
+def _is_transport_error(exc: BaseException) -> bool:
+    """True when *exc* means "the remote could not be reached or dropped the
+    connection" rather than "the remote actively refused".
+
+    Mirrors huggingface_hub's own offline classification (ConnectError,
+    TimeoutException, OfflineModeIsEnabled) plus the transport-level classes it
+    does NOT catch (TLS handshake failures, mid-response resets, stream
+    errors). ``httpx.ProxyError`` is deliberately excluded: huggingface_hub
+    re-raises it on purpose so a misconfigured proxy surfaces instead of being
+    silently ignored.
+    """
+    import socket
+    import ssl
+
+    import httpx
+
+    return isinstance(
+        exc,
+        (
+            ssl.SSLError,
+            httpx.ConnectError,
+            httpx.TimeoutException,
+            httpx.ReadError,
+            httpx.RemoteProtocolError,
+            httpx.StreamError,
+            httpx.DecodingError,
+            httpx.TooManyRedirects,
+            ConnectionError,
+            socket.timeout,
+            TimeoutError,
+        ),
+    )
+
+
+def _snapshot_dir() -> str:
+    """Resolve the local MAGE snapshot, tolerating a glitchy remote.
+
+    ``snapshot_download`` revalidates the repo against the Hub on every call
+    (the remote ETag/commit liveness check). huggingface_hub classifies
+    connect/timeout/offline errors as "offline" and falls back to the cached
+    snapshot, but transport failures it does not classify — TLS handshake
+    errors (``ssl.SSLError``), connection resets mid-response
+    (``httpx.ReadError``/``RemoteProtocolError``) — propagate. A one-off blip
+    of that kind must not permanently kill a fully-cached detector (``_dead``
+    in ``score`` is permanent for the process), so retry cache-only and load
+    what is on disk. If nothing is cached, the original error propagates and
+    the detector goes dead for real.
+    """
+    from huggingface_hub import snapshot_download
+
+    try:
+        return snapshot_download(_MODEL_ID)
+    except Exception as exc:
+        if not _is_transport_error(exc):
+            raise
+        try:
+            return snapshot_download(_MODEL_ID, local_files_only=True)
+        except Exception:
+            raise exc from None
+
+
 class MageDetector:
     name = "mage"
     tier = "full"
@@ -54,14 +115,13 @@ class MageDetector:
             import json
             import os
 
-            from huggingface_hub import snapshot_download
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-            local = snapshot_download(_MODEL_ID)
+            local = _snapshot_dir()
             cfg_path = os.path.join(local, "config.json")
             with open(cfg_path, encoding="utf-8") as fh:
                 raw = json.load(fh)
-            i2l = raw.get("id2label") and {}
+            i2l = raw.get("id2label") or {}
             if not (i2l and all(isinstance(v, str) for v in i2l.values())):
                 # MAGE label convention: 0 == machine-generated, 1 == human.
                 raw["id2label"] = {"0": "machine", "1": "human"}
