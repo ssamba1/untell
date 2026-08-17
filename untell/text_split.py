@@ -243,7 +243,7 @@ def _continues_after_abbreviation(previous: str, nxt: str) -> bool:
 # The test is the NEXT word's case. A genuine sentence after an ellipsis is capitalised
 # ("It works... Mostly."); a continuation is not. Narrow on purpose — a real sentence boundary
 # after an ellipsis still splits.
-_ELLIPSIS_END_RE = re.compile(r"(?:\.{2,}|…)" "[\"'”’)\]}»" + _ZERO_WIDTH_CLASS + r"]*$")
+_ELLIPSIS_END_RE = re.compile(r"(?:\.{2,}|…)" r"[\"'”’)\]}»" + _ZERO_WIDTH_CLASS + r"]*$")
 
 def _first_alpha_is_lower(nxt: str) -> bool:
     """The continuation's first LETTER is lowercase, skipping leading quotes and brackets.

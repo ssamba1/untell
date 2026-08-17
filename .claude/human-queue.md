@@ -1181,3 +1181,60 @@ NEXT   Apply the exact proposed text (also posted as issue #23 comment 2026-08-1
        applies to the model-backed tiers."
        A human may then close #23 (or re-open the mitigation lane with a new signal; em_dash
        at sentence level is a candidate anti-signal to exclude if tells targeting is retried).
+
+## 2026-08-16 slice 8 (wave 4) note — #37 HEALTHCHECK + #35 docs/api-server.md re-verified; docker build NOT run (no docker here)
+
+WHAT   #37: added HEALTHCHECK to Dockerfile probing /health (the one endpoint auth and rate
+       limiting exempt — a probe can never 401/429 itself into a restart loop): interval 30s,
+       timeout 5s, start-period 60s, retries 3, shell form `python -c "import
+       urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"`.
+       urllib is stdlib (curl is not in python:3.11-slim). Pinned by a new test in
+       tests/test_dockerfile_installs_the_wheel.py (8 passed).
+       #35: re-verified every claim in docs/api-server.md against HEAD via live TestClient
+       probes (routes, /openapi.json securitySchemes + per-route security, /health shape,
+       auth + exempt list, OPTIONS preflight, CORS unset/set, rate limit 429+Retry-After,
+       50k-char 422, all request-model defaults). All TRUE except six fixes landed in the
+       same commit: /humanize example updated to real defaults (tier full / rewriter
+       composite / best_of 3 — code defaults, probed), Docker snippet CMD now `--host
+       0.0.0.0` (plain `untell-server` binds 127.0.0.1 = unreachable in a container) +
+       HEALTHCHECK line, "every endpoint from the CLI" -> "full scoring, analysis and
+       rewriting surface" (CLI/MCP have compare, REST does not), UNTELL_CORS_ORIGINS row
+       added to the config table, UNTELL_API_KEY row "Unset or empty = open access",
+       Hosted-LLM section corrected (sibling's `rewriter: "anthropic"/"openai"` claim was
+       FALSE — live probe: both 422 literal_error; only `rewriter: "auto"` reaches hosted
+       providers, falling back to free composite without a key).
+       Queue re-verified at HEAD: README:149 MCP tool list (5 names vs 8 registered) and
+       README:789 UNTELL_CORS_ORIGINS row ("unset means no cross-origin access" vs live
+       wildcard-no-credentials) are BOTH still stale -> stay queued (README is guard-RED).
+       Bind-default entry resolved; [api]-extra entry resolved by sibling's ec8d6b6.
+RAN    UNTELL_LITE_NO_TORCH=1 ./.venv/Scripts/python.exe _mem_probe/slice8_doc_probe.py
+       (TestClient, ALL PROBES PASSED); dockerfile-parse DockerfileParser(path='Dockerfile');
+       pytest tests/test_dockerfile_installs_the_wheel.py (8 passed),
+       tests/test_cors_preflight_and_openapi_auth.py (8 passed)
+SAW    docker/podman/buildah all "command not found" on this host -> full `docker build`
+       NOT run; dockerfile-parse parses every instruction cleanly including HEALTHCHECK.
+       All live probes passed; 16 targeted tests passed. Note: my three files' content
+       landed in HEAD via sibling sweep commit 70c8cbf (verified identical, `git diff HEAD`
+       empty for all three); this commit closes #37/#35 and carries this note.
+WHY    Note entry: #37's acceptance asked for a build smoke test or a documented syntax
+       check — docker is unavailable here, so the check is documented here + in the slice
+       report. Everything else is GREEN (docs/api-server.md is not guard-RED).
+NEXT   Human/CI: run a real `docker build` + `docker run` and confirm the HEALTHCHECK
+       transitions to healthy (no CI job builds the image). Apply the two still-stale
+       README rows (MCP tool list + CORS) from the earlier entries when next editing README.
+
+## 2026-08-16 wave-4 issue #41 — ruff probe policy RESOLVED via documented exemption
+
+WHAT   The ~705-error probe-script debt (slice 9's entry above) is resolved structurally:
+       [tool.ruff.lint.per-file-ignores] exempts ".claude/probes/*.py" from ALL rules,
+       with the rationale in .claude/probes/RUFF-POLICY.md and coverage asserted by
+       tests/test_probe_ruff_policy.py (every probe *.py must match a listed pattern;
+       no dead patterns; `ruff check .` end-to-end). Shipped code (untell/, tests/,
+       scripts/) stays zero-tolerance and is gated by the ci.yml ruff job.
+RAN    git diff pyproject.toml; tests/test_probe_ruff_policy.py (policy invariants run
+       ruff-free; the e2e check skips only when ruff is absent).
+SAW    Guard exit 0 on the policy commit; 3/3 policy tests pass.
+WHY    AMBER: pyproject.toml touched (config). RED-not: the exemption is documented and
+       enforced, not silent.
+NEXT   Human/CI: confirm the ruff job in ci.yml passes on the next push (the e2e check
+       is the same command CI runs).

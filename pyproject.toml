@@ -170,6 +170,14 @@ extend-exclude = ["*.ipynb"]  # notebooks use cell magics (!cmd) ruff can't pars
 select = ["E", "F", "I", "W", "UP", "B"]
 ignore = ["E501"]
 
+# .claude/probes/ are one-off audit/diagnostic scripts, not shipped code. They carry a
+# documented per-file exemption (blanket rule ignore) — the rationale lives in
+# .claude/probes/RUFF-POLICY.md and coverage is asserted by tests/test_probe_ruff_policy.py
+# (every *.py under .claude/probes/ must match a pattern here). Shipped code
+# (untell/, tests/, scripts/) stays zero-tolerance and is gated by the ruff CI job.
+[tool.ruff.lint.per-file-ignores]
+".claude/probes/*.py" = ["ALL"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Tests that load a real model (detector ensemble, sentence-transformers, NLI, T5) are marked
