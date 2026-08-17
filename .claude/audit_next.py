@@ -10,6 +10,10 @@ commit).
     python .claude/audit_next.py
     python .claude/audit_next.py record --verdict clean --tests-before 5736 \
         --tests-after 5736 --note "probed X, invariant held at N of M"
+
+The recorder refuses a byte-identical row (issue #16): the same pass recorded twice is a
+duplicate, not a finding, and the next pass number counts passes (max recorded + 1), not
+rows - the log is marked, never pruned, so the two can diverge.
 """
 
 from __future__ import annotations
@@ -61,6 +65,35 @@ VERDICTS = ("clean", "defect-fixed", "coverage-closed", "red-fixed", "queued")
 # than it found it. Anything else is a story, and a story is what a cheap model writes when
 # the probe was inconclusive but the pass feels like it should have produced something.
 NEEDS_EVIDENCE = ("defect-fixed", "coverage-closed")
+
+
+def next_pass_number(history: list[dict[str, str]]) -> int:
+    """The next pass number counts passes, not rows.
+
+    The log is marked, not pruned, when a fleet collision reuses a number, so the row
+    count can run BEHIND the highest pass number (2729 rows ended at pass 2730 after the
+    55 duplicate rows were marked, issue #16). Numbering from the row count reissues an
+    already-taken number on the very next record; numbering from the highest recorded
+    pass keeps every pass unique.
+    """
+    if not history:
+        return 1
+    return max(int(r["n"]) for r in history) + 1
+
+
+def byte_identical(row: str) -> bool:
+    """True when this exact row line is already in the log.
+
+    The recorder's dedup guard (issue #16): a byte-identical row means the same pass was
+    recorded twice, and the second copy is never a finding. Refusing it keeps the log
+    honest even when nothing else noticed.
+    """
+    if not LOG.exists():
+        return False
+    needle = row.strip()
+    return any(line.strip() == needle
+               for line in LOG.read_text(encoding="utf-8").splitlines())
+
 
 ROW = re.compile(
     r"^\|\s*(?P<n>\d+)\s*\|\s*(?P<lane>L\d)\s*\|\s*(?P<target>\S+)\s*\|"
@@ -124,7 +157,7 @@ def assign(history: list[dict[str, str]], offset: int = 0) -> tuple[int, str, st
     """
     history = list(history)
     for _ in range(offset + 1):
-        n = len(history) + 1
+        n = next_pass_number(history)
         lane = SCHEDULE[(n - 1) % len(SCHEDULE)]
         if lane == "L1":
             target = least_used(target_ids(), history)
@@ -198,6 +231,15 @@ def cmd_record(a: argparse.Namespace) -> int:
         f"| {n} | {lane} | {target} | {a.verdict} | {a.tests_before} | {a.tests_after} "
         f"| {a.commit or '-'} | {note} |\n"
     )
+
+    # Issue #16's named defect class: a byte-identical row is the same pass recorded
+    # twice, and it must not be recorded again no matter how it is being written - the
+    # direct path here, or a worker row the collector will later move into the log.
+    if byte_identical(row):
+        sys.exit(
+            "REFUSED: this exact row is already in the audit log (byte-identical "
+            "duplicate). A pass is recorded once - change the note or the pass number."
+        )
 
     if a.worker:
         # Parallel passes run in separate worktrees, and every one of them appending to the

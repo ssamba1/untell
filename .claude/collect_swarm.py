@@ -44,6 +44,20 @@ def taken_numbers() -> set[int]:
             out.add(int(m.group(1)))
     return out
 
+
+def taken_lines() -> set[str]:
+    """Every row line already in the log, stripped (issue #16 dedup guard).
+
+    audit_next.py refuses byte-identical rows at record time; the collector is the last
+    line of defence for rows queued by fleet workers against a stale log, which is
+    exactly how the 55 duplicate pass-rows happened. A row whose exact text is already
+    present is the same pass recorded twice - skip it.
+    """
+    if not LOG.exists():
+        return set()
+    return {line.strip() for line in LOG.read_text(encoding="utf-8").splitlines()
+            if ROW.match(line.strip())}
+
 def next_free(n: int, taken: set[int]) -> int:
     while n in taken:
         n += 1
@@ -89,11 +103,13 @@ def main() -> int:
         merged.append(branch)
         print(f"  swarm{i}: merged {ahead} commit(s)")
 
-    # 3. Append rows (unless merge-only), renumbering collisions.
+    # 3. Append rows (unless merge-only), deduping byte-identical text and renumbering
+    # collisions.
     if not a.merge_only:
         rows = sorted(RECORDS.glob("*.row"), key=lambda p: p.name)
         if rows:
             taken = taken_numbers()
+            seen = taken_lines()
             appended = 0
             with LOG.open("a", encoding="utf-8") as f:
                 for rf in rows:
@@ -101,6 +117,10 @@ def main() -> int:
                     m = ROW.match(text)
                     if not m:
                         print(f"  !! bad row {rf.name}: {text[:60]}")
+                        continue
+                    if text in seen:
+                        print(f"  skip {rf.name}: byte-identical row already in the log")
+                        rf.unlink()
                         continue
                     n = int(m.group(1))
                     if n in taken:
@@ -111,6 +131,7 @@ def main() -> int:
                     else:
                         taken.add(n)
                     f.write(text + "\n")
+                    seen.add(text)
                     rf.unlink()
                     appended += 1
             print(f"appended {appended} rows")

@@ -124,3 +124,34 @@ class TestCompare:
         })
         # post_flagged_rate is missing on the prev side -> skipped, not compared
         assert not any("post_flagged_rate" in ln and "->" in ln for ln in lines), lines
+
+
+class TestDuplicateRows:
+    """Issue #17 dedup guard: the recorder must SEE a byte-identical line it is about
+    to append (append-only policy retains it; the warning makes the double-append
+    visible instead of silent)."""
+
+    def test_counts_identical_lines(self, tmp_path, monkeypatch) -> None:
+        row = {"recipe": "lite-builtin", "seconds": 64.6, "argv": ["-m", "eval.ceiling"]}
+        other = {"recipe": "lite-builtin", "seconds": 60.6, "argv": ["-m", "eval.ceiling"]}
+        path = tmp_path / "measurements.jsonl"
+        path.write_text(
+            json.dumps(row) + "\n" + json.dumps(row) + "\n" + json.dumps(other) + "\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(R, "LEDGER", path)
+        assert R.duplicate_rows(row) == 2
+        assert R.duplicate_rows(other) == 1
+
+    def test_missing_ledger_is_zero(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setattr(R, "LEDGER", tmp_path / "nope.jsonl")
+        assert R.duplicate_rows({"recipe": "x"}) == 0
+
+    def test_whitespace_insensitive(self, tmp_path, monkeypatch) -> None:
+        """The recorded line is json.dumps output; a trailing-space variant of the same
+        object must still count (byte-identical modulo line whitespace)."""
+        row = {"recipe": "lite-builtin", "seconds": 1.0}
+        path = tmp_path / "measurements.jsonl"
+        path.write_text(json.dumps(row) + "\n", encoding="utf-8")
+        monkeypatch.setattr(R, "LEDGER", path)
+        assert R.duplicate_rows(row) == 1

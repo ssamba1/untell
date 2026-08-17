@@ -179,6 +179,15 @@ def _unavailable_reason(name: str) -> str:
             f"rewriter {name!r} reports itself unavailable even though {env_var} is set and "
             f"{module} is importable. Run `untell --check` for the installed list."
         )
+    if name.lower() in ("local", "local-policy"):
+        # The local-policy rewriter's reason is richer than the generic fallback below: it names
+        # the exact missing package and the extra that installs it (issue #34). A library caller
+        # passing rewriter="local" gets that instead of "check the name or install its extra".
+        from untell.rewriter.local_policy import LocalPolicyRewriter
+
+        reason = LocalPolicyRewriter().unavailable_reason()
+        if reason is not None:
+            return f"rewriter {name!r} is unavailable: {reason}"
     return (
         f"rewriter {name!r} is not available — check the name (see `untell --check` for the "
         "installed list) or install its extra"
@@ -238,6 +247,28 @@ FREE_FALLBACK_WARNING = (
 )
 
 
+def _free_fallback_warning_text() -> str:
+    """The fallback warning the two readers share, tailored when UNTELL_POLICY_DIR is set.
+
+    FREE_FALLBACK_WARNING tells a user with nothing configured to set UNTELL_POLICY_DIR. When
+    they ALREADY set it and the policy still cannot run — peft (or torch/transformers) missing,
+    adapter dir gone — that advice is nonsense twice over: they did the thing it asks, and the
+    rewriter needs something else entirely. Name the real reason in the same slot (issue #34).
+    """
+    if not os.environ.get("UNTELL_POLICY_DIR"):
+        return FREE_FALLBACK_WARNING
+    from untell.rewriter.local_policy import LocalPolicyRewriter
+
+    reason = LocalPolicyRewriter().unavailable_reason()
+    if reason is None:
+        return FREE_FALLBACK_WARNING  # policy looks runnable; the fallback is a key thing
+    return (
+        f"UNTELL_POLICY_DIR is set but the local-policy rewriter cannot run: {reason} "
+        "so the free 'composite' path ran instead. Install the extra above to use the "
+        "trained policy, or pass rewriter='composite' to make the fallback explicit."
+    )
+
+
 def _warn_free_rewriter_fallback() -> None:
     """Say once that no configured rewriter was found and the free path ran instead.
 
@@ -249,7 +280,7 @@ def _warn_free_rewriter_fallback() -> None:
     if _WARNED_FREE_FALLBACK:
         return
     _WARNED_FREE_FALLBACK = True
-    logging.getLogger(__name__).warning(FREE_FALLBACK_WARNING)
+    logging.getLogger(__name__).warning(_free_fallback_warning_text())
 
 
 def _warn_voice_sample_too_short(words: int) -> None:
@@ -914,7 +945,7 @@ def _untell_text(
         # process, in a log they may not be reading, on a surface that returns a dict.
         rw = get_rewriter("composite")
         _warn_free_rewriter_fallback()
-        rewriter_warning = FREE_FALLBACK_WARNING
+        rewriter_warning = _free_fallback_warning_text()
 
     # A voice sample below the documented minimum yields a profile built on too few sentences to
     # mean anything, and the tie-break then runs on noise. `untell humanize --voice-sample` warns
@@ -1293,6 +1324,7 @@ def _untell_text(
 
     # Restore sentinels to get the final human-readable text before any confirm/polish/return.
     final = restore(best_masked, mapping)
+
     # OUTPUT scrub, and why the input scrub above is not enough (issue #4). The scrub at the top
     # of this function covers the INPUT vector: hidden characters the caller's text carried are
     # gone before lock(), so no restored span can bring them back. It does NOT cover the vector
@@ -1707,7 +1739,7 @@ def _render(result: dict) -> str:
 
 _REWRITER_NAMES = [
     "auto", "surgical", "structural", "composite", "targeted", "neural", "ensemble",
-    "max", "t5_paraphrase", "mt_pivot", "base",
+    "max", "t5_paraphrase", "mt_pivot", "base", "local",
 ]
 
 # Shipped defaults, in one place so the config layer has something to fall back TO and the tests
@@ -1915,7 +1947,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--browser",
         help="score each iteration against free web detector(s) instead of local proxies — "
-        "comma-separated (e.g. 'zerogpt,detecting-ai'); the loop must beat the MAX across all. "
+        "comma-separated (e.g. 'zerogpt,detecting-ai', or 'auto' for the first available); the "
+        "loop must beat the MAX across all. "
         "Real checkers, no key, but slow (~10s each/iter). Needs .[browser] + playwright.",
     )
     parser.add_argument(
@@ -1946,7 +1979,8 @@ def build_parser() -> argparse.ArgumentParser:
         "'t5_paraphrase' = free neural paraphraser alone (needs .[full]); "
         "'mt_pivot' = round-trip machine translation (needs .[full]; best on watermarked input); "
         "'base' = untuned base model, no LoRA adapter (A/B baseline; needs .[full] + UNTELL_POLICY_BASE); "
-        "'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR).",
+                "'local' = trained LoRA policy (single-pass rewriter; needs UNTELL_POLICY_DIR + .[train] for peft); "
+                "'auto' = hosted-LLM / local-policy rewriter (needs a key or UNTELL_POLICY_DIR).",
     )
     parser.add_argument("--no-scrub", action="store_true", help="skip stripping hidden watermark/unicode chars from input")
     parser.add_argument("--polish", action="store_true", help="add a cheap surgical word-substitution polish pass at the end")
@@ -2081,6 +2115,27 @@ def main(argv: list[str] | None = None) -> int:
                 "set UNTELL_POLICY_BASE to a HF model id to override the default base."
             )
             return 1
+    elif args.rewriter == "local":
+        # The trained LoRA policy (use_adapter=True) — the CLI half of the A/B pair whose other
+        # half is "base". Unlike the free-name branch above, this one constructs the rewriter
+        # directly: `get_rewriter(prefer="local")` falls through to a hosted key when the policy
+        # is unavailable, and a caller who NAMED the policy wants that policy, not a substitute.
+        # A missing optional dep (peft/torch/transformers) exits 2 with a message naming the
+        # package and the extra that installs it, instead of the ModuleNotFoundError traceback
+        # the unguarded import inside _load used to leak (issue #34).
+        from untell.rewriter.local_policy import LocalPolicyRewriter
+
+        rewriter = LocalPolicyRewriter()
+        reason = rewriter.unavailable_reason()
+        if reason is not None:
+            message = f"--rewriter local is unavailable: {reason}"
+            if args.json:
+                # Same contract as every other error this command can return: under `--json`
+                # stdout is JSON, because a caller parsing stdout cannot special-case one branch.
+                print(json.dumps({"error": message}))
+            else:
+                print(f"ERROR: {message}", file=sys.stderr)
+            return 2
 
     voice_sample = None
     if args.voice_sample:

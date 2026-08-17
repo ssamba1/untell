@@ -155,10 +155,20 @@ measurement data is RED; the wave-3 slice-8 precedent). The recorder (`research.
 appends unconditionally: a byte-identical pair (e.g. the two 64.6s `lite-builtin` rows at
 lines 2-3) is a double-run, and the ledger cannot distinguish a deliberate reproducibility
 re-run from a double-append, so the dedup policy is this explicit note rather than a refusal
-guard. A recipe's run count (`load()`/`report`) counts every row, including identical ones.
-`.claude/instruments.json` keys are a subset of `RECIPES` in `research.py` (pinned by
+guard. Since 2026-08-17 the recorder *warns* (`WARNING: a byte-identical ... row is already
+in ...`) when the line it is about to append already exists — append-only is unchanged, the
+double-append is just no longer silent (`duplicate_rows()` in `research.py`). A recipe's run
+count (`load()`/`report`) counts every row, including identical ones. `.claude/instruments.json`
+keys are a subset of `RECIPES` in `research.py` (pinned by
 `tests/test_claude_instruments_match_recipes.py`); an instrument may only exist for a recipe
 that exists.
+
+**Schema (one JSON object per line, appended by `research.py run`):** `recipe` (a `RECIPES`
+key), `seconds` (wall-clock time of the run, one decimal), `argv` (the exact command that
+produced the numbers), `metrics` (the recipe's `metrics` fields that came back non-null),
+`raw` (every non-list/non-dict field the ceiling command emitted — corpus, n, rewriter, tier,
+spread, liveness flags). The `metrics`+`raw` split is what `compare()` reads: metrics drive
+the noise band checks, raw carries the liveness evidence that the rewriter actually loaded.
 
 **This lane edits no source and no document.** Its output is evidence, not a decision. If
 something MOVED beyond the noise band, write it to `.claude/human-queue.md` with the command

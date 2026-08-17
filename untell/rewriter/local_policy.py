@@ -106,6 +106,17 @@ _SENTENCE_LENGTH_BAND = (0.7, 1.4)
 
 DEFAULT_BASE = "Qwen/Qwen2.5-3B-Instruct"
 
+# A missing optional dependency must never surface as a bare traceback. The bar this repo holds
+# itself to (io_utils: "reading it needs python-docx: pip install 'untell[docs]'") is to name the
+# package AND the extra AND the command. Each entry maps a dep to the extra that installs it:
+# torch/transformers ship with `.[full]`; peft only ships with `.[train]` (the GPU training
+# extra), so a machine that can run every other rewriter still needs it for the adapter load.
+_MISSING_DEP_HINTS = {
+    "torch": "pip install 'untell[full]'",
+    "transformers": "pip install 'untell[full]'",
+    "peft": "pip install 'untell[train]'",
+}
+
 
 # "Output only the rewritten text" is an instruction, not a guarantee, and a base instruct model
 # obeys it most of the time. The failure is expensive and silent: a leading "Here is the rewritten
@@ -264,23 +275,58 @@ class LocalPolicyRewriter:
         if not use_adapter:
             self.name = "base-model"
 
+    def unavailable_reason(self) -> str | None:
+        """Why this rewriter cannot run, or None when it can.
+
+        ``available()`` answers a bool; this answers the question a user actually has — which
+        package is missing, which extra installs it, and what to run. Same checks, so the two
+        can never disagree about availability. Split out because the CLI and the ``_load``
+        guard both need the REASON, and a caller gated on ``available()`` still reached the
+        unguarded ``import peft`` inside ``_load`` on every path the gate was skipped.
+        """
+        import importlib
+
+        if self.use_adapter and (not self.adapter_dir or not os.path.isdir(self.adapter_dir)):
+            return (
+                "UNTELL_POLICY_DIR is not set (or points to a missing directory); set it to "
+                "the trained adapter dir (see training/rl_humanizer.py)."
+            )
+        missing = []
+        for module, hint in _MISSING_DEP_HINTS.items():
+            if not self.use_adapter and module == "peft":
+                continue  # base-only eval loads no adapter and needs no peft
+            try:
+                importlib.import_module(module)
+            except Exception:
+                missing.append((module, hint))
+        if not missing:
+            return None
+        if len(missing) == 1:
+            module, hint = missing[0]
+            return (
+                f"the local-policy rewriter needs the '{module}' package, which is not "
+                f"installed: {hint}"
+            )
+        names = ", ".join(f"'{module}'" for module, _ in missing)
+        return (
+            f"the local-policy rewriter needs the {names} packages, none of which are "
+            f"installed: pip install 'untell[full,train]'"
+        )
+
     def available(self) -> bool:
         """True when the adapter dir exists (when using one) and torch/transformers/peft import."""
-        if self.use_adapter and (not self.adapter_dir or not os.path.isdir(self.adapter_dir)):
-            return False
-        try:
-            import torch  # noqa: F401
-            import transformers  # noqa: F401
-
-            if self.use_adapter:  # peft is only needed to load the adapter; base-only eval doesn't use it
-                import peft  # noqa: F401
-        except Exception:
-            return False
-        return True
+        return self.unavailable_reason() is None
 
     def _load(self) -> None:
         if self._model is not None:
             return
+        reason = self.unavailable_reason()
+        if reason is not None:
+            # A caller that gate(d) on available() cannot reach this; a caller that did NOT
+            # (eval harness, the determinism driver, a library user) gets the plain-English
+            # reason instead of a ModuleNotFoundError five imports deep — after the base model
+            # had already downloaded. Fail before any heavy work.
+            raise RuntimeError(reason)
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 

@@ -271,6 +271,23 @@ def load(recipe: str | None = None) -> list[dict]:
             out.append(row)
     return out
 
+def duplicate_rows(row: dict) -> int:
+    """How many byte-identical lines the ledger already holds for this exact row.
+
+    The dedup guard behind the issue #17 policy: measurements.jsonl is append-only, so a
+    double-append is retained like any other line, but the recorder must SAY when a run it
+    is about to write is byte-identical to something already recorded - the two 64.6s
+    lite-builtin rows at lines 2-3 went in silently and stayed silent until a slice read
+    the file. The ledger cannot tell a deliberate reproducibility re-run from a
+    double-append, so this warns instead of refusing.
+    """
+    line = json.dumps(row)
+    if not LEDGER.exists():
+        return 0
+    return sum(1 for l in LEDGER.read_text(encoding="utf-8").splitlines()
+               if l.strip() == line)
+
+
 
 def flat_numbers(obj, prefix: str = "") -> dict[str, float]:
     """Every number in the result, flattened, so a recipe with no declared metrics is still
@@ -548,6 +565,11 @@ def cmd_run(name: str, timeout_minutes: int | None) -> int:
     for line in compare(name, result):
         print(line)
 
+    dup = duplicate_rows(row)
+    if dup:
+        print(f"WARNING: a byte-identical {name} row is already in "
+              f"{LEDGER.relative_to(ROOT)} ({dup} time(s)). Append-only policy retains "
+              "both (issue #17), but check you did not double-append a single run.")
     with LEDGER.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row) + "\n")
     print(f"\nappended to {LEDGER.relative_to(ROOT)} ({len(load(name))} run(s) of {name})")
