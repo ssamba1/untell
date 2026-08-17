@@ -14,6 +14,8 @@ NER cache).
 """
 from __future__ import annotations
 
+import os
+
 import untell.scripts.score as S
 
 
@@ -137,9 +139,15 @@ def test_lru_evicts_oldest_entries(monkeypatch):
         det = [_FakeDetector(f"fake{i}", 0.1 + (i % 9) * 0.1)]
         S._score_with_detectors(det, f"text number {i} here", tier="lite")
     assert len(S._score_cache) <= S._SCORE_CACHE_SIZE
-    # The first entries were evicted; the newest are still there.
-    assert S._score_cache.get(("text number 0 here", ("fake0",), "lite", S.DEFAULT_THRESHOLD)) is None
+    # The first entries were evicted; the newest are still there. The key is the full
+    # production key, mode component included (UNTELL_LITE_NO_TORCH=1 in the ambient env).
+    mode = tuple(
+        (name, os.environ.get(name)) for name in S._SCORING_MODE_ENV_VARS if os.environ.get(name)
+    )
     assert S._score_cache.get(
-        (f"text number {n - 1} here", (f"fake{n - 1}",), "lite", S.DEFAULT_THRESHOLD)
+        ("text number 0 here", ("fake0",), "lite", S.DEFAULT_THRESHOLD, mode)
+    ) is None
+    assert S._score_cache.get(
+        (f"text number {n - 1} here", (f"fake{n - 1}",), "lite", S.DEFAULT_THRESHOLD, mode)
     ) is not None
     S._score_cache.clear()

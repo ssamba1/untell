@@ -15,7 +15,20 @@ graphs spaCy does not produce (a self-headed token at 273 is impossible).
 
 from __future__ import annotations
 
+import pytest
+
 from untell.scripts import roles
+
+
+@pytest.fixture(autouse=True)
+def _torch_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These mutation kills exercise the spaCy parser path.
+
+    role_swap gates on UNTELL_LITE_NO_TORCH and returns None (unavailable) before the
+    killed code is reachable — the empty-analysis guard at roles.py:327 is only
+    exercised when the parser actually ran. Pin the env unset for the whole file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 
 def test_available_is_true_when_the_parser_loads() -> None:

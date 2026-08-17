@@ -234,6 +234,10 @@ def test_out_of_range_score_is_clamped_and_surfaced(monkeypatch):
     assert r["ai_percent"] == 100.0  # not 8500.0
     assert r["out_of_range_detectors"] == ["d0"]  # the adapter bug stays visible
 
+    # The per-text score cache is keyed on (text, detector names, tier, threshold) — the
+    # same string with the same NAMED fake detector would otherwise serve the 85.0 result
+    # to the -1.0 config (measured: the second assert read max=1.0). Clear between configs.
+    sc._score_cache.clear()
     monkeypatch.setattr(sc, "load_detectors", _fake_detectors([-1.0]))
     r = sc.score_text("some sample text here", tier="lite")
     assert r["max"] == 0.0  # not a "more human than human" negative

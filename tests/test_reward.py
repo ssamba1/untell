@@ -61,7 +61,12 @@ def test_faithful_paraphrase_the_loop_accepts_is_not_gated(monkeypatch):
     deployed loop accepts. The docstring's own measurement of the raw cosine gate admits 4 of 11
     meaning-broken rewrites; NLI admits 0 of 11, so aligning the reward with the loop is not a
     loosening of the gate, it is the gate the loop actually ships.
+
+    This test IS the NLI path: with UNTELL_LITE_NO_TORCH set, meaning_preserved is the
+    similarity-only fallback and rejects this paraphrase (measured False) — the assertion
+    only has meaning when the NLI stack is present, so pin the env unset for this test.
     """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
     import training.reward as r
 
     orig = "The cat sat on the mat in the warm afternoon sun, perfectly content."

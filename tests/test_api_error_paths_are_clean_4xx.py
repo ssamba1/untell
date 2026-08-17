@@ -68,9 +68,13 @@ def _no_rate_limit():
     limiter is read per call, so the env var is a per-test switch."""
     import os
 
+    previous = os.environ.get("UNTELL_RATE_LIMIT")
     os.environ["UNTELL_RATE_LIMIT"] = "0"
     yield
-    os.environ.pop("UNTELL_RATE_LIMIT", None)
+    if previous is None:
+        os.environ.pop("UNTELL_RATE_LIMIT", None)
+    else:
+        os.environ["UNTELL_RATE_LIMIT"] = previous
 
 
 @pytest.mark.parametrize("path", sorted(REQUESTS))

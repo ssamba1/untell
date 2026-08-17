@@ -27,9 +27,13 @@ def _api_key_env():
     green alone, red together. `_api_key()` is read per request, so nothing here needs the
     variable at import time.
     """
+    previous = os.environ.get("UNTELL_API_KEY")
     os.environ["UNTELL_API_KEY"] = "secret"
     yield
-    os.environ.pop("UNTELL_API_KEY", None)
+    if previous is None:
+        os.environ.pop("UNTELL_API_KEY", None)
+    else:
+        os.environ["UNTELL_API_KEY"] = previous
 
 
 def test_rate_limit_keyed_by_api_key():

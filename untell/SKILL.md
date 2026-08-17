@@ -308,6 +308,13 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
      detector is in the loop (costs credits). Never claim this output will pass GPTZero/Turnitin
      unless it was verified against the real thing.
 
+7. **Batch mode — many files at once.** For a whole directory tree of `.txt`/`.md` files, use
+   `python scripts/batch.py "<dir>"` — it humanizes every file, mirrors the tree into
+   `<dir>_humanized/`, and writes `manifest.json` (per-file status, pre/post scores, rewrote flag)
+   plus a summary line. `--dry-run` previews without writing; `--limit N` caps the file count;
+   per-file failures never abort the run and the exit code reflects them. Single-file requests
+   still follow steps 1-6; batch is the directory-scale version of the same loop.
+
 > **Restoring sentinels:** the mapping from step 2 is `sentinel -> original`. Replace each
 > `⟦HZxxxx⟧` in your final text with its mapped value. (Programmatically:
 > `from untell.scripts.preserve import restore; restore(text, mapping)`.)

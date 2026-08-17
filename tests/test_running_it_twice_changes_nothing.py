@@ -66,7 +66,15 @@ def _stdlib_lite_module():
         if hasattr(fn, "cache_clear"):
             fn.cache_clear()
     yield
-    os.environ.pop("UNTELL_LITE_NO_TORCH", None)
+    # Restore the PREVIOUS value: an unconditional pop leaks the unset state to every
+    # later test in the session that assumes the ambient env (verified: with this pop,
+    # test_the_result_names_the_style_that_ran and the verify family fail when this
+    # module runs first — the style test scores on the torch path with the var gone).
+    previous = os.environ.get("UNTELL_LITE_NO_TORCH")
+    if previous is None:
+        os.environ.pop("UNTELL_LITE_NO_TORCH", None)
+    else:
+        os.environ["UNTELL_LITE_NO_TORCH"] = previous
     for name in ("score_text", "batch_score_texts"):
         fn = getattr(score_mod, name, None)
         if hasattr(fn, "cache_clear"):
