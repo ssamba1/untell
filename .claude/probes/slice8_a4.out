@@ -1,5 +1,0 @@
-CHUNK=A4_ENV_RETRY_LANG_CONFIG FILES=tests/test_env.py tests/test_env_comment_line_skipped.py tests/test_env_fallback_guards.py tests/test_env_real_env_wins.py tests/test_the_env_fallback_agrees_with_dotenv.py tests/test_retry.py tests/test_retry_class_name_alone.py tests/test_retry_classification.py tests/test_retry_kill_survivors.py tests/test_languages.py tests/test_a_verdict_on_german_says_it_is_not_a_verdict.py tests/test_config.py tests/test_config_and_languages_edges.py tests/test_config_fallthrough_is_named.py tests/test_config_says_when_it_ignores_a_file.py 
-  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
-C:\Users\Admin\Humanize\.venv\Lib\site-packages\coverage\inorout.py:558: CoverageWarning: Module untell.humanness was never imported. (module-not-imported); see https://coverage.readthedocs.io/en/7.15.4/messages.html#warning-module-not-imported
-  self.warn(f"Module {pkg} was never imported.", slug="module-not-imported")
-CHUNK_DONE=A4_ENV_RETRY_LANG_CONFIG

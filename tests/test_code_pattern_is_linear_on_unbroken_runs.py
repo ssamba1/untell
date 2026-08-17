@@ -14,7 +14,17 @@ from __future__ import annotations
 
 import time
 
+import pytest
+
 from untell.scripts.preserve import _PATTERNS, lock
+@pytest.fixture(autouse=True)
+def _torch_path(monkeypatch):
+    """These assertions exercise model-backed paths (NER entities, the full ensemble,
+    the NLI gate, the spaCy role veto). Under UNTELL_LITE_NO_TORCH=1 those paths are
+    gated away (no entities, reduced ensemble, similarity-only naming, role_swap=None),
+    so the file fails without meaning anything. Pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 
 def test_the_code_pattern_is_linear_on_unbroken_runs():

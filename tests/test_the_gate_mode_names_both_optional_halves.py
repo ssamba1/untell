@@ -30,6 +30,14 @@ import pytest
 import untell.scripts.roles as roles
 from untell.scripts.roles import parser_available, role_swap
 from untell.scripts.run import _meaning_gate_mode
+@pytest.fixture(autouse=True)
+def _torch_path(monkeypatch):
+    """These assertions exercise model-backed paths (NER entities, the full ensemble,
+    the NLI gate, the spaCy role veto). Under UNTELL_LITE_NO_TORCH=1 those paths are
+    gated away (no entities, reduced ensemble, similarity-only naming, role_swap=None),
+    so the file fails without meaning anything. Pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 
 @pytest.fixture(autouse=True)

@@ -33,11 +33,11 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import time
 import hmac
 import logging
 import os
 import sys
+import time
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Annotated, Literal

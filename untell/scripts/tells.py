@@ -1209,7 +1209,7 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
 
     # Count by SPAN, not by pattern — see _claimed_spans for why a single phrase must count in
     # exactly one category, and how the longest match wins the overlap.
-    for start, end, name, matched in _claimed_spans(text):
+    for _, _, name, matched in _claimed_spans(text):
         by_category[name] = by_category.get(name, 0) + 1
         if include_matches:
             matches.setdefault(name, []).append(matched)

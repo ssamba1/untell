@@ -765,8 +765,10 @@ def _tell_probe_words(
         _FENCE_RE,
         _HEADING_RE,
         _MIN_WORDS_FOR_REPETITION,
-        _WORD as TELLS_WORD,
         _claimed_spans,
+    )
+    from untell.scripts.tells import (
+        _WORD as TELLS_WORD,
     )
     from untell.text_split import fold_unicode_spaces, split_sentences
 

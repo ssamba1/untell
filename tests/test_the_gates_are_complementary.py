@@ -33,6 +33,14 @@ from untell.scripts.hedges import certainty_kept, polarity_kept
 from untell.scripts.numerals import numbers_kept
 from untell.scripts.quality import passes, similarity
 from untell.scripts.roles import role_swap
+@pytest.fixture(autouse=True)
+def _torch_path(monkeypatch):
+    """These assertions exercise model-backed paths (NER entities, the full ensemble,
+    the NLI gate, the spaCy role veto). Under UNTELL_LITE_NO_TORCH=1 those paths are
+    gated away (no entities, reduced ensemble, similarity-only naming, role_swap=None),
+    so the file fails without meaning anything. Pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 FAITHFUL = (
     "The framework improves efficiency by 47% across the corpus.",

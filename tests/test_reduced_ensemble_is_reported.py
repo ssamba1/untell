@@ -30,6 +30,14 @@ from __future__ import annotations
 import pytest
 
 from untell.scripts.score import score_text
+@pytest.fixture(autouse=True)
+def _torch_path(monkeypatch):
+    """These assertions exercise model-backed paths (NER entities, the full ensemble,
+    the NLI gate, the spaCy role veto). Under UNTELL_LITE_NO_TORCH=1 those paths are
+    gated away (no entities, reduced ensemble, similarity-only naming, role_swap=None),
+    so the file fails without meaning anything. Pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 AI_TEXT = (
     "Moreover, the framework leverages robust methodologies to deliver outcomes at scale. "
@@ -62,32 +70,46 @@ def _top_member(result: dict) -> tuple[type, str]:
     tops the ensemble is a property of the model set and the input, and it changes; the invariant
     under test (losing a member can only push `max` down, and that has to be said out loud) does
     not. So resolve the member from the measurement instead of asserting a name.
+
+    TIES are part of the same lesson: with the current models this AI_TEXT saturates TWO members
+    (mage at 1.0 and hc3_roberta at 0.9979), so silencing a single name still moves `max` not at
+    all. The tests silence EVERY member tied at the top.
     """
     from untell.detectors.base import load_detectors
 
     scored = {k: v for k, v in result["detectors"].items() if isinstance(v, (int, float))}
     assert scored, "no detector produced a number; nothing to silence"
-    name = max(scored, key=lambda k: scored[k])
+    top = max(scored.values())
+    tied = sorted(k for k, v in scored.items() if v == top)
+    classes = []
     for d in load_detectors("full"):
-        if d.name == name:
-            return type(d), name
-    raise AssertionError(f"{name} set max but is not in load_detectors('full')")
+        if d.name in tied:
+            classes.append((type(d), d.name))
+    assert classes, f"the max-setting member(s) {tied} are not in load_detectors('full')"
+    return classes
 
 
 @pytest.fixture
 def healthy() -> dict:
+    from untell.scripts import score as sc
+
     result = score_text(AI_TEXT, tier="full")
     assert len(result["detectors"]) >= 2, "a one-detector ensemble cannot be partially reduced"
+    # The per-text score cache would otherwise serve THIS result to the silenced re-score
+    # below (identical text/tier/threshold/mode key) — the silencing must actually re-run.
+    sc._score_cache.clear()
     return result
 
 
 def test_an_abstaining_detector_is_reported(healthy, monkeypatch: pytest.MonkeyPatch) -> None:
-    cls, name = _top_member(healthy)
-    monkeypatch.setattr(cls, "score", lambda self, text: None)
+    # Patch the real extension point: the batched windowing path calls `_score_batch`,
+    # not the per-text `score` (wave-3 slice-5 batched scoring), so `.score` is dead here.
+    for cls, name in _top_member(healthy):
+        monkeypatch.setattr(cls, "_score_batch", lambda self, windows, _n=name: [None] * len(windows))
     result = score_text(AI_TEXT, tier="full")
 
-    assert result["max"] < healthy["max"], "premise: silencing the top member must lower max"
-    assert name in (result.get("warning") or "")
+    assert result["max"] < healthy["max"], "premise: silencing the top member(s) must lower max"
+    assert any(n in (result.get("warning") or "") for _, n in _top_member(healthy))
     assert "errs toward NOT flagged" in result["warning"]
 
 
@@ -100,16 +122,20 @@ def test_losing_a_detector_can_flip_the_verdict(healthy, monkeypatch: pytest.Mon
     ensemble and cleared without it. Taking the cut from the two measured maxima tests exactly that,
     on whatever detectors this machine has.
     """
-    cls, _ = _top_member(healthy)
-    monkeypatch.setattr(cls, "score", lambda self, text: None)
+    for cls, _ in _top_member(healthy):
+        monkeypatch.setattr(cls, "_score_batch", lambda self, windows: [None] * len(windows))
     reduced = score_text(AI_TEXT, tier="full")
-    assert reduced["max"] < healthy["max"], "premise: the top member must have been the silenced one"
+    assert reduced["max"] < healthy["max"], "premise: the top member(s) must have been silenced"
 
     cut = (reduced["max"] + healthy["max"]) / 2
     monkeypatch.undo()
     assert score_text(AI_TEXT, tier="full", threshold=cut)["flagged"] is True
 
-    monkeypatch.setattr(cls, "score", lambda self, text: None)
+    from untell.scripts import score as sc
+
+    sc._score_cache.clear()  # the un-silenced score above must not serve the silenced one below
+    for cls, _ in _top_member(healthy):
+        monkeypatch.setattr(cls, "_score_batch", lambda self, windows: [None] * len(windows))
     after = score_text(AI_TEXT, tier="full", threshold=cut)
     assert after["flagged"] is False, "the verdict must actually flip in this band"
     assert "errs toward NOT flagged" in (after.get("warning") or ""), (
@@ -120,10 +146,10 @@ def test_losing_a_detector_can_flip_the_verdict(healthy, monkeypatch: pytest.Mon
 def test_an_erroring_detector_is_reported_too(healthy, monkeypatch: pytest.MonkeyPatch) -> None:
     """`failed_detectors` names which one died. It does not say the verdict moved because of it."""
 
-    def boom(self, text):
+    def boom(self, windows):
         raise RuntimeError("adapter blew up")
 
-    monkeypatch.setattr(_detector_class(), "score", boom)
+    monkeypatch.setattr(_detector_class(), "_score_batch", boom)
     result = score_text(AI_TEXT, tier="full")
 
     assert result["failed_detectors"] == ["roberta_openai"]

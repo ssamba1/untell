@@ -68,6 +68,7 @@ INVOCATIONS = {
     "hedges.py": (AI, REWRITE),
     "sentences.py": (AI,),
     "explain.py": (AI,),
+    "batch.py": ("--help",),  # full batch run needs a directory; --help proves it loads
     "tells.py": (AI,),
     "voice.py": ("--sample", "sample.txt", "--draft", "draft.txt"),
     "latex.py": ("--help",),  # its real form needs a .tex file and a .bib; --help proves it loads
