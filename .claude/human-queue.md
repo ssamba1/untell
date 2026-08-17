@@ -1637,3 +1637,13 @@ SAW    duplicate_rows() counts; warning fires before append; schema note renders
        audit-lanes.md L8.
 REVERT git revert of the commit; research.py appends silently again.
 NEXT   None.
+
+## 2026-08-17 wave-5 salvage (59504dc) — AMBER record
+
+WHAT   browser_check "auto" selector (#2), structural signals= mode (#3, additive), cli check
+       surfaces local-policy reason, 6 env-pin test files, one test renamed
+       (test_the_free_rewriter_list_matches_the_cli_minus_its_two_special_names -> shorter name).
+RAN    fast suite green (8427 passed) with all changes present; browser tests 75/75.
+SAW    No queue entry in the original commit (discipline slip — repaired here).
+WHY    New CLI surfaces (--browser auto, signals mode) are AMBER per the envelope.
+NEXT   Issue #3 per-rule rubric tests + #2 live-probe e2e evidence: queued for the next wave.
