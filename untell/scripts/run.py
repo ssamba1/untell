@@ -20,7 +20,9 @@ import os
 import random
 import sys
 import threading
+import time
 from collections import Counter
+from contextlib import contextmanager
 
 # Run-as-file support (zero-dep lite tier): when this file is executed directly
 # rather than imported as part of the `untell` package, put the directory that
@@ -536,6 +538,75 @@ def _flagged_sentences_of(final: str, threshold: float) -> dict:
         return []
 
 
+# ---------------------------------------------------------------------------
+# Per-phase budget tracking (issue #27)
+#
+# MEASURED at wave 3 (slice 6, 1MB document, full loop): the rewrite phase took
+# 462.7s of a 467.4s loop — 99.5% of the wall clock — while the initial score and
+# the per-draw rescore together cost ~2s. The loop's cost is the rewrite, and a
+# regression in ANY phase is invisible unless each phase is reported separately.
+# `--timings` / `timings=True` emits the split; a regression test pins the shape.
+#
+# Order is EXECUTION order: the initial score, the per-iteration sentence
+# targeting, the rewrite draws, the similarity gate, the per-draw rescore, the
+# tells tie-break, the optional polish — then the whole-body `total` last. The
+# dict is emitted in exactly this order so a reader (or a test) can see at a
+# glance whether the phases are in the order the loop actually runs them.
+_PHASE_ORDER = ("score_pre", "targeting", "rewrite", "similarity", "rescore", "tells", "polish")
+
+
+@contextmanager
+def _timed(phase: dict[str, float], name: str):
+    """Add the wall-clock seconds of the wrapped block to ``phase[name]``.
+
+    Always runs, even when ``timings=False``: two ``perf_counter`` calls per phase
+    call are noise against the detector/rewrite passes they wrap, and keeping one
+    code path means the report can never describe a run that was timed differently
+    from the one that happened.
+    """
+    t0 = time.perf_counter()
+    try:
+        yield
+    finally:
+        phase[name] += time.perf_counter() - t0
+
+
+def _timings_dict(phase: dict[str, float], start: float) -> dict[str, float]:
+    """Assemble the ``timings`` result payload: phases in canonical order, total last.
+
+    ``total`` is the whole-body wall clock, so it is >= the sum of the phase
+    buckets by construction (the buckets are disjoint sub-intervals of the body;
+    locking, scrubbing, seeding and the restore passes are the un-bucketed rest).
+    """
+    report = {name: phase[name] for name in _PHASE_ORDER}
+    report["total"] = time.perf_counter() - start
+    return report
+
+
+def _timings_report(timings: dict | None) -> str:
+    """One human-readable line for ``untell humanize --timings``.
+
+    Per-phase seconds with the share of the total, in execution order, so a
+    regression shows up as a percentage shift a reader can see at a glance —
+    the rewrite phase measured 99.5% of a 1MB-document loop, and a jump in any
+    other phase's share is the signal this exists to surface.
+    """
+    if not timings:
+        return ""
+
+    def _fmt(seconds: float) -> str:
+        # Sub-second phases are common on short text; a bare "0.0s" hides them.
+        return f"{seconds:.2f}s" if seconds < 10 else f"{seconds:.1f}s"
+
+    total = timings.get("total") or 0.0
+    parts = []
+    for name in _PHASE_ORDER:
+        seconds = timings.get(name, 0.0)
+        share = (seconds / total * 100.0) if total > 0 else 0.0
+        parts.append(f"{name} {_fmt(seconds)} ({share:.1f}%)")
+    return "[timings] " + " | ".join(parts) + f" | total {_fmt(total)}"
+
+
 def untell_text(
     text: str,
     tier: str = "full",
@@ -565,6 +636,13 @@ def untell_text(
     # Print a line per iteration. Default False so every programmatic caller — library, MCP, REST —
     # behaves exactly as before; the CLI opts in for its human-facing (non-JSON) path.
     progress: bool = False,
+    # Per-phase wall-clock budget (issue #27): when True, the result dict gains a ``timings``
+    # key with the score_pre/rewrite/rescore split (plus targeting/similarity/tells/polish and
+    # the whole-body ``total``), in execution order. The loop's cost is dominated by the rewrite
+    # phase (measured 462.7s of a 467.4s 1MB-document loop, 99.5%), so the split is what makes a
+    # regression in any single phase visible. Off by default so every existing caller's payload
+    # is byte-identical; the CLI exposes it as ``--timings``.
+    timings: bool = False,
     # None derives the seed from the input text (see the block at the top of the body). Pass an int
     # to sweep seeds: several tests and harnesses vary the seed deliberately to show a knob is not
     # inert at one lucky draw, and text-derived seeding alone would have turned those sweeps into
@@ -677,7 +755,7 @@ def untell_text(
             result = _untell_text(
                 text, tier, threshold, max_iters, sim_bar, rewriter, browser, margin, confirm,
                 scrub, polish, style, best_of, detector_thresholds, veto_contradictions,
-                voice_sample, progress,
+                voice_sample, progress, timings,
             )
         finally:
             random.setstate(_rng_state)
@@ -708,8 +786,14 @@ def _untell_text(
     veto_contradictions: bool,
     voice_sample: str | None,
     progress: bool,
+    timings: bool,
 ) -> dict:
     """The loop body. Split out only so ``untell_text`` can own the seeding above."""
+
+    # Per-phase budget accumulator (issue #27). Always built — the cost is two
+    # perf_counter calls per phase call — but only reported when `timings` is set.
+    phase: dict[str, float] = {name: 0.0 for name in _PHASE_ORDER}
+    _t_start = time.perf_counter()
 
     # Scrub BEFORE the rewriter is resolved, so the early error returns below cannot ship the
     # payload back. They used to: both of them answer `"final": text` from before this ran, and
@@ -937,7 +1021,8 @@ def _untell_text(
         # Comfortable pass: below threshold by the safety margin (headroom vs detector noise).
         return s["max"] < threshold - margin
 
-    pre = score(masked)
+    with _timed(phase, "score_pre"):
+        pre = score(masked)
     best_masked, best_score = masked, pre
     iters = 0
     rewrites = 0
@@ -995,16 +1080,18 @@ def _untell_text(
             masked_sents = split_sentences(best_masked)
             restored_sents = split_sentences(restore(best_masked, mapping))
             if len(masked_sents) == len(restored_sents):
-                scored = score_sentences(
-                    restore(best_masked, mapping), tier="lite", threshold=threshold
-                )["flagged"]
+                with _timed(phase, "targeting"):
+                    scored = score_sentences(
+                        restore(best_masked, mapping), tier="lite", threshold=threshold
+                    )["flagged"]
                 flagged_idx = {i for i, s in enumerate(restored_sents) if s in scored}
                 flagged = [s for i, s in enumerate(masked_sents) if i in flagged_idx]
             else:
                 # Locking changed the sentence split, so the two lists cannot be paired by index.
                 # Fall back rather than guess an alignment: a wrong pairing would target sentences
                 # the rewriter was not asked about, which is worse than the masked score it replaces.
-                flagged = score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"]
+                with _timed(phase, "targeting"):
+                    flagged = score_sentences(best_masked, tier="lite", threshold=threshold)["flagged"]
             best_score = {**best_score, "flagged_sentences": flagged, "style": style}
         except Exception:
             pass
@@ -1026,10 +1113,15 @@ def _untell_text(
         draws = 1 if getattr(rw, "deterministic", False) else max(1, best_of)
         for _ in range(draws):
             try:
-                candidate = rw.rewrite(best_masked, best_score, threshold)
+                with _timed(phase, "rewrite"):
+                    candidate = rw.rewrite(best_masked, best_score, threshold)
             except Exception as exc:  # surface the failure rather than silently looping
                 if drew == 0:
-                    return {"error": f"rewriter failed: {type(exc).__name__}: {str(exc)[:160]}", "final": restore(best_masked, mapping)}
+                    return {
+                        "error": f"rewriter failed: {type(exc).__name__}: {str(exc)[:160]}",
+                        "final": restore(best_masked, mapping),
+                        **({"timings": _timings_dict(phase, _t_start)} if timings else {}),
+                    }
                 break  # a later draw failed; use the candidates we already have
             drew += 1
             rewrites += 1
@@ -1063,7 +1155,8 @@ def _untell_text(
             # is also principled here rather than merely harmless: the sentinel-integrity check
             # above has already proven every locked span appears identically on both sides, so
             # comparing them again adds nothing, and what is left is the prose the rewriter changed.
-            sim = similarity(masked, candidate)
+            with _timed(phase, "similarity"):
+                sim = similarity(masked, candidate)
             if veto_contradictions:
                 if not meaning_preserved(masked, candidate, sim, sim_bar):
                     vetoed += 1
@@ -1071,7 +1164,8 @@ def _untell_text(
             elif sim < sim_bar:
                 vetoed += 1
                 continue  # meaning drifted too far from the source
-            cscore = score(candidate)
+            with _timed(phase, "rescore"):
+                cscore = score(candidate)
             # Count tells on the RESTORED candidate, for the same reason `score()` scores the
             # restored text: a sentinel is not what anyone reads, and the tell catalogue's patterns
             # do not match through one. MEASURED over 120 HC3+RAID texts, 91 of which lock at least
@@ -1087,7 +1181,9 @@ def _untell_text(
             # rarely holds two candidates with different counts. Kept regardless, on the same
             # grounds `score()` above gives for scoring the restored text: the size of the misreport
             # is not the argument, that the loop was RANKING on a quantity nobody is judged on is.
-            valid.append((candidate, cscore, score_tells(restore(candidate, mapping)).get("tells", 0)))
+            with _timed(phase, "tells"):
+                cand_tells = score_tells(restore(candidate, mapping)).get("tells", 0)
+            valid.append((candidate, cscore, cand_tells))
         cand_best, cand_best_score = None, None
         if valid:
             # Primary objective: lowest detector max. Restrict the tells tie-break to the ADOPTABLE
@@ -1206,7 +1302,8 @@ def _untell_text(
     # replaced by the real citations/numbers/URLs the detector might key on.
     if stopped == "passed" and confirm > 0:
         for _ in range(confirm):
-            rescore = score(final)
+            with _timed(phase, "rescore"):
+                rescore = score(final)
             if rescore["max"] >= threshold - margin:
                 best_score = rescore
                 stopped = "passed_unconfirmed"
@@ -1220,8 +1317,10 @@ def _untell_text(
             # Optimize against the SAME signal the loop scored against (so the swaps target the real
             # objective), except in browser mode whose composite tier isn't directly scoreable -> lite.
             polish_tier = "lite" if browser_score is not None else tier
-            polished = surgical_substitute(final, tier=polish_tier, threshold=threshold)["text"]
-            polished_score = score(polished)
+            with _timed(phase, "polish"):
+                polished = surgical_substitute(final, tier=polish_tier, threshold=threshold)["text"]
+            with _timed(phase, "rescore"):
+                polished_score = score(polished)
             # Polish on the restored (final) text: verify meaning preserved (vs the original) and
             # that it actually HELPS. Sentinel check is irrelevant — text is already restored.
             # Adopt only on a genuine improvement: an equal-scoring polish spends meaning-similarity
@@ -1229,9 +1328,12 @@ def _untell_text(
             # count while doing it. Ties therefore go to the unpolished text (same no-harm principle as
             # the composite/ensemble selectors); within the detector noise band, tells break the tie.
             better_score = polished_score["max"] < best_score["max"] - _TELLS_EPS
+            with _timed(phase, "tells"):
+                polished_tells = score_tells(polished).get("tells", 0)
+                final_tells = score_tells(final).get("tells", 0)
             tie_but_more_human = (
                 abs(polished_score["max"] - best_score["max"]) <= _TELLS_EPS
-                and score_tells(polished).get("tells", 0) < score_tells(final).get("tells", 0)
+                and polished_tells < final_tells
             )
             # Never trade a pass for a tie. The tie band is +/- _TELLS_EPS (0.02), so a polished
             # candidate scoring UP TO 0.02 worse is adopted when it carries fewer tells — and if the
@@ -1265,6 +1367,16 @@ def _untell_text(
                     _name, str(exc)[:120],
                 )
 
+    # Final numbers the caller reads, computed AFTER the loop so each lands in the
+    # right budget bucket: the per-sentence re-flag pass is a scoring pass, the
+    # reported similarity is a similarity pass, the tells delta is a tells pass.
+    with _timed(phase, "rescore"):
+        final_flagged = _flagged_sentences_of(final, threshold)
+    with _timed(phase, "similarity"):
+        final_sim = similarity(text, final)
+    with _timed(phase, "tells"):
+        tells_delta = _tells_delta(text, final)
+
     return {
         **({"voice_warning": voice_warning} if voice_warning else {}),
         # Which BACKEND ran, kept separate from `warning`, which is about how to read the numbers.
@@ -1283,7 +1395,7 @@ def _untell_text(
         # Recomputed against `final`, not carried out of the loop — see `_flagged_sentences_of`.
         "post": {
             **best_score,
-            "flagged_sentences": _flagged_sentences_of(final, threshold),
+            "flagged_sentences": final_flagged,
             # Same defect as `flagged_sentences` above and fixed in the same place: the loop sets
             # `style` at the top of an iteration and `best_score` is then replaced wholesale when a
             # candidate is adopted, rescored or polished, so the caller was told `None` even when a
@@ -1310,7 +1422,7 @@ def _untell_text(
         # which is exactly the population that most needs a trustworthy meaning number. The gate's
         # own masked comparison is a separate decision, measured and deliberately kept; this is the
         # figure a caller reads and can reproduce, so it is computed the way they would compute it.
-        "similarity": similarity(text, final),
+        "similarity": final_sim,
         "tier": best_score.get("tier", tier),
         # The SCORE's own caveat travels with the verdict, not just inside `post`. `carried_payload`
         # covers hidden characters and was the only thing that ever reached this field, so a caller
@@ -1371,8 +1483,12 @@ def _untell_text(
         #
         # stdlib-only and cheap, so this costs the same on every tier and cannot fail the run: a
         # broken counter must not take the humanized text down with it.
-        **_tells_delta(text, final),
+        **tells_delta,
         **_stronger_rewriter_hint(rw, best_score["flagged"], best_score.get("tier", tier)),
+        # Per-phase budget (issue #27): only when asked, so every existing caller's payload is
+        # byte-identical. Order is execution order — score_pre first, total last — which is what
+        # the regression test pins as "phase order sane".
+        **({"timings": _timings_dict(phase, _t_start)} if timings else {}),
     }
 
 
@@ -1853,6 +1969,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     parser.add_argument(
+        "--timings",
+        action="store_true",
+        help="report the per-phase wall-clock budget: score_pre / rewrite / rescore (plus "
+        "targeting, similarity, tells, polish) with each phase's share of the total. The loop's "
+        "cost is the rewrite phase (measured 462.7s of 467.4s on a 1MB doc, 99.5%% of the loop), "
+        "so a regression in any single phase is invisible without the split. With --json the "
+        "timings dict rides inside the result payload instead of the one-line summary.",
+    )
+    parser.add_argument(
         "--diff",
         action="store_true",
         help="print a unified-style before/after of the humanization, showing only changed "
@@ -1999,6 +2124,7 @@ def main(argv: list[str] | None = None) -> int:
         # stdout ahead of the payload would corrupt it for every scripted caller. `--diff --json`
         # is a scripted caller too — same rule, same flag.
         progress=not args.json,
+        timings=args.timings,
     )
     if args.diff:
         if "error" in result:
@@ -2009,6 +2135,9 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(f"ERROR: {result['error']}")
             return 1
+        if args.timings and not args.json:
+            # stdout is the diff; the budget line is context, so it goes above it.
+            print(_timings_report(result.get("timings")))
         payload = _diff_payload(text, result)
         if args.json:
             print(json.dumps(payload, ensure_ascii=True, indent=2))
@@ -2023,6 +2152,10 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, ensure_ascii=True, indent=2))
     elif "error" in result:
         print(f"ERROR: {result['error']}")
+        if args.timings:
+            # A failed run still has a budget (the failure is often IN a phase); stderr keeps
+            # stdout a single parseable error line for anyone scraping it.
+            print(_timings_report(result.get("timings")), file=sys.stderr)
     else:
         # Rich output when available, otherwise the standard render
         try:
@@ -2045,6 +2178,8 @@ def main(argv: list[str] | None = None) -> int:
             # rendered as a normal degraded run, and it silently swallowed exactly that mistake
             # while this warning was being wired in. A bug in the renderer should be loud.
             print(_render(result))
+        if args.timings:
+            print(_timings_report(result.get("timings")))
     return 1 if "error" in result else 0
 
 
