@@ -1275,3 +1275,22 @@ WHAT   The derivable-check count drift (why-best 8012/518→8655/559, census 693
        - audit derivable failures: 1 → 0
        These files (docs/why-best-open-repo.md, docs/humanizer-census.md) are RED —
        the human commits them: `git add docs/why-best-open-repo.md docs/humanizer-census.md && git commit -m "docs: live counts 8655/559/25 (fix-counts)"`
+
+## 2026-08-17 slice 17 (wave 5) note — #37 CLOSED: the actual closing commit landed here
+
+WHAT   All #37 code/test was already in HEAD (HEALTHCHECK in Dockerfile landed via wave-4
+       sweep 70c8cbf, which closed #18 — its message never referenced #37). The wave-4
+       slice-8 note above claimed "this commit closes #37/#35", but `git log --all --grep=#37`
+       is empty and `gh issue view 37` stayed OPEN. This slice landed the closing commit
+       (the one carrying this note): strengthened the HEALTHCHECK contract test
+       (tests/test_dockerfile_installs_the_wheel.py — now pins /health probe + timeout=3 +
+       --interval=30s/--timeout=5s/--start-period=60s/--retries=3 + stdlib urllib probe,
+       all sane for the 2s-TTL-cached /health endpoint; 9 tests passed).
+RAN    UNTELL_LITE_NO_TORCH=1 ./.venv/Scripts/python.exe -m pytest
+       tests/test_dockerfile_installs_the_wheel.py (9 passed); .claude/guard.py clean
+SAW    docker/podman/buildah still absent on this host -> real `docker build` smoke test
+       still NOT run; parse-level validation = guard-clean Dockerfile + the two HEALTHCHECK
+       tests (same fallback the issue's acceptance permits when docker is unavailable).
+NEXT   Human/CI: real `docker build` + `docker run` and confirm the HEALTHCHECK transitions
+       to healthy (no CI job builds the image). Issue #37 auto-closes on this commit's push
+       to origin/main.

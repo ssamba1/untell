@@ -54,6 +54,13 @@ def test_the_temporary_wheel_is_cleaned_up() -> None:
     assert "rm /tmp/untell-*.whl" in _DOCKERFILE
 
 
+def _healthcheck_line() -> str:
+    """The full HEALTHCHECK instruction, or a clean failure if it is gone."""
+    lines = [ln for ln in _DOCKERFILE.splitlines() if ln.lstrip().startswith("HEALTHCHECK")]
+    assert len(lines) == 1, f"expected exactly one HEALTHCHECK instruction, found {len(lines)}"
+    return lines[0]
+
+
 def test_healthcheck_probes_the_unauthenticated_health_endpoint() -> None:
     """The image must health-check `/health` — the one endpoint auth and rate limiting exempt.
 
@@ -62,11 +69,27 @@ def test_healthcheck_probes_the_unauthenticated_health_endpoint() -> None:
     urllib is stdlib: `curl` is not in python:3.11-slim and the image installs only
     ca-certificates.
     """
-    m = re.search(r"HEALTHCHECK\s+.*?CMD\s+(.*)$", _DOCKERFILE, re.M)
-    assert m, "no HEALTHCHECK instruction in the Dockerfile"
-    cmd = m.group(1).rstrip()
-    assert "127.0.0.1:8000/health" in cmd, f"HEALTHCHECK does not probe /health: {cmd!r}"
-    assert "timeout=3" in cmd, f"HEALTHCHECK lacks a timeout: {cmd!r}"
+    line = _healthcheck_line()
+    assert "127.0.0.1:8000/health" in line, f"HEALTHCHECK does not probe /health: {line!r}"
+    assert "timeout=3" in line, f"HEALTHCHECK lacks a probe timeout: {line!r}"
+
+
+def test_the_healthcheck_timing_suits_a_ttl_cached_cheap_endpoint() -> None:
+    """Interval/timeout must assume a warm /health, not the 9.34s cold first call.
+
+    `/health` is TTL-cached (2s), offloaded off the event loop, and auth/rate-limit exempt
+    (api_server.py), and the server refuses connections until lifespan's detector warm-up
+    finishes — so a probe is either a refused connection during startup (covered by
+    --start-period) or a sub-second answer. Slow defaults or a missing --start-period would
+    restart a healthy container while it warms up (wave-3 measurement: cold first /health
+    9.34s, second 0.0026s).
+    """
+    line = _healthcheck_line()
+    assert "--interval=30s" in line, f"HEALTHCHECK interval is not sane: {line!r}"
+    assert "--timeout=5s" in line, f"HEALTHCHECK timeout is not sane: {line!r}"
+    assert "--start-period=60s" in line, f"HEALTHCHECK lacks a warm-up start period: {line!r}"
+    assert "--retries=3" in line, f"HEALTHCHECK lacks retries: {line!r}"
+    assert "urllib" in line, "the probe must use stdlib urllib (curl is not in python:3.11-slim)"
 
 
 # --- .dockerignore must not strip the wheel's inputs -------------------------
