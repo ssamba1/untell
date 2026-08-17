@@ -330,7 +330,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--browser",
-        help="comma-separated free-web-UI checkers to drive via Playwright (e.g. 'zerogpt'). "
+        help="comma-separated free-web-UI checkers to drive via Playwright (e.g. 'zerogpt', or "
+        "'auto' for the first available checker — built-ins first, then your browser_sites.json). "
         "No API key, but slow/fragile; respect each site's terms.",
     )
     return parser

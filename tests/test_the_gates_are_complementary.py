@@ -33,6 +33,8 @@ from untell.scripts.hedges import certainty_kept, polarity_kept
 from untell.scripts.numerals import numbers_kept
 from untell.scripts.quality import passes, similarity
 from untell.scripts.roles import role_swap
+
+
 @pytest.fixture(autouse=True)
 def _torch_path(monkeypatch):
     """These assertions exercise model-backed paths (NER entities, the full ensemble,

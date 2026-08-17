@@ -22,6 +22,18 @@ import re
 from untell.layout import apply_per_block
 from untell.rewriter.base import Rewriter
 from untell.scripts.tells import (
+    _CLICHE_RE as _TELLS_CLICHE_RE,
+)
+from untell.scripts.tells import (
+    _FILLER_RE as _TELLS_FILLER_RE,
+)
+from untell.scripts.tells import (
+    _HEDGE_STACK_RE as _TELLS_HEDGE_STACK_RE,
+)
+from untell.scripts.tells import (
+    _TRANSITION_OPENER_RE as _TELLS_TRANSITION_OPENER_RE,
+)
+from untell.scripts.tells import (
     CLOSER_REMAINDER_WORDS as _TELLS_CLOSER_REMAINDER_WORDS,
 )
 from untell.scripts.tells import is_pure_scaffolding, looks_non_english
@@ -2913,8 +2925,130 @@ def style_profile(style: str | None) -> dict:
     return {**_NEUTRAL, **_STYLE_PROFILES.get(style.strip().lower(), {})}
 
 
+# ---------------------------------------------------------------------------
+# Named-signal rubric (issue #3)
+#
+# Each named signal keys a documented rewrite rule: DETECT finds the signal, REWRITE
+# removes it. The registry is the executable half of `references/prompt-rubric.md`'s
+# "Named-signal rubric" section — the same six signals the issue names (burstiness,
+# perplexity, cliches, formulaic_transition, sentence_uniformity, vocab_homogeneity)
+# plus the two the task names that the structural rewriter owns (filler, hedging) and
+# the register axis (formality_register). Rules run ONLY when their signal is detected
+# in the text being rewritten — see `rewrite_named_signals` / `structural_rewrite`'s
+# ``signals`` parameter. Sentinels and locked spans are protected by the same masks the
+# full pipeline uses (`_plain_register` stashes `⟦HZxxxx⟧`; the sentence-level rules
+# run on split text where a locked span is a single opaque token).
+# ---------------------------------------------------------------------------
+
+
+def _detect_formality_register(text: str) -> bool:
+    """Formal/AI-register vocabulary the register rule would swap to plain English.
+
+    The registered list is the same family `_plain_register`'s map targets; these are
+    the highest-frequency members, kept as a small sample so the detector stays cheap.
+    Absence of contractions is the stronger formal signal, but it needs a sentence
+    count; any register-formal word is enough to declare the signal present.
+    """
+    return bool(_FORMAL_REGISTER_RE.search(text))
+
+
+_FORMAL_REGISTER_RE = re.compile(
+    r"\b(?:"
+    r"utilize|utilization|utilising|utilizing|facilitate|facilitation|commence|"
+    r"demonstrate|demonstrates|ascertain|endeavor|endeavour|pursuant|"
+    r"numerous|sufficient|sufficiently|optimal|optimize|obtain|obtains|"
+    r"render|renders|peruse|hereby|thereafter|wherein|whilst|"
+    r"endeavors|commences|demonstrated|consequently|subsequently"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _detect_sentence_uniformity(text: str) -> bool:
+    """Uniform sentence lengths (low CV) — the tell the burstiness rule fixes."""
+    sents = _split_sentences(text)
+    if len(sents) < 3:
+        return False
+    lengths = [len(_WORD_RE.findall(s)) for s in sents]
+    return _cv(lengths) < 0.35
+
+
+def _detect_vocab_homogeneity(text: str) -> bool:
+    """Repeated sentence openers or repeated trigrams — the tell the opener rule fixes."""
+    from untell.scripts.tells import _duplicate_sentence_starts, _repeated_trigrams
+
+    return _duplicate_sentence_starts(text) > 0 or _repeated_trigrams(text) > 0
+
+
+# One callable per named signal. Signature: detect(text) -> bool, rewrite(text) -> str.
+# Every rewrite returns the input unchanged when its signal is absent, so callers can
+# apply rules unconditionally; the mode layer also gates on detection for clarity.
+_SIGNAL_RULES: dict[str, tuple[object, object]] = {
+    "cliche": (
+        lambda text: bool(_TELLS_CLICHE_RE.search(text)),
+        _flatten_cliches,
+    ),
+    "filler": (
+        lambda text: bool(_FILLER_OPENER_RE.search(text) or _TELLS_FILLER_RE.search(text)),
+        lambda text: _strip_meta_closers(_strip_filler_openers(text)),
+    ),
+    "formulaic_transition": (
+        lambda text: bool(_TELLS_TRANSITION_OPENER_RE.search(text)),
+        lambda text: " ".join(_strip_transitions(_split_sentences(text), rate=1.0)),
+    ),
+    "formality_register": (
+        _detect_formality_register,
+        lambda text: _plain_register(_inject_contractions(text), intensity=1.0, spent=set()),
+    ),
+    "hedging": (
+        lambda text: bool(_HEDGE_RE.search(text) or _TELLS_HEDGE_STACK_RE.search(text)),
+        lambda text: _HEDGE_RE.sub(r"\1", text),
+    ),
+    "sentence_uniformity": (
+        _detect_sentence_uniformity,
+        lambda text: _target_burstiness(_split_sentences(text), target_cv=0.45),
+    ),
+    "vocab_homogeneity": (
+        _detect_vocab_homogeneity,
+        lambda text: _vary_openers(
+            _split_sentences(text), rate=0.5, spent=set(), seen={}
+        ),
+    ),
+}
+
+NAMED_SIGNALS = frozenset(_SIGNAL_RULES)
+_SIGNAL_ORDER = (
+    "cliche", "filler", "formulaic_transition", "formality_register",
+    "hedging", "sentence_uniformity", "vocab_homogeneity",
+)
+
+
+def rewrite_named_signals(text: str, signals: set[str] | None) -> str:
+    """Apply exactly the rewrite rules named by ``signals``, gated on detection.
+
+    This is the named-signal rewrite mode: a caller selects the AI tells it wants gone
+    (``signals={"cliche", "hedging"}``) and only those rules run, each only when its
+    signal is detected. ``None`` means the default full pipeline (`_rewrite_prose`),
+    preserving the previous behaviour exactly.
+    """
+    if not signals:
+        raise ValueError("signals must be a non-empty set of named signals")
+    unknown = set(signals) - NAMED_SIGNALS
+    if unknown:
+        raise ValueError(f"unknown named signal(s): {sorted(unknown)}")
+    out = text
+    for name in _SIGNAL_ORDER:
+        if name not in set(signals):
+            continue
+        detect, rewrite = _SIGNAL_RULES[name]
+        if detect(out):
+            out = rewrite(out)  # type: ignore[operator]
+    return out
+
+
 def structural_rewrite(
-    text: str, intensity: float = 0.5, seed: int | None = None, style: str | None = None
+    text: str, intensity: float = 0.5, seed: int | None = None, style: str | None = None,
+    signals: set[str] | None = None,
 ) -> str:
     """Run the full structural rewrite pipeline. ``intensity`` in [0, 1].
 
@@ -2924,6 +3058,11 @@ def structural_rewrite(
     ``style`` selects a register profile (see ``_STYLE_PROFILES``): it decides whether contractions
     are injected and how much of the formal->plain vocabulary map is applied. Unknown or None keeps
     the previous neutral behaviour, so this is additive.
+
+    ``signals`` selects the NAMED-SIGNAL mode from the issue-3 rubric: a non-empty set
+    of signal names (cliche, filler, formulaic_transition, formality_register, hedging,
+    sentence_uniformity, vocab_homogeneity) runs ONLY the rules keyed by those signals,
+    each gated on detection. ``None`` (default) runs the full pipeline below.
 
     Document structure is preserved. The pipeline ends in ``" ".join(sentences)``, so run over a
     whole document it returned one wall of text: paragraph breaks gone, three bullets merged onto

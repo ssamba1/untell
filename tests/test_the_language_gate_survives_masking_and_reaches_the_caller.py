@@ -32,6 +32,8 @@ import pytest
 from untell.scripts.preserve import lock
 from untell.scripts.run import untell_text
 from untell.scripts.tells import looks_non_english
+
+
 @pytest.fixture(autouse=True)
 def _torch_path(monkeypatch):
     """These assertions exercise model-backed paths (NER entities, the full ensemble,

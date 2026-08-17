@@ -30,6 +30,8 @@ import pytest
 import untell.scripts.roles as roles
 from untell.scripts.roles import parser_available, role_swap
 from untell.scripts.run import _meaning_gate_mode
+
+
 @pytest.fixture(autouse=True)
 def _torch_path(monkeypatch):
     """These assertions exercise model-backed paths (NER entities, the full ensemble,

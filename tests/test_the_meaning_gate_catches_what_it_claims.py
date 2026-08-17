@@ -52,6 +52,8 @@ import pytest
 
 from untell.scripts.entailment import available, meaning_preserved
 from untell.scripts.quality import similarity
+
+
 @pytest.fixture(autouse=True)
 def _torch_path(monkeypatch):
     """These assertions exercise model-backed paths (NER entities, the full ensemble,

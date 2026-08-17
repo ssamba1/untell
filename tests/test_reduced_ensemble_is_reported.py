@@ -30,6 +30,8 @@ from __future__ import annotations
 import pytest
 
 from untell.scripts.score import score_text
+
+
 @pytest.fixture(autouse=True)
 def _torch_path(monkeypatch):
     """These assertions exercise model-backed paths (NER entities, the full ensemble,

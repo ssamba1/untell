@@ -142,8 +142,11 @@ def test_no_surface_is_missing_a_parameter_another_one_has(operation):
     # line or — under --json — added to the result payload by `untell_text(timings=True)`. The
     # library knob exists for any programmatic caller; REST/MCP simply do not expose a toggle yet,
     # so their payloads stay byte-identical until someone asks for the report there.
+    # `html` (issue #30) is the same category again: a presentation of the humanize result as a
+    # self-contained HTML report, built on the diff payload — a CLI-only artifact that renders
+    # the loop's existing result dict, changing nothing the network surfaces would mirror.
     allowed = {"browser", "sim_bar", "scrub", "detector_thresholds", "confirm", "n",
-               "include_matches", "diff", "timings"}
+                   "include_matches", "diff", "timings", "html"}
     unexpected = {k: v for k, v in missing.items() if k not in allowed}
     assert not unexpected, f"{name}: parameter present on some surfaces only: {unexpected}"
 
@@ -212,12 +215,14 @@ def test_the_free_rewriter_list_is_the_same_on_both_network_surfaces():
     assert api._FREE_REWRITERS == mcp._FREE_REWRITERS
 
 
-def test_the_free_rewriter_list_matches_the_cli_minus_its_two_special_names():
+def test_the_free_rewriter_list_matches_the_cli_minus_its_three_special_names():
     """Three places enumerate the rewriters, and the relationship between them is exact.
 
-    `untell humanize --rewriter` offers the free backends plus two names that are not free
-    backends: "auto" (let get_rewriter choose, which may be a PAID hosted LLM) and "base" (the
-    untrained local policy, a training/debug backend). _FREE_REWRITERS is exactly the rest, and
+    `untell humanize --rewriter` offers the free backends plus three names that are not free
+    backends: "auto" (let get_rewriter choose, which may be a PAID hosted LLM), "base" (the
+    untrained local policy, a training/debug backend) and "local" (the trained local policy,
+    also a training/debug backend; added for issue #34 so a missing peft extra exits with a
+    clean message instead of a traceback). _FREE_REWRITERS is exactly the rest, and
     that is what both network surfaces resolve against — so a backend added to the CLI and not to
     the frozenset would be rejected over HTTP while working on the command line.
     """
@@ -225,8 +230,8 @@ def test_the_free_rewriter_list_matches_the_cli_minus_its_two_special_names():
 
     action = next(a for a in build_parser()._actions if a.dest == "rewriter")
     cli = set(action.choices)
-    assert {"auto", "base"} <= cli
-    assert cli - {"auto", "base"} == set(api._FREE_REWRITERS)
+    assert {"auto", "base", "local"} <= cli
+    assert cli - {"auto", "base", "local"} == set(api._FREE_REWRITERS)
 
 
 def test_the_ceiling_cli_offers_the_same_backends():

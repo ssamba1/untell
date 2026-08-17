@@ -6,7 +6,9 @@ Some detectors have no affordable API but a free web checker. This drives a real
 **Config-driven.** A site is just a ``SiteConfig`` (url + selectors). One built-in ships (ZeroGPT,
 confirmed live 2026-06: input ``#textArea``, "Detect Text" button clicked via JS to dodge an ad
 overlay, result ``.percentage-div`` → "100%AI GPT*"). Add your own sites without code via a JSON
-file — see ``get_browser_checker`` / ``UNTELL_BROWSER_SITES``.
+file — see ``get_browser_checker`` / ``UNTELL_BROWSER_SITES``. ``--browser auto`` picks the first
+available checker (built-ins first, then your JSON sites) so verification works with no site name
+at all.
 
 Reality check (probed 2026-06): most free detectors are now bot-gated and NOT automatable —
 QuillBot (reCAPTCHA), GPTZero web (redirects to a login app), Scribbr/Brandwell (iframe widgets),
@@ -387,9 +389,37 @@ def _user_sites() -> dict[str, SiteConfig]:
     return out
 
 
+def _all_checkers() -> dict[str, SiteConfig]:
+    """Built-ins first (registration order), then user JSON sites (file order).
+
+    ``auto`` means "the first AVAILABLE checker", so the order is the contract: the shipped
+    built-in (zerogpt) is the default pick, and a user's ``browser_sites.json`` adds candidates
+    behind it. Built-ins also keep the lookup precedence ``get_browser_checker`` always enforced —
+    a user entry of the same name must NOT shadow the shipped config, or ``auto`` and naming the
+    site would disagree about which detector ran.
+    """
+    merged = dict(_BUILTINS)
+    for name, cfg in _user_sites().items():
+        if name not in _BUILTINS:
+            merged[name] = cfg
+    return merged
+
+
 def get_browser_checker(name: str) -> WebUIChecker | None:
-    """Return a checker for ``name`` (built-in or user-configured), or None if unknown."""
-    key = name.lower()
+    """Return a checker for ``name`` (built-in or user-configured), or None if unknown.
+
+    ``name`` may be ``"auto"`` (case-insensitive): resolve to the first AVAILABLE checker —
+    built-ins in registration order, then user JSON sites in file order (see ``_all_checkers``).
+    With only the shipped built-in that is zerogpt; adding a ``browser_sites.json`` extends the
+    pool without code (issue #2). Returns None only when nothing at all is configured, so
+    ``--browser auto`` degrades exactly like an unknown name instead of crashing.
+    """
+    key = (name or "").lower()
+    if key == "auto":
+        merged = _all_checkers()
+        if not merged:
+            return None
+        return WebUIChecker(next(iter(merged.values())))
     if key in _BUILTINS:
         return WebUIChecker(_BUILTINS[key])
     user = _user_sites()
@@ -399,4 +429,6 @@ def get_browser_checker(name: str) -> WebUIChecker | None:
 
 
 def available_browser_checkers() -> list[str]:
+    """Every configured checker name (sorted for display; ``auto`` picks the first in
+    registration/file order instead — see ``_all_checkers``)."""
     return sorted(set(_BUILTINS) | set(_user_sites()))

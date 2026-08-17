@@ -264,6 +264,14 @@ def _run_check() -> int:
         rw = get_rewriter(prefer=name)
         status = "✓" if rw and rw.available() else "✗"
         print(f"  {status} {name}")
+    # The trained local-policy rewriter gets its own line because its unavailability needs the
+    # REASON, not just a check mark: the adapter dir may be set while peft/torch/transformers are
+    # missing, and the reason names the extra that installs them (issue #34).
+    from untell.rewriter.local_policy import LocalPolicyRewriter
+    _lp = LocalPolicyRewriter()
+    _lp_reason = _lp.unavailable_reason()
+    print(f"  {'✓' if _lp_reason is None else '✗'} local (trained policy)"
+          + ("" if _lp_reason is None else f" — {_lp_reason}"))
 
     # API server
     try:
