@@ -27,6 +27,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.slow  # subprocess battery (32s alone); spawns error under full-suite load
+
 REPO = Path(__file__).resolve().parents[1]
 
 AI = (
