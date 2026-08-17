@@ -25,6 +25,14 @@ from untell.scripts.entailment import (
 )
 from untell.scripts.quality import method, recommended_bar
 from untell.scripts.run import untell_text
+@pytest.fixture(autouse=True)
+def _embedding_path(monkeypatch):
+    """These assertions pin EMBEDDING-based measurements (similarity bars, the
+    documented method). Under UNTELL_LITE_NO_TORCH=1 quality.similarity falls back
+    to token_overlap, which is harsher (a one-closer deletion scores 0.91 vs 0.98)
+    and the bars were measured on embeddings. Pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 DOC = pathlib.Path("untell/references/thresholds.md").read_text(encoding="utf-8")
 

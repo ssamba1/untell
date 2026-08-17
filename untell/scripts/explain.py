@@ -155,6 +155,14 @@ RATIONALES: dict[str, str] = {
         "sentinel survives intact is the worst possible outcome for a contact "
         "fact."
     ),
+    "coordinate": (
+        "Latitude/longitude pairs — '37.7749° N, 122.4194° W', DMS '0°7′W', a leading "
+        "N/S form — lock as one span. Before the rule the hemisphere letter and the "
+        "DMS parts were free, so a rewriter could reassemble a location from its "
+        "pieces and the fact would survive byte-for-byte while being wrong. The "
+        "terminator is the hemisphere letter, not the punctuation, so a following "
+        "sentence boundary still splits."
+    ),
     "hexid": (
         "Hex literals and identifiers — 0xFF, \\x1B, URL percent-encoding, git "
         "short shas, MD5/SHA digests: one altered character makes them point at "

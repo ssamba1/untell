@@ -49,6 +49,10 @@ KNOWN_POSITIVES: dict[str, str] = {
     # markup it contains, and the haystack sweep would report it dead. "1." is what `restore` hands
     # it when a locked span opens a numbered list item.
     "_LIST_MARKER_ONLY": "1. ",
+    # A degenerate run of 1000+ non-word, non-space chars: the NER-skip guard for symbol soup
+    # (spaCy's tokenizer is O(n^2) on such runs — MEASURED ~36s on 10k \"$\" tokens). No corpus
+    # document contains one; the guard exists precisely so that inputs like this never reach NER.
+    "_DEGENERATE_RUN_RE": "$" * 1000 + " then prose resumes.",
 }
 
 

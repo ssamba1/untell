@@ -109,6 +109,34 @@ def _isolate_score_cache():
     _score_mod._score_cache.clear()
 
 
+# The suite's verify/prove tests were written for a machine with NO commercial keys: their
+# premises are "no checkers configured", "this configuration must run nothing". This machine's
+# Windows user environment carries STALE commercial keys (originality 422, copyleaks 403 —
+# MEASURED), which make verify() run the commercial detectors and flip every one of those
+# premises. The keys are real credentials of the user's; they must not leak into test state
+# any more than any other ambient secret.
+_COMMERCIAL_KEY_VARS = (
+    "ORIGINALITY_API_KEY",
+    "WINSTON_API_KEY",
+    "GPTZERO_API_KEY",
+    "SAPLING_API_KEY",
+    "ZEROGPT_API_KEY",
+    "COPYLEAKS_EMAIL",
+    "COPYLEAKS_API_KEY",
+)
+
+
+@pytest.fixture(autouse=True)
+def _no_commercial_keys(monkeypatch):
+    """Hide the ambient commercial API keys from tests that assume a keyless machine.
+
+    Tests that deliberately exercise the keyed paths set their own (fake) values via
+    monkeypatch, so a blanket clear cannot break them.
+    """
+    for name in _COMMERCIAL_KEY_VARS:
+        monkeypatch.delenv(name, raising=False)
+
+
 def pytest_configure(config):
     """Register the ``soak`` marker used by tests/test_server_soak.py.
 

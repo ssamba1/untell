@@ -38,6 +38,14 @@ import pytest
 
 from untell.rewriter.structural import _CLOSER_REMAINDER_WORDS, _strip_meta_closers
 from untell.scripts.quality import passes, similarity
+@pytest.fixture(autouse=True)
+def _embedding_path(monkeypatch):
+    """These assertions pin EMBEDDING-based measurements (similarity bars, the
+    documented method). Under UNTELL_LITE_NO_TORCH=1 quality.similarity falls back
+    to token_overlap, which is harsher (a one-closer deletion scores 0.91 vs 0.98)
+    and the bars were measured on embeddings. Pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
 
 BODY = (
     "Salt lowers the freezing point of water, which is why it is spread on roads in winter. "
