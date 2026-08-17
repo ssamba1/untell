@@ -63,6 +63,34 @@ def next_free(n: int, taken: set[int]) -> int:
         n += 1
     return n
 
+
+def classify_row(text: str, taken: set[int], seen: set[str]) -> tuple[str, bool]:
+    """Decide whether a queued row may be appended, and under what number.
+
+    Returns (new_text, ok). ok=False means the row is a byte-identical duplicate
+    (its exact text is already in the log) and must be SKIPPED — the fleet
+    accident issue #16 names. ok=True means the row is new; its pass number is
+    renumbered if it collides with an already-taken number.
+
+    Extracted from the append loop so the collector's dedupe is testable without
+    touching git (issue #16 pins this as the last line of defence).
+    """
+    m = ROW.match(text)
+    if not m:
+        return text, False
+    if text in seen:
+        return text, False
+    n = int(m.group(1))
+    new = text
+    if n in taken:
+        nn = next_free(n + 1, taken)
+        new = re.sub(r"^\|\s*\d+", f"| {nn}", text, count=1)
+        taken.add(nn)
+    else:
+        taken.add(n)
+    seen.add(new)
+    return new, True
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=8)
@@ -114,24 +142,15 @@ def main() -> int:
             with LOG.open("a", encoding="utf-8") as f:
                 for rf in rows:
                     text = rf.read_text(encoding="utf-8").strip()
-                    m = ROW.match(text)
-                    if not m:
-                        print(f"  !! bad row {rf.name}: {text[:60]}")
-                        continue
-                    if text in seen:
-                        print(f"  skip {rf.name}: byte-identical row already in the log")
+                    new, ok = classify_row(text, taken, seen)
+                    if not ok:
+                        if text in seen:
+                            print(f"  skip {rf.name}: byte-identical row already in the log")
+                        else:
+                            print(f"  !! bad row {rf.name}: {text[:60]}")
                         rf.unlink()
                         continue
-                    n = int(m.group(1))
-                    if n in taken:
-                        nn = next_free(n + 1, taken)
-                        text = re.sub(r"^\|\s*\d+", f"| {nn}", text, count=1)
-                        print(f"  renumber {n} -> {nn} ({rf.name})")
-                        taken.add(nn)
-                    else:
-                        taken.add(n)
-                    f.write(text + "\n")
-                    seen.add(text)
+                    f.write(new + "\n")
                     rf.unlink()
                     appended += 1
             print(f"appended {appended} rows")
