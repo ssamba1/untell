@@ -90,11 +90,17 @@ def test_distill_drops_flagged_or_low_similarity(monkeypatch):
 def test_distill_keeps_a_faithful_paraphrase_the_loop_admits(monkeypatch):
     """The distillation filter must agree with the deployed loop's meaning gate.
 
+    This is the NLI path: meaning_preserved admits the faithful paraphrase only when the
+    NLI stack runs (with UNTELL_LITE_NO_TORCH set it is the similarity-only fallback and
+    rejects at sim 0.32 — measured). Pin the env unset for this test, like test_reward's
+    identical assertion.
+
     A faithful rewrite the loop's NLI gate admits (measured 0.664-0.704 on the embedding cosine
     bar, below the 0.76 raw bar) used to be dropped from the training set — the same defect just
     fixed in training/reward.py, at the site that decides which examples enter the DISTILLATION
     SET. `meaning_preserved` is the loop's own gate; the filter now uses it.
     """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
     import untell.scripts.entailment as ent
     import untell.scripts.run as run_mod
     from untell.scripts.quality import similarity
