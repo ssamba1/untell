@@ -145,8 +145,12 @@ def test_no_surface_is_missing_a_parameter_another_one_has(operation):
     # `html` (issue #30) is the same category again: a presentation of the humanize result as a
     # self-contained HTML report, built on the diff payload — a CLI-only artifact that renders
     # the loop's existing result dict, changing nothing the network surfaces would mirror.
+    # `manifest` (issue #31) is the same category once more: `--manifest PATH` writes a
+    # reproducibility JSON *file* as a side effect of the run. It is output routing to a
+    # filesystem the REST/MCP surfaces have no concept of, so there is nothing for them to
+    # mirror — the loop result dict they return is unchanged.
     allowed = {"browser", "sim_bar", "scrub", "detector_thresholds", "confirm", "n",
-                   "include_matches", "diff", "timings", "html"}
+               "include_matches", "diff", "timings", "html", "manifest"}
     unexpected = {k: v for k, v in missing.items() if k not in allowed}
     assert not unexpected, f"{name}: parameter present on some surfaces only: {unexpected}"
 

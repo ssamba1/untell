@@ -79,3 +79,39 @@ pytest tests/test_reproducibility_across_processes.py
 Subprocesses run with `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1`, so the test cannot
 depend on the network; the sampled-T5 case additionally requires the model in the HF cache
 and reports a skip (not a failure) when it is absent.
+
+## Manifest mode (`--manifest PATH`)
+
+The contract above is **operable** through `untell humanize --manifest PATH`, which writes a
+JSON manifest of one run (issue #31):
+
+```json
+{
+  "manifest_version": 1,
+  "untell_version": "0.3.0",
+  "input_sha256":  "...",
+  "output_sha256": "...",
+  "seed": 42,
+  "rewriter": "composite",
+  "tier": "lite",
+  "threshold": 0.0,
+  "pre_max": 0.4846,
+  "post_max": 0.2121,
+  "iterations": 1,
+  "determinism": "reproducible",
+  "determinism_reason": "same input + seed reproduce identical bytes ..."
+}
+```
+
+- `input_sha256` / `output_sha256` pin the exact bytes that went in and came out; `seed`,
+  `rewriter`, `tier` and `threshold` are the four inputs those bytes depended on. `pre_max` /
+  `post_max` record the detector maxima so a reader sees the score moved.
+- **`determinism` is classified honestly**, on the same line the table above draws: remote
+  rewriters (`anthropic` / `openai`) and `--browser` detectors are marked
+  `"non-deterministic by design"`, everything else `"reproducible"`.
+- The manifest carries **no timestamp** (`determinism.md` bans clock stamps from output
+  surfaces), so for a reproducible run the manifest file is itself byte-identical across
+  runs — pinned by `tests/test_manifest_mode.py::test_manifest_is_byte_identical_across_processes`
+  in fresh processes, the same way the loop output is.
+- `pytest tests/test_manifest_mode.py` verifies the field set, the determinism classification,
+  and the byte-identity contract.

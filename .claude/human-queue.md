@@ -1883,3 +1883,24 @@ WHY    VERIFICATION only (GREEN band: no code/threshold/pub-doc change). The cou
 NEXT   Human (one step): `git add docs/why-best-open-repo.md docs/humanizer-census.md && git commit
        -m "docs: live counts 8655/559/25 (fix-counts)" && git push origin main`. Auto-closes #20 if the
        message references it, else close after verify. #19 (CI fast/slow split) tracked separately; stays OPEN.
+## 2026-08-17 slice-3 (wave 6) AMBER — new `--manifest` reproducibility-manifest flag (issue #31)
+
+WHAT   Shipped `untell humanize --manifest PATH` (commit message "Closes #31"): writes a JSON
+       reproducibility manifest recording input/output sha256, seed, rewriter, tier, threshold,
+       pre/post max and an honest determinism class. Local rewriters -> "reproducible"; remote
+       rewriters (anthropic/openai) and --browser detectors -> "non-deterministic by design".
+       Carries no timestamp, so for a reproducible run the manifest file is itself byte-identical
+       across runs — pinned by tests/test_manifest_mode.py (10 tests, incl. cross-process
+       byte-identity, added this slice). Also added `result["rewriter"]` (which backend actually
+       ran) to the loop result dict, alongside seed/tier, so the manifest never has to guess.
+       Documented in docs/determinism.md ("Manifest mode").
+RAN    UNTELL_LITE_NO_TORCH=1 pytest tests/test_manifest_mode.py tests/test_reproducibility_across_processes.py tests/test_batch_cli.py
+SAW    10 passed (manifest mode), 6 passed (cross-process determinism), 19 passed (batch CLI).
+       Live demo: same input+seed run twice in fresh processes -> byte-identical stdout AND
+       byte-identical manifest; seed 43 -> different bytes (the seed is inert-free and live).
+WHY    New CLI flag (--manifest) is AMBER per the envelope — a new surface, so it is queued here
+       in the same commit. No existing command, flag, exit code or signature changed; the result
+       dict gained one additive key (rewriter) that no test asserted against.
+NEXT   None required. If a manifest field ever drifts from the determinism contract, the field set
+       is pinned by test_manifest_records_every_contract_field and the byte-identity by
+       test_manifest_is_byte_identical_across_processes.
