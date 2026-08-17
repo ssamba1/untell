@@ -38,6 +38,18 @@ from untell.scripts.entailment import meaning_preserved
 from untell.scripts.quality import similarity
 from untell.scripts.roles import _conditional_pair, role_swap
 
+
+@pytest.fixture(autouse=True)
+def _torch_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These assertions exercise the spaCy predicate-argument veto.
+
+    role_swap gates on UNTELL_LITE_NO_TORCH (returns None = unavailable) while the
+    availability probe _conditional_pair does not, so under the stdlib env this file
+    neither skips (probe parses fine) nor passes (role_swap is gated). The docstring's
+    measurements are the full-NLI path — pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+
 SWAPPED = [
     ("If the sensor fails, the system shuts down.",
      "If the system shuts down, the sensor fails."),

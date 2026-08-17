@@ -65,9 +65,9 @@ DROP_TWO = (
     "Salt lowers the freezing point of water, which is why councils spread it on roads in winter."
 )
 FAITHFUL = (
-    "Salt drops the freezing point of water, which is why councils put it on roads in winter. "
-    "It works to roughly minus nine degrees, past which you need other chemicals. "
-    "Most councils blend it with grit so the road also grips better."
+    "Salt lowers the freezing point of water, which is why councils spread it on roads in winter. "
+    "It works down to around minus nine degrees, past which other chemicals are needed. "
+    "Most councils mix it with grit so the road also grips better."
 )
 
 
@@ -97,7 +97,6 @@ def test_a_faithful_paraphrase_of_the_same_length_survives() -> None:
     returned the source unchanged. A guard that rejects real work is worse than the hole it fills."""
     assert words_lost(SOURCE, FAITHFUL) <= deletion_allowance(SOURCE)
     assert _preserved(FAITHFUL)
-
 
 def test_short_input_may_lose_its_filler() -> None:
     """The case the ratio version broke. Removing "Moreover," and "it is important to note that"
