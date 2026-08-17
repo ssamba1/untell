@@ -1828,3 +1828,39 @@ NEXT   HUMAN: apply README line-541 correction (or approve):
              image-segmentation abstracts; prior "RAID 0%" did NOT reproduce).
        Suggested soft qualifier (same sentence): "That 33% is HC3-SPECIFIC" -> "worst on HC3".
        Regression probe to re-pin: python .claude/probes/mage_raid_fpr.py --json
+
+## 2026-08-17 pass ? — RED — issue #22: mage per-detector cut (decision, not a change)
+
+WHAT   mage's shipped cut (0.30) lands inside the human score distribution's upper
+       mode: it flags 33.3% of HC3 human docs (10/30 the human upper band) at the
+       shipped threshold. Measured 2026-08-17 on HC3 + RAID (30 pairs each, mage on
+       collapsed doc text, same load path as `eval.detector_audit`):
+         HC3  hm=0.3338 am=1.0000 AUROC=1.0 FPR@0.30=0.3333 TPR@0.30=1.0
+              humans>=0.83:10/30  humans>=0.99:7/30  AI op point=0.999987
+         RAID hm=0.1660 am=1.0000 AUROC=1.0 FPR@0.30=0.1667 TPR@0.30=1.0
+              humans>=0.83: 5/30  humans>=0.99:4/30  AI op point=0.999987
+       The AI operating point saturates at 0.999987 (min AND median), and the small
+       human "upper mode" on HC3 tops out at 0.999984 — so the shipped coarse 0.01-grid
+       said "cut(FPR<=0.20)=1.0 TPR=0" (misleading). Dense sampling resolves the gap:
+       a mage-only cut just below the AI op point separates cleanly.
+RAN    python .claude/probes/mage_calib_probe.py --corpus hc3,raid --pairs 30
+         -> evidence/mage_calib_probe_20260817.json
+       python .claude/probes/mage_calib_analyze.py evidence/mage_calib_probe_20260817.json
+SAW    FPR/TPR vs mage-only cut (HC3 / RAID), TPR stays 1.000 in all rows:
+         cut      HC3-FPR  RAID-FPR
+         0.30     0.333    0.167   (shipped)
+         0.9990   0.233    0.100
+         0.9995   0.200    0.100
+         0.9999   0.133    0.067   <- RECOMMENDED per-detector mage cut
+         0.99995  0.067    0.033
+         0.999985 0.000    0.000   (just below AI op 0.999987)
+WHAT2  Recommend a PER-DETECTOR mage cut K=0.9999 (applied at the aggregation layer,
+       not a global threshold move) => HC3 FPR 13.3%, RAID FPR 6.7%, TPR 100% both;
+       margin 8.7e-5 below the measured AI operating point. HC3 numbers match the
+       wave-5 slice-11 sweep bit-for-bit (RAID too) => curves reproduce.
+WHY    RED — a threshold/cut is a product decision a human applies. Nothing changed.
+NEXT   Human: (1) apply the mage-specific cut K=0.9999 (sentence+doc aggregation in
+       untell/scripts/score.py, mirroring the `_verdict_threshold` mode-aware precedent)
+       or reject; (2) re-run the probe + detector audit after applying. Guardrail:
+       mage output is bimodal-into-saturated; any cut between 0.999985 and 0.999987
+       is FPR=0 on both corpora but depends on the AI saturation value staying put.
