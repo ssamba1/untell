@@ -71,6 +71,7 @@ def test_bar_is_respected(monkeypatch):
     assert entailment.contradicts("a", "b", bar=0.3) is True
 
 
+@pytest.mark.slow  # loads the real NLI model (sentence-transformers + torch)
 def test_real_model_vetoes_inversion_but_not_register_shift():
     """The property the module exists for, against the real model.
 

@@ -58,8 +58,8 @@ def test_a_lone_tag_character_is_still_stripped():
 def test_tag_chars_without_the_flag_base_are_still_stripped():
     """Tag chars need the WAVING BLACK FLAG base; letters alone are not a sequence."""
     # g b e n g + CANCEL TAG with no base, and a CANCEL TAG alone
-    assert scrub_hidden(f"ab\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007Fcd") == "abcd"
-    assert scrub_hidden(f"ab\U000E007Fcd") == "abcd"
+    assert scrub_hidden("ab\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007Fcd") == "abcd"
+    assert scrub_hidden("ab\U000E007Fcd") == "abcd"
 
 
 def test_an_incomplete_sequence_is_stripped():

@@ -138,8 +138,12 @@ def test_no_surface_is_missing_a_parameter_another_one_has(operation):
     # `diff` is the CLI's presentation mode for the humanize report (unified before/after, or a
     # machine-readable untell-diff payload with --json) — the loop result dict is unchanged, so
     # there is nothing for the network surfaces to mirror, the same reasoning as `sim_bar`.
+    # `timings` is the same category: a per-phase budget REPORT (issue #27), printed as a summary
+    # line or — under --json — added to the result payload by `untell_text(timings=True)`. The
+    # library knob exists for any programmatic caller; REST/MCP simply do not expose a toggle yet,
+    # so their payloads stay byte-identical until someone asks for the report there.
     allowed = {"browser", "sim_bar", "scrub", "detector_thresholds", "confirm", "n",
-               "include_matches", "diff"}
+               "include_matches", "diff", "timings"}
     unexpected = {k: v for k, v in missing.items() if k not in allowed}
     assert not unexpected, f"{name}: parameter present on some surfaces only: {unexpected}"
 

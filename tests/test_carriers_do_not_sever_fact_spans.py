@@ -2,7 +2,7 @@
 
 preserve-lock's whole promise is that a fact survives a rewrite byte-for-byte. An
 invisible carrier (bidi control, zero-width char) sitting between the components of
-a fact is invisible to the number patterns' `\s` connectors, so it severs the span:
+a fact is invisible to the number patterns' `\\s` connectors, so it severs the span:
 
     lock("The dose is 5\u200Fmg ...")      ->  "5mg" locks NOTHING (unit fully rewritable)
     lock("...at 9:30\u200FAM tomorrow")    ->  locks "9:30" only, "AM" free (12-hour shift)

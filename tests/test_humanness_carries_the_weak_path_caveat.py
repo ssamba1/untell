@@ -73,6 +73,7 @@ def test_it_fires_once_per_process(monkeypatch, caplog):
     assert caplog.text.count("pure-stdlib lite path") == 1
 
 
+@pytest.mark.slow  # runs the model-backed humanness path (torch)
 def test_a_model_backed_run_stays_quiet(monkeypatch, caplog):
     """Scoped to the path it describes. Warning at full tier would train readers to skip it."""
     monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)

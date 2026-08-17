@@ -17,8 +17,6 @@ full tier), because it needs a live forward pass.
 
 from __future__ import annotations
 
-import math
-
 from untell.detectors.base import WINDOW_WORDS, batched_windowed_max, windowed_max
 
 
@@ -56,7 +54,7 @@ def test_none_and_nan_windows_are_dropped() -> None:
 
     def sb(ws):
         out = []
-        for w in ws:
+        for _w in ws:
             calls["n"] += 1
             if calls["n"] % 3 == 0:
                 out.append(None)      # no signal

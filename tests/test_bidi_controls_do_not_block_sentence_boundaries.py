@@ -61,10 +61,10 @@ def test_an_abbreviation_tail_with_a_bidi_control_is_still_recognised():
 def test_an_ellipsis_continuation_merges_across_a_bidi_control():
     # '...' is a pause, not a terminator: a lowercase continuation is the same clause
     # even with a bidi control after the dots.
-    parts = split_sentences(f"He paused...\u200F then continued with the analysis.")
+    parts = split_sentences("He paused...\u200F then continued with the analysis.")
     assert len(parts) == 1, parts
 
 
 def test_a_quoted_period_continuation_merges_across_a_bidi_control():
-    parts = split_sentences(f'He said "stop."\u200F and left.')
+    parts = split_sentences('He said "stop."\u200F and left.')
     assert len(parts) == 1, parts

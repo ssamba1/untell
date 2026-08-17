@@ -96,7 +96,6 @@ def test_cache_key_includes_threshold(monkeypatch, stdlib_lite):
 def test_failed_detector_results_are_not_cached(monkeypatch):
     """A transient failure must not be frozen for the life of the process."""
     calls = {"n": 0}
-    real = S._score_with_detectors_uncached
 
     class BoomDetector:
         name = "boom"

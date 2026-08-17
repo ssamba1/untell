@@ -149,6 +149,7 @@ def test_the_caveat_reaches_the_score_result() -> None:
     assert "one sentence:" in str(result.get("warning"))
 
 
+@pytest.mark.slow  # scores through the real GPT-2 path when torch is present
 def test_the_caveat_stays_quiet_when_gpt2_scored_the_sentence(monkeypatch) -> None:
     """The bug the mode check fixes: stdlib wording attached to a run GPT-2 had done.
 

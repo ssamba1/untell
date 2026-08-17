@@ -180,7 +180,7 @@ def _make_files(script: str, argv: list[str]) -> list[str]:
     """Materialise temp files for placeholders in the minimal invocation."""
     tmp = Path(tempfile.mkdtemp(prefix=f"cli_matrix_{script}_"))
     out = []
-    for i, arg in enumerate(argv):
+    for _, arg in enumerate(argv):
         if arg == "__SAMPLE__":
             f = tmp / "sample.txt"
             f.write_text(

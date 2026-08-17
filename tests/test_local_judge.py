@@ -1,6 +1,8 @@
 """Tests for the local LLaMA-as-judge detector — offline (no model download)."""
 from __future__ import annotations
 
+import pytest
+
 from untell.detectors.local_judge import LocalJudgeDetector
 
 
@@ -62,6 +64,7 @@ def test_local_judge_is_not_in_the_default_heavy_tier_either(monkeypatch):
     assert "local_judge" not in {d.name for d in load_detectors("heavy")}
 
 
+@pytest.mark.slow  # instantiates the real local-judge model when torch/transformers are present
 def test_local_judge_can_still_be_opted_into(monkeypatch):
     """Opt-in, not deleted — the same shape RADAR uses, so it stays usable for experiments."""
     monkeypatch.setenv("UNTELL_DISABLE_MAGE", "1")

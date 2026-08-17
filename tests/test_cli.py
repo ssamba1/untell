@@ -161,6 +161,7 @@ class TestDemoUsesTheStrongestAvailableTier:
         out = self._run_demo(monkeypatch, capsys, no_torch=True)
         assert "(tier: lite)" in out
 
+    @pytest.mark.slow  # loads the real full-tier detectors to score the probe
     def test_full_tier_is_used_when_the_full_stack_actually_loads(self, monkeypatch, capsys):
         """`import torch` succeeding is not the same as the full tier working.
 

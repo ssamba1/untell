@@ -27,6 +27,8 @@ import pytest
 pytest.importorskip("torch")
 pytest.importorskip("transformers")
 
+pytestmark = pytest.mark.slow  # loads real RoBERTa-class detectors; deselected by the fast suite
+
 HC3_AI_SENTENCES = [
     "Artificial intelligence has fundamentally transformed numerous industries in recent years.",
     "Organizations increasingly leverage these technologies to optimize operational efficiency.",
