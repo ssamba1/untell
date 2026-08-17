@@ -1294,3 +1294,267 @@ SAW    docker/podman/buildah still absent on this host -> real `docker build` sm
 NEXT   Human/CI: real `docker build` + `docker run` and confirm the HEALTHCHECK transitions
        to healthy (no CI job builds the image). Issue #37 auto-closes on this commit's push
        to origin/main.
+
+
+## 2026-08-17 issue #12 — CHANGELOG unrecorded since b37cb02: full backfill draft queued (guard-RED)
+
+WHAT   Issue #12: CHANGELOG.md has no entries for the wave 1-4 user-visible changes
+       (last changelog commit b37cb02; the file's [Unreleased] section stops there).
+       CHANGELOG.md is guard-RED, so the GREEN path was attempted first and blocked;
+       per the envelope the full draft is queued here and posted as the issue comment.
+       Deliverables: (1) exact proposed CHANGELOG text below — ~38 grouped entries in
+       house style (bold symptom lead, mechanism/measurement) under [Unreleased]
+       Added/Changed/Fixed, covering batch (af37909), explain (04e3bb2), --diff
+       (d1e3e11), lite-env gating of the NLI/roles gates (1a16ee5), localhost bind +
+       preflight/CORS doc (694f786, 4ba0a18), mode-keyed score cache + batched window
+       scoring (3fccf19, bdc2c8b, eb07c50), T5 torch seeding (401501b), packaging
+       fixes (75be76a, b1ed8d2), per-phase timings (331ee9a), UNTELL_SELECT
+       (ce3b6f8), plus the binary/surrogate/stdin family, MCP refusal family,
+       German/language-caveat family, preserve-lock coverage family, text_split and
+       unicode families, numerals fact gate, rewriter accidents, --top, /health TTL
+       cache, CLI-startup-without-FastAPI — each mapped to its commit(s) (mapping
+       table at the bottom of the draft); (2) a doc-claims test in
+       tests/test_changelog.py (test_shipped_version_section_names_its_headline_features)
+       asserting the shipped version's (0.3.0) changelog section names its headline
+       features — GREEN today, and it fails when a version is bumped without notes.
+       CHECKED: no watch/html/checksum/jsonl/inspect features landed (git log grep —
+       only 8c70a16 HTML-code-tags preserve fix, already in the draft); no CORS code
+       fix beyond 694f784/4ba0a18 cluster.
+RAN    Guard GREEN-path demo in a scratch worktree (C:/Users/Admin/AppData/Local/Temp/w5-18):
+       staged a CHANGELOG.md edit -> `python .claude/guard.py` ->
+       "BLOCK RED file touched: CHANGELOG.md - a human owns this one. Put it in the
+       queue." exit 2. Baseline tests/test_changelog.py + tests/test_docs_claims.py:
+       42 passed (PYTHONPATH= UNTELL_LITE_NO_TORCH=1). Added the headline-features
+       test; re-ran test_changelog.py -> 13 passed. CLI facts verified against the
+       tree before drafting: untell-batch/untell-explain console scripts present,
+       --diff in run.py, UNTELL_HOST defaults to 127.0.0.1, per-phase timing blocks
+       in run.py, UNTELL_SELECT max/mean/dropout in run.py.
+SAW    Guard blocks any CHANGELOG.md edit (exit 2, message quoted above). Baseline
+       changelog/docs-claims suite green (42 passed); new test green (13 passed total
+       in test_changelog.py). Draft mapped to ~45 commits; ~19 grouped entries in the
+       mapping table (A1-A6, C1-C7, F1-F19). Sibling activity: main moved 127e782 ->
+       4fdf14e (docker HEALTHCHECK test) while working; staged ONLY my two files.
+WHY    RED: CHANGELOG.md is a published-number doc the human owns; the guard is a wall,
+       not advice — the draft + test are the deliverable. Issue #12 stays OPEN until a
+       human merges the proposed text (NEXT); the new test then guards the bump.
+NEXT   Human: apply the proposed text below into CHANGELOG.md under `## [Unreleased]`
+       (append to the existing entries; keep the section grouping), then close #12.
+       The new test will verify a bumped version's section names its headline
+       features on the next release. Draft also posted as issue #12 comment on
+       2026-08-17 (gh issue comment 12 --body-file).
+
+### EXACT PROPOSED TEXT (append to `## [Unreleased]` in CHANGELOG.md)
+
+(append to `## [Unreleased]`)
+
+### Added
+
+- **`untell batch` — humanize a whole directory tree in one command.** Walks a
+  directory, humanizes every file (preserving relative structure), and records a
+  JSON manifest (`<out>/manifest.json`) with each input's relative path, verdict
+  numbers and outcome, plus a one-line summary. The walk is sorted, so `--limit`
+  and the manifest are deterministic. `--json` keeps stdout pure JSON like every
+  other command. (`af37909`)
+- **`untell explain` — which rule locked each span, and why.** The answer to "why
+  was my citation/number/URL left alone?" after a rewrite: the command reports the
+  locking rule for every span, and the `--diff` renderer annotates changed lines
+  with it. (`04e3bb2`, `d1e3e11`)
+- **`untell humanize --diff` — a unified-style line diff, only changed lines.**
+  Original vs final as a line diff instead of a wall of text; `--diff --json`
+  emits the same payload as a structured dict (verbatim, ASCII-escaped) so a
+  scripted caller has one JSON contract. (`d1e3e11`)
+- **Per-phase timings on the humanize loop.** The loop now reports wall-clock
+  seconds per phase (score, rewrite, …), so a regression in any one phase is
+  visible instead of hiding inside the total — measured at wave 3: the rewrite
+  phase of a 1MB document dominated the loop and nothing said so. (`331ee9a`,
+  issue #27)
+- **`UNTELL_SELECT` — what best-of-N ranks candidates on is now a knob.**
+  `max` (the shipped default; every published figure uses it), `mean` (lowering
+  four detectors beats gaming one), or `dropout` (rank on the max over a random
+  subset of the tier, resampled each iteration — a candidate cannot be selected
+  for exploiting a detector that was absent from the subset it was judged on).
+  (`ce3b6f8`)
+- **Shipped fuzz and soak coverage for the server surfaces** — REST-socket,
+  MCP-over-stdio and long-run soak cases, including a soak test that runs in the
+  suite. (`c3b2f93`)
+
+### Changed
+
+- **The server binds localhost by default.** `untell-server` previously bound
+  0.0.0.0 — with API-key auth off, that is a browser tab away from someone else's
+  text and settings. `UNTELL_HOST` still overrides, and the default now matches
+  uvicorn's own (127.0.0.1) and the documentation; the OPTIONS preflight
+  exemption is documented against the OpenAPI auth schemes. (`694f786`, `4ba0a18`)
+- **`UNTELL_LITE_NO_TORCH=1` now gates the model-backed meaning gates too.** The
+  flag already avoided loading torch for scoring; the NLI and roles gates still
+  pulled the stack in, so a "no torch" run could import it anyway. Both gates now
+  respect the flag, so the lite environment is actually lite. (`1a16ee5`)
+- **`UNTELL_POLICY_MAXTOK` invalid values warn and fall back** instead of raising
+  — a typo in the environment no longer kills the run at startup. (`58c52bf`)
+- **Detector scores are cached per text across loop iterations, and window
+  scoring is batched.** The loop rescored the same evolving text every iteration;
+  scores are now cached per text — keyed by scoring mode, so torch and stdlib
+  results cannot collide (`eb07c50`) — and the detector windows are scored in one
+  batch, measured 1.4-9.3x faster. Same verdicts, far fewer detector loads.
+  (`3fccf19`, `bdc2c8b`, `eb07c50`)
+- **Sampled T5 draws seed torch from the loop seed.** `mt_pivot` and the sampled
+  T5 rewriter seed torch from the run's seed, so a seeded run is reproducible end
+  to end; a contract test and doc pin it. (`401501b`)
+- **`--seed -1` and `--seed 1` are no longer the same random stream.** Negative
+  seed values folded onto the same RNG state as their positive counterparts, so
+  two "different" seeds produced identical rewrites. (`f7da552`)
+- **The `[api]` extra has a name in the docs.** The extra existed and worked but
+  was undocumented; the README names it, and the version test now pins
+  `CITATION.cff` alongside the other version carriers. (`ec8d6b6`, closes #15)
+
+### Fixed
+
+- **`untell-server` silently did nothing.** `main()` ended at the argument-parser
+  construction, so the console script exited 0 without ever binding a port — and
+  a Dockerfile that runs it built fine. Now serves. (`b1ed8d2`)
+- **The Docker image could never build.** `.dockerignore` stripped the wheel's
+  inputs from the build context, so `pip install` of the local wheel found an
+  empty sdist. (`75be76a`)
+- **Binary and NUL-bearing stdin were scored, crashed, or leaked tracebacks.**
+  NUL-bearing piped stdin was scored as prose (`7a0c925`); binary stdin leaked a
+  `UnicodeDecodeError` traceback from the score/scrub/humanness CLIs
+  (`50975c0`, `0680990`); `bytes` input raised a raw `TypeError` from
+  `score_text`/`untell_text` (`912929b`); lone-surrogate input crashed
+  `untell_text`, the NER path and the 422 renderer (`6716429`, `bb87f87`). All
+  now refuse cleanly with the documented error and exit code, or answer
+  `{"error": ...}` under `--json`. (`5b38d76`)
+- **Missing `--file` values leaked tracebacks.** `untell-prove` with a missing
+  file printed a `FileNotFoundError` traceback (`32d6ee9`), and
+  `untell-ceiling`/`untell-compare` did the same for a bad `--file`
+  (`5fb4c5c`). All now exit with one line naming the file.
+- **Distill ran for minutes on degenerate input.** Degenerate numeric arguments
+  were accepted at parse and the run churned before failing; they are now
+  rejected when the arguments are read (`e1391d4`). The distill filter also
+  scores with the loop's meaning gate rather than the raw cosine bar, so a
+  rewrite that fails the gate is not distilled as if it passed. (`47cdbc2`)
+- **NER locked common words as person names.** "Email", "May", "Will" and friends
+  were frozen as PERSON entities, so a rewrite could not touch them and
+  `preserve` treated them as facts. The false-lock is gone. (`00722ae`)
+- **The humanness bar crashed or flooded the terminal on bad input.** A
+  non-finite or out-of-range max crashed the bar renderer (`e2c18b2`), and a
+  `None` max crashed the whole humanize report (`57d008b`). Both are clamped or
+  handled now.
+- **CLI rendering and argument acceptance were inconsistent.** Panels escaped
+  markup, flag-like argument values were accepted, and `--json` was not honored
+  on every path; fuzz-found type guards on `text`/`tier`/`threshold` plus
+  surrogate-safe CLI output close the set. (`2e02bb3`, `5b38d76`)
+- **The MCP server crashed where it should refuse.** Non-numeric arguments
+  crashed `_bad_args` (`606f0e0`), infinite counts crashed it too (`d57026c`),
+  an unknown rewriter produced a misleading final instead of a refusal
+  (`60c2a11`), oversized text and unknown ceiling rewriters slipped past the edge
+  (`2f68c78`), and `top`/`seed` rejected `None` — their documented default
+  (`a506353`). All now refuse with a message naming what is wrong.
+- **A detector failure could manufacture a valid-looking score.** `clamp01`
+  turned NaN into a neutral 0.5 — a failure reading as "not AI" (`2ef7ee3`) — and
+  the lite-builtin determinism flag was calibrated on too few runs; it is now
+  corrected to false on a 5-run spread that beats the old 2-run calibration
+  (`e1d558c`). The detector-audit excused list is restored (the suite had been
+  red at HEAD since a mutant sweep) and its summary names what it measured
+  (`607621a`, `0e1729c`). Corrupt census data no longer crashes the derivable
+  audit (`dc318d2`), and `mage` survives snapshot/network failures instead of
+  dying with the underlying error. (`7279283`)
+- **German text was scored with an English instrument and told nothing.**
+  `humanness` scored a German paragraph 100.0 "human" because nothing examined it
+  (`4bc1db0`); `score`/`tells` gave a German paragraph an AI verdict with no
+  language caveat (`23253c1`); `sentences` flagged German per-sentence with a
+  caveat about the tier (`dd5c45b`); and the tells caveat told a German reader
+  their text was not Latin script (`b3be984`). The English-only limit is now
+  reported instead of a confident number.
+- **Sentence splitting missed boundaries and hid them.** Bidi controls between a
+  terminator and the next word hid the boundary (`4ef658a`); footnote/endnote
+  markers after the terminator lost the boundary, and the Latin abbreviations
+  ca/viz/nb/op/cit split wrongly (`c0cc7f3`); the dotted-initialism cap was too
+  low at five letters (`0a82920`); a sentence-final abbreviation split on a
+  capital continuation (`180fc97`); a quoted period with a lowercase continuation
+  was treated as a boundary (`62b53df`). Identical long pairs now skip the
+  quadratic difflib matcher (`1c1482c`), and `aligned_chunks` — a quadratic DoS
+  on long documents — is bounded. (`9134c09`)
+- **Unicode edge cases survived or crashed the pipeline.** CJK/RTL sentence
+  terminators were missed, zero-width characters bypassed boundaries,
+  scriptio-continua text windowed wrongly, and chained hidden-carrier characters
+  survived scrubbing (`0315a14`); emoji tag sequences (England/Scotland/Wales
+  flags) were scrubbed as hidden text (`b5b0856`); display-math `$$...$$` blocks
+  were transformed (`a7a4a19`); `count_hidden` was quadratic and less accurate
+  than the walk that replaced it (`9aeccd8`); and NFC-composed base characters
+  are now counted. (`a7a4a19`)
+- **Preserve-lock left facts rewritable.** Dates, currencies, scientific-notation
+  units, coordinates and formulas are locked whole, and dates round-trip
+  (`9eda40e`); short hex, two-component dotted and phone numbers joined the set
+  (`a9a77d5`); compound units, time ranges, exponents and spaced phone numbers
+  lock whole (`1162504`); feet-inches heights, dimensions and semicolon numeric
+  cites lock (`b91932f`); a setting locked its name and left its value rewritable
+  (`544be36`); `restore()` edited a document that nothing had rewritten
+  (`7502220`); a price earlier in the sentence exposed the equation (`3660968`);
+  and HTML code tags — the one notation with no cover — are protected.
+  (`8c70a16`)
+- **The numerals fact gate admitted changed quantities and vetoed unchanged
+  ones.** Quantities that a rewrite had changed passed the gate, and quantities
+  it had not changed were vetoed (`9012649`); spelled multi-scale numbers
+  ("five million") now parse as one quantity with their digit forms
+  (`524e6a7`).
+- **Rewriter accidents.** The negated-contrast flatten deleted text across
+  sentence boundaries (`31a2bcd`); uncontracted "It is not X, it is Y" contrasts
+  were not flattened at all (`a262839`); a conjunction-trap comma killed a clean
+  split (`c71f42b`); the surgical adoption loop counted each candidate's tells
+  twice — now once (`c9a692c`); the composite intensity sweep duplicated a draw
+  at the clamping edges (`f2cc79e`); and polish-failure warnings dedupe by type
+  instead of repeating the first failure. (`01e43f8`)
+- **`--top` on `untell sentences` was a slice index.** A negative value flagged
+  n-1 sentences instead of n (`fc391db`), and `--top` decided the output but two
+  surfaces did not offer it at all (`9d338af`).
+- **`/health` paid a cold detector-list resolution on first probe.** The
+  detector list was resolved on the first call — the call an orchestrator makes
+  before restarting a container that never served a request. It is now resolved
+  at boot and the payload is TTL-cached; the boot lifespan also invokes the
+  explain command wiring. (`e567607`)
+- **CLI startup no longer imports the FastAPI stack.** `run.py` imported the
+  server for its bounds check, so even `--help` paid a FastAPI import; the bounds
+  are read without it. (`be9b15d`)
+
+### Commit mapping (entry -> commit(s))
+(entry → commit(s))
+
+| # | Entry | Commit(s) |
+|---|-------|-----------|
+| A1 | `untell batch` | af37909 |
+| A2 | `untell explain` | 04e3bb2, d1e3e11 (diff renderer annotation), e567607 (server wiring) |
+| A3 | `--diff` mode | d1e3e11 |
+| A4 | per-phase timings | 331ee9a |
+| A5 | `UNTELL_SELECT` | ce3b6f8 |
+| A6 | fuzz/soak surfaces | c3b2f93 |
+| C1 | localhost bind + CORS/preflight doc | 694f786, 4ba0a18 |
+| C2 | lite env gating of NLI/roles gates | 1a16ee5 |
+| C3 | `UNTELL_POLICY_MAXTOK` fallback | 58c52bf |
+| C4 | score cache (mode-keyed) + batched windows | 3fccf19, bdc2c8b, eb07c50 |
+| C5 | T5 torch seeding | 401501b |
+| C6 | `--seed -1` != `--seed 1` | f7da552 |
+| C7 | `[api]` extra named + CITATION pin | ec8d6b6 |
+| F1 | untell-server no-op | b1ed8d2 |
+| F2 | dockerignore broke the wheel | 75be76a |
+| F3 | binary/NUL/surrogate stdin + bytes input | 7a0c925, 50975c0, 0680990, 912929b, 6716429, bb87f87, 5b38d76 |
+| F4 | missing-file tracebacks | 32d6ee9, 5fb4c5c |
+| F5 | distill degenerate args + meaning gate | e1391d4, 47cdbc2 |
+| F6 | NER common-word false-lock | 00722ae |
+| F7 | humanness bar/report crashes | e2c18b2, 57d008b |
+| F8 | CLI markup/flag/--json consistency + type guards | 2e02bb3, 5b38d76 |
+| F9 | MCP refusals | 606f0e0, d57026c, 60c2a11, 2f68c78, a506353 |
+| F10 | detector failure honesty + audit fixes | 2ef7ee3, e1d558c, 607621a, 0e1729c, dc318d2, 7279283 |
+| F11 | German/language caveats | 4bc1db0, 23253c1, dd5c45b, b3be984 |
+| F12 | sentence splitting | 4ef658a, c0cc7f3, 0a82920, 180fc97, 62b53df, 1c1482c, 9134c09 |
+| F13 | unicode edge cases | 0315a14, b5b0856, a7a4a19, 9aeccd8 |
+| F14 | preserve-lock coverage | 9eda40e, a9a77d5, 1162504, b91932f, 544be36, 7502220, 3660968, 8c70a16 |
+| F15 | numerals fact gate | 9012649, 524e6a7 |
+| F16 | rewriter accidents | 31a2bcd, a262839, c71f42b, c9a692c, f2cc79e, 01e43f8 |
+| F17 | `--top` slice index | fc391db, 9d338af |
+| F18 | `/health` TTL cache | e567607 |
+| F19 | CLI startup without FastAPI | be9b15d |
+
+(Also in range but dev-facing, not user-visible, so excluded from the changelog
+text: ruff lint gate + fast-suite deselection in CI 518758f; per-attacks probe-set
+restriction 4efb961; annotation/console-script hygiene checkers 8514811; and the
+~1100 audit-pass/mutation-kill commits that changed no user-visible behavior.)

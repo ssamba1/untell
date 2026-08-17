@@ -159,6 +159,38 @@ def test_the_shipped_version_appears_in_the_changelog() -> None:
     )
 
 
+def test_shipped_version_section_names_its_headline_features() -> None:
+    """The section a reader lands on after installing must NAME the headline
+    features of that release — not just exist as a heading.
+
+    ``test_the_shipped_version_appears_in_the_changelog`` ties the heading to the
+    version; this ties the CONTENT to the version. Each shipped version lists the
+    features a reader of its notes is checking for. If the version is bumped and
+    the new section does not name them, the changelog is stale in the way a
+    reader actually meets it — the cheapest assertion that the file was updated
+    alongside the release, mirroring ``test_unreleased_covers_the_shipped_headline``
+    for the released side of the file.
+    """
+    import pathlib
+    import re
+    import tomllib
+
+    version = tomllib.loads(
+        pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+    )["project"]["version"]
+    headline = {
+        "0.3.0": ("untell humanness", "REST API server", "batch_score_texts", "untell-audit"),
+    }
+    text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+    parts = re.split(r"^## \[", text, flags=re.M)
+    section = next((p for p in parts if p.startswith(f"{version}]")), "")
+    assert section, f"no changelog section for the shipped version {version}"
+    missing = [f for f in headline.get(version, ()) if f not in section]
+    assert not missing, (
+        f"version {version}'s changelog section does not mention headline features: {missing}"
+    )
+
+
 def test_unreleased_is_not_the_only_place_work_accumulates() -> None:
     """`[Unreleased]` growing without bound is how the above happens.
 
