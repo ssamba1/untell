@@ -38,6 +38,8 @@ import pytest
 
 from untell.rewriter.structural import _CLOSER_REMAINDER_WORDS, _strip_meta_closers
 from untell.scripts.quality import passes, similarity
+
+
 @pytest.fixture(autouse=True)
 def _embedding_path(monkeypatch):
     """These assertions pin EMBEDDING-based measurements (similarity bars, the

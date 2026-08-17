@@ -25,6 +25,8 @@ from untell.scripts.entailment import (
 )
 from untell.scripts.quality import method, recommended_bar
 from untell.scripts.run import untell_text
+
+
 @pytest.fixture(autouse=True)
 def _embedding_path(monkeypatch):
     """These assertions pin EMBEDDING-based measurements (similarity bars, the

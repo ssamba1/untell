@@ -17,6 +17,8 @@ import time
 import pytest
 
 from untell.scripts.preserve import _PATTERNS, lock
+
+
 @pytest.fixture(autouse=True)
 def _torch_path(monkeypatch):
     """These assertions exercise model-backed paths (NER entities, the full ensemble,
@@ -71,15 +73,19 @@ def test_symbol_soup_skips_ner_without_loading_the_model(monkeypatch):
         def __call__(self, text):
             raise AssertionError("the NER model was invoked on degenerate input")
 
-    monkeypatch.setattr(preserve._spacy_entity_spans, "_nlp", _Boom())
-    preserve._spacy_entity_spans_cached.cache_clear()
-    try:
-        for blob in ("`" * 48_000, "$" * 48_000, ("$" * 60 + " ") * 5_000):
-            assert preserve._spacy_entity_spans(blob) == []
-    finally:
+    # Scoped in a context, NOT patched on the shared monkeypatch: the fixture's env
+    # delenv lives on the SAME per-test monkeypatch instance, and a bare undo() here
+    # would restore UNTELL_LITE_NO_TORCH=1 mid-test (it did — the prose check below
+    # then hit the env gate and returned []).
+    with monkeypatch.context() as mp:
+        mp.setattr(preserve._spacy_entity_spans, "_nlp", _Boom(), raising=False)
         preserve._spacy_entity_spans_cached.cache_clear()
-        monkeypatch.undo()
-    # normal prose still gets entities through the same entry point
+        try:
+            for blob in ("`" * 48_000, "$" * 48_000, ("$" * 60 + " ") * 5_000):
+                assert preserve._spacy_entity_spans(blob) == []
+        finally:
+            preserve._spacy_entity_spans_cached.cache_clear()
+    # context exit restores _nlp without touching the fixture's env delenv
     spans = preserve._spacy_entity_spans("Alice met Bob in Paris on Monday. " * 5)
     assert len(spans) > 0, "prose must still yield entities"
 

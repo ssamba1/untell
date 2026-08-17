@@ -12,11 +12,12 @@ from unittest.mock import patch
 
 import untell.detectors.commercial as commercial
 
-os.environ["COPYLEAKS_EMAIL"] = "e"
-os.environ["COPYLEAKS_API_KEY"] = "k"
-
 
 def test_expired_token_is_refreshed():
+    # Set inside the test (not at module import): the suite's autouse commercial-key
+    # isolation clears ambient keys per test, and module-level env would be wiped.
+    os.environ["COPYLEAKS_EMAIL"] = "e"
+    os.environ["COPYLEAKS_API_KEY"] = "k"
     commercial._CL_TOKEN["token"] = "stale-token"
     commercial._CL_TOKEN["exp"] = time.time() - 100
     called = []

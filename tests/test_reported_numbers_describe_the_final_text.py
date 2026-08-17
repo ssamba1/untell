@@ -42,6 +42,8 @@ from untell.scripts.quality import similarity
 from untell.scripts.run import untell_text
 from untell.scripts.score import score_text
 from untell.scripts.tells import score_tells
+
+
 @pytest.fixture(autouse=True)
 def _embedding_path(monkeypatch):
     """These assertions pin EMBEDDING-based measurements (similarity bars, the

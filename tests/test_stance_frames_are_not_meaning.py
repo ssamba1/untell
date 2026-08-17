@@ -31,6 +31,16 @@ from untell.scripts.entailment import meaning_preserved, strip_scaffolding
 from untell.scripts.quality import similarity
 from untell.scripts.tells import STANCE_FRAME_RE
 
+
+@pytest.fixture(autouse=True)
+def _embedding_path(monkeypatch):
+    """The meaning-gate bars here (0.76 similarity, NLI admission) are embedding/NLI
+    measurements. Under UNTELL_LITE_NO_TORCH the similarity-only fallback rejects the
+    frame removal at token_overlap 0.706 — the frame's words are a real fraction of a
+    short sentence under token counting. Pin the env unset for the file.
+    """
+    monkeypatch.delenv("UNTELL_LITE_NO_TORCH", raising=False)
+
 DELETED_FRAMES = [
     "It's important to note that the cache is cleared on restart.",
     "It is also worth noting that the cache is cleared on restart.",

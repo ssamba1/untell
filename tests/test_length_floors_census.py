@@ -72,6 +72,13 @@ FLOORS: dict[str, dict[str, tuple[float, str]]] = {
                                "separates the classes: 0/20 false positives and 9/10 non-English "
                                "caught, against 0/10 caught at 12 words"),
     },
+    "untell/scripts/preserve.py": {
+        "_MIN_WORD_CHAR_SHARE": (0.10, "the NER-skip guard for symbol soup (spaCy's tokenizer is "
+                                       "O(n^2) on long non-word runs — MEASURED ~36s on 10k '$' "
+                                       "tokens). Below one word-character in ten there is nothing "
+                                       "worth locking; the ratio check is a single linear regex "
+                                       "pass, cheaper than what it prevents"),
+    },
     "untell/scripts/voice.py": {
         "MIN_SAMPLE_WORDS": (150, "where the same-author/cross-author AUROC of 0.680 was measured"),
     },
