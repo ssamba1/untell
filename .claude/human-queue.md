@@ -1733,3 +1733,73 @@ NEXT   Human: in docs/why-best-open-repo.md bump the count to **26** console scr
        tests/test_console_script_list_matches_pyproject.py to green. The two unstaged
        count-repair docs can be committed together. Revert of this commit is `git revert`;
        it returns the doc and the conformance tests to the pre-watch state.
+## 2026-08-17 wave-6 slice 7 — issue #17 CLOSED (dedup applied); #20 re-verified GREEN, still OPEN
+
+WHAT   Issue #17 closed on this commit. .claude/measurements.jsonl byte-identical duplicate
+       (lines 2-3, the two 64.6s lite-builtin rows) DEDUPLICATED: second occurrence removed,
+       original first occurrence + order preserved (40 -> 39 rows). Append-only policy and
+       the recorder WARNING guard are unchanged; audit-lanes.md 'Ledger policy (issue #17)'
+       note updated to state the historical pair was removed 2026-08-17 (deleting a *real*
+       distinct run stays RED, per wave-3 slice-8). New pin
+       tests/test_research_contract.py::TestDuplicateRows::test_ledger_holds_no_byte_identical_pair
+       fails if any byte-identical pair reappears (future double-append trips it AND the
+       recorder warning). instruments.json keys {lite-builtin, lite-hc3, lite-hc3-ensemble}
+       remain a pinned subset of RECIPES (test_claude_instruments_match_recipes.py).
+RAN    export PYTHONPATH=; UNTELL_LITE_NO_TORCH=1 pytest tests/test_research_contract.py
+       tests/test_claude_instruments_match_recipes.py (15 passed); .claude/guard.py
+       run before commit.
+SAW    Ledger scan after dedup: 39 lines, 0 duplicate line-keys (was 40 with 1 dup pair).
+       Issue #20 derivable check re-verified GREEN at HEAD in the primary tree:
+       tests/test_audit.py::test_the_repository_currently_passes_its_derivable_checks ->
+       1 passed in 201.13s (EXIT=0) with the count-fix docs unstaged.
+WHY    #17 is GREEN (code + pinned test + verified ledger dedup, no published-number edit):
+       the close commit is 'Closes #17', push auto-closes the issue. #20 stays OPEN: the
+       two count-fix docs (docs/why-best-open-repo.md, docs/humanizer-census.md) are RED,
+       still UNSTAGED in the primary tree, pending the HUMAN commit.
+REVERT git revert of this commit restores the duplicate ledger line (re-append the second
+       64.6s lite-builtin row); the policy note goes back to 'retained as recorded'.
+NEXT   HUMAN (issue #20, the ONLY remaining step for it): cd C:/Users/Admin/Humanize && git
+       add docs/why-best-open-repo.md docs/humanizer-census.md && git commit -m "docs: live
+       counts 8655/559/25 (fix-counts)" && git push origin main. That lands the count-fix and
+       #20 then closes (auto if the message references it, else manually after verifying).
+## 2026-08-17 wave-6 slice-16 issue #36 — AMBER record
+
+WHAT   Optional-extra guard audit. Matrix test (tests/test_optional_extra_matrix.py,
+       runner tests/_optional_extra_surfaces.py) pins all 6 optional deps fail cleanly
+       (meta_path-blocked subprocess per row): peft (CLI exit 2 + reason naming
+       untell[train]; wave-5 #34 fix verified), sacremoses (mt_pivot availability
+       survives; transformers warns), nltk (synonyms->builtin map), torch (score full
+       honestly degrades to lite), spacy (roles degrade to unavailable), fastapi. FIXED
+       the one observed traceback: `untell-server` console shim leaked a full ImportError
+       traceback (exit 1) when fastapi absent. New module untell/api_server_cli.py runs
+       in front of the module so the console surface exits 2 with a one-line message
+       naming untell[server]; library callers of untell.api_server keep their deliberate
+       catchable ImportError. pyproject console entry untell-server ->
+       untell.api_server_cli:main.
+RAN    python -m pytest tests/test_optional_extra_matrix.py -> 9 passed;
+       tests/test_cli_conformance_matrix.py -k server -> 3 passed 1 skipped (server
+       still starts via the new shim); tests/test_cli_dispatch.py -> 10 passed; ruff clean.
+SAW    all six deps fail cleanly at their surfaces; server shim exits 2 with the
+       untell[server] message when fastapi is blocked.
+WHY    AMBER: new module (new surface) + pyproject.toml console-entry edit, per envelope.
+NEXT   Human review of the shim exit code (2) and the untell-server entry-point change.
+
+## 2026-08-17 wave-6 slice-6 issue #16 — AMBER record (dedupe finished, collector pinned)
+
+WHAT   Issue #16's acceptance was already met in HEAD by wave-5 slice-19's machinery
+       (audit_next.py refuses byte-identical rows via byte_identical(); numbers passes
+       via next_pass_number() so the recorder counts greenness not rows; the 55 historical
+       fleet-collision rows stay marked [dup pass# N]; test_audit_next_contract.py pins
+       all of it, incl. the live-log hygiene). This slice closes the last unpinned gap:
+       the COLLECTOR's dedupe — the fleet path that actually produced the collisions —
+       had no test. Extracted collect_swarm.classify_row() (pure, git-free decision: skip
+       byte-identical text, renumber number collisions) and wired the append loop through
+       it; new tests/test_collect_swarm_dedup.py pins the refusal, bad-row, fresh-row and
+       renumber branches.
+RAN    pytest tests/test_collect_swarm_dedup.py tests/test_audit_next_contract.py -> 25 passed;
+       ruff check .claude/collect_swarm.py + both test files -> clean.
+SAW    byte-identical queued row -> classify_row ok=False (never appended); number
+       collision 5->6 renumber; live log still all-unique (2878 rows, 0 byte-identical).
+WHY    AMBER: machinery (.claude/collect_swarm.py) touched + new test file, per envelope.
+NEXT   None. The fleet keeps running; audit_next refuses at record time, the collector
+       skips at collection time, and both are now pinned. Commit closes issue #16.
