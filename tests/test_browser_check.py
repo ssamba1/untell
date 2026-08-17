@@ -165,6 +165,66 @@ def test_zerogpt_class_still_constructs():
     assert z.name == "zerogpt"
 
 
+class TestZeroGPTSiteConfigPinned:
+    """Pin the shipped zerogpt selector against the current live layout.
+
+    Re-probed live 2026-08-17 with a real Chromium + Playwright against
+    https://www.zerogpt.com/. The result selector `.percentage-div` and input
+    `#textArea` were confirmed present and returned `0%AI GPT*`. The SUBMIT
+    selector was the live-broken piece: a nav link whose text is "AI/GPT
+    Detector" (an `<a class="item">`) appears BEFORE `button.scoreButton`
+    ("Detect Text") in the DOM, and the generic submit-control clicker
+    (`button, a, input[type=submit]` + first match of `/text/i`) matched that
+    LINK first. Clicking it fires no detection, so `.percentage-div` never
+    appears and check() raised SelectorMiss after the full wait budget.
+
+    The regex is matched case-insensitively and a bare "detect" is a PREFIX of
+    "Detect Text" — so it ALSO matched every "AI/GPT Detector", "AI Image
+    Detector", ... link in the DOM. A more specific "detect text" matches only
+    the real submit control. These tests pin BOTH the shipped value and the
+    matching semantics so a revert to the ambiguous "detect" is caught offline
+    (no live site needed).
+    """
+
+    # The live DOM labels (captured 2026-08-17). Order matters: the nav links
+    # come first, which is why the generic first-match clicker hit the link.
+    LIVE_SUBMIT_LABELS = [
+        "AI/GPT Detector",
+        "AI Image Detector",
+        "Detect Text",
+        "AI Image Detector",
+        "AI Video Detector",
+        "AI Detector",
+    ]
+
+    def test_shipped_submit_text_is_specific(self):
+        # A bare "detect" is a prefix of every "AI/GPT Detector"-style label;
+        # the shipped value must NOT be that ambiguous.
+        assert ZEROGPT.submit_button_text == "detect text"
+
+    def test_submit_regex_matches_the_real_button_but_not_the_nav_links(self):
+        import re
+
+        rx = re.compile(ZEROGPT.submit_button_text, re.IGNORECASE)
+        matches = [label for label in self.LIVE_SUBMIT_LABELS if rx.search(label)]
+        # Only the real submit control's label matches.
+        assert matches == ["Detect Text"]
+
+    def test_first_dom_match_is_now_the_detect_button(self):
+        # Mirror the JS clicker's argmax over the DOM query order: the first
+        # label matching the regex must be the real button, not a nav link.
+        import re
+
+        rx = re.compile(ZEROGPT.submit_button_text, re.IGNORECASE)
+        first = next(label for label in self.LIVE_SUBMIT_LABELS if rx.search(label))
+        assert first == "Detect Text"
+
+    def test_parse_of_live_result_string(self):
+        # The live `.percentage-div` text captured on a successful run.
+        assert abs(parse_ai_percent("0%AI GPT*") - 0.0) < 1e-6
+        assert abs(parse_ai_percent("100%AI GPT*") - 1.0) < 1e-6
+
+
 def test_user_defined_site_from_json(tmp_path, monkeypatch):
     sites = tmp_path / "sites.json"
     sites.write_text(

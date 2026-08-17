@@ -257,7 +257,7 @@ ZEROGPT = SiteConfig(
     url="https://www.zerogpt.com/",
     input_selector="#textArea",
     input_mode="textarea",
-    submit_button_text="detect",
+    submit_button_text="detect text",
     result_selector=".percentage-div",
 )
 
