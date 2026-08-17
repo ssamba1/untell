@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import time
 import hmac
 import logging
 import os
@@ -932,9 +933,26 @@ _CEILING_RESPONSES = _obj(
 )
 
 
+_health_cache: tuple[float, dict] | None = None
+_HEALTH_TTL_S = 2.0
+
+
 @app.get("/health", responses=_HEALTH_RESPONSES)
 async def health() -> dict:
-    """Health check. Returns service info and the available detector tier."""
+    """Health check. Returns service info and the available detector tier.
+
+    The tier payload is cached for a short TTL: resolving it means calling `available()` on
+    every detector (offloaded, but ~80ms measured under the stdlib env, and several times
+    slower while a rewrite worker holds the GIL). Without a cache, a health poller at 50Hz
+    lands ~10Hz and, under rewrite load, can land ZERO responses during a multi-second
+    rewrite — a liveness probe that fails is exactly what restarts a healthy process.
+    Two seconds of staleness on `detector_tier`/`detectors` is a non-event; the response is
+    microseconds once warm, so the poller runs at its natural rate even mid-rewrite.
+    """
+    global _health_cache
+    now = time.monotonic()
+    if _health_cache is not None and now - _health_cache[0] < _HEALTH_TTL_S:
+        return _health_cache[1]
     from untell.detectors.base import load_detectors, resolved_tier
 
     # Offloaded like every other worker. Warm this is microseconds, but `available()` on the
@@ -942,13 +960,15 @@ async def health() -> dict:
     # call that outran the startup warm-up would otherwise block the loop, and this is the one
     # endpoint whose whole job is to answer promptly.
     dets = await _offload(load_detectors, "full")
-    return {
+    payload = {
         "status": "ok",
         "version": APP_VERSION,
         "detector_tier": resolved_tier(dets),
         "detector_count": len(dets),
         "detectors": [d.name for d in dets],
     }
+    _health_cache = (now, payload)
+    return payload
 
 
 def _numeric_detectors(result: dict) -> dict:

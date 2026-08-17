@@ -53,29 +53,35 @@ def client_app(monkeypatch):
 
 async def _run_probe(app, payload: dict) -> tuple[int, int, float]:
     """Return (health responses during the call, total, rewrite seconds)."""
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://probe") as client:
-        stamps: list[float] = []
-        stop = False
+    # Boot the app the way uvicorn boots it. ASGITransport never runs the lifespan, so without
+    # this the probe measures a server that never started: the first /health pays the cold
+    # detector-stack import (~4.3s measured) INSIDE the rewrite window, zero polls land, and the
+    # test reports a blocked loop that isn't blocked. In production uvicorn blocks connections
+    # until lifespan completes, so a probe always sees a warm /health. Model that here.
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://probe") as client:
+            stamps: list[float] = []
+            stop = False
 
-        async def poll() -> None:
-            while not stop:
-                r = await client.get("/health")
-                assert r.status_code == 200
-                stamps.append(time.perf_counter())
-                await asyncio.sleep(0.02)
+            async def poll() -> None:
+                while not stop:
+                    r = await client.get("/health")
+                    assert r.status_code == 200
+                    stamps.append(time.perf_counter())
+                    await asyncio.sleep(0.02)
 
-        task = asyncio.create_task(poll())
-        await asyncio.sleep(0.05)  # let polling establish before the work starts
-        started = time.perf_counter()
-        resp = await client.post("/humanize", json=payload, timeout=300.0)
-        finished = time.perf_counter()
-        stop = True
-        await task
+            task = asyncio.create_task(poll())
+            await asyncio.sleep(0.05)  # let polling establish before the work starts
+            started = time.perf_counter()
+            resp = await client.post("/humanize", json=payload, timeout=300.0)
+            finished = time.perf_counter()
+            stop = True
+            await task
 
-        assert resp.status_code == 200, resp.text[:300]
-        during = [s for s in stamps if started < s < finished]
-        return len(during), len(stamps), finished - started
+            assert resp.status_code == 200, resp.text[:300]
+            during = [s for s in stamps if started < s < finished]
+            return len(during), len(stamps), finished - started
 
 
 def test_health_is_served_while_a_rewrite_runs(client_app) -> None:
