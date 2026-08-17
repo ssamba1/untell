@@ -1558,3 +1558,33 @@ NEXT   Human: apply the proposed text below into CHANGELOG.md under `## [Unrelea
 text: ruff lint gate + fast-suite deselection in CI 518758f; per-attacks probe-set
 restriction 4efb961; annotation/console-script hygiene checkers 8514811; and the
 ~1100 audit-pass/mutation-kill commits that changed no user-visible behavior.)
+
+## 2026-08-17 wave5 slice12 — AMBER — issue #24 decision: keep the NER gate (option A); README line 248 needs a qualifier (RED)
+
+WHAT   Issue #24's decision (lite-tier composition: preserve-NER loaded spacy+torch, ~18s first call) is
+       now RESOLVED-IN-CODE at HEAD: commit 9eda40e already gates `_spacy_entity_spans_impl` on
+       UNTELL_LITE_NO_TORCH=1 BEFORE importing spacy (tested: tests/test_lite_env_var_gates_preserve_ner.py,
+       6/6 green). The wave-3 slice-13 queue entry (line 711) predates that gate and is stale. Decision
+       recorded here: **keep the gate (option A)** — it matches the README's documented contract
+       ("force the pure-stdlib lite path even when torch is installed", env table line 791; tier table
+       line 538 "Stdlib only"). Named entities are then NOT locked on lite (people/orgs/places), but the
+       regex locks (citations, numbers, quotes, URLs) are untouched. Options B (keep NER on all tiers +
+       document) and C (optional UNTELL_ENABLE_NER opt-in) measured and NOT taken — B contradicts the
+       documented contract and would revert shipped code+test; C is a future AMBER feature for a human.
+RAN    python .claude/probes/slice12_ner_lite_measure.py  (fresh subprocess, env set vs unset)
+       python .claude/probes/slice12_lite_score_measure.py (end-to-end score_text(tier='lite'))
+       pytest tests/test_lite_env_var_gates_preserve_ner.py tests/test_lite_env_var_forces_token_overlap_gate.py -q
+SAW    env set:   first NER call 0.000s, lock 0.001s, 0 entity/5 regex spans, NO torch/spacy/thinc in
+                  sys.modules; score_text(tier='lite') 0.283s end-to-end, no heavy imports.
+       env unset: first NER call 11.677s (spacy+torch via thinc+en_core_web_sm), 5 entity+4 regex spans,
+                  torch/spacy/thinc imported. (Issue title's ~18s and wave-3's 17.9s are the same load,
+                  machine/date-dependent; 11.7s is today's cold-cache number on this box.)
+WHY    AMBER — a composition decision, queued for the human, no code changed this pass. The one RED leftover:
+       README line 248 claims "Citations, numbers, quotes, URLs and named entities are locked byte-for-byte"
+       — under UNTELL_LITE_NO_TORCH=1 the entity part is now false. Human should edit line 248 to read e.g.
+       "...quotes and named entities are locked byte-for-byte (entities on tiers without
+       UNTELL_LITE_NO_TORCH; the lite/stdio path locks citations/numbers/quotes/URLs and skips entity
+       naming)". Env table row 791 already documents the var's effect from the user's side.
+NEXT   Human: (1) decide whether to accept the qualifier wording above or reword (README is RED — loop
+       cannot touch it), (2) optionally file the UNTELL_ENABLE_NER opt-in as a feature request. Issue #24
+       closes with this decision (commit message 'Closes #24').
