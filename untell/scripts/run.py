@@ -424,7 +424,7 @@ def _inert_budget_warning(max_iters: int, best_of: int) -> str | None:
 
 
 def _nothing_adopted_warning(
-    rewrites: int, adopted: int, changed: bool, vetoed: int = 0
+    rewrites: int, adopted: int, changed: bool, vetoed: int = 0, noop: bool = False
 ) -> str | None:
     """Say when the loop drew candidates and kept none of them.
 
@@ -449,6 +449,16 @@ def _nothing_adopted_warning(
     if changed or not rewrites or adopted:
         return None
     drafts = f"{rewrites} candidate{'s' if rewrites != 1 else ''}"
+    if noop:
+        # Issue #25: every draw was byte-identical to the input (the `stalled_noop` stop). The old
+        # text said "every draft scored worse", which is FALSE here — a byte-identical draw never
+        # scored at all. The rewriter had nothing left to change, which is a different situation
+        # (correct early stop) from "it tried and everything was worse".
+        return (
+            f"the rewriter returned {drafts} and every one was byte-identical to your text — "
+            "there was nothing left to change, so the loop stopped instead of re-drawing the same "
+            "text. Your text was returned unchanged."
+        )
     if vetoed >= rewrites:
         # Every draft died at the meaning gate, which `continue`s BEFORE scoring — so none of them
         # was ever compared on score, and saying they "scored worse" would describe a comparison
@@ -1142,6 +1152,10 @@ def _untell_text(
         # are pure waste — and the waste is the EXPENSIVE part (a full-tier detector pass per draw).
         # Best-of-N only buys anything when the draws actually differ.
         draws = 1 if getattr(rw, "deterministic", False) else max(1, best_of)
+        # Issue #25 — how many draws this iteration returned the input byte-identical. Used to
+        # (a) skip the ~20-40s gate for each no-op draw and (b) drive the `noop_stall_safe` stop
+        # condition at the end of the iteration.
+        noop_draws = 0
         for _ in range(draws):
             try:
                 with _timed(phase, "rewrite"):
@@ -1156,6 +1170,23 @@ def _untell_text(
                 break  # a later draw failed; use the candidates we already have
             drew += 1
             rewrites += 1
+            # Issue #25 — no-op draw short-circuit. A draw that returns the input byte-identical is
+            # a fixed point for ANY rewriter: its sentinel multiset, meaning-gate verdict and
+            # detector score are the incumbent's by definition (same string), so the
+            # similarity+NLI-gate+rescore below (~20-40s each on the full tier — the measured
+            # majority of the loop's cost on repetitive docs) is pure waste. Keep the draw in
+            # `valid` with the incumbent's OWN score+tells so the tells tie-break selection below is
+            # byte-identical to having run the full gate on it — a no-op entry can win that
+            # tie-break today, and dropping it would change which candidate is adopted on an edge
+            # doc. (A byte-identical candidate can never be vetoed: best_masked passed the gate when
+            # it was adopted, or is `masked` itself when nothing was adopted, for which sim >= bar.)
+            if candidate == best_masked:
+                noop_draws += 1
+                with _timed(phase, "tells"):
+                    # The no-op draw IS the incumbent, so its tells are the incumbent's tells.
+                    noop_tells = score_tells(restore(best_masked, mapping)).get("tells", 0)
+                valid.append((candidate, best_score, noop_tells))
+                continue
             # Multiset compare against the masked source's own sentinels — NOT Counter(mapping), whose
             # dict values ("Smith (2020)", "47") would be read as counts. A valid rewrite reproduces
             # every sentinel exactly as often as it appears in `masked`: no drop, no alter, no dup.
@@ -1320,6 +1351,23 @@ def _untell_text(
         # for the rest of max_iters. Stochastic rewriters (LLM/policy) have no such flag and keep going.
         if getattr(rw, "deterministic", False) and best_masked == prev_masked:
             stopped = "stalled"
+            break
+        # Issue #25 — no-op-draw stop condition for rule-based stochastic rewriters (composite).
+        # They draw different seeds (so the `deterministic` guard above never fires), but their
+        # DRAWS are deterministic given (input, RNG state): once an iteration's every draw returned
+        # the input byte-identical AND nothing was adopted, no later draw on the same text can
+        # differ — the aggressive end of the intensity sweep fires whenever an eligible item exists,
+        # so all-no-op at every swept intensity means there is nothing left to change. Stop instead
+        # of re-drawing the remaining iterations as guaranteed no-ops (MEASURED ~9-12 wasted
+        # draws/doc on adopting docs). Only when the rewriter advertises `noop_stall_safe`; a T5 /
+        # LLM / policy draw CAN differ on the next call, so they are intentionally unflagged.
+        if (
+            getattr(rw, "noop_stall_safe", False)
+            and drew > 0
+            and noop_draws == drew
+            and best_masked == prev_masked
+        ):
+            stopped = "stalled_noop"
             break
 
     # Restore sentinels to get the final human-readable text before any confirm/polish/return.
@@ -1492,12 +1540,14 @@ def _untell_text(
         **({"warning": _merge_warnings(
             language_warning, carried_payload, best_score.get("warning"),
             _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
-            _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed),
+            _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed,
+                                     stopped == "stalled_noop"),
             _inert_budget_warning(max_iters, best_of),
         )}
            if (language_warning or carried_payload or best_score.get("warning")
                or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)
-               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed)
+               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(),
+                                           vetoed, stopped == "stalled_noop")
                or _inert_budget_warning(max_iters, best_of))
            else {}),
         "sim_bar": sim_bar,

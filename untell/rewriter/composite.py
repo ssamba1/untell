@@ -194,6 +194,19 @@ class CompositeRewriter(Rewriter):
         if use_t5 and self._t5 is not None:
             self.name = "neural"  # distinguish in logs/results when the neural stage is live
 
+        # Issue #25 — no-op-draw stop condition. The plain rule-based chain (no T5 front stage) is
+        # deterministic given (input, RNG state): once the outer loop sees an iteration whose EVERY
+        # draw returns the input byte-identical at all swept intensities AND nothing was adopted,
+        # no later draw on the same text can differ (the aggressive end of the sweep fires
+        # whenever an eligible item exists, so all-no-op at every intensity means there is nothing
+        # left to change). The outer loop uses this flag to stop at that iteration (`stopped =
+        # "stalled_noop"`) instead of re-drawing the remaining iterations as guaranteed no-ops
+        # (MEASURED: ~12 wasted draws/doc on adopting docs, each paying a full gate pass).
+        # NOT set when the neural (T5) front stage is live: a later T5 SAMPLE can genuinely differ,
+        # so stopping there would lose a real late adoption. Ensembles and LLM/policy rewriters
+        # stay unflagged for the same reason.
+        self.noop_stall_safe = not use_t5 or self._t5 is None
+
     def available(self) -> bool:
         return True
 

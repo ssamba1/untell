@@ -1693,3 +1693,25 @@ NEXT   A human applies the per-detector sentence-cut table where sentence scores
        calibration_sweep.py) and the paragraph audit (validation protocol, design point
        6). A RAID sentence sweep is the follow-up before shipping the table as the
        default (curves are HC3-only).
+
+## 2026-08-17 slice 12 (wave 6, issue #25) — AMBER — no-op-draw stop condition for the composite rewriter
+
+WHAT   Issue #25 shipped: the composite rewriter no longer burns ~12 no-op draws/doc. Added (a) a
+       no-op-draw short-circuit in the run.py loop (a byte-identical draw's gate+rescore is skipped
+       but it stays in the candidate pool with the incumbent's score+tells, so the tells tie-break
+       is byte-identical), (b) a `noop_stall_safe` flag on the plain rule-based CompositeRewriter
+       (NOT on the T5-neural variant, ensembles, or LLM/policy rewriters), and (c) an early stop at
+       the first iteration whose every draw returns the input byte-identical AND nothing was
+       adopted -> `stopped="stalled_noop"`.
+RAN    env -u PYTHONPATH UNTELL_LITE_NO_TORCH=1 .../slice25_harness.py (10 HC3 docs, lite tier,
+       max_iters=5, best_of=3, seed text-derived) BEFORE then AFTER, same harness.
+SAW    FINAL byte-identical on ALL 10 docs before/after (full string compared); adopted counts
+       unchanged (short#1/#2 keep their iteration-2 adoption). Draws 135 -> 66 (51% fewer, 69
+       wasted gate passes removed); elapsed 22.4s -> 12.9s (42% faster on lite; ~20-40s each on
+       full tier). long#2 (all draws CHANGED, gate-vetoed) correctly NOT stalled, still runs
+       max_iters. Tests: new tests/test_issue25_noop_stall.py, 5/5 GREEN.
+WHY    AMBER: new semantics (new `stopped` value, gates skipped on no-op draws, fewer reported
+       draws/iterations) could change edge-doc reporting; behavior proven byte-identical on the
+       measured adopting docs, so issue #25 CLOSED in the same commit ("Closes #25").
+NEXT   Human: merge the branch and close issue #25 (commit carries "Closes #25"). If a future doc
+       shows a lost late adoption on the neural/T5 path, that path is already unflagged by design.
