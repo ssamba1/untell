@@ -189,12 +189,16 @@ The repo ships a [Dockerfile](../Dockerfile) that builds the wheel from source a
 
 ```dockerfile
 FROM python:3.11-slim
-RUN pip install "untell[full,server]"
+RUN pip install "untell[server]"
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1
-CMD ["untell-server", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "exec untell-server --host 0.0.0.0 --port 8000"]
 ```
+
+The image installs the `server` extra **only** (no `full`/torch) and defaults to the `lite`
+tier, matching the Dockerfile's `ENV UNTELL_TIER="lite"` — the container answers the API without
+pulling a model stack.
 
 `/health` is exempt from auth and rate limiting, so a probe can never 401 or 429 itself into a
 restart loop. The default bind is `127.0.0.1`, which is unreachable from outside a container —
