@@ -1803,3 +1803,28 @@ SAW    byte-identical queued row -> classify_row ok=False (never appended); numb
 WHY    AMBER: machinery (.claude/collect_swarm.py) touched + new test file, per envelope.
 NEXT   None. The fleet keeps running; audit_next refuses at record time, the collector
        skips at collection time, and both are now pinned. Commit closes issue #16.
+
+## 2026-08-17 slice 9 (wave 6, issue #21) — RED — README "RAID 0%" falsified: re-measured 0.1667, exact edit + regression probe queued
+
+WHAT   Issue #21 (calibration/decision): README heavy-tier note (line 541, 2026-08-11)
+       claims `mage` human FPR at 0.30 on RAID is 0%. Re-measured at the EXACT cited recipe
+       at the task-pinned HEAD dd25242 in a fresh worktree and REPRODUCED 0.1667 (5/30) —
+       the 0% claim is falsified. Wave-3 slice 11 reported the same 5/30.
+RAN    python -m eval.detector_audit --pairs 30 --dataset raid --json   (PYTHONPATH cleared, venv)
+       + python .claude/probes/mage_raid_fpr.py --json   (regression probe, same load path)
+SAW    mage paragraph row, raid n=30 layout collapsed: verdict OK_SEPARATED, AUROC 1.000,
+       human_mean 0.166, FPR 0.1667, TPR 1.000  ->  5/30 human RAID docs flagged at 0.30
+       (flagged idx [1,4,11,13,25]: deep-learning/image-segmentation abstracts, mage training
+       genre; layout collapse predates the claim 02756ca 2026-08-10; upstream RAID snapshot
+       unchanged since 2024). README says RAID 0% — DOES NOT REPRODUCE. Regression probe
+       exits 0 pinning 0.1667. Evidence: .claude/probes/evidence/issue21_raid_measure.json,
+       issue21_mage_raid_pin.json.
+WHY    RED (envelope): "RAID 0%" is a published number in README.md — a human applies or
+       approves the correction. Agent committed only the measurement + probe (GREEN).
+NEXT   HUMAN: apply README line-541 correction (or approve):
+       OLD:  `mage`'s human false-positive rate at 0.30 is HC3 33.3%, RAID 0%, MAGE 3.3%.
+       NEW:  `mage`'s human false-positive rate at 0.30 is HC3 33.3%, RAID 16.7%, MAGE 3.3%
+             (RAID 16.7% re-measured 2026-08-17 @ dd25242, 5/30 human deep-learning/
+             image-segmentation abstracts; prior "RAID 0%" did NOT reproduce).
+       Suggested soft qualifier (same sentence): "That 33% is HC3-SPECIFIC" -> "worst on HC3".
+       Regression probe to re-pin: python .claude/probes/mage_raid_fpr.py --json

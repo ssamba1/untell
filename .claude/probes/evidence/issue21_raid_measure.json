@@ -1,0 +1,159 @@
+{
+  "results": [
+    {
+      "detector": "perplexity_burstiness",
+      "verdict": "OK",
+      "human_mean": 0.1732,
+      "ai_mean": 0.4839,
+      "gap": 0.3107,
+      "range": 0.6019,
+      "auroc": 0.9967,
+      "fpr": 0.0667,
+      "tpr": 0.9667,
+      "n": 30
+    },
+    {
+      "detector": "roberta_openai",
+      "verdict": "OK",
+      "human_mean": 0.0015,
+      "ai_mean": 0.4962,
+      "gap": 0.4946,
+      "range": 0.9997,
+      "auroc": 0.8644,
+      "fpr": 0.0,
+      "tpr": 0.5333,
+      "n": 30
+    },
+    {
+      "detector": "hc3_roberta",
+      "verdict": "OK",
+      "human_mean": 0.0111,
+      "ai_mean": 0.7066,
+      "gap": 0.6955,
+      "range": 0.998,
+      "auroc": 0.9922,
+      "fpr": 0.0,
+      "tpr": 0.7333,
+      "n": 30
+    },
+    {
+      "detector": "fast_detectgpt",
+      "verdict": "OK_SEPARATED",
+      "human_mean": 0.0671,
+      "ai_mean": 0.7612,
+      "gap": 0.694,
+      "range": 0.9564,
+      "auroc": 1.0,
+      "fpr": 0.0,
+      "tpr": 1.0,
+      "n": 30
+    },
+    {
+      "detector": "mage",
+      "verdict": "OK_SEPARATED",
+      "human_mean": 0.166,
+      "ai_mean": 1.0,
+      "gap": 0.834,
+      "range": 1.0,
+      "auroc": 1.0,
+      "fpr": 0.1667,
+      "tpr": 1.0,
+      "n": 30
+    },
+    {
+      "detector": "radar",
+      "verdict": "UNAVAILABLE"
+    },
+    {
+      "detector": "local_judge",
+      "verdict": "UNAVAILABLE"
+    },
+    {
+      "detector": "binoculars",
+      "verdict": "UNAVAILABLE"
+    },
+    {
+      "detector": "perplexity_burstiness [sentence]",
+      "verdict": "OK",
+      "human_mean": 0.0662,
+      "ai_mean": 0.1276,
+      "gap": 0.0614,
+      "range": 0.5866,
+      "auroc": 0.7089,
+      "fpr": 0.0333,
+      "tpr": 0.1667,
+      "n": 30,
+      "granularity": "sentence"
+    },
+    {
+      "detector": "roberta_openai [sentence]",
+      "verdict": "WEAK",
+      "human_mean": 0.3021,
+      "ai_mean": 0.352,
+      "gap": 0.0499,
+      "range": 0.969,
+      "auroc": 0.5211,
+      "fpr": 0.4333,
+      "tpr": 0.4333,
+      "n": 30,
+      "granularity": "sentence"
+    },
+    {
+      "detector": "hc3_roberta [sentence]",
+      "verdict": "OK",
+      "human_mean": 0.1299,
+      "ai_mean": 0.545,
+      "gap": 0.4151,
+      "range": 0.9989,
+      "auroc": 0.84,
+      "fpr": 0.1,
+      "tpr": 0.5333,
+      "n": 30,
+      "granularity": "sentence"
+    },
+    {
+      "detector": "fast_detectgpt [sentence]",
+      "verdict": "MISCALIBRATED",
+      "human_mean": 0.2008,
+      "ai_mean": 0.5763,
+      "gap": 0.3754,
+      "range": 0.9734,
+      "auroc": 0.8367,
+      "fpr": 0.3,
+      "tpr": 0.8333,
+      "n": 30,
+      "granularity": "sentence"
+    },
+    {
+      "detector": "mage [sentence]",
+      "verdict": "MISCALIBRATED",
+      "human_mean": 0.8881,
+      "ai_mean": 0.9674,
+      "gap": 0.0793,
+      "range": 0.9893,
+      "auroc": 0.7822,
+      "fpr": 0.9,
+      "tpr": 0.9667,
+      "n": 30,
+      "granularity": "sentence"
+    },
+    {
+      "detector": "radar [sentence]",
+      "verdict": "UNAVAILABLE",
+      "granularity": "sentence"
+    },
+    {
+      "detector": "local_judge [sentence]",
+      "verdict": "UNAVAILABLE",
+      "granularity": "sentence"
+    },
+    {
+      "detector": "binoculars [sentence]",
+      "verdict": "UNAVAILABLE",
+      "granularity": "sentence"
+    }
+  ],
+  "broken": [],
+  "source": "raid labelled pairs (n=30, layout collapsed)",
+  "layout_shortcut": 1.0
+}
