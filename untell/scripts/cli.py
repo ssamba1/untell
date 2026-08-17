@@ -55,6 +55,7 @@ _COMMANDS: dict[str, str] = {
     "hedges": "untell.scripts.hedges:main",
     "explain": "untell.scripts.explain:main",
     "batch": "untell.scripts.batch:main",
+    "watch": "untell.scripts.watch:main",
 }
 
 # Console scripts this project ships that are NOT subcommands of `untell`. Typing one of these
@@ -81,6 +82,7 @@ _ONE_LINER = {
     "hedges": "check a rewrite does not state more firmly than the original",
     "explain": "show why the preserve lock freezes each span (rule + rationale)",
     "batch": "humanize every .txt/.md file in a directory tree (manifest + summary)",
+    "watch": "humanize .txt/.md files as they appear or change (debounced batches)",
 }
 
 

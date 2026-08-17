@@ -1693,3 +1693,43 @@ NEXT   A human applies the per-detector sentence-cut table where sentence scores
        calibration_sweep.py) and the paragraph audit (validation protocol, design point
        6). A RAID sentence sweep is the follow-up before shipping the table as the
        default (curves are HC3-only).
+
+
+## 2026-08-17 wave-6 slice 1 — AMBER + count-drift RED — untell watch (#29)
+
+WHAT   Added the watch capability for issue #29: `untell watch <dir>` (subcommand in
+       untell/scripts/cli.py) plus a standalone `untell-watch` console script
+       (pyproject.toml). New module untell/scripts/watch.py: a stdlib polling watcher
+       that rescan a directory every --poll-interval seconds and humanizes each
+       .txt/.md the moment it appears or is edited, reusing the exact batch pipeline
+       (untell.scripts.batch._process_one) with one shared rewriter. Debounced batches
+       (--debounce) coalesce bursts into one pass; a file edited again before its batch
+       flushes is humanized once from its newest content (latest wins); a file deleted
+       before flush is dropped. Flags: --out/--tier/--threshold/--rewriter/--max-iters/
+       --best-of/--dry-run/--poll-interval/--debounce/--max-batches/--timeout. 19 tests
+       in tests/test_watch_cli.py (fake watcher via injected scan/sleep/now/process) +
+       one real filesystem test through the real batch pipeline; conformance matrix entry.
+
+       COUNT-DRIFT: adding this console script brings pyproject.toml [project.scripts] to
+       26, while docs/why-best-open-repo.md documents 25 console scripts and names them.
+       The two assertions in tests/test_console_script_list_matches_pyproject.py
+       (count == 26 vs 25; 'untell-watch' not in the named list) now FAIL. This belongs to
+       the same count-drift repair the human owns in docs/why-best-open-repo.md (RED,
+       not edited here; it is one of the two unstaged human-owned count-repair docs).
+RAN    pytest tests/test_watch_cli.py (19 passed); pytest tests/test_cli_conformance_matrix.py
+       -k watch (5 passed, incl. bounded minimal invocation via --timeout 2);
+       pytest tests/test_cli_dispatch.py test_console_scripts_respond.py
+       test_a_mistyped_subcommand_is_not_humanized.py test_cli_mutation_guards.py (77 passed);
+       ruff clean on all new/edited files.
+SAW    Real end-to-end CLI demo (watcher subprocess + external writer created report.md):
+       "watch: 1 batch(es), 1 file(s) humanized (1 rewrote), 0 skipped, 0 failed", rc=0,
+       out/report.md written with genuinely rewritten (more-human) text in 3.27s.
+       The only fast-suite failures are the 2 doc-conformance assertions above.
+WHY    New CLI flag/command + new module + new console script = AMBER (must be written
+       down). The doc-conformance failure is RED-doc-gated (human-owned published count)
+       and is queued here rather than edited.
+NEXT   Human: in docs/why-best-open-repo.md bump the count to **26** console scripts and
+       add `-watch` to the named parenthetical list. That restores
+       tests/test_console_script_list_matches_pyproject.py to green. The two unstaged
+       count-repair docs can be committed together. Revert of this commit is `git revert`;
+       it returns the doc and the conformance tests to the pre-watch state.

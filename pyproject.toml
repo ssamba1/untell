@@ -146,6 +146,7 @@ untell-numbers = "untell.scripts.numerals:main"
 untell-hedges = "untell.scripts.hedges:main"
 untell-explain = "untell.scripts.explain:main"
 untell-batch = "untell.scripts.batch:main"
+untell-watch = "untell.scripts.watch:main"
 
 [tool.setuptools]
 packages = [

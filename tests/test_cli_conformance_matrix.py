@@ -103,6 +103,8 @@ MINIMAL: dict[str, dict] = {
     "untell-hedges": {"argv": ["It may be possible.", "It might be possible."], "expect": 0},
     "untell-explain": {"argv": [TEXT], "expect": 0},
     "untell-batch": {"argv": ["__DIR__", "--dry-run", "--tier", "lite"], "expect": 0, "files": ["__DIR__"]},
+    # watch is a long-running loop; a bounded invocation is the documented clean run.
+    "untell-watch": {"argv": ["__DIR__", "--timeout", "2", "--poll-interval", "0.1", "--tier", "lite"], "expect": 0, "files": ["__DIR__"]},
 }
 
 # Commands whose no-args invocation is a documented VALID run (not a missing-argument
