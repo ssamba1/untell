@@ -711,6 +711,191 @@ def _tell_count(text: str) -> int:
     return score_tells(text).get("tells", 0)
 
 
+def _tell_probe_words(
+    text: str, syns_by_word: dict[str, list[str]], raw_words: list[str]
+) -> set[str]:
+    """Words whose first-occurrence synonym substitution could possibly change the tells count.
+
+    The exact probe-set restriction for `_tell_ranks`. With nltk/WordNet installed, `synonyms()`
+    returns candidates for nearly every content word, so the unrestricted loop ran one FULL
+    `score_tells` pass per unique word — ~10 s per pass at 1 MB (wave-3 slice 6), i.e. hours on a
+    1 MB document. A substitution only ever changes the text at the word's FIRST occurrence
+    (`substitute_once` uses `re.sub(..., count=1)`), so the probe can only change the tells count
+    if that occurrence participates in a counted tell structure. This function computes, in a
+    handful of full-text passes done ONCE per call, the set of words that satisfy that condition
+    for at least one occurrence. It returns a SUPERSET of every word whose probe could report a
+    positive gain, so skipping the rest never changes a ranking decision; each category's
+    condition is argued in the per-category table below.
+
+    All conditions are computed on the SAME normalisation `score_tells` applies
+    (`scrub_hidden` + `fold_unicode_spaces`) and with `tells._WORD` tokenisation, because that is
+    the text the probe's tells count actually sees.
+
+    category                    word can matter iff (first occurrence)
+    --------------------------  ---------------------------------------------------
+    regex span categories       inside a claimed tell span (longest-match claiming);
+    (20 patterns)               or immediately after "a"/"an", whose rewrite ("an X" ->
+                                "a Y") can break a span ending at the article
+    repeated_phrasing           the category FIRES and a trigram window at the
+    (trigrams)                  occurrence is repeated (breaking it drops the repeat
+                                count), or the category fires and a multi-word first
+                                synonym pushes the share under the 5% bar
+    repeated_sentence_openers   the category FIRES and the word is a duplicated opener
+                                (dupes can only drop; a non-firing category reports 0
+                                and cannot go below 0); or the opener is "a"/"an" and
+                                the SECOND word's substitution rewrites the article
+    rule_of_three               the word sits in a <=3-word sentence whose length grows
+                                past 3 (only short->long flips change the runs)
+    title_case_heading          the word sits in a heading line outside fenced code
+    semicolon / em_dash /       NEVER — a word substitution cannot add or remove ";",
+    diff_anchored               "—", or a "+ \\w" line anchor
+    burstiness (cv, low)        not part of the tells COUNT (separate result fields)
+
+    Two safety nets close the remaining corners: the quant-frame keys ("myriad"/"plethora",
+    whose substitution rewrites a 3-token frame at once) are included whenever present, and any
+    raw word absent from the normalised token stream (zero-width merges, "don't"->"don", "t",
+    hyphenated compounds) is included unconditionally, because the probe can still change a
+    merged token's content.
+    """
+    from bisect import bisect_right
+    from collections import Counter
+
+    from untell.attacks import scrub_hidden
+    from untell.scripts.tells import (
+        _FENCE_RE,
+        _HEADING_RE,
+        _MIN_WORDS_FOR_REPETITION,
+        _WORD as TELLS_WORD,
+        _claimed_spans,
+    )
+    from untell.text_split import fold_unicode_spaces, split_sentences
+
+    norm = fold_unicode_spaces(scrub_hidden(text))
+    tokens = list(TELLS_WORD.finditer(norm))
+    lc = [m.group(0).lower() for m in tokens]
+    n = len(lc)
+    out: set[str] = set()
+
+    # A. claimed tell spans. A span can only be destroyed by a change at a token it contains;
+    # claimed spans never overlap, so at most one contains any token. The article seam covers a
+    # span that ENDS at "a"/"an": the following word's substitution rewrites the article token
+    # (agree_article), which can break a match the word itself is outside of.
+    spans = _claimed_spans(norm)
+    if spans:
+        bounds = sorted((s, e) for s, e, _name, _matched in spans)
+        starts = [s for s, _e in bounds]
+        for i, m in enumerate(tokens):
+            j = bisect_right(starts, m.start()) - 1
+            if j >= 0 and m.start() < bounds[j][1]:
+                out.add(lc[i])
+                if lc[i] in ("a", "an") and i + 1 < n:
+                    out.add(lc[i + 1])
+
+    # B. repeated trigrams — the strongest signal in the catalogue, and the one that makes a
+    # full-text probe expensive (a Counter over every 3-gram). Restriction: a non-firing
+    # category reports 0 and cannot go below 0, so only a FIRING category can reward a probe;
+    # and the count can only drop by breaking a repeated gram at the substituted occurrence.
+    grams = Counter(tuple(lc[i : i + 3]) for i in range(n - 2)) if n >= 3 else Counter()
+    repeats = sum(c - 1 for c in grams.values() if c > 1)
+    trigram_fires = n >= _MIN_WORDS_FOR_REPETITION and repeats / n * 100 >= 5.0
+    if trigram_fires:
+        for i in range(n - 2):
+            if grams[tuple(lc[i : i + 3])] > 1:
+                out.add(lc[i])
+                out.add(lc[i + 1])
+                out.add(lc[i + 2])
+        # Article seam in the gram stream: "an X" -> "a Y" changes the article token, so a
+        # repeated gram ENDING in "a"/"an" can break even though X's own windows are intact.
+        for p in range(2, n):
+            if lc[p] in ("a", "an") and p + 1 < n and grams[tuple(lc[p - 2 : p + 1])] > 1:
+                out.add(lc[p + 1])
+
+    # C. duplicate sentence openers. A non-firing category cannot reward a probe (dupes only
+    # drop, and the category reports 0 either side of 40%). The second word after a duplicated
+    # "a"/"an" opener matters too: its substitution rewrites the article, i.e. the opener token.
+    sents = split_sentences(norm)
+    opener_counts: Counter = Counter()
+    second_after_article: set[str] = set()
+    for s in sents:
+        sw = [m.group(0).lower() for m in TELLS_WORD.finditer(s)]
+        if not sw:
+            continue
+        opener_counts[sw[0]] += 1
+        if sw[0] in ("a", "an") and len(sw) > 1:
+            second_after_article.add(sw[1])
+    total_openers = sum(opener_counts.values())
+    if n >= _MIN_WORDS_FOR_REPETITION and total_openers >= 4:
+        dupes = total_openers - len(opener_counts)
+        if dupes / total_openers * 100 >= 40.0:
+            for w, c in opener_counts.items():
+                if c >= 2:
+                    out.add(w)
+            if opener_counts.get("a", 0) >= 2 or opener_counts.get("an", 0) >= 2:
+                out.update(second_after_article)
+
+    # D. rule-of-three runs: only a SHORT (<=3-word) sentence whose length grows past 3 can
+    # leave a run. k is the replacement's token count under tells._WORD tokenisation — a
+    # hyphenated replacement like "first-of-its-kind" is FOUR tokens there, not one.
+    for s in sents:
+        sw = [m.group(0).lower() for m in TELLS_WORD.finditer(s)]
+        if len(sw) <= 3:
+            for w in sw:
+                syns = syns_by_word.get(w)
+                if not syns:
+                    continue
+                if len(sw) + len(TELLS_WORD.findall(syns[0])) - 1 > 3:
+                    out.add(w)
+
+    # E. repeated-trigram threshold flip: a multi-word first synonym adds tokens to the whole
+    # text (the first occurrence is the only one substituted), which can push a FIRING category
+    # under the 5% bar — worth up to `repeats` tells in one probe.
+    if trigram_fires:
+        for w, syns in syns_by_word.items():
+            if not syns:
+                continue
+            k = len(TELLS_WORD.findall(syns[0]))
+            if k >= 2 and repeats / (n + k - 1) * 100 < 5.0:
+                out.add(w)
+
+    # F. title-case headings: a substitution inside a heading line can break its title-casing.
+    # Fenced code is stripped before heading counting, so headings inside a fence cannot matter.
+    fences = [m.span() for m in _FENCE_RE.finditer(norm)]
+    for hm in _HEADING_RE.finditer(norm):
+        hs, he = hm.span()
+        if any(fs <= hs and he <= fe for fs, fe in fences):
+            continue
+        for i, m in enumerate(tokens):
+            if m.start() >= he:
+                break
+            if m.end() > hs:
+                out.add(lc[i])
+
+    # G. quant-frame keys rewrite a 3-token frame ("a myriad of") in one substitution — a change
+    # no single-token condition captures, so include them whenever they appear.
+    for key in ("myriad", "plethora"):
+        if any(t == key for t in lc):
+            out.add(key)
+
+    # H. the substitution can still matter for a raw word the normalised stream never contains
+    # (scrub_hidden can merge tokens: "a\u200bb" -> "ab"; tells._WORD splits "don't"/hyphens
+    # differently than this module's _WORD). Those are few; include them unconditionally.
+    token_set = set(lc)
+    for w in raw_words:
+        wl = w.lower()
+        if wl not in token_set:
+            out.add(wl)
+
+    # I. a first synonym that is a comma-less coordinator ("and"/"but"/"or"/"nor") makes
+    # substitute_once target a clause-boundary occurrence instead of the first one — the
+    # position analysis above is void, so include the word unconditionally. (WordNet does not
+    # synsetise conjunctions; the builtin map never lists one first, so this never fires.)
+    for w, syns in syns_by_word.items():
+        if syns and syns[0].lower() in _COMMA_LESS_OPENERS:
+            out.add(w)
+
+    return out
+
+
 def _tell_ranks(text: str) -> list[tuple[str, int]]:
     """Words worth swapping because swapping one removes a catalogued tell, most-gain first.
 
@@ -718,12 +903,26 @@ def _tell_ranks(text: str) -> list[tuple[str, int]]:
     no usable per-word gradient, and at full tier it has one that buys nothing for this operation.
     The gain is measured with the word's FIRST synonym as a probe — enough to tell whether the word
     is carrying a tell at all, without scoring every synonym of every word up front.
+
+    The probes are restricted to the exact set of words whose substitution could possibly change
+    the tells count (see `_tell_probe_words`), and each probe stays a full-text pass, so the
+    measured gain — and therefore every ranking decision — is identical to the unrestricted loop.
+    What the restriction removes is the COUNT of probes: with nltk/WordNet installed every content
+    word gains synonyms, and the unrestricted loop ran one ~10 s `score_tells` pass per unique
+    word at 1 MB (wave-3 slice 6) — hours. The restricted loop probes only tell-adjacent words.
     """
     base = _tell_count(text)
+    words = list(dict.fromkeys(m.group(0) for m in _WORD.finditer(text)))
+    # `synonyms()` lowercases internally, so keying by the lowercased form is exact and collapses
+    # "Leverage"/"leverage" to one entry. One call per unique raw word either way.
+    syns_by_word = {w.lower(): synonyms(w) for w in words}
+    probe_words = _tell_probe_words(text, syns_by_word, words)
     ranks: list[tuple[str, int]] = []
-    for word in dict.fromkeys(m.group(0) for m in _WORD.finditer(text)):
-        syns = synonyms(word)
+    for word in words:
+        syns = syns_by_word[word.lower()]
         if not syns:
+            continue
+        if word.lower() not in probe_words:
             continue
         gain = base - _tell_count(substitute_once(text, word, syns[0]))
         if gain > 0:

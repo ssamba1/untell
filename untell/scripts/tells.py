@@ -1111,6 +1111,39 @@ def _language_supported(text: str) -> bool:
     return latin > non_latin
 
 
+def _claimed_spans(text: str) -> list[tuple[int, int, str, str]]:
+    """Pattern tell spans ``text`` actually counts: (start, end, category, matched).
+
+    Count by SPAN, not by pattern, so one stretch of text can only ever be one tell. Several words
+    legitimately appear in two categories — "boasts" is AI vocabulary AND an inflated copula;
+    "showcasing" is AI vocabulary AND the head of a participial trailer — and counting both fired
+    the same token twice, breaking the module's stated invariant that "a single phrase must count
+    in exactly one category, never two". Deleting the duplicate words is the wrong fix: they are
+    real tells in constructions the more specific pattern does not match ("platform showcasing
+    wins" has no comma, so the trailer pattern never fires).
+
+    The LONGEST match claims the span, not the first category in the list — _CATEGORIES is ordered
+    for readability, not specificity, and ai_vocab sits first, so list order would let a single
+    word beat the multi-word construction that contains it.
+
+    Extracted from ``score_tells`` so the probe-set restriction in
+    ``untell.attacks.word_importance`` can ask "which words sit inside a counted tell span?"
+    without reimplementing (and silently drifting from) the claiming rule.
+    """
+    spans: list[tuple[int, int, str, str]] = []
+    for name, pat in _CATEGORIES:
+        for m in pat.finditer(text):
+            spans.append((m.start(), m.end(), name, m.group(0)))
+    spans.sort(key=lambda s_: (-(s_[1] - s_[0]), s_[0]))  # longest first, then leftmost
+
+    claimed: list[tuple[int, int, str, str]] = []
+    for start, end, name, matched in spans:
+        if any(start < c_end and end > c_start for c_start, c_end, _n, _m in claimed):
+            continue  # this text is already counted as a richer tell
+        claimed.append((start, end, name, matched))
+    return claimed
+
+
 def score_tells(text: str, *, include_matches: bool = False) -> dict:
     """Count AI tells in ``text`` per the catalogue. Lower is more human-reading."""
     if not isinstance(text, str):
@@ -1174,28 +1207,9 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         if include_matches:
             matches["em_dash"] = ["—"] * text.count("—")
 
-    # Count by SPAN, not by pattern, so one stretch of text can only ever be one tell. Several words
-    # legitimately appear in two categories — "boasts" is AI vocabulary AND an inflated copula;
-    # "showcasing" is AI vocabulary AND the head of a participial trailer — and counting both fired
-    # the same token twice, breaking the module's stated invariant that "a single phrase must count
-    # in exactly one category, never two". Deleting the duplicate words is the wrong fix: they are
-    # real tells in constructions the more specific pattern does not match ("platform showcasing
-    # wins" has no comma, so the trailer pattern never fires).
-    #
-    # The LONGEST match claims the span, not the first category in the list — _CATEGORIES is ordered
-    # for readability, not specificity, and ai_vocab sits first, so list order would let a single
-    # word beat the multi-word construction that contains it.
-    spans: list[tuple[int, int, str, str]] = []
-    for name, pat in _CATEGORIES:
-        for m in pat.finditer(text):
-            spans.append((m.start(), m.end(), name, m.group(0)))
-    spans.sort(key=lambda s_: (-(s_[1] - s_[0]), s_[0]))  # longest first, then leftmost
-
-    claimed: list[tuple[int, int]] = []
-    for start, end, name, matched in spans:
-        if any(start < c_end and end > c_start for c_start, c_end in claimed):
-            continue  # this text is already counted as a richer tell
-        claimed.append((start, end))
+    # Count by SPAN, not by pattern — see _claimed_spans for why a single phrase must count in
+    # exactly one category, and how the longest match wins the overlap.
+    for start, end, name, matched in _claimed_spans(text):
         by_category[name] = by_category.get(name, 0) + 1
         if include_matches:
             matches.setdefault(name, []).append(matched)
