@@ -2035,6 +2035,15 @@ def build_parser() -> argparse.ArgumentParser:
         "hunk payload instead. Built on the preserve-lock explainer: the payload also "
         "reports how many locked spans survived the rewrite byte-for-byte.",
     )
+    parser.add_argument(
+        "--html",
+        action="store_true",
+        help="write a self-contained HTML report of the humanization to stdout: before/after "
+        "text, pre/post scores, seed, whether it rewrote, the unified --diff payload, and a "
+        "per-span annotation of every locked fact (via the explain machinery), all HTML-"
+        "escaped with no external assets. With --json, emit the machine-readable envelope "
+        "holding the report string plus the diff payload.",
+    )
     return parser
 
 
@@ -2051,6 +2060,46 @@ def _diff_payload(text: str, result: dict) -> dict:
     from untell.scripts.explain import explain_spans
 
     return humanize_diff(text, result.get("final", ""), locked_spans=explain_spans(text))
+
+
+def _html_payload(text: str, result: dict) -> dict:
+    """The `--html` envelope: the rendered report string plus the structured run data.
+
+    ``render_humanize_html`` draws the diff (with its per-span lock annotations) and the
+    score/seed/rewrote facts into one escaped, self-contained document. The envelope keeps
+    the machine-readable pieces alongside the string, so `--html --json` is a parseable
+    contract rather than a page dump — the same split `--diff` / `--diff --json` already
+    makes.
+    """
+    from untell.rich_output import render_humanize_html
+
+    diff = _diff_payload(text, result)
+    html_doc = render_humanize_html(
+        original=text,
+        final=result.get("final", ""),
+        pre_score=result.get("pre", {}),
+        post_score=result.get("post", {}),
+        iterations=result.get("iterations", 0),
+        stopped=result.get("stopped", "unknown"),
+        warning=result.get("warning"),
+        diff=diff,
+        seed=result.get("seed"),
+        rewrote=result.get("changed"),
+        tells_before=result.get("tells_before"),
+        tells_after=result.get("tells_after"),
+    )
+    return {
+        "format": "untell-html",
+        "version": 1,
+        "html": html_doc,
+        "diff": diff,
+        "pre": result.get("pre", {}),
+        "post": result.get("post", {}),
+        "seed": result.get("seed"),
+        "rewrote": result.get("changed"),
+        "iterations": result.get("iterations", 0),
+        "stopped": result.get("stopped", "unknown"),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2193,8 +2242,11 @@ def main(argv: list[str] | None = None) -> int:
         seed=args.seed,
         # Only on the human-facing path: --json must stay parseable, so a progress line printed to
         # stdout ahead of the payload would corrupt it for every scripted caller. `--diff --json`
-        # is a scripted caller too — same rule, same flag.
-        progress=not args.json,
+        # is a scripted caller too — same rule, same flag. `--html` is a full-document mode just
+        # like `--json`: stdout IS the report, so progress must go to stderr (where untell_text's
+        # progress printer already sends iterations) or the saved .html file would start with a
+        # stray iteration line.
+        progress=not (args.json or args.html),
         timings=args.timings,
     )
     if args.diff:
@@ -2218,6 +2270,21 @@ def main(argv: list[str] | None = None) -> int:
             from untell.rich_output import print_humanize_diff
 
             print_humanize_diff(payload)
+        return 0
+    if args.html:
+        if "error" in result:
+            # Same contract as the other modes: under `--html --json` stdout is JSON, so a
+            # caller parsing stdout cannot special-case one branch.
+            if args.json:
+                print(json.dumps(result, ensure_ascii=True, indent=2))
+            else:
+                print(f"ERROR: {result['error']}")
+            return 1
+        payload = _html_payload(text, result)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=True, indent=2))
+        else:
+            print(payload["html"])
         return 0
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))

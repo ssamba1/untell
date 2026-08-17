@@ -1647,3 +1647,28 @@ RAN    fast suite green (8427 passed) with all changes present; browser tests 75
 SAW    No queue entry in the original commit (discipline slip — repaired here).
 WHY    New CLI surfaces (--browser auto, signals mode) are AMBER per the envelope.
 NEXT   Issue #3 per-rule rubric tests + #2 live-probe e2e evidence: queued for the next wave.
+## 2026-08-17 slice 2 (wave 6, issue #30) — AMBER — new `untell humanize --html` surface (new CLI flag + HTML artifact)
+
+WHAT   Issue #30: `untell humanize --html` now writes a self-contained, deterministic HTML
+       report of the run to stdout: before/after text, pre/post scores, seed, whether it
+       rewrote, the unified --diff payload, and a per-span lock annotation (via the
+       explain/lock machinery — same single source of truth as lock()). Every dynamic value
+       is HTML-escaped (fuzz-tested against <script>/<img>/<svg> injection shapes), and the
+       document carries no external assets (inline <style>, zero <script>/<link>/remote
+       URLs) so it renders from file://. `--html --json` emits a machine-readable envelope
+       (format "untell-html", version 1) holding the report string plus the diff payload,
+       pre/post, seed, rewrote; the --json error path stays parseable. stdout is the clean
+       document (progress suppressed, like --json), so `untell humanize --html ... > r.html`
+       yields a valid page. Determinism + escaping + self-containment pinned by
+       tests/test_humanize_html.py (15 tests).
+RAN    UNTELL_LITE_NO_TORCH=1 python -m untell.scripts.run --tier lite --rewriter composite
+       --seed 11 --max-iters 6 --best-of 3 --html --json "<AI sample>"  (plus the test file)
+SAW    format=untell-html, seed=11, rewrote=True, iters=1, pre max 0.3736 -> post max
+       0.2115, 2 locked spans preserved verbatim; demo_report.html written; 15/15 html
+       tests green; ruff whole-tree clean; full fast suite green (see commit).
+WHY    AMBER: a NEW CLI flag surface (the humanize --html presentation mode). No existing
+       flag, exit code, error message, result shape or library signature changed; the loop
+       result dict is unchanged, so REST/MCP mirror nothing (test_surface_parity already
+       free-lists "html" as CLI-only). No RED file touched.
+NEXT   A human may extend the HTML report (per-sentence flagged annotations, style/voice,
+       det-detailed rows) or surface it in the REST/MCP API; nothing required.

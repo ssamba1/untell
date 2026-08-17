@@ -523,3 +523,242 @@ def progress_iteration(current: int, total: int, tier: str, score: float | None 
     score_part = f"  P(AI)={score:.2f}" if score is not None else ""
     _CONSOLE.print(f"  [dim]→ Iteration {current}/{total}[/]  tier={tier}{score_part}")
     return None
+
+
+# ---------------------------------------------------------------------------
+# HTML report (`untell humanize --html`, issue #30)
+# ---------------------------------------------------------------------------
+#
+# A self-contained, deterministic HTML rendering of a humanize loop run. Unlike
+# the rich terminal views this module also drives, the artifact is meant to be
+# saved and shared, so it carries everything a reader needs to trust the run:
+# before/after text, pre/post scores, seed, whether it rewrote, the unified
+# --diff payload and — via the explain machinery the loop's own lock builds on —
+# a per-span annotation of every frozen fact and why it was frozen.
+#
+# Determinism: the same inputs return byte-identical output. There is no
+# timestamp, no random, no process-dependent value, and the CSS is inlined, so
+# two runs on the same text/seed produce two files that diff to nothing.
+#
+# Escaping is load-bearing, not cosmetic. Every value that came from the user's
+# text — original, final, each locked span, rules, rationale, warning — passes
+# through `html.escape`, so text that *is* attacker-shaped markup (a "<script>"
+# inside the text being humanized) renders as inert characters instead of
+# executing or breaking the page. The escaping tests fuzz this surface directly.
+#
+# No external assets: the whole document is one string with an inline <style>
+# and zero <script>/<link> references, so it renders identically from a
+# file:// path or an air-gapped box. It needs no `rich` and no JS.
+def _esc(value: object) -> str:
+    """HTML-escape an arbitrary value with both quotes, so it is safe in any
+    text node AND inside a quoted attribute."""
+    raw = str(value)
+    return (
+        raw.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#x27;")
+    )
+
+
+def _score_cell(score: dict, key: str, fmt: str = "{:.2f}") -> str:
+    """A score dict value rendered safely, or \"—\" when absent/non-numeric."""
+    value = (score or {}).get(key)
+    if isinstance(value, (int, float)):
+        try:
+            return fmt.format(value)
+        except (ValueError, TypeError):  # non-finite -> the dash, not a crash
+            return "—"
+    return "—"
+
+
+def _verdict_cell(score: dict) -> str:
+    """The same flag/borderline/clear verdict the terminal table shows, so the
+    HTML and the console cannot disagree about what the score means."""
+    cut = (score or {}).get("verdict_threshold", (score or {}).get("threshold", 0.30))
+    p_ai = (score or {}).get("max")
+    if not isinstance(p_ai, (int, float)) or not isinstance(cut, (int, float)):
+        return "—"
+    if p_ai >= cut:
+        return "flagged"
+    return "borderline" if p_ai >= cut - _VERDICT_BAND else "clear"
+
+
+def render_humanize_html(
+    original: str,
+    final: str,
+    pre_score: dict,
+    post_score: dict,
+    iterations: int,
+    stopped: str,
+    warning: str | None = None,
+    diff: dict | None = None,
+    seed=None,
+    rewrote: bool | None = None,
+    tells_before: int | None = None,
+    tells_after: int | None = None,
+) -> str:
+    """Render a complete standalone HTML report for one humanize run.
+
+    Returns a single ``str`` that is a fully self-contained HTML document
+    (DOCTYPE through </html>). Every dynamic value is HTML-escaped; the output
+    is deterministic and depends on no external file, image, stylesheet or
+    script. Pass the ``humanize_diff`` payload (with its ``locked_spans`` and
+    ``locks_preserved``) as ``diff`` to include the before/after and the
+    per-span lock annotations.
+    """
+    diff = diff or {}
+    changed = rewrote
+    if changed is None:
+        changed = final != original
+    no_change = not changed
+
+    # --- header / summary ---------------------------------------------------
+    title = "untell — humanization report"
+    status = "no change made" if no_change else "humanization complete"
+    plural = "s" if iterations != 1 else ""
+
+    lines: list[str] = [
+        "<!DOCTYPE html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        f"<title>{_esc(title)}</title>",
+        "<style>",
+        "  :root{--bg:#0f172a;--panel:#1e293b;--ink:#e2e8f0;--muted:#94a3b8;"
+        "--add:#166534;--addink:#bbf7d0;--del:#7f1d1d;--delink:#fecaca;--line:#334155;}",
+        "  *{box-sizing:border-box;}",
+        "  body{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;"
+        "font-size:14px;line-height:1.5;color:var(--ink);background:var(--bg);}",
+        "  main{max-width:960px;margin:0 auto;padding:24px;}",
+        "  h1{font-size:18px;margin:0 0 4px;}",
+        "  p.sub{color:var(--muted);margin:0 0 20px;font-size:12px;}",
+        "  h2{font-size:14px;border-bottom:1px solid var(--line);padding-bottom:4px;margin:24px 0 10px;}",
+        "  table{border-collapse:collapse;width:100%;margin:6px 0;}",
+        "  th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);font-size:13px;}",
+        "  th{color:var(--muted);font-weight:600;}",
+        "  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;}"
+        "  .badge.ok{background:var(--add);color:var(--addink);}"
+        "  .badge.no{background:var(--del);color:var(--delink);}",
+        "  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;"
+        "padding:10px 12px;margin:4px 0;white-space:pre-wrap;word-break:break-word;}"
+        "  .dig{white-space:pre-wrap;word-break:break-word;}",
+        "  .hunk{background:var(--panel);border:1px solid var(--line);border-radius:8px;"
+        "padding:8px 12px;margin:8px 0;}",
+        "  .hunk .h{color:var(--muted);}",
+        "  .hunk .a{color:var(--delink);}",
+        "  .hunk .d{color:var(--addink);}",
+        "  .why{color:var(--muted);font-size:12px;}",
+        "  .warn{background:#3f1d1d;border:1px solid #7f1d1d;color:#fecaca;border-radius:8px;"
+        "padding:8px 12px;margin:8px 0;}",
+        "  footer{margin-top:32px;color:var(--muted);font-size:11px;border-top:1px solid var(--line);"
+        "padding-top:8px;}",
+        "</style>",
+        "</head>",
+        "<body>",
+        "<main>",
+        f"<h1>{_esc(title)}</h1>",
+        f'<p class="sub">{_esc(status)} &middot; {_esc(iterations)} iteration{_esc(plural)} '
+        f"&middot; stopped: {_esc(stopped.replace('_', ' ').title())}</p>",
+    ]
+
+    # --- summary badges -----------------------------------------------------
+    rewrote_txt = "rewrote" if changed else "returned unchanged"
+    seed_txt = "" if seed is None else f"  seed: {_esc(seed)}"
+    lines.append(
+        f'<p><span class="badge {"ok" if changed else "no"}">{_esc(rewrote_txt.capitalize())}</span>'
+        f"<span class=\"badge ok\">P(AI) {_esc(_score_cell(pre_score, 'max'))} "
+        f"&rarr; {_esc(_score_cell(post_score, 'max'))}</span>{_esc(seed_txt)}</p>"
+    )
+
+    # --- scores table -------------------------------------------------------
+    lines.append("<h2>Score</h2>")
+    lines.append("<table><tr><th>Metric</th><th>Before</th><th>After</th></tr>")
+    for label, key, fmt in (
+        ("P(AI) max", "max", "{:.4f}"),
+        ("P(AI) mean", "mean", "{:.4f}"),
+    ):
+        lines.append(
+            f"<tr><td>{_esc(label)}</td><td>{_esc(_score_cell(pre_score, key, fmt))}</td>"
+            f"<td>{_esc(_score_cell(post_score, key, fmt))}</td></tr>"
+        )
+    lines.append(
+        f"<tr><td>Verdict</td><td>{_esc(_verdict_cell(pre_score))}</td>"
+        f"<td>{_esc(_verdict_cell(post_score))}</td></tr>"
+    )
+    if tells_before is not None and tells_after is not None:
+        lines.append(
+            f"<tr><td>AI tells</td><td>{_esc(tells_before)}</td><td>{_esc(tells_after)}</td></tr>"
+        )
+    tier = (pre_score or {}).get("tier", post_score.get("tier", "?"))
+    lines.append(f"<tr><td>Tier</td><td colspan=\"2\">{_esc(tier)}</td></tr>")
+    lines.append("</table>")
+
+    # --- locked spans -------------------------------------------------------
+    locked = diff.get("locked_spans") or []
+    locks_preserved = diff.get("locks_preserved")
+    lines.append("<h2>Locked spans</h2>")
+    if not locked:
+        lines.append('<p class="sub">No spans locked — the rewriter may touch every word.</p>')
+    else:
+        if locks_preserved is not None:
+            kept_txt = (
+                f"{locks_preserved} of {len(locked)} preserved verbatim"
+                if locks_preserved == len(locked)
+                else f"WARNING: {len(locked) - locks_preserved} of {len(locked)} did NOT survive"
+            )
+            lines.append(f'<p class="sub">{_esc(kept_txt)}</p>')
+        lines.append("<table><tr><th>Sentinel</th><th>Span</th><th>Rules</th><th>Why locked</th></tr>")
+        for row in locked:
+            rules = ", ".join(row.get("rules") or [])
+            preserved = row.get("span", "") in final
+            ok = "kept" if preserved else "LOST"
+            lines.append(
+                "<tr>"
+                f"<td>{_esc(row.get('sentinel', ''))}</td>"
+                f"<td>{_esc(row.get('span', ''))}</td>"
+                f"<td>{_esc(rules)}</td>"
+                f"<td><span class=\"badge {'ok' if preserved else 'no'}\">{_esc(ok)}</span> "
+                f'<span class="why">{_esc(row.get("rationale", ""))}</span></td>'
+                "</tr>"
+            )
+        lines.append("</table>")
+
+    # --- unified diff -------------------------------------------------------
+    lines.append("<h2>Diff</h2>")
+    changed_lines = diff.get("hunks") or []
+    if not changed_lines:
+        lines.append('<p class="sub">No lines changed — the loop returned the original unmodified.</p>')
+    else:
+        lines.append(
+            f'<p class="sub">{_esc(diff.get("added_lines", 0))} added, '
+            f'{_esc(diff.get("removed_lines", 0))} removed.</p>'
+        )
+        for hunk in changed_lines:
+            hdr = "@@ -{} +{} @@".format(
+                _unified_range(hunk["start_original"], hunk["start_original"] + hunk["count_original"]),
+                _unified_range(hunk["start_final"], hunk["start_final"] + hunk["count_final"]),
+            )
+            body = []
+            for line in hunk["lines"]:
+                cls = "a" if line["kind"] == "-" else "d"
+                body.append(f'<div class="{cls}">{_esc(line["text"])}</div>')
+            lines.append(f'<div class="hunk"><div class="h">{_esc(hdr)}</div>{"".join(body)}</div>')
+
+    # --- before / after -----------------------------------------------------
+    lines.append("<h2>Before</h2>")
+    lines.append(f'<div class="panel">{_esc(original)}</div>')
+    lines.append("<h2>After</h2>")
+    lines.append(f'<div class="panel">{_esc(final)}</div>')
+
+    if warning:
+        lines.append(f'<div class="warn">NOTE: {_esc(warning)}</div>')
+
+    lines.append(
+        "<footer>Generated by untell humanize --html &middot; "
+        "lock annotations from the preserve/explain machinery &middot; deterministic.</footer>"
+    )
+    lines += ["</main>", "</body>", "</html>"]
+    return "\n".join(lines)
+
