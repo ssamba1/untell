@@ -1293,6 +1293,22 @@ def _untell_text(
 
     # Restore sentinels to get the final human-readable text before any confirm/polish/return.
     final = restore(best_masked, mapping)
+    # OUTPUT scrub, and why the input scrub above is not enough (issue #4). The scrub at the top
+    # of this function covers the INPUT vector: hidden characters the caller's text carried are
+    # gone before lock(), so no restored span can bring them back. It does NOT cover the vector
+    # where a REWRITER introduces them — a hosted LLM echoing a zero-width char from its own
+    # training, a T5/mt_pivot sample, a local policy's vocabulary. MEASURED before this line with
+    # an injecting rewriter (text.replace("leverage", "lever\u200bage")): the zero-width space
+    # shipped into `final` with scrub=True and nothing saying so. That is the same evasion
+    # payload the input scrub exists to stop, arriving one stage later, so the defense has to run
+    # on both sides of the loop. Idempotent and linear; on text the rewriters left clean it is a
+    # byte-identical no-op (the scrub's own contract, pinned by test_no_hidden_character_survives_a_scrub).
+    #
+    # Gated on `scrub` like the input half: `scrub=False` is the caller saying "leave my
+    # characters alone", and scrubbing the output would silently violate that — the carried_payload
+    # warning above already tells them the chars travel with the result.
+    if scrub:
+        final = scrub_hidden(final)
 
     # No re-score of `final` here: `score()` already measured restored text, so `best_score` and the
     # polish comparison below are both on the same footing as the string the caller receives.
