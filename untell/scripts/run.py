@@ -684,7 +684,8 @@ def untell_text(
     """Run the closed loop on ``text``; return a structured result dict.
 
     Keys: ``final`` (humanized text, spans restored), ``iterations``, ``pre``/``post`` score dicts,
-    ``similarity``, ``tier``, ``sim_bar``, ``flagged`` (final), and ``stopped`` (why it stopped).
+    ``similarity``, ``tier``, ``rewriter`` (which backend actually ran), ``sim_bar``, ``flagged``
+    (final), and ``stopped`` (why it stopped).
     If no rewriter is available, returns ``{"error": ...}`` without rewriting the text. ``final`` on
     that path is still scrubbed when ``scrub=True`` (the default): the caller asked for hidden
     characters removed, and that request is independent of whether a rewriter turned up.
@@ -1472,6 +1473,13 @@ def _untell_text(
         # figure a caller reads and can reproduce, so it is computed the way they would compute it.
         "similarity": final_sim,
         "tier": best_score.get("tier", tier),
+        # Which rewriter backend actually RAN, not the name the caller asked for. `rw` is resolved
+        # above — it can differ from `rewriter` (None -> auto-select, or a hosted/local-policy path
+        # that fell back to `composite`), so reporting `args.rewriter` here would attribute the
+        # output to a technique that did not produce it. Same channel as `seed` and `tier` (the
+        # other hidden variables a number depends on): a caller holding an output should be able
+        # to read what produced it and replay the run.
+        "rewriter": rw.name,
         # The SCORE's own caveat travels with the verdict, not just inside `post`. `carried_payload`
         # covers hidden characters and was the only thing that ever reached this field, so a caller
         # reading the documented top-level `warning` got None while `post["warning"]` said
@@ -2035,6 +2043,17 @@ def build_parser() -> argparse.ArgumentParser:
         "hunk payload instead. Built on the preserve-lock explainer: the payload also "
         "reports how many locked spans survived the rewrite byte-for-byte.",
     )
+    parser.add_argument(
+        "--manifest",
+        metavar="PATH",
+        default=None,
+        help="write a reproducibility manifest (JSON) to PATH: input/output sha256, seed, "
+        "rewriter, tier, threshold, pre/post max, and a determinism class. Same input + same "
+        "--seed reproduce identical bytes for local rewriters (pinned by the determinism suite); "
+        "remote rewriters (anthropic/openai) and --browser detectors are marked "
+        "'non-deterministic by design'. Carries no timestamp, so the manifest itself is "
+        "byte-identical across runs.",
+    )
     return parser
 
 
@@ -2051,6 +2070,92 @@ def _diff_payload(text: str, result: dict) -> dict:
     from untell.scripts.explain import explain_spans
 
     return humanize_diff(text, result.get("final", ""), locked_spans=explain_spans(text))
+
+
+# Hosted-LLM rewriters are sampled on a third-party service the loop's seed cannot reach, so any
+# run drawing on them is not reproducible no matter the seed (docs/determinism.md). Same class as
+# --browser detectors. Everything else is covered by the determinism suite.
+_REMOTE_REWRITERS = frozenset({"anthropic", "openai"})
+_MANIFEST_VERSION = 1
+
+
+def _manifest_payload(
+    text: str,
+    result: dict,
+    browser: str | None,
+    threshold: float | None = None,
+) -> dict:
+    """Assemble the reproducibility manifest row for one loop run (issue #31).
+
+    The manifest is the *operable* half of the determinism contract: it records every input the
+    output bytes depend on (input sha, output sha, seed, rewriter, tier, threshold) plus the
+    pre/post detector maxima, and classifies determinism honestly. Local rewriters reproduce
+    identical bytes for the same input + seed — the same guaranteed by
+    `tests/test_reproducibility_across_processes.py`; remote rewriters and --browser detectors
+    are marked "non-deterministic by design" because their noise lives on a service the seed
+    cannot reach.
+
+    Deliberately carries no timestamp: docs/determinism.md holds that no output surface may carry
+    one, because a clock stamp would defeat the byte-identity the manifest exists to prove.
+    """
+    import untell
+
+    name = result.get("rewriter")
+    browser_used = bool(browser)
+    if browser_used:
+        determinism, reason = (
+            "non-deterministic by design",
+            "browser detector: a live web checker has its own run-to-run noise",
+        )
+    elif name in _REMOTE_REWRITERS:
+        determinism, reason = (
+            "non-deterministic by design",
+            "remote rewriter: sampling happens on a third-party service the seed cannot reach",
+        )
+    else:
+        determinism, reason = (
+            "reproducible",
+            "same input + seed reproduce identical bytes (docs/determinism.md, pinned by "
+            "tests/test_reproducibility_across_processes.py)",
+        )
+
+    return {
+        "manifest_version": _MANIFEST_VERSION,
+        "untell_version": untell.__version__,
+        "input_sha256": hashlib.sha256(
+            text.encode("utf-8", errors="replace")
+        ).hexdigest(),
+        "output_sha256": hashlib.sha256(
+            str(result.get("final", "")).encode("utf-8", errors="replace")
+        ).hexdigest(),
+        "seed": result.get("seed"),
+        "rewriter": name,
+        "tier": result.get("tier"),
+        "threshold": threshold,
+        "pre_max": (result.get("pre") or {}).get("max"),
+        "post_max": (result.get("post") or {}).get("max"),
+        "iterations": result.get("iterations"),
+        "determinism": determinism,
+        "determinism_reason": reason,
+    }
+
+
+def _write_manifest(path: str, payload: dict) -> None:
+    """Write the manifest JSON to ``path``, creating parent dirs; report the path on stderr.
+
+    ``sort_keys=True`` so the bytes are stable regardless of dict insertion order — the same
+    byte-identity the manifest is there to prove.
+    """
+    from pathlib import Path
+
+    target = Path(path)
+    if str(target.parent) != ".":
+        target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=True, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(f"manifest: {target}", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2197,6 +2302,18 @@ def main(argv: list[str] | None = None) -> int:
         progress=not args.json,
         timings=args.timings,
     )
+    if args.manifest:
+        # Written before the --diff/--json/rendered branches so the manifest lands for every
+        # output mode, including an erroring run. `--json` keeps stdout pure; the path is the
+        # only thing reported, on stderr (same channel batch.py uses for its manifest line).
+        _write_manifest(
+            args.manifest,
+            _manifest_payload(
+                text, result,
+                browser=args.browser,
+                threshold=args.threshold,
+            ),
+        )
     if args.diff:
         if "error" in result:
             # Same contract as every other error this command can return: under `--diff --json`
