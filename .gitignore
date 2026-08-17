@@ -74,3 +74,5 @@ delegation-*
 # directory appears after every verification run; `git add -A` would commit the whole
 # rendered site. It has happened once already, with 14 stray log files.
 site/
+/audit_tmp_*.json
+/audit_tmp_*.err

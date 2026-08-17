@@ -149,6 +149,17 @@ rewriter never loaded or which rewrote nothing, appends the numbers to
 `.claude/measurements.jsonl`, and compares against the last run of the same recipe using the
 spread each run reports.
 
+**Ledger policy (issue #17, 2026-08-16):** `measurements.jsonl` is append-only and every line
+is one real run — identical lines are retained as recorded, never merged or deleted (deleting
+measurement data is RED; the wave-3 slice-8 precedent). The recorder (`research.py run`)
+appends unconditionally: a byte-identical pair (e.g. the two 64.6s `lite-builtin` rows at
+lines 2-3) is a double-run, and the ledger cannot distinguish a deliberate reproducibility
+re-run from a double-append, so the dedup policy is this explicit note rather than a refusal
+guard. A recipe's run count (`load()`/`report`) counts every row, including identical ones.
+`.claude/instruments.json` keys are a subset of `RECIPES` in `research.py` (pinned by
+`tests/test_claude_instruments_match_recipes.py`); an instrument may only exist for a recipe
+that exists.
+
 **This lane edits no source and no document.** Its output is evidence, not a decision. If
 something MOVED beyond the noise band, write it to `.claude/human-queue.md` with the command
 and the output. If everything is inside the band, that is the result: record it and say so.
