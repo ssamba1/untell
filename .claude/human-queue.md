@@ -1723,3 +1723,24 @@ NEXT   HUMAN (issue #20, the ONLY remaining step for it): cd C:/Users/Admin/Huma
        add docs/why-best-open-repo.md docs/humanizer-census.md && git commit -m "docs: live
        counts 8655/559/25 (fix-counts)" && git push origin main. That lands the count-fix and
        #20 then closes (auto if the message references it, else manually after verifying).
+## 2026-08-17 wave-6 slice-16 issue #36 — AMBER record
+
+WHAT   Optional-extra guard audit. Matrix test (tests/test_optional_extra_matrix.py,
+       runner tests/_optional_extra_surfaces.py) pins all 6 optional deps fail cleanly
+       (meta_path-blocked subprocess per row): peft (CLI exit 2 + reason naming
+       untell[train]; wave-5 #34 fix verified), sacremoses (mt_pivot availability
+       survives; transformers warns), nltk (synonyms->builtin map), torch (score full
+       honestly degrades to lite), spacy (roles degrade to unavailable), fastapi. FIXED
+       the one observed traceback: `untell-server` console shim leaked a full ImportError
+       traceback (exit 1) when fastapi absent. New module untell/api_server_cli.py runs
+       in front of the module so the console surface exits 2 with a one-line message
+       naming untell[server]; library callers of untell.api_server keep their deliberate
+       catchable ImportError. pyproject console entry untell-server ->
+       untell.api_server_cli:main.
+RAN    python -m pytest tests/test_optional_extra_matrix.py -> 9 passed;
+       tests/test_cli_conformance_matrix.py -k server -> 3 passed 1 skipped (server
+       still starts via the new shim); tests/test_cli_dispatch.py -> 10 passed; ruff clean.
+SAW    all six deps fail cleanly at their surfaces; server shim exits 2 with the
+       untell[server] message when fastapi is blocked.
+WHY    AMBER: new module (new surface) + pyproject.toml console-entry edit, per envelope.
+NEXT   Human review of the shim exit code (2) and the untell-server entry-point change.
