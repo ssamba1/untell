@@ -1238,3 +1238,15 @@ WHY    AMBER: pyproject.toml touched (config). RED-not: the exemption is documen
        enforced, not silent.
 NEXT   Human/CI: confirm the ruff job in ci.yml passes on the next push (the e2e check
        is the same command CI runs).
+
+## 2026-08-16 wave-4 issues #14/#19 — CI parity: ruff gate + fast/slow split
+
+WHAT   ci.yml gains a dedicated ruff job (zero-tolerance on untell/tests/scripts;
+       whole-tree check honoring the documented probes exemption) and the lite-tier
+       job now runs `pytest -m "not slow"` (the marker exists; slow = real-ML tests).
+RAN    git diff .github/workflows/ci.yml; the jobs mirror commands verified locally
+       (ruff check untell/ tests/ scripts/ passes; pytest -m "not slow" is the fast tier).
+SAW    Guard AMBER (workflow file); no RED.
+WHY    AMBER: .github/workflows/ci.yml touched.
+NEXT   Human/CI: watch the next push — the ruff job and fast suite must go green in
+       actions; the slow tier runs in the existing full job.
