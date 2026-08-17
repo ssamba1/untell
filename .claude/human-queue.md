@@ -1264,3 +1264,14 @@ SAW    Guard AMBER on untell/SKILL.md (batch step wired in for test_skill_reacha
 WHY    AMBER: SKILL.md touched. Queue entry recorded post-commit (04230a9) — the commit
        predates this entry by one commit; content verified on origin/main.
 NEXT   None — human/CI: the full fast suite must go green on the next sweep.
+
+## 2026-08-17 — count-drift REPAIRED in the working tree (human commit pending)
+
+WHAT   The derivable-check count drift (why-best 8012/518→8655/559, census 6930→8655,
+       24→25 console scripts) has been REPAIRED in the working tree:
+       - `untell-audit --fix-counts` run (why-best counts)
+       - docs/humanizer-census.md line 126 count updated
+       - docs/why-best-open-repo.md console-script row 24→25 + `-batch` enumerated
+       - audit derivable failures: 1 → 0
+       These files (docs/why-best-open-repo.md, docs/humanizer-census.md) are RED —
+       the human commits them: `git add docs/why-best-open-repo.md docs/humanizer-census.md && git commit -m "docs: live counts 8655/559/25 (fix-counts)"`
