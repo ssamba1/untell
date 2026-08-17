@@ -1864,3 +1864,22 @@ NEXT   Human: (1) apply the mage-specific cut K=0.9999 (sentence+doc aggregation
        or reject; (2) re-run the probe + detector audit after applying. Guardrail:
        mage output is bimodal-into-saturated; any cut between 0.999985 and 0.999987
        is FPR=0 on both corpora but depends on the AI saturation value staying put.
+
+## 2026-08-17 wave-6 slice 19 — VERIFIED — #20 derivable check GREEN; human count-fix commit is the one remaining step
+
+WHAT   Issue #20 re-verified at current main HEAD (bb5483b). `python -m untell.scripts.audit` on the
+       primary working tree -> exit 0, ok=True, 42 checks, 0 failures, 0 unattributed. Derivable:
+       "every 'N test modules' claim matches tests/" -> 1 claim agrees, 561 modules on disk (doc says
+       559, within drift band 5); "every 'N tests' claim is close to what pytest collects" -> 2 claims
+       within 10% of 8700 collected (doc says 8655). The two count-fix docs (docs/humanizer-census.md,
+       docs/why-best-open-repo.md) remain UNSTAGED and uncommitted (verified: committed census at HEAD
+       still reads 6930). No code change owned by this slice.
+RAN    PYTHONPATH= .venv/Scripts/python.exe -m untell.scripts.audit --json   (exit 0)
+       pytest -m "not slow" in worktree _wt_slice19 at HEAD (PYTHONPATH=$PWD -> clean HEAD code)
+SAW    audit ok=True 0 failures. Fast-suite re-verification run in progress (~10% of 8429 fast tests,
+       zero failures observed) under heavy 19-slice machine saturation; wave baseline 8429/0.
+WHY    VERIFICATION only (GREEN band: no code/threshold/pub-doc change). The count docs are RED
+       (human-owned; guard blocks automated edits) and stay uncommitted here.
+NEXT   Human (one step): `git add docs/why-best-open-repo.md docs/humanizer-census.md && git commit
+       -m "docs: live counts 8655/559/25 (fix-counts)" && git push origin main`. Auto-closes #20 if the
+       message references it, else close after verify. #19 (CI fast/slow split) tracked separately; stays OPEN.
