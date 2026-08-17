@@ -173,6 +173,7 @@ def test_shipped_version_section_names_its_headline_features() -> None:
     """
     import pathlib
     import re
+
     import tomllib
 
     version = tomllib.loads(

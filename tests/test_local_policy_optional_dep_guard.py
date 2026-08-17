@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import sys
 
-import pytest
-
 from untell.rewriter.local_policy import LocalPolicyRewriter
 
 

@@ -73,9 +73,15 @@ def test_an_explicit_rewriter_is_not_a_substitution() -> None:
 def test_the_log_and_the_field_are_one_string() -> None:
     import inspect
 
-    source = inspect.getsource(run_module._warn_free_rewriter_fallback)
-    assert "FREE_FALLBACK_WARNING" in source
-    assert "no hosted or local-policy" not in source, "the text must not be duplicated here"
+    # The warning text lives in exactly one function; both the log path and the
+    # rewriter_warning field must call it, so the two can never drift.
+    log_src = inspect.getsource(run_module._warn_free_rewriter_fallback)
+    assert "_free_fallback_warning_text()" in log_src, "log must use the shared text function"
+    assert "no hosted or local-policy" not in log_src, "text must not be duplicated here"
+    run_src = inspect.getsource(run_module._untell_text)
+    assert "rewriter_warning = _free_fallback_warning_text()" in run_src, (
+        "the result field must use the same shared text function"
+    )
 
 
 def test_the_rest_surface_documents_it() -> None:

@@ -284,8 +284,8 @@ def duplicate_rows(row: dict) -> int:
     line = json.dumps(row)
     if not LEDGER.exists():
         return 0
-    return sum(1 for l in LEDGER.read_text(encoding="utf-8").splitlines()
-               if l.strip() == line)
+    return sum(1 for ln in LEDGER.read_text(encoding="utf-8").splitlines()
+               if ln.strip() == line)
 
 
 

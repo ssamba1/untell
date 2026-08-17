@@ -7,6 +7,7 @@ import builtins
 import pytest
 
 from untell.browser_check import (
+    ZEROGPT,
     WebUIChecker,
     ZeroGPTChecker,
     available_browser_checkers,
@@ -75,6 +76,87 @@ def test_registry_builtin():
     assert chk.name == "zerogpt"
     assert chk.config.input_selector == "#textArea"
     assert get_browser_checker("nonexistent-site") is None
+
+
+class TestAutoSelector:
+    """`--browser auto` resolves to the first AVAILABLE checker (issue #2).
+
+    Pure registry logic — no network, no browser binary, so it cannot flake. The contract
+    is the order: built-ins in registration order (zerogpt is the shipped one), then user
+    JSON sites in file order. 'auto' with nothing configured is None, exactly like an
+    unknown name, so the CLI degrades to the existing "unavailable" error row.
+    """
+
+    def test_auto_with_only_the_builtin_picks_zerogpt(self):
+        assert get_browser_checker("auto").name == "zerogpt"
+
+    def test_auto_is_case_insensitive(self):
+        assert get_browser_checker("AUTO").name == "zerogpt"
+        assert get_browser_checker("Auto").name == "zerogpt"
+
+    def test_auto_resolves_to_the_same_config_as_naming_the_site(self):
+        auto = get_browser_checker("auto")
+        named = get_browser_checker("zerogpt")
+        assert auto.config.url == named.config.url == ZEROGPT.url
+
+    def test_auto_prefers_builtin_over_user_site_even_when_it_sorts_after(
+        self, tmp_path, monkeypatch
+    ):
+        # 'aaa' sorts before 'zerogpt'; auto must follow REGISTRATION order, not sorted order.
+
+        sites = tmp_path / "sites.json"
+        sites.write_text(
+            '{"aaa": {"url": "https://example.test", "input_selector": "#i", '
+            '"result_selector": "#o"}}',
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("UNTELL_BROWSER_SITES", str(sites))
+        assert "aaa" in available_browser_checkers()
+        assert get_browser_checker("auto").name == "zerogpt"
+
+    def test_auto_picks_user_sites_in_file_order_when_builtins_are_gone(
+        self, tmp_path, monkeypatch
+    ):
+        import untell.browser_check as bc
+
+        sites = tmp_path / "sites.json"
+        sites.write_text(
+            '{"zebra": {"url": "https://z.test", "input_selector": "#i", "result_selector": "#o"}, '
+            '"alpha": {"url": "https://a.test", "input_selector": "#i", "result_selector": "#o"}}',
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("UNTELL_BROWSER_SITES", str(sites))
+        monkeypatch.setattr(bc, "_BUILTINS", {})
+        # File order wins: zebra is listed first and is picked, even though alpha sorts first.
+        assert get_browser_checker("auto").name == "zebra"
+
+    def test_auto_with_user_site_and_builtin_still_takes_the_builtin(self, tmp_path, monkeypatch):
+        import untell.browser_check as bc
+
+        sites = tmp_path / "sites.json"
+        sites.write_text(
+            '{"zerogpt": {"url": "https://evil.test", "input_selector": "#i", '
+            '"result_selector": "#o"}}',
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("UNTELL_BROWSER_SITES", str(sites))
+        # A user entry cannot shadow a built-in — auto must hand back the SHIPPED config,
+        # not the JSON impostor (same precedence get_browser_checker always enforced).
+        assert get_browser_checker("auto").config.url == bc.ZEROGPT.url
+        assert get_browser_checker("zerogpt").config.url == bc.ZEROGPT.url
+
+    def test_auto_with_nothing_configured_is_none(self, tmp_path, monkeypatch):
+        import untell.browser_check as bc
+
+        monkeypatch.setattr(bc, "_BUILTINS", {})
+        monkeypatch.delenv("UNTELL_BROWSER_SITES", raising=False)
+        monkeypatch.chdir(tmp_path)  # no ./browser_sites.json fallback in the cwd either
+        assert get_browser_checker("auto") is None
+
+    def test_auto_does_not_claim_an_unknown_name(self):
+        # Only the exact 'auto' token resolves; 'automate' stays an unknown site.
+        assert get_browser_checker("automate") is None
+        assert get_browser_checker("") is None
 
 
 def test_zerogpt_class_still_constructs():
