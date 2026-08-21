@@ -18,18 +18,14 @@ GATES TESTED
 from __future__ import annotations
 
 import os
-import unittest.mock as mock
-
-import pytest
 
 # Zero-dep path so tests run without torch/transformers.
 os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
 os.environ.setdefault("UNTELL_DISABLE_MAGE", "1")
 
+from untell.inspect_report import render_inspect_report
 from untell.scripts.entailment import meaning_preserved_vetoes
 from untell.scripts.run import untell_text
-from untell.inspect_report import render_inspect_report
-
 
 # ---------------------------------------------------------------------------
 # meaning_preserved_vetoes unit tests

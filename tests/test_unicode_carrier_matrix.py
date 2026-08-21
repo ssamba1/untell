@@ -126,7 +126,6 @@ class TestCarrierMatrixLockRestore:
         if "\ud800" <= carrier <= "\udfff":
             return  # surrogate already handled by lock(); no further assertion needed
 
-        any_in_mapping = any(carrier in v for v in mapping.values())
         # Some carriers sit between citation components and end up in the locked span;
         # others may not be swallowed by the citation pattern at all. Either way the
         # total carrier count is either preserved (in mapping) or still in free text.

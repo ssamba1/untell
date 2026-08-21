@@ -30,7 +30,6 @@ for that iteration — the rejections themselves are the record.
 from __future__ import annotations
 
 import difflib
-import textwrap
 
 
 def render_inspect_report(
@@ -70,8 +69,8 @@ def render_inspect_report(
     lines.append("-" * W)
 
     try:
-        from untell.text_split import split_sentences
         from untell.scripts.tells import score_tells
+        from untell.text_split import split_sentences
 
         src_sents = split_sentences(source)
         out_sents = split_sentences(final)

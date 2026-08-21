@@ -41,7 +41,6 @@ import difflib
 import html as _html
 from pathlib import Path
 
-
 # ---------------------------------------------------------------------------
 # Security: escaping (DO NOT call any HTML-writing function without this)
 # ---------------------------------------------------------------------------

@@ -32,8 +32,8 @@ LEDGER = CLAUDE / "measurements.jsonl"
 INSTRUMENTS = CLAUDE / "instruments.json"
 
 sys.path.insert(0, str(CLAUDE))
-import research as R  # noqa: E402
 import audit_next as A  # noqa: E402
+import research as R  # noqa: E402
 
 # ── measurements.jsonl ─────────────────────────────────────────────────────────
 
@@ -193,7 +193,7 @@ class TestInstrumentsJson:
             if absent:
                 bad.append((name, absent))
         assert not bad, (
-            f"instruments.json entries missing required fields:\n"
+            "instruments.json entries missing required fields:\n"
             + "\n".join(f"  {n}: missing {f}" for n, f in bad)
         )
 

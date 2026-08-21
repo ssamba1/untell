@@ -21,7 +21,6 @@ os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
 
 from untell.html_report import generate_html_report
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

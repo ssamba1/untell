@@ -5,33 +5,31 @@ Root cause (now fixed):
     For each of n lengths of `.{20,}?`, the engine tried O(n) lengths for the
     adjacent `\\s+` — measured: n=5000 took 4.5 s, n=20000 took 154 s.
 
-Fix (structural.py): `.{20,}?` → `.{19,}?\S`
-    `\S` forces `main` to end at a non-space character.  The total number of
-    `\s+` tries across all anchors equals the sum of all space-run lengths in the
+Fix (structural.py): `.{20,}?` → `.{19,}?\\S`
+    `\\S` forces `main` to end at a non-space character.  The total number of
+    `\\s+` tries across all anchors equals the sum of all space-run lengths in the
     string, which is ≤ n, so the match is O(n) in string length.
 
 Adversarial input: 20 non-space chars + k spaces + 1 non-space char + nothing
     that the pattern can use as `sub`.  Forces the engine to explore all k lengths
-    of `\s+` exactly once (at the first anchor), then skip the remaining O(k)
-    positions where `\S` fails on spaces, then reject at the final anchor.
+    of `\\s+` exactly once (at the first anchor), then skip the remaining O(k)
+    positions where `\\S` fails on spaces, then reject at the final anchor.
     Total: O(n).  Any O(n^2) regression makes this test time out in < 2 s.
 """
 
 from __future__ import annotations
 
+import os
+import sys
 import threading
 import time
 
 import pytest
 
-import os
-import sys
-
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("UNTELL_LITE_NO_TORCH", "1")
 
 from untell.rewriter.structural import _FRONTABLE_RE  # type-ignore
-
 
 # ---------------------------------------------------------------------------
 # Helpers

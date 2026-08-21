@@ -102,7 +102,7 @@ def test_entry_point_answers_help(name: str, target: str) -> None:
     sys.argv = [name, "--help"]
     try:
         main()
-    except SystemExit as exc:
+    except SystemExit:
         # SystemExit(0) is success.  Some CLIs (including argparse) exit 0 on --help.
         # A non-zero exit is allowed if the entry-point prints a clean message explaining
         # why it cannot start (e.g. untell-server exits 2 when FastAPI is absent).

@@ -26,7 +26,6 @@ from untell.html_report import generate_html_report
 from untell.scripts.explain import explain_spans
 from untell.scripts.preserve import lock
 
-
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------

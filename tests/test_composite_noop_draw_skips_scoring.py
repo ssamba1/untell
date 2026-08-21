@@ -100,8 +100,9 @@ def test_changing_draw_still_scores(monkeypatch: pytest.MonkeyPatch) -> None:
         "In conclusion, these findings underscore the pivotal importance of this approach."
     )
 
-    from untell.rewriter.composite import CompositeRewriter
     import random
+
+    from untell.rewriter.composite import CompositeRewriter
 
     rw = CompositeRewriter(best_of=3)
     score_result = {"tier": "lite", "max": 0.85}

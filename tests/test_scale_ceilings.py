@@ -33,7 +33,9 @@ for _p in Path(__file__).resolve().parents:
             sys.path.insert(0, str(_p))
         break
 
-import pytest
+# The sys.path bootstrap above has to run before anything imports `untell`, so every import in
+# this file necessarily follows executable code.
+import pytest  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # RSS helper
@@ -463,9 +465,9 @@ def _profile_1mb() -> str:
 
 def run_full_benchmark() -> None:
     """Print the full ceiling table.  Interleaves A/B where 19 sibling agents create noise."""
-    from untell.scripts.tells import score_tells
     from untell.scripts.score import score_text
-    from untell.text_split import split_sentences, aligned_chunks
+    from untell.scripts.tells import score_tells
+    from untell.text_split import aligned_chunks, split_sentences
 
     REPS = 5
     sep = "-" * 72
@@ -536,7 +538,6 @@ def run_full_benchmark() -> None:
     print("\n## aligned_chunks  (identical pair, interleaved A/B)")
     print(f"{'words':>8}  {'median(s)':>10}  {'ratio':>8}")
     prev_t = None
-    pairs = [(500, 1_000), (1_000, 2_000), (2_000, 4_000), (4_000, 6_000), (6_000, 8_000)]
     results: dict[int, float] = {}
     # Interleave every consecutive pair
     wlist = [500, 1_000, 2_000, 4_000, 6_000, 8_000]
