@@ -790,7 +790,7 @@ def untell_text(
             result = _untell_text(
                 text, tier, threshold, max_iters, sim_bar, rewriter, browser, margin, confirm,
                 scrub, polish, style, best_of, detector_thresholds, veto_contradictions,
-                voice_sample, progress, timings,
+                voice_sample, progress, timings, inspect,
             )
         finally:
             random.setstate(_rng_state)
@@ -822,6 +822,7 @@ def _untell_text(
     voice_sample: str | None,
     progress: bool,
     timings: bool,
+    inspect: bool = False,
 ) -> dict:
     """The loop body. Split out only so ``untell_text`` can own the seeding above."""
 
@@ -1070,7 +1071,7 @@ def _untell_text(
     # what happened to one draw: sentinel failure, which meaning gate fired, or acceptance.
     # Kept in a list so the caller gets the full per-iteration history rather than just counts.
     # None when inspect=False so the inspection overhead is strictly zero by default.
-    inspect_events: list[dict] | None = [] if inspect else None
+    inspect_events = [] if inspect else None  # type: list[dict] | None
     # `rewrites` counts DRAWS, including every candidate the guards rejected — which is a fair
     # reading of "rewrites attempted" but not the question a caller is actually asking. MEASURED:
     # a text the loop could not improve came back byte-identical while the result said
