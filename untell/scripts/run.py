@@ -2248,6 +2248,16 @@ def build_parser() -> argparse.ArgumentParser:
         "The rejection reasons are currently invisible without this flag. "
         "Report goes to stderr so stdout stays clean for piping.",
     )
+    parser.add_argument(
+        "--html",
+        metavar="PATH",
+        default=None,
+        help="write a self-contained HTML report to PATH: shows the document with LOCKED "
+        "SPANS visibly marked (the exact spans lock() protected -- citations, numbers, "
+        "versions, identifiers, URLs), changed vs unchanged text, and per-sentence AI "
+        "scores. No external CSS/JS/fonts; opens from file://. Path echoed to stderr so "
+        "stdout stays clean. Composable with all other flags; written before --diff/--json.",
+    )
     return parser
 
 
@@ -2540,6 +2550,10 @@ def main(argv: list[str] | None = None) -> int:
                 threshold=args.threshold,
             ),
         )
+    if getattr(args, "html", None):
+        from untell.html_report import generate_html_report
+        generate_html_report(text, result, path=args.html)
+        print(f"html: {args.html}", file=sys.stderr)
     if args.diff:
         if "error" in result:
             # Same contract as every other error this command can return: under `--diff --json`
