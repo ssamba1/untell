@@ -164,3 +164,43 @@ def test_no_paired_data_is_an_error_not_an_empty_table(monkeypatch):
     monkeypatch.setattr(holdout, "_holdout_detector", lambda: _FakeDetector({}))
     monkeypatch.setattr(holdout, "load_pairs", lambda dataset, n, min_words=60: [])
     assert "error" in holdout.run(n=4)
+
+
+def test_the_result_names_the_corpus(monkeypatch):
+    """Per-corpus reporting requires the corpus name to be in the result.
+
+    Without it a caller cannot tell which corpus produced the numbers, and a function
+    that is supposed to be run on hc3, raid, and mage all under the same interface
+    would silently lose the provenance if the field were dropped.
+    """
+    detector = _FakeDetector({"ai": 0.9, "out": 0.2, "human": 0.05})
+    _wire(monkeypatch, detector, pairs=[("human", "ai")], rewritten={"ai": (0.9, 0.2, "out")})
+
+    for corpus in ("hc3", "raid", "mage"):
+        result = holdout.run(dataset=corpus, n=1)
+        assert result["config"]["dataset"] == corpus, (
+            f"expected 'dataset' to be {corpus!r}, got {result['config'].get('dataset')!r}"
+        )
+        assert corpus in holdout.render(result)
+
+
+def test_a_dead_control_does_not_print_transfer_numbers_as_findings(monkeypatch):
+    """RADAR cannot separate HC3 human from AI — the render must say so, not a number.
+
+    hc3_roberta is fine-tuned ON HC3 and sits in the selection tier, so the loop can
+    trivially drive down HC3 in-sample scores. If RADAR also cannot separate on HC3, a
+    positive-looking transfer figure would be produced entirely by a dead control —
+    uninterpretable, not merely bad. The render gate is the last line of defence.
+    """
+    # Inverted scores: AI scores lower than human — control is dead on this corpus.
+    detector = _FakeDetector({"ai": 0.12, "out": 0.11, "human": 0.85})
+    _wire(monkeypatch, detector, pairs=[("human", "ai")],
+          rewritten={"ai": (0.90, 0.20, "out")})
+
+    result = holdout.run(dataset="hc3", n=1)
+
+    assert result["control"]["separates"] is False
+    rendered = holdout.render(result)
+    assert "DOES NOT SEPARATE" in rendered
+    # The corpus name must still be present so the reader knows WHICH corpus is dead.
+    assert "hc3" in rendered

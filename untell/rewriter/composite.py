@@ -274,6 +274,13 @@ class CompositeRewriter(Rewriter):
             )
             # Step 2: surgical (word-level polish)
             polished = self._surgical.rewrite(restructured, score_result, threshold)
+            # No-op draw: polished == text means this candidate is byte-identical to the
+            # original.  Scoring it cannot improve best_text: cand_score would equal
+            # baseline (same bytes → same score), and best_score starts at baseline and
+            # only decreases when a genuine improvement is adopted, so cand_score <
+            # best_score is impossible.  Skip the score_text() call entirely.
+            if polished == text:
+                continue
             # Score the candidate
             try:
                 cand_score = _selection_key(score_text(polished, tier=tier))
