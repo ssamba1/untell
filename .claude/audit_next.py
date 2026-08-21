@@ -81,6 +81,27 @@ def next_pass_number(history: list[dict[str, str]]) -> int:
     return max(int(r["n"]) for r in history) + 1
 
 
+def live_taken_numbers() -> set[int]:
+    """Pass numbers currently recorded in the live log.
+
+    Re-reads the file at call time so concurrent direct-path writers see each
+    other's commits.  The collect_swarm collector uses the same live-read
+    pattern; this brings the direct path to parity so a second agent that
+    starts after the first one commits can step over the taken number instead
+    of colliding on it.  Not atomic: two agents that read simultaneously can
+    still race, but the window is the file-open + assign latency (~ms) rather
+    than the whole task duration (~minutes).  See issue #16, slice 19.
+    """
+    if not LOG.exists():
+        return set()
+    out: set[int] = set()
+    for line in LOG.read_text(encoding="utf-8").splitlines():
+        m = ROW.match(line.strip())  # ROW defined below; forward reference is fine at call time
+        if m:
+            out.add(int(m.group("n")))
+    return out
+
+
 def byte_identical(row: str) -> bool:
     """True when this exact row line is already in the log.
 
@@ -209,6 +230,18 @@ def cmd_record(a: argparse.Namespace) -> int:
     history = rows()
     n, lane, target = assign(history, a.offset)
     lane, target = a.lane or lane, a.target or target
+
+    # Pass-number collision guard (slice 19, issue #16): re-read the live log to
+    # catch numbers committed by concurrent direct-path agents since we read history.
+    # The fleet collector (classify_row) renumbers queued worker rows; this brings
+    # the direct path to parity.  Not atomic, but shrinks the collision window from
+    # the whole task duration to the file-open latency (~ms).
+    live = live_taken_numbers()
+    while n in live:
+        n += 1
+    # n is now the next free pass number; claim it in the local set so the row
+    # built below uses the right n even if something reads this set later.
+    live.add(n)
 
     if a.verdict in NEEDS_EVIDENCE:
         if not a.commit or a.commit == "-":
