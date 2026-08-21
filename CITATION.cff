@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "untell — closed-loop, detector-feedback AI-text humanizer"
+title: "untell — an AI-detector auditing toolkit"
 message: "If you use this software in research, please cite it."
 type: software
 version: "0.3.0"
@@ -9,16 +9,17 @@ authors:
 repository-code: "https://github.com/ssamba1/untell"
 url: "https://github.com/ssamba1/untell"
 abstract: >-
-  An open-source, closed-loop AI-text humanizer that iteratively rewrites text against a multi-detector
+  An open-source AI-detector auditing toolkit that measures detector false-positive rates on human
+  writing and verdict stability, using a detector-in-the-loop harness that rewrites text against a multi-detector
   ensemble (local proxy detectors plus key-gated commercial APIs) using each detector's score as feedback,
   gated on a semantic-similarity meaning-preservation constraint and byte-for-byte preservation of citations,
   numbers, quotes, and named entities. Packaged as a Claude Code skill and a Python CLI. Research and
   defensive tool.
 keywords:
-  - ai-humanizer
+  - detector-evaluation
   - ai-detection
   - detector-feedback
-  - text-humanizer
+  - false-positives
   - nlp
   - claude-skill
 license: MIT

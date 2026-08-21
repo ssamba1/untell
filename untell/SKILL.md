@@ -1,11 +1,13 @@
 ---
 name: untell
 description: >-
-  Humanize AI-generated text via a closed-loop, detector-feedback rewrite (the "untell" skill).
-  Use when the user wants to humanize text, make writing sound more human or less like AI, reduce
-  AI-detection scores, bypass or beat an AI detector (GPTZero, Turnitin, Originality, ZeroGPT), or
-  lower the "AI probability" of a passage or file. Research/defensive tool — preserves meaning,
-  citations, and facts.
+  Audit an AI detector and measure what its verdict is worth, using a closed-loop
+  detector-feedback rewrite as the instrument (the "untell" skill). Use when the user wants to
+  check whether text reads as AI-generated, find out why a detector flagged something, measure a
+  detector's false-positive rate on human writing, test how stable or robust a detector's verdict
+  is, strip hidden unicode carriers, or reduce the AI-detection score of a passage or file.
+  Preserves meaning, citations and facts. Not for misrepresenting authorship — and measured to be
+  ineffective for it: the loop's gains do not transfer to detectors it has not optimised against.
 ---
 
 # untell

@@ -1,5 +1,5 @@
 site_name: untell
-site_description: Open-source closed-loop AI-text humanizer — the strongest training-free detector-evasion tool, packaged as a Python library, CLI, skill, MCP server, and REST API.
+site_description: Open-source AI-detector auditing toolkit — measures detector false-positive rates on human writing, verdict stability across seeds, and robustness to meaning-preserving edits. Python library, CLI, skill, MCP server, and REST API.
 site_url: https://ssamba1.github.io/untell/
 repo_url: https://github.com/ssamba1/untell
 edit_uri: blob/main/docs/

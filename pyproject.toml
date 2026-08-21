@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "untell"
 version = "0.3.0"
-description = "Closed-loop, detector-feedback AI-text humanizer packaged as a Python library, CLI, MCP server, and REST API."
+description = "AI-detector auditing toolkit: measures detector false-positive rates on human writing, verdict stability, and robustness to meaning-preserving edits. Python library, CLI, MCP server, and REST API."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "untell contributors" }]
-keywords = ["untell", "ai-humanizer", "humanize-ai", "ai-detection", "gptzero", "turnitin", "claude-skill", "nlp", "detector-evasion"]
+keywords = ["untell", "ai-detection", "detector-evaluation", "false-positives", "robustness-testing", "gptzero", "turnitin", "claude-skill", "nlp", "reproducible-research"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

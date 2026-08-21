@@ -11,6 +11,6 @@
   "homepage": "https://ssamba1.github.io/untell/",
   "repository": "https://github.com/ssamba1/untell",
   "license": "MIT",
-  "keywords": ["ai-humanizer", "humanize-ai", "ai-detection", "gptzero", "turnitin", "zerogpt", "claude-code-skill"],
+  "keywords": ["ai-detection", "detector-evaluation", "false-positives", "gptzero", "turnitin", "zerogpt", "claude-code-skill"],
   "skills": "./"
 }

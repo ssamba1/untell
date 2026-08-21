@@ -4,7 +4,7 @@
     "name": "ssamba1",
     "url": "https://github.com/ssamba1"
   },
-  "description": "untell — the open-source AI humanizer for Claude Code (closed-loop, detector-feedback).",
+  "description": "untell — an AI-detector auditing toolkit for Claude Code (detector-in-the-loop measurement).",
   "plugins": [
     {
       "name": "untell",
@@ -15,7 +15,7 @@
       "homepage": "https://ssamba1.github.io/untell/",
       "repository": "https://github.com/ssamba1/untell",
       "license": "MIT",
-      "keywords": ["ai-humanizer", "ai-detection", "gptzero", "turnitin"],
+      "keywords": ["ai-detection", "detector-evaluation", "false-positives", "gptzero", "turnitin"],
       "category": "writing"
     }
   ]
