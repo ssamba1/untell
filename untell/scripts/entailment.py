@@ -528,6 +528,69 @@ def meaning_preserved(
     return role_swap(source, candidate) is not True
 
 
+def meaning_preserved_vetoes(
+    source: str,
+    candidate: str,
+    sim: float,
+    strict_sim_bar: float,
+    relaxed_sim_bar: float = RELAXED_SIM_BAR,
+    contradiction_bar: float = DEFAULT_CONTRADICTION_BAR,
+    entailment_floor: float = DEFAULT_ENTAILMENT_FLOOR,
+) -> list[str]:
+    """Report ALL veto gates that fired for this (source, candidate) pair.
+
+    Same parameters as :func:`meaning_preserved`, but runs every check without short-circuiting
+    and returns a list of human-readable veto names (empty list = meaning preserved).
+
+    Called only from the ``--inspect`` path; zero cost on the default rewrite loop.
+    """
+    from untell.scripts.hedges import certainty_kept, polarity_kept
+    from untell.scripts.numerals import numbers_kept
+
+    source, candidate = strip_scaffolding(source), strip_scaffolding(candidate)
+
+    fired: list[str] = []
+
+    if not numbers_kept(source, candidate):
+        fired.append("numbers_kept")
+    if not certainty_kept(source, candidate):
+        fired.append("certainty_kept")
+    if not polarity_kept(source, candidate):
+        fired.append("polarity_kept")
+
+    lost = words_lost(source, candidate)
+    allowance = deletion_allowance(source)
+    if lost > allowance:
+        fired.append(f"deletion (lost {lost} words, allowance {int(allowance)})")
+
+    if not available():
+        if sim < strict_sim_bar:
+            fired.append(f"similarity (sim {sim:.3f} < bar {strict_sim_bar:.3f}, no NLI)")
+        return fired
+
+    con = contradiction_score(source, candidate)
+    ent = entailment_score(source, candidate)
+
+    if con is None or ent is None:
+        if sim < strict_sim_bar:
+            fired.append(f"similarity (sim {sim:.3f} < bar {strict_sim_bar:.3f}, NLI unavailable)")
+        return fired
+
+    if sim < relaxed_sim_bar:
+        fired.append(f"similarity (sim {sim:.3f} < relaxed bar {relaxed_sim_bar:.3f})")
+    if con >= contradiction_bar:
+        fired.append(f"contradiction (score {con:.3f} >= bar {contradiction_bar:.3f})")
+    if ent < entailment_floor:
+        fired.append(f"entailment (score {ent:.3f} < floor {entailment_floor:.3f})")
+
+    from untell.scripts.roles import role_swap
+
+    if role_swap(source, candidate) is True:
+        fired.append("role_swap")
+
+    return fired
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI: ``python scripts/entailment.py "<original>" "<rewrite>"`` -> JSON (``-m`` form works too).
 

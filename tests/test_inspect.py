@@ -177,15 +177,38 @@ class TestGateNamingTruthfulness:
         )
         return result.get("inspect", [])
 
-    def test_number_dropped_names_numbers_kept(self) -> None:
-        """A candidate that drops '42' must produce a 'numbers_kept' gate event."""
-        bad = SRC.replace("42 ", "")
-        events = self._run_with_fixed_candidate(bad)
+    def test_polarity_flip_names_polarity_kept(self) -> None:
+        """A candidate that negates the main claim fires 'polarity_kept' in the inspect log.
+
+        Numbers in SRC are locked as sentinels, so the rewriter must work with the masked
+        text to avoid tripping the sentinel check.  Flipping "reduced" -> "did not reduce"
+        keeps all sentinels intact but breaks polarity, letting the meaning gate fire.
+        """
+        class _PolarityFlipRewriter:
+            name = "polarity_flip"
+            deterministic = False
+
+            def available(self) -> bool:
+                return True
+
+            def rewrite(self, text: str, score_result: dict, threshold: float = 0.30) -> str:
+                # `text` is the masked source; only touch prose, not sentinel tokens.
+                return text.replace("reduced mortality", "did not reduce mortality")
+
+        result = untell_text(
+            SRC,
+            tier="lite",
+            max_iters=1,
+            best_of=1,
+            rewriter=_PolarityFlipRewriter(),
+            inspect=True,
+        )
+        events = result.get("inspect", [])
         rejected = [e for e in events if e.get("type") == "candidate_rejected"]
         assert rejected, "expected at least one rejected event"
         gates = [e["gate"] for e in rejected]
-        assert any(g == "numbers_kept" for g in gates), (
-            f"expected 'numbers_kept' in gates, got {gates}"
+        assert any(g == "polarity_kept" for g in gates), (
+            f"expected 'polarity_kept' in gates, got {gates}"
         )
 
     def test_sentinel_dropped_names_sentinels(self) -> None:
@@ -257,9 +280,13 @@ class TestGateNamingTruthfulness:
         events = result.get("inspect", [])
         rejected = [e for e in events if e.get("type") == "candidate_rejected"]
         assert rejected, "expected at least one rejected event"
-        gates = [e["gate"] for e in rejected]
-        assert any(g.startswith("deletion") for g in gates), (
-            f"expected a 'deletion ...' gate in {gates}"
+        # deletion may not be the FIRST veto (certainty_kept fires before it in the veto
+        # order), but it must appear in the full vetoes list for the rejected event.
+        all_vetoes: list[str] = []
+        for ev in rejected:
+            all_vetoes.extend(ev.get("vetoes", []))
+        assert any(v.startswith("deletion") for v in all_vetoes), (
+            f"expected 'deletion ...' somewhere in vetoes, got {all_vetoes}"
         )
 
 

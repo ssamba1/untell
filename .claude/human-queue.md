@@ -1941,3 +1941,24 @@ RAN    pytest tests/test_html_report_xss.py tests/test_html_report_lock_fidelity
 SAW    16 passed in 1.69s -- all green
 WHY    New CLI flag is AMBER per the envelope.
 NEXT   None required. Flag implemented, tested, AMBER entry filed, issue #30 closed.
+
+## 2026-08-21 w7-08 -- AMBER -- new CLI flag --inspect (issue #33)
+
+WHAT   Added `--inspect` to `untell humanize`. Outputs a per-sentence rewrite report to
+       stderr showing: [ok]/[rewrite]/[deleted]/[added] status for each sentence, which AI
+       tells were present before rewriting, and for every candidate the loop rejected -- which
+       specific gate fired and why (sentinels, numbers_kept, polarity_kept, certainty_kept,
+       deletion, similarity, contradiction, entailment, role_swap). Previously rejection
+       reasons were invisible (the loop just `continue`d). Implemented in:
+       - untell/inspect_report.py: new render_inspect_report() module
+       - untell/scripts/entailment.py: new meaning_preserved_vetoes() -- runs all 8 checks
+         without short-circuiting, returns list[str] of all veto names that fired
+       - untell/scripts/run.py: inspect=True param, inspect_events list, --inspect CLI flag
+       - docs/result-shapes.md: documented result["inspect"] conditional key
+       19 tests in tests/test_inspect.py (7 unit tests of meaning_preserved_vetoes,
+       5 integration tests of inspect event collection, 3 gate-naming truthfulness tests,
+       4 render smoke tests).
+RAN    pytest tests/test_inspect.py -v
+SAW    19 passed in 3.40s -- all green
+WHY    New CLI flag is AMBER per the envelope.
+NEXT   None required. Flag implemented, tested, AMBER entry filed, issue #33 closed.

@@ -43,7 +43,8 @@ score_sentences   flagged, note, sentences, threshold, tier,
 
 untell_text       adopted, changed, final, flagged, iterations, meaning_gate, post, pre,
                   quality_metric, rewriter, rewrites, seed, sim_bar, similarity, stopped,
-                  tells_after, tells_before, tier, warning (only when a caveat applies)
+                  tells_after, tells_before, tier, warning (only when a caveat applies),
+                  inspect (only when inspect=True / --inspect)
 
                   pre                 the score_text keys above, for the input
                   post                the score_text keys above, plus
