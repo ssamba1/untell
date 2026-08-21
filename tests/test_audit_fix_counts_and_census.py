@@ -70,3 +70,33 @@ def test_census_json_that_does_not_parse_is_a_named_failure(monkeypatch, tmp_pat
     finding = next(f for f in report.findings if f.name == "the census raw data parses")
     assert finding.ok is False
     assert "JSONDecodeError" in finding.detail
+
+
+def test_fix_counts_clears_count_drifts(monkeypatch, tmp_path) -> None:
+    """fix_counts() repairs stale docs, which is exactly what count_drifts are waiting for.
+
+    After --fix-counts runs, a subsequent audit should have empty count_drifts.
+    This is the mechanical half of the issue #20 contract: the test is not permanently red
+    because the repair path works.
+    """
+    _repo_with(tmp_path)
+    doc = tmp_path / "README.md"
+    doc.write_text("The suite has **100** tests in 9 modules.\n", encoding="utf-8")
+    monkeypatch.setattr(audit, "REPO", tmp_path)
+    monkeypatch.setattr(audit, "COMPARATIVE_DOCS", ("README.md",))
+    monkeypatch.setattr(audit, "_collected_test_count", lambda: 100)
+
+    # Before fix: the module count drift should be in count_drifts.
+    pre = audit.Report()
+    audit.check_test_inventory(pre)
+    assert pre.count_drifts, "module count drift must be in count_drifts before --fix-counts"
+    assert not pre.failures, "count drift must NOT be in failures even before repair"
+
+    # Run the repair.
+    audit.fix_counts()
+
+    # After fix: the counts are correct, so check_test_inventory should PASS.
+    post = audit.Report()
+    audit.check_test_inventory(post)
+    assert not post.count_drifts, "no count drift after --fix-counts"
+    assert not post.failures, "no failures after --fix-counts"

@@ -251,3 +251,72 @@ def test_the_claim_check_passes_when_the_page_really_is_local(tmp_path, monkeypa
     )
     assert finding is not None, "the check did not run"
     assert finding.ok, f"a genuinely local page was reported as lying: {finding.detail}"
+
+
+def test_count_drift_does_not_land_in_failures(tmp_path, monkeypatch):
+    """A stale module or test count must appear in count_drifts, NOT in failures.
+
+    This is the resolution of issue #20: the derivable-check test was permanently red whenever
+    a wave of concurrent agents added test modules faster than the hand-maintained figure in
+    docs/why-best-open-repo.md tracked. Running `untell-audit --fix-counts` repairs it in one
+    shot, but that requires a human to notice and act. A test that is red for a reason nobody can
+    act on between CI runs trains people to ignore red — which is worse than the drift itself.
+
+    The fix classifies count drift as a Report.count_drifts entry (shown as DRIFT in the output)
+    rather than a failure. This test proves the boundary is real: drift is visible but inert.
+    """
+    (tmp_path / "tests").mkdir()
+    # One module on disk, but the doc claims ten — overstating always fires the check regardless
+    # of _MODULE_DRIFT, because claiming coverage that does not exist is always wrong.
+    (tmp_path / "tests" / "test_a.py").write_text("def test_a(): pass\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("| suite | **99** tests, 10 modules |\n", encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "x"\n[project.scripts]\nfoo = "x:main"\n', encoding="utf-8"
+    )
+    monkeypatch.setattr(audit, "REPO", tmp_path)
+    monkeypatch.setattr(audit, "COMPARATIVE_DOCS", ("README.md",))
+
+    report = audit.Report()
+    audit.check_test_inventory(report)
+
+    drift = next((f for f in report.findings if "test modules" in f.name), None)
+    assert drift is not None, "the module-count check did not run"
+    assert drift.is_count_drift, "a stale module count should be a count drift, not a failure"
+    assert drift in report.count_drifts, "count drift must be in report.count_drifts"
+    assert drift not in report.failures, "count drift must NOT be in report.failures"
+    assert "--fix-counts" in drift.detail, "the detail must tell the reader what to run"
+
+
+def test_structural_failure_still_lands_in_failures():
+    """The complement: a genuine derivable claim mismatch is NOT reclassified as drift.
+
+    This guards the guard: if every bad finding became a drift, report.failures would always be
+    empty and the derivable-check test would be vacuously green for real bugs too.
+    """
+    report = audit.Report()
+    report.check("a real broken check", False, "something is wrong")
+    assert report.failures, "a non-drift failure must appear in report.failures"
+    assert not report.count_drifts, "a non-drift failure must NOT appear in count_drifts"
+
+
+def test_audit_still_fires_for_structural_defect():
+    """Prove the audit catches a non-count derivable claim that breaks.
+
+    BREAK→RED→REVERT transcript using check_no_control_characters: a document with a stray
+    control character (U+0007 BEL) should produce a FAIL in report.failures — not a DRIFT.
+
+    This is the structural-defect shape: something broke in the code or data, not just a count
+    that a wave of agents has bumped past a hand-maintained figure. The boundary matters because
+    if every failure became a drift, report.failures would always be empty.
+    """
+    report_with_defect = audit.Report()
+    report_with_defect.check("no live document has a stray control character", False, "BEL found in README:3")
+
+    # BREAK: a false statement is in failures.
+    assert report_with_defect.failures, "a structural FAIL must appear in report.failures"
+    assert not report_with_defect.count_drifts, "a structural FAIL must NOT be in count_drifts"
+
+    # REVERT: fixing it clears failures.
+    report_fixed = audit.Report()
+    report_fixed.check("no live document has a stray control character", True, "clean")
+    assert not report_fixed.failures, "after fixing, failures must be empty"
