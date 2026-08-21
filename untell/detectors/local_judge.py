@@ -21,11 +21,14 @@ Usage::
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 
 from .base import clamp01
 from .llm_judge import _JUDGE_PROMPT
+
+logger = logging.getLogger(__name__)
 
 _NUM = re.compile(r"\d*\.\d+|\d+")
 
@@ -79,6 +82,11 @@ class LocalJudgeDetector:
 
     _model = None
     _tokenizer = None
+    _dead = False  # set once a load fails so we never re-attempt the heavy download per call
+    # Tracks which model_id was loaded into the class-level cache. A second instance constructed
+    # with a DIFFERENT model_id reuses the first-loaded model and logs a warning — the class-level
+    # cache holds one model per process. Set UNTELL_JUDGE_MODEL before the first score() call.
+    _loaded_model_id: str | None = None
 
     def __init__(self, model_id: str | None = None, device: str | None = None):
         self.model_id = model_id or _DEFAULT_MODEL
@@ -134,12 +142,33 @@ class LocalJudgeDetector:
             ).to(device).eval()
             LocalJudgeDetector._tokenizer = tok
             LocalJudgeDetector._model = model
+            LocalJudgeDetector._loaded_model_id = self.model_id
+        elif LocalJudgeDetector._loaded_model_id != self.model_id:
+            # A second instance with a different model_id was constructed after the cache was
+            # populated. Warn rather than silently serve wrong weights. Set UNTELL_JUDGE_MODEL
+            # before the first score() call to control which model loads.
+            logger.warning(
+                "LocalJudgeDetector: model_id %r requested but %r is already loaded "
+                "(class-level cache holds one model per process). Using the loaded model.",
+                self.model_id, LocalJudgeDetector._loaded_model_id,
+            )
         return LocalJudgeDetector._tokenizer, LocalJudgeDetector._model
 
     def score(self, text: str) -> float | None:
+        if LocalJudgeDetector._dead:
+            return None
         if not self.available() or not text.strip():
             return None
-        tok, model = self._load()
+        try:
+            tok, model = self._load()
+        except Exception as exc:
+            LocalJudgeDetector._dead = True
+            logger.warning(
+                "local_judge failed to load and was EXCLUDED from the ensemble "
+                "(%s: %s). Check network access and the HuggingFace cache.",
+                type(exc).__name__, str(exc)[:140],
+            )
+            raise
         prompt = f"{_JUDGE_PROMPT}\n\n--- TEXT ---\n{text}\n\n--- RATING ---"
         messages = [{"role": "user", "content": prompt}]
         # Apply chat template so instruct models respond properly.
