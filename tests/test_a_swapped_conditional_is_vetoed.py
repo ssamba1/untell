@@ -75,6 +75,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.slow  # calls meaning_preserved which loads the NLI model
 @pytest.mark.parametrize("source,candidate", SWAPPED, ids=lambda x: x[:24])
 def test_a_swapped_conditional_is_vetoed(source: str, candidate: str) -> None:
     assert role_swap(source, candidate) is True, (
@@ -85,6 +86,7 @@ def test_a_swapped_conditional_is_vetoed(source: str, candidate: str) -> None:
     )
 
 
+@pytest.mark.slow  # calls meaning_preserved which loads the NLI model
 @pytest.mark.parametrize("source,candidate", FAITHFUL, ids=lambda x: x[:24])
 def test_a_reordered_conditional_still_passes(source: str, candidate: str) -> None:
     """The error that would matter more. "B if A" is the same claim as "If A, B", and a veto that

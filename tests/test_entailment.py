@@ -172,6 +172,7 @@ def test_gate_still_rejects_gross_topic_drift(monkeypatch):
     assert entailment.meaning_preserved("a", "b", sim=0.05, strict_sim_bar=0.76) is False
 
 
+@pytest.mark.slow  # loads the real NLI model (sentence-transformers + torch)
 def test_real_model_gate_beats_similarity_alone_on_both_axes():
     """The headline claim, against the real model: more faithful rewrites admitted AND fewer bad."""
     pytest.importorskip("torch")

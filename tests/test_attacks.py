@@ -46,6 +46,7 @@ def _mt_ready() -> bool:
     return True
 
 
+@pytest.mark.slow  # downloads and runs MarianMT for back-translation (16s measured)
 @pytest.mark.skipif(not _mt_ready(), reason="MarianMT stack (torch/transformers/sentencepiece) unavailable")
 def test_roundtrip_changes_text_but_keeps_gist():
     src = "The committee approved the new policy after a lengthy and contentious debate."
