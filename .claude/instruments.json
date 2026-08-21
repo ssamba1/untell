@@ -8,7 +8,8 @@
       "post_mean_max": 0.0096
     },
     "reported_spread": 0.017,
-    "note": "corrected 2026-08-15: full-history min-max spread across 5 committed runs is 0.0096 (post_mean_max 0.1163/0.1163/0.1163/0.1163/0.1259), not the 0.0 the 2-run calibration reported. Run 5 moved 0.0096 above the cluster, invisible to a last-two comparison. Determinism verdict corrected to false by the calibrate fix (pass 717), same class as the lite-hc3 correction."
+    "calibration_env": "full_lite_ensemble",
+    "note": "corrected 2026-08-15: full-history min-max spread across 5 committed runs is 0.0096 (post_mean_max 0.1163/0.1163/0.1163/0.1163/0.1259), not the 0.0 the 2-run calibration reported. Run 5 moved 0.0096 above the cluster, invisible to a last-two comparison. Determinism verdict corrected to false by the calibrate fix (pass 717), same class as the lite-hc3 correction. spot-check 2026-08-21 (slice 19): UNTELL_LITE_NO_TORCH=1 (single-detector mode) produced post_mean_max=0.2635 and post_flagged_rate=0.333 — intentionally different from calibration values because the env suppresses the HC3/roberta/mage detectors; values do not contradict the recorded spread."
   },
   "lite-hc3": {
     "deterministic": false,
