@@ -36,21 +36,21 @@ _WARNED_UNINFORMATIVE = False
 
 
 UNINFORMATIVE_TARGETING_WARNING = (
-    "per-sentence targeting on the pure-stdlib path is near-chance (measured AUROC 0.493 on "
-    "labelled data, vs 0.89-1.00 for the model-backed detectors). The 'flagged' sentences are "
-    "close to arbitrary. Install .[full] for targeting that means anything."
+    "per-sentence targeting on the pure-stdlib path is near-chance (measured AUROC 0.513 on "
+    "HC3 and 0.516 on RAID — 50 docs each — vs 0.89-1.00 for the model-backed detectors). The "
+    "'flagged' sentences are close to arbitrary. Install .[full] for targeting that means anything."
 )
 
 
 def _targeting_is_uninformative(tier: str, modes: dict | None = None) -> bool:
     """Whether the only detector that scored these sentences could not rank them.
 
-    Measured per-sentence AUROC on real labelled data: 0.493 for the stdlib heuristic against
-    0.886-1.000 for every model-backed detector. Re-measured at 100 HC3 sentences while adding the
-    result field below, and the shape is worse than a low AUROC suggests: the stdlib path returns
-    **6 distinct values across 100 sentences, 91 of them exactly 0.250**, for an AUROC of 0.515.
-    The full tier returns 39 distinct values at 0.965. It is not a weak ranking, it is a constant
-    with a few exceptions.
+    Measured per-sentence AUROC on real labelled data: 0.513 on HC3 and 0.516 on RAID (50 docs
+    each, re-measured 2026-08-21 with UNTELL_LITE_NO_TORCH=1 to isolate the stdlib path). The
+    shape is worse than a low AUROC suggests: 86% of HC3 sentences and 44% of RAID sentences pin
+    to exactly 0.250 (the ceiling of the capped common-word term when no AI tells fire), and
+    burstiness — the dominant signal at document level — is undefined for a single sentence.
+    It is not a weak ranking, it is a constant with a few exceptions.
 
     THE 0.886-1.000 RANGE DOES NOT REPRODUCE ON HC3 SENTENCES, and this function's whole purpose is
     to decide when the ranking can be trusted. Re-measured 2026-08-12 over 40 human and 40 AI HC3
@@ -183,12 +183,15 @@ def score_sentences(
     every sentence over an absolute threshold, which floods short text with false positives. The
     ``flagged`` list is "rewrite these first", not an absolute per-sentence verdict.
 
-    **How well this actually works depends entirely on the tier.** MEASURED per-sentence AUROC over
-    150 human and 150 ChatGPT sentences drawn from HC3 paragraphs:
+    **How well this actually works depends entirely on the tier.** MEASURED per-sentence AUROC:
 
         hc3_roberta        1.000        full (GPT-2) perplexity   0.968
         fast_detectgpt     0.940        roberta_openai            0.886
-        lite (stdlib)      **0.493**  <- a coin flip
+        lite (stdlib)      **0.513 HC3 / 0.516 RAID**  <- near-chance on both corpora
+
+    Root cause: burstiness is undefined for a lone sentence; the capped common-word term collapses
+    to the same value (0.25) for 86% of HC3 and 44% of RAID sentences; tell density fires only
+    when a sentence contains a characteristic AI marker. Re-measured 2026-08-21 on 50 docs each.
 
     So on the zero-dependency path — no torch, the pure stdlib heuristic — per-sentence targeting
     points the rewriter at essentially random sentences. Note that "lite" auto-upgrades to GPT-2

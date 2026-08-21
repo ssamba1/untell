@@ -143,11 +143,11 @@ def test_no_module_keeps_its_own_sentence_splitter():
 
 
 def test_stdlib_path_warns_that_sentence_targeting_is_near_chance(monkeypatch, caplog):
-    """Per-sentence AUROC on real labelled data (150 human / 150 ChatGPT sentences from HC3):
+    """Per-sentence AUROC on real labelled data, re-measured 2026-08-21 on 50 docs each:
 
         hc3_roberta   1.000     full (GPT-2)     0.968
         fast_detect   0.940     roberta_openai   0.886
-        lite (stdlib) 0.493  <- a coin flip
+        lite (stdlib) 0.513 HC3 / 0.516 RAID  <- near-chance on both corpora
 
     On the zero-dependency path the flagged sentences are close to arbitrary, and a caller cannot
     see that from the output — the scores look like scores. Said once, not per call.
@@ -166,9 +166,12 @@ def test_stdlib_path_warns_that_sentence_targeting_is_near_chance(monkeypatch, c
         s.score_sentences(text, tier="lite")
         s.score_sentences(text, tier="lite")
 
-    warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
+    warnings = [r for r in caplog.records
+                if r.levelno >= logging.WARNING and r.name == "untell.scripts.sentences"]
     assert len(warnings) == 1, f"expected exactly one warning, got {len(warnings)}"
-    assert "0.493" in warnings[0].getMessage()
+    # "0.513" is the HC3 AUROC in the current warning; updating this when the measurement is
+    # re-run is intentional — the warning must say a number a reader can look up.
+    assert "0.513" in warnings[0].getMessage()
 
 
 def test_no_warning_when_a_model_backed_detector_will_do_the_ranking(monkeypatch, caplog):
