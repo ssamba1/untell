@@ -32,6 +32,7 @@ class RadarDetector:
 
     _model = None
     _tokenizer = None
+    _dead = False  # set once a load fails so we never re-attempt the heavy download per call
     _warned = False
 
     def available(self) -> bool:
@@ -56,6 +57,8 @@ class RadarDetector:
         # None == "no signal" (empty / unavailable): excluded from the aggregate rather than
         # folded in as a fake neutral 0.5. A load/scoring failure propagates so score_text records
         # it in failed_detectors (matching the other supervised adapters' contract).
+        if RadarDetector._dead:
+            return None
         if not self.available() or not text.strip():
             return None
         if not RadarDetector._warned:
@@ -67,7 +70,16 @@ class RadarDetector:
         import torch
         import torch.nn.functional as F
 
-        tok, model = self._load()
+        try:
+            tok, model = self._load()
+        except Exception as exc:
+            RadarDetector._dead = True
+            logger.warning(
+                "radar failed to load and was EXCLUDED from the ensemble "
+                "(%s: %s). Check network access and the HuggingFace cache.",
+                type(exc).__name__, str(exc)[:140],
+            )
+            raise
 
         def _one(window: str) -> float:
             inputs = tok(window, return_tensors="pt", truncation=True, max_length=512)
