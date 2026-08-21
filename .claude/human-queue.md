@@ -1904,3 +1904,20 @@ WHY    New CLI flag (--manifest) is AMBER per the envelope — a new surface, so
 NEXT   None required. If a manifest field ever drifts from the determinism contract, the field set
        is pinned by test_manifest_records_every_contract_field and the byte-identity by
        test_manifest_is_byte_identical_across_processes.
+
+## 2026-08-21 w7-07 — AMBER — new CLI flag --jsonl (issue #32)
+
+WHAT   Added `--jsonl` streaming output mode to `untell humanize`. Splits the input into
+       paragraphs (blank-line separated), calls `untell_text` per paragraph, and emits one
+       JSON object per block as it completes (flushed immediately). A final summary object
+       closes the stream. `--jsonl` and `--json` are mutually exclusive; the conflict is
+       reported as a JSON error on stderr with exit 2 (no traceback). Per-paragraph seeds are
+       derived from the document seed via blake2b(doc_seed, para_idx) so the same input +
+       same --seed is byte-identical across fresh processes. Seven new tests in
+       tests/test_jsonl_streaming.py cover: valid JSON per line, block/summary structure,
+       mutual exclusion (clean error), cross-process byte identity, seed non-inertness, and
+       the streaming property (first line arrives BEFORE the process exits).
+RAN    pytest tests/test_jsonl_streaming.py tests/test_reproducibility_across_processes.py tests/test_run.py -v
+SAW    7 passed (jsonl) + 6 passed (reproducibility) + 49 passed 2 skipped (run) — all green
+WHY    New CLI flag is AMBER per the envelope.
+NEXT   None required. The flag is implemented, tested, and the AMBER entry filed here.

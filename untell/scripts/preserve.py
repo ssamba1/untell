@@ -305,7 +305,15 @@ _PATTERNS: list[tuple[str, re.Pattern]] = [
     # SPACE, one character class over. A URL that genuinely ends in "." is rare
     # enough that the round trip (period restored as free text) is the safer
     # reading; the two can be told apart only by a parser, not a regex.
-    ("url", re.compile(r"https?://\S+(?<![.,;:!?])|doi:\s*\S+(?<![.,;:!?])", re.IGNORECASE)),
+    # arXiv identifiers share the same partial-lock failure shape as the DOI pattern: MEASURED
+    # before this entry, "arXiv:2301.00000" locked only "2301.00000" (a decimal) and left
+    # "arXiv:" free — a rewrite could replace the namespace prefix with any string while every
+    # sentinel survived intact. Two formats exist:
+    #   New (since 2007): arXiv:YYMM.NNNNN[vN]    e.g. arXiv:2301.00000v2
+    #   Old (pre-2007):   arXiv:subj-class/YYMMNNN  e.g. arXiv:cs.AI/0301042, arXiv:hep-th/9901001
+    # The `\S+` suffix with a trailing lookbehind mirrors the doi pattern exactly; ordered BEFORE
+    # the number/dotted rules so the prefix is claimed with the numeric part rather than ceded.
+    ("url", re.compile(r"https?://\S+(?<![.,;:!?])|doi:\s*\S+(?<![.,;:!?])|arXiv:\S+(?<![.,;:!?])", re.IGNORECASE)),
     # Quoted spans (straight or curly double quotes)
     ("quote", re.compile(r"[\"“][^\"”]{1,400}[\"”]")),
     # Single-quoted spans. British and academic house styles quote this way as a matter of course,

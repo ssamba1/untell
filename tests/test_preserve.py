@@ -635,3 +635,157 @@ class TestLaTeXIsLocked:
         masked, mapping = lock(text)
         assert restore(masked, mapping) == text
         assert not any(k.startswith("latex") for k in mapping)
+
+
+class TestIdempotence:
+    """Idempotence properties of lock() and restore().
+
+    The loop calls restore() on already-restored text (the polish and confirm paths both hand
+    it `final`), and can call lock() on masked text if a helper re-locks before scoring.
+    Both must be safe non-ops on their second application.
+    """
+
+    def test_lock_of_masked_text_returns_identical_masked_text(self):
+        """lock(lock(t)[0])[0] == lock(t)[0].
+
+        A sentinel is text. The second lock finds each sentinel via the sentinel pattern and
+        assigns it a new sentinel with the SAME number (because sentinels appear in numerical
+        order and the counter starts at 0). The masked text is therefore unchanged.
+        If a second lock produced DIFFERENT masked text, restore() with the first mapping
+        would silently lose locked spans.
+        """
+        text = "Smith (2020) rose 47%. As noted in [12]. See https://example.com."
+        masked1, mapping1 = lock(text)
+        masked2, _mapping2 = lock(masked1)
+        assert masked1 == masked2, (
+            f"lock(lock(t)[0])[0] != lock(t)[0]: {masked2!r} != {masked1!r}"
+        )
+
+    def test_lock_of_masked_maps_each_sentinel_to_itself(self):
+        """The second lock's mapping maps each sentinel to itself (a no-op round-trip)."""
+        text = "Smith (2020) rose 47%."
+        masked, mapping1 = lock(text)
+        _, mapping2 = lock(masked)
+        for sentinel, original in mapping1.items():
+            assert sentinel in mapping2, f"{sentinel} not in second lock's mapping"
+            assert mapping2[sentinel] == sentinel, (
+                f"{sentinel} maps to {mapping2[sentinel]!r} in second lock, expected itself"
+            )
+
+    def test_restore_of_restored_text_is_a_noop(self):
+        """restore(restore(masked, mapping), mapping) == restore(masked, mapping).
+
+        A second restore pass finds no sentinels left to replace and returns the already-
+        restored text unchanged.
+        """
+        text = "Smith (2020) rose 47%. As noted in [12]."
+        masked, mapping = lock(text)
+        once = restore(masked, mapping)
+        twice = restore(once, mapping)
+        assert twice == once, "restore is not idempotent"
+        assert once == text, "first restore did not return original"
+
+    def test_lock_restore_lock_mapping_is_stable(self):
+        """lock(restore(*lock(t))) produces the same mapping as lock(t).
+
+        If the mapping changes on the second round, the loop's score-then-restore path
+        would be comparing incompatible mappings and silently corrupting facts.
+        """
+        text = "Smith (2020) noted p<0.05 across [12] studies."
+        masked1, mapping1 = lock(text)
+        restored = restore(masked1, mapping1)
+        masked2, mapping2 = lock(restored)
+        assert masked2 == masked1, "masked text changed after restore+relock"
+        assert mapping2 == mapping1, (
+            f"mapping changed after restore+relock:\n"
+            f"  mapping1={mapping1}\n  mapping2={mapping2}"
+        )
+
+    def test_two_literal_sentinels_in_input_round_trip(self):
+        """Two literal sentinels in the source text both map to themselves and survive."""
+        from untell.scripts.preserve import lock, restore
+
+        s0, s1 = "⟦HZ0000⟧", "⟦HZ0001⟧"
+        text = f"Data {s0} and {s1} were compared (Smith, 2020)."
+        masked, mapping = lock(text)
+        assert restore(masked, mapping) == text
+        assert mapping[s0] == s0, f"{s0} did not map to itself"
+        assert mapping[s1] == s1, f"{s1} did not map to itself"
+
+    def test_high_numbered_literal_sentinel_round_trips(self):
+        """A literal ⟦HZ0007⟧ in the source maps to ⟦HZ0001⟧ in the masked text (renumbered)
+        but restores to its original form byte-exact."""
+        from untell.scripts.preserve import lock, restore
+
+        s = "⟦HZ0007⟧"
+        text = f"Smith (2020) said {s} is the key finding."
+        masked, mapping = lock(text)
+        restored = restore(masked, mapping)
+        assert restored == text, f"round-trip failed: {restored!r} != {text!r}"
+        # The literal sentinel ends up as the value of SOME key in the mapping
+        assert s in mapping.values(), f"{s!r} not preserved in any locked span"
+
+    def test_span_at_start_of_document(self):
+        """A locked span at position 0 of the text is handled correctly."""
+        text = "42% is the accuracy, as shown by Smith (2020)."
+        masked, mapping = lock(text)
+        assert restore(masked, mapping) == text
+        assert masked.startswith("⟦HZ0000⟧"), "first sentinel not at position 0"
+        assert mapping["⟦HZ0000⟧"] == "42%"
+
+    def test_span_at_end_of_document(self):
+        """A locked span at the very end of the text (no trailing text after it) round-trips."""
+        text = "The result was noted in Smith (2020)"
+        masked, mapping = lock(text)
+        assert restore(masked, mapping) == text
+        assert masked.endswith("⟦HZ0000⟧"), "last sentinel not at EOF"
+
+    def test_entire_document_is_one_span(self):
+        """A document whose entire content is one locked span round-trips."""
+        text = "https://very-long-url.example.com/api/v2/endpoint?query=value&page=1"
+        masked, mapping = lock(text)
+        assert restore(masked, mapping) == text
+        assert masked == "⟦HZ0000⟧", f"expected single sentinel, got {masked!r}"
+
+
+class TestArXivIDs:
+    """arXiv IDs are academic citations in a namespace-prefixed format.
+
+    MEASURED before the fix: "arXiv:2301.00000" locked only "2301.00000" (the numeric part),
+    leaving "arXiv:" free for the rewriter — the same partial-lock worst case documented
+    throughout this file. A rewrite could change "arXiv:..." to "paper:..." with every sentinel
+    intact, mis-citing the source.
+
+    Three forms exist in the wild:
+      1. New format: arXiv:YYMM.NNNNN[vN] (since 2007)
+      2. Old format: arXiv:subj-class/YYMMNNN (pre-2007)
+    All share the "arXiv:" prefix as the identifier of the namespace.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "must_contain"),
+        [
+            ("See arXiv:2301.00000 for the method.", "arXiv:2301.00000"),
+            ("See arXiv:2301.00000v2 for the method.", "arXiv:2301.00000v2"),
+            ("See arXiv:cs.AI/0301042 for it.", "arXiv:cs.AI/0301042"),
+            ("See arXiv:hep-th/9901001v3 for it.", "arXiv:hep-th/9901001v3"),
+            ("Multiple: arXiv:2301.00000 and arXiv:2302.11111v1.", "arXiv:2301.00000"),
+        ],
+        ids=["new_format", "new_versioned", "old_subj", "old_hep_th", "multiple"],
+    )
+    def test_arxiv_id_is_locked_whole(self, text, must_contain):
+        """The entire arXiv identifier including the 'arXiv:' prefix is one locked span."""
+        masked, mapping = lock(text)
+        assert restore(masked, mapping) == text
+        values = list(mapping.values())
+        assert any(must_contain in v for v in values), (
+            f"{must_contain!r} not fully locked; locked={values!r}\nmasked={masked!r}"
+        )
+
+    def test_arxiv_prefix_is_not_free_in_masked_text(self):
+        """The 'arXiv:' prefix must not appear in the masked text (it would be rewritable)."""
+        text = "See arXiv:2301.00000 for the method."
+        masked, _ = lock(text)
+        assert "arXiv:" not in masked, (
+            f"'arXiv:' leaked into the rewritable text: {masked!r}"
+        )

@@ -680,6 +680,9 @@ def untell_text(
     # the same run repeated. Setting `random.seed()` before the call no longer reaches the loop, so
     # this is the supported way to ask for a specific stream.
     seed: int | None = None,
+    # Collect per-candidate rejection reasons and expose them as ``result["inspect"]``.
+    # Zero overhead when False (the default). The CLI exposes this as ``--inspect``.
+    inspect: bool = False,
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
@@ -1063,6 +1066,11 @@ def _untell_text(
     # a caveat that says "every draft scored worse" would be describing a comparison
     # that did not happen. Different cause, different remedy.
     vetoed = 0
+    # Per-candidate rejection log (inspect=True only). Each entry is a small dict describing
+    # what happened to one draw: sentinel failure, which meaning gate fired, or acceptance.
+    # Kept in a list so the caller gets the full per-iteration history rather than just counts.
+    # None when inspect=False so the inspection overhead is strictly zero by default.
+    inspect_events: list[dict] | None = [] if inspect else None
     # `rewrites` counts DRAWS, including every candidate the guards rejected — which is a fair
     # reading of "rewrites attempted" but not the question a caller is actually asking. MEASURED:
     # a text the loop could not improve came back byte-identical while the result said
@@ -1161,6 +1169,11 @@ def _untell_text(
             # dict values ("Smith (2020)", "47") would be read as counts. A valid rewrite reproduces
             # every sentinel exactly as often as it appears in `masked`: no drop, no alter, no dup.
             if Counter(_SENTINEL_RE.findall(candidate)) != Counter(_SENTINEL_RE.findall(masked)):
+                if inspect_events is not None:
+                    inspect_events.append({
+                        "type": "candidate_rejected", "iter": i, "draw": drew,
+                        "gate": "sentinels", "vetoes": ["sentinels"], "sim": None,
+                    })
                 continue  # dropped/altered/DUPLICATED a locked span — reject outright
             # Meaning gate. Cosine similarity alone is wrong in BOTH directions: it penalises
             # register change (the primary humanizing move — it rejected 6/6 faithful formal->casual
@@ -1192,9 +1205,23 @@ def _untell_text(
             if veto_contradictions:
                 if not meaning_preserved(masked, candidate, sim, sim_bar):
                     vetoed += 1
+                    if inspect_events is not None:
+                        from untell.scripts.entailment import meaning_preserved_vetoes
+                        _vetoes = meaning_preserved_vetoes(masked, candidate, sim, sim_bar)
+                        inspect_events.append({
+                            "type": "candidate_rejected", "iter": i, "draw": drew,
+                            "gate": _vetoes[0] if _vetoes else "meaning_gate",
+                            "vetoes": _vetoes, "sim": sim,
+                        })
                     continue
             elif sim < sim_bar:
                 vetoed += 1
+                if inspect_events is not None:
+                    _gate = f"similarity (sim {sim:.3f} < bar {sim_bar:.3f})"
+                    inspect_events.append({
+                        "type": "candidate_rejected", "iter": i, "draw": drew,
+                        "gate": _gate, "vetoes": [_gate], "sim": sim,
+                    })
                 continue  # meaning drifted too far from the source
             with _timed(phase, "rescore"):
                 cscore = score(candidate)
@@ -1216,6 +1243,9 @@ def _untell_text(
             with _timed(phase, "tells"):
                 cand_tells = score_tells(restore(candidate, mapping)).get("tells", 0)
             valid.append((candidate, cscore, cand_tells))
+            if inspect_events is not None:
+                inspect_events.append({"type": "candidate_accepted", "iter": i, "draw": drew})
+        _inspect_was_adopted = False  # track for inspect event below
         cand_best, cand_best_score = None, None
         if valid:
             # Primary objective: lowest detector max. Restrict the tells tie-break to the ADOPTABLE
@@ -1312,6 +1342,12 @@ def _untell_text(
             if cand_best != best_masked:
                 adopted += 1
             best_masked, best_score = cand_best, cand_best_score
+            _inspect_was_adopted = True
+        if inspect_events is not None:
+            if _inspect_was_adopted:
+                inspect_events.append({"type": "adopted", "iter": i})
+            elif valid:
+                inspect_events.append({"type": "not_adopted", "iter": i})
         if _passed(best_score):
             stopped = "passed"
             break
@@ -1545,6 +1581,10 @@ def _untell_text(
         # byte-identical. Order is execution order — score_pre first, total last — which is what
         # the regression test pins as "phase order sane".
         **({"timings": _timings_dict(phase, _t_start)} if timings else {}),
+        # Per-candidate rejection log (issue #33). Only present when inspect=True, so every
+        # existing caller's payload is byte-identical. The CLI renders this as a human-readable
+        # report; programmatic callers can walk the list directly.
+        **({"inspect": inspect_events} if inspect_events is not None else {}),
     }
 
 
@@ -1691,6 +1731,143 @@ def _stronger_rewriter_hint(rw, flagged: bool, tier: str) -> dict:
             f"Measure it with `untell-ceiling --rewriter neural --repeats 3`."
         )
     }
+
+
+def _split_blocks(text: str) -> list[str]:
+    """Split *text* into non-empty paragraphs on blank lines.
+
+    The JSONL streaming mode processes one block at a time and emits a JSON
+    object per block as it completes, so a caller can read the first result
+    long before the last paragraph finishes.  Double-newline (or more) is the
+    universal paragraph break in plain prose, Markdown, and the plain-text
+    exports the batch command produces.
+
+    Empty strings (e.g. trailing newlines) are dropped.  If the split yields
+    nothing the original text is returned as one block — a caller always gets
+    at least one result line.
+    """
+    import re
+
+    blocks = [b.strip() for b in re.split(r"\n{2,}", text)]
+    non_empty = [b for b in blocks if b]
+    return non_empty if non_empty else [text]
+
+
+def _para_seed(doc_seed: int, para_idx: int) -> int:
+    """Deterministic per-paragraph seed derived from the document-level seed.
+
+    Each paragraph must receive a *different* seed so best-of-N draws are not
+    all identical — two paragraphs at the same seed through the same rewriter
+    produce identical rewrites, defeating the loop.  Blake2b of (seed, index)
+    gives independent but reproducible streams:
+
+        same doc_seed, different para_idx  → different seeds  (independent)
+        same doc_seed, same para_idx       → same seed        (reproducible)
+        different doc_seed, same para_idx  → different seeds  (seed is not inert)
+
+    The high 64 bits of a blake2b-16 digest are used, matching the range the
+    `_Seed` API type bounds the user-facing seed to (0 .. 2**64-1).
+    """
+    payload = doc_seed.to_bytes(8, "big", signed=False) + para_idx.to_bytes(4, "big")
+    return int.from_bytes(hashlib.blake2b(payload, digest_size=8).digest(), "big")
+
+
+def _emit_jsonl(
+    args,
+    text: str,
+    rewriter,
+    voice_sample: str | None,
+    detector_thresholds: dict | None,
+) -> int:
+    """Stream one JSON object per paragraph to stdout, flushed immediately.
+
+    Paragraphs are separated by one or more blank lines.  Each line is a
+    complete, valid JSON object with ``"type": "block"``; the last line is a
+    summary object with ``"type": "summary"``.
+
+    The document-level seed is either the user-supplied ``--seed`` value or is
+    derived from the full input text (the same formula ``untell_text`` uses
+    internally), so two fresh processes with the same input and the same seed
+    produce byte-identical output.
+
+    Per-paragraph seeds are derived from the document seed + paragraph index
+    via ``_para_seed``, giving each paragraph an independent but reproducible
+    stream.
+    """
+    max_iters = args.max_rounds if args.max_rounds is not None else args.max_iters
+
+    # Derive the document-level seed exactly as untell_text does when seed=None.
+    doc_seed: int = (
+        args.seed
+        if args.seed is not None
+        else int.from_bytes(
+            hashlib.blake2b(
+                text.encode("utf-8", errors="replace"), digest_size=8
+            ).digest(),
+            "big",
+        )
+    )
+
+    blocks = _split_blocks(text)
+    total = len(blocks)
+    n_changed = 0
+    n_flagged_after = 0
+    n_error = 0
+    exit_code = 0
+
+    for idx, block in enumerate(blocks):
+        para_seed = _para_seed(doc_seed, idx)
+        result = untell_text(
+            block,
+            tier=args.tier,
+            threshold=args.threshold,
+            max_iters=max_iters,
+            rewriter=rewriter,
+            browser=args.browser,
+            margin=args.margin,
+            confirm=args.confirm,
+            scrub=not args.no_scrub,
+            polish=args.polish,
+            style=args.style,
+            best_of=args.best_of,
+            detector_thresholds=detector_thresholds,
+            voice_sample=voice_sample,
+            seed=para_seed,
+            progress=False,
+            timings=args.timings,
+        )
+
+        if "error" in result:
+            n_error += 1
+            exit_code = 1
+        else:
+            if result.get("changed"):
+                n_changed += 1
+            if result.get("flagged"):
+                n_flagged_after += 1
+
+        line = {
+            "type": "block",
+            "index": idx,
+            "total_blocks": total,
+            **result,
+        }
+        sys.stdout.write(json.dumps(line, ensure_ascii=True) + "\n")
+        sys.stdout.flush()
+
+    summary: dict = {
+        "type": "summary",
+        "total_blocks": total,
+        "changed": n_changed,
+        "flagged_after": n_flagged_after,
+        "doc_seed": doc_seed,
+    }
+    if n_error:
+        summary["errors"] = n_error
+    sys.stdout.write(json.dumps(summary, ensure_ascii=True) + "\n")
+    sys.stdout.flush()
+
+    return exit_code
 
 
 def _render(result: dict) -> str:
@@ -2027,6 +2204,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     parser.add_argument(
+        "--jsonl",
+        action="store_true",
+        help="streaming JSONL mode: split the input into paragraphs and emit one JSON object per "
+        "paragraph as it completes, flushed immediately. A final summary object closes the stream. "
+        "Mutually exclusive with --json. Same input + same --seed produces byte-identical output "
+        "across fresh processes.",
+    )
+    parser.add_argument(
         "--timings",
         action="store_true",
         help="report the per-phase wall-clock budget: score_pre / rewrite / rescore (plus "
@@ -2053,6 +2238,15 @@ def build_parser() -> argparse.ArgumentParser:
         "remote rewriters (anthropic/openai) and --browser detectors are marked "
         "'non-deterministic by design'. Carries no timestamp, so the manifest itself is "
         "byte-identical across runs.",
+    )
+    parser.add_argument(
+        "--inspect",
+        action="store_true",
+        help="per-sentence rewrite report: for each sentence show whether it was rewritten or "
+        "left alone, which AI tells were detected, and — for every candidate the loop rejected — "
+        "which gate fired and why (sentinels, numbers_kept, deletion, contradiction, etc.). "
+        "The rejection reasons are currently invisible without this flag. "
+        "Report goes to stderr so stdout stays clean for piping.",
     )
     return parser
 
@@ -2165,6 +2359,18 @@ def main(argv: list[str] | None = None) -> int:
     configure_utf8_io()
     args = build_parser().parse_args(argv)
 
+    # --jsonl and --json are mutually exclusive: --json emits one big object at the end,
+    # --jsonl emits one object per paragraph as it completes.  They cannot coexist because
+    # stdout carries either a single JSON value or a newline-delimited sequence — not both.
+    if getattr(args, "jsonl", False) and args.json:
+        print(
+            json.dumps({
+                "error": "--jsonl and --json are mutually exclusive: choose one output mode"
+            }),
+            file=sys.stderr,
+        )
+        return 2
+
     if args.file:
         from untell.scripts.io_utils import read_file_or_exit
 
@@ -2274,11 +2480,17 @@ def main(argv: list[str] | None = None) -> int:
             message = (
                 f"--detector-thresholds must be a JSON object of name:number pairs ({exc})."
             )
-            if args.json:
+            if args.json or getattr(args, "jsonl", False):
                 print(json.dumps({"error": message}))
             else:
                 print(f"ERROR: {message}", file=sys.stderr)
             return 2
+
+    # --jsonl: paragraph-by-paragraph streaming. Each block is processed with untell_text and
+    # its result is emitted as a JSON line (flushed) as it completes. A final summary line
+    # closes the stream. This branch handles its own output and returns directly.
+    if getattr(args, "jsonl", False):
+        return _emit_jsonl(args, text, rewriter, voice_sample, detector_thresholds)
 
     result = untell_text(
         text,
@@ -2301,7 +2513,21 @@ def main(argv: list[str] | None = None) -> int:
         # is a scripted caller too — same rule, same flag.
         progress=not args.json,
         timings=args.timings,
+        inspect=getattr(args, "inspect", False),
     )
+    if getattr(args, "inspect", False) and "inspect" in result and "error" not in result:
+        from untell.inspect_report import render_inspect_report
+
+        print(
+            render_inspect_report(
+                text,
+                result.get("final", ""),
+                result["inspect"],
+                pre_score=result.get("pre"),
+                post_score=result.get("post"),
+            ),
+            file=sys.stderr,
+        )
     if args.manifest:
         # Written before the --diff/--json/rendered branches so the manifest lands for every
         # output mode, including an erroring run. `--json` keeps stdout pure; the path is the
