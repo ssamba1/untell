@@ -1,13 +1,13 @@
 <div align="center">
 
-<a href="https://ssamba1.github.io/untell/"><img src="docs/og.png" alt="untell — the open-source AI humanizer that closes the loop: rewrites AI text against live detector scores while keeping meaning, citations and facts intact" width="820"></a>
+<a href="https://ssamba1.github.io/untell/"><img src="docs/og.png" alt="untell — an AI-detector auditing toolkit: measures detector false-positive rates on human writing and tests how stable a verdict is under meaning-preserving edits" width="820"></a>
 
-# untell — the open-source AI humanizer that *closes the loop*
+# untell — an AI-detector auditing toolkit
 
-### Iteratively rewrite AI-generated text against live AI-detector scores until it reads human — while keeping your meaning, citations, and facts intact.
+### Measure whether an AI detector can be trusted: what it does to writing a human actually wrote, how stable its verdict is, and what happens to that verdict under meaning-preserving edits.
 
-A **closed-loop, detector-feedback** AI humanizer, shipped as a **Claude Code skill** *and* a Python CLI.
-Free. Open source. Honest about what it can and can't do.
+A **detector-in-the-loop measurement harness**, shipped as a **Claude Code skill** *and* a Python CLI.
+Free. Open source. Its headline result is a negative one, and it says so.
 
 [![CI](https://github.com/ssamba1/untell/actions/workflows/ci.yml/badge.svg)](https://github.com/ssamba1/untell/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -18,24 +18,52 @@ Free. Open source. Honest about what it can and can't do.
 [![Live site](https://img.shields.io/badge/site-ssamba1.github.io%2Funtell-2ea44f.svg)](https://ssamba1.github.io/untell/)
 [![good first issues](https://img.shields.io/github/issues/ssamba1/untell/good%20first%20issue.svg?label=good%20first%20issues&color=7057ff)](https://github.com/ssamba1/untell/labels/good%20first%20issue)
 
-**Optimize against real detectors — with the detector *in the loop*, not blind guessing.** Out of the box it
-beats the **free web checkers** (ZeroGPT 100%→0%, measured live on 2026-06-25 against the formulaic
-demo paragraphs — a third-party site that can change without notice, so re-verify with
-`--browser zerogpt` rather than trusting the figure). To actually beat **GPTZero · Originality.ai ·
-Turnitin-class · Copyleaks**, you wire *their* API into the loop (key-gated, paid) — the bundled **local
-proxies alone do *not* predict those, and we [say so plainly](#honest-caveats)** rather than fake a "99% human."
-[Why this is the most complete open humanizer →](#-why-this-is-the-best-open-source-ai-humanizer)
+**What this is for: finding out how much a detector's verdict is worth.** Detectors are increasingly
+used to make consequential accusations, and this repository exists to measure how well that holds up.
+Measured here, at each tool's own shipped threshold: the full local ensemble flags **17% of genuine
+human writing** (5 of 30 real HC3 answers); the lite tier flagged **30%** on conversational prose;
+one bundled detector flags **6 of 8** human documents and another flags **89%** of them — that second
+one was demoted out of its tier for it. Before a calibration fix, the ensemble flagged **95% of human
+documents**.
+
+The rewriting loop is the *probe*, not the product: it is how you test whether a verdict survives
+meaning-preserving editing. The answer it produced is a negative one — the loop moves the detectors it
+optimises against, and **does not move a detector it has never seen** (4/10 flagged, every seed, every
+objective, every rewriter).
+[What the measurements establish →](#-the-measured-free-ceiling)
 
 </div>
 
 ---
 
+## Intended use
+
+Built for **detector evaluation and reliability research**: measuring false-positive rates on human
+writing, auditing a detector before anyone relies on it, testing robustness claims, and stripping
+hidden-unicode carriers (zero-width characters, bidi overrides — the Trojan Source class) from text
+before it is read or scored.
+
+**Not built for, and not supported for, misrepresenting authorship** — including submitting
+machine-written work as your own where that is prohibited. If that is what you are here for, the
+measurements below are the wrong news anyway: the evasion this tool achieves is against its own local
+proxies, it does not transfer to a detector it has not seen, and it has never been shown to move a
+commercial checker.
+
+The honest summary of the capability is in [Honest caveats](#honest-caveats), and every number is
+reproducible from [`docs/free-ceiling-measured.md`](docs/free-ceiling-measured.md).
+
 ## TL;DR
 
-Most "AI humanizers" do **one blind paraphrase pass** and plateau at 60–80% detector bypass. This one runs a
-**loop**: it *scores* your text against an ensemble of real AI detectors, *rewrites* using each detector's
-score as feedback (targeting the exact sentences that read as AI), and *re-scores* — repeating until the
-hardest detector stops flagging it **and** a semantic-similarity gate confirms the meaning is unchanged.
+**An AI detector gives you a number. This tells you what that number is worth.**
+
+Point it at a detector and it will measure three things: how often that detector calls human writing
+machine-generated, whether its verdict is stable across seeds and paraphrases, and whether a score
+you can move is a score that means anything. It does the last one by putting the detector *in a
+closed loop* — score, edit under a meaning gate, re-score — because a verdict that collapses under
+meaning-preserving editing was never measuring authorship.
+
+The loop is a measurement instrument, and it produced a negative result about itself: it reliably
+moves the detectors it optimises against and does not move one it has never seen.
 
 That iterative, detector-feedback approach is the strongest *training-free* technique in the published
 literature ([arXiv 2506.07001](https://arxiv.org/abs/2506.07001): −87.88% average TPR@1%FPR, transfers
@@ -504,7 +532,7 @@ need their API in the loop — paid). The tool says so, everywhere.
 
 ---
 
-## 🏆 Why this is the best open-source AI humanizer
+## 🏆 Why this is the most rigorous open detector-audit toolkit
 
 We surveyed ~110 open-source humanizer repos (GitHub topics, papers-with-code, the research SOTA) as part
 of building this project, and re-swept the field on 2026-08-05 across **624 queries turning up 1287 candidate
@@ -529,7 +557,7 @@ the strongest open competitors:
 | **Commercial** adapters (Originality/GPTZero/Turnitin-class) | ✅ 6 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Semantic meaning gate** + citation lock | ✅ | claim | ◑ rollback | ◑ keyword | heuristic | ❌ | ✅ BERTScore |
 | **Per-sentence** targeting | ✅ | ❌ | ◑ | ❌ | ❌ | ❌ | ❌ |
-| **Live bypass proof** (real score shown) | ✅ ZeroGPT 100→0 | ❌ | ❌ | ❌ | ◑ Binoculars | GIF | ✅ paper |
+| **Live detector round-trip** (real score shown) | ✅ ZeroGPT 100→0 | ❌ | ❌ | ❌ | ◑ Binoculars | GIF | ✅ paper |
 | Packaged **install** (pip *and* Claude skill) | ✅ both | ✅ | ✅ | web app | ✅ skill | ✅ skill | ❌ research |
 | **CI** on real models | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Runs **without a GPU** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
@@ -697,7 +725,7 @@ Add your own site with **zero code** — it's just CSS selectors in a JSON file
 ## ❓ FAQ
 
 <details>
-<summary><b>Is there a free AI humanizer that actually works?</b></summary>
+<summary><b>Can a free tool actually move a detector's verdict?</b></summary>
 
 Yes — the lite tier installs with **zero dependencies** and the `--browser zerogpt` path optimizes against a
 real detector for **$0**. "Actually works," honestly: the loop reliably clears the *free* web detectors
@@ -707,7 +735,7 @@ human" are lying. This repo tells you the real per-detector score instead.
 </details>
 
 <details>
-<summary><b>Does it bypass GPTZero / ZeroGPT / Turnitin / Originality.ai?</b></summary>
+<summary><b>Will this get past GPTZero / Turnitin / Originality.ai?</b></summary>
 
 It *optimizes and verifies against* them. ZeroGPT is built into the free browser path and live-proven.
 GPTZero, Originality.ai, Turnitin-class, Copyleaks, Winston and Sapling are wired as **key-gated commercial
