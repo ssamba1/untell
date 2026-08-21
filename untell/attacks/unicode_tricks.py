@@ -366,6 +366,16 @@ def scrub_hidden(text: str) -> str:
     one with no RTL text to act on — is stripped as a carrier. Verified: RLM/LRM adjacent to Arabic,
     and RLE/PDF and FSI/PDI pairs, all survive unchanged; an RLM between two ASCII words does not.
     """
+    # Strip lone surrogates (U+D800..U+DFFF). They are invalid Unicode scalar values whose
+    # category is "Cs" (surrogate), not "Cc" (control), so they pass the C0/C1 filter below
+    # unchanged. Downstream tools (spaCy's tokeniser, the JSON serialiser, UTF-8 file I/O)
+    # raise UnicodeEncodeError on them. MEASURED: scrub_hidden("hello\ud800world") returned
+    # the input unchanged and count_hidden reported 0 — the worst possible report, the caller
+    # is told the text is clean while an invalid codepoint is still in it. Stripping matches
+    # what this function does to every other invisible carrier: the text reads the same without
+    # the surrogate, so nothing visible is lost.
+    if any(0xD800 <= ord(ch) <= 0xDFFF for ch in text):
+        text = "".join(ch for ch in text if not (0xD800 <= ord(ch) <= 0xDFFF))
     text = _WATERMARK_CHARS.sub("", text)
     # Tag chars are context-dependent: complete emoji tag sequences (flags) are load-bearing,
     # lone tag chars are watermark payload. Previously the blanket class above stripped BOTH —

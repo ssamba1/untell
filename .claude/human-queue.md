@@ -1921,3 +1921,23 @@ RAN    pytest tests/test_jsonl_streaming.py tests/test_reproducibility_across_pr
 SAW    7 passed (jsonl) + 6 passed (reproducibility) + 49 passed 2 skipped (run) — all green
 WHY    New CLI flag is AMBER per the envelope.
 NEXT   None required. The flag is implemented, tested, and the AMBER entry filed here.
+
+## 2026-08-21 w7-09 -- AMBER -- new CLI flag --html PATH (issue #30)
+
+WHAT   Added `--html PATH` to `untell humanize`. Writes a self-contained single-file HTML
+       report to PATH: the original text with LOCKED SPANS highlighted (the exact spans
+       lock() protected -- citations, numbers, versions, identifiers, URLs), the humanized
+       text with changed regions marked via character-level diff, and a per-sentence AI-score
+       table. No external CSS/JS/fonts; the file opens from file:// with no network access.
+       Implemented in new module untell/html_report.py (generate_html_report).
+       Security: all user text HTML-escaped via html.escape(quote=True) before insertion;
+       <script>, &, <, > and " all produce entities; no user text reaches any href/src
+       attribute. Locked spans derived from explain_spans() -- the same _collect_labeled_spans()
+       machinery lock() itself uses -- not re-detected heuristically.
+       16 new tests: 8 XSS-safety (tests/test_html_report_xss.py), 8 lock-fidelity
+       (tests/test_html_report_lock_fidelity.py).
+       Live demo: 9 614 bytes, 15 locked spans from a paper-style paragraph with citations.
+RAN    pytest tests/test_html_report_xss.py tests/test_html_report_lock_fidelity.py -v
+SAW    16 passed in 1.69s -- all green
+WHY    New CLI flag is AMBER per the envelope.
+NEXT   None required. Flag implemented, tested, AMBER entry filed, issue #30 closed.

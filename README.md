@@ -148,6 +148,11 @@ git clone https://github.com/ssamba1/untell && cp -r untell/untell ~/.claude/ski
 
 # MCP server (Claude Desktop & any MCP client) — exposes score/sentences/untell/verify/scrub as tools:
 pip install -e ".[mcp]" && untell-mcp     # (pip install "untell[mcp]" once on PyPI)
+
+# Feature extras (not required for the core loop):
+pip install -e ".[docs]"     # .docx / .pdf file input (python-docx, pypdf) — needed for --file *.docx / *.pdf
+pip install -e ".[rich]"     # coloured terminal output (rich) — auto-detected; falls back to plain text without it
+pip install -e ".[quality]"  # higher-fidelity quality gate (BERTScore-F1 backend, vs. embedding/token-overlap)
 ```
 </details>
 
