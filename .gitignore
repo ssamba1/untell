@@ -41,6 +41,7 @@ delegation-*
 # Anchored to the root so similar-looking `.claude/probes/` files (e.g.
 # `.claude/probes/_fuzz_*.jsonl`, `.claude/probes/sliceN_*.py`) stay tracked.
 /_mem_probe*/
+/_wt_*/
 /audit_tmp.json
 /_fix_*.py
 /_probe*.py

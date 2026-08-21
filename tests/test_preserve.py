@@ -666,7 +666,7 @@ class TestIdempotence:
         text = "Smith (2020) rose 47%."
         masked, mapping1 = lock(text)
         _, mapping2 = lock(masked)
-        for sentinel, original in mapping1.items():
+        for sentinel, _original in mapping1.items():
             assert sentinel in mapping2, f"{sentinel} not in second lock's mapping"
             assert mapping2[sentinel] == sentinel, (
                 f"{sentinel} maps to {mapping2[sentinel]!r} in second lock, expected itself"
