@@ -72,6 +72,10 @@ INVOCATIONS = {
     "tells.py": (AI,),
     "voice.py": ("--sample", "sample.txt", "--draft", "draft.txt"),
     "latex.py": ("--help",),  # its real form needs a .tex file and a .bib; --help proves it loads
+    # A real run polls a directory until it changes, so it does not terminate on its own here;
+    # --help proves the module loads and the CLI parses. Behaviour is covered for real by
+    # tests/test_watch_cli.py (19 tests), which drives it with --max-batches so it exits.
+    "watch.py": ("--help",),
 }
 
 

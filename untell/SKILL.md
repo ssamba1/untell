@@ -317,6 +317,15 @@ rewrite — `ai-tells.md` is the full catalog of patterns the output must never 
    per-file failures never abort the run and the exit code reflects them. Single-file requests
    still follow steps 1-6; batch is the directory-scale version of the same loop.
 
+   **Watch mode — the same batch, re-run as files change.** When the user is still editing and wants
+   the humanized copy kept current, use `python scripts/watch.py "<dir>"`. It polls the tree every
+   `--poll-interval` seconds, queues files whose `(mtime, size)` changed, debounces bursts so one
+   save-storm costs one pass, and runs each changed file through the *same* per-file pipeline batch
+   uses — so the loop, the binary/empty skips and the per-file failure isolation behave identically.
+   Polling rather than filesystem events, deliberately: no third-party watcher dependency, so it
+   runs on the stdlib lite tier. `--out` chooses the output directory; `--max-batches N` exits after
+   N processed batches, which is what makes it testable and scriptable rather than a daemon.
+
 > **Restoring sentinels:** the mapping from step 2 is `sentinel -> original`. Replace each
 > `⟦HZxxxx⟧` in your final text with its mapped value. (Programmatically:
 > `from untell.scripts.preserve import restore; restore(text, mapping)`.)
