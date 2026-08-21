@@ -192,6 +192,66 @@ def test_shipped_version_section_names_its_headline_features() -> None:
     )
 
 
+def test_changelog_is_not_stale_relative_to_recent_user_visible_commits() -> None:
+    """Fail when many user-visible commits have accumulated since CHANGELOG.md was last updated.
+
+    Without this, the changelog can silently fall behind for hundreds of commits (issue #12
+    found ~77 unrecorded user-visible changes since b37cb02). The threshold is intentionally
+    low — 20 user-visible commits is enough to motivate updating before the backlog compounds.
+
+    'User-visible' means any commit whose type prefix is feat, fix, or perf and whose scope is
+    not one of the internal subsystems (test, lint, queue, survivors, research, docs, instruments,
+    training). Audit-loop commits and doc-queue commits do not count; new commands, fixed crashes,
+    and visible performance changes do.
+
+    This test requires git; it skips gracefully when git is absent (e.g. in a source tarball).
+    """
+    import subprocess
+
+    repo = Path(__file__).resolve().parent.parent
+
+    try:
+        last_cl = subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "--", "CHANGELOG.md"],
+            text=True,
+            cwd=repo,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("git unavailable")
+
+    if not last_cl:
+        pytest.skip("CHANGELOG.md has never been committed")
+
+    try:
+        log_lines = subprocess.check_output(
+            ["git", "log", f"{last_cl}..HEAD", "--oneline", "--no-merges"],
+            text=True,
+            cwd=repo,
+            stderr=subprocess.DEVNULL,
+        ).splitlines()
+    except subprocess.CalledProcessError:
+        pytest.skip("git log failed")
+
+    _INTERNAL_SCOPE = re.compile(
+        r"^\w+ (feat|fix|perf)\((test|lint|queue|survivors|research|docs|instruments|training)\)"
+    )
+    _USER_VISIBLE = re.compile(r"^\w+ (feat|fix|perf)(\(|\: )")
+
+    user_visible = [
+        line for line in log_lines
+        if _USER_VISIBLE.match(line) and not _INTERNAL_SCOPE.match(line)
+    ]
+
+    _THRESHOLD = 20
+    assert len(user_visible) <= _THRESHOLD, (
+        f"CHANGELOG.md last updated at {last_cl[:8]}, but {len(user_visible)} user-visible "
+        f"commits have accumulated since then (threshold {_THRESHOLD}). "
+        f"Update CHANGELOG.md. First five: "
+        + "; ".join(c[:60] for c in user_visible[:5])
+    )
+
+
 def test_unreleased_is_not_the_only_place_work_accumulates() -> None:
     """`[Unreleased]` growing without bound is how the above happens.
 
