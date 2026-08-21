@@ -16,10 +16,7 @@ Nothing here is reimplemented: every assertion is on the real build_rewrite_prom
 
 from __future__ import annotations
 
-import pytest
-
-from untell.rewriter.prompts import build_rewrite_prompt, _detected_signals, _CATEGORY_ADVICE
-
+from untell.rewriter.prompts import _CATEGORY_ADVICE, _detected_signals, build_rewrite_prompt
 
 # ---------------------------------------------------------------------------
 # Fixtures — texts that are reliably heavy in ONE category
