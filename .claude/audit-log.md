@@ -2893,3 +2893,4 @@ permanently.
 | 2728 | L4 | L4 | clean | 7506 | 7506 | - | L4 local_policy.py re-verified: 2/2 alive. |
 | 2729 | L4 | L4 | clean | 7506 | 7506 | - | L4 targeted.py re-verified: _SENT_SPLIT alive. |
 | 2730 | L1 | T08 | clean | 7506 | 7506 | - | T08 re-audit (45th): _MERGE_WEIGHTS unchanged. |
+| 2731 | L2 | records-integrity | defect-fixed | 9104 | 9116 | 8620abb | slice 19: audit-log collision guard (live_taken_numbers + cmd_record while-loop), instrument calibration_env field, schema evolution docs, 12 guard tests |
