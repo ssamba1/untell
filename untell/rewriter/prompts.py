@@ -3,6 +3,18 @@
 Turns a detector score result into a concrete, feedback-driven rewrite instruction following the
 same rubric the skill uses (references/prompt-rubric.md + references/ai-tells.md): write plain,
 naturally uneven human prose, inject NONE of the known AI tells, preserve meaning and every sentinel.
+
+Named-signal rubric (build_rewrite_prompt):
+The prompt now names the SPECIFIC tell categories detected in THIS document, derived from a live
+``score_tells`` call on the text, rather than repeating a generic list of everything the catalogue
+covers.  A document heavy in clichés gets a cliché-focused instruction; one heavy in repeated openers
+gets that.  Categories that did not fire are not mentioned, so the model does not anchor on signals
+that are not a problem for this text.
+
+The caller may also pre-supply tells via ``score_result["by_category"]``.  When present, that dict is
+used instead of re-running ``score_tells`` — handy if the loop already has it from the tie-break step.
+``score_result`` without ``by_category`` triggers a fresh computation; exceptions inside it are caught
+so a scoring failure never silences the whole prompt.
 """
 
 from __future__ import annotations
@@ -72,6 +84,152 @@ _RUBRIC = (
 )
 
 
+# Per-category advice for the named-signal section of the rewrite prompt.
+#
+# Each entry maps the ``score_tells`` category key to a ONE-LINE instruction that is concrete enough
+# for a rewriter to act on immediately.  Ordering matters: the rubric lists them from most-actionable
+# to least, so the model reads the most important one first even if only one fires.
+#
+# Why NOT a generic list?  The current _RUBRIC already names the canonical tells so the model has the
+# full context.  The named-signal block below is the TARGETED layer — it names only what THIS document
+# actually contains, so the model's attention is directed at real defects rather than diffused across
+# the whole catalogue.
+_CATEGORY_ADVICE: dict[str, str] = {
+    "cliche": (
+        "clichés in this text (e.g. 'in today's fast-paced world', 'at its core', 'game-changer', "
+        "'paradigm shift', 'dive into', 'shed light on') — cut or rephrase as a plain, specific statement"
+    ),
+    "formulaic_transition": (
+        "formulaic sentence-opening transitions (e.g. 'Moreover', 'Furthermore', 'Additionally', "
+        "'Overall', 'Ultimately', 'Thus', 'Therefore') — replace with a plain 'but', 'and', 'so', "
+        "'though', or nothing; start with the actual point"
+    ),
+    "repeated_phrasing": (
+        "repeated phrases — the same word-cluster appears several times; vary the wording, "
+        "use pronouns, or cut a repetition"
+    ),
+    "repeated_sentence_openers": (
+        "repeated sentence starters — multiple sentences open with the same word; "
+        "vary how sentences begin"
+    ),
+    "ai_vocab": (
+        "AI vocabulary in this text (e.g. 'delve', 'leverage', 'utilize', 'robust', 'seamless', "
+        "'tapestry', 'testament', 'realm', 'landscape', 'pivotal', 'underscore', 'foster', "
+        "'harness', 'multifaceted', 'meticulous', 'nuanced') — use a plain, specific word instead"
+    ),
+    "participial_trailer": (
+        "participial-phrase trailers (, underscoring …, marking …, highlighting …, showcasing …) "
+        "— cut the trailing clause or restate it as a separate sentence"
+    ),
+    "hedge_stacking": (
+        "stacked hedges ('could potentially', 'may eventually', 'might possibly') "
+        "— keep one hedge or drop it"
+    ),
+    "vague_attribution": (
+        "vague attribution ('studies show', 'research suggests', 'experts argue') "
+        "— name the actual source or cut the claim"
+    ),
+    "negated_contrast": (
+        "negated-contrast constructions ('not just X, it's Y'; 'not only X but also Y') "
+        "— state the positive claim directly"
+    ),
+    "sycophancy": (
+        "sycophantic openers ('Certainly!', 'Absolutely!', 'Great question!') — cut them entirely"
+    ),
+    "meta_closer": (
+        "chatbot sign-off phrases ('I hope this helps', 'Let me know if', 'Feel free to reach out') "
+        "— cut; end on the actual content"
+    ),
+    "chatbot_artifact": (
+        "chatbot artefacts ('As an AI language model', '[INSERT …]') — remove entirely"
+    ),
+    "inflated_copula": (
+        "inflated copulas ('serves as', 'boasts', 'epitomizes') — use 'is' or 'has' instead"
+    ),
+    "em_dash": (
+        "em-dashes (—) used for rhythm — replace with a comma, period, or short separate clause"
+    ),
+    "semicolon_crutch": (
+        "semicolons used as a rhythm crutch — split into two sentences or use a comma"
+    ),
+    "filler_phrase": (
+        "filler phrases ('due to the fact that', 'at this point in time', 'needless to say') "
+        "— cut or rephrase directly"
+    ),
+    "aphorism": (
+        "aphorism formulas ('X is the new Y', 'X is the backbone of Y') "
+        "— state the idea plainly without the metaphor"
+    ),
+    "false_range": (
+        "false-range breadth ('from X to Y', 'whether you're X or Y') "
+        "— be specific or cut the sweep"
+    ),
+    "rule_of_three": (
+        "staccato rule-of-three ('Fast. Simple. Effective.') "
+        "— merge into a normal sentence or paragraph"
+    ),
+    "steering_opener": (
+        "reader-steering adverbs at sentence start ('Interestingly,', 'Notably,', 'Importantly,') "
+        "— cut the adverb and start with the claim"
+    ),
+    "rhetorical_opener": (
+        "theatrical openers ('Honestly?', 'Look,', 'Here's the thing') "
+        "— start with the actual point"
+    ),
+    "markdown_artifact": (
+        "markdown artefacts (Key Takeaways:, TL;DR, emoji section headers) — remove"
+    ),
+    "cutoff_disclaimer": (
+        "knowledge-cutoff disclaimers ('as of my last training', 'limited information is available') "
+        "— cut, or state the gap as a plain fact about the subject"
+    ),
+    "challenges_section": (
+        "generic challenges-section framing ('faces several challenges', 'future prospects') "
+        "— be specific about what the challenge is"
+    ),
+    "notability_padding": (
+        "notability padding ('has been widely covered', 'cited by multiple major outlets') "
+        "— cut, or cite a specific real source"
+    ),
+}
+
+# Maximum number of detected tell categories to name in the prompt. Beyond this the list becomes
+# noise — a rewriter told about fifteen things at once is not better guided than one told about
+# three. Cap keeps the prompt proportionate to the actual worst offenders.
+_MAX_NAMED_SIGNALS = 5
+
+
+def _detected_signals(text: str, score_result: dict) -> list[tuple[str, int]]:
+    """Return tell categories detected in ``text``, sorted by count descending.
+
+    Prefers ``score_result["by_category"]`` when present — the loop already computed tells for the
+    tie-break, so we avoid a second pass.  Falls back to a fresh ``score_tells`` call.  Exceptions
+    are swallowed so a scoring failure never silences the whole prompt.
+
+    Returns a list of (category, count) pairs, highest-count first, capped at _MAX_NAMED_SIGNALS.
+    Only categories present in ``_CATEGORY_ADVICE`` (i.e. actionable) are returned.
+    """
+    by_category: dict[str, int] = {}
+
+    if "by_category" in score_result:
+        by_category = score_result["by_category"] or {}
+    else:
+        try:
+            from untell.scripts.tells import score_tells
+
+            by_category = score_tells(text).get("by_category") or {}
+        except Exception:
+            pass  # a diagnostic must never break the prompt it describes
+
+    actionable = [
+        (name, count)
+        for name, count in by_category.items()
+        if name in _CATEGORY_ADVICE and isinstance(count, int) and count > 0
+    ]
+    actionable.sort(key=lambda kv: kv[1], reverse=True)
+    return actionable[:_MAX_NAMED_SIGNALS]
+
+
 def _worst_detectors(score_result: dict, k: int = 3) -> list[tuple[str, float]]:
     dets = score_result.get("detectors", {})
     numeric = [(n, v) for n, v in dets.items() if isinstance(v, (int, float)) and "__error" not in n]
@@ -79,7 +237,13 @@ def _worst_detectors(score_result: dict, k: int = 3) -> list[tuple[str, float]]:
 
 
 def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30) -> str:
-    """Build the rewrite instruction, naming the detectors + the exact sentences flagging the text."""
+    """Build the rewrite instruction, naming the detectors + the exact sentences flagging the text.
+
+    Named-signal section: derives the tell categories actually present in ``text`` (via
+    ``_detected_signals``) and appends a bullet per detected category with a concrete action.
+    A document heavy in clichés gets a cliché-focused instruction; one heavy in repeated openers
+    gets that.  Categories that did not fire are not mentioned.
+    """
     worst = _worst_detectors(score_result)
     if worst:
         flagged = ", ".join(f"{name} (P(AI)={val:.2f})" for name, val in worst)
@@ -103,6 +267,18 @@ def build_rewrite_prompt(text: str, score_result: dict, threshold: float = 0.30)
             "\n\nThese specific sentences read most as AI — REWRITE THESE the hardest into plain, "
             "uneven, natural prose; break any neat parallelism, tricolons, or aphorisms (do not add "
             f"facts the source didn't state):\n{listed}"
+        )
+
+    # Named-signal section: list ONLY the tell categories that actually fired in this text.
+    # Derived from a live score_tells pass (or from score_result["by_category"] if pre-supplied).
+    signals = _detected_signals(text, score_result)
+    if signals:
+        lines = "\n".join(
+            f"  - {_CATEGORY_ADVICE[name]} (found {count} time{'s' if count != 1 else ''})"
+            for name, count in signals
+        )
+        feedback += (
+            "\n\nThis specific text contains these AI signals — address each:\n" + lines
         )
 
     return f"{_RUBRIC}\n\n{feedback}\n\n--- TEXT ---\n{text}"
