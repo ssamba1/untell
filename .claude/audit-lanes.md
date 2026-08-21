@@ -173,6 +173,14 @@ produced the numbers), `metrics` (the recipe's `metrics` fields that came back n
 `raw` (every non-list/non-dict field the ceiling command emitted — corpus, n, rewriter, tier,
 spread, liveness flags). The `metrics`+`raw` split is what `compare()` reads: metrics drive
 the noise band checks, raw carries the liveness evidence that the rewriter actually loaded.
+`tests/test_records_integrity.py::TestMeasurementsJsonlSchema` pins both halves.
+
+**Schema evolution (rows without `seconds`):** Non-standard rows appended by ad-hoc
+one-off scripts carry `recipe`, `date`, `head` (git commit), `kind`, and `rows` (structured
+evidence). As of 2026-08-21 there is one such row (line 39, `slice12-ner-lite-gate`
+timing decision; appended by slice 12's NER gate investigation). These rows are NOT compared
+by `compare()` and are NOT checked by `load()` recipe filters; they are pass-through evidence
+preserved for audit provenance. The guard test treats their schema separately.
 
 **This lane edits no source and no document.** Its output is evidence, not a decision. If
 something MOVED beyond the noise band, write it to `.claude/human-queue.md` with the command
