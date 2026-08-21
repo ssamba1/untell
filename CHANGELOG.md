@@ -5,6 +5,59 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **`untell batch` -- directory-tree humanization with JSON manifest.** `untell batch DIR` walks
+  a directory tree, humanizes every `.txt`/`.md` file with the same loop as `untell humanize`,
+  mirrors the structure into `DIR_humanized/`, and writes a `manifest.json` recording input path,
+  status, pre/post detector scores, and whether the text was rewritten. Binary files are skipped
+  cleanly; per-file failures never abort the run; the exit code is 1 if any file failed. Flags:
+  `--out`, `--tier`, `--threshold`, `--rewriter`, `--max-iters`, `--best-of`, `--dry-run`,
+  `--limit`, `--json`. (`af37909`)
+- **`untell watch DIR` -- humanize files on change.** Polls a directory and humanizes every
+  `.txt`/`.md` file the moment it appears or is edited, reusing the batch pipeline with one shared
+  rewriter. Editor-save bursts are coalesced by a debounce window (`--debounce`). Flags: `--out`,
+  `--tier`, `--threshold`, `--rewriter`, `--poll-interval`, `--debounce`, `--dry-run`. (`0e5cbfd`)
+- **`untell explain` -- reports which rule locks each span and why.** The preserve-lock mask was
+  opaque: a span came back verbatim with no way to ask why. `untell explain TEXT` (or `--file`,
+  stdin, `--json`) now lists every locked span, the rule(s) that matched, and the documented
+  rationale from a machine-checked registry. The registry is tested: every rule has a rationale,
+  every rationale names a rule. (`04e3bb2`)
+- **`untell humanize --diff` -- shows only what changed.** Renders a unified-diff-style
+  before/after view (red deletions, green additions, dim hunk headers) through the same
+  rich-output conventions as the standard report, with a plain-text fallback. `--diff --json`
+  emits a machine-readable payload (format `untell-diff`, hunks with 0-based spans) that also
+  carries the locked spans and the count of locks that survived byte-for-byte. (`d1e3e11`)
+- **`untell humanize --jsonl` -- streaming output mode for long documents.** Splits input on
+  blank lines and emits one JSON object per block as it completes, flushed immediately, so a
+  1 MB document reports progress instead of going silent for minutes. A final summary object
+  closes the stream. `--jsonl` and `--json` are mutually exclusive; the combination exits 2
+  with a clean error. (`520edfc`)
+- **`untell humanize --manifest PATH` -- reproducibility manifest.** Writes a JSON record for
+  each run: input/output sha256, seed, rewriter, tier, threshold, pre/post detector scores,
+  untell version, and an honest determinism class (`reproducible` for local rewriters;
+  `non-deterministic by design` for hosted and browser paths). For a reproducible run the
+  manifest is itself byte-identical across runs and across processes. (`516253d`)
+- **`untell humanize --timings` -- per-phase timing output.** Emits a JSON block recording
+  score/rewrite/rescore/loop-total times so the rewrite-dominated cost shape is visible per
+  run. (`331ee9a`)
+- **`UNTELL_SELECT` -- selection objective for best-of-N.** Controls what the candidate-
+  selection step ranks on: `max` (the tier maximum, shipped default), `mean` (ensemble mean,
+  so lowering four detectors beats gaming one), or `dropout` (maximum over a seeded-random
+  subset of the tier, resampled each iteration). (`ce3b6f8`)
+- **Browser checker uses an automatic site selector.** `_all_checkers()` builds the candidate
+  list dynamically (built-in sites first, then user-added sites), and `'auto'` picks the first
+  available. The zerogpt submit selector was also fixed: the previous selector matched a
+  navigation link before the actual "Detect Text" button, so no detection ever fired and every
+  retry spent its full wait budget before raising `SelectorMiss`. (`59504dc`, `a1196f1`)
+- **The web demo now shows AI-tell counts.** `/humanize` returns `tells_before` and
+  `tells_after`; the CLI and rich-output table already showed them; the demo page
+  (`docs/demo.html`) never referenced either key. On input where the detectors saturate, the
+  score can barely move while the tells fall to zero, so the two score bars alone read as
+  "nothing happened." Both counts now appear. (`c5141ce`)
+- **`untell humanize --html PATH` -- save a styled HTML report.** Calls the HTML report
+  module and writes the output to `PATH`; echoes the path to stderr so stdout stays clean
+  for piping. (`a5a1dbd`)
+
 ### Fixed
 - **A rewrite could weld English words into German and French.** Every transform in the structural
   rewriter is English, and applied to Latin-script text that is not English they do not fail — they
@@ -144,6 +197,215 @@ All notable changes to this project are documented here. The format is based on
   they diverge in a band reachable on the default clean install, where the documented procedure had
   no stated action.
 
+- **`untell-server` silently did nothing.** An extraction refactor placed `_host_from_env()`
+  inside `main()`, causing `main()` to return after building the argument parser. The console
+  script, the Dockerfile entrypoint, and `python -m untell.api_server` all exited 0 printing
+  nothing; `--help` produced no output; the CI docker job's "server starts and answers" step
+  had no server to answer. (`b1ed8d2`)
+- **The Docker image could never build.** `.dockerignore` dropped `eval/` and `training/`
+  (declared packages in `pyproject.toml`), producing a `package directory eval does not
+  exist` error from the builder. It also excluded every `*.md` file, giving the wheel an
+  empty long description and stripping `untell/SKILL.md` and the references directory from
+  the installed package. (`75be76a`)
+- **The API server bound to `0.0.0.0` by default instead of `127.0.0.1`.** This contradicted
+  the README, the module's own comments, and the CORS tests. The server is now localhost-only
+  by default; `UNTELL_HOST` or `--host` override it. (`694f786`)
+- **`/humanize` silently billed a hosted rewriter when a free one was unavailable.**
+  Requesting `t5_paraphrase` or `mt_pivot` without optional dependencies returned HTTP 200
+  with no `rewriter_warning` and selected a hosted (paid) backend. The endpoint now returns
+  422, matching the MCP tools which already refused. (`694f786`)
+- **`/health` re-resolved the full detector list on every call.** The startup cost (measured
+  at 9.34s cold) ran on every liveness probe -- the exact call an orchestrator makes before
+  deciding to restart a container. The result is now resolved during lifespan startup and
+  TTL-cached thereafter (measured 0.0026s warm). (`e567607`)
+- **The version number in `api_server` was `0.2.0` while the package shipped `0.3.0`.**
+  (`4a00730`)
+- **CJK and RTL text was treated as one sentence.** `split_sentences` only knew `[.!?]`; a
+  CJK document was one sentence, giving burstiness CV 0.0 and causing per-sentence targeting
+  to name the whole document as one unit. Added CJK/Arabic terminators (no whitespace
+  required), plus a zero-width bypass so carriers between a full stop and the next word
+  cannot hide a boundary. Windowed scoring for scriptio-continua text now uses character
+  widths rather than space-split words, so adapters no longer truncate to the opening
+  ~380 words. (`0315a14`)
+- **Emoji tag sequences (England/Scotland/Wales flags) were destroyed by `scrub_hidden`.**
+  Tag characters U+E0000-U+E007F form valid emoji tag sequences but are also invisible. The
+  scrubber treated them as hidden characters and deleted the flag glyphs. (`b5b0856`)
+- **U+2028 (line separator) and U+2029 (paragraph separator) were neither scrubbed nor
+  scored.** Measured: inserting U+2028 after every `e` in a two-sentence paragraph moved the
+  lite/stdlib score from 0.6735 to 0.5545, a 0.119 drop in the direction that reports AI
+  text as human, with no warning and no removal. Both are now caught. (`e9643cb`)
+- **`count_hidden` re-derived what `scrub_hidden` does and had drifted for the sixth time.**
+  The two functions now share one implementation. (`8402356`)
+- **Binary stdin caused `UnicodeDecodeError` tracebacks from the CLI.** Piping binary content
+  into `untell score`, `untell scrub`, and `untell humanness` printed a raw traceback.
+  NUL-bearing stdin was also scored as prose rather than refused. All now exit 2 with one
+  line. (`50975c0`, `0680990`, `7a0c925`)
+- **Lone-surrogate input crashed `untell_text`, the NER preserver, and the REST 422
+  renderer.** A `UnicodeEncodeError` from the library, a `ValueError` from spaCy, and a
+  `TypeError` from the error-payload path each produced tracebacks. Lone surrogates are now
+  refused or sanitised at every surface. (`6716429`, `bb87f87`, `5b38d76`)
+- **Preserve did not lock dates, currencies, SI units, coordinates, or formulas.**
+  Dates like `10 November 2023`, prices like `€1,200`, units like `9.81 m/s²`, coordinates,
+  and equations were all rewritable. The lock catalogue now covers these forms. (`9eda40e`)
+- **Preserve did not lock compound units, time ranges, exponents, or formatted phone
+  numbers.** `120 kWh/month`, `09:00-17:00`, exponents, and `+1 (800) 555-1234` were all
+  rewritable. (`1162504`)
+- **Preserve did not lock feet-inches heights, measurement dimensions, or semicolon numeric
+  citations.** `5'11"`, `4×6 cm`, and `(pp. 12; 14)` were all rewritable. (`b91932f`)
+- **Preserve did not lock short hex strings, two-component dotted identifiers, or additional
+  phone-number formats.** (`a9a77d5`)
+- **HTML `<code>` tags were the one notation the preserver left rewritable.** (`8c70a16`)
+- **Curly single quotes were rewritable.** All other quotation styles were already locked.
+  (`f5ca2da`)
+- **A citation containing a semicolon was not recognised as a citation.** `(Smith, 2020;
+  Jones, 2021)` was not locked. (`0900a53`)
+- **A price earlier in a sentence could expose an equation.** The preserver's masking was
+  order-sensitive: a price before a formula caused the formula's token to be unmasked by the
+  price's unmask step. (`3660968`)
+- **A preserve setting locked its own name but left its value rewritable.** The sentinel
+  pattern matched the key only. (`544be36`)
+- **`restore()` edited documents that nothing had rewritten.** Calling `restore()` on text
+  not passed through `lock()` applied inverse substitutions to accidental pattern matches.
+  (`7502220`)
+- **A masked abbreviation was treated as a sentence boundary by everything downstream.**
+  A `preserve`-masked token containing a period triggered the sentence-boundary detector,
+  splitting the sentence in the middle of a locked span. (`bccf8aa`)
+- **NER false-locked common English words as named entities.** spaCy tagged capitalised
+  `Email`, `May`, `Will`, `Mark`, `Bill`, and `Rose` as PERSON entities; `lock()` then froze
+  those words in every context, preventing `Email me the file` from being rewritten.
+  Single-token PERSON entities whose text is a common word are now filtered. (`00722ae`)
+- **Bidi controls between a terminator and the next word hid the sentence boundary.** A
+  zero-width character between `.` and a capital letter made `split_sentences` see one
+  sentence where there were two. Abbreviation and quoted-period rules now see through
+  trailing zero-width characters. (`4ef658a`)
+- **Footnote/endnote markers after a terminator were not recognised.** Superscripts and
+  bracketed numerals were counted as abbreviations. Latin abbreviations `ca.`, `viz.`,
+  `nb.`, `op.`, and `cit.` were also missing. (`c0cc7f3`)
+- **A quoted period with a lowercase continuation was treated as a sentence boundary.**
+  `"It ended."` followed by `he said` split at the close-quote. (`62b53df`)
+- **The dotted-initialism filter capped at four letters, missing five- and six-letter
+  initialisms.** `U.S.A.`, `N.A.T.O.`, `I.U.P.A.C.` were split at internal periods. Cap
+  raised to six. (`0a82920`)
+- **Sentence-final abbreviations split on a capital continuation.** `Dr.` followed by a
+  name was treated as a sentence end. (`180fc97`)
+- **Disjoint aligned pairs truncated the source document.** When `aligned_chunks` produced
+  pairs covering a subset of the source, the outer text was trimmed to match. (`4696358`)
+- **Negated-contrast flattening deleted text across sentence boundaries.** `"It is not X.
+  It is Y."` had its second sentence consumed by the transform for the first. (`31a2bcd`)
+- **Uncontracted negated-contrast phrases were not flattened.** `"It is not X, it is Y"` was
+  not matched; only the contracted form `"It's not"` was handled. (`a262839`)
+- **The adoption loop counted each candidate's tells twice.** The current-best tell count
+  was computed over already-adopted text rather than the candidate's text, inflating the
+  denominator for every adoption decision. (`c9a692c`)
+- **A conjunction-trap comma incorrectly blocked a clean structural split.** A comma before
+  a coordinating conjunction inside a clause was treated as a compound-sentence marker.
+  (`c71f42b`)
+- **The comma splitters split inside parentheses and brackets.** A comma in `(A, B)` triggered
+  a sentence split. (`8a82cf2`)
+- **A bracket was treated as a sentence boundary.** An opening parenthesis immediately after
+  a word triggered the boundary detector. (`a5ba654`)
+- **Display-math `$$...$$` blocks were transformed.** Operators and terms inside display-math
+  environments were treated as prose and rewritten. The delimiters are now locked. (`a7a4a19`)
+- **The layout `restore_layout_lines` guard was inverted.** The condition caused the
+  layout-protection pass to apply to every document except aligned ones, silently disabling
+  layout protection for the class of documents it was written to protect. (`d53b5fd`,
+  `cca631b`)
+- **The quality gate's cosine condition was inverted by a fleet edit.** `if cos is not None`
+  was changed to `if cos is None`, disabling the gate for documents that computed a cosine
+  similarity and enabling it for documents that did not. (`3fb3e75`)
+- **`RELAXED_SIM_BAR` was silently changed from 0.30 to 0.20** by a sweeping audit commit.
+  (`29cd12b`)
+- **A mistyped subcommand was silently humanized instead of refused.** `untell humnaize` ran
+  the rewriter on the misspelled string as its input text. (`d76344c`)
+- **CLI panels did not escape Rich markup in user-supplied text.** Brackets in input were
+  interpreted as Rich markup tags. Flag-like arguments beginning with `-` were also accepted
+  silently on paths that should reject them, and `--json` was not accepted consistently
+  across all subcommands. (`2e02bb3`)
+- **The optional-dependency error message for `--rewriter local` was wrong.** The message
+  named the package's development extra instead of the install path from the README. (`e5a7d33`)
+- **The plain terminal path dropped the caveat and the tell counts.** Users who installed
+  `untell` without the `[rich]` extra saw neither the caveat nor the AI-tell counts. (`ee3ca09`)
+- **Hidden characters introduced by a rewriter were not scrubbed from the output.** The
+  input-side scrub (before `lock()`) already existed. A hosted LLM, T5 sample, or
+  local-policy step could re-emit a hidden character; `restore()` was not followed by a
+  scrub. Measured with an injecting rewriter: a zero-width space appeared in the final text
+  with `scrub=True` and no warning. (`e3c38f8`)
+- **`--seed -1` and `--seed 1` produced the same random stream.** Both were converted to
+  their absolute value before seeding. (`f7da552`)
+- **`untell prove --file MISSING` printed a `FileNotFoundError` traceback.** (`32d6ee9`)
+- **`untell-compare` accepted `--n 0` and `--threshold 2.5` without complaint.** Zero
+  candidates cannot be compared, and a threshold above 1 can never be met by a probability
+  score. Both now exit 2 with a clear message. (`6cadc0e`, `5735dc3`)
+- **`untell-ceiling` and `untell-compare` reported a bad `--file` argument as a traceback,
+  not a message.** (`5fb4c5c`)
+- **`score_text` and `untell_text` raised a raw `TypeError` on bytes input.** (`912929b`)
+- **The humanize-loop polish step warned about the same failure type once per failure, not
+  once per type.** On a document with repeated polish failures of the same class, the
+  terminal showed the same warning once per sentence rather than once for the class. (`01e43f8`)
+- **A `None` max score crashed the humanize report.** When no detector ran, the result's
+  `max` key was `None` and the report formatter crashed while rendering the score bar.
+  (`57d008b`)
+- **The `humanness` score bar crashed or flooded the terminal on non-finite input.** Infinity
+  or NaN from a detector path caused the bar renderer to either raise or print an unbounded
+  number of characters. (`e2c18b2`)
+- **The MCP ceiling tool accepted a non-existent tier and a threshold nothing can reach.**
+  `tier="bogus"` ran the lite path silently; `threshold=50` returned passes_all=True with a
+  warning. Both now match the REST `/verify` endpoint and the CLI. (`3373638`)
+- **MCP `_bad_args` crashed on non-numeric input instead of refusing.** `top="all"` or
+  `threshold="high"` raised inside the validation function. (`606f0e0`)
+- **MCP `_bad_args` treated `None` as an invalid `top`/`seed` value.** `None` is the
+  documented default for both; a fleet edit regressed them to "invalid argument". (`a506353`)
+- **MCP `_bad_args` crashed instead of refusing infinite counts.** (`d57026c`)
+- **MCP tools accepted oversized text or an unknown ceiling rewriter without refusing.**
+  (`2f68c78`)
+- **An unknown rewriter name on the MCP surface produced a misleading error.** The message
+  told the caller to check the rewriter name when the real issue was a missing backend.
+  (`60c2a11`)
+- **The torch-path and stdlib-path scores collided in the per-text score cache.** The
+  content-addressed cache keyed on text, detector names, tier, and threshold -- but not on
+  `UNTELL_LITE_NO_TORCH`, which flips `perplexity_burstiness` between GPT-2 and a stdlib
+  heuristic. Measured: 56 full-suite failures, all verdict-threshold assertions after the
+  first env toggle. (`eb07c50`)
+- **`clamp01` converted a `NaN` detector score into a neutral `0.5`.** A silently-failed
+  detector returned `NaN`; `clamp01` mapped it to the midpoint rather than propagating the
+  failure. A failed detector now appears in `failed_detectors`. (`2ef7ee3`)
+- **The `mage` detector's fallback handling was fragile.** A missing snapshot file, a
+  mismatched hash, or network unavailability each raised instead of falling back gracefully.
+  (`7279283`)
+- **T5 sampling did not seed torch from the loop's seed.** The T5-based rewriter paths drew
+  from an unseeded torch RNG, so `--seed N` did not make T5 outputs reproducible. (`401501b`)
+- **`UNTELL_LITE_NO_TORCH=1` did not gate the NLI and roles meaning gates.** The lite-env
+  flag disabled `perplexity_burstiness` but not the two meaning-gate paths that also load
+  torch models. (`1a16ee5`)
+- **`UNTELL_POLICY_MAXTOK` set to a non-integer raised inside the argument parser.** Even
+  `--help` was blocked. Invalid values now warn and fall back to the default. (`58c52bf`)
+- **An unclosed quote put the quote character inside the API key.** (`31fa6fa`)
+- **Non-English text received AI verdicts with no language caveat on five surfaces.**
+  A German paragraph passed to `score_text`, `score_tells`, `score_sentences`, `humanize`,
+  and `humanness` returned AI results without noting that the detectors and tell catalogue
+  are English-only. `humanness` returned 100.0 "Human" for German text because nothing in
+  its scoring path examined it. `--top` on `sentences` was also not respected on two
+  surfaces, and a negative `--top` value flagged `n-1` instead of the most-flagged sentences.
+  All language-caveat branches now share one function with language-first priority.
+  (`23253c1`, `dd5c45b`, `4bc1db0`, `b3be984`, `fc391db`, `9d338af`, `51799d6`)
+- **The numerals fact gate admitted changed quantities and vetoed unchanged ones.** The
+  comparison read the wrong direction. (`9012649`)
+- **Spelled multi-scale numbers compared as separate quantities.** `"five million"` and
+  `"5 million"` were compared as `5 != 5,000,000`; `billion` and `trillion` were not
+  recognised in the digit path. Both paths now share one scale table. (`524e6a7`)
+- **`aligned_chunks` was quadratic in document length.** The difflib-based alignment produced
+  an O(n*m) cost that timed out on long documents. (`9134c09`)
+- **The distill filter used the raw cosine bar instead of the loop's meaning gate.** Documents
+  the meaning gate would accept were rejected by the stricter raw cosine, producing a
+  distillation set different from what the loop itself would produce. (`47cdbc2`)
+- **`untell distill` accepted degenerate numeric arguments at parse time.** `--n 0` or an
+  extreme `--length` started running rather than being caught early. (`e1391d4`)
+- **The composite rewriter duplicated one draw at each clamping edge of the intensity
+  sweep.** The boundary values were sampled twice. (`f2cc79e`)
+- **The detector-audit summary named wrong probe counts and reported miscalibrated
+  verdicts.** The summary showed derived-probe counts rather than raw-probe counts, and the
+  verdict classification was applied to the wrong column. (`0e1729c`)
+
 ### Changed
 - **The server no longer blocks itself.** Every endpoint was `async def` calling a blocking worker
   directly, so a rewrite ran on the event loop: measured against an 11.20s `/humanize` with
@@ -166,6 +428,26 @@ All notable changes to this project are documented here. The format is based on
   `tests/test_changelog.py` now ties the newest heading to the shipped version — the existing
   tests there checked the file's shape (standard sections, no duplicate headings, no orphaned
   entries) and all of them passed throughout.
+
+- **Supervised detector scoring is 1.4-9.3x faster on multi-window documents.** The four
+  window-based adapters (`roberta_openai`, `hc3_roberta`, `fast_detectgpt`, `mage`) previously
+  scored each window with a separate model call; a 15-window document cost 15 forwards.
+  `base.batched_windowed_max` and per-detector `_score_batch` now score all windows in a
+  small number of padded forwards; scores are bit-identical to the sequential path. Measured:
+  `mage` 121.8s -> 13.1s (hc3-human), `roberta_openai` 53.4s -> 6.5s (hc3-human). (`bdc2c8b`)
+- **Detector scores are cached across loop iterations.** On iterations where the rewriter
+  produced no change, the per-text cache is hit and detectors are not called again. (`3fccf19`)
+- **`count_hidden` was O(n^2).** The character-walk replacement now runs in O(n). (`9aeccd8`)
+- **CLI startup no longer imports the FastAPI stack for command-line bounds.** `run.py`
+  imported `api_server` to read a port-range constant, pulling FastAPI, uvicorn, and their
+  dependency trees into every CLI invocation. The constant was moved. (`be9b15d`)
+- **spaCy NER results are now cached per document.** Repeated per-sentence NER calls were
+  replaced by one call per document, and degenerate-input guards and a quadratic code-pattern
+  anchor were also fixed. (`9e02182`)
+- **CI: ruff lint gate job and fast-suite deselection in the lite tier job.** The ruff gate
+  runs with zero tolerance on shipped code (probe files are exempted by documented policy);
+  the lite job deselects `pytest-slow` so CI answers in minutes while the full job runs
+  everything. (`518758f`)
 
 ## [0.3.0]
 
