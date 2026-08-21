@@ -864,6 +864,16 @@ _HUMANIZE_RESPONSES = _obj(
         # pinned, "P(AI) 1.00 -> 1.00" is the whole before/after story a client can see, and these
         # are the numbers that did move. MEASURED on 4 HC3 documents at full tier, max gained
         # +0.0000 on 4 of 4 while tells fell 4->0, 1->0 and 1->0.
+        # Added to the loop result by the --manifest work so a manifest never has to GUESS which
+        # backend ran, then returned here without being declared — the exact drift this schema's
+        # own docstring warns about, caught by test_no_returned_field_is_undocumented rather than
+        # by anyone reading the diff.
+        "rewriter": {
+            **_STR,
+            "description": "which rewriter backend actually ran. May differ from the one "
+                           "requested: an unconfigured hosted backend falls back to the free "
+                           "'composite' path, and `rewriter_warning` says so when it happens",
+        },
         "seed": {
             **_INT,
             "description": "the random stream this run used. Unset in the request, it is derived "
