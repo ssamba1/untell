@@ -1,6 +1,6 @@
-# untell — the open-source AI humanizer that *closes the loop*
+# untell — an AI-detector auditing toolkit
 
-**Iteratively rewrite AI-generated text against live AI-detector scores until it reads human — while keeping your meaning, citations, and facts intact.**
+**Measure whether an AI detector can be trusted: what it does to writing a human actually wrote, how stable its verdict is, and whether that verdict survives meaning-preserving edits.**
 
 [![CI](https://github.com/ssamba1/untell/actions/workflows/ci.yml/badge.svg)](https://github.com/ssamba1/untell/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -9,9 +9,11 @@
 
 ---
 
-## What makes untell different
+## What this is for
 
-Most "AI humanizers" do **one blind paraphrase pass** and plateau at 60–80% detector bypass. untell runs a **closed loop**: it *scores* your text against an ensemble of real AI detectors, *rewrites* using each detector's score as feedback (targeting the exact sentences that read as AI), and *re-scores* — repeating until the hardest detector stops flagging it **and** a semantic-similarity gate confirms the meaning is unchanged.
+An AI detector gives you a number, and that number is increasingly used to make consequential accusations. This measures what it is worth. Measured here, at each tool's own shipped threshold: the full local ensemble flags **17% of genuine human writing**; the lite tier flagged **30%** on conversational prose; one bundled detector flags **6 of 8** human documents and another flags **89%** of them.
+
+The rewrite loop is the instrument, not the product: score, edit under a meaning gate, re-score — because a verdict that collapses under meaning-preserving editing was never measuring authorship. Its result is a negative one, and it is stated as such: the loop moves the detectors it optimises against and **does not move a detector it has never seen**.
 
 That iterative, detector-feedback approach is the strongest *training-free* technique in the published literature ([arXiv 2506.07001](https://arxiv.org/abs/2506.07001): −88% TPR@1%FPR, transfers across detectors, preserves meaning) — and **no shipping tool, open or commercial, actually does it.**
 
@@ -71,7 +73,7 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **[Summary: the free-ceiling report](free-ceiling-report.md)** — the short version
 - **[Humanizer comparison](humanizer-comparison.md)** — untell vs every free technique
 - **[The 435-repo census](humanizer-census.md)** — what this field is actually made of
-- **[Why this is the most complete open humanizer](why-best-open-repo.md)** — the argument, with its corrections
+- **[Why this is the most rigorous open detector audit](why-best-open-repo.md)** — the argument, with its corrections
 - **[Training runbook](free-training-runbook.md)** — the GPU path (RL against the ensemble)
 
 ## License

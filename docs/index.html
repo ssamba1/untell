@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>untell — Free Open-Source AI Humanizer (Closed-Loop, Detector-Feedback) | Bypass GPTZero, ZeroGPT, Turnitin</title>
-<meta name="description" content="Free, open-source AI humanizer that closes the loop: iteratively rewrites AI-generated text against live AI-detector scores (GPTZero, ZeroGPT, Originality.ai, Turnitin, Copyleaks) while preserving your meaning, citations and facts. Claude Code skill + Python CLI. MIT.">
-<meta name="keywords" content="ai humanizer, free ai humanizer, humanize ai text, untell, bypass gptzero, bypass turnitin, bypass ai detection, zerogpt, originality.ai, undetectable ai, open source ai humanizer, claude code skill, detector feedback">
+<title>untell — AI-Detector Auditing Toolkit | False-Positive and Robustness Measurement</title>
+<meta name="description" content="Open-source toolkit for auditing AI detectors: measures how often a detector flags genuine human writing, how stable its verdict is across seeds, and whether that verdict survives meaning-preserving edits. Claude Code skill + Python CLI. MIT.">
+<meta name="keywords" content="ai detector evaluation, ai detection false positives, detector benchmark, detector robustness, gptzero, zerogpt, originality.ai, turnitin, ai detection research, claude code skill, reproducible research, unicode security">
 <link rel="canonical" href="https://ssamba1.github.io/untell/">
 <meta name="theme-color" content="#0d1117">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="untell — the open-source AI humanizer that closes the loop">
-<meta property="og:description" content="Iteratively rewrites AI text against live detector scores until it reads human — while keeping your meaning, citations and facts intact. Free, open source, honest. Live-proven 100%→0% on ZeroGPT.">
+<meta property="og:title" content="untell — an AI-detector auditing toolkit">
+<meta property="og:description" content="Measures what an AI detector's verdict is worth: false-positive rate on genuine human writing, stability across seeds, and whether the verdict survives meaning-preserving edits. Free, open source, and its headline result is a negative one.">
 <meta property="og:url" content="https://ssamba1.github.io/untell/">
 <meta property="og:image" content="https://ssamba1.github.io/untell/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="untell — the open-source AI humanizer that closes the loop">
+<meta name="twitter:title" content="untell — an AI-detector auditing toolkit">
 <meta name="twitter:description" content="Rewrites AI text against live detector scores while preserving meaning, citations & facts. Free, open source, honest. Live-proven 100%→0% on ZeroGPT.">
 <meta name="twitter:image" content="https://ssamba1.github.io/untell/og.png">
 
@@ -24,7 +24,7 @@
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "untell",
-  "description": "Open-source, closed-loop AI-text humanizer: iteratively rewrites text against a multi-detector ensemble using each detector's score as feedback, gated on semantic meaning preservation and citation locking. Packaged as a Claude Code skill and a Python CLI.",
+  "description": "Open-source AI-detector auditing toolkit: measures detector false-positive rates on human writing, verdict stability across seeds, and whether a verdict survives meaning-preserving editing. Uses a detector-in-the-loop harness gated on semantic meaning preservation and citation locking. Packaged as a Claude Code skill and a Python CLI.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Windows, macOS, Linux",
   "softwareVersion": "0.1.0",
@@ -41,12 +41,12 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "Is there a free AI humanizer that actually works?",
+      "name": "Can a free tool actually move a detector's verdict?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. The lite tier installs with zero dependencies and the browser path optimizes against the live ZeroGPT detector for $0 (measured 100% to 0% AI). No tool can honestly promise it passes every commercial detector forever; untell reports the real per-detector score instead of a fake '99% human' claim." }
     },
     {
       "@type": "Question",
-      "name": "Does untell bypass GPTZero, ZeroGPT, Turnitin and Originality.ai?",
+      "name": "Will this get past GPTZero, ZeroGPT, Turnitin or Originality.ai?",
       "acceptedAnswer": { "@type": "Answer", "text": "It optimizes and verifies against them. ZeroGPT is built into the free browser path and live-proven. GPTZero, Originality.ai, Turnitin-class, Copyleaks, Winston and Sapling are wired as key-gated commercial adapters; the loop drives the maximum score across every configured checker below threshold. Originality.ai is the hardest; untell does not claim to beat it without your API key to prove it." }
     },
     {
@@ -56,7 +56,7 @@
     },
     {
       "@type": "Question",
-      "name": "How is untell different from Undetectable.ai, QuillBot or WriteHuman?",
+      "name": "How is untell different from the closed-SaaS humanizers?",
       "acceptedAnswer": { "@type": "Answer", "text": "Those are closed SaaS that do a single blind pass and report a fake binary verdict. untell is open source, runs a closed detector-feedback loop, optimizes against multiple real detectors at once, gates on meaning preservation, and gives an honest, reproducible per-detector score you can audit and run yourself." }
     }
   ]
@@ -114,7 +114,7 @@
 </header>
 
 <main class="wrap">
-  <p>Most "AI humanizers" do <strong>one blind paraphrase pass</strong> and plateau at 60–80% detector bypass. This one runs a <strong>loop</strong>: it <em>scores</em> your text against an ensemble of real AI detectors, <em>rewrites</em> using each detector's score as feedback (targeting the exact sentences that read as AI), and <em>re-scores</em> — repeating until the hardest detector stops flagging it <strong>and</strong> a semantic-similarity gate confirms your meaning is unchanged. That detector-feedback approach is the strongest <em>training-free</em> technique in the published literature — and no shipping tool, open or commercial, actually ships it.</p>
+  <p>An AI detector gives you a number, and that number is increasingly used to make consequential accusations. This measures what it is worth. At each tool's own shipped threshold, measured here: the full local ensemble flags <strong>17% of genuine human writing</strong>; the lite tier flagged <strong>30%</strong> on conversational prose; one bundled detector flags <strong>6 of 8</strong> human documents and another flags <strong>89%</strong> of them. The rewrite loop is the instrument rather than the product — score, edit under a meaning gate, re-score — because a verdict that collapses under meaning-preserving editing was never measuring authorship. Its result is a negative one: the loop moves the detectors it optimises against and <strong>does not move a detector it has never seen</strong>.</p>
 
   <div class="proof">
     Measured live:&nbsp; a formulaic AI paragraph went &nbsp;<span class="r">100%</span> → <b>0% AI</b> on ZeroGPT&nbsp; in one loop.<br>
@@ -148,16 +148,16 @@ untell-verify --file draft.txt                    # honest pass/fail per detecto
     <tr><td>Real detectors in the loop</td><td class="y">✅</td><td class="n">❌</td><td class="n">❌</td><td class="n">❌</td></tr>
     <tr><td>Commercial adapters (6)</td><td class="y">✅</td><td class="n">❌</td><td class="n">❌</td><td class="n">❌</td></tr>
     <tr><td>Semantic meaning gate</td><td class="y">✅</td><td>claim</td><td>◑</td><td>◑</td></tr>
-    <tr><td>Live bypass proof</td><td class="y">✅</td><td class="n">❌</td><td class="n">❌</td><td class="n">❌</td></tr>
+    <tr><td>Live detector round-trip</td><td class="y">✅</td><td class="n">❌</td><td class="n">❌</td><td class="n">❌</td></tr>
     <tr><td>pip + Claude skill</td><td class="y">✅</td><td>pip</td><td>✅</td><td>web app</td></tr>
   </table>
   <p class="note">Stars are not capability — the highest-starred repos win on SEO, not architecture. Full evidenced breakdown (and the one place we're honestly not #1): <a href="https://github.com/ssamba1/untell/blob/main/docs/why-best-open-repo.md">docs/why-best-open-repo.md</a>.</p>
 
   <h2>FAQ</h2>
   <details><summary>Is there a free AI humanizer that actually works?</summary><p>Yes — the lite tier installs with zero dependencies and the <code>--browser zerogpt</code> path optimizes against a real detector for $0 (live-measured 100%→0%). No tool can honestly promise it passes every commercial detector forever; the ones claiming "99% human" are lying. untell reports the real per-detector score instead.</p></details>
-  <details><summary>Does it bypass GPTZero / ZeroGPT / Turnitin / Originality.ai?</summary><p>It optimizes and verifies against them. ZeroGPT is built into the free browser path and live-proven. GPTZero, Originality.ai, Turnitin-class, Copyleaks, Winston and Sapling are key-gated commercial adapters; the loop drives the max across every checker you configure. Originality.ai is the hardest — we don't claim to beat it without your key to prove it.</p></details>
+  <details><summary>Will this get past GPTZero / ZeroGPT / Turnitin / Originality.ai?</summary><p>Unknown, and that is the honest answer — it has never been measured against a commercial checker. What IS measured: the local proxies do not predict them, and the loop's gains do not transfer even to a FREE detector it was not optimised against (4 of 10 still flagged, every seed). Commercial adapters exist as key-gated <em>evaluation</em> targets so you can audit a detector you pay for; wiring one in tells you about that detector, not about a guarantee.</p></details>
   <details><summary>Will it ruin my meaning, citations or numbers?</summary><p>No. A semantic-similarity gate rejects meaning-drifting rewrites and preserve-lock freezes citations, numbers, quotes, URLs and entities byte-for-byte. Good for academic, legal and ESL writing.</p></details>
-  <details><summary>How is it different from Undetectable.ai / QuillBot / WriteHuman?</summary><p>Those are closed SaaS doing a single blind pass with a fake binary verdict. untell is open source, runs a closed detector-feedback loop, optimizes against multiple real detectors, gates on meaning, and gives an honest reproducible score you can audit.</p></details>
+  <details><summary>How is it different from the closed-SaaS humanizers?</summary><p>Different purpose. Those sell a binary "99% human" verdict you cannot inspect. This is a measurement harness: every number is reproducible, the corpus and n are stated, the false-positive rates on human writing are published, and the headline finding is a limitation rather than a claim.</p></details>
   <details><summary>Is this ethical?</summary><p>AI detectors are noisy proxies — they falsely flag non-native English writers at ~61% in some studies. untell is a research harness and a defense against false positives, not an academic-dishonesty aid.</p></details>
 
   <div style="text-align:center;margin:48px 0">
