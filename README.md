@@ -122,13 +122,34 @@ untell verify --file draft.txt                       # honest pass/fail per dete
 untell compare                                       # head-to-head vs free-humanizer techniques
 untell ceiling --rewriter composite --best-of 3 --repeats 3  # measure free evasion (with error bars)
 
+# Shipped and, until now, undocumented here (waves 6-7):
+untell humanize "text" --inspect                     # per-sentence: rewritten or not, and WHICH meaning gate rejected each draft
+untell humanize "text" --jsonl                       # one JSON object per paragraph, flushed as it completes (long documents)
+untell humanize "text" --html report.html            # self-contained report: locked spans marked, per-sentence scores, no network
+untell humanize "text" --manifest run.json           # sha256 in/out + seed + rewriter + an honest determinism class
+untell humanize "text" --timings                     # per-phase cost breakdown
+
 # (every subcommand is also a standalone `untell-<name>` script, e.g. `untell-loop`, `untell-tells`)
 ```
 
-> **How far does free actually go?** We measured it, then re-measured it twice when the first two
-> answers turned out to be wrong. The training-free, no-key loop drops the local open-detector
-> ensemble from **100% flagged to 0%** (mean max P(AI) **0.86 → 0.15 ± 0.04**, 27 loop runs), with
-> meaning held by an NLI gate plus a predicate-argument veto. An earlier draft of this line quoted a
+> **How far does free actually go?** Three numbers, because one of them alone would mislead you.
+>
+> | measured on | before | after | still flagged |
+> |---|---|---|---|
+> | built-in demo sample (3 paragraphs, ~36 words each) | 0.86 | **0.15 ± 0.04** | 100% → **0%** |
+> | real AI text (RAID, n=40, 3 repeats) | 0.629 | **0.287 ± 0.003** | 83% → **28%** |
+> | **a detector the loop never optimised against** (RADAR, n=10 × 3 seeds) | 0.722 | **0.44–0.50** | 70% → **40%, every seed** |
+>
+> The first row is the one most tools would print. It is the easiest corpus in the repository, and
+> this project's own measurement log says so. The third row is the one that matters: **the in-sample
+> flagged count moves freely (10/10 → 4, 2, 3 across seeds) and the held-out count does not move at
+> all (4/10 in every seed, every selection objective, every rewriter tried).** A second held-out
+> control flipped zero verdicts in 60 rewrites.
+>
+> So: the loop reliably moves the detectors it optimises against, and has **not been shown** to move
+> a detector it does not. That is the honest state of the art here, it is not the claim we set out to
+> make, and it is measured rather than assumed — see Results 163, 228 and 229. Meaning is held by an
+> NLI gate plus a predicate-argument veto. An earlier draft of this line quoted a
 > tighter figure from three repeats that did not replicate — see the note under the table. The
 > largest correction was the detector itself: the
 > one detector present at every tier was itself anti-correlated and saturating, so every previous
