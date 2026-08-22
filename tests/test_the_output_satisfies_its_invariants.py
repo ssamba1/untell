@@ -61,6 +61,21 @@ INVARIANTS = {
     "period next to a comma": lambda t: len(re.findall(r"\.\s*,|,\s*\.", t)),
     "sentinel left in the output": lambda t: len(re.findall(r"⟦|⟧|HZ\d{4}", t)),
     "space before punctuation added": lambda t: len(re.findall(r"\s[.,;:!?]", t)),
+    # An invisible character the loop ADDED. This tool ships `untell scrub` to remove these
+    # from a user's text, so emitting one is the sharpest contradiction available -- and it is
+    # invisible by construction, which is exactly the class a sweep catches and a reader does
+    # not. The consequence is measured elsewhere in this repository: substituting U+00A0 for
+    # the spaces in genuine HUMAN text took it from 5/10 to 9/10 flagged and hid 2 of 5 tells.
+    # A rewriter substitution table that picked up one non-breaking space or one soft hyphen
+    # would do that to every document silently.
+    #
+    # Counted against the source like every other row: text that arrives carrying invisibles
+    # keeps them (scrubbing the input is a different command), so this asks only what the
+    # rewriter introduced.
+    "invisible character added": lambda t: len(
+        re.findall(r"[\u00a0\u00ad\u200b-\u200f\u2028\u2029\u202a-\u202e"
+                   r"\u2060-\u2064\u2066-\u2069\ufeff]", t)
+    ),
 }
 
 
@@ -125,6 +140,9 @@ KNOWN_POSITIVES = {
     "period next to a comma": "The plan passed ., and the committee agreed.",
     "sentinel left in the output": "The plan ⟦HZ0000⟧ passed and the committee agreed.",
     "space before punctuation added": "The plan passed , and the committee agreed.",
+    # A zero-width space between two words. Renders identically to the clean control above,
+    # which is the point of the row.
+    "invisible character added": "The plan\u200b passed and the committee agreed.",
 }
 
 
