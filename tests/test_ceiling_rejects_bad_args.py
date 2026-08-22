@@ -8,11 +8,16 @@ exit 2 — the measurements engine must too, or a quoted number can be
 produced from a degenerate configuration.
 """
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PY = ROOT / ".venv" / "Scripts" / "python.exe"
-
+# `sys.executable` rather than a hard-coded `.venv/Scripts/python.exe`.
+# That path is Windows-only and lives inside one developer's checkout: on CI's
+# Linux runner it cannot exist, so `subprocess.run` raised FileNotFoundError and
+# this test FAILED rather than skipping. The interpreter already running the
+# suite is the one whose environment these tests mean to exercise.
+PY = sys.executable
 env = dict(__import__("os").environ)
 env["PYTHONPATH"] = ""
 env["UNTELL_LITE_NO_TORCH"] = "1"

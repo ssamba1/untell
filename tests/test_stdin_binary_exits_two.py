@@ -13,13 +13,18 @@ from __future__ import annotations
 import io
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from untell.scripts.io_utils import read_stdin_or_none
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT / ".venv" / "Scripts" / "python.exe"
-
+# `sys.executable` rather than a hard-coded `.venv/Scripts/python.exe`.
+# That path is Windows-only and lives inside one developer's checkout: on CI's
+# Linux runner it cannot exist, so `subprocess.run` raised FileNotFoundError and
+# this test FAILED rather than skipping. The interpreter already running the
+# suite is the one whose environment these tests mean to exercise.
+PYTHON = sys.executable
 NUL_PAYLOADS = [
     b"\x00\x01\x02\xff",
     b"hello\x00world",

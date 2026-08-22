@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -285,7 +286,12 @@ class TestCliPrintingSurvivesSurrogates:
 
     def test_scrub_subprocess_surrogate_argv_does_not_traceback(self):
         repo = Path(__file__).resolve().parents[1]
-        py = repo / ".venv" / "Scripts" / "python.exe"
+        # `sys.executable` rather than a hard-coded `.venv/Scripts/python.exe`.
+        # That path is Windows-only and lives inside one developer's checkout: on CI's
+        # Linux runner it cannot exist, so `subprocess.run` raised FileNotFoundError and
+        # this test FAILED rather than skipping. The interpreter already running the
+        # suite is the one whose environment these tests mean to exercise.
+        py = sys.executable
         env = {"PYTHONPATH": "", "PYTHONUTF8": "1"}
         # a lone surrogate in the text position; scrub prints it back
         proc = subprocess.run(
@@ -298,7 +304,12 @@ class TestCliPrintingSurvivesSurrogates:
 
     def test_argparse_surrogate_argv_does_not_traceback(self):
         repo = Path(__file__).resolve().parents[1]
-        py = repo / ".venv" / "Scripts" / "python.exe"
+        # `sys.executable` rather than a hard-coded `.venv/Scripts/python.exe`.
+        # That path is Windows-only and lives inside one developer's checkout: on CI's
+        # Linux runner it cannot exist, so `subprocess.run` raised FileNotFoundError and
+        # this test FAILED rather than skipping. The interpreter already running the
+        # suite is the one whose environment these tests mean to exercise.
+        py = sys.executable
         env = {"PYTHONPATH": "", "PYTHONUTF8": "1"}
         # an invalid --tier value containing a surrogate: argparse prints the value
         # into its error message, which crashed on HEAD. (No NUL here — Windows

@@ -6,11 +6,16 @@ raised an uncaught UnicodeDecodeError from sys.stdin.read(). The contract
 is an input class that must take the same path, not leak a traceback.
 """
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT / ".venv" / "Scripts" / "python.exe"
-
+# `sys.executable` rather than a hard-coded `.venv/Scripts/python.exe`.
+# That path is Windows-only and lives inside one developer's checkout: on CI's
+# Linux runner it cannot exist, so `subprocess.run` raised FileNotFoundError and
+# this test FAILED rather than skipping. The interpreter already running the
+# suite is the one whose environment these tests mean to exercise.
+PYTHON = sys.executable
 BINARY_INPUTS = [
     b"\x00\x01\x02\xff",        # null bytes + invalid utf-8
     b"\xff\xfe\xfd\xfc",        # pure invalid
