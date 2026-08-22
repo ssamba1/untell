@@ -279,6 +279,19 @@ def _segments(text: str):
         if not buffer and (line.startswith("    ") or line.startswith("\t")):
             yield ("layout", "", line)
             continue
+        # A list-item marker must be extracted BEFORE the hard-break check fires. A list item
+        # whose body ends in two trailing spaces — "- item  " — is a hard break, but the marker
+        # "- " still needs to be separated from the body "item  " so the transform receives only
+        # the body. Without this ordering, the hard-break branch catches "- item  " first, yields
+        # ("prose", "", "- item  "), and `_walk` passes "- item" to the transform — the bullet is
+        # inside the transform's input, inconsistent with how every other list item is handled.
+        # MEASURED before the fix: apply_per_block("- item  \n- normal", upper) produced
+        # "[- ITEM]  \n- [NORMAL]" — the bullet was capitalised for the hard-break item.
+        marker = _LINE_MARKER_RE.match(line)
+        if marker:
+            yield from flush()
+            yield ("prose", marker.group(1), marker.group(2))
+            continue
         # A markdown HARD BREAK — two or more trailing spaces — is not a soft wrap. It is the
         # author saying "render a line break here", and gathering it into the surrounding block
         # lets a sentence-level transform merge straight across it. MEASURED: two lines joined by a
@@ -312,11 +325,6 @@ def _segments(text: str):
         # Same trade as the hard-break branch above, for the same reason: the block ends, so the
         # transform sees less context, and honouring a boundary the author put there beats
         # optimising across it.
-        marker = _LINE_MARKER_RE.match(line)
-        if marker:
-            yield from flush()
-            yield ("prose", marker.group(1), marker.group(2))
-            continue
         # AFTER the marker branch, deliberately. A list item ends in a full stop as often as a
         # paragraph does, so testing this first swallowed "- Furthermore, it is robust." into the
         # prose buffer with its bullet attached — `blocks()` strips the marker and `apply_per_block`
