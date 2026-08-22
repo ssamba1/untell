@@ -686,9 +686,14 @@ def untell_text(
 ) -> dict:
     """Run the closed loop on ``text``; return a structured result dict.
 
-    Keys: ``final`` (humanized text, spans restored), ``iterations``, ``pre``/``post`` score dicts,
-    ``similarity``, ``tier``, ``rewriter`` (which backend actually ran), ``sim_bar``, ``flagged``
-    (final), and ``stopped`` (why it stopped).
+    Full key list in ``docs/result-shapes.md`` (``untell_text`` row). Always present: ``final``
+    (humanized text, spans restored), ``iterations``, ``pre``/``post`` score dicts, ``similarity``,
+    ``tier``, ``rewriter`` (which backend actually ran), ``sim_bar``, ``flagged`` (final),
+    ``stopped`` (why it stopped), ``meaning_gate`` (which NLI path was active), ``seed``,
+    ``rewrites``, ``changed``, ``adopted``, ``quality_metric``.
+    Conditional: ``tells_before``/``tells_after`` (omitted if the tell counter raises),
+    ``warning`` (only when a caveat applies), ``inspect`` (only when inspect=True),
+    ``timings`` (only when timings=True).
     If no rewriter is available, returns ``{"error": ...}`` without rewriting the text. ``final`` on
     that path is still scrubbed when ``scrub=True`` (the default): the caller asked for hidden
     characters removed, and that request is independent of whether a rewriter turned up.
