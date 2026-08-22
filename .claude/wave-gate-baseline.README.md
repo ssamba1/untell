@@ -44,3 +44,25 @@ NOT because they are acceptable.
 
 **The baseline shrinking is the metric.** A baseline that only ever grows is a list of things this
 project decided to stop seeing.
+
+
+## 2026-08-22 — shrunk from 24 to 17
+
+The gate reports tests that STOPPED failing, not just new ones, and that half of its output is the
+half that rots. Seven entries had been fixed by this wave and were still listed:
+
+    test_audit_next_contract ... test_recording_an_identical_row_is_refused   (1a7b7ae)
+    test_console_script_list_matches_pyproject ... x2
+    test_docs_claims ... x2
+    test_features ... test_loop_scrubs_hidden_chars
+    test_surface_parity ... [humanize]                                        (0c4ec5a)
+
+A baseline entry is a licence to fail. Leaving a fixed test in it means the gate would absorb a
+RE-break of that exact test in silence -- which is the same defect the gate was built to fix, one
+level up: the first version of this gate reported 24 failures on a good commit and cried wolf, and
+a stale baseline is the mirror image, crying nothing when it should.
+
+Removed, so those seven are now load-bearing again.
+
+Not removed and still genuine: the `mage` pair, `audit_next_contract`'s other entries, and the
+environment artifacts documented above.
