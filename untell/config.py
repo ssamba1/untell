@@ -37,6 +37,7 @@ a lookup order it only partly participates in reads exactly like a finished feat
 from __future__ import annotations
 
 import logging
+import math
 import os
 from pathlib import Path
 from typing import Any
@@ -174,13 +175,27 @@ def _coerce(value: str, default: Any, key: str = "") -> Any:
         return value.strip().lower() in ("1", "true", "yes", "on")
     for caster in ((int,) if isinstance(default, int) else (float,) if isinstance(default, float) else ()):
         try:
-            return caster(value)
+            result = caster(value)
         except ValueError:
             logger.warning(
                 "ignoring UNTELL_%s=%r: expected %s, using the default %r instead.",
                 (key or "?").upper(), value, caster.__name__, default,
             )
             return default
+        # `float("nan")` and `float("inf")` succeed — no ValueError — so the branch above
+        # never fires for them. But a threshold of `nan` makes every comparison return False
+        # (detection disabled) and `inf` makes the threshold unreachable (same effect). Both
+        # are as harmful as a non-parseable value, and both must say so.
+        # `float("1e309")` returns `inf` in CPython (overflow to infinity, not an exception),
+        # so this also catches `UNTELL_THRESHOLD=1e999` and similar out-of-range exponents.
+        if isinstance(result, float) and not math.isfinite(result):
+            logger.warning(
+                "ignoring UNTELL_%s=%r: expected a finite number, got %s, "
+                "using the default %r instead.",
+                (key or "?").upper(), value, result, default,
+            )
+            return default
+        return result
     return value
 
 

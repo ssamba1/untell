@@ -276,3 +276,50 @@ def test_a_passed_default_still_wins_the_type(tmp_path, monkeypatch):
     monkeypatch.setenv("UNTELL_THRESHOLD", "0.42")
     assert config.get("threshold", 0.30) == pytest.approx(0.42)
     assert isinstance(config.get("threshold", 0.30), float)
+
+
+# --- non-finite float env vars must not silently corrupt the config ---------------------------
+# `float("nan")` and `float("inf")` succeed in Python without raising ValueError, so the
+# ValueError branch in `_coerce` never fired for them.
+#
+#   UNTELL_THRESHOLD=nan  -> _coerce returned nan  -> score >= nan is always False -> nothing flags
+#   UNTELL_THRESHOLD=inf  -> _coerce returned inf  -> threshold unreachable       -> nothing flags
+#   UNTELL_THRESHOLD=1e999 -> float("1e999") == inf (CPython overflow)            -> same as inf
+#
+# All three are as harmful as a non-parseable value ("abc" -> default + warning), but were
+# silently passed through. Now they also warn and fall back to the default, matching the
+# documented contract: "A value that will not convert falls back to the default AND SAYS SO."
+
+import math as _math
+
+
+@pytest.mark.parametrize("bad_value", ["nan", "inf", "-inf", "1e999"])
+def test_non_finite_float_env_var_falls_back_to_default(monkeypatch, caplog, bad_value):
+    """A non-finite string that float() accepts must not silently bypass the default."""
+    import logging
+
+    from untell import config
+
+    monkeypatch.setenv("UNTELL_THRESHOLD", bad_value)
+    with caplog.at_level(logging.WARNING, logger="untell.config"):
+        result = config.get("threshold", 0.30)
+
+    assert _math.isfinite(result), (
+        f"UNTELL_THRESHOLD={bad_value!r} produced a non-finite threshold {result!r}; "
+        "detection would be silently disabled"
+    )
+    assert result == pytest.approx(0.30), f"expected fallback to default 0.30, got {result!r}"
+    assert caplog.text, f"UNTELL_THRESHOLD={bad_value!r} was silently accepted — no warning logged"
+
+
+def test_finite_float_env_var_is_still_accepted(monkeypatch, caplog):
+    """The fix must not break ordinary float values."""
+    import logging
+
+    from untell import config
+
+    monkeypatch.setenv("UNTELL_THRESHOLD", "0.55")
+    with caplog.at_level(logging.WARNING, logger="untell.config"):
+        result = config.get("threshold", 0.30)
+    assert result == pytest.approx(0.55)
+    assert caplog.text == "", "a valid float should produce no warning"
