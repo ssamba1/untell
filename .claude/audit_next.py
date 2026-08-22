@@ -229,6 +229,7 @@ def cmd_next(offset: int = 0) -> int:
 def cmd_record(a: argparse.Namespace) -> int:
     history = rows()
     n, lane, target = assign(history, a.offset)
+    n_assigned = n  # remember the original assignment for the duplicate-content check below
     lane, target = a.lane or lane, a.target or target
 
     # Pass-number collision guard (slice 19, issue #16): re-read the live log to
@@ -260,15 +261,22 @@ def cmd_record(a: argparse.Namespace) -> int:
     if len(note) < 20:
         sys.exit("REFUSED: --note must actually say what was probed and what the numbers were.")
 
-    row = (
-        f"| {n} | {lane} | {target} | {a.verdict} | {a.tests_before} | {a.tests_after} "
-        f"| {a.commit or '-'} | {note} |\n"
-    )
-
     # Issue #16's named defect class: a byte-identical row is the same pass recorded
     # twice, and it must not be recorded again no matter how it is being written - the
     # direct path here, or a worker row the collector will later move into the log.
-    if byte_identical(row):
+    # Also check with the ORIGINAL assigned n: when the collision guard stepped us to a
+    # fresh number, the current row is not byte-identical to what is already in the log
+    # (different n), but the row we WOULD have written with the original n might be - which
+    # means a stale worker is trying to re-record work that is already there. Letting it
+    # through would create a logical duplicate with a different pass number.
+    def _row_text(pass_n: int) -> str:
+        return (
+            f"| {pass_n} | {lane} | {target} | {a.verdict} | {a.tests_before} | {a.tests_after} "
+            f"| {a.commit or '-'} | {note} |\n"
+        )
+
+    row = _row_text(n)
+    if byte_identical(row) or (n != n_assigned and byte_identical(_row_text(n_assigned))):
         sys.exit(
             "REFUSED: this exact row is already in the audit log (byte-identical "
             "duplicate). A pass is recorded once - change the note or the pass number."
