@@ -448,6 +448,13 @@ class HumanizeRequest(_Request):
     # result. Sent as an int it fixes the stream, which is what makes two requests that differ by
     # one field comparable — otherwise the difference between them includes the draw.
     seed: _Seed | None = None
+    # Per-candidate rejection log (issue #33). When True, result["inspect"] carries a list of
+    # dicts describing for each sentence whether it was rewritten or left alone, which AI tells
+    # fired, and — for every candidate the loop rejected — which gate fired and why. Zero
+    # overhead when False (the default). The CLI exposes this as --inspect and renders it on
+    # stderr; over HTTP the log rides inside the response JSON, where a REST caller can consume
+    # it programmatically. The same library knob exists here, so the surfaces are symmetric.
+    inspect: bool = False
 
 
 class TellsRequest(_Request):
@@ -706,6 +713,24 @@ _SCORE_RESPONSES = _obj(
         },
         "flagged": _BOOL,
         "warning": {**_STR, "description": "present only when the effective tier was downgraded"},
+        # score.py clamps any detector value outside [0, 1] and records the raw value separately,
+        # so the clamped numeric makes it into `detectors` while the original is still visible.
+        # Both fields were in CONDITIONAL (the test allowlist for fields absent on a normal call)
+        # but absent from the schema itself — a client generated from /openapi.json had no entry
+        # for them and could not act on the diagnostic. MEASURED: a 0-100-scale commercial API
+        # adapter was returning 85.0; `out_of_range_raw` was the only path to that information.
+        "out_of_range_detectors": {
+            "type": "array", "items": _STR,
+            "description": "present only when a detector returned a value outside [0,1]: "
+                           "the names of those detectors, whose scores were clamped to the "
+                           "nearest boundary before appearing in `detectors`",
+        },
+        "out_of_range_raw": {
+            "type": "object", "additionalProperties": _NUM,
+            "description": "present only when a detector returned a value outside [0,1]: "
+                           "name -> the raw (unclamped) value. The clamped score appears in "
+                           "`detectors`; this records how far off the adapter was",
+        },
     },
     required=["tier", "detectors", "max", "ai_percent", "flagged"],
 )
@@ -895,6 +920,17 @@ _HUMANIZE_RESPONSES = _obj(
                            "that means no hosted or local-policy backend was configured and the "
                            "free 'composite' path ran instead",
         },
+        # run.py emits this when the loop exhausts max_iters still flagged at the full tier with a
+        # rule-based rewriter (surgical, structural, composite, targeted). It was in CONDITIONAL —
+        # the test allowlist for fields that may be absent on a normal call — but completely absent
+        # from _HUMANIZE_RESPONSES.properties. MEASURED: a CLI caller sees it above the output;
+        # a REST or MCP caller had no schema entry and could not discover it from /openapi.json.
+        "suggestion": {
+            **_STR,
+            "description": "present when the loop exhausted max_iters and the text is still "
+                           "flagged at full tier with a rule-based rewriter. Suggests trying a "
+                           "stronger technique (e.g. neural) and explains the trade-offs",
+        },
     },
     required=["final", "changed", "pre", "post", "flagged"],
 )
@@ -1079,6 +1115,7 @@ async def humanize(body: HumanizeRequest) -> JSONResponse:
         detector_thresholds=body.detector_thresholds,
         voice_sample=body.voice_sample,
         seed=body.seed,
+        inspect=body.inspect,
     )
     return _safe(_numeric_detectors(result))
 

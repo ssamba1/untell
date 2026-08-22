@@ -30,7 +30,11 @@ import argparse
 import untell.api_server as api  # noqa: E402
 
 # CLI-only spellings: input plumbing and output formatting, not parameters of the operation.
-_CLI_ONLY = {"file", "json", "quiet", "max_rounds", "help", "text"}
+_CLI_ONLY = {"file", "json", "jsonl", "quiet", "max_rounds", "help", "text"}
+# `jsonl` is the streaming variant of `--json`: it splits the input into paragraphs and emits
+# one JSON object per paragraph to stdout as it completes. REST already returns JSON in one
+# response; MCP tools already return a dict. There is no streaming contract to mirror — the
+# same category as `--json` itself, which was already here.
 
 
 def _mcp_tools() -> dict:

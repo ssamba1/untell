@@ -248,6 +248,12 @@ def _server():
         # global threshold. An MCP client could ask for neither.
         confirm: int = 0,
         detector_thresholds: dict[str, float] | None = None,
+        # Per-candidate rejection log (issue #33). When True, result["inspect"] carries a list
+        # of dicts describing for each sentence whether it was rewritten, which AI tells fired,
+        # and which gate rejected each candidate. Zero overhead when False (the default). The
+        # CLI exposes this as --inspect and renders it on stderr; over MCP the log rides in the
+        # returned dict, where a programmatic caller can consume it. Same library knob as REST.
+        inspect: bool = False,
     ) -> dict:
         """Run the closed untell loop: score -> rewrite -> re-score until the hardest
         detector passes or max_iters is hit. Needs an LLM rewriter key, or pass
@@ -299,6 +305,30 @@ def _server():
         if bad:
             return bad
 
+        # `detector_thresholds` values must be probabilities in [0, 1], for the same reason the
+        # global `threshold` must be. A value above 1 can never be reached by a detector score
+        # (all scores are P(AI) in [0, 1]), so {"hc3_roberta": 50} silently makes the hc3_roberta
+        # gate unreachable — the text always passes for that detector even at score=1.0. The
+        # global `threshold` is already refused above via `_bad_args`; per-detector overrides were
+        # the one path that bypassed the same check. MEASURED: a caller who set threshold=0.5 and
+        # detector_thresholds={"hc3_roberta": 50.0} got a 200 response where hc3_roberta never
+        # contributed to the flagged verdict, silently.
+        if detector_thresholds:
+            for _dt_name, _dt_val in detector_thresholds.items():
+                try:
+                    _dt_f = float(_dt_val)
+                except (TypeError, ValueError):
+                    return {
+                        "error": f"detector_thresholds[{_dt_name!r}]={_dt_val!r} is not a number; "
+                                 "expected a probability in [0, 1]."
+                    }
+                if not (0.0 <= _dt_f <= 1.0):
+                    return {
+                        "error": f"detector_thresholds[{_dt_name!r}]={_dt_val!r} is outside [0, 1]. "
+                                 "Detector scores are probabilities; a value above 1 can never be "
+                                 "reached, so this per-detector gate would never fire."
+                    }
+
         # An unknown style is looked up in the STYLES dict, missed, and silently ignored — so a
         # caller asked for a voice and got a rewrite with no style applied and nothing saying so.
         # `untell humanize --style` rejects the same input at parse time (argparse `choices`), and
@@ -347,6 +377,7 @@ def _server():
             seed=seed,
             confirm=confirm,
             detector_thresholds=detector_thresholds,
+            inspect=inspect,
         ))
         # untell_text answers an unknown/unavailable rewriter with {"error": ..., "final":
         # <original UNCHANGED>, "seed": ...} (run.py returns that dict before the loop runs).
