@@ -66,3 +66,24 @@ Removed, so those seven are now load-bearing again.
 
 Not removed and still genuine: the `mage` pair, `audit_next_contract`'s other entries, and the
 environment artifacts documented above.
+
+
+## 2026-08-22 (later) — shrunk from 17 to 14, on gate evidence rather than a local run
+
+Three more entries stopped failing, each traceable to a specific commit:
+
+    test_every_audit_check_can_fail::test_test_inventory      23b0817
+    test_every_audit_check_can_fail::test_test_count_claims   23b0817
+    test_loop_phase_timings::test_the_cli_flag_prints_...     61fe3ca
+
+The evidence matters more than the number. Thirteen of the seventeen entries pass in the MAIN tree,
+which tempted a shrink -- and would have been wrong, because the gate runs a clean checkout where
+most of them still fail. The authoritative list came from the gate's own run, and only three of the
+thirteen were genuinely fixed.
+
+That run's set arithmetic was itself broken (a CRLF baseline; see c8871fb), so the diff above was
+recomputed from its FAILURE LIST, which was valid -- only the comparison against the baseline was
+not. Worth separating: a broken comparison does not invalidate the measurement it was comparing.
+
+The two genuinely new failures that run surfaced are fixed: 68d240f (a numerals regression this
+session introduced) and 8327f67 (`--fix-counts` writing a full-tier count its own guard rejects).
