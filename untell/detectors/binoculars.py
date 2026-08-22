@@ -11,9 +11,12 @@ listing detectors never pulls 14B params.
 
 from __future__ import annotations
 
+import logging
 import math
 
 from .base import clamp01, windowed_max
+
+logger = logging.getLogger(__name__)
 
 _OBSERVER = "tiiuae/falcon-7b"
 _PERFORMER = "tiiuae/falcon-7b-instruct"
@@ -29,6 +32,8 @@ class BinocularsDetector:
     _observer = None
     _performer = None
     _tokenizer = None
+    _dead = False   # set once _load() fails so we never re-attempt the 14 GB download per call
+    _warned = False
 
     def available(self) -> bool:
         try:
@@ -64,10 +69,24 @@ class BinocularsDetector:
     def score(self, text: str) -> float | None:
         # None == "no signal" (empty / too short / unavailable): excluded from the aggregate
         # rather than folded in as a fake neutral 0.5.
+        if BinocularsDetector._dead:
+            return None
         if not self.available() or not text.strip():
             return None
 
-        tok, observer, performer = self._load()
+        try:
+            tok, observer, performer = self._load()
+        except Exception as exc:
+            BinocularsDetector._dead = True
+            if not BinocularsDetector._warned:
+                logger.warning(
+                    "binoculars failed to load and was EXCLUDED from the ensemble "
+                    "(%s: %s). Check CUDA availability and the HuggingFace cache.",
+                    type(exc).__name__, str(exc)[:140],
+                )
+                BinocularsDetector._warned = True
+            raise
+
         device = next(observer.parameters()).device
         # Windowed, like every other supervised adapter. `truncation=True, max_length=512` reads
         # roughly the first 380 words and silently discards the rest, so a document with a long
