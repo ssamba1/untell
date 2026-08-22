@@ -281,10 +281,38 @@ def _strip_mark_stacks(text: str, keep: int = _MAX_MARK_STACK) -> str:
     return "".join(out)
 
 
+# The two OVERRIDE controls, kept separate from the rest of the bidi set because they are the only
+# ones with no layout job to protect.
+#
+# Legitimate bidirectional text is laid out with EMBEDDINGS (U+202A/202B), ISOLATES (U+2066-2068) and
+# MARKS (U+200E/200F) — all of which respect the intrinsic direction of the characters they contain.
+# An OVERRIDE does the opposite: it forces direction regardless of what the characters are, which is
+# exactly the property that makes displayed text differ from byte order. That is the Trojan Source
+# vector (CVE-2021-42574), and it is why these two are stripped even when the document is genuinely
+# right-to-left.
+_BIDI_OVERRIDES = re.compile("[‭‮]")
+
+
 def _strip_orphan_bidi(text: str) -> str:
-    """Drop bidi format controls unless the text actually contains a right-to-left script."""
+    """Drop bidi format controls unless the text actually contains a right-to-left script.
+
+    The RTL guard exists because a control sitting in genuinely bidirectional text may be doing real
+    layout work, and stripping it would corrupt the document — the same rule this module applies to
+    orphan ZWJ, scripted marks and emoji tag sequences.
+
+    MEASURED DEFECT (issue #48): that guard fires on the presence of ANY right-to-left codepoint
+    anywhere in the text, so a single Arabic letter protected every bidi control in an otherwise
+    Latin document — including RLO. `scrub_hidden` returned the text unchanged and `count_hidden`
+    reported 0, telling the caller a document carrying an override was clean:
+
+        text = "Access GRANTED " + chr(0x202E) + "DENIED " + chr(0x0645)
+
+    Overrides are now removed FIRST and unconditionally, before the guard is consulted. The guard
+    still protects embeddings, isolates and marks in real RTL text, which is what it was for.
+    """
+    text = _BIDI_OVERRIDES.sub("", text)
     if _RTL_CHARS.search(text):
-        return text  # real RTL content — the controls may be doing layout work, leave them alone
+        return text  # real RTL content — the remaining controls may be doing layout work
     return _BIDI_CONTROLS.sub("", text)
 
 

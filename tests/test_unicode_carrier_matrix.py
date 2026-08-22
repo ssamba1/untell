@@ -196,71 +196,72 @@ class TestLoneSurrogateHandling:
 # ---------------------------------------------------------------------------
 
 class TestBidiCarrierSmuggling:
-    """A single RTL character causes _strip_orphan_bidi to preserve ALL bidi controls.
+    """Bidi OVERRIDES are stripped unconditionally; embeddings and isolates are not (issue #48).
 
-    MEASURED: 'Access GRANTED \\u202eDENIED \\u0645' — the Arabic 'م' (U+0645) at the
-    end makes _strip_orphan_bidi see RTL content and return the text unchanged, so the
-    RLO (U+202E) survives and count_hidden reports 0 (text is told clean).
+    The original defect: `_strip_orphan_bidi` returned the text untouched whenever ANY right-to-left
+    codepoint appeared anywhere in it, so appending one Arabic letter smuggled an RLO through an
+    otherwise-Latin document. `scrub_hidden` changed nothing and `count_hidden` reported 0 — the
+    caller was told a document carrying a Trojan Source override was clean.
 
-    This is the Trojan Source vector: the text READS one way and IS another. An
-    attacker who controls input text can smuggle an RLO through the scrubber by appending
-    one Arabic character, making the terminal display differ from the byte sequence.
+    The fix splits the bidi set on what the controls DO. Embeddings (U+202A/202B), isolates
+    (U+2066-2068) and marks (U+200E/200F) respect the intrinsic direction of the characters they
+    contain, so in genuine bidirectional text they may be doing real layout work and the RTL guard
+    still protects them. OVERRIDES (U+202D/202E) force direction regardless of content, which is
+    precisely the property that makes rendered text differ from byte order — they have no layout job
+    worth protecting, and they go first and unconditionally.
 
-    FILED as a GitHub issue (search: "bidi carrier smuggling via single RTL character").
-    The scrubber's contract — keep bidi controls that may be doing RTL layout work — is
-    correct for genuine mixed-script documents. The weakness is that "any RTL character"
-    is a coarser test than "bidi controls adjacent to RTL content". Fixing this requires
-    a full Unicode bidi algorithm, which is out of scope for this slice.
-
-    These tests PIN the current behaviour so any change to the bidi path is a conscious
-    decision, not an accidental regression.
+    These tests now assert the STRONGER guarantee the previous version of this class predicted:
+    "if this assertion ever fails, the security posture improved and the test should be updated".
     """
 
-    RLO = "‮"          # RIGHT-TO-LEFT OVERRIDE — the Trojan Source character
-    ARABIC_M = "م"     # Arabic letter meem — one real RTL character
+    RLO = "‮"        # RIGHT-TO-LEFT OVERRIDE — the Trojan Source character
+    LRO = "‭"        # LEFT-TO-RIGHT OVERRIDE — same class, opposite direction
+    RLE = "‫"        # RIGHT-TO-LEFT EMBEDDING — legitimate layout, must survive real RTL
+    ARABIC_M = "م"   # Arabic letter meem — one real RTL character
 
     def test_rlo_in_pure_latin_is_stripped(self):
-        """Baseline: no RTL content → RLO is always removed."""
+        """Baseline: no RTL content -> RLO is removed."""
         text = "Access GRANTED " + self.RLO + "DENIED"
         assert self.RLO not in scrub_hidden(text)
         assert count_hidden(text) == 1
 
-    def test_rlo_survives_when_single_rtl_char_present(self):
-        """KNOWN LIMITATION: one Arabic character causes RLO to survive in Latin text.
-
-        This is the smuggling attack. The test pins the behaviour so it cannot change
-        silently. If this assertion ever fails (RLO is correctly stripped even with a
-        stray Arabic char), the security posture improved and the test should be updated
-        to reflect the stronger guarantee.
-        """
+    def test_rlo_is_stripped_even_with_a_stray_rtl_char(self):
+        """THE FIX. One Arabic character no longer buys an override safe passage."""
         text = "Access GRANTED " + self.RLO + "DENIED " + self.ARABIC_M
-        scrubbed = scrub_hidden(text)
-        # RLO survives because _strip_orphan_bidi sees the Arabic char and preserves all controls.
-        assert self.RLO in scrubbed, (
-            "RLO was stripped even with a stray Arabic char present — the smuggling path "
-            "is no longer exploitable (update this test to document the stronger guarantee)"
-        )
-        # count_hidden reports 0 because nothing was changed.
-        assert count_hidden(text) == 0, (
-            "count_hidden should report 0 when the scrubber makes no change "
-            "(the text was told clean even though it contains RLO)"
-        )
+        assert self.RLO not in scrub_hidden(text), "the smuggling path is open again"
+        assert count_hidden(text) == 1, "an override was removed but not counted"
 
-    def test_rlo_in_genuine_arabic_document_is_preserved(self):
-        """In real Arabic text bidi controls are load-bearing and must survive."""
-        arabic_text = "مرحبا " + self.RLO + " عالم"
-        scrubbed = scrub_hidden(arabic_text)
-        assert self.RLO in scrubbed, "RLO stripped from genuine Arabic text (over-scrub)"
+    def test_lro_is_stripped_on_the_same_terms(self):
+        """The other override. Fixing only the one in the report would be fixing the example."""
+        text = "Access GRANTED " + self.LRO + "DENIED " + self.ARABIC_M
+        assert self.LRO not in scrub_hidden(text)
+        assert count_hidden(text) == 1
 
-    def test_bidi_smuggling_in_lock_restore(self):
-        """The smuggled RLO also survives lock() / restore() because scrub_hidden says clean."""
+    def test_an_override_inside_genuine_arabic_is_still_stripped(self):
+        """Deliberate, and the one real cost of this fix.
+
+        An override in real Arabic prose is removed too. That is the trade the fix makes: an
+        override cannot be distinguished from an attack by context, and it is not how Arabic is
+        laid out — embeddings and isolates are, and those survive (see the next test).
+        """
+        arabic = "مرحبا " + self.RLO + " عالم"
+        assert self.RLO not in scrub_hidden(arabic)
+
+    def test_embeddings_in_genuine_rtl_text_are_preserved(self):
+        """The guard still does its original job: real layout controls survive real RTL text."""
+        arabic = "مرحبا " + self.RLE + " عالم"
+        assert self.RLE in scrub_hidden(arabic), "over-scrubbed a load-bearing embedding"
+
+    def test_an_orphan_embedding_in_latin_is_still_stripped(self):
+        """And the guard is not disabled: an embedding with no RTL to act on is still an orphan."""
+        text = "Latin only " + self.RLE + "more latin"
+        assert self.RLE not in scrub_hidden(text)
+
+    def test_an_override_cannot_ride_through_lock_restore(self):
+        """The round-trip was the delivery mechanism: scrub said clean, so lock/restore carried it."""
         text = "The result was APPROVED " + self.RLO + "REJECTED " + self.ARABIC_M
-        masked, mapping = lock(text)
-        restored = restore(masked, mapping)
-        # The RLO rides through the round-trip intact.
-        assert self.RLO in restored, (
-            "RLO disappeared from lock/restore — unexpected, scrub was not called"
-        )
+        masked, mapping = lock(scrub_hidden(text))
+        assert self.RLO not in restore(masked, mapping)
 
 
 # ---------------------------------------------------------------------------
