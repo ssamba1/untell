@@ -72,11 +72,42 @@ def assert_fails(name: str, note: str) -> None:
     assert report.failures, f"{name} passed after {note}: {[f.name for f in report.findings]}"
 
 
+def assert_drifts(name: str, note: str) -> None:
+    """Assert a check reported COUNT DRIFT, which is deliberately not a failure.
+
+    `2a64a7b` reclassified a stale published count from a structural failure to a DRIFT:
+    `Report.drift` appends to `findings` and `count_drifts` but NOT to `failures`, because a
+    number that has fallen behind the suite is a repair job (`untell-audit --fix-counts`) and
+    not a broken invariant.
+
+    That was the right call and it silently disarmed this file for the two count checks:
+    `assert_fails` reads `failures`, so both mutations stopped proving anything, and the file
+    whose entire purpose is 'every audit check CAN report a problem' stopped covering two of
+    them. Asserting on the channel the check actually writes to restores that.
+    """
+    report = run_check(name)
+    assert report.count_drifts, (
+        f"{name} reported no drift after {note}: {[f.name for f in report.findings]}"
+    )
+    assert not report.failures, (
+        f"{name} reported a FAILURE for a count drift, which 2a64a7b made non-fatal: "
+        f"{[f.name for f in report.failures]}"
+    )
+
+
 def assert_passes(name: str) -> None:
     """Guards the guard for every case below. If a check failed on the UNMUTATED copy, the
-    corresponding mutation test would pass without the mutation doing anything."""
+    corresponding mutation test would pass without the mutation doing anything.
+
+    Drift counts here too: a check already drifting before the mutation would make
+    `assert_drifts` below vacuous in exactly the same way.
+    """
     report = run_check(name)
     assert not report.failures, [f"{f.name}: {f.detail}" for f in report.failures]
+    assert not report.count_drifts, (
+        "already drifting before the mutation: "
+        + str([f"{f.name}: {f.detail}" for f in report.count_drifts])
+    )
 
 
 def mutate(path: Path, edit) -> None:
@@ -180,7 +211,9 @@ def test_test_inventory(repo) -> None:
         # attempt matching "N test modules" changed nothing — `\s+` in the real pattern spans the
         # optional word and a line break, and a literal space does not.
         mutate(victim, lambda t: re.sub(r"\d+(\s+test)?\s+modules\b", "3 modules", t, count=1))
-        assert_fails("check_test_inventory", "claiming 3 test modules")
+        # DRIFT, not failure -- see `assert_drifts`. This assertion used to read `assert_fails`
+        # and stopped proving anything the day count drift became non-fatal.
+        assert_drifts("check_test_inventory", "claiming 3 test modules")
     finally:
         _restore(victim, original)
 
@@ -195,7 +228,7 @@ def test_test_count_claims(repo) -> None:
         victim.write_text(
             victim.read_text(encoding="utf-8") + "\n\nThe suite is 100 tests.\n", encoding="utf-8"
         )
-        assert_fails("check_test_count_claims", "claiming 100 tests")
+        assert_drifts("check_test_count_claims", "claiming 100 tests")
     finally:
         _restore(victim, original)
 
