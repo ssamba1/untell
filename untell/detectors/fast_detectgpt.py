@@ -98,7 +98,11 @@ class FastDetectGPTDetector:
         enc = tok(windows, return_tensors="pt", truncation=True, max_length=512,
                   padding="longest")
         ids, mask = enc["input_ids"], enc["attention_mask"]
-        valid = [i for i in range(ids.shape[0]) if ids[i].shape[0] >= 2]
+        # MUST use mask.sum() to count real (non-padding) tokens, not ids[i].shape[0].
+        # After padding="longest", every row has the same shape (the batch-max padded length),
+        # so ids[i].shape[0] is identical for all rows — the check is all-or-nothing and never
+        # excludes individual short windows. mask[i].sum() counts the actual real tokens.
+        valid = [i for i in range(ids.shape[0]) if mask[i].sum().item() >= 2]
         out: list[float | None] = [None] * len(windows)
         if not valid:
             return out
