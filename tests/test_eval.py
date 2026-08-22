@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import sys
+from unittest.mock import MagicMock
+
+import pytest
+
 from eval.baselines import api_loop, full_loop, noop, rewrite, single_pass
 from eval.benchmark import run
 from eval.datasets import load_samples
@@ -106,6 +111,45 @@ def test_api_loop_uses_a_configured_rewriter(monkeypatch):
     assert res.post["max"] <= res.pre["max"] + 1e-9
 
 
+def test_raid_load_samples_excludes_attack_variants(monkeypatch):
+    """load_samples('raid') must only return rows where attack is 'none' or absent.
+
+    _raid_pairs enforces this filter with an explicit comment explaining why: adversarially
+    perturbed variants (homoglyphs, whitespace, synonym swaps) answer a DIFFERENT question
+    from normal AI text, and mixing them in makes a measurement answer neither cleanly.
+    load_samples lacked the same filter, so --dataset raid in ceiling/benchmark/eval-policy
+    silently returned a mixed population.
+
+    Known-positive check: with an attacked row and a clean row in the stream, only the clean
+    row should appear in the result.
+    """
+    # > 30 words each so the word-count gate passes.
+    _W = "word " * 8
+    attack_row = {"generation": _W + "attack", "model": "chatgpt", "attack": "homoglyph"}
+    clean_row = {"generation": _W + "clean", "model": "chatgpt", "attack": "none"}
+    no_attack_key = {"generation": _W + "nokey", "model": "chatgpt"}
+
+    mock_datasets = MagicMock()
+    mock_datasets.load_dataset.return_value = iter([attack_row, clean_row, no_attack_key])
+
+    monkeypatch.setitem(sys.modules, "datasets", mock_datasets)
+
+    import importlib
+    import eval.datasets as ds_mod
+    importlib.reload(ds_mod)
+
+    result = ds_mod.load_samples("raid", 10)
+
+    assert len(result) == 2, (
+        f"Expected 2 samples (clean + no-key), got {len(result)}. "
+        "If 3, the attack filter is missing."
+    )
+    texts = {r.strip() for r in result}
+    assert any("clean" in t for t in texts), "clean row (attack='none') not returned"
+    assert any("nokey" in t for t in texts), "row with no attack key not returned"
+    assert not any("attack" in t for t in texts), "attacked row must be excluded"
+
+
 def test_api_loop_survives_rewriter_exception(monkeypatch):
     import untell.rewriter
 
@@ -121,3 +165,45 @@ def test_api_loop_survives_rewriter_exception(monkeypatch):
     monkeypatch.setattr(untell.rewriter, "get_rewriter", lambda prefer=None: _BoomRW())
     res = api_loop(load_samples("builtin", 1)[0], tier="lite")  # must fall back, not raise
     assert res.iterations >= 1
+
+
+def test_raid_load_samples_excludes_attack_variants(monkeypatch):
+    """load_samples('raid') must only return rows where attack is 'none' or absent.
+
+    _raid_pairs enforces this filter with an explicit comment explaining why: adversarially
+    perturbed variants (homoglyphs, whitespace, synonym swaps) answer a DIFFERENT question
+    from normal AI text, and mixing them in makes a measurement answer neither cleanly.
+    load_samples lacked the same filter, so --dataset raid in ceiling/benchmark/eval-policy
+    silently returned a mixed population.
+
+    Known-positive: given an attacked row, a clean row, a no-key row and a human row in the
+    stream, only the clean row and the no-key row (both machine, attack absent/none) pass.
+    """
+    import sys
+    from unittest.mock import MagicMock
+    import eval.datasets as ds_mod
+
+    # 36 words per body — well above the > 30 word gate in load_samples.
+    _body = "the quick brown fox jumps over the lazy dog " * 4  # 36 words
+    rows = [
+        {"generation": _body + "attacked", "model": "chatgpt", "attack": "homoglyph"},
+        {"generation": _body + "clean", "model": "chatgpt", "attack": "none"},
+        {"generation": _body + "nokey", "model": "chatgpt"},  # no 'attack' key
+        {"generation": _body + "human", "model": "human", "attack": "none"},  # human, excluded
+    ]
+
+    mock_ds = MagicMock()
+    mock_ds.load_dataset.return_value = iter(rows)
+    monkeypatch.setitem(sys.modules, "datasets", mock_ds)
+
+    result = ds_mod.load_samples("raid", 10)
+
+    assert len(result) == 2, (
+        f"Expected 2 samples (clean + nokey), got {len(result)}. "
+        "If 3, the attack-variant filter in load_samples is missing."
+    )
+    joined = " ".join(result)
+    assert "attacked" not in joined, "row with attack='homoglyph' must be excluded"
+    assert "clean" in joined, "row with attack='none' must be included"
+    assert "nokey" in joined, "row with no 'attack' key must be included"
+    assert "human" not in joined, "human-authored row must be excluded"

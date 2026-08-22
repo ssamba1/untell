@@ -360,6 +360,13 @@ def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> 
             ds = load_dataset("liamdugan/raid", split="train", streaming=True)
             texts = []
             for row in ds:
+                # Skip adversarially perturbed copies (homoglyphs, whitespace, synonym swaps).
+                # _raid_pairs already enforces this filter with the same reason: those rows
+                # answer "how does a detector survive an attack", not "how does untell perform
+                # against normal AI text". Without it, --dataset raid silently mixed the two
+                # populations and answered neither question cleanly.
+                if (row.get("attack") or "none") != "none":
+                    continue
                 gen = row.get("generation") or row.get("text")
                 if gen and row.get("model", "human") != "human" and len(gen.split()) > 30:
                     texts.append(gen.strip())
