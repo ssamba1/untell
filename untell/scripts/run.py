@@ -1516,7 +1516,13 @@ def _untell_text(
         # output to a technique that did not produce it. Same channel as `seed` and `tier` (the
         # other hidden variables a number depends on): a caller holding an output should be able
         # to read what produced it and replay the run.
-        "rewriter": rw.name,
+        # `getattr`, not `rw.name`: the Rewriter protocol declares `name: str`, but Protocol is
+        # structural and nothing enforces it at runtime, and `untell_text(rewriter=...)` accepts any
+        # object. MEASURED: a test stub with only `.rewrite()` raised `AttributeError` HERE — at the
+        # end of a completed run, after every rewrite had already been paid for. Losing finished work
+        # to a missing label is the wrong trade; the class name is a worse identifier than a real
+        # `name` and a far better one than a traceback. See issue #57.
+        "rewriter": getattr(rw, "name", None) or type(rw).__name__,
         # The SCORE's own caveat travels with the verdict, not just inside `post`. `carried_payload`
         # covers hidden characters and was the only thing that ever reached this field, so a caller
         # reading the documented top-level `warning` got None while `post["warning"]` said
@@ -2281,6 +2287,13 @@ def _diff_payload(text: str, result: dict) -> dict:
 # run drawing on them is not reproducible no matter the seed (docs/determinism.md). Same class as
 # --browser detectors. Everything else is covered by the determinism suite.
 _REMOTE_REWRITERS = frozenset({"anthropic", "openai"})
+# Every rewriter whose determinism this repository has actually established. `_REWRITER_NAMES` is the
+# CLI's accepted spellings; these are the names a rewriter object reports as `.name`, plus the class
+# names of the two backends that carry one. A name outside this set is caller-supplied, and the
+# manifest says "unknown" rather than vouching for it.
+_KNOWN_REWRITERS = frozenset(_REWRITER_NAMES) | _REMOTE_REWRITERS | {
+    "base-model", "local-policy",
+}
 _MANIFEST_VERSION = 1
 
 
@@ -2316,6 +2329,19 @@ def _manifest_payload(
         determinism, reason = (
             "non-deterministic by design",
             "remote rewriter: sampling happens on a third-party service the seed cannot reach",
+        )
+    elif name not in _KNOWN_REWRITERS:
+        # An unrecognised rewriter is a CALLER-SUPPLIED one, and nothing here knows whether it calls
+        # a network service, reads a clock or draws from an unseeded generator. The previous branch
+        # structure sent it to `else` and stamped it "reproducible" — the manifest exists to make an
+        # honest determinism claim, and that is the one case where it was guessing.
+        #
+        # "unknown" rather than "non-deterministic": asserting irreproducibility would be the same
+        # error with the opposite sign. The reason names what the caller has to do to find out.
+        determinism, reason = (
+            "unknown",
+            f"unrecognised rewriter {name!r}: untell cannot vouch for a caller-supplied "
+            "implementation. Run the same input and seed twice and compare output_sha256",
         )
     else:
         determinism, reason = (
