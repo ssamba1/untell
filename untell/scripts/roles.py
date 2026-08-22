@@ -59,6 +59,9 @@ _CONNECTIVES: dict[str, str] = {
 
 _SUBJ = {"nsubj", "csubj", "expl"}
 _PASS_SUBJ = {"nsubjpass", "nsubj:pass", "csubjpass"}
+# Union used in the per-sentence comparison arm scan so passive subjects are included.
+# Defined once rather than recomputed on each sentence.
+_ALL_SUBJ = _SUBJ | _PASS_SUBJ
 # Clausal complements count as objects. "Smoking causes lung cancer" -> "Lung cancer causes
 # smoking" parses the swapped "smoking" as an xcomp rather than a dobj, so without these the one
 # role swap in the probe set that involves a gerund slipped through.
@@ -221,7 +224,12 @@ def _triples(doc) -> list[tuple[str, str, str | None]]:
     # with the sentence's subject is what puts both entities in one triple, which is what rule 1
     # needs to see them exchanged.
     for sent in doc.sents:
-        subject = next((_key(tok) for tok in sent if tok.dep_ in _SUBJ), None)
+        # Include passive subjects (_PASS_SUBJ) so "The drug was compared with placebo."
+        # contributes arm ("drug", "with", "placebo"). Without this, `nsubjpass` tokens were
+        # invisible here and the arm was never emitted, letting the swap pass every gate.
+        # MEASURED before the fix: role_swap("The drug was compared with placebo.",
+        # "Placebo was compared with the drug.") returned False.
+        subject = next((_key(tok) for tok in sent if tok.dep_ in _ALL_SUBJ), None)
         if not subject:
             continue
         for tok in sent:

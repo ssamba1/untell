@@ -28,6 +28,10 @@ SWAPS = [
     ("The treatment scored higher than the control.",
      "The control scored higher than the treatment."),
     ("Revenue grew faster than costs.", "Costs grew faster than revenue."),
+    # Passive voice on both sides: "drug" and "placebo" are both nsubjpass, so the per-sentence
+    # arm scan must include _PASS_SUBJ to detect the subject. Before the fix, the arm was never
+    # emitted and role_swap returned False.
+    ("The drug was compared with placebo.", "Placebo was compared with the drug."),
 ]
 
 NOT_SWAPS = [
@@ -40,6 +44,10 @@ NOT_SWAPS = [
     ("The study ran in April.", "The study ran during April."),
     ("The treatment scored higher than the control.",
      "The treatment scored better than the control."),
+    # Passive comparison kept on the same side — synonym preposition, not a swap.
+    ("The drug was compared with placebo.", "The drug was compared against the placebo."),
+    # Passive voice change without any comparison arm is always faithful.
+    ("The drug was compared with placebo.", "The medication was compared with placebo."),
 ]
 
 
