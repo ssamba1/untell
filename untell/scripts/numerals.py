@@ -172,6 +172,27 @@ _SMALL_TAIL = (
     r"(?:(?:" + "|".join(_TENS) + r")(?:[\-\s]+(?:one|" + "|".join(_UNITS) + r"))?"
     r"|(?:" + "|".join(_TEENS) + r")|(?:one|" + "|".join(_UNITS) + r"))"
 )
+# Variant of _SMALL_TAIL for the STANDALONE position in _SPELLED_RE. "one" is excluded from
+# the bare-units alternative because standalone "one" — as in "one of the reasons" or "line
+# one" — functions as an article or ordinal, not the quantity 1. Reading it out creates a
+# false veto whenever the candidate rephrases without mentioning "one" at all.
+#
+# The compound-tail position (_SMALL_TAIL) keeps "one" so "twenty-one", "three hundred one"
+# and "one thousand and one" are all still matched correctly.
+#
+# MEASURED before this fix: numbers_kept("One of the researchers attended.", "A researcher
+# attended.") returned False — "1" was extracted from the source "one" and was absent from
+# the candidate. After the fix it returns True. This is documented in the module comment
+# ("one only as the tail of a compound").
+#
+# KNOWN MISS: "One site participated." -> "Five sites participated." is no longer caught when
+# the digit is written as a word in the source. That trade is recorded in numbers_kept's
+# docstring: the safe direction for written-word source quantities follows the same reasoning
+# as the "invented number" direction — no gate that can be measured here.
+_SMALL_TAIL_NO_ONE = (
+    r"(?:(?:" + "|".join(_TENS) + r")(?:[\-\s]+(?:one|" + "|".join(_UNITS) + r"))?"
+    r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
+)
 _GROUP_HEAD = r"(?:a|one|" + "|".join(_UNITS) + r"|" + "|".join(_TEENS) + r"|" + "|".join(_TENS) + r")"
 # One scale group: "two hundred", "three thousand", "two hundred thousand", "fifteen hundred".
 _GROUP = (
@@ -183,8 +204,10 @@ _SPELLED_RE = re.compile(
     # A chain of scale groups, then an optional "and" + tens/units tail.
     r"(?:" + _GROUP + r"(?:[\-\s]+" + _GROUP + r")*"
     r"(?:[\-\s]+and)?(?:[\-\s]+" + _SMALL_TAIL + r")?"
-    # A bare tens/units compound with no scale word.
-    r"|" + _SMALL_TAIL + r")"
+    # A bare tens/units number with no scale word. _SMALL_TAIL_NO_ONE is used here so
+    # standalone "one" (article/ordinal in prose) does not create false vetoes. Compounds
+    # like "twenty-one" still match via the first alternative of _SMALL_TAIL_NO_ONE.
+    r"|" + _SMALL_TAIL_NO_ONE + r")"
     r")(?![\w-])",
     re.IGNORECASE,
 )

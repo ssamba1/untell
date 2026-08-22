@@ -145,6 +145,60 @@ class TestListMarkersAreNotQuantities:
         assert "2024" in missing_numbers(src, "That was the turning point.")
 
 
+class TestOneAsArticleOrOrdinalIsNotVetoed:
+    """Standalone "one" functions as an article or ordinal in prose and must not be read as the
+    quantity 1.
+
+    MEASURED before the fix: numbers_kept("One of the researchers attended.", "A researcher
+    attended.") returned False — _SPELLED_RE matched standalone "one", extracted "1" as a source
+    number, and the candidate had no "1" or synonym, so the gate vetoed a faithful rewrite. The
+    comment in numerals.py said "one only as the tail of a compound ('twenty-one')" — the code
+    did the opposite.
+
+    After the fix, the standalone alternative in _SPELLED_RE uses _SMALL_TAIL_NO_ONE, which
+    drops "one" from the bare-units group. Compounds and scale groups still match "one":
+    "twenty-one" via _SMALL_TAIL in the compound-tail position, "one thousand" via _GROUP.
+    """
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            # "one" as article/pronoun: must not extract "1" from source
+            ("One of the researchers attended.", "A researcher attended.", "one of X → article"),
+            ("one of the reasons is clear", "a clear reason exists", "lowercase one of X"),
+            # Digit form "1" in source still works — the fix is source-side _SPELLED_RE only
+            ("1 patient enrolled.", "one patient enrolled.", "digit 1 -> word one"),
+        ],
+    )
+    def test_false_veto_no_longer_fires(self, source, candidate, label):
+        assert numbers_kept(source, candidate), f"{label}: {missing_numbers(source, candidate)}"
+
+    @pytest.mark.parametrize(
+        ("source", "candidate", "label"),
+        [
+            # Compounds and scale groups must still be caught
+            ("twenty-one sites joined.", "5 sites joined.", "twenty-one still extracted"),
+            ("one thousand patients.", "500 patients.", "one thousand still extracted"),
+            ("three hundred and one runs.", "250 runs.", "three hundred and one still extracted"),
+        ],
+    )
+    def test_compound_one_is_still_caught(self, source, candidate, label):
+        assert not numbers_kept(source, candidate), label
+
+    def test_known_miss_is_documented(self):
+        """Standalone word "one" as a quantity — "one site" vs "five sites" — is a known miss.
+
+        When the source writes a quantity as the word "one" with no scale word or tens prefix,
+        _SPELLED_RE no longer extracts it (to avoid the false veto on "one of the reasons").
+        This means "one site participated" -> "five sites participated" is not caught here.
+
+        The trade is accepted for the same reason numbers_kept is one-directional: the free
+        rewriter cannot change a digit and the hosted-LLM path cannot be measured without a key.
+        Pinned as a test so the miss is a documented property, not a surprise.
+        """
+        assert numbers_kept("One site participated.", "Five sites participated.")
+
+
 class TestNumbersCLIUsage:
     def test_help_names_the_untell_command(self, capsys):
         """The help advertised `numerals.py` — a filename, not a command on PATH — and did not
