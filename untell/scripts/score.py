@@ -952,6 +952,24 @@ def _score_with_detectors_uncached(
             "n=30) and 70% (RAID, n=30), every miss against a full-tier score of 1.000. Weak "
             "evidence in both directions — re-run at --tier full before trusting a flag OR a clear."
         )
+        # "Re-run at --tier full" is useless advice to someone who ASKED for --tier full and landed
+        # here because the ML stack is not installed. This branch sits ABOVE the downgrade branch
+        # below, so it claimed the message first and the only actionable sentence — how to get the
+        # full tier — never printed. The user is told to do the thing they just did.
+        #
+        # Reordering the two would lose the measurement above, which is the part worth keeping, so
+        # the downgrade case PREPENDS its instruction rather than replacing the note. Prepended, not
+        # appended, for the reason `test_the_specific_caveat_comes_first` records: the standing
+        # caveat is wallpaper, and a reader who stops after the first sentence must still get the
+        # sentence that is specific to their run.
+        if _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
+            tier_note = (
+                f"requested tier '{tier}' but the ML stack is not installed, so this ran on the "
+                "stdlib lite path. To enable the full ensemble, install the optional "
+                "dependencies: pip install 'untell[full]'. "
+                + (f"Failed to load: {', '.join(failed)}. " if failed else "")
+                + tier_note
+            )
     # Loudly flag a silent downgrade: full requested, but the ML stack didn't produce scores.
     elif _TIER_RANK.get(tier, 0) > _TIER_RANK.get(effective, 0):
         tier_note = (
