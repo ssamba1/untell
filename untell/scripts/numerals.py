@@ -189,6 +189,21 @@ _SMALL_TAIL = (
 # the digit is written as a word in the source. That trade is recorded in numbers_kept's
 # docstring: the safe direction for written-word source quantities follows the same reasoning
 # as the "invented number" direction — no gate that can be measured here.
+# Denominator words. A standalone "one" in front of one of these is the NUMERATOR of a
+# fraction -- a real quantity -- not the article/ordinal use the exclusion below is aimed at.
+#
+# This is the case the first version of the exclusion got wrong. It was recorded as an
+# accepted miss ("One site participated." -> "Five sites participated."), but
+# `test_a_fraction_change_is_now_caught` already asserted the fraction half of it, and its
+# docstring says so outright: the gap "closed, so it now asserts the detection instead of
+# expecting the miss". Excluding "one" everywhere reopened a gap the suite had closed --
+# `missing_numbers("One third of the group left.", "Half of the group left.")` went from
+# ["1"] to []. A quantity change stopped being reported.
+#
+# The lookahead keeps the MATCH to "one" alone, so the extracted value is still 1.
+_DENOMINATOR = (
+    r"half|halves|third|quarter|fourth|fifth|sixth|seventh|eighth|ninth|tenth"
+)
 _SMALL_TAIL_NO_ONE = (
     r"(?:(?:" + "|".join(_TENS) + r")(?:[\-\s]+(?:one|" + "|".join(_UNITS) + r"))?"
     r"|(?:" + "|".join(_TEENS) + r")|(?:" + "|".join(_UNITS) + r"))"
@@ -207,6 +222,9 @@ _SPELLED_RE = re.compile(
     # A bare tens/units number with no scale word. _SMALL_TAIL_NO_ONE is used here so
     # standalone "one" (article/ordinal in prose) does not create false vetoes. Compounds
     # like "twenty-one" still match via the first alternative of _SMALL_TAIL_NO_ONE.
+    # "one" survives here ONLY as a numerator: "one third", "one half". Every other standalone
+    # use ("one of the reasons", "line one") stays excluded, which is what the exclusion is for.
+    r"|(?:one(?=[\s\-](?:" + _DENOMINATOR + r")s?(?![\w-])))"
     r"|" + _SMALL_TAIL_NO_ONE + r")"
     r")(?![\w-])",
     re.IGNORECASE,
