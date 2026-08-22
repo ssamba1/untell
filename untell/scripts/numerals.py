@@ -2,16 +2,17 @@
 
 `preserve.py` deliberately does NOT lock bare single digits — a lone "5" stays rewritable so a
 rewrite can write "five", which is a normal style move and changes nothing. The cost of that
-choice is that a single digit can also be rewritten into vagueness, and the meaning gate does not
-reliably catch it. MEASURED:
+choice is that a single digit can also be rewritten into vagueness. MEASURED, the NLI and
+similarity checks alone do not catch it:
 
     "Only 7 of the 19 tests passed."  ->  "Only a few of the 19 tests passed."
-        similarity 0.951   contradiction 0.011   entailment 0.007   -> meaning gate PASSES
+        similarity 0.951   contradiction 0.011   entailment 0.007
 
-The entailment floor is 0.005, so that rewrite clears it by 0.002. Nothing else objects: no
-sentinel was dropped (7 was never locked), the roles are unchanged, and cosine sees near-identical
+The entailment floor is 0.005, so that rewrite cleared it by 0.002. Nothing else objected: no
+sentinel was dropped (7 was never locked), the roles were unchanged, and cosine saw near-identical
 text. A precise claim quietly became an imprecise one, in a tool whose headline promise is that
-facts survive.
+facts survive. This module was added to ``meaning_preserved`` to catch exactly that case — the
+loop path now vetoes it via ``numbers_kept``.
 
 This check is mechanical and narrow on purpose: it asserts only that each numeral in the source is
 still findable in the rewrite, as a numeral or as its English word. It makes no judgement about
@@ -346,6 +347,21 @@ def numbers_kept(source: str, candidate: str) -> bool:
     So the trade on today's evidence is: no protection where it can be verified, real false-veto
     risk where it cannot. If the LLM path is ever measured for invented numbers, revisit — the
     check itself is easy, and ``_numbers`` already reads both sides.
+
+    REACHABILITY ON THE LOOP PATH (issue #53). The loop calls ``meaning_preserved(masked, candidate,
+    ...)`` where both sides carry ``⟦HZ⟧`` sentinels. ``_numbers`` strips sentinels before parsing,
+    so a number locked by ``preserve.py`` becomes invisible on both sides — it cannot be "missing"
+    and this check is dead for it. Two categories determine the boundary:
+
+    - **DEAD**: any number ``preserve.py`` locks (multi-digit integers, numbers with units, dates,
+      ranges, etc.). After stripping the sentinel from both sides, neither side has the value. This
+      check is unreachable for those numbers.
+    - **LIVE**: bare single digits that ``preserve.py`` deliberately leaves unlocked (e.g. a lone
+      "7"). They survive the sentinel strip on both sides and can be dropped by the rewriter, which
+      is exactly what this check guards against. MEASURED: "Only 7 of the ⟦HZ…⟧ tests passed." ->
+      "Only a few of the ⟦HZ…⟧ tests passed." — ``_numbers`` sees ["7"] in source and [] in
+      candidate -> veto fires correctly. The module docstring's worked example of 7 -> "a few"
+      was measured BEFORE this function was added to ``meaning_preserved``; it is caught now.
     """
     return not missing_numbers(source, candidate)
 
