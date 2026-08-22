@@ -194,7 +194,41 @@ jobs:
           # gate that rejected 19 of 20 real rewrites. An optional extra nobody exercises
           # is an untested code path a user can turn on with one pip flag.
           pip install -e ".[full,eval,quality,docs,rich,dev]"
-          python -m spacy download en_core_web_sm || true
+          # Retried rather than `|| true`d into silence. A bare `|| true` treats a transient
+          # model-index failure and a permanently missing model as the same thing, and the
+          # capability check below turns the second into a red build.
+          for attempt in 1 2 3; do
+            python -m spacy download en_core_web_sm && break
+            echo "spacy model download failed (attempt $attempt/3), retrying"
+            sleep 5
+          done
+
+      # Loading the library is not the same as having the model, and a missing model does not
+      # fail anything -- it skips. MEASURED, with the capability gated off:
+      #
+      #     pytest tests/test_roles.py  ->  47 skipped, exit 0
+      #
+      # So the whole predicate-argument veto (one of the seven meaning-gate vetoes) would go
+      # untested in the one job that exists to test the full tier, `pytest -q` would print a
+      # skip count nobody reads as a failure, and the build would be green. That is the same
+      # defect the `quality` extra above was added to fix -- "an optional extra nobody
+      # exercises is an untested code path" -- reintroduced by a best-effort install.
+      #
+      # This step is to the meaning gates what `untell detector-audit` below is to the
+      # detectors: a capability that silently went missing must turn the build red.
+      - name: Meaning-gate capability - the optional vetoes are live, not skipped
+        run: |
+          python - <<'PY'
+          from untell.scripts import entailment, roles
+          checks = {"roles (needs en_core_web_sm)": roles.available(),
+                    "entailment (needs transformers)": entailment.available()}
+          dead = sorted(name for name, live in checks.items() if not live)
+          assert not dead, (
+              f"the full job cannot exercise {dead} - their tests would skip and this build "
+              "would pass while reporting nothing"
+          )
+          print("meaning-gate capabilities live:", ", ".join(sorted(checks)))
+          PY
 
       - name: Sanity — torch + detectors import and score
         run: |
