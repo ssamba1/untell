@@ -51,7 +51,7 @@ detectors. A PR that's green locally should be green in CI.
   [examples/browser_sites.example.json](examples/browser_sites.example.json)) and the probe notes in
   [docs/free-detector-probes.md](docs/free-detector-probes.md). No code required.
 - **A new detector adapter** — implement the `Detector` protocol in `untell/detectors/base.py`
-  (`score(text) -> float in [0,1]`), gate heavy deps behind availability checks, and add a test.
+  (`score(text) -> float | None`, where `None` opts out for empty/too-short input), gate heavy deps behind availability checks, and add a test.
 - **Rewrite-rubric improvements** — `untell/references/prompt-rubric.md` is where the named AI-signal
   targeting lives (clichés, formulaic transitions, sentence uniformity, vocab homogeneity, burstiness,
   perplexity).
