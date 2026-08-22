@@ -118,6 +118,17 @@ _SENT_SPLIT = re.compile(
     rf"|(?<=[.!?]\[\d\][{_C}])\s+"
     rf"|(?<=[.!?][{_FN}])\s+"
     rf"|(?<=[.!?][{_FN}][{_FN}])\s+"
+    # An emoji, symbol, or other non-word character between the terminator and the
+    # following whitespace — "Done.🎉 Next." and "Task complete.✓ Proceed." — hides the
+    # boundary from all rules above because none of them expects a character that is not a
+    # closer, not zero-width, and not a letter. The \w exclusion covers letters and digits
+    # (so "Dr.S Next" — a typo with no space — is NOT split here, only by rule 1 above),
+    # and the closer/ZW exclusions keep the existing rules authoritative for those shapes.
+    # MEASURED before this fix:
+    #
+    #     split_sentences("Done.\U0001F389 The next sentence.")  ->  ONE sentence
+    #     split_sentences("Task complete.✓ Now proceed.")   ->  ONE sentence
+    rf"|(?<=[.!?][^\s\w{_C}{_ZERO_WIDTH_CLASS}])\s+"
 )
 
 # Abbreviations whose trailing period is not a sentence end.
@@ -169,7 +180,14 @@ def ends_with_abbreviation(fragment: str) -> bool:
 # Jr. He left." is two sentences, and "Jr." is followed by a lowercase verb in the common case
 # ("John Smith Jr. is a doctor."), which merges under the case rule anyway.
 _TITLE_PREFIXES = frozenset(
-    {"dr", "mr", "mrs", "ms", "prof", "st", "rev", "hon", "gen", "col", "sgt", "lt"}
+    # "vs" is in _ABBREVIATIONS but NOT a sentence terminator — "A vs. B" is ALWAYS a
+    # comparison, never a sentence boundary. Without the unconditional merge the capital
+    # after it (a team name, a company name, a proper noun) triggers a split and breaks the
+    # comparison into two fragments. MEASURED:
+    #
+    #     split_sentences("Team A vs. Team B won.")  ->  ["Team A vs.", "Team B won."]
+    #     split_sentences("Good vs. Evil is the theme.")  ->  ["Good vs.", "Evil is the theme."]
+    {"dr", "mr", "mrs", "ms", "prof", "st", "rev", "hon", "gen", "col", "sgt", "lt", "vs"}
 )
 
 
