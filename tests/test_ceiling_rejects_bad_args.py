@@ -45,7 +45,7 @@ def test_compare_rejects_out_of_range_args():
         proc = subprocess.run(
             [str(PY), "-m", "eval.compare_humanizers", *argv, "--tier", "lite"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             errors="replace",
             timeout=60,
             env=env,
@@ -63,7 +63,7 @@ def test_ceiling_rejects_out_of_range_args():
             proc = subprocess.run(
                 [str(PY), *cmd, *argv, *extra],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
                 errors="replace",
                 timeout=60,
                 env=env,

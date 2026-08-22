@@ -130,7 +130,7 @@ def test_the_cli_refuses_what_the_library_warns_about(flag: str, value: str) -> 
     result = subprocess.run(
         [sys.executable, "-m", "untell.scripts.run", "--tier", "lite", "--rewriter", "structural",
          flag, value, "Some text about winter roads and the salt spread on them."],
-        capture_output=True, text=True, timeout=300,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300,
     )
     assert result.returncode != 0, result.stdout[:200]
     assert "error:" in (result.stderr or "").lower(), result.stderr[:200]

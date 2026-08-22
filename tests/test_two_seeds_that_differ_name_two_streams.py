@@ -75,7 +75,7 @@ class TestTheCliRefusesIt:
         return subprocess.run(
             [sys.executable, "-m", "untell.scripts.run", TEXT, "--tier", "lite",
              "--max-iters", "1", *args],
-            capture_output=True, text=True, timeout=300, env=env, input="",
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env, input="",
         )
 
     @pytest.mark.parametrize("value", ["-1", "-12345"])

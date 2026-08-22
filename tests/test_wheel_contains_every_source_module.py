@@ -102,7 +102,7 @@ def test_egg_info_is_not_committed_to_git() -> None:
     result = subprocess.run(
         ["git", "ls-files", "untell.egg-info/"],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         cwd=REPO,
     )
     tracked = result.stdout.strip()

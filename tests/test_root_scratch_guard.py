@@ -48,7 +48,7 @@ def test_no_stray_untracked_scratch_at_root() -> None:
         ["git", "status", "--porcelain=v1", "--untracked-files=all"],
         cwd=ROOT,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         check=True,
     )
 

@@ -140,7 +140,7 @@ def test_the_cli_flag_emits_the_split_as_json(stdlib_lite) -> None:
         [sys.executable, "-m", "untell.scripts.run", "--timings", "--json",
          "--tier", "lite", "--rewriter", "composite", "--best-of", "1",
          "--max-iters", "1", "--threshold", "0.001", TEXT],
-        capture_output=True, text=True, timeout=300, env=env,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env,
     )
     assert proc.returncode == 0, (proc.stdout[:300], proc.stderr[:300])
     payload = json.loads(proc.stdout)
@@ -157,7 +157,7 @@ def test_the_cli_flag_prints_a_human_summary_without_json(stdlib_lite) -> None:
         [sys.executable, "-m", "untell.scripts.run", "--timings",
          "--tier", "lite", "--rewriter", "composite", "--best-of", "1",
          "--max-iters", "1", "--threshold", "0.001", TEXT],
-        capture_output=True, text=True, timeout=300, env=env,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env,
     )
     assert proc.returncode == 0, (proc.stdout[:300], proc.stderr[:300])
     assert "[timings]" in proc.stdout, proc.stdout[-500:]
@@ -175,7 +175,7 @@ def test_without_the_flag_the_payload_is_unchanged(stdlib_lite) -> None:
         [sys.executable, "-m", "untell.scripts.run", "--json",
          "--tier", "lite", "--rewriter", "composite", "--best-of", "1",
          "--max-iters", "1", TEXT],
-        capture_output=True, text=True, timeout=300, env=env,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env,
     )
     assert proc.returncode == 0, (proc.stdout[:300], proc.stderr[:300])
     assert "timings" not in json.loads(proc.stdout)

@@ -33,7 +33,7 @@ def test_a_bad_file_is_a_message_not_a_traceback():
             proc = subprocess.run(
                 [str(PY), "-m", mod, "--file", *argv, "--tier", "lite"],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
                 errors="replace",
                 timeout=60,
                 env=env,

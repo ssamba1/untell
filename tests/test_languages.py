@@ -159,7 +159,7 @@ class TestRouting:
             "'importing untell.scripts.tells must not import the language registry'"
         )
         result = subprocess.run(
-            [sys.executable, "-c", probe], capture_output=True, text=True,
+            [sys.executable, "-c", probe], capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=60, cwd=repo,
         )
         assert result.returncode == 0, (

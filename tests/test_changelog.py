@@ -213,7 +213,7 @@ def test_changelog_is_not_stale_relative_to_recent_user_visible_commits() -> Non
     try:
         last_cl = subprocess.check_output(
             ["git", "log", "-1", "--format=%H", "--", "CHANGELOG.md"],
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             cwd=repo,
             stderr=subprocess.DEVNULL,
         ).strip()
@@ -226,7 +226,7 @@ def test_changelog_is_not_stale_relative_to_recent_user_visible_commits() -> Non
     try:
         log_lines = subprocess.check_output(
             ["git", "log", f"{last_cl}..HEAD", "--oneline", "--no-merges"],
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             cwd=repo,
             stderr=subprocess.DEVNULL,
         ).splitlines()

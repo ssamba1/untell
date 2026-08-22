@@ -109,7 +109,7 @@ def _run_cli(*args: str) -> tuple[int, str]:
     env = {**os.environ, "UNTELL_LITE_NO_TORCH": "1", "PYTHONIOENCODING": "utf-8"}
     proc = subprocess.run(
         [sys.executable, str(_HOLDOUT), *args],
-        capture_output=True, text=True, env=env, cwd=str(_HOLDOUT.parents[1]), timeout=300,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(_HOLDOUT.parents[1]), timeout=300,
     )
     return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
 

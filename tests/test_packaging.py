@@ -23,7 +23,7 @@ PYPROJECT = (REPO / "pyproject.toml").read_text(encoding="utf-8")
 
 def _tracked(prefix: str) -> list[str]:
     out = subprocess.run(
-        ["git", "ls-files", prefix], cwd=REPO, capture_output=True, text=True, timeout=120
+        ["git", "ls-files", prefix], cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
     )
     return [line.strip() for line in out.stdout.splitlines() if line.strip()]
 

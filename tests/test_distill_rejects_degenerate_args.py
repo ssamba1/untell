@@ -39,7 +39,7 @@ def test_distill_rejects_degenerate_args_fast():
         proc = subprocess.run(
             [str(PY), "-m", "training.distill", *argv, "--tier", "lite"],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
             errors="replace",
             timeout=30,  # a refusal must be instant; the old behaviour ran for minutes
             env=env,
@@ -55,7 +55,7 @@ def test_distill_still_accepts_valid_defaults():
     proc = subprocess.run(
         [str(PY), "-m", "training.distill", "--help"],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         errors="replace",
         timeout=30,
         env=env,

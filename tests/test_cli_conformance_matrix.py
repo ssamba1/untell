@@ -129,7 +129,7 @@ def _run(target: str, argv: list[str], *, timeout: int, stdin_closed: bool = Fal
     stdin = subprocess.DEVNULL if stdin_closed else None
     return subprocess.run(
         [sys.executable, "-c", code],
-        capture_output=True, text=True, env=env, timeout=timeout, stdin=stdin,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=timeout, stdin=stdin,
     )
 
 
@@ -242,7 +242,7 @@ def _assert_minimal(script: str) -> None:
         code = f"import {target.partition(':')[0]} as m; raise SystemExit(m.main({argv!r}))"
         proc = subprocess.Popen(
             [sys.executable, "-c", code], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, env=env,
+            text=True, encoding="utf-8", errors="replace", env=env,
         )
         try:
             startup = ""

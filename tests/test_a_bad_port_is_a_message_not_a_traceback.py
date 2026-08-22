@@ -52,7 +52,7 @@ def _run_with_port(value: str | None) -> tuple[int, str]:
         env["UNTELL_PORT"] = value
     proc = subprocess.run(
         [sys.executable, "-c", _PROBE],
-        capture_output=True, text=True, env=env, cwd=str(_ROOT), timeout=300,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, cwd=str(_ROOT), timeout=300,
     )
     return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
 

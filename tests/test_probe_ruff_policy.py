@@ -112,7 +112,7 @@ def test_ruff_check_passes_on_the_whole_tree_including_probes() -> None:
         [ruff, "check", "."],
         cwd=REPO_ROOT,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
     assert proc.returncode == 0, (
         f"`ruff check .` failed (exit {proc.returncode}):\n"

@@ -19,7 +19,7 @@ def test_prove_missing_file_no_traceback():
     proc = subprocess.run(
         [str(PY), "-m", "eval.prove", "--file", "nope_missing_xyz.txt"],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
         errors="replace",
         timeout=120,
         env=env,

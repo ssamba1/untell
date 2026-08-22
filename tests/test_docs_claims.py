@@ -238,7 +238,7 @@ def test_why_best_test_count_is_not_stale():
     claimed = int(m.group(1))
     out = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:randomly"],
-        cwd=root, capture_output=True, text=True, timeout=600,
+        cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
     ).stdout
     actual = int(re.search(r"(\d+) tests collected", out).group(1))
     # Only fails when the doc OVERSTATES, or understates by more than a session's growth.

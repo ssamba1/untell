@@ -46,7 +46,7 @@ def test_script_responds_to_help(name: str, target: str) -> None:
     result = subprocess.run(
         [sys.executable, "-m", module, "--help"],
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         timeout=300,
         cwd=REPO,
     )
@@ -78,7 +78,7 @@ FILE_COMMANDS = [
 def test_a_missing_file_is_one_line_not_a_traceback(module):
     result = subprocess.run(
         [sys.executable, "-m", module, "--file", "definitely-not-a-real-file.txt"],
-        capture_output=True, text=True, timeout=300, cwd=REPO,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, cwd=REPO,
     )
     combined = result.stdout + result.stderr
     assert "Traceback" not in combined, f"{module} raised instead of reporting:\n{combined[-400:]}"
@@ -93,7 +93,7 @@ def test_a_directory_says_directory_not_permission_denied(module):
     nothing to do with permissions."""
     result = subprocess.run(
         [sys.executable, "-m", module, "--file", "docs"],
-        capture_output=True, text=True, timeout=300, cwd=REPO,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, cwd=REPO,
     )
     combined = (result.stdout + result.stderr).lower()
     assert "Traceback" not in (result.stdout + result.stderr), combined[-400:]

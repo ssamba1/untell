@@ -53,7 +53,7 @@ def _argv(tree: Path, script: str, *args: str) -> list[str]:
 
 def _run(argv: list[str]) -> subprocess.CompletedProcess:
     env = dict(os.environ, UNTELL_LITE_NO_TORCH="1", PYTHONIOENCODING="utf-8")
-    return subprocess.run(argv, capture_output=True, text=True, timeout=300, env=env)
+    return subprocess.run(argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env)
 
 
 # The flag combinations SKILL.md gives, with its placeholders filled in.
