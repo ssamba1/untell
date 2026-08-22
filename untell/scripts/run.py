@@ -424,7 +424,7 @@ def _inert_budget_warning(max_iters: int, best_of: int) -> str | None:
 
 
 def _nothing_adopted_warning(
-    rewrites: int, adopted: int, changed: bool, vetoed: int = 0
+    rewrites: int, adopted: int, changed: bool, vetoed: int = 0, sentinel_failed: int = 0
 ) -> str | None:
     """Say when the loop drew candidates and kept none of them.
 
@@ -449,6 +449,34 @@ def _nothing_adopted_warning(
     if changed or not rewrites or adopted:
         return None
     drafts = f"{rewrites} candidate{'s' if rewrites != 1 else ''}"
+    # Drafts that mangled a locked span. Like the meaning gate, this check `continue`s BEFORE
+    # scoring — so these drafts were never compared on score either, and the sentence below about
+    # "scored worse" would describe a comparison that did not happen. That reasoning was already
+    # written down for `vetoed`; this counter is the sibling rejection path it was never applied to.
+    #
+    # MEASURED: `_nothing_adopted_warning(rewrites=3, adopted=0, changed=False, vetoed=0)` returned
+    # "every draft scored worse than your text" for a run in which nothing reached the scorer.
+    #
+    # The remedy differs too, and it is the reason this is worth its own branch: a rewriter that
+    # drops locked spans will keep dropping them, so "try --best-of 3 for more draws" is exactly
+    # the wrong advice.
+    if sentinel_failed >= rewrites:
+        return (
+            f"the rewriter produced {drafts} and every one altered a locked span — a citation, "
+            "number, quote or URL that must survive verbatim — so your text was returned "
+            "unchanged. None of them was scored; the integrity check runs first. Try a different "
+            "--rewriter: more draws of this one will keep failing the same way. `untell explain` "
+            "lists which spans are locked and why."
+        )
+    if sentinel_failed:
+        scored_worse = rewrites - vetoed - sentinel_failed
+        return (
+            f"the rewriter produced {drafts} and adopted none: {sentinel_failed} altered a locked "
+            f"span, {vetoed} changed the meaning, and {scored_worse} scored worse than your text. "
+            "Only the last group was ever scored — the other two are refused before the scorer "
+            "runs. A rewriter that cannot keep locked spans intact will keep failing that way, so "
+            "try a different --rewriter before spending more draws."
+        )
     if vetoed >= rewrites:
         # Every draft died at the meaning gate, which `continue`s BEFORE scoring — so none of them
         # was ever compared on score, and saying they "scored worse" would describe a comparison
@@ -1072,6 +1100,9 @@ def _untell_text(
     # a caveat that says "every draft scored worse" would be describing a comparison
     # that did not happen. Different cause, different remedy.
     vetoed = 0
+    # Drafts the SENTINEL check refused, counted separately for the same reason `vetoed` is: the
+    # check `continue`s before scoring, so these never reached the comparison either.
+    sentinel_failed = 0
     # Per-candidate rejection log (inspect=True only). Each entry is a small dict describing
     # what happened to one draw: sentinel failure, which meaning gate fired, or acceptance.
     # Kept in a list so the caller gets the full per-iteration history rather than just counts.
@@ -1180,6 +1211,7 @@ def _untell_text(
                         "type": "candidate_rejected", "iter": i, "draw": drew,
                         "gate": "sentinels", "vetoes": ["sentinels"], "sim": None,
                     })
+                sentinel_failed += 1
                 continue  # dropped/altered/DUPLICATED a locked span — reject outright
             # Meaning gate. Cosine similarity alone is wrong in BOTH directions: it penalises
             # register change (the primary humanizing move — it rejected 6/6 faithful formal->casual
@@ -1548,12 +1580,15 @@ def _untell_text(
         **({"warning": _merge_warnings(
             language_warning, carried_payload, best_score.get("warning"),
             _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
-            _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed),
+            _nothing_adopted_warning(
+                rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed
+            ),
             _inert_budget_warning(max_iters, best_of),
         )}
            if (language_warning or carried_payload or best_score.get("warning")
                or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)
-               or _nothing_adopted_warning(rewrites, adopted, final.strip() != text.strip(), vetoed)
+               or _nothing_adopted_warning(
+                   rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed)
                or _inert_budget_warning(max_iters, best_of))
            else {}),
         "sim_bar": sim_bar,
