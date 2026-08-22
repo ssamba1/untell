@@ -503,7 +503,12 @@ _CLICHES = [
     r"(?:challenges|obstacles|setbacks|difficulties)"
     r"[^.]{0,40}?continues to (?:thrive|grow|flourish|expand)",
     r"vibrant hub", r"thriving ecosystem",
-    r"rich tapestry of", r"game-?changer", r"game-?changing",
+    # `game-?changer` matched "game-changer" and "gamechanger" but not "game changer" (spaced),
+    # which is the most common written form in English prose and AI output alike. MEASURED:
+    # `_CLICHE_RE.search("This is a game changer.")` returned None. The `?` makes the hyphen
+    # optional (so it matches no-hyphen), but it is still a literal hyphen — a space is a
+    # different character. `[- ]?` covers all three forms: hyphen, space, or no separator.
+    r"rich tapestry of", r"game[- ]?changer", r"game[- ]?changing",
     # 2024-2026 additions — corporate/AI cliché set
     r"in the age of", r"in the world of", r"it'?s no secret that", r"the bottom line is",
     r"the possibilities are endless", r"unlock the (?:potential|power) of", r"harness the power of",
@@ -572,8 +577,16 @@ _FALSE_RANGE_RE = re.compile(
 
 # Distinctly-AI markdown artifacts (§7/§12) — NOT plain headings/bullets (those have honest uses), only
 # the structure prose almost never adds itself: TL;DR / Key Takeaways blocks and emoji section headers.
+#
+# The original only allowed `#` heading markers before the keyword, so `**TL;DR**:` and
+# `**Key Takeaways**` — the bold-formatted block form, equally common in AI output — scored clean.
+# MEASURED: `_MARKDOWN_ARTIFACT_RE.search("**TL;DR**: Summary here.")` returned None. The `**` is
+# not whitespace, not `#`, and not consumed by `\s*(?:#{1,6}\s*)?`. Adding `(?:\*{1,3}|_{1,3})\s*`
+# as an alternative inside the optional group catches the bold form. `**TL;DR` matches because `\b`
+# after `R` succeeds (the next character `*` is not a word char); `__TL;DR__` does not match the
+# `\b` (underscore IS a word char) — acceptable, that form is far less common in AI output.
 _MARKDOWN_ARTIFACT_RE = re.compile(
-    r"^\s*(?:#{1,6}\s*)?(?:key takeaways?|key points?|tl;?dr|in a nutshell)\b"
+    r"^\s*(?:#{1,6}\s*|(?:\*{1,3}|_{1,3})\s*)?(?:key takeaways?|key points?|tl;?dr|in a nutshell)\b"
     r"|^#{1,6}\s.*[\U0001F300-\U0001FAFF✅✨]",  # TL;DR/Key-Takeaways blocks, or emoji headers
     re.MULTILINE | re.IGNORECASE,
 )
