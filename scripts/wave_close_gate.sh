@@ -65,8 +65,15 @@ if [ ! -f "$BASELINE" ]; then
     echo "Read it. Every line is either an environment artifact or a real defect someone must own."
     status=0
 else
-    new_failures=$(comm -23 "$WT/.gate.failed" "$BASELINE")
-    fixed=$(comm -13 "$WT/.gate.failed" "$BASELINE")
+    # Normalise the baseline before comparing. `comm` is a byte comparison, so a baseline written
+    # by a Windows editor -- or by Python's text mode, which is how this happened -- carries a
+    # trailing CR on every line and matches NOTHING. The failure mode is silent and maximally
+    # confusing: the SAME test ids are reported as "no longer failing" AND as "not in the baseline"
+    # in one run, because every baseline entry looks fixed and every failure looks new. MEASURED
+    # after a CRLF-writing edit: 17 of 17 entries in both lists at once.
+    tr -d '' < "$BASELINE" | sed '/^[[:space:]]*$/d' | sort -u > "$WT/.gate.baseline"
+    new_failures=$(comm -23 "$WT/.gate.failed" "$WT/.gate.baseline")
+    fixed=$(comm -13 "$WT/.gate.failed" "$WT/.gate.baseline")
     [ -n "$fixed" ] && { echo "no longer failing (shrink the baseline):"; echo "$fixed" | sed 's/^/  /'; }
     if [ -n "$new_failures" ]; then
         echo "GATE FAIL: failures that are NOT in the baseline —"
