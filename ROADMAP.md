@@ -89,8 +89,8 @@ both a stronger result and far better evidence: post 0.285 ± 0.005 against a pr
 configuration (`best_of=3`), replicated over 3 runs and 120 rewrites.
 
 The two halves of that row moved in opposite directions on the last change and both are reported.
-Adding nominalisation substitutions took the flagged rate from 35.8% to **31.7%** — the number a
-user sees — while the mean score went 0.300 to 0.312 and the spread doubled to ±0.016, so the score
+Adding nominalisation substitutions took the flagged rate from 35.8% to **31.7%** at that step,
+while the mean score went 0.300 to 0.312 and the spread doubled to ±0.016, so the score
 difference is INSIDE the noise rather than a regression. Quoting only the improvement would be the
 kind of selective reporting this document exists to avoid.
 
@@ -108,7 +108,7 @@ attempts to recover the score without reintroducing it either failed or made the
 The shipped figure was also first measured as a single run at **0.302 / 32.5%** and held back from
 this row under the ≥3-repeats rule. Replication put it at 0.327 / 37.5% — the single run was two
 standard deviations low, and quoting it would have overstated the product by 5 points of flagged
-rate. It then improved to the **0.300 ± 0.007** above when a length budget stopped the rewriter
+rate. It then improved to **0.300 ± 0.007** when a length budget stopped the rewriter
 inflating sentence length (Result 26); the single run happened to land near the right answer for
 the wrong reason, which is what a spread is for.
 
