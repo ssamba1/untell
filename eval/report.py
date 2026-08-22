@@ -29,6 +29,26 @@ def _per_detector(results: list, threshold: float) -> dict[str, dict[str, float]
     The beat rate is the honest per-checker headline — e.g. how often we get RADAR (the hardest open,
     paraphrase-robust detector) under threshold, separately from the aggregate max.
     """
+    # A run where NOTHING scored must not produce a per-detector table. `score_text` returns
+    # `max: 0.0` and 0.0 detector entries as PLACEHOLDERS when no detector produced a number,
+    # and a placeholder is numeric -- so it sailed through the isinstance pairing below, and a
+    # broken ML stack rendered as a complete table of beaten detectors.
+    #
+    # MEASURED, five rows with `scored: False`:
+    #
+    #     bypass_rate        0.0      <- guarded, correct
+    #     beat_rate          1.0      <- "beaten on 100% of samples"
+    #     hardest_detector   "d1"     <- a headline drawn from nothing
+    #
+    # `_bypass_rate` above records this exact trap and filters on `scored is not False`; the
+    # docstring below records the paired-filtering version of it. This is the third place in
+    # the same file and the one where the guard was missing, which is also the one whose
+    # number is quoted per detector rather than in aggregate.
+    results = [
+        r
+        for r in results
+        if r.pre.get("scored") is not False and r.post.get("scored") is not False
+    ]
     names: list[str] = []
     for r in results:
         for k in r.pre.get("detectors", {}):
