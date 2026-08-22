@@ -20,9 +20,8 @@ from __future__ import annotations
 
 import pytest
 
-from untell.layout import apply_per_block, _segments
+from untell.layout import _segments, apply_per_block
 from untell.text_split import split_sentences
-
 
 # ---------------------------------------------------------------------------
 # Bug 1: emoji / symbol after sentence-terminal period
@@ -153,7 +152,7 @@ class TestHardBreakListItem:
     def test_numbered_list_item_with_hard_break_also_fixed(self):
         """The same fix applies to ordered-list items like '1. item  '."""
         segs = list(_segments("1. First item  \n2. Second item"))
-        for kind, prefix, body in segs:
+        for kind, _prefix, body in segs:
             if kind == "prose":
                 assert not body.lstrip().startswith(("1.", "2.")), (
                     f"Numbered list marker inside transform body: {body!r}"

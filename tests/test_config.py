@@ -8,6 +8,7 @@ importable, and its two defects below were the kind that only appear in one envi
 
 from __future__ import annotations
 
+import math
 import os
 
 import pytest
@@ -290,8 +291,6 @@ def test_a_passed_default_still_wins_the_type(tmp_path, monkeypatch):
 # silently passed through. Now they also warn and fall back to the default, matching the
 # documented contract: "A value that will not convert falls back to the default AND SAYS SO."
 
-import math as _math
-
 
 @pytest.mark.parametrize("bad_value", ["nan", "inf", "-inf", "1e999"])
 def test_non_finite_float_env_var_falls_back_to_default(monkeypatch, caplog, bad_value):
@@ -304,7 +303,7 @@ def test_non_finite_float_env_var_falls_back_to_default(monkeypatch, caplog, bad
     with caplog.at_level(logging.WARNING, logger="untell.config"):
         result = config.get("threshold", 0.30)
 
-    assert _math.isfinite(result), (
+    assert math.isfinite(result), (
         f"UNTELL_THRESHOLD={bad_value!r} produced a non-finite threshold {result!r}; "
         "detection would be silently disabled"
     )
