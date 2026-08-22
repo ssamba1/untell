@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
 import subprocess
 import sys
@@ -583,7 +584,7 @@ def _tracked_text_files() -> list[str]:
     files.
     """
     result = subprocess.run(
-        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, timeout=60
+        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60
     )
     if result.returncode != 0:
         return []
@@ -896,10 +897,23 @@ def _collected_test_count() -> int | None:
     extras are installed, because some modules skip at import. So this is used for a drift band,
     never for equality.
     """
+    # Collected on the LITE tier, deliberately, because the number this feeds is WRITTEN into
+    # the docs by `--fix-counts` and then checked by `test_why_best_test_count_is_not_stale`,
+    # which requires `claimed <= actual` on whatever tier happens to run. Full tier collects
+    # more (parametrised over detectors that only exist with torch), so a figure captured in a
+    # full-tier shell is correct there and too large everywhere else.
+    #
+    # MEASURED: running the documented repair in a full-tier shell wrote 9269 while lite
+    # collects 9247, and the guard test went red -- the repair command broke the suite it was
+    # meant to repair. The docs print `UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q` beside
+    # the figure as the way to reproduce it, so pinning the tier here makes the tool agree with
+    # its own published instructions instead of with the shell it was invoked from.
+    env = dict(os.environ, UNTELL_LITE_NO_TORCH="1")
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:randomly"],
-            cwd=REPO, capture_output=True, text=True, timeout=600,
+            cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=600, env=env,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -1332,7 +1346,7 @@ def check_skill_commands(report: Report) -> None:
         try:
             result = subprocess.run(
                 [sys.executable, "-m", module, "--help"],
-                capture_output=True, text=True, timeout=120,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
             )
         except Exception as exc:  # noqa: BLE001
             unaccepted.append(f"{target}: --help failed ({type(exc).__name__})")

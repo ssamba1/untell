@@ -379,13 +379,13 @@ def _code_state() -> str:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
             cwd=Path(__file__).resolve().parent.parent,
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
         )
         if out.returncode == 0 and out.stdout.strip():
             dirty = subprocess.run(
                 ["git", "status", "--porcelain"],
                 cwd=Path(__file__).resolve().parent.parent,
-                capture_output=True, text=True, timeout=10,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10,
             )
             suffix = "+dirty" if dirty.returncode == 0 and dirty.stdout.strip() else ""
             return out.stdout.strip() + suffix
