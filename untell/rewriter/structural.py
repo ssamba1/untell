@@ -388,7 +388,7 @@ _SEMICOLON_RE = re.compile(r";\s+")
 # and keep the clause. "It is worth noting that X" -> "X"; "It should be noted that X" -> "X".
 _FILLER_OPENER_RE = re.compile(
     r"(?P<lead>^|(?<=[.!?]\s))\s*"
-    r"(?:it (?:is|'s) (?:worth (?:noting|mentioning)|important to (?:note|mention|highlight|remember)) that"
+    r"(?:it(?:\s+is|'s) (?:worth (?:noting|mentioning)|important to (?:note|mention|highlight|remember)) that"
     r"|it should be noted that"
     r"|one (?:thing|point) (?:to note|worth noting) is that"
     r"|(?:it is|there is) no (?:doubt|denying) that"

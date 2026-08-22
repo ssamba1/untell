@@ -92,6 +92,10 @@ class TestStructuralRewriter:
             _strip_filler_openers("The cat sat. It is important to note that dogs bark too.")
             == "The cat sat. Dogs bark too."
         )
+        # Contracted form must be handled directly by _strip_filler_openers, not silently
+        # rescued downstream by _flatten_cliches (which has its own correct pattern).
+        assert _strip_filler_openers("It's worth noting that results improved.") == "Results improved."
+        assert _strip_filler_openers("It's important to note that errors dropped.") == "Errors dropped."
 
     def test_empty_input(self):
         assert structural_rewrite("", intensity=1.0) == ""
