@@ -67,17 +67,23 @@ _WORD_RE = re.compile(r"[A-Za-z']+")
 _WARNED_TOO_SHORT = False
 
 
-def _warn_too_short() -> None:
-    """Say once that the input was too short to score, rather than returning a confident number."""
+def _warn_too_short() -> str:
+    """Say once that the input was too short to score, rather than returning a confident number.
+
+    Returns the message as well as logging it. The log fires once per process — right for a CLI,
+    which would otherwise repeat itself down a directory — but that makes the log useless to a
+    caller scoring a batch, where documents 2..n get the same fiat 50.0 in silence. The returned
+    string is the same text, per document, so `humanness_with_caveats` can hand it to every one.
+    """
     global _WARNED_TOO_SHORT
-    if _WARNED_TOO_SHORT:
-        return
-    _WARNED_TOO_SHORT = True
-    logger.warning(
-        "text is shorter than %d words — humanness cannot be measured at that length and is "
-        "reported as 50 (undetermined), not as a verdict.",
-        _MIN_WORDS_FOR_SIGNAL,
+    message = (
+        f"text is shorter than {_MIN_WORDS_FOR_SIGNAL} words — humanness cannot be measured at "
+        "that length and is reported as 50 (undetermined), not as a verdict."
     )
+    if not _WARNED_TOO_SHORT:
+        _WARNED_TOO_SHORT = True
+        logger.warning(message)
+    return message
 
 
 # Long enough for the score to mean what the bands say. Deliberately the SAME bar `score_text` uses
@@ -108,41 +114,48 @@ _MIN_WORDS_FOR_A_BAND = 40
 _WARNED_SHORT_BAND = False
 
 
-def _warn_band_unreliable(words: int) -> None:
-    """Say once that the score is in the band where it does not separate the classes."""
+def _warn_band_unreliable(words: int) -> str:
+    """Say once that the score is in the band where it does not separate the classes.
+
+    This is the caveat with the measured harm on it — 0 of 30 genuine human texts reached a human
+    band — and it was also the one with no way to reach a batch caller: the log fires once and
+    `undetermined_reason` deliberately does not cover this case, because the score IS returned
+    here. Returning the text is what closes that gap.
+    """
     global _WARNED_SHORT_BAND
-    if _WARNED_SHORT_BAND:
-        return
-    _WARNED_SHORT_BAND = True
-    logger.warning(
-        "%d words: humanness is reported, but at this length it does not separate the classes. "
-        "MEASURED on 30 HC3 pairs truncated to 40 words: AUROC 0.694 against 0.978 at full "
-        "length, and 0 of 30 genuine HUMAN texts scored in the 'human' or 'mostly human' bands. "
-        "Treat the number as no evidence either way, not as a verdict.",
-        words,
+    message = (
+        f"{words} words: humanness is reported, but at this length it does not separate the "
+        "classes. MEASURED on 30 HC3 pairs truncated to 40 words: AUROC 0.694 against 0.978 at "
+        "full length, and 0 of 30 genuine HUMAN texts scored in the 'human' or 'mostly human' "
+        "bands. Treat the number as no evidence either way, not as a verdict."
     )
+    if not _WARNED_SHORT_BAND:
+        _WARNED_SHORT_BAND = True
+        logger.warning(message)
+    return message
 
 
 _WARNED_UNSUPPORTED_LANGUAGE = False
 
 
-def _warn_unsupported_language() -> None:
+def _warn_unsupported_language() -> str:
     """Say the catalogue does not cover this script, rather than that the text is too short."""
     global _WARNED_UNSUPPORTED_LANGUAGE
-    if _WARNED_UNSUPPORTED_LANGUAGE:
-        return
-    _WARNED_UNSUPPORTED_LANGUAGE = True
-    logger.warning(
+    message = (
         "the text is mostly a script this English-only catalogue cannot match, so humanness is "
         "reported as 50 (undetermined) rather than as a verdict. See untell/languages.py for how "
         "a catalogue for another language would be registered."
     )
+    if not _WARNED_UNSUPPORTED_LANGUAGE:
+        _WARNED_UNSUPPORTED_LANGUAGE = True
+        logger.warning(message)
+    return message
 
 
 _WARNED_WEAK_PATH = False
 
 
-def _warn_about_the_weak_path(warning: str | None) -> None:
+def _warn_about_the_weak_path(warning: str | None) -> str | None:
     """Forward the stdlib-path caveat, which is the one that changes how to read the number.
 
     `_warn_about_invisibles` below passes through the invisible-character caveat "and drops the
@@ -166,40 +179,85 @@ def _warn_about_the_weak_path(warning: str | None) -> None:
     constraint the invisibles note records.
     """
     global _WARNED_WEAK_PATH
-    if not warning or _WARNED_WEAK_PATH:
-        return
-    if "stdlib path" not in warning:
-        return
-    _WARNED_WEAK_PATH = True
-    logger.warning(
-        # Single %, not %%. `logging` interpolates only when args are supplied, and there are none
-        # here — the first version printed "64%% of HUMAN text" to the user.
+    if not warning or "stdlib path" not in warning:
+        return None
+    # Single %, not %%. `logging` interpolates only when args are supplied, and there are none
+    # here — the first version printed "64%% of HUMAN text" to the user.
+    message = (
         "this number comes from the pure-stdlib lite path, which is weak evidence in both "
         "directions: 64% of HUMAN text scores above the loop threshold, and it clears 10-70% of "
         "AI text depending on the corpus. A 'human' band here is not a pass. Re-run at --tier "
         "full, or `untell score` for the full caveat."
     )
+    if not _WARNED_WEAK_PATH:
+        _WARNED_WEAK_PATH = True
+        logger.warning(message)
+    return message
 
 
 _WARNED_INVISIBLE = False
 
 
-def _warn_about_invisibles(warning: str | None) -> None:
+def _warn_about_invisibles(warning: str | None) -> str | None:
     """Pass through only the invisible-character caveat, once, and drop the rest."""
     global _WARNED_INVISIBLE
-    if not warning or "invisible character" not in warning or _WARNED_INVISIBLE:
-        return
-    _WARNED_INVISIBLE = True
+    if not warning or "invisible character" not in warning:
+        return None
     # They no longer shift the score, which is what this used to say. Detector input is scrubbed, so
     # this number is now the number for the text a reader sees — measured identical at 90.8 with and
     # without a soft hyphen between every character. The caveat is still worth emitting, because the
     # characters are still IN the caller's text and every other tool they reach is unhardened: the
     # same paragraph took an external detector from 0.0002 to 0.7900 depending only on those bytes.
-    logger.warning(
+    message = (
         "the text carries invisible characters. They do not move this score — detector input is "
         "scrubbed — but they are still in your text, and tools that do not scrub will read it "
         "differently. Run `untell scrub` to remove them, or `untell score` for the details."
     )
+    if not _WARNED_INVISIBLE:
+        _WARNED_INVISIBLE = True
+        logger.warning(message)
+    return message
+
+
+_WARNED_EMPTY = False
+
+
+def _warn_empty() -> str:
+    """Say the input was empty, rather than that its script is unsupported.
+
+    `undetermined_reason` returns three reasons and `humanness` branched on two: anything not
+    starting with "shorter" took the language arm. Empty input is neither, so asking for the
+    humanness of "" reported "the text is mostly a script this English-only catalogue cannot
+    match" — a claim about a script, made about no characters at all, pointing the reader at
+    untell/languages.py to fix a problem that is not there.
+    """
+    global _WARNED_EMPTY
+    message = (
+        "the text is empty, so humanness is reported as 50 (undetermined) rather than as a "
+        "verdict. There is nothing to measure — this is not a statement about the writing."
+    )
+    if not _WARNED_EMPTY:
+        _WARNED_EMPTY = True
+        logger.warning(message)
+    return message
+
+
+_NO_DETECTOR_CAVEAT = (
+    "no detector produced a score, so the humanness number reflects only the mechanical "
+    "signals (tells + burstiness) — treat it as weaker evidence, not a clean verdict."
+)
+
+
+def _collect(sink: list[str] | None, message: str | None) -> None:
+    """Record a caveat for this document, if the caller asked for them.
+
+    The five `_warn_*` helpers each fire once per process. That is right for the CLI and wrong for
+    everyone else: scoring a batch in one process, document 1 gets the caveat and documents 2..n
+    get the same number in silence. MEASURED, five sub-threshold texts in one process: five scores
+    of 50.0, one caveat. This sink is per call, so the count is five of five.
+    """
+    if sink is not None and message:
+        sink.append(message)
 
 
 def undetermined_reason(text: str) -> str | None:
@@ -226,7 +284,7 @@ def undetermined_reason(text: str) -> str | None:
     return None
 
 
-def humanness(text: str, tier: str = "full") -> float:
+def humanness(text: str, tier: str = "full", _caveats: list[str] | None = None) -> float:
     """Return a humanness score in [0, 100] — higher = more human-like.
 
     Args:
@@ -294,6 +352,12 @@ def humanness(text: str, tier: str = "full") -> float:
         # load_detectors with "unhashable type" — name the contract instead.
         raise TypeError(f"tier must be str, got {type(tier).__name__}")
     if not text or not text.strip():
+        # Routed through the same helper as every other abstention. This return predates
+        # `undetermined_reason` and sat ABOVE the call to it, so the one function that exists to
+        # keep the reasons in one place never saw the empty case: `undetermined_reason("")` said
+        # "empty" while `humanness("")` returned 50.0 with no caveat and no log line at all — the
+        # exact drift that docstring says it prevents, surviving in the branch nobody re-read.
+        _collect(_caveats, _warn_empty())
         return 50.0  # Neutral for empty text
 
     # Too short to score. MEASURED, without this guard:
@@ -321,16 +385,18 @@ def humanness(text: str, tier: str = "full") -> float:
     reason = undetermined_reason(text)
     if reason:
         if reason.startswith("shorter"):
-            _warn_too_short()
+            _collect(_caveats, _warn_too_short())
+        elif reason == "empty":
+            _collect(_caveats, _warn_empty())
         else:
-            _warn_unsupported_language()
+            _collect(_caveats, _warn_unsupported_language())
         return 50.0
 
     # Long enough for the three signals to exist, short enough that they do not separate the
     # classes. See `_MIN_WORDS_FOR_A_BAND` for the measurement. The score is still returned.
     _words = len(_WORD_RE.findall(text))
     if _words < _MIN_WORDS_FOR_A_BAND:
-        _warn_band_unreliable(_words)
+        _collect(_caveats, _warn_band_unreliable(_words))
 
     # 1. AI-tells signal
     tells_result = score_tells(text)
@@ -357,15 +423,13 @@ def humanness(text: str, tier: str = "full") -> float:
     # because the characters are still in the CALLER's text and every unhardened tool downstream
     # still reads them — the same text took an external detector from 0.0002 to 0.7900 on those
     # bytes alone. This surface returns a bare float, so a log line is the only channel it has.
-    _warn_about_invisibles(detector_result.get("warning"))
-    _warn_about_the_weak_path(detector_result.get("warning"))
+    _collect(_caveats, _warn_about_invisibles(detector_result.get("warning")))
+    _collect(_caveats, _warn_about_the_weak_path(detector_result.get("warning")))
     detector_scored = detector_result.get("scored") is not False
     detector_max = float(detector_result.get("max", 0.0)) if detector_scored else None
     if not detector_scored:
-        logger.warning(
-            "no detector produced a score, so the humanness number reflects only the mechanical "
-            "signals (tells + burstiness) — treat it as weaker evidence, not a clean verdict."
-        )
+        logger.warning(_NO_DETECTOR_CAVEAT)
+        _collect(_caveats, _NO_DETECTOR_CAVEAT)
 
     # 3. Burstiness signal
     cv = tells_result.get("burstiness_cv")
@@ -444,6 +508,32 @@ def humanness(text: str, tier: str = "full") -> float:
     # Clamp to [0, 1] then scale to [0, 100].
     human_score = max(0.0, min(1.0, 1.0 - ai_score))
     return round(human_score * 100.0, 1)
+
+
+def humanness_with_caveats(text: str, tier: str = "full") -> tuple[float, list[str]]:
+    """The score and everything that qualifies it, for callers a log line cannot reach.
+
+    `humanness` returns a bare float and says so; its own comments record that "a log line is the
+    only channel it has". That holds for one document at a terminal. It fails for the two cases
+    that matter most:
+
+      * a batch — the `_warn_*` helpers fire once per process, so document 1 carries the caveat and
+        documents 2..n carry the same number with nothing attached;
+      * a long-lived server — request 1 gets it, every later request is silent, and the warning
+        goes to the operator's log rather than to the caller who is holding the number.
+
+    `undetermined_reason` covers only the three cases where the score is withheld. It deliberately
+    does not cover the case with the measured harm on it: between 5 and 40 words the score IS
+    returned, AUROC is 0.694 against 0.978 at full length, and 0 of 30 genuine human texts reached
+    a human band. That is the caveat a caller most needs and the one with no accessor.
+
+    Costs nothing extra — same single pass, both outputs. Returns the caveats in the order the
+    scorer reached them; an empty list means the number carries no qualification, which is a
+    positive statement rather than an absence of one.
+    """
+    caveats: list[str] = []
+    score = humanness(text, tier=tier, _caveats=caveats)
+    return score, caveats
 
 
 def classification(score: float) -> str:
