@@ -178,6 +178,28 @@ def _segments(text: str):
     # text with a formula in it, and the inline form is locked by preserve.py's latex_math rule
     # before any rewriter sees it.
     in_math: bool = False
+    # True when the PREVIOUS emitted line was a list-item marker and nothing has closed the
+    # item since. An indented line is an indented code block only when it BEGINS a block, and
+    # the `not buffer` test below was standing in for that -- correctly for a gathered
+    # paragraph, and wrongly here, because the marker branch flushes and yields directly
+    # without ever appending to `buffer`. So after "- item" the buffer is empty and the
+    # item's own continuation line looked exactly like the start of a code block.
+    #
+    # MEASURED: _segments("- first item\n    continues here\n- second") classified the middle
+    # line as layout, so `apply_per_block` returned it verbatim -- the author's own prose was
+    # silently excluded from the rewrite with nothing saying so.
+    #
+    # A blank line closes the item, which is what separates this from a genuine indented code
+    # block inside a list ("- item\n\n    code"): that case still reads as layout, correctly.
+    after_list_item: bool = False
+
+    def _is_list_marker(prefix: str) -> bool:
+        """A bullet or ordered-list marker, NOT a heading or blockquote.
+
+        An indented line after "# Heading" really is a code block, so only list items get the
+        continuation treatment.
+        """
+        return bool(re.match(r"\s*(?:[-*+]|\d+[.)])\s+$", prefix))
 
     def flush():
         if buffer:
@@ -231,6 +253,8 @@ def _segments(text: str):
             yield ("layout", "", line)
             continue
         if fence is not None or in_math or not line.strip():
+            # A blank line closes the list item, so what follows may be a code block again.
+            after_list_item = False
             yield from flush()
             yield ("layout", "", line)
             continue
@@ -276,7 +300,18 @@ def _segments(text: str):
         # indented line only starts code when it BEGINS a block, which after a blank line it does.
         # A line indented in the middle of a gathered paragraph stays prose, which is what a wrapped
         # paragraph in a list item looks like.
+        # A list item's own CONTINUATION line, indented under its marker with no blank line
+        # between. That is prose the author wrapped, not code. The indent is carried as a
+        # prefix and re-attached, exactly as a list marker is, so the transform sees only the
+        # words.
+        if after_list_item and not buffer and (
+            line.startswith("    ") or line.startswith("\t")
+        ):
+            stripped = line.lstrip(" \t")
+            yield ("prose", line[: len(line) - len(stripped)], stripped)
+            continue
         if not buffer and (line.startswith("    ") or line.startswith("\t")):
+            after_list_item = False
             yield ("layout", "", line)
             continue
         # A list-item marker must be extracted BEFORE the hard-break check fires. A list item
@@ -290,6 +325,7 @@ def _segments(text: str):
         marker = _LINE_MARKER_RE.match(line)
         if marker:
             yield from flush()
+            after_list_item = _is_list_marker(marker.group(1))
             yield ("prose", marker.group(1), marker.group(2))
             continue
         # A markdown HARD BREAK — two or more trailing spaces — is not a soft wrap. It is the
