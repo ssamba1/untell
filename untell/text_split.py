@@ -131,6 +131,24 @@ _SENT_SPLIT = re.compile(
     rf"|(?<=[.!?][^\s\w{_C}{_ZERO_WIDTH_CLASS}])\s+"
 )
 
+# Common sentence-opening words that are NEVER surnames following an initial.
+# Used to break the false merge "variable X. The formula is Y." while leaving
+# "J. Smith" and "The author J. Smith" intact. Articles and pronouns are the
+# safest anchors; conjunctive adverbs are safe too — none of these words is
+# an English surname. Kept minimal on purpose: false positives (splitting a
+# genuine "J. However Doe" — a name nobody has) are far less likely than the
+# false negatives the set allows through.
+_SENTENCE_STARTERS = frozenset({
+    "the", "a", "an",
+    "it", "its", "he", "she", "they", "we",
+    "this", "that", "these", "those", "there",
+    "however", "therefore", "moreover", "furthermore", "additionally",
+    "nevertheless", "consequently", "thus", "hence",
+    "note", "consider", "observe", "recall", "suppose", "assume",
+    "first", "second", "third", "finally", "next",
+    "then", "now", "here",
+})
+
 # Abbreviations whose trailing period is not a sentence end.
 _ABBREVIATIONS = {
     "dr", "mr", "mrs", "ms", "prof", "sr", "jr", "st", "rev", "hon", "gen", "col", "sgt", "lt",
@@ -239,10 +257,30 @@ def _continues_after_abbreviation(previous: str, nxt: str) -> bool:
     Name prefixes (``Dr.``, ``J.R.R.``, ``1.``) are exempt — see :func:`_ends_in_a_name_prefix`.
     Everything else merges only when the continuation cannot open a sentence — lowercase, or a
     non-letter start (``et al. (2020)``, ``et al. 2020`` are citations, not sentences).
+
+    Lone undotted single-letter "abbreviations" (``X.``, ``M.``) are ambiguous: they may be a
+    variable ending a sentence (``The answer is X. The formula is Y.``) or an initial preceding
+    a name (``J. Smith`` or ``The author J. Smith``). The capital test below is blind to this,
+    but common sentence-opening words (articles, pronouns, conjunctive adverbs — see
+    ``_SENTENCE_STARTERS``) are NEVER surnames, so when the continuation's first word is in
+    that set the merge is suppressed. MEASURED before this fix:
+
+        split_sentences("The answer is X. The formula is Y.")  ->  ONE sentence
+        split_sentences("See model M. It predicts well.")      ->  ONE sentence
     """
     if not ends_with_abbreviation(previous):
         return False
     if _ends_in_a_name_prefix(previous):
+        # Guard: a lone undotted letter (variable X.) followed by a known sentence-opener
+        # is a real boundary, not an initial preceding a name.
+        _tail = previous.rstrip().rsplit(" ", 1)[-1] if previous.strip() else ""
+        _tail = _tail.rstrip(_ZERO_WIDTH_BETWEEN)
+        if _tail.endswith("."):
+            _bare = _tail[:-1].lower().lstrip("([\"'")
+            if len(_bare) == 1 and _bare.isalpha() and "." not in _bare:
+                _first = nxt.lstrip().split()[:1]
+                if _first and _first[0].rstrip(".,;:!?").lower() in _SENTENCE_STARTERS:
+                    return False
         return True
     return not nxt.lstrip()[:1].isupper()
 

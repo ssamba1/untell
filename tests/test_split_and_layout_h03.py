@@ -167,3 +167,42 @@ class TestHardBreakListItem:
         for kind, prefix, body in segs:
             if kind == "prose" and "hard break" in body:
                 assert prefix == "", f"Expected no prefix for plain line: prefix={prefix!r}"
+
+
+# ---------------------------------------------------------------------------
+# Bug 4: lone-letter "initial" rule false-merges sentences ending with a
+#         variable name — "The answer is X. The formula is Y." -> ONE sentence
+# ---------------------------------------------------------------------------
+
+class TestLoneLetterVariableEndOfSentence:
+    """A sentence ending in 'variable X.' must split when a new sentence follows."""
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "The answer is X. The formula is Y.",
+            "See model M. It predicts well.",
+            "The force is F. However, friction opposes.",
+        ],
+    )
+    def test_sentence_ending_in_variable_splits(self, text):
+        result = split_sentences(text)
+        assert len(result) == 2, (
+            f"Expected 2 sentences but got {len(result)}: {result!r}"
+        )
+
+    def test_lone_initial_in_name_still_merges(self):
+        """Guard: 'J. Smith arrived.' must remain ONE sentence."""
+        assert split_sentences("J. Smith arrived.") == ["J. Smith arrived."]
+
+    def test_initial_after_other_words_in_name_still_merges(self):
+        """Guard: 'The book was written by J. Smith.' must remain ONE sentence."""
+        assert len(split_sentences("The book was written by J. Smith.")) == 1
+
+    def test_dotted_initials_still_merge(self):
+        """Guard: 'J.R.R. Tolkien wrote it.' must remain ONE sentence."""
+        assert len(split_sentences("J.R.R. Tolkien wrote it.")) == 1
+
+    def test_unknown_continuation_after_variable_keeps_merge(self):
+        """'X. Smithsonian showed' — 'Smithsonian' is not a sentence-opener so merges."""
+        assert len(split_sentences("The value is X. Smithsonian researchers agreed.")) == 1
