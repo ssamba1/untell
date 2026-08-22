@@ -59,6 +59,50 @@ All notable changes to this project are documented here. The format is based on
   for piping. (`a5a1dbd`)
 
 ### Fixed
+- **`--tier full` without torch told you to re-run at `--tier full`.** On a base install the ML
+  stack cannot load, scoring falls back to the stdlib lite path, and the note it attached ended
+  "re-run at --tier full before trusting a flag OR a clear" -- which is what the user had just
+  done. The note-selection chain is an if/elif and the stdlib branch sat above the downgrade
+  branch, so it claimed the message and the install instruction was unreachable for exactly the
+  people who needed it. The downgrade case now prepends `pip install 'untell[full]'` and names the
+  members that failed to load, keeping the stdlib measurement behind it. (`ec7d452`, closes #51)
+- **The humanness caveat reached the first document and no other.** The five `_warn_*` helpers each
+  fire once per process. MEASURED: five sub-threshold texts scored in one process produced five
+  scores of 50.0 and one caveat. The gap was widest in the 5-40 word band, where the score IS
+  returned, AUROC is 0.694 against 0.978 at full length, and 0 of 30 genuine human texts reached a
+  human band -- the caveat callers most need was the only one with no accessor.
+  `humanness_with_caveats(text, tier)` now returns the score and every caveat that applies to that
+  document, from the same single pass. Also fixed: `humanness("")` returned 50.0 in total silence,
+  because an early return sat above the call to `undetermined_reason`. (`7ef35b4`)
+- **`load_samples("raid")` returned adversarially attacked rows.** RAID ships perturbed copies
+  (homoglyph, whitespace, synonym) beside baseline `attack='none'` rows in the same split.
+  `_raid_pairs` filtered them; `load_samples` did not, so `untell-ceiling --dataset raid`,
+  `eval.benchmark` and `untell-eval-policy` all silently measured a mixed population. (`1d6c239`)
+- **A passive comparison swap escaped the role veto.** The argument-swap scan missed `nsubjpass`,
+  so a rewrite that reversed the direction of a passive comparison passed the meaning gate.
+  (`862e201`)
+- **A hard-broken list item lost its marker.** Layout restoration dropped the prefix when a list
+  item carried a hard line break, silently changing the structure of the returned document.
+  (`3f1c330`)
+- **An emoji or symbol between a terminator and its space hid a sentence boundary.** Sentence
+  splitting missed the break, so downstream per-sentence work treated two sentences as one.
+  (`ed62d34`)
+- **`_FILLER_OPENER_RE` never matched a contraction.** The pattern required a space before the
+  apostrophe (`it (?:is|'s)`), so "It's worth noting that X" skipped the filler-opener step
+  entirely and was only cleared later by cliche flattening -- making the earlier step dead code for
+  contracted input and creating a hidden dependency on step order. (`63541dd`)
+- **`inspect` was accepted by the CLI but not by REST or MCP.** Both surfaces now forward it, so
+  the per-candidate rejection log is reachable from every entry point. `--jsonl` is recorded as
+  CLI-only, since no streaming contract exists on the other two. (`0c4ec5a`)
+- **A completed run was lost when a caller-supplied rewriter had no `name`.** (`8ed2a43`, closes #57)
+- **Bidi overrides are stripped unconditionally (Trojan Source).** U+202D/U+202E force display
+  direction regardless of content, so they are removed whether or not the text contains RTL
+  characters; embeddings, isolates and marks still respect intrinsic direction. (`61fc014`,
+  closes #48)
+- **`/humanize` returned an undocumented `rewriter` field.** (`c8a8557`)
+- **Catastrophic backtracking in `_FRONTABLE_RE`.** (`ac16b5a`)
+- **`LocalJudgeDetector` and `RadarDetector` had no dead-load latch**, so a failed model load
+  retried on every subsequent call with nothing reported. (`d98a66b`, `97f8d30`)
 - **A rewrite could weld English words into German and French.** Every transform in the structural
   rewriter is English, and applied to Latin-script text that is not English they do not fail — they
   produce fluent-looking damage: an opener prepended to a German sentence, and `and` inserted as a
