@@ -154,6 +154,25 @@ detector carrying both, weighted differently from ours, lands somewhere else on 
 is precisely why the operating point and the component weighting have to be *measured* per
 detector rather than assumed.
 
+**Is it an artifact of our formula?** No, and this is the obvious next objection so it was
+tested. Five different measures of sentence-length dispersion, on both corpora:
+
+| measure | ELLIPSE (low vs high proficiency) | ASAP (ELL vs non-ELL) |
+|---|---|---|
+| CV (what we ship) | *d* +0.467 | +0.119 |
+| raw standard deviation | +0.568 | +0.306 |
+| median absolute deviation | +0.486 | +0.247 |
+| normalised entropy | −0.647 * | −0.292 * |
+| range / mean | +0.059 | −0.108 |
+
+\* entropy over length proportions is *maximised* by uniformity, so its sign is inverted by
+construction and it agrees with the rest.
+
+**Four of five agree, on both corpora, in the same direction**: the more fluent group writes
+sentences of less variable length. Only range-over-mean fails, and it is a max-minus-min statistic
+dominated by one outlier sentence. So the disparity is a property of the **writing**, not of our
+CV formula, and any burstiness signal built on a standard dispersion measure inherits it.
+
 **Scope, stated because it would otherwise be overclaimed.** Burstiness is the feature GPTZero
 popularised and still explains publicly, but GPTZero migrated to a deep-learning architecture in
 autumn 2023, so none of this is a claim about current GPTZero. It applies to detectors that still
