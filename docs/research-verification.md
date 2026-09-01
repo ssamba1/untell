@@ -193,3 +193,40 @@ ESL flag-rate figures. Directional only.
 - Detection is unreliable and beatable; paraphrase attacks transfer; watermarking only covers
   cooperating generators; retrieval defence works but needs provider-side logging.
 - Humans cannot reliably detect AI text (experts ~70%, students 59%, ESL teachers 61%).
+
+
+---
+
+## Sensitivity analysis — does any decision actually hinge on an unverified claim?
+
+The residual Tier-B set is small and it is all arXiv-only preprints on a host blocked by policy.
+Rather than leave that as an open worry, this is the check that matters: **for each roadmap item,
+what is the weakest source it rests on, and would a plausible error there change the decision?**
+
+| Roadmap item | Weakest load-bearing source | If it were wrong |
+|---|---|---|
+| **23 — AI-assisted arm, FAR/MFAR, stratification** | Karr's exact percentages (Tier B, though the paper is peer-reviewed) | **No change.** Pratama is Tier A, read in full, and on its own establishes the whole case: 0.00% FPR on the clean arm, 25% vs 11% over-detection on the assisted one, with FAR/MFAR defined and measured. Karr sharpens the argument; it does not carry it |
+| **18 — calibrated thresholds** | MCP's "length-conditioned" detail (Tier B) | **No change.** The load-bearing part — CP bounds FPR, plain CP costs accuracy, MCP recovers it — is ✅ Tier A from the published abstract. Conformal prediction is textbook statistics and does not need this paper to be correct; the length question is an implementation choice we would settle by measurement anyway |
+| **19 — Beemo + ARB** | ARB's design details (Tier B) | **No change.** Beemo is ✅ Tier A verbatim and justifies the item alone. ARB is a dataset we would inspect before wiring it in, at which point its details verify themselves |
+| **20 — base-vs-instruct arm** | *Base Models Look Human* (Tier B, and qualitative even in the paper) | **No change, by construction.** The item is to run *our own* measurement. We deliberately quote no number from it. If the paper is wrong, our arm is what shows that — which is a result worth having either way |
+| **21 — SynthID / Article 50** | The August 2026 date | **Timing only.** The degradation figures are now ✅ Tier A from the authors' repo, and the date is corroborated by two independent sources and is trivially checkable against the regulation itself |
+| **22 — confidence intervals** | Nothing external | **No change.** Arithmetic over data we already hold |
+| **The composite-null keystone** | arXiv-only, single-authored | **Framing changes; strategy does not.** Its conclusion — that a false-positive rate is a property of a detector *and a population* — is what Liang (✅), Pratama (✅) and Karr independently measure. Losing the proof would cost us the clean theoretical statement, not the mandate to measure per-subgroup on the user's own corpus |
+
+**Result: no roadmap item flips on any Tier-B claim.** Every item is either grounded in a Tier-A
+source, or is itself a measurement that would expose the error it depends on. That is the strongest
+honest statement available here — not "everything is verified", which the egress policy forbids, but
+**"nothing we plan to do would change if the unverified parts turned out wrong."**
+
+### What would still be worth an outside check
+
+Three things, in order, for anyone with unrestricted access:
+
+1. **arXiv:2603.20254** — the composite-null argument. It is load-bearing for the framing and it is
+   the weakest-sourced item here. Read the proof.
+2. **arXiv:2608.11256** — Karr et al. Confirm 64–80% / 38–49% and the >96% humanized-evasion figure
+   directly; they are the numbers this roadmap quotes most.
+3. **arXiv:2607.29539** — ARB. Confirm the four-way matched design before we build a loader against it.
+
+Everything else either reads at source from PubMed, the ACL Anthology or an author's repository, or
+does not carry a decision.
