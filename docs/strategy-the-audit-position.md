@@ -1,6 +1,9 @@
 # The audit position — the one move that changes the category
 
-**Written 2026-09-01**, from a re-run of the census ([131 repos, 13 angles](research-tooling-survey.md))
+**Written 2026-09-01**, with every number in it evidenced in
+[`detector-fairness-measured.md`](detector-fairness-measured.md).
+
+Written from a re-run of the census ([131 repos, 13 angles](research-tooling-survey.md))
 and from the detection literature as it stands today.
 
 [`what-would-make-this-the-top-repo.md`](what-would-make-this-the-top-repo.md) answered "how do we

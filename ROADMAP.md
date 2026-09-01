@@ -71,7 +71,8 @@ field is empty.
 
 ## 0b. ✅ The audit position — the move that changes the category
 
-Full argument and evidence: [`docs/strategy-the-audit-position.md`](docs/strategy-the-audit-position.md).
+Argument: [`docs/strategy-the-audit-position.md`](docs/strategy-the-audit-position.md).
+Evidence, with every interval and every withdrawal: [`docs/detector-fairness-measured.md`](docs/detector-fairness-measured.md).
 
 The census measured whether this is the best *humanizer*. That is a category
 [worth 0.3% of the field's attention](docs/what-would-make-this-the-top-repo.md) with a 413★
