@@ -1183,8 +1183,13 @@ And the flagged group differs from the unflagged one in ways that are not author
 native language characteristics 38.7% vs 19.6% (p<0.001)**, shorter statements, shorter sentences.
 
 **2. Fellowship applications, 421 personal statements** (Stern et al., *J Arthroplasty*,
-[DOI](https://doi.org/10.1016/j.arth.2025.07.072)). Pre-ChatGPT cohort scored **99.5% human**;
-post-ChatGPT **83.8%**. And: "international medical graduates and applicants from non-US residencies
+[DOI](https://doi.org/10.1016/j.arth.2025.07.072)). ✗ **Round twenty-one corrected how this was
+stated.** The figures are **mean GPTZero scores**, not shares of statements: the pre-ChatGPT cohort
+averaged **99.5% human (SD 1.9)** and the post-ChatGPT cohort **83.8% human (SD 29.9)**. The second
+standard deviation is the point — **29.9 on a mean of 83.8 means the statements are not clustered
+around 84% human**, but split between a majority scoring near-human and a minority scoring heavily
+AI. **An average of 83.8% human does not mean 16% of statements were AI-written**, and the earlier
+phrasing invited exactly that reading. And: "international medical graduates and applicants from non-US residencies
 demonstrated a higher proportion of AI-generated text in their PSs compared to US applicants
 (P < 0.001)."
 
@@ -1630,3 +1635,52 @@ That is a limitation worth stating plainly rather than fixing with a regex: **un
 are not mechanically checkable from prose, so a table of numbers from different studies needs a human
 to confirm every row measures the same thing.** The table now says which quantity it holds, in its
 own heading, so the next row added has to answer the question.
+
+---
+
+# Round twenty-one — the same question asked of the rest
+
+Round twenty found the false-positive table mixing *rates* with *per-document scores*. That is not a
+provenance error, so no existing check could see it, and the obvious next move was to ask the same
+question of every remaining figure rather than to assume it was a one-off.
+
+## ✗ It was not a one-off
+
+**Stern et al.** ([DOI](https://doi.org/10.1016/j.arth.2025.07.072)) was published in round fourteen
+as "Pre-ChatGPT cohort scored 99.5% human; post-ChatGPT 83.8%". According to PubMed the abstract
+reads:
+
+> "The pre-PS cohort had an **average GPTZero score** of **99.5% (SD 1.9) human**, 0.4% (SD 0.8) AI …
+> while the post-PS cohort had scores of **83.8% (SD 29.9) human**, 15.1% (SD 28.9) AI"
+
+These are **mean detector scores across statements**, not shares of statements — the third instance
+of this quantity after Bohler and Popkov. Our phrasing was ambiguous rather than wrong, and ambiguity
+here reads in exactly one direction: *83.8% human* sounds like *16% of applicants used AI*.
+
+**And the standard deviation is the real finding.** SD 29.9 on a mean of 83.8 means the statements
+are **not** clustered near 84% human — they split between a majority scoring near-human and a
+minority scoring heavily AI. The pre-cohort's SD of 1.9 shows what a tight distribution looks like by
+comparison. A mean over a bimodal distribution is close to meaningless as a description of any
+individual applicant, which matters because applicants are judged individually.
+
+## ✅ What verified cleanly
+
+- **The systematic review** ([DOI](https://doi.org/10.1186/s12909-026-09303-7)) — and it is a rate,
+  so its place in the corrected table is right: detectors "falsely labeled NNES writing as AI-created
+  in **50.2%–61.3% of all cases** (compared to **less than 5%** among native writers)". Also
+  confirmed verbatim: **27** studies from **1,213** screened, the **0.5–1.2 SD** downward scoring
+  bias, and the survey arm (**n = 8**, total **2,847**; **79%**, **63%**, **71%**).
+- **Erol et al.** ([DOI](https://doi.org/10.1007/s00701-025-06622-4)): **250** pre-ChatGPT
+  human-authored articles against **750** ChatGPT texts, three detectors, **AUC 0.75–1.00**, "none of
+  the detectors achieved 100% reliability", "false positives pose risks to researchers". Verbatim.
+
+## The count, and the standing rule
+
+Three of the studies this repository cites report a **mean or median detector score per document**
+(Bohler, Popkov, Stern); the rest report **shares of documents flagged**. All three are now labelled
+as what they are, and none sits in the rate table.
+
+**The rule this leaves behind:** before a figure joins a table or a comparison, ask what it is the
+proportion *of*. Provenance checks cannot answer that — `untell-audit` counted all three among its
+attributed claims, and every one was quoted correctly from a paper that reports it. Only reading the
+sentence around the number answers it.
