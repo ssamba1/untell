@@ -3812,3 +3812,60 @@ for a blind spot and the last place it was looked for.
 The reachability guard caught the omission that followed: a new topic registered without a probe
 would report an honest-looking zero forever, and the test that requires every topic to demonstrate it
 can fire failed immediately.
+
+---
+
+# Round fifty-seven — measuring the noise floor instead of filtering it away
+
+Round fifty-six found one missing topic by noticing it. Doing the same thing systematically —
+clustering the **271 detection papers that fall under no topic** by vocabulary over-represented among
+them — produced no second missing category. The strongest signal was **hallucination** (32 papers),
+which is not a topic this survey lacks. It is a paper about a different problem.
+
+## ✅ 13.8% of the corpus is some other detection task
+
+MEASURED: **80 of 578** papers have a title naming another detection problem — fake news,
+hallucination, factual inconsistency, toxicity, abuse, spam, bot or stance detection,
+out-of-distribution — and not machine-generated text.
+
+## ✅ And the shares barely move
+
+MEASURED by re-running every topic count over the corpus with those 80 papers removed:
+
+| topic | with them | without them |
+|---|---|---|
+| robustness/paraphrase | 26.5% | **27.5%** |
+| multilingual/cross-lingual | 13.3% | **13.1%** |
+| human-AI mixed/edited | 11.2% | **12.9%** |
+| watermark | 7.6% | **8.8%** |
+| education/integrity | 7.6% | **8.6%** |
+| calibration/thresholds | 3.8% | **3.4%** |
+| false positives/accusation | 1.9% | **2.0%** |
+| fairness/non-native bias | 2.1% | **1.8%** |
+
+**Fifth time the ratio has survived a change to the corpus beneath it**, and the first time the noise
+has been *quantified* rather than argued about. Round thirty predicted this shape — noise roughly flat
+across topics, recall loss uneven — and it holds: removing an eighth of the corpus moves no share by
+more than 1.7 points.
+
+## ✗ The filter is deliberately not being changed again
+
+The obvious move is to exclude those 80. **It is the wrong one**, for the reason round thirty
+established and then demonstrated: a phrase-only filter scored better on precision and dropped
+`2026.eacl-srw.20`, the Czech result that **disconfirms part of this repository's own thesis**. For a
+ratio, losing on-topic papers biases the topics unevenly while noise does not, and a title-based
+exclusion would drop any genuine machine-generated-text paper that frames itself around
+misinformation.
+
+**Measuring the noise floor is more useful than removing it**, and it is honest in a way a second
+filter revision would not be: the number now has a stated error term rather than an implied precision
+it does not have.
+
+## One claim gets sharper
+
+`disability/neurodivergence` goes from one match to none on the filtered corpus — MEASURED by
+re-running the topic counts with the off-topic papers removed. The single match was
+*Centering the Margins*, a **toxicity**-detection paper — recorded in round thirty as not a
+counterexample, and now shown to be the only thing standing between that row and zero. The claim that
+**no study examines whether AI-text detectors flag neurodivergent or disabled writers** is exactly
+true, in both corpora, with nothing to qualify.
