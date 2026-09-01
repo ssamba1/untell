@@ -52,7 +52,7 @@ no decision, no native speaker and no GPU, only the work.
 | 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **15.8% measured**, CI [10.4%, 23.4%] | — |
 | 25 | Length-conditioned false-positive curve | ✅ done — **26.7% at ≤50 words against 15.6% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
-| 27 | Conformal calibration (`untell/calibrate.py`) | 🔜 open | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
+| 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -550,6 +550,30 @@ at 25.0% and Gemini-generated at 5.0%; at n = 60 they are 15.0% and 21.7%. Estim
 than 15 points on tripling the sample. **Every small-n detector number in this repo, and in every
 vendor's marketing, should be read in that light** — which is exactly why item 22 exists and why
 these arms report intervals by default.
+
+✅ **Calibration is shipped, and it turns the headline result into an instruction.**
+`untell/calibrate.py` implements the conformal bound: score documents known to be human, take the
+`ceil((n+1)(1-α))`-th smallest, and a genuinely human document exceeds it with probability at most α.
+The `n+1` is the finite-sample correction and is the difference between a guarantee and a guess.
+
+Calibrated on **150 pre-LLM ACL abstracts**, lite tier:
+
+| threshold | false positives on human text |
+|---|---|
+| **0.45 — what we ship** | **17.3%** (26/150) |
+| 0.4939 — α = 0.10 | 10.0% |
+| **0.5215 — α = 0.05** | **4.7%** |
+
+**Moving the verdict threshold by 0.07 takes the false-positive rate from 17.3% to under 5%, with a
+bound rather than a hope.** That is the answer this repo could not previously give to the question
+its own headline provokes, and it is now three lines of arithmetic and a corpus that cannot be
+disputed.
+
+The module refuses rather than flatters: it returns `None` when the sample cannot support the α (1%
+control needs 99 documents — asking for it with 40 gets nothing, not a confident number), reports
+what the bound costs in retained detections, and exposes the realised rate so a caller can see when
+score ties broke the guarantee. A test checks the bound empirically on held-out samples instead of
+trusting the derivation.
 
 - 🔜 **Calibrated thresholds, so the negative result stops being only a complaint.** Multiscaled
   conformal prediction ([2025.acl-long.601](https://aclanthology.org/2025.acl-long.601/); Zhu, Ren,
