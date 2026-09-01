@@ -201,6 +201,32 @@ def calibrate_by_length(
 
     ``samples`` are ``(word_count, score)`` pairs from known-human text. Bands with too few samples
     report ``None`` rather than an unsupported threshold.
+
+    ⚠️ **How much this matters was not measured until round seventy-two, and it is a lot.** MEASURED
+    on all 6,810 pre-LLM abstracts, the single global threshold this module recommends at
+    ``alpha=0.05`` — 0.5401 — delivers:
+
+    ==============  ===========  ====================  =================
+    band (words)    documents    realised FPR          95% CI
+    ==============  ===========  ====================  =================
+    60-100          603          **10.78%**            [8.55%, 13.51%]
+    100-150         3,032        5.11%                 [4.38%, 5.95%]
+    150-200         2,705        4.03%                 [3.35%, 4.84%]
+    200+            470          2.55%                 [1.47%, 4.41%]
+    ==============  ===========  ====================  =================
+
+    **The 5% bound is 10.78% for short documents and 2.55% for long ones** — a 4.2x spread, and the
+    short band's confidence interval does not come near 5%. So the guarantee holds on the mixture and
+    breaches by 2.2x exactly where a wrong verdict is least recoverable.
+
+    The per-band thresholds that fix it span 0.5187 to 0.6087. For scale, rounds sixty and sixty-one
+    spent two entire rounds on the 0.0060 between two global thresholds; **the length spread is
+    0.0900, fifteen times larger.** Applied the other way, the short band's threshold flags 1.25% of
+    the whole corpus and the long band's 7.14%: one number cannot serve both ends.
+
+    ✗ **And the corpus floor hides the worst of it.** These abstracts are 60 words or more. This
+    repo separately measured 30.0% false positives at 50 words or fewer, so the 60-100 row is the
+    mildest short-document case there is, not the worst.
     """
     edges = list(bands) + [10**9]
     out: dict[str, dict | None] = {}

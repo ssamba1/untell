@@ -4889,3 +4889,66 @@ in the same file, in a comment explaining a bug of exactly this kind. **A lesson
 comment beside one call site is not a lesson the next call site inherits** — which is the argument
 for `flatten_prose` being a function rather than a fixed regex, and the same argument round
 sixty-two made for `_MODULE_CLAIM` and round sixty-three made for `eval/arms.py`.
+
+---
+
+# Round seventy-two — the bound this repo recommends is 10.78% for short documents
+
+`untell/calibrate.py` shipped `calibrate_by_length` alongside `calibrate`, with a docstring saying
+that one threshold across all lengths "is one average". **Nobody had measured what the average
+costs.** The scores and word counts for all 6,810 pre-LLM abstracts were already saved from round
+sixty-one, so it took one arithmetic pass.
+
+MEASURED, the global α = 0.05 threshold of 0.5401 by document length:
+
+| band (words) | documents | realised FPR | 95% CI | band's own threshold |
+|---|---|---|---|---|
+| **60–100** | 603 | **10.78%** | [8.55%, 13.51%] | 0.6087 |
+| 100–150 | 3,032 | 5.11% | [4.38%, 5.95%] | 0.5422 |
+| 150–200 | 2,705 | 4.03% | [3.35%, 4.84%] | 0.5283 |
+| 200+ | 470 | 2.55% | [1.47%, 4.41%] | 0.5187 |
+
+**The five percent bound is 10.78% at the short end and 2.55% at the long one.** The short band's
+interval does not reach 5% from below — its *lower* limit is 8.55% — so this is a real breach of the
+guarantee, not sampling noise.
+
+## The direction is the bad one
+
+Short documents are where this repo has separately measured the highest false-positive rates
+(**30.0% at 50 words or fewer**), where a detector has least evidence, and where a wrong accusation
+is least recoverable. The global bound is loosest exactly there.
+
+✗ **And the corpus floor conceals the worst of it.** These abstracts are 60 words or more, so
+**60–100 is the mildest short-document band that exists in this corpus.** Whatever happens below 60
+words is worse and unmeasured by this table.
+
+## The scale, against this ledger's own recent history
+
+Rounds sixty and sixty-one spent two full rounds — a retraction, a correction to the retraction, and
+a new function — on the **0.0060** between two global thresholds derived from different sample sizes.
+
+**The spread across length bands is 0.0900. Fifteen times larger.**
+
+Read the other way it is the same fact: the short band's threshold applied to the whole corpus flags
+**1.25%**, the long band's flags **7.14%**. One number cannot serve both ends, and the number this
+repository publishes is the mixture's.
+
+## Why it was invisible
+
+`calibrate()` is what the documentation demonstrates, what the roadmap's calibration table uses, and
+what rounds sixty, sixty-one and sixty-five all argued about. `calibrate_by_length()` sat beside it,
+correct and tested, and **no document ever quoted a number from it.** The function that would have
+shown the problem was shipped, exercised by a unit test with synthetic data, and never pointed at the
+corpus.
+
+That is a third kind of blind spot, after round sixty-two's checker-versus-fixer and round
+seventy-one's two sibling checks: **a right answer that exists in the code and never reaches a
+document.** Nothing was wrong. Nothing was stale. It simply was not run.
+
+## ✅ Incidental: round sixty-two's fixer, working in the wild
+
+Committing this round tripped the count guard — six new test modules since the last repair — so
+`untell-audit --fix-counts` ran for the first time since it was rewritten. It set the counts in
+`why-best-open-repo.md` and `humanizer-census.md` and **left this ledger alone**, which is exactly
+what round sixty-two changed it to do after it rewrote two historical entries here, one of them a
+count quoted inside a code span. Both of those lines are still as written.

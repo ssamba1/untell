@@ -70,6 +70,7 @@ no decision, no native speaker and no GPU, only the work.
 | 42 | A hole in the corpus must be a command, not a hunch | ✅ done — `python -m eval.litreview --gaps` probes every venue named in `VOLUMES` against every year in it. It reports rather than adds: widening a survey behind its author's back produces numbers nobody chose | — |
 | 43 | The retraction guard must see a claim that wraps | ✅ done — it searched one line at a time, and these documents hard-wrap, so **eight of eleven multi-word retired forms were one line break away from invisible**. One was: a claim retracted in round seventeen stood eight lines below its own ✗ for fifty-three rounds, in two documents | — |
 | 44 | A line break must not decide whether a document check fires | ✅ done — `check_demo_privacy_claims`, which guards against a document claiming a user's text is `never uploaded`, **caught a false claim written on one line and missed the identical one wrapped**. `flatten_prose` now collapses whitespace, strips emphasis and blanks code spans; a standing test plants every phrase claim both ways | — |
+| 45 | Calibrate per length band, because one threshold is one average | ✅ done — the global α = 0.05 threshold delivers **10.78% on 60–100-word documents and 2.55% on 200+**, and the short band's CI [8.55%, 13.51%] is nowhere near 5%. Per-band thresholds span **0.0900**, fifteen times the gap two whole rounds were spent on | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -912,6 +913,31 @@ MEASURED — reproduce with `python -m eval.pre_llm_fpr --download`, then calibr
 with a bound rather than a hope.** That is the answer this repo could not previously give to the
 question its own headline provokes, and it is now three lines of arithmetic and a corpus that cannot
 be disputed.
+
+### ✗ And the bound is a length average, which is worse than it sounds
+
+MEASURED on all 6,810 abstracts, the single α = 0.05 threshold above — 0.5401 — by document length:
+
+| band (words) | documents | realised FPR | 95% CI |
+|---|---|---|---|
+| **60–100** | 603 | **10.78%** | [8.55%, 13.51%] |
+| 100–150 | 3,032 | 5.11% | [4.38%, 5.95%] |
+| 150–200 | 2,705 | 4.03% | [3.35%, 4.84%] |
+| 200+ | 470 | 2.55% | [1.47%, 4.41%] |
+
+**The 5% bound is 10.78% for short documents and 2.55% for long ones.** The short band's interval
+does not come near 5%, so this is a breach and not noise — and it breaches in the direction where a
+wrong verdict is least recoverable.
+
+`calibrate_by_length` fixes it, and the thresholds it returns span **0.5187 to 0.6087**. For scale,
+the two rounds above turned on the **0.0060** between two global thresholds; the length spread is
+**0.0900 — fifteen times larger**, and it was sitting unmeasured behind a function that shipped with
+a docstring saying one threshold "is one average". Applied the other way round, the short band's
+threshold flags 1.25% of the whole corpus and the long band's 7.14%.
+
+⚠️ **The corpus floor hides the worst of it.** These abstracts are 60 words or more, and this repo
+separately measured **30.0% at 50 words or fewer**. The 60–100 row is the mildest short-document case
+there is.
 
 ### What the bound actually promises, which is not what it sounds like
 
