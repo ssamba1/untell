@@ -755,6 +755,32 @@ products and we should say which one we are.
 H2L results, and that nobody has connected stylistic distance to false-positive rate. Both were
 overstatements that reading the sources removed.
 
+### Two findings that land on this repo's own components
+
+⚠️ **A published tell catalogue accelerates its own obsolescence.** *Human-LLM Coevolution*
+([2025.findings-acl.657](https://aclanthology.org/2025.findings-acl.657/)) tracks arXiv abstracts and
+finds **"delve" dropping markedly soon after it was publicised as an AI marker in early 2024**, while
+other ChatGPT-favoured words kept rising — authors selecting and editing in response to what is known.
+`untell/scripts/tells.py` publishes 29 patterns. The measured half-life of the most famous one, once
+advertised, was months. **Tell precision figures need a date attached, not just a corpus**, and the
+categories with the longest useful life are the ones nobody has advertised. This is not an argument
+for secrecy — public measurement is the whole case — but a catalogue is a depreciating asset and
+should be documented as one.
+
+✅ **The `ai_vocab` coin-flip result is confirmed externally, and now explained.** We measure that
+cluster at 0.615 precision on HC3 and 0.585 on RAID. [2025.bea-1.71](https://aclanthology.org/2025.bea-1.71/)
+evaluates GPTZero's *AI Vocabulary* feature and finds it works on ChatGPT text and drops to
+**near-random on Claude**. The cluster is not weak in general — it is **generator-specific**, which is
+why it reads as a coin flip on multi-generator corpora. The same paper finds **presence** of AI terms
+outperforms **frequency**, which is not how a per-100-words rate counts them and is worth testing in
+`tells.py`.
+
+✗ **And "humans cannot detect" is retired as a general claim.** A majority vote among five annotators
+who frequently use LLMs for writing misclassified **1 of 300 articles**, beating most commercial and
+open-source detectors *under paraphrasing and humanization*
+([2025.acl-long.267](https://aclanthology.org/2025.acl-long.267/)). Most people cannot do this; those
+people can. The aggregation rule that matters for detectors turns out to matter for panels too.
+
 ### The rule this section is written under
 
 Publisher and preprint hosts are blocked here by organization egress policy. After exhausting every
