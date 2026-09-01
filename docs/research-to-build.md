@@ -17,11 +17,17 @@ egress policy. Items marked ✅ were read at source.
 
 ### 1. Conformal FPR control — turns the repo's negative result into a constructive one
 
-**arXiv:2505.05084**, ACL 2025 ([ACL Anthology](https://aclanthology.org/2025.acl-long.601/)) —
-*Reliably Bounding False Positives: A Zero-Shot MGT Detection Framework via Multiscaled Conformal
-Prediction (MCP)*. Uses a small calibration set of human-authored text to derive **length-conditioned
-quantile thresholds** with a guaranteed FPR bound, and ships **RealDet**, a multi-domain calibration
-corpus.
+✅ **Read at source** ([2025.acl-long.601](https://aclanthology.org/2025.acl-long.601/); Zhu, Ren, Cao,
+Lin, Fang, Li) — *Reliably Bounding False Positives: A Zero-Shot MGT Detection Framework via
+Multiscaled Conformal Prediction (MCP)*. Conformal prediction bounds the FPR from a human-only
+calibration set; the paper's own framing is that "most existing detection methods focus excessively
+on detection accuracy, often neglecting the societal risks posed by high false positive rates", and
+that plain CP constrains FPR but "leads to a significant reduction in detection performance" — MCP
+exists to recover it. It ships **RealDet** as the calibration corpus.
+
+> ✗ Two details this document previously asserted are **not in the published abstract**: that the
+> quantiles are *length-conditioned*, and RealDet's 15-domain / 22-LLM / 847k-text dimensions. Both
+> came from secondary summaries and are now Tier B. Build against the paper.
 
 This is the single most valuable thing found. Right now untell says *your detector's shipped threshold
 produces a 17%/40%/89% false-positive rate*. MCP is the answer to the obvious next question — **"then
@@ -62,9 +68,11 @@ actually about.
 
 > ✗ **Correction to an earlier draft**, which said nobody publishes what detectors do to H2L text.
 > Wrong. Pratama (*PeerJ CS*, ✅ read at source, [DOI](https://doi.org/10.7717/peerj-cs.2953)) ran
-> exactly that experiment with per-subgroup over- and under-detection rates, and Karr et al.
-> ([arXiv:2608.11256](https://arxiv.org/abs/2608.11256)) put light "refine abstract only" edits at
-> **38–80% flagged** against **9–15%** for unmodified originals. ARB's value is scale, matched design
+> exactly that experiment with per-subgroup over- and under-detection rates, and Karr, Khvatskii, Hua
+> & Chawla (Notre Dame, **ACM AILS '26** — peer-reviewed;
+> [arXiv:2608.11256](https://arxiv.org/abs/2608.11256)) put light "refine abstract only" edits at
+> **64–80% flagged by Pangram and 38–49% by GPTZero** against **9–15%** for unmodified originals —
+> while **>96% of humanized rewrites evade both**. ARB's value is scale, matched design
 > and a strict operating point — not primacy. **The gap is in our corpora, not in the literature**,
 > which is a smaller claim and a true one.
 
@@ -227,7 +235,9 @@ already exists but has no multilingual evaluation data behind it.
   *intervention*, in both directions, in 2023 — enriching the vocabulary of non-native essays cut the
   average FPR from **61.3% to 11.6%**, and simplifying native essays *raised* misclassification — and
   Karr et al. tie detector scores to long-token and Academic Word List density. The axis is
-  established causally, not by correlation.
+  established causally, not by correlation. Their asymmetry is the frame for everything here:
+  **detectors flag legitimate light editing at 38–80% while letting >96% of deliberately humanized
+  text through** — hardest on the people not cheating.
   **What is actually open is narrower and more useful:** a *continuous, centroid-referenced* distance
   measure — embed a corpus, locate the model's stylistic centroid, plot FPR against each writer's
   distance from it — computed **per subgroup**, with modern detectors, at a calibrated operating point.

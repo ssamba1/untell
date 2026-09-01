@@ -13,12 +13,22 @@ instructions: `arxiv.org`, `export.arxiv.org`, `aclanthology.org`, `api.semantic
 `huggingface.co`, `nature.com`, `science.org`, `link.springer.com`, `europepmc.org`,
 `digital-strategy.ec.europa.eu`, `artificialintelligenceact.eu`.
 
+**A second pass found a third channel that closed most of the gap.** The ACL Anthology publishes its
+complete paper metadata — including abstracts — as XML in its own GitHub repository, and
+`raw.githubusercontent.com` is reachable by both WebFetch and curl. Downloading
+`data/xml/{2024.acl,2025.acl,2026.acl,2025.naacl,2026.eacl}.xml` (≈18 MB) and parsing out the
+relevant entries moved **seven papers from Tier B to Tier A**. This is the Anthology's own
+distribution of its own metadata on a permitted host — not a mirror or a proxy around a denial.
+Several arXiv-only papers were then confirmed through their authors' own GitHub repositories.
+
 **These channels are open and were used as primary sources:**
 
 - **PubMed / PMC via MCP** — full metadata, and full text for open-access records. This covers
   *Nature Human Behaviour*, *Trends in Cognitive Sciences*, *Patterns*, *Science Advances*,
   *PeerJ CS* and more, which is most of the prevalence and fairness literature.
 - **github.com via WebFetch** — author repositories, dataset cards, reference implementations.
+- **ACL Anthology XML via raw.githubusercontent.com** — official abstracts for every ACL, NAACL and
+  EACL paper.
 - **Web search** — indexes abstracts, so a claim quoted identically by several independent indexes
   is corroborated but not confirmed.
 
@@ -44,6 +54,44 @@ instructions: `arxiv.org`, `export.arxiv.org`, `aclanthology.org`, `api.semantic
 | Beemo composition: 6.5k + 13.1k texts, ten instruction-tuned LLMs, expert + LLM edits | Confirmed on the authors' repository, incl. editor models (GPT-4o, Llama 3.1-70B) and the 20–40% edit budget | [github.com/Toloka/beemo](https://github.com/Toloka/beemo) |
 | SynthID-Text ships a no-training Weighted Mean detector and a trained Bayesian detector, integrated in HF Transformers | Confirmed — **plus a build-relevant caveat we did not have:** the DeepMind repo is "not intended for production use" and points to the HF Transformers implementation instead | [github.com/google-deepmind/synthid-text](https://github.com/google-deepmind/synthid-text) |
 
+## Tier A — the ACL Anthology pass (second round)
+
+Read from the Anthology's own XML. Abstracts quoted here are the published ones.
+
+| Paper | Claim as published | Result |
+|---|---|---|
+| **MCP / RealDet** (2025.acl-long.601, Zhu, Ren, Cao, Lin, Fang, Li) | Conformal prediction bounds FPR; MCP recovers the accuracy that plain CP costs; ships RealDet | ✅ **Confirmed.** "most existing detection methods focus excessively on detection accuracy, often neglecting the societal risks posed by high false positive rates… directly applying CP constrains FPRs, [but] also leads to a significant reduction in detection performance." ✗ **But the published abstract never says "length-conditioned"** — that detail came from a secondary summary and is demoted to Tier B, as are RealDet's 15-domain / 22-LLM / 847k-text dimensions |
+| **Beemo** (2025.naacl-long.357) | 6.5k + 13.1k texts, ten instruction-finetuned LLMs, 33 detector configurations, expert editing evades detection | ✅ **Confirmed verbatim**, including "benchmarking 33 configurations" and "expert-based editing evades MGT detection, while LLM-edited texts are unlikely to be recognized as human-written". The repo's "11 detectors" is the initial release; both numbers are right |
+| **RAID** (2024.acl-long.674) | Benchmark scale and the robustness finding | ✅ **Confirmed verbatim**: "over 6 million generations spanning 11 models, 8 domains, 11 adversarial attacks and 4 decoding strategies", evaluating "8 open- and 4 closed-source detectors". The shipped dataset on GitHub is larger (>10M docs, 11 domains, 12 attacks) — cite the release you mean |
+| **Feature-inversion trap / StyloBench** (2026.acl-long.1998, ACL 2026 **Oral**, incl. Preslav Nakov) | Features flip sign under personalization | ✅ **Confirmed**, plus a number we lacked: StyloCheck "predicts both the direction and magnitude of cross-domain performance shifts with an **85% correlation** to actual outcomes" |
+| **DetectRL-X** (2026.acl-long.1773) | 8 languages, 6 domains, 4 commercial LLMs, polish/expand/condense | ✅ **Confirmed verbatim**, including "8 dimensions" and the multilingual paraphrase/perturbation attack framework |
+| **M4GT-Bench** (2024.acl-long.218) | Three tasks incl. human–machine boundary detection | ✅ **Confirmed** — and it carries a finding that supports our thesis directly: "obtaining good performance in MGT detection usually requires an access to the training data from the same domain and generators" |
+| **LitBench** (2026.eacl-long.362) | 43,827 training pairs, 2,480-pair test set, Claude-3.7-Sonnet 73%, trained RMs 78% | ✅ **Confirmed verbatim** |
+
+### Author-repository confirmations
+
+| Paper | Result |
+|---|---|
+| **Adversarial Paraphrasing** ([chengez/Adversarial-Paraphrasing](https://github.com/chengez/Adversarial-Paraphrasing), **NeurIPS 2025**) | ✅ Confirms the figures **already published in `humanizer-research-report.md`**: average **T@1%F reduction of 87.88%** under OpenAI-RoBERTa-Large guidance, and **98.96% on Fast-DetectGPT** |
+| **SynGuard / SynthID robustness** ([githshine/SynGuard](https://github.com/githshine/SynGuard)) | ✅ Exact degradation table, which we only had as prose: SynthID-Text F1 **1.000 → 0.842** (paraphrase), **0.788** (copy-paste), **0.714** (re-translation); SynGuard recovers to 0.923 / 0.891 / 0.775 |
+| **Base Models Look Human** ([YixuanEvenXu/humanization-by-iterative-paraphrasing](https://github.com/YixuanEvenXu/humanization-by-iterative-paraphrasing)) | Repo confirms authorship (Xu, Zhong, Raghunathan, Fang, Kolter) but publishes **no numbers**. The empirical claim stays Tier B — and the paper states it qualitatively, so **no figure may be quoted** |
+
+### ✗ Karr et al. — published, and our numbers were imprecise
+
+*Why AI Detection Fails for Academic Integrity* is **not** a bare preprint: it is Karr, Khvatskii,
+Hua and Chawla (University of Notre Dame), in the **Proceedings of the ACM AI Leadership Summit
+(AILS '26)**, 30 Aug – 2 Sep 2026, Atlanta. That is peer-reviewed, and it raises the weight this
+result carries.
+
+The numbers are sharper than the range we published. We wrote "light edits flagged at 38–80%". The
+paper splits by detector: **light edits flagged at 64–80% by Pangram and 38–49% by GPTZero** — and
+adds the half we were missing entirely: **after humanization, more than 96% of AI-labeled rewrites
+evade both detectors.**
+
+**That asymmetry is the most quotable sentence in this whole literature, and it is now Tier A:
+detectors punish legitimate light editing at 38–80% while letting more than 96% of deliberately
+humanized synthetic text through.** They are hardest on exactly the people not cheating.
+
 ## Tier A — findings that were *not* in our documents and change the plan
 
 These came out of reading sources rather than snippets, and they are the reason this pass was worth
@@ -58,8 +106,16 @@ that **any text-only, one-shot detector with useful power must produce false acc
 governed by the overlap between that population's writing and AI output — a constraint arising from
 population diversity, logically independent of AI model quality, that cannot be overcome by better
 detector engineering.** This is stronger than the AUROC→0.5 ceiling the repo currently cites: it
-does not require the distributions to converge, only the population to be diverse. *(Tier B — the
-arXiv host is blocked; corroborated across index and ResearchGate summaries.)*
+does not require the distributions to converge, only the population to be diverse.
+
+> ⚠️ **Weight this correctly, because we made it the strategic keystone.** It is Tier B, and the
+> weakest Tier-B item the strategy leans on: arXiv-only, **single-authored** (N. A. Garland, Griffith
+> University), from outside the NLP community. It is a mathematical argument, so it stands or falls
+> on its logic rather than on refereeing, and its conclusion is independently corroborated by three
+> Tier-A empirical results — Liang's two-directional intervention, Pratama's per-subgroup ODR, and
+> Karr's asymmetry. Use it as the framing that *explains* those results, not as a theorem the field
+> has ratified. If one item in this ledger deserves an independent read before it carries a strategy,
+> it is this one.
 
 **2. A detector can have a 0% false-positive rate and still be the most biased one.** In Pratama's
 data GPTZero scored 97.22% accuracy with **0.00% FPR** on clean human-vs-AI — and then showed the
@@ -126,6 +182,8 @@ ESL flag-rate figures. Directional only.
 | Beemo "33 detector configurations" | Reconciled, not wrong: **11 detectors across 33 configurations** | `research-to-build.md` §2 |
 | RAID "6M generations, 8 domains, 11 attacks" (ACL abstract) | The shipped dataset is larger: **>10M documents, 11 domains, 12 attacks**, incl. Czech, German and Python. Both are true of different releases — cite the release | ledger only; no doc quoted these |
 | "FPR as a function of stylistic distance from the model centroid — nobody has done it" | **Overstated.** Liang et al. ran the *intervention* in both directions in 2023 (enhancing non-native vocabulary cut FPR 61.3%→11.6%; simplifying native essays raised misclassification), and Karr et al. tie scores to Academic Word List density. What is genuinely open is narrower — a *continuous, centroid-referenced* distance measure, across subgroups, with modern detectors | `research-to-build.md`, chat claims |
+| Karr et al. cited as a preprint; "light edits flagged at **38–80%**" | **Both imprecise.** It is peer-reviewed — Karr, Khvatskii, Hua & Chawla, **ACM AILS '26**, Notre Dame. And the range collapses two detectors: **64–80% Pangram, 38–49% GPTZero**. We also missed the other half entirely: **>96% of humanized rewrites evade both** | `research-to-build.md`, ROADMAP §7 |
+| MCP described as deriving "**length-conditioned** quantile thresholds"; RealDet as "15 domains, 22 LLMs, 847k texts" | Neither appears in the published ACL abstract, read at source. Both demoted to Tier B and hedged. The FPR-bounding claim itself is ✅ confirmed, as is the trade-off MCP exists to fix | `research-to-build.md`, ROADMAP §7 |
 | "Your Brain on ChatGPT" characterised as small and non-peer-reviewed | **Correct, and now citable:** still a preprint, with a formal published Comment (arXiv:2601.00856, Stanković et al.) faulting sample size, EEG methodology, reproducibility, reporting consistency and transparency | `ai-writing-research.md` §6 |
 
 ## Claims that survived unchanged

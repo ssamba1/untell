@@ -374,8 +374,10 @@ Added 2026-09-01, then **checked rather than trusted**. The survey is
 corrections that checking produced are in
 [the verification ledger](docs/research-verification.md)** — read that before quoting any number
 here. Publisher and preprint hosts are blocked by organization egress policy in the environment this
-was compiled in; PubMed/PMC and github.com are not, which put the prevalence, fairness and
-homogenization literature under direct reading. ✅ marks a claim read at source.
+was compiled in; PubMed/PMC and github.com are not. The ACL Anthology publishes its abstracts as XML
+in its own GitHub repository, which put **seven more papers** under direct reading, and several
+arXiv-only results were confirmed from their authors' repositories. ✅ marks a claim read at source.
+Six claims changed on contact with their sources; the ledger lists all of them.
 
 ### The result that should organise everything else
 
@@ -397,14 +399,30 @@ That is stronger than the AUROC→0.5 ceiling this repo currently cites (Ghosal 
 human and machine distributions to converge. This one needs only that people write differently from
 each other, which is not a trend that can reverse.
 
+⚠️ **Weight it honestly, because it is load-bearing here and it is the weakest-sourced thing in this
+section.** Single-authored, arXiv-only, from outside the NLP community. It is a mathematical
+argument, so it survives or fails on its logic rather than on refereeing — and its conclusion is what
+three Tier-A empirical results independently show. Treat it as the frame that *explains* the
+measurements below, not as a result the field has ratified. It is the one item worth an independent
+read before it carries a roadmap.
+
 ✅ **The mechanism is measured, and it runs in both directions.** Liang et al. (*Patterns*, read at
 source, [DOI](https://doi.org/10.1016/j.patter.2023.100779)) did not merely correlate: enriching the
 vocabulary of non-native TOEFL essays cut the average false-positive rate from **61.3% to 11.6%**, and
-simplifying native-speaker essays **raised** their misclassification. Karr et al.
-([arXiv:2608.11256](https://arxiv.org/abs/2608.11256)) tie detector scores to long-token and Academic
+simplifying native-speaker essays **raised** their misclassification. Karr, Khvatskii, Hua and Chawla
+(Notre Dame, **ACM AILS '26** — peer-reviewed, not a preprint;
+[arXiv:2608.11256](https://arxiv.org/abs/2608.11256)) tie detector scores to long-token and Academic
 Word List density rather than authorship. So a detector's verdict on a human tracks that human's
 distance from the model's stylistic centre — which makes §2's homogenization findings and §4's
 fairness findings the same finding, measured from two ends.
+
+✅ **And the asymmetry is the sentence this whole roadmap should be argued from.** The same paper
+measures both directions on published abstracts: light "refine abstract only" edits — guideline-
+compliant assistance — are flagged at **64–80% by Pangram and 38–49% by GPTZero**, while after
+humanization **more than 96% of AI-labelled rewrites evade both detectors**. Unmodified 2023–25
+originals still draw 9–15%, with non-STEM far above STEM (p<0.001). **A deployed detector is hardest
+on the people not cheating and nearly blind to the people who are.** Every item below exists to
+measure some part of that.
 
 **What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
 population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.
@@ -421,10 +439,13 @@ population, per subgroup, at the vendor's threshold and at a calibrated one, and
   arm, and stratify by subgroup — the auditing protocol the literature specifies and nobody ships.
 
 - 🔜 **Calibrated thresholds, so the negative result stops being only a complaint.** Multiscaled
-  conformal prediction ([arXiv:2505.05084](https://arxiv.org/abs/2505.05084), ACL 2025) derives
-  length-conditioned quantile thresholds from a human-only calibration set with a bounded FPR at a
-  chosen α. Its corpus **RealDet** is far larger than first described — 15 domains, 22 LLMs, 847k+
-  texts, 113k+ human-written, EN+ZH, with adversarial variants. Today untell can say a shipped
+  conformal prediction ([2025.acl-long.601](https://aclanthology.org/2025.acl-long.601/); Zhu, Ren,
+  Cao, Lin, Fang, Li) bounds the FPR from a human-only calibration set. ✅ Read at source: plain
+  conformal prediction constrains FPR but "leads to a significant reduction in detection
+  performance", and MCP exists to recover it — which is precisely our trade-off. *(The
+  "length-conditioned" reading and RealDet's 15-domain / 22-LLM / 847k-text dimensions are **not** in
+  the published abstract and remain Tier B — build against the paper, not against our summary.)*
+  Today untell can say a shipped
   threshold flags 17% / 40% / 89% of human documents and has no answer to "then what threshold should
   I use". This is that answer, and it is the principled form of something already found by hand: the
   `verdict_threshold` split that took stdlib-path false positives from 52% to 18% is length-and-path
@@ -440,8 +461,11 @@ population, per subgroup, at the vendor's threshold and at a calibrated one, and
   that expert editing evades detection while LLM editing does not. **ARB**
   ([arXiv:2607.29539](https://arxiv.org/abs/2607.29539)) supplies H2L — human text an LLM rewrote —
   matched four ways at TPR@1%FPR. ✗ An earlier draft of this section called H2L unpublished; that was
-  wrong (Pratama measured it; Karr et al. put light edits at **38–80% flagged** against **9–15%** for
-  unmodified originals). The gap is in *our* corpora, not in the literature.
+  wrong (Pratama measured it; Karr et al. put light edits at **64–80%** for Pangram and **38–49%** for
+  GPTZero against **9–15%** for unmodified originals). The gap is in *our* corpora, not in the
+  literature. ✅ Beemo's abstract was read at source and says exactly what we claimed: 33 detector
+  configurations, "expert-based editing evades MGT detection, while LLM-edited texts are unlikely to
+  be recognized as human-written".
 
 - 🔜 **The base-vs-instruct arm — a day of work for a finding that renames the category.** Base
   (non-instruction-tuned) output is judged overwhelmingly human by GPTZero and Pangram while the
@@ -456,9 +480,10 @@ population, per subgroup, at the vendor's threshold and at a calibrated one, and
 - 🔜 **A SynthID-Text adapter, timed to the Article 50 phase-in.** Article 50(2) has applied since
   **2 August 2026**, with systems already on the market covered from **2 December 2026**; providers
   must ensure synthetic text is marked machine-readably and detectable as AI-generated. Nobody audits
-  whether that marking survives ordinary use, and the evidence says it does not: SynthID-Text degrades
-  under paraphrase, copy-paste editing and back-translation
-  ([arXiv:2508.20228](https://arxiv.org/abs/2508.20228)), its mean score has a published
+  whether that marking survives ordinary use, and the evidence says it does not — ✅ with exact
+  numbers, read from the authors' repo ([githshine/SynGuard](https://github.com/githshine/SynGuard)):
+  SynthID-Text detection F1 falls from **1.000 to 0.842** under paraphrase, **0.788** under
+  copy-and-paste and **0.714** under re-translation. Its mean score also has a published
   layer-inflation attack ([arXiv:2603.03410](https://arxiv.org/abs/2603.03410)), and a legal-technical
   analysis finds machine-verifiable marks "fragile under standard data processing"
   ([arXiv:2603.26983](https://arxiv.org/html/2603.26983v1), LREC 2026), independently corroborating
