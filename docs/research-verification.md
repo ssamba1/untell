@@ -213,7 +213,12 @@ what is the weakest source it rests on, and would a plausible error there change
 | **22 — confidence intervals** | Nothing external | **No change.** Arithmetic over data we already hold |
 | **The composite-null keystone** | arXiv-only, single-authored | **Framing changes; strategy does not.** Its conclusion — that a false-positive rate is a property of a detector *and a population* — is what Liang (✅), Pratama (✅) and Karr independently measure. Losing the proof would cost us the clean theoretical statement, not the mandate to measure per-subgroup on the user's own corpus |
 
-**Result: no roadmap item flips on any Tier-B claim.** Every item is either grounded in a Tier-A
+**Result: no roadmap item flips on any Tier-B claim.** Following this analysis the roadmap was
+rewritten so that the point is structural rather than incidental: §7's strategic core is now built
+from four Tier-A results only (Liang, Pratama, M4GT-Bench, Beemo), and every Tier-B item — the
+composite-null framing, Karr's asymmetry, ARB's design, base-vs-instruct — is demoted to an
+explicitly labelled *lead* that no decision depends on. **The verified set and the load-bearing set
+are now the same set.** Every item is either grounded in a Tier-A
 source, or is itself a measurement that would expose the error it depends on. That is the strongest
 honest statement available here — not "everything is verified", which the egress policy forbids, but
 **"nothing we plan to do would change if the unverified parts turned out wrong."**

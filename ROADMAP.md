@@ -379,50 +379,54 @@ in its own GitHub repository, which put **seven more papers** under direct readi
 arXiv-only results were confirmed from their authors' repositories. ✅ marks a claim read at source.
 Six claims changed on contact with their sources; the ledger lists all of them.
 
-### The result that should organise everything else
+### The result that should organise everything else — built only from sources read at source
 
-*AI Detectors Fail Diverse Student Populations* ([arXiv:2603.20254](https://arxiv.org/abs/2603.20254))
-makes a point the rest of the field writes around. Detection theory models a binary test between
-*one* human distribution and *one* AI distribution. A real institution has no single human
-distribution — the null hypothesis is composite: "this was written by student *i*, whose writing
-distribution is unknown." Under a composite null, any text-only, one-shot detector with useful power
-**must** produce false accusations at a rate set by the overlap between *that population's* writing
-and AI output. The constraint comes from population **diversity**, is logically independent of model
-quality, and cannot be engineered away.
+Four ✅ Tier-A findings, independent of each other, converge on one conclusion. **Every claim in this
+subsection was read from a publisher or the ACL Anthology's own metadata, not from a summary**, which
+is what lets it carry a roadmap.
 
-**The corollary is this repo's entire thesis, upgraded from an opinion to a consequence: a false-positive
-rate is not a property of a detector. It is a property of a detector and the population it is pointed
-at.** A vendor-published FPR is therefore meaningless for any specific institution, and the only valid
-measurement is the one taken on that institution's own corpus, per subgroup.
+1. ✅ **Moving a writer's style moves the verdict, in both directions.** Liang et al. (*Patterns*,
+   [DOI](https://doi.org/10.1016/j.patter.2023.100779)) did not merely correlate. Enriching the
+   vocabulary of non-native TOEFL essays cut the average false-positive rate from **61.3% to 11.6%**;
+   *simplifying* native-speaker essays **raised** their misclassification. Seven detectors, 91 + 88
+   essays, 19.8% unanimously flagged, 97.8% flagged by at least one.
+2. ✅ **A detector can post 0.00% FPR and be the most biased one in the same study.** Pratama
+   (*PeerJ CS*, [DOI](https://doi.org/10.7717/peerj-cs.2953)): GPTZero, **97.22% accuracy at 0.00%
+   FPR** on clean human-vs-AI, then the *worst* of three tools for non-native authors on
+   LLM-**assisted** text (Welch's t = −2.115, p = 0.036), over-detecting **25%** of non-native authors
+   against **11%** of native ones. Ensemble exposure: **FAR 44.44%**, **MFAR 4.17%**.
+3. ✅ **Detection performance is domain- and generator-bound.** M4GT-Bench
+   ([2024.acl-long.218](https://aclanthology.org/2024.acl-long.218/)): "obtaining good performance in
+   MGT detection usually requires an access to the training data from the same domain and generators."
+4. ✅ **Human editing defeats detection; machine editing does not.** Beemo
+   ([2025.naacl-long.357](https://aclanthology.org/2025.naacl-long.357/)): "expert-based editing evades
+   MGT detection, while LLM-edited texts are unlikely to be recognized as human-written."
 
-That is stronger than the AUROC→0.5 ceiling this repo currently cites (Ghosal et al.), which needs the
-human and machine distributions to converge. This one needs only that people write differently from
-each other, which is not a trend that can reverse.
+**Together these force one conclusion, and none of it depends on an unverified source: a false-positive
+rate is not a property of a detector. It is a property of a detector, a population, a domain and an
+editing history.** A vendor-published FPR therefore says nothing about any particular deployment, and
+the only measurement worth anything is the one taken on that deployment's own corpus, per subgroup.
 
-⚠️ **Weight it honestly, because it is load-bearing here and it is the weakest-sourced thing in this
-section.** Single-authored, arXiv-only, from outside the NLP community. It is a mathematical
-argument, so it survives or fails on its logic rather than on refereeing — and its conclusion is what
-three Tier-A empirical results independently show. Treat it as the frame that *explains* the
-measurements below, not as a result the field has ratified. It is the one item worth an independent
-read before it carries a roadmap.
+That is this repo's thesis, and as of this pass it is a consequence of four independently verified
+results rather than a position.
 
-✅ **The mechanism is measured, and it runs in both directions.** Liang et al. (*Patterns*, read at
-source, [DOI](https://doi.org/10.1016/j.patter.2023.100779)) did not merely correlate: enriching the
-vocabulary of non-native TOEFL essays cut the average false-positive rate from **61.3% to 11.6%**, and
-simplifying native-speaker essays **raised** their misclassification. Karr, Khvatskii, Hua and Chawla
-(Notre Dame, **ACM AILS '26** — peer-reviewed, not a preprint;
-[arXiv:2608.11256](https://arxiv.org/abs/2608.11256)) tie detector scores to long-token and Academic
-Word List density rather than authorship. So a detector's verdict on a human tracks that human's
-distance from the model's stylistic centre — which makes §2's homogenization findings and §4's
-fairness findings the same finding, measured from two ends.
+> **A framing we do not lean on.** *AI Detectors Fail Diverse Student Populations*
+> ([arXiv:2603.20254](https://arxiv.org/abs/2603.20254)) argues the same conclusion formally: detection
+> theory assumes one human distribution, an institution has none, and under a composite null any
+> text-only detector with useful power must produce false accusations at a rate set by population
+> diversity — independent of model quality, unfixable by engineering. It is an elegant statement of
+> exactly what the four results above measure. **It is also single-authored, arXiv-only, from outside
+> the NLP community, and this environment cannot reach it.** So it is recorded as a lead worth an
+> independent read, and **nothing in this roadmap rests on it.** The four Tier-A findings do the work
+> on their own.
 
-✅ **And the asymmetry is the sentence this whole roadmap should be argued from.** The same paper
-measures both directions on published abstracts: light "refine abstract only" edits — guideline-
-compliant assistance — are flagged at **64–80% by Pangram and 38–49% by GPTZero**, while after
-humanization **more than 96% of AI-labelled rewrites evade both detectors**. Unmodified 2023–25
-originals still draw 9–15%, with non-STEM far above STEM (p<0.001). **A deployed detector is hardest
-on the people not cheating and nearly blind to the people who are.** Every item below exists to
-measure some part of that.
+> **The sharpest phrasing of the same failure, also recorded as a lead.** Karr, Khvatskii, Hua and
+> Chawla (Notre Dame, **ACM AILS '26** — a peer-reviewed venue, but reachable here only through
+> indexes, so the figures are corroborated rather than read): guideline-compliant "refine abstract
+> only" edits are flagged at **64–80% by Pangram and 38–49% by GPTZero**, while after humanization
+> **more than 96% of AI-labelled rewrites evade both**. *A deployed detector is hardest on the people
+> not cheating and nearly blind to the people who are.* It is the best one-sentence summary of the
+> problem, and the four verified results above establish the plan without it.
 
 **What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
 population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.
@@ -470,8 +474,12 @@ population, per subgroup, at the vendor's threshold and at a calibrated one, and
 - 🔜 **The base-vs-instruct arm — a day of work for a finding that renames the category.** Base
   (non-instruction-tuned) output is judged overwhelmingly human by GPTZero and Pangram while the
   instruction-tuned counterpart is not ([arXiv:2605.19516](https://arxiv.org/abs/2605.19516); Xu,
-  Zhong, Raghunathan, Fang, Kolter — note the paper states this qualitatively, so **do not quote a
-  number we have not measured**). If raw base output goes unflagged, the detector is keying on
+  Zhong, Raghunathan, Fang, Kolter). **This is a Tier-B lead and the item does not rest on it**: the
+  deliverable is *our* measurement, which is what would expose the claim if it were wrong, and the
+  paper states its finding qualitatively so **no number may be quoted from it**. The reason to run the
+  arm regardless is Tier A — M4GT-Bench establishes that detection is generator-bound, and a base
+  model is the cleanest generator contrast available. If raw base output goes unflagged, the detector
+  is keying on
   instruction-tuning register, not machine generation — the same conclusion the homogenization
   literature reaches from the other end, and the reason an L2, autistic or technical writer gets
   flagged for prose that merely sits where RLHF converges. Ship it as
@@ -512,6 +520,21 @@ products and we should say which one we are.
 ✗ Two claims in the first draft were wrong and are corrected in the ledger: that nobody publishes
 H2L results, and that nobody has connected stylistic distance to false-positive rate. Both were
 overstatements that reading the sources removed.
+
+### The rule this section is written under
+
+Publisher and preprint hosts are blocked here by organization egress policy. After exhausting every
+legitimate channel — PubMed/PMC, the ACL Anthology's own metadata, authors' repositories, GitHub code
+search, arXiv mirror repositories, OpenAlex, Crossref, CORE, OpenReview, `github.io` — a set of
+arXiv-only 2026 preprints remains unreadable from here. Calling them validated would be false, and
+leaving them load-bearing would be worse.
+
+So this section is written to a rule instead: **every claim a decision rests on is one that was read
+at source.** Where a Tier-B result is genuinely useful — the composite-null framing, Karr's
+asymmetry, ARB's design, the base-vs-instruct finding — it is cited as a *lead*, marked as such, and
+the item it accompanies is justified without it. **The verified set and the load-bearing set are the
+same set.** What remains unread is signposted for anyone with unrestricted access, in priority order,
+at the end of [the ledger](docs/research-verification.md).
 
 **Two findings that change existing text rather than adding work.** Weber-Wulff et al.
 ([IJEI 2023](https://link.springer.com/article/10.1007/s40979-023-00146-z)) tested 14 detectors,
