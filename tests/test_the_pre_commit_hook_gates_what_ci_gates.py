@@ -40,7 +40,15 @@ def test_the_hook_is_executable():
 
 @pytest.mark.parametrize("check", ["ruff check", "untell.scripts.audit",
                                    "test_docs_claims", "test_roadmap_status",
-                                   "test_retracted_claims_do_not_survive_elsewhere"])
+                                   "test_retracted_claims_do_not_survive_elsewhere",
+                                   # Added in round 53. This is the guard that notices a document
+                                   # stating a count next to a noun the audit tracks, and it was
+                                   # absent from the hook for fifty-two rounds. Four ledger entries
+                                   # DESCRIBING a count-drift defect reproduced the literal string
+                                   # they warned about, re-triggered the check, and reached the
+                                   # remote — because the hook ran the other three doc guards and
+                                   # not this one.
+                                   "test_every_audit_check_can_fail"])
 def test_the_hook_still_runs_every_gate_ci_runs(check):
     """The drift that matters. Dropping a check from this script makes the hook faster and makes it
     stop protecting the thing it was written for, with no visible difference."""

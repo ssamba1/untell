@@ -3655,3 +3655,29 @@ written in the same shape.
 
 The remaining drift was real: six test files added this round took the module count from 614 to 620,
 repaired with `--fix-counts`.
+
+---
+
+# Round fifty-three — why four self-inflicted failures reached the remote
+
+Four times a ledger entry **describing** a count-drift defect reproduced the literal string it warned
+about and re-triggered the check. Round fifty-two documented that. What it did not explain is the
+part that actually matters: **all four reached the remote before anyone noticed.**
+
+The pre-commit hook built in round forty exists to refuse a commit CI would reject. On a Markdown
+change it runs `test_docs_claims`, `test_roadmap_status` and
+`test_retracted_claims_do_not_survive_elsewhere`. It did **not** run
+`test_every_audit_check_can_fail` — which is the guard that notices a document stating a count next
+to a noun the audit tracks.
+
+So the gate was working exactly as configured, and its configuration had a hole shaped precisely like
+the failure that kept recurring. Every one of the four was caught eventually — by a full-suite run,
+long after the push.
+
+It is in the hook now, verified by staging a doc edit that states a drifting count and watching the
+commit be refused. It costs about twenty-five seconds and only on a Markdown change.
+
+**The rewritten lesson.** Round fifty-two's conclusion — that the checks were right every time and
+none should be loosened — was correct and incomplete. A check that is right and runs too late is a
+check that documents failures rather than preventing them. The four instances were not a prose
+problem; they were a **scheduling** problem, and the prose was where it happened to show.

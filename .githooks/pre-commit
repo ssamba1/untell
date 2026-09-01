@@ -46,12 +46,19 @@ if printf '%s\n' "$changed" | grep -qE '\.py$'; then
     fi
 fi
 
+# `test_every_audit_check_can_fail.py` is in this list for a specific reason. It is the guard that
+# notices a document stating a count next to a noun the audit tracks — "N tests", "N modules" — and
+# it was NOT run here for the first fifty-two rounds. Four times a ledger entry DESCRIBING a
+# count-drift defect reproduced the literal string it warns about and re-triggered the check, and all
+# four reached the remote before anyone noticed, because the hook ran the other three doc guards and
+# not this one. It costs about twenty-five seconds and only on a Markdown change.
 docs_changed=$(printf '%s\n' "$changed" | grep -E '\.md$' || true)
 if [ -n "$docs_changed" ]; then
     python -m pytest -q -p no:randomly \
         tests/test_docs_claims.py \
         tests/test_roadmap_status.py \
         tests/test_retracted_claims_do_not_survive_elsewhere.py \
+        tests/test_every_audit_check_can_fail.py \
         >/dev/null 2>&1 || fail "documentation guards failed. Run them to see which."
 fi
 
