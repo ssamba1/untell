@@ -37,7 +37,7 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 `unedited-adult-writing`, `liang-population-fpr`, `liang-paired-gpt4-polish`,
 `liang-threshold-sweep`, `liang-component-ablation`, `liang-paired-equalised-odds`,
 `liang-paired-separation`, `liang-paired-fnr-disparity`,
-`liang-prompt-engineered-evasion`.
+`liang-prompt-engineered-evasion`, `liang-gpt-simplify-reversal`.
 
 ## The corpora
 
@@ -410,6 +410,12 @@ is keyed to, GPT-4's editing removes some of it. That is a stronger form of Resu
 the penalty is on a way of writing, not on machine provenance — and here it is established by a
 within-writer paired design rather than by a between-corpus contrast.
 
+> **SCOPE CORRECTION ([Result 18](#result-18--result-12-does-not-generalise-on-a-second-population-llm-editing-makes-it-worse)).**
+> This holds for TOEFL essays and does **not** generalise. On the second machine-edited arm Liang
+> ships — 8th-grade essays simplified by GPT — the effect reverses: 88.6% → 94.3%, d = +0.646.
+> The numbers above stand; the sentence "a language model editing an essay makes it look like a
+> more fluent human wrote it" was drawn from one population and is withdrawn as a general claim.
+
 ## Result 13 — raising the threshold cuts the error rate and widens the gap
 
 Untell's threshold sweep and saturation check, run on Liang's corpus. Neither
@@ -437,7 +443,7 @@ would take that trade without seeing it. The honest reading of the last two rows
 is fair" — it is that the detector has stopped discriminating between anything, which the
 saturation flag says rather than letting a clean-looking ratio imply fairness.
 
-## Result 14 — the two channels rank the populations in nearly opposite orders, and that explains Result 12
+## Result 14 — the two channels rank the populations in nearly opposite orders, and that is what decides the direction of an edit
 
 Component ablation on Liang's 485 essays. Each half of `perplexity_burstiness` is thresholded at
 its **own median**, so both flag about half the corpus and neither can look fairer merely by
@@ -459,13 +465,18 @@ CS224N at the top and college admission essays at the bottom. Each channel's wor
 population is near the other's best-served, and both gaps separate at 95%. This is Result 3 on a
 third corpus with five bands instead of two, and it is much larger here.
 
-**It also explains Result 12's paradox.** GPT-4 polishing the same 91 TOEFL essays moves them
-*down* the vocabulary channel, 100.0% → 24.2%, and *up* the burstiness channel, 46.2% → 74.7%.
-The model replaces the common-word-heavy vocabulary of a learner writing in a second language,
-which is most of what this detector is keyed to, while regularising sentence lengths, which is
-what the smaller channel penalises. The vocabulary effect is far larger, so the composite flag
-rate falls: 96.7% → 78.0%. A language model editing an essay does not make it look
-machine-written to this detector — it makes it look like a more fluent human wrote it.
+**It also explains Result 12's paradox — and, in [Result 18](#result-18--result-12-does-not-generalise-on-a-second-population-llm-editing-makes-it-worse),
+predicts where that paradox reverses.** GPT-4 polishing the same 91 TOEFL essays moves them *down*
+the vocabulary channel, 100.0% → 24.2%, and *up* the burstiness channel, 46.2% → 74.7%. The model
+replaces the common-word-heavy vocabulary of a learner writing in a second language, which is most
+of what this detector is keyed to, while regularising sentence lengths, which is what the smaller
+channel penalises. Here the vocabulary effect is larger, so the composite flag rate falls: 96.7% →
+78.0%.
+
+The general form is what matters, because the balance is not fixed: **an edit moves a text on two
+channels that disagree, and the net direction is decided by which movement is larger.** On
+8th-grade essays simplified by GPT the burstiness collapse dominates instead and the flag rate
+*rises*. Same mechanism, opposite outcome.
 
 ## Result 15 — both error rates, and why Result 11's threshold recommendation was wrong
 
@@ -563,6 +574,46 @@ race untell cannot win and should stop spending on, which stands — but the rea
 was never the axis. And Result 15's finding sharpens: the lite tier is not merely miscalibrated
 for accusation, it is miscalibrated against an adversary who does nothing but ask nicely.
 
+## Result 18 — Result 12 does not generalise: on a second population, LLM editing makes it *worse*
+
+Result 12 found that GPT-4 polishing made non-native TOEFL essays *less* likely to be flagged, and
+drew a general conclusion: "a language model editing an essay does not make it look
+machine-written to this detector — it makes it look like a more fluent human wrote it." Liang
+ships a second machine-edited arm, `HewlettStudentEssay_GPTsimplify_88`, which was not used. Run
+on it, **the effect reverses.**
+
+| population | treatment | FPR before | FPR after | Cohen's d |
+|---|---|---|---|---|
+| TOEFL, non-native | GPT-4 **polished** | 96.7% | **78.0%** | negative — editing helped |
+| US 8th-grade | GPT **simplified** | 88.6% | **94.3%** | **+0.646** — editing hurt |
+
+**The general claim is withdrawn.** Editing an essay with a language model does not reliably make
+it look more human to this detector; on 8th-grade writing it made things measurably worse. Result
+12's numbers stand for TOEFL and its inference beyond TOEFL does not.
+
+**What survives is the mechanism, and it is not the one I would have guessed.** The obvious
+explanation — that polishing and simplifying push vocabulary in opposite directions — is wrong.
+Measured on the raw channels, both treatments move *both* channels the same way:
+
+| population | treatment | common-word ratio | burstiness |
+|---|---|---|---|
+| TOEFL | polished | 0.5614 → 0.4411 (**−0.120**) | 0.4022 → 0.3269 (−0.075) |
+| 8th grade | simplified | 0.5618 → 0.4763 (−0.086) | 0.4969 → 0.3086 (**−0.188**) |
+
+A *higher* common-word ratio reads as machine-like; a *lower* burstiness reads as machine-like. So
+in both cases the edit makes the essay look more human on vocabulary and more machine on
+burstiness — the two channels pull against each other exactly as
+[Result 14](#result-14--the-two-channels-rank-the-populations-in-nearly-opposite-orders-and-that-explains-result-12)
+describes, and **the net direction is decided by which movement is larger.** For TOEFL the
+vocabulary shift dominates (−0.120 against −0.075) and the score falls. For the 8th-graders the
+burstiness collapse dominates (−0.188 against −0.086) and the score rises.
+
+So the opposed-channel finding is confirmed, and strengthened by predicting a reversal rather than
+only describing a static ranking. What is refuted is the tidier story built on top of it. The
+honest form of Result 12 is: **an LLM edit moves a text along two channels that disagree, and
+whether the detector then flags it more or less is a property of the population and the edit, not
+of language models in general.**
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
@@ -615,6 +666,11 @@ argue against. All are fixed and pinned by tests.
 
 | defect | how it showed | what it would have caused |
 |---|---|---|
+| Result 12 generalised from one population | a second machine-edited arm reversed it, d = +0.646 | "LLM editing makes text look human" as a general claim, from n=1 population |
+| equalised odds reported no pooled pair | a 100% false-negative rate sat unremarked beside ordinary per-group rows | a threshold that catches nothing reading as a threshold that is safe |
+| an axis no row carries rendered empty | `Overall` beside two real axes, groups `{}` | an empty heading reads as "looked here, found nothing" |
+| ablation assumed a numeric band axis | `--band-axis population` printed "no rows fell into a band" | a real 145x disparity looking like an absence of data |
+| separation computed only for two bands | five populations reported 145x beside `separated: null` | the largest disparity in the project quoted with no significance attached |
 | `NA` treated as a subgroup | ASAP codes missing demography as `"NA"`; 4,019 rows scored 19.1% against 30–38% for real groups | missing data became the "best" arm and produced a phantom **2.01x** disparity |
 | `--csv` dropped label columns | `ell_status` vanished, the axis rendered as a bare heading | an empty heading reads as "no disparity here" |
 | confident rows broke at scale | 3/3 on 23 repos became 6/9 on 111 | a vendor rule matched a repo's **own name** |
@@ -622,5 +678,15 @@ argue against. All are fixed and pinned by tests.
 | monotonicity over-claimed | held-out split did not reproduce it | a 1.57x headline the data could not support |
 | "perplexity" was a stoplist | a real LM pointed the other way | a mechanism story built on a misnamed proxy |
 
-Four of the six surfaced only by pointing the instrument at a corpus it was not built around. That
-is the argument for the second corpus, restated as evidence.
+Four of the original six surfaced only by pointing the instrument at a corpus it was not built
+around. That is the argument for the second corpus, restated as evidence — and the five added on
+2026-09-01 make it twice over: every one of them surfaced on the *first run against a third
+corpus*, four of them within an hour of that corpus becoming loadable. A measurement tool is
+tested by the data it has not seen, and this one had been reporting confidently on two corpora
+while carrying a branch that could not band a categorical axis and a report with no pooled rates
+in it.
+
+The first row is the one worth keeping in view: it is not a coding defect but an inference defect,
+and it is the same one this document catches detectors making. A result measured on one population
+was written up as a fact about language models. It took a second population to see it, exactly as
+Result 2's monotonicity claim needed a held-out split.
