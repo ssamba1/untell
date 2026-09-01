@@ -2103,3 +2103,27 @@ The other new flags are the checker behaving correctly on two things it cannot s
 twenty-seven, minutes after it was written.** That is the first time a guard in this ledger has
 caught something in the round that created it rather than an inherited defect, and it is the only
 evidence that any of these checks pay for themselves going forward rather than only backwards.
+
+## The parity result, complete this time
+
+Round twenty-five compared truncated logs — both runs had been piped through `tail -50`, so the
+failure-ID diff was taken over the last fifty lines of each and could not have been trusted. Both
+suites were re-run capturing **every** failure ID. MEASURED by
+`python -m pytest tests/ -q -p no:randomly --continue-on-collection-errors`, branch against a
+`git worktree` at `main` (b054e67):
+
+| | branch | base |
+|---|---|---|
+| failing ids | **81** | 82 |
+| passed | 8,933 | 8,803 |
+| **only on branch (regressions)** | **none** | — |
+| only on base (fixed by branch) | — | `test_docs_claims.py::test_why_best_test_count_is_not_stale` |
+
+**The regression set is empty and the branch fixes one failure base has** — the documented test count
+stopped being stale once this session's tests were added. The three regressions round twenty-five
+found are gone, and nothing replaced them.
+
+The methodological note is the reusable part: **a truncated log cannot support a difference claim.**
+Round twenty-five's `tail -50` was a convenience that quietly reduced a set comparison to a comparison
+of two arbitrary windows, and it produced a diff with entries on both sides that were artefacts of
+where each window happened to start. The counts were right; the diff was noise.
