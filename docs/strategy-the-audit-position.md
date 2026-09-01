@@ -234,6 +234,55 @@ shows it alone. `subgroup_audit` reported one axis at a time until 2026-09-01. I
 them (`--by "race_ethnicity*ell_status"`), with the missing-data rule applied to every part so a
 row lacking either lands nowhere rather than in a cell named after absent data.
 
+### Who this is actually for — the framing was wrong, and the correction is good news
+
+This document has said throughout that the instrument is "a tool a university could point at the
+detector it is about to license". Searched 2026-09-01, that sentence describes a market which is
+moving the other way.
+
+**As of August 2026, more than fifty universities across the US, Canada, the UK, Australia and
+South Africa have formally banned, disabled, or recommended against AI detection tools** — MIT,
+Yale, UCLA, Vanderbilt, the University of Toronto among them. Turnitin publishes a sub-1%
+false-positive claim; independent work puts it at 5–20% on native English writing and up to 61% on
+non-native, and a 2026 peer-reviewed evaluation on 192 texts reports overall accuracy of 0.61.
+Students have begun filing suit over false accusations.
+
+**Read [Vanderbilt's published reasoning](https://www.vanderbilt.edu/brightspace/2023/08/16/guidance-on-ai-detection-and-why-were-disabling-turnitins-ai-detector/)
+and it is this document's own argument, made by the customer.** They cite: the arithmetic that
+75,000 annual submissions at a claimed 1% false-positive rate is ~750 students wrongly flagged;
+bias against non-native English speakers and first-generation students; disproportionate impact on
+international students, disciplines with rigid formatting conventions, and writers who received
+editing support; and — the line that matters most here — **"no insight into how it works"**.
+
+So the position is not wrong, but the buyer and the transaction were. Three corrections:
+
+1. **The decision is usually whether to use a detector at all, not which one to buy.** An
+   instrument that produces local evidence serves that decision in either direction, and the
+   institutions making it are already reaching for exactly this evidence class — they are just
+   citing other people's studies, on other people's students, because they have no way to run it
+   on their own.
+
+2. **"No insight into how it works" is a capability this repository has and almost nobody else
+   does.** Component ablation ([Result 14](detector-fairness-measured.md)) opens the scorer: it
+   showed one channel flagging 100.0% of non-native TOEFL essays and 0.7% of Stanford CS224N
+   essays, with the two halves pulling in opposite directions and partly cancelling in the
+   aggregate. A black-box benchmark structurally cannot report that, and it is precisely the
+   complaint Vanderbilt raised.
+
+3. **[Result 15](detector-fairness-measured.md) is the same conclusion reached from the other
+   end.** Fifty universities concluded from institutional experience that these scores should not
+   carry accusations. This instrument concluded from 391 paired essays that its own lite tier is a
+   usable ranking signal and not an accusation instrument at any threshold — AUROC 0.8012, and no
+   operating point with tolerable error on both sides. The two arguments are independent and they
+   agree.
+
+**What that changes about the work.** It stops the strategy resting on a procurement story that
+the evidence does not support, and it makes the honest pitch narrower and more defensible: not
+"choose better", but *"here is what this detector does to writing like your students', measured
+on your corpus, with the mechanism visible and every rate carrying an interval"*. That is useful
+to an institution banning a tool, one keeping it under constraints, and one defending either
+decision — and it is the same artifact in all three cases.
+
 ### The one measurement with no better-resourced prior version
 
 Everything else in this document is a narrowing. BAID benchmarks detector bias across seven
