@@ -735,3 +735,43 @@ def test_the_ablation_separation_is_corrected_too():
     for name, comp in res["components"].items():
         assert "separated_uncorrected" in comp, f"{name} lost the plain verdict"
         assert comp["groups_compared"] == 5, f"{name}: {comp['groups_compared']}"
+
+
+def test_the_printed_verdict_names_the_test_it_actually_used():
+    """A star meaning the corrected test beside a footnote describing the plain one is a lie.
+
+    The renderer switched to the corrected verdict with `_disparity`, but its wording still said
+    "the two groups' 95% Wilson intervals do not overlap" — which is the test it had stopped
+    using. A reader checking the printed intervals by eye would have found them overlapping on a
+    row marked as separated, or the reverse, with nothing on the page to explain it.
+    """
+    import eval.subgroup_audit as sa
+
+    rows = []
+    spec = [("a", 88, 200), ("b", 58, 200)] + [(f"c{i}", 72, 200) for i in range(10)]
+    for band, hits, n in spec:
+        rows += [{"text": "x", "g": band, "flagged": i < hits} for i in range(n)]
+    rep = {"corpus_n": len(rows), "scored_n": len(rows), "tier": "lite", "threshold": 0.5,
+           "overall_fpr": 0.36, "overall_ci": [0.34, 0.38], "saturation": None,
+           "axes": sa._group(rows, ("g",))}
+    text = sa.render(rep)
+    d = rep["axes"]["g"]["disparity"]
+    assert d["separated_uncorrected"] and not d["separated"], "fixture is no longer marginal"
+    assert "selection is accounted for" in text, (
+        f"the renderer hid that a plain-95% separation did not survive:\n{text}"
+    )
+    assert "widened for a pick from" in text, text
+
+
+def test_a_two_group_axis_still_reads_plainly():
+    """The extra wording must not clutter the common case, where nothing was selected."""
+    import eval.subgroup_audit as sa
+
+    rows = ([{"text": "x", "g": "a", "flagged": i < 140} for i in range(400)]
+            + [{"text": "x", "g": "b", "flagged": i < 60} for i in range(400)])
+    rep = {"corpus_n": 800, "scored_n": 800, "tier": "lite", "threshold": 0.5,
+           "overall_fpr": 0.25, "overall_ci": [0.22, 0.28], "saturation": None,
+           "axes": sa._group(rows, ("g",))}
+    text = sa.render(rep)
+    assert "widened for a pick" not in text, text
+    assert "intervals separate" in text, text

@@ -431,7 +431,9 @@ Untell's threshold sweep and saturation check, run on Liang's corpus. Neither
 | 0.80 | 0.6% | — | saturated |
 | 0.90+ | 0.2% | — | saturated |
 
-`*` = the two groups' Wilson intervals do not overlap.
+`*` = a real difference — the intervals do not overlap once widened for the fact that these two
+groups were *selected* as the extremes of five ([the correction](#result-19--crossing-finds-less-not-more-the-headline-is-retracted)).
+Both starred rows were re-derived under it and hold.
 
 The overall rate falls monotonically. **The disparity does not.** It more than quadruples between
 0.30 and 0.50 — at 0.50 the TOEFL non-native essays are flagged 49.5% (39.4–59.5) against 7.1%

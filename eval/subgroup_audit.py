@@ -465,10 +465,18 @@ def render(report: dict) -> str:
                        f"(95% CI {lo:5.1%}-{hi:5.1%})")
         d = block["disparity"]
         if d:
-            verdict = ("intervals separate" if d["separated"]
-                       else "intervals OVERLAP - not shown to differ")
+            k = d.get("groups_compared", 2)
+            verdict = ("separate" if d["separated"] else "OVERLAP - not shown to differ")
+            # Say which test the verdict came from. Above two groups these are the extremes of a
+            # set the data chose, and the widened interval -- not the printed 95% one -- decides.
+            how = ("intervals" if k <= 2 else
+                   f"intervals widened for a pick from {k} groups")
+            extra = ""
+            if k > 2 and d["separated_uncorrected"] and not d["separated"]:
+                extra = "  [separates at a plain 95%, but not once the selection is accounted for]"
             ratio = f"{d['ratio']}x" if d["ratio"] is not None else "n/a"
-            out.append(f"  -> worst {d['worst']} vs best {d['best']}: {ratio}, {verdict}")
+            out.append(f"  -> worst {d['worst']} vs best {d['best']}: {ratio}, "
+                       f"{how} {verdict}{extra}")
     out += [
         "",
         "This measures a DETECTOR, not a document. A per-group rate says nothing about whether any",
@@ -565,9 +573,11 @@ def render_ablation(result: dict) -> str:
             out.append(f"     {g:14} n={v['n']:<5} {v['fpr']:6.1%} "
                        f"[{v['ci'][0]:.1%}, {v['ci'][1]:.1%}]")
         out.append(f"     -> worst {block['worst']}, {block['ratio']}x, "
-                   f"separated={block['separated']}")
+                   f"separated={block['separated']} "
+                   f"(from {block.get('groups_compared', 2)} groups)")
     if result["opposed"]:
-        out += ["", "  !! THE COMPONENTS ARE BIASED IN OPPOSITE DIRECTIONS, both separated at 95%.",
+        out += ["", "  !! THE COMPONENTS ARE BIASED IN OPPOSITE DIRECTIONS, both separated after",
+                "     correcting for the number of groups compared.",
                 "     They partly cancel in the combined score, so ANY aggregate fairness number",
                 "     for this detector understates both. A black-box audit cannot see this."]
     return "\n".join(out)
@@ -594,8 +604,10 @@ def render_sweep(results: list[dict]) -> str:
                 bits.append(f"{axis}={d['ratio']}x{mark}")
         fpr = f"{r['overall_fpr']:.1%}" if r["overall_fpr"] is not None else "n/a"
         out.append(f"{r['threshold']:>6} {fpr:>12}  {state:<12} " + "  ".join(bits))
-    out += ["", "* = the two groups' 95% Wilson intervals do not overlap (a real difference).",
-            "  No star means the ratio is not distinguishable from noise at this sample size."]
+    out += ["", "* = a real difference: the intervals do not overlap once widened for the fact",
+            "  that these two groups were SELECTED as the extremes of the set (Bonferroni over",
+            "  the pairs a worst-vs-best pick could have landed on). No star means the ratio is",
+            "  not distinguishable from noise at this sample size and this number of groups."]
     if not usable:
         out.append("")
         out.append("NO measurable operating point: this detector flags nearly all human text at "
