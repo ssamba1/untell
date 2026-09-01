@@ -781,7 +781,8 @@ def cmd_inspect(path: Path, workdir: Path, keep: bool, limit: int | None,
           f"({len(conf) / len(allrows):.0%} of the budget saved)")
     changed = [r for r in done if r.get("evidence") == "source"
                and r["category"] != next((o["category"] for o in rows if o["name"] == r["name"]), None)]
-    print(f"  {len(changed)} categories revised by the tree")
+    print(f"  {len(changed)} categories revised by the tree\n")
+    print(_tally(allrows))
     errs = [r for r in allrows if r.get("inspect_error")]
     if errs:
         print(f"  {len(errs)} could not be cloned", file=sys.stderr)
@@ -791,17 +792,41 @@ def cmd_inspect(path: Path, workdir: Path, keep: bool, limit: int | None,
     return 0
 
 
+def _tally(rows: list[dict]) -> str:
+    """Category counts, DECIDED and QUEUED kept apart.
+
+    MEASURED 2026-09-01, by walking into it: this printed one merged tally, and a merged tally
+    reads as "what the field is made of". It is not. An unsure row keeps its category as a PRIOR
+    for the reader -- deliberately, because dropping it cost real agreement -- so the fallback
+    bucket carries the label `rule-based-rewriter` on every row it has not decided. On the
+    131-repo sweep that bucket was 66 rows, all of them unsure, and tallying it produced a
+    field-composition figure of 32% against the census's 60% that meant nothing at all. A
+    placeholder that reads as a finding is the same defect as an empty axis heading, and the
+    only reliable guard is to never print the two together.
+    """
+    decided: dict[str, int] = {}
+    queued: dict[str, int] = {}
+    for r in rows:
+        bucket = queued if r.get("needs_read") else decided
+        bucket[r["category"]] = bucket.get(r["category"], 0) + 1
+    lines = ["  DECIDED -- these are verdicts:"]
+    lines += [f"    {c:24} {n:4}" for c, n in sorted(decided.items(), key=lambda kv: -kv[1])]
+    if not decided:
+        lines.append("    (none)")
+    lines.append("")
+    lines.append("  READ QUEUE -- these are PRIORS for a reader, not findings. Do not tally them")
+    lines.append("  as a picture of the field; the fallback assigns a category to every row it")
+    lines.append("  could not decide.")
+    lines += [f"    {c:24} {n:4}" for c, n in sorted(queued.items(), key=lambda kv: -kv[1])]
+    return "\n".join(lines)
+
 def cmd_classify(path: Path) -> int:
     rows = [classify(r) for r in _load(path)]
     confident = [r for r in rows if not r["needs_read"]]
-    counts: dict[str, int] = {}
-    for r in rows:
-        counts[r["category"]] = counts.get(r["category"], 0) + 1
     print(f"{len(rows)} repos: {len(confident)} classified from metadata, "
           f"{len(rows) - len(confident)} need a reader "
           f"({100 * len(confident) / max(len(rows), 1):.0f}% of the budget saved)\n")
-    for cat, n in sorted(counts.items(), key=lambda kv: -kv[1]):
-        print(f"  {cat:24} {n:4}")
+    print(_tally(rows))
     out = path.with_suffix(".classified.json")
     out.write_text(json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\nwrote {out.relative_to(ROOT) if out.is_relative_to(ROOT) else out}")

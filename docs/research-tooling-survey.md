@@ -533,6 +533,33 @@ ungrouped. This paragraph first said `stef41/lmscan` and `Jroo1053/MGTMark` were
 reader"; both were then read, and neither is. `lmscan` computes `fp / total_neg` in its
 evaluation module, `MGTMark` the same per run-config. No subgroups in either.
 
+### A third defect, found by walking into it
+
+With 131 repos read at source, the obvious next question is what the sweep says the field is made
+of — `ROADMAP.md` opens on exactly that table, and its headline is that **60% of the field either
+instructs a humanizer or resells one**. Tallying the sweep's categories gives **32%**, a 27-point
+gap that would be a significant finding about where the field is moving.
+
+It is not a finding. It is an artifact of how the tally was printed. Of the sweep's 131 rows, 66
+are `rule-based-rewriter` and **every one of them is `unsure`** — that category is the classifier's
+fallback, the bucket for "has source; detector-in-loop and meaning verification need reading". An
+unsure row keeps a category on purpose, as a prior for whoever reads it: dropping the category was
+measured to take unsure-row agreement from 11/24 down to 4/24, because a reader starting from a
+wrong prior still starts from a prior. But that means half the sweep sat in a bucket wearing a
+category name, and a merged tally counted it as though it were a verdict.
+
+`classify` and `inspect` now print two lists that cannot be added together — DECIDED, and a READ
+QUEUE labelled as priors rather than findings. The defect is the same one this repository already
+fixed twice in the audit: an empty axis heading that reads as "no disparity here", and a report
+with no pooled error rates that let a 100% false-negative rate pass unremarked. **A placeholder
+that reads as a finding is the recurring bug in this codebase**, and the only reliable guard is
+never to render the two side by side.
+
+Worth stating plainly: nothing above tells you the field's composition has or has not changed. The
+census ran 624 queries and read source by hand; this sweep ran 11 angles and reads file trees.
+They are not comparable samples measured the same way, and the honest answer to "what is the field
+made of in September" is that this sweep does not establish it.
+
 ### Two defects the run exposed in the tooling
 
 Both are fixed and pinned by tests, and both were only visible because the run was big enough.

@@ -534,3 +534,44 @@ def test_the_fairness_probe_does_not_decide_anything():
         "the fairness probe has become a classifier branch; score it against the census overlap "
         "first, the way the detector branch was not"
     )
+
+
+def test_a_tally_never_merges_verdicts_with_the_read_queue():
+    """A merged category tally reads as "what the field is made of". It is not.
+
+    An unsure row keeps its category as a PRIOR for the reader — deliberately, because dropping
+    it cost real agreement — so the fallback labels every row it could not decide
+    `rule-based-rewriter`. MEASURED 2026-09-01 by walking into it: on the 131-repo sweep that
+    bucket held 66 rows, ALL of them unsure, and tallying the merged output produced a
+    field-composition figure of 32% against the census's 60% that meant nothing whatsoever.
+
+    A placeholder that reads as a finding is the same defect as an empty axis heading in the
+    audit, and the only reliable guard is to never print the two together.
+    """
+    rows = [
+        {"category": "prompt-guide", "needs_read": False},
+        {"category": "unicode-trickery", "needs_read": False},
+        {"category": "rule-based-rewriter", "needs_read": True},
+        {"category": "rule-based-rewriter", "needs_read": True},
+    ]
+    out = census._tally(rows)
+    decided, queue = out.split("READ QUEUE", 1)
+    assert "rule-based-rewriter" not in decided, (
+        f"an undecided row appeared among the verdicts:\n{decided}"
+    )
+    assert "prompt-guide" in decided and "prompt-guide" not in queue
+    assert "rule-based-rewriter" in queue
+    assert "not findings" in out, "the read queue is not labelled as priors"
+
+
+def test_the_fallback_keeps_its_category_as_a_prior():
+    """The fix must not be "drop the category", which was already measured to be worse.
+
+    Unsure-row agreement went 4/24 -> 11/24 when guarded rows kept their category, because a
+    reader starting from a wrong prior still starts from a prior. The separation belongs in the
+    PRESENTATION, not in the data.
+    """
+    row = census.classify({"full_name": "someone/thing", "description": "rewrites text",
+                           "language": "Python", "topics": []})
+    assert row["category"], "the fallback stopped naming a category at all"
+    assert row["needs_read"] is True
