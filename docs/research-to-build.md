@@ -207,6 +207,8 @@ it is a ready-made fairness corpus with ground truth and a permissive licence.
 |---|---|---|
 | **Beemo** | Human **expert** edits of machine text — external control for the rewrite loop | [HF](https://huggingface.co/datasets/toloka/beemo) / [2025.naacl-long.357](https://aclanthology.org/2025.naacl-long.357/) |
 | **ARB** | H2L: human text rewritten by an LLM — the false-accusation case | [arXiv:2607.29539](https://arxiv.org/abs/2607.29539) |
+| **Resume corpus (LREC 2026)** | **The assisted arm with a public three-way label**: 420 resumes marked authentic / AI-enhanced / fully AI-generated, five IT job descriptions, authentic ones anonymised. Commercial detectors do badly on it — Originality 55.7% accuracy, Writer 25.0% | [2026.lrec-1.581](https://aclanthology.org/2026.lrec-1.581/) |
+| **SenDetEX benchmark** | Sentence-level detection on human-AI hybrid text where the two alternate irregularly — the case our length-conditioned curve says is hardest | [2025.emnlp-main.268](https://aclanthology.org/2025.emnlp-main.268/) |
 | **RealDet** ⚠️ Tier B | Calibration corpus: 15 domains, 22 LLMs, 847k+ texts, 113k+ human-written, EN+ZH, plus adversarial paraphrase/edit variants — **none of these dimensions appear in the published abstract**, so they are unverified at source | [arXiv:2505.05084](https://arxiv.org/abs/2505.05084) |
 | **StyloBench** | Personalized/style-imitating machine text — triggers feature inversion | [arXiv:2510.12476](https://arxiv.org/pdf/2510.12476) |
 | **DetectRL-X** | 8 languages, 6 domains, commercial LLMs, **and polish/expand/condense ops** | [arXiv:2605.15518](https://arxiv.org/abs/2605.15518), ACL 2026 |

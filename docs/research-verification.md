@@ -1962,3 +1962,121 @@ its result would have mixed old and new code. It was killed rather than reported
 second time in this session that editing during a long run contaminated it** — the first was
 installing spaCy mid-suite. The rule that follows: a long verification run makes the tree read-only
 until it finishes, and the discipline costs nothing compared with trusting a mixed result.
+
+---
+
+# Round twenty-seven — the corpus knew things the strategy did not
+
+The cached Anthology corpus has been used to *check* claims. This round used it to *look* — reading
+the papers under each topic that this repository had never cited. Six of them change something.
+
+## ✗ 1. "Nobody audits whether that marking survives ordinary use" is false
+
+ROADMAP §7 said exactly that of Article 50 watermark marking. **WaterPark**
+([2025.findings-emnlp.1148](https://aclanthology.org/2025.findings-emnlp.1148/)) is a unified
+platform integrating **10 watermarkers and 12 removal attacks**, built to answer "what are the
+strengths/limitations of various watermarkers, especially their attack robustness?" That is the audit
+the claim said did not exist. **This is the fourth "nobody does this" claim in this ledger to fail on
+contact with the corpus**, after H2L, the stratified audit and stylistic distance.
+
+## ✗ 2. And the item's *design* was wrong for a third-party auditor
+
+Row 21 said "build against the HF Transformers implementation" of SynthID's detector. That detector
+needs the provider's key or scheme. **TTP-Detect**
+([2026.findings-acl.990](https://aclanthology.org/2026.findings-acl.990/)) states the consequence
+better than we had:
+
+> "existing secret-key schemes tightly couple detection with injection, requiring access to keys or
+> provider-side scheme-specific detectors for verification. **This dependency creates a fundamental
+> barrier for real-world governance, as independent auditing becomes impossible without compromising
+> model security or relying on the opaque claims of service providers.**"
+
+That is this repository's own thesis, published, about watermarks. **An auditor holding the vendor's
+key is not a third party.** TTP-Detect's architecture — decouple detection from injection, reframe it
+as relative hypothesis testing against a proxy model — is what row 21 should be built to. The item is
+not cancelled; its blueprint changed.
+
+**WaterSeeker** ([2025.findings-naacl.156](https://aclanthology.org/2025.findings-naacl.156/)) adds
+the realistic case: watermarked *segments* inside large human documents, not wholly-marked texts.
+That maps onto `untell/scripts/sentences.py` rather than onto document-level scoring.
+
+## ✗ 3. The fine-grained arm we position around is already a shipped tool
+
+`LLM-DetectAIve` ([2024.emnlp-demo.35](https://aclanthology.org/2024.emnlp-demo.35/)) is a
+demonstrated system with **four categories: human-written; machine-generated; machine-written then
+machine-humanized; human-written then machine-polished.** Those are the humanizer arm and the
+assisted arm, shipped, in 2024. Our positioning has to narrow accordingly: what remains ours is not
+fine-grained *classification* but **per-subgroup false-positive measurement at a caller's threshold,
+with the aggregation spread** — none of which LLM-DetectAIve reports.
+
+It also supplies the normative sentence this strategy needed: machine-polishing of human text is
+"typically acceptable in academic writing, but not in education." **The acceptability of assistance is
+set by the institution, not the detector** — which is the argument for reporting arms separately
+rather than collapsing them into one verdict.
+
+## ✅ 4. A public three-way corpus for the assisted arm — in hiring
+
+[2026.lrec-1.581](https://aclanthology.org/2026.lrec-1.581/) releases **the first corpus annotated
+authentic / AI-enhanced / fully AI-generated**: 420 resumes, balanced across the three classes, five
+IT job descriptions, authentic resumes anonymised, released for reuse. Row 19 named Beemo and ARB as
+the corpora for this arm; this is a third, in a **second high-stakes deployment domain** after
+admissions.
+
+**And it benchmarks two commercial detectors on it.** Originality reaches **55.7% accuracy overall**
+(71/140 authentic, 81/140 AI-generated, 82/140 AI-enhanced correct); Writer reaches **25.0%**, "with
+the largest failures on AI-enhanced resumes, highlighting domain shift and cautioning against
+uncalibrated deployment."
+
+⚠️ **A derived figure, labelled as derived.** From their per-class counts, **69 of 140 authentic
+resumes — 49.3% — were misclassified by Originality.** The paper does not state that number; it
+states the counts and an overall accuracy of 55.7%, which the same counts reproduce exactly
+((71+81+82)/420 = 55.7%), so the arithmetic is checked against their own total. In a three-way task a
+misclassified authentic resume is called AI-enhanced or AI-generated, and for an applicant both are
+an accusation. Read as a share of documents, it belongs in the false-positive table; it is entered
+there as a derived quantity.
+
+Its style analysis independently reproduces the homogenization finding from the other direction:
+**authentic text has the widest variance across all features**, AI-generated the shortest and most
+uniform sentences.
+
+## ✅ 5. The accused *can* be shown evidence — the technical half of round sixteen's gap
+
+Round sixteen found no study following an accused student through an appeal, and concluded the
+literature "measures the flag and stops before the consequence". That stands for *process*. It is
+wrong about *technique*, and two refereed systems say so:
+
+- **ExaGPT** ([2026.findings-acl.380](https://aclanthology.org/2026.findings-acl.380/)) opens on this
+  repository's own ethical claim — detection errors risk "undermining student's academic dignity" —
+  and argues detection "needs to ensure the interpretability of the decision, which can help users
+  judge how reliably correct its prediction is." It returns, per span, the similar human-written and
+  LLM-generated spans that drove the decision, and a **human evaluation shows this helps people judge
+  correctness better than existing interpretable methods.**
+- **DAMASHA** ([2026.findings-eacl.326](https://aclanthology.org/2026.findings-eacl.326/)) segments
+  mixed-authorship text, releases an adversarial benchmark, and adds **Human-Interpretable
+  Attribution overlays** with a human study of their usefulness.
+
+**This is the strongest available answer to the label effect.** Round five established that a bare
+label changes how a reader judges the text, and that "a human will review the flag" therefore fails.
+A label plus checkable per-span evidence is a different object from a label, and it is the only
+mitigation in this literature that acts on the reviewer rather than on the accused.
+
+**Consequence for this repo:** `untell/scripts/sentences.py` already targets per sentence. Reporting
+*why* a span scored as it did is the same shape as what it already computes, and it is now a
+refereed requirement rather than a nicety.
+
+## ✅ 6. Sentence-level hybrid detection has a benchmark
+
+**SenDetEX** ([2025.emnlp-main.268](https://aclanthology.org/2025.emnlp-main.268/)) builds a
+dedicated sentence-level benchmark for "complex human-AI hybrid content, where human-written text and
+AI-generated text alternate irregularly", noting mainstream detectors "target document-level long
+texts and struggle to generalize to sentence-level short texts". That is the same finding as our own
+length-conditioned curve — **26.7% flagged at ≤50 words against 15.6% at 50–100** — arrived at
+independently, and it supplies a corpus for the case.
+
+## What this round is evidence of
+
+Every earlier round asked *is what we wrote true?* This one asked *what is in the corpus we already
+downloaded?* — and found a shipped tool covering two of our arms, a public corpus for a third, a
+published statement of our own governance thesis, and a fourth false "nobody" claim. **The corpus had
+been treated as a fact-checking instrument and never as a source.** Reading the uncited papers under
+each topic took one pass and changed two roadmap items.

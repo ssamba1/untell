@@ -44,9 +44,9 @@ no decision, no native speaker and no GPU, only the work.
 | 16 | RL-against-ensemble | ⛔ blocked | a GPU |
 | 17 | Alignment rewriter | ⛔ blocked | a GPU |
 | 18 | Calibrated verdict thresholds (conformal, length-conditioned) | 🔜 open | **nobody — buildable now.** Needs a human-only calibration corpus, which RealDet supplies and RAID's human side approximates. |
-| 19 | Beemo + ARB loaders — human-edited and LLM-rewritten-human text | 🔜 open | **nobody — buildable now.** Both corpora are public; Beemo needs a four-way label, not the current pair shape. |
+| 19 | Assisted-arm loaders — Beemo, ARB, and the LREC resume corpus | 🔜 open | **buildable now, and the corpus list grew.** All are public; the resume corpus already ships the three-way authentic / enhanced / generated label this arm needs. |
 | 20 | The base-vs-instruct audit arm | 🔜 open | **nobody — buildable now.** CPU only, ~1 day, no new dependency. |
-| 21 | SynthID-Text detector adapter (Article 50 marking audit) | 🔜 open | **nobody — buildable now.** `synthid-text` is open source and in HF Transformers; the attack side already exists. |
+| 21 | Third-party watermark audit (Article 50 marking) | 🔜 open | **WaterPark already audits watermark robustness**; what is open is a *key-free third-party* audit in the TTP-Detect sense, at segment level. Blueprint corrected in §7. |
 | 22 | Confidence intervals on every published rate | ✅ done — **169 proportions tabulated**, and a test fails if one appears without an interval | — |
 | 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
 | 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **15.8% measured**, CI [10.4%, 23.4%] | — |
@@ -555,6 +555,22 @@ front of them.
 That is the ethical case for this repo, established by someone else's experiment: the cost of a false
 positive is not a corrected mistake, it is a permanently altered reading.
 
+✅ **And the one mitigation that acts on the reviewer rather than the accused.** If a bare label
+corrupts the reading, then the thing to change is what accompanies the label. **ExaGPT**
+([2026.findings-acl.380](https://aclanthology.org/2026.findings-acl.380/)) opens on this repo's own
+ethical claim — detection errors risk "undermining student's academic dignity" — and returns, for
+each span, the human-written and LLM-generated spans most similar to it, as the evidence for the
+decision. Its **human evaluation shows this helps people judge the correctness of a decision better
+than existing interpretable methods.** **DAMASHA**
+([2026.findings-eacl.326](https://aclanthology.org/2026.findings-eacl.326/)) does the same for
+mixed-authorship segmentation with Human-Interpretable Attribution overlays and its own human study.
+
+**A label plus checkable per-span evidence is a different object from a label.** This qualifies what
+this roadmap says about human review: review fails when the reviewer gets only a verdict, and these
+two results are the refereed statement of what to hand them instead. `untell/scripts/sentences.py`
+already computes per-sentence targets, so reporting *why* a span scored as it did is the same shape
+as work already done — and it is now a requirement with evidence behind it, not a nicety.
+
 ### The number that settles it
 
 A PubMed pass then assembled every refereed study that reports a false-positive rate **on text known
@@ -574,6 +590,7 @@ see the note underneath:
 | **Residency personal statements, 2022–23 cycle — submitted before ChatGPT**, GPTZero | **10.2%** | [DOI](https://doi.org/10.1016/j.jsurg.2025.103566) |
 | Same statements, Copyleaks | 2.6% | same |
 | Same statements, **both tools required to agree** | **1.7%** | same |
+| **Resumes, Originality — authentic CVs in a hiring corpus** (derived, see note) | **49.3%** | [2026.lrec-1.581](https://aclanthology.org/2026.lrec-1.581/) |
 
 **Same technology, on real human writing, from about 0% to 61%.** These do not contradict each other;
 each is a correct measurement of a different population, domain, detector set and aggregation rule.
@@ -586,6 +603,15 @@ Mixing a per-document score into a table of rates is precisely the conflation th
 institutions against, and it sat in our own headline table for nineteen rounds. Both remain real,
 useful measurements of pre-LLM and human text — they are just not false-positive rates, and the
 0-to-61% range is a range of rates.
+
+⚠️ **The resume row is derived, and is marked so.** The paper reports Originality at **55.7%
+accuracy** over 420 resumes with per-class counts of 71/140 authentic, 81/140 AI-generated and 82/140
+AI-enhanced correct. It does not state a false-positive rate; **69 of 140 authentic resumes
+misclassified is 49.3%**, and those counts reproduce the paper's own 55.7% exactly, which is what
+makes the arithmetic checkable rather than assumed. In a three-way task a misclassified authentic
+resume is called AI-enhanced or AI-generated, and to an applicant both are an accusation — so it is a
+share of documents, and belongs here. Writer scored **25.0%** on the same corpus
+([2026.lrec-1.581](https://aclanthology.org/2026.lrec-1.581/)).
 
 The last three rows are one study, one corpus, one day, and they are the union/consensus spread again
 — **10.2% against 1.7%, a factor of six** — this time on 1,490 real applications rather than a
@@ -662,6 +688,19 @@ returns **one** record. The arms-race research is essentially absent from the co
 against applicants is well represented — **the people running these tools are not reading the work
 showing the tools can be walked around.** That asymmetry is the argument for shipping the audit
 rather than the evasion: the population that needs this evidence is not the one reading NLP venues.
+
+✗ **One more neighbour, found by reading the corpus rather than checking it.** `LLM-DetectAIve`
+([2024.emnlp-demo.35](https://aclanthology.org/2024.emnlp-demo.35/)) is a shipped tool with **four
+categories: human-written; machine-generated; machine-written then machine-humanized; human-written
+then machine-polished.** Those are the humanizer arm and the assisted arm, demonstrated in 2024. So
+"fine-grained classification" is not ours to claim. **What remains ours is narrower and unchanged by
+it: per-subgroup false-positive measurement, on the caller's corpus, at the vendor's threshold and a
+calibrated one, with the aggregation spread** — none of which that tool reports.
+
+It also supplies the sentence this section needed: machine-polishing human text is "typically
+acceptable in academic writing, but not in education." **Whether assistance is acceptable is set by
+the institution, not by the detector**, which is the argument for reporting the arms separately
+instead of collapsing them into one verdict.
 
 **What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
 population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.
@@ -808,8 +847,13 @@ trusting the derivation.
 
 - 🔜 **A SynthID-Text adapter, timed to the Article 50 phase-in.** Article 50(2) has applied since
   **2 August 2026**, with systems already on the market covered from **2 December 2026**; providers
-  must ensure synthetic text is marked machine-readably and detectable as AI-generated. Nobody audits
-  whether that marking survives ordinary use, and the evidence says it does not — ✅ with exact
+  must ensure synthetic text is marked machine-readably and detectable as AI-generated.
+
+  ✗ **This item used to say "nobody audits whether that marking survives ordinary use". That is
+  false.** **WaterPark** ([2025.findings-emnlp.1148](https://aclanthology.org/2025.findings-emnlp.1148/))
+  integrates **10 watermarkers and 12 removal attacks** to answer exactly that question — the fourth
+  primacy claim in this roadmap to fail on contact with the corpus. What the evidence does say is that
+  marking degrades — ✅ with exact
   numbers, read from the authors' repo ([githshine/SynGuard](https://github.com/githshine/SynGuard)):
   SynthID-Text detection F1 falls from **1.000 to 0.842** under paraphrase, **0.788** under
   copy-and-paste and **0.714** under re-translation.
@@ -827,9 +871,23 @@ trusting the derivation.
   layer-inflation attack ([arXiv:2603.03410](https://arxiv.org/abs/2603.03410)), and a legal-technical
   analysis finds machine-verifiable marks "fragile under standard data processing"
   ([arXiv:2603.26983](https://arxiv.org/html/2603.26983v1), LREC 2026), independently corroborating
-  the August 2026 date. ✅ Build against the **HF Transformers** implementation, not the DeepMind
-  reference repo, which states it is "not intended for production use". Our
-  `untell/attacks/back_translation.py` is already one of the attacks that robustness paper uses.
+  the August 2026 date. Our `untell/attacks/back_translation.py` is already one of the attacks that
+  robustness paper uses.
+
+  ✗ **And the build target was wrong.** This item said to build against the **HF Transformers**
+  SynthID detector. That detector needs the provider's key or scheme, and **TTP-Detect**
+  ([2026.findings-acl.990](https://aclanthology.org/2026.findings-acl.990/)) names the consequence:
+  key-coupled schemes mean "independent auditing becomes impossible without compromising model
+  security or relying on the opaque claims of service providers." **An auditor holding the vendor's
+  key is not a third party** — which is this repository's entire thesis, published, about watermarks.
+  The blueprint is TTP-Detect's instead: decouple detection from injection and treat verification as
+  relative hypothesis testing against a proxy model. Keep the HF implementation as the *reference*
+  for what a keyed detector sees, and never as the audit itself.
+
+  ⚠️ **And the unit is the segment, not the document.** WaterSeeker
+  ([2025.findings-naacl.156](https://aclanthology.org/2025.findings-naacl.156/)) targets watermarked
+  *sections inside large human documents*, which is the realistic case and maps onto
+  `untell/scripts/sentences.py` rather than onto document-level scoring.
 
 - ✅ **Confidence intervals on every published rate — finished.** `wilson_interval` is
   shipped and used by every new arm, and the README headline now carries intervals on the rates it
