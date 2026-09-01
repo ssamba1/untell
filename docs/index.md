@@ -76,6 +76,19 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **[Why this is the most rigorous open detector audit](why-best-open-repo.md)** — the argument, with its corrections
 - **[Training runbook](free-training-runbook.md)** — the GPU path (RL against the ensemble)
 
+### The literature this project argues from
+
+- **[What untell should be](strategy-options.md)** — four candidate identities, three rejected on the
+  evidence. Read this first if you want the argument rather than the sources.
+- **[A literature map of AI-writing research](https://github.com/ssamba1/untell/blob/main/ai-writing-research.md)**
+  — prevalence, homogenization, detection, fairness, attacks, watermarking, evaluation
+- **[What we can build from it](research-to-build.md)** — the intersection with this codebase:
+  datasets, metrics and arms, ranked
+- **[Verification ledger](research-verification.md)** — every claim, the tier it was checked to, and
+  the eight that changed when they were checked. **The corrections are the point of this document.**
+- **Reproduce the survey yourself:** `python -m eval.litreview --download` re-derives the count the
+  strategy rests on (28,120 abstracts; 102 papers on evasion robustness against 6 on false positives)
+
 ## License
 
 MIT — free to use, modify, and distribute.
