@@ -1145,3 +1145,66 @@ researchers."
 
 Independent use of the same design as `eval/pre_llm_fpr.py` — pre-ChatGPT text as unfalsifiable human
 ground truth — now in a third field, after Wikipedia and craniofacial surgery.
+
+---
+
+# Round fourteen — where these tools are actually pointed at people
+
+The education/admissions string returns 27 records and is exhausted. Reading it produced the most
+consequential cluster in this ledger, because unlike almost everything else here it is not a
+benchmark: **these are detectors being run against real applicants in real selection processes.**
+
+According to PubMed:
+
+**1. Surgical residency, 1,490 personal statements** (Subillaga et al., *J Surg Educ*,
+[DOI](https://doi.org/10.1016/j.jsurg.2025.103566)). GPTZero and Copyleaks on the same documents
+across two match cycles:
+
+| | GPTZero | Copyleaks | **both agreeing** |
+|---|---|---|---|
+| 2022–23 | 10.2% | 2.6% | **1.7%** |
+| 2023–24 | 36.6% | 22.5% | **21.2%** |
+
+**That is the union-versus-consensus spread, measured in a live admissions process.** One tool flags
+36.6% of applicants; requiring two to agree flags 21.2%. Which tool a program happened to license
+changes the accused population by fourteen points.
+
+And the flagged group differs from the unflagged one in ways that are not authorship: **non-English
+native language characteristics 38.7% vs 19.6% (p<0.001)**, shorter statements, shorter sentences.
+
+**2. Fellowship applications, 421 personal statements** (Stern et al., *J Arthroplasty*,
+[DOI](https://doi.org/10.1016/j.arth.2025.07.072)). Pre-ChatGPT cohort scored **99.5% human**;
+post-ChatGPT **83.8%**. And: "international medical graduates and applicants from non-US residencies
+demonstrated a higher proportion of AI-generated text in their PSs compared to US applicants
+(P < 0.001)."
+
+**3. The one that should stop a deployment** (Cumbo et al., *Cureus*,
+[DOI](https://doi.org/10.7759/cureus.88969)). Three detectors on 25 samples of ~700 words.
+Human-written personal statements **from before ChatGPT existed** were scored as
+**64–100% AI-generated**. The authors still conclude programs "may be able to detect AI use," while
+noting that "the use of invalidated tools may harm honest applicants."
+
+A pre-2022 human document scoring 64–100% AI is not a marginal false positive. It is the measurement
+`eval/pre_llm_fpr.py` exists to take, arrived at independently, in the setting where the cost of being
+wrong is somebody's career.
+
+**4. And humans, again, doing well** (Goodman et al., *J Phys Ther Educ*,
+[DOI](https://doi.org/10.1097/JTE.0000000000000396)). Two raters on 50 human and 50 Gemini-generated
+statements: **97% and 99% accuracy, κ = 0.92** — above the GPTZero-derived parameters measured on the
+same corpus. Consistent with round nine: the right humans are very good at this.
+
+## What this cluster changes
+
+Everything else in this ledger is a benchmark result. This is deployment, and it shows the three
+things this repo argues, happening at once, to applicants who did not consent to being measured:
+detector choice changes the accused population by more than a factor of two; the flagged group skews
+non-native; and text that predates the technology scores as the technology.
+
+**It is also the clearest statement of who untell is for.** Not researchers comparing detectors — the
+program director who licensed one tool rather than another and has no way to know what that choice
+did to their applicant pool.
+
+**The humanizer literature is absent here.** The dedicated query returns **one** record. The arms-race
+research this repo's own `humanizer-research-report.md` surveys has essentially no presence in the
+biomedical and education literature, while deployment against applicants is well represented — the
+people running these tools are not reading the work showing they can be evaded.
