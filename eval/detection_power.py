@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from eval.pre_llm_fpr import wilson_interval
 
@@ -55,8 +56,15 @@ def ranking_auroc(machine: list[float], human: list[float]) -> float | None:
     rate is a property of the detector AND the bar; AUROC is a property of the ordering. 0.5 is a
     coin flip and below 0.5 means the detector ranks human text as more machine-like.
 
-    MEASURED on the matched 40-100 range: **0.3538**, 95% bootstrap CI **[0.2824, 0.4272]** — the
-    whole interval below 0.5. And it rises toward 0.5 with length: 0.1873 at 40-60 words, 0.3599 at
+    MEASURED on the matched 40-100 range through `score_text`, which is what `--run` executes:
+    **0.3529**, 95% bootstrap CI **[0.2822, 0.4270]** — the whole interval below 0.5.
+
+    ⚠️ Round seventy-seven published **0.3538** for this. That figure is real and came from a
+    reimplementation of the score's components, used to compare two burstiness estimators without
+    re-running the whole pipeline. It is not what the shipped detector returns. Round eighty-four
+    made the arc reproducible in one command, the command printed 0.3529, and the published number
+    was corrected to it — **the reproduction command is the authority, not the script that found
+    the result.** And it rises toward 0.5 with length: 0.1873 at 40-60 words, 0.3599 at
     60-100, 0.4589 at 100+, which is what the small-sample burstiness bias predicts, since longer
     documents have more sentences and less estimator bias.
 
@@ -200,33 +208,128 @@ def render(report: dict) -> str:
     return "\n".join(lines)
 
 
+def score_arm(texts, tier: str = "lite") -> list[tuple[int, float]]:
+    """(word_count, detector score) for each text, skipping any the detector declines to score."""
+    from untell.scripts.score import score_text
+
+    out = []
+    for text in texts:
+        flat = " ".join(text.split())
+        result = score_text(flat, tier=tier)
+        values = [v for v in result.get("detectors", {}).values() if isinstance(v, (int, float))]
+        if values:
+            out.append((len(flat.split()), values[0]))
+    return out
+
+
+def human_arm(cache, min_words: int = 40, max_words: int = 100, limit: int | None = None,
+              tier: str = "lite", seed: int = 0) -> list[tuple[int, float]]:
+    """The known-human arm: pre-2022 ACL abstracts, in the length range the machine arm covers.
+
+    Bounded above as well as below. The machine arm tops out around 220 words, and pooling a human
+    arm that runs to 356 against it would compare length as much as authorship — see `eval/arms.py`.
+    """
+    import random
+
+    from eval.pre_llm_fpr import pre_llm_abstracts
+
+    texts = [t for t in pre_llm_abstracts(cache, min_words, 2021)
+             if min_words <= len(t.split()) < max_words]
+    random.Random(seed).shuffle(texts)
+    return score_arm(texts[:limit] if limit else texts, tier=tier)
+
+
+def register_comparison(tier: str = "lite") -> dict:
+    """The same author in three registers, which is what separates register from authorship.
+
+    Round eighty-two: the tell catalogue separates assistant-register prose from academic prose at
+    AUROC 1.0000 with authorship held constant, and cannot separate its own two target registers
+    from each other (0.5625). A detector that does that is reading register.
+    """
+    from eval.data.generated_abstracts import ABSTRACTS
+    from eval.data.generated_registers import ASSISTANT, PROMOTIONAL
+    from untell.scripts.tells import score_tells
+
+    def density(texts, low, high):
+        out = []
+        for text in texts:
+            flat = " ".join(text.split())
+            if low <= len(flat.split()) < high:
+                out.append(score_tells(flat)["tells_per_100w"])
+        return out
+
+    return {
+        "tells_60_100": {
+            "academic": density(ABSTRACTS, 60, 100),
+            "assistant": density(ASSISTANT, 60, 100),
+        },
+        "tells_30_60": {
+            "academic": density(ABSTRACTS, 30, 60),
+            "promotional": density(PROMOTIONAL, 30, 60),
+        },
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--machine", type=str, default=None,
                         help="JSON [[words, score], ...]; defaults to scoring the packaged corpus")
-    parser.add_argument("--human", type=str, required=True,
+    parser.add_argument("--human", type=str, default=None,
                         help="JSON [[words, score], ...] from a known-human corpus")
+    parser.add_argument("--run", action="store_true",
+                        help="build and score both arms from scratch: the packaged machine corpus "
+                             "and pre-2022 ACL abstracts from --cache. Needs the Anthology cache "
+                             "(python -m eval.pre_llm_fpr --download)")
+    parser.add_argument("--cache", type=Path, default=Path(".anthology-cache"))
+    parser.add_argument("--limit", type=int, default=None,
+                        help="cap the human arm, for a faster run")
+    parser.add_argument("--registers", action="store_true",
+                        help="also report the same-author register comparison (round eighty-two)")
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
 
     if args.machine:
-        machine = [tuple(x) for x in json.loads(open(args.machine).read())]
+        machine = [tuple(x) for x in json.loads(Path(args.machine).read_text())]
     else:
         from eval.data.generated_abstracts import ABSTRACTS
-        from untell.scripts.score import score_text
 
-        machine = []
-        for abstract in ABSTRACTS:
-            text = " ".join(abstract.split())
-            result = score_text(text, tier="lite")
-            values = [v for v in result.get("detectors", {}).values()
-                      if isinstance(v, (int, float))]
-            if values:
-                machine.append((len(text.split()), values[0]))
-    human = [tuple(x) for x in json.loads(open(args.human).read())]
+        machine = score_arm(ABSTRACTS)
+
+    if args.human:
+        human = [tuple(x) for x in json.loads(Path(args.human).read_text())]
+    elif args.run:
+        human = human_arm(args.cache, limit=args.limit)
+        if not human:
+            print(f"no pre-2022 abstracts in {args.cache} — run "
+                  f"`python -m eval.pre_llm_fpr --download` first", file=sys.stderr)
+            return 1
+    else:
+        print("give --human a scored corpus, or --run to build one from --cache", file=sys.stderr)
+        return 2
+
     report = compare(machine, human, args.threshold)
+    if args.registers:
+        report["registers"] = {
+            band: {arm: {"n": len(v), "mean_tells_per_100w": round(sum(v) / len(v), 4)}
+                   for arm, v in arms.items() if v}
+            for band, arms in register_comparison().items()
+        }
+        for band, arms in register_comparison().items():
+            names = [k for k, v in arms.items() if v]
+            if len(names) == 2:
+                report["registers"][band]["auroc"] = round(
+                    ranking_auroc(arms[names[1]], arms[names[0]]) or 0.0, 4)
     print(json.dumps(report, indent=2) if args.as_json else render(report))
+    if args.registers and not args.as_json:
+        print()
+        print("same author, register against register (tells per 100 words):")
+        for band, arms in report["registers"].items():
+            parts = [f"{k} {v['mean_tells_per_100w']:.3f} (n={v['n']})"
+                     for k, v in arms.items() if isinstance(v, dict)]
+            auroc = arms.get("auroc")
+            print(f"  {band}: " + "   ".join(parts)
+                  + (f"   AUROC {auroc:.4f}" if auroc is not None else ""))
     return 0
 
 

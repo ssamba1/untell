@@ -86,7 +86,7 @@ model wrote one instead, in the same register, where the label is provenance rat
 MEASURED at the shipped threshold, matched by length against pre-LLM ACL abstracts, the lite tier
 flags **10.7%** of machine abstracts and **30.4%** of human ones over the matched 40–100 range,
 intervals not overlapping — and flags human text more often in **every** band. Threshold-free,
-**AUROC 0.3538**, bootstrap interval [0.2824, 0.4272], entirely below the 0.5 of a coin flip.
+**AUROC 0.3529**, bootstrap interval [0.2822, 0.4270], entirely below the 0.5 of a coin flip.
 
 **On this register the ordering is reversed, not weak.** Both live features rank below 0.5 alone, so
 no single term is at fault: they measure how closely a document reads like a standard academic

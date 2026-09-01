@@ -1199,7 +1199,7 @@ def _claimed_spans(text: str) -> list[tuple[int, int, str, str]]:
 #     state-of-the-art      25.37%   (one string, a quarter of the corpus)
 #
 # On the same corpus the catalogue fires on **48.1%** of human abstracts against **8.6%** of
-# machine-written ones — AUROC 0.2697, further from a coin flip than the lite score's 0.3538.
+# machine-written ones — AUROC 0.2697, further from a coin flip than the lite score's 0.3529.
 #
 # ⚠️ This is one register, and the register is the point. `state-of-the-art` sits in the vocabulary
 # list beside "best-in-class", "top-tier" and "turnkey", which are promotional. In NLP it is the

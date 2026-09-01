@@ -24,7 +24,16 @@ from __future__ import annotations
 import pytest
 
 from eval.data.generated_abstracts import ABSTRACTS
-from eval.detection_power import BANDS, compare, component_auroc, ranking_auroc, render
+from eval.detection_power import (
+    BANDS,
+    compare,
+    component_auroc,
+    main,
+    ranking_auroc,
+    register_comparison,
+    render,
+    score_arm,
+)
 
 
 def _arm(rate: float, n: int, words: int, high: float = 0.9, low: float = 0.1):
@@ -205,3 +214,54 @@ def test_a_missing_component_is_skipped_rather_than_defaulted():
     human = [{"a": 0.1}, {}]
     assert component_auroc(machine, human, ("a",))["a"] == 1.0
     assert component_auroc(machine, human, ("missing",))["missing"] is None
+
+
+# --- one command reproduces the arc, added in round eighty-four -----------------------------------
+
+
+def test_score_arm_returns_a_length_and_a_score_for_each_text():
+    arm = score_arm(["The system processes each record and stores the result carefully. " * 3])
+    assert len(arm) == 1
+    words, score = arm[0]
+    assert words > 20 and 0.0 <= score <= 1.0
+
+
+def test_score_arm_skips_text_the_detector_declines_to_score():
+    """A detector returning no signal is not a zero. Folding one in would add a fabricated
+    most-human-possible document to whichever arm was short enough to trigger it."""
+    assert score_arm(["", "   ", "hi"]) == []
+
+
+def test_the_register_comparison_returns_both_matched_bands():
+    bands = register_comparison()
+    assert set(bands) == {"tells_60_100", "tells_30_60"}
+    assert set(bands["tells_60_100"]) == {"academic", "assistant"}
+    assert set(bands["tells_30_60"]) == {"academic", "promotional"}
+    for band in bands.values():
+        for arm in band.values():
+            assert arm, "a band with an empty arm cannot be compared"
+
+
+def test_the_register_bands_reproduce_the_published_separation():
+    """The round eighty-two figures, through the shipped path rather than a script."""
+    bands = register_comparison()
+    academic = bands["tells_60_100"]["academic"]
+    assistant = bands["tells_60_100"]["assistant"]
+    assert ranking_auroc(assistant, academic) == 1.0
+    assert sum(bands["tells_30_60"]["academic"]) == 0.0
+
+
+def test_the_cli_refuses_rather_than_guessing_when_given_no_human_arm(capsys):
+    """`--human` and `--run` are the two ways to supply one. Without either, inventing a default
+    would produce a comparison nobody chose."""
+    code = main([])
+    assert code == 2
+    assert "--run" in capsys.readouterr().err
+
+
+def test_the_cli_names_the_missing_corpus_rather_than_reporting_an_empty_comparison(capsys, tmp_path):
+    """An empty human arm would render as a table of dashes and an AUROC of None, which reads as a
+    result. It is a missing download."""
+    code = main(["--run", "--cache", str(tmp_path)])
+    assert code == 1
+    assert "pre_llm_fpr --download" in capsys.readouterr().err

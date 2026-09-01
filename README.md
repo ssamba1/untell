@@ -53,8 +53,8 @@ MEASURED at the shipped threshold, matched by length against those same pre-LLM 
 | **40–100 pooled** | **10.7%** [5.0%, 21.5%] | **30.4%** [27.0%, 34.1%] |
 
 **In every band it flags human text more often than machine text**, and over the matched range the
-intervals do not overlap. Threshold-free, **AUROC is 0.3538** with a bootstrap interval of
-[0.2824, 0.4272] — entirely below the 0.5 of a coin flip.
+intervals do not overlap. Threshold-free, **AUROC is 0.3529** with a bootstrap interval of
+[0.2822, 0.4270] — entirely below the 0.5 of a coin flip.
 
 **On this register the lite tier is not a weak detector. Its ordering is reversed.** Both of its live
 features are below 0.5 ranked alone, so there is no single bad term to remove: they measure how much

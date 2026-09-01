@@ -5234,6 +5234,11 @@ Round seventy-six measured flag rates at one threshold. A flag rate is a propert
 
 95% bootstrap interval on the pooled figure: **[0.2824, 0.4272]** — the whole interval below 0.5.
 
+> ⚠️ **These come from a reimplementation of the score's components, not from `score_text`.** Round
+> eighty-four made the arc reproducible in one command and the command printed **0.3529**, CI
+> **[0.2822, 0.4270]**. Both are right about what they measured; only one is what the shipped
+> detector returns, and the published figures were corrected to it.
+
 **So the inversion is not an artefact of choosing 0.45.** A random machine abstract outscores a
 random human one 35% of the time. The detector's ordering is reversed, not just its operating point.
 
@@ -5627,3 +5632,57 @@ human*, so a working tool puts machine text BELOW human text, and an AUROC compu
 (P(positive > negative)) reads backwards for this score. The figures above are printed with the
 direction named in the same line — `should be below 0.5`, `should be above 0.5` — because a sign
 error here would invert the headline and read as a fix.
+
+---
+
+# Round eighty-four — the arc becomes one command, and the command corrects it
+
+Rounds seventy-six to eighty-three are the most consequential measurements in this repository and
+they were reproducible only by re-deriving the scripts that produced them. `eval/detection_power.py`
+existed but needed two pre-scored JSON files that nothing shipped knew how to make.
+
+    python -m eval.detection_power --run --registers
+
+now builds both arms, scores them, and prints the whole arc: flag rates per matched band, the pooled
+comparison, the AUROC, the inversion verdict, and the same-author register table. `--limit` caps the
+human arm for a fast run; the Anthology cache is the only prerequisite, and the tool names the
+download command when it is missing rather than rendering an empty table that reads as a result.
+
+## ✗ And the first thing it did was contradict a published figure
+
+The command prints **AUROC 0.3529**. The README, the index, the roadmap and this ledger all said
+**0.3538**.
+
+Both numbers are real. Round seventy-seven computed the AUROC from a **reimplementation of the
+score's components** — written to compare two burstiness estimators without re-running the whole
+pipeline — and the difference between that and `score_text` is the clamping and `max` the shipped
+path applies. MEASURED both ways on the same arms: 0.3538 from the reimplementation, **0.3529 from
+`score_text`**, bootstrap CI [0.2822, 0.4270] against [0.2824, 0.4272].
+
+**The reproduction command is the authority, not the script that found the result.** Every figure
+that stands for *what the shipped detector does* is now 0.3529, and the 0.3538 stays where it belongs
+— beside the estimator comparison it was computed for, labelled as the component path.
+
+This is a small number and a large distinction. A published measurement whose reproduction command
+returns something else is the defect this project exists to document; it had one for eight rounds,
+and the fix was to make the command exist.
+
+## What the harness is careful about
+
+* **It bounds the human arm above as well as below.** The machine arm tops out near 220 words; a
+  human arm running to 356 would compare length as much as authorship, which is what `eval/arms.py`
+  exists for.
+* **It skips text the detector declines to score** rather than folding a zero in. A no-signal reading
+  is not a most-human-possible document.
+* **It refuses without a human arm** instead of inventing a default, and names the missing download
+  rather than printing dashes.
+
+## ⚠️ The full tier remains unmeasurable here, and that is now settled rather than assumed
+
+Every figure in this arc is the **lite** path. The README tells readers to re-run at `--tier full`
+before trusting a flag or a clear, and that tier has never been measured against machine text.
+
+VERIFIED, not assumed: `torch` and `transformers` are absent, no model is cached, PyPI is reachable
+so the packages could be installed — and `huggingface.co` returns **403 at the egress proxy, by
+organization policy**, so GPT-2's weights cannot be fetched. The blocker is policy, not effort, and
+it is recorded here so nobody repeats the investigation.
