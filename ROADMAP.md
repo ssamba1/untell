@@ -558,15 +558,15 @@ positive is not a corrected mistake, it is a permanently altered reading.
 ### The number that settles it
 
 A PubMed pass then assembled every refereed study that reports a false-positive rate **on text known
-to be human**:
+to be human**. Every row below is **the share of documents flagged** — one quantity, comparable
+across studies. Two studies that used to sit in this table are not that quantity and were moved out;
+see the note underneath:
 
 | Setting | Measured FPR | Source |
 |---|---|---|
 | Anatomy essays, **4 detectors in aggregate** | **~0%** | [DOI](https://doi.org/10.1152/advan.00235.2024) |
 | Same study, single detectors | 1.3% | same |
 | Same study, **9 human raters** | 5.0% | same |
-| *J. Craniofacial Surgery* manuscripts from **2014** — necessarily pre-LLM | **8.6%** | [DOI](https://doi.org/10.1097/SCS.0000000000012366) |
-| Behavioral-health articles, free detector | 27.2% | [DOI](https://doi.org/10.1080/08989621.2024.2331757) |
 | Abstracts, flagged by ≥1 of 3 tools | 44.44% | [DOI](https://doi.org/10.7717/peerj-cs.2953) |
 | TOEFL essays, non-native writers, 7 detectors | 61.3% | [DOI](https://doi.org/10.1016/j.patter.2023.100779) |
 | **Non-native English writers, six experiments pooled in a systematic review** | **50.2–61.3%** | [DOI](https://doi.org/10.1186/s12909-026-09303-7) |
@@ -577,6 +577,15 @@ to be human**:
 
 **Same technology, on real human writing, from about 0% to 61%.** These do not contradict each other;
 each is a correct measurement of a different population, domain, detector set and aggregation rule.
+
+✗ **Two rows were removed from that table in round twenty, because they measure something else.**
+Bohler's **8.6%** is "mean detectable AI content" — the average *percentage of text within a
+manuscript* that ZeroGPT scores as AI (SD 9.8) — and Popkov & Barrett's **27.2%** is a **median**
+"proportion of academic text identified as AI-generated". Neither is a share of documents flagged.
+Mixing a per-document score into a table of rates is precisely the conflation this section warns
+institutions against, and it sat in our own headline table for nineteen rounds. Both remain real,
+useful measurements of pre-LLM and human text — they are just not false-positive rates, and the
+0-to-61% range is a range of rates.
 
 The last three rows are one study, one corpus, one day, and they are the union/consensus spread again
 — **10.2% against 1.7%, a factor of six** — this time on 1,490 real applications rather than a
@@ -677,7 +686,7 @@ a fact about HC3, and the 0-to-61% range is the reason to say so every time we q
 
   ✗ **And a refereed result says our aggregation is the wrong verdict rule.** Hyatt et al.
   ([DOI](https://doi.org/10.1152/advan.00235.2024)) found single detectors at **1.3%** false positives
-  on 190 students' essays and **~0% when required to agree**. Our `max` is the *union* rule — flag if
+  on a randomly selected 50 of 190 students' essays and **~0% when required to agree** (the 9 human raters saw a separate 48). Our `max` is the *union* rule — flag if
   **any** detector flags — which is exactly the FAR measured at 44.44%, and it maximises false
   accusations by construction. It is right as the loop's **stop target** and wrong as a **verdict**.
   So report the spread rather than a number: **union (FAR) / majority (MFAR) / unanimous (consensus)**,
@@ -688,15 +697,18 @@ a fact about HC3, and the 0-to-61% range is the reason to say so every time we q
   single-detector case named rather than printed as consensus.
 
   ✅ **Bohler et al.'s probe is shipped too** ([DOI](https://doi.org/10.1097/SCS.0000000000012366) —
-  they scored 659 manuscripts from **2014** and got **8.6%**). `eval/pre_llm_fpr.py` builds the
+  they scored 659 manuscripts from **2014**, reporting **8.6%** mean detectable AI content per
+  manuscript — a text-percentage score, not a flag rate). `eval/pre_llm_fpr.py` builds the
   corpus for free from ACL Anthology volumes published through 2021: thousands of human abstracts in
   the technical register detectors are worst on, where **every flag is a false positive by
   construction** — no labels, nothing to dispute.
 
   **First measurement: 15.8% of 120 pre-LLM abstracts flagged, 95% CI [10.4%, 23.4%], lite tier.**
   That is now the most defensible false-positive number this repo has, because its ground truth
-  cannot be argued with, and it is roughly double the 8.6% Bohler measured with ZeroGPT on older
-  medical text. It also demonstrates the interval discipline item 22 asks for: `wilson_interval`
+  cannot be argued with. ✗ **It is not comparable to Bohler's 8.6%**, which an earlier draft of this
+  paragraph called "roughly double" — ours is the share of documents flagged, theirs is the mean
+  share of text scored AI within a document. Two different quantities; no ratio between them means
+  anything. It also demonstrates the interval discipline item 22 asks for: `wilson_interval`
   confirms the worked example this roadmap quotes — 5 of 30 is 17% with a range of **7.3% to 33.6%**.
 
 ✅ **The AI-assisted arm is shipped and it has already taught us something uncomfortable.**

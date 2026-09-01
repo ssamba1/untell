@@ -410,7 +410,10 @@ it in front of them. That is a concrete product change, derived from refereed me
 
 Bohler et al. (*J Craniofac Surg*, [DOI](https://doi.org/10.1097/SCS.0000000000012366)) analysed
 **1,490 manuscripts**, 659 from **2014** and 831 from 2024. Because 2014 text
-is necessarily pre-LLM, **its detector score is a pure false-positive rate: 8.6%**. The authors
+is necessarily pre-LLM, **its detector score is pure false-positive signal: a mean of 8.6% detectable
+AI content per manuscript** (SD 9.8). ✗ Round twenty corrected this line: an earlier version called
+it "a pure false-positive rate", which it is not — it is the mean *percentage of text within a
+manuscript* scored as AI, not the share of manuscripts flagged. The authors
 conclude the modest rise to 10.7% "likely reflect[s] detection software behavior and evolving writing
 structure rather than widespread use of generative AI."
 
@@ -1558,3 +1561,72 @@ documented.
 The honest summary: **the two sources carrying the most weight are now verified at full-text depth,
 and the structural trap that would have made a naive port of round eighteen's tool report a
 catastrophe is documented so the next person does not fall into it.**
+
+---
+
+# Round twenty — the load-bearing table was mixing two different quantities
+
+Round nineteen verified the two most-cited DOIs and left 22 unchecked. This round worked through the
+ones carrying the false-positive table, and found **the table itself was wrong** — not in any
+individual number, but in what it was a table *of*.
+
+## ✅ What verified cleanly
+
+According to PubMed, verbatim from the abstracts:
+
+- **Hyatt et al.** ([DOI](https://doi.org/10.1152/advan.00235.2024)): "Approximately **1.3%** and
+  **5.0%** of the essays were detected as false positives … by AI detectors and human raters,
+  respectively" and "Using AI detectors in aggregate reduced the likelihood of detecting a false
+  positive to **nearly 0%**." All three rows confirmed.
+- **Subillaga et al.** ([DOI](https://doi.org/10.1016/j.jsurg.2025.103566)): **1490** statements,
+  GPTZero **10.2% → 36.6%**, Copyleaks **2.6% → 22.5%**, concordance **1.7% → 21.2%**, non-English
+  native language characteristics **38.7% vs 19.6%**. Every figure in round fourteen confirmed.
+- **Bohler et al.** ([DOI](https://doi.org/10.1097/SCS.0000000000012366)): **1490** manuscripts,
+  **659** from 2014 and **831** from 2024, **8.6% → 10.7%**. Confirmed.
+- **Popkov & Barrett** ([DOI](https://doi.org/10.1080/08989621.2024.2331757)): **27.2%**, **100**
+  articles from 2016–2018. Confirmed.
+
+## ✗ And the defect: two of those rows are not rates
+
+Read the exact wording of the last two:
+
+> Bohler: "**Mean detectable AI content** increased from **8.6%** (SD 9.8) in 2014 to 10.7%"
+>
+> Popkov: "The free AI detector showed a **median of 27.2%** for **the proportion of academic text**
+> identified as AI-generated"
+
+**Neither is a share of documents flagged.** Both are per-document *scores* — the average percentage
+of text inside a manuscript that a detector marks as AI — averaged or medianed across a corpus. The
+other rows (1.3%, 5.0%, 44.44%, 61.3%, 10.2%, 2.6%, 1.7%) are shares of documents. **Two different
+quantities, in one table, under one heading, feeding one "0% to 61%" range.**
+
+This is the exact conflation the section containing that table warns institutions about, and it is
+the same error this ledger caught itself making twice before — the Cumbo 64–100% figures were kept
+*out* of the table in round fourteen for precisely this reason, and the SD of 9.8 on Bohler's 8.6%
+should have been the tell. **It sat in the headline table for nineteen rounds, through every previous
+audit, because nothing checks the units of a number — only its provenance.**
+
+Both rows are removed from the rate table and the distinction is stated beneath it. The 0-to-61%
+range is unaffected: it was always a range of rates, and both removed figures sat inside it.
+
+## Two consequences that followed
+
+**1. A comparison that meant nothing.** ROADMAP claimed our own pre-LLM measurement — "15.8% of 120
+abstracts flagged" — was "roughly double the 8.6% Bohler measured". A share of documents against a
+mean share of text: no ratio between them means anything. Corrected.
+
+**2. A sample size that was the wrong one.** ROADMAP said Hyatt found 1.3% false positives "on 190
+students' essays". The abstract: 190 was the *participant* count; the detectors saw a randomly
+selected **50** essays and the nine human raters a separate **48**. Corrected.
+
+## What this round is really evidence of
+
+Every previous check in this ledger asked *does this number have a source* and *does the source say
+it*. Both answers were yes here — the figures are quoted correctly from papers that report them. The
+defect was in **what kind of number it is**, which no provenance check can see. `untell-audit` counts
+445 attributed claims and would count these among them.
+
+That is a limitation worth stating plainly rather than fixing with a regex: **units and quantity type
+are not mechanically checkable from prose, so a table of numbers from different studies needs a human
+to confirm every row measures the same thing.** The table now says which quantity it holds, in its
+own heading, so the next row added has to answer the question.
