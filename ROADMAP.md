@@ -379,54 +379,66 @@ in its own GitHub repository, which put **seven more papers** under direct readi
 arXiv-only results were confirmed from their authors' repositories. ✅ marks a claim read at source.
 Six claims changed on contact with their sources; the ledger lists all of them.
 
-### The result that should organise everything else — built only from sources read at source
+### The result that should organise everything else — all of it peer-reviewed and read at source
 
-Four ✅ Tier-A findings, independent of each other, converge on one conclusion. **Every claim in this
-subsection was read from a publisher or the ACL Anthology's own metadata, not from a summary**, which
-is what lets it carry a roadmap.
+A systematic pass over **16 ACL Anthology volumes, 20,875 abstracts, 334 detection papers** (method
+and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
+below is refereed and was read from the Anthology's own metadata.
 
-1. ✅ **Moving a writer's style moves the verdict, in both directions.** Liang et al. (*Patterns*,
-   [DOI](https://doi.org/10.1016/j.patter.2023.100779)) did not merely correlate. Enriching the
-   vocabulary of non-native TOEFL essays cut the average false-positive rate from **61.3% to 11.6%**;
-   *simplifying* native-speaker essays **raised** their misclassification. Seven detectors, 91 + 88
-   essays, 19.8% unanimously flagged, 97.8% flagged by at least one.
-2. ✅ **A detector can post 0.00% FPR and be the most biased one in the same study.** Pratama
-   (*PeerJ CS*, [DOI](https://doi.org/10.7717/peerj-cs.2953)): GPTZero, **97.22% accuracy at 0.00%
-   FPR** on clean human-vs-AI, then the *worst* of three tools for non-native authors on
-   LLM-**assisted** text (Welch's t = −2.115, p = 0.036), over-detecting **25%** of non-native authors
-   against **11%** of native ones. Ensemble exposure: **FAR 44.44%**, **MFAR 4.17%**.
-3. ✅ **Detection performance is domain- and generator-bound.** M4GT-Bench
-   ([2024.acl-long.218](https://aclanthology.org/2024.acl-long.218/)): "obtaining good performance in
-   MGT detection usually requires an access to the training data from the same domain and generators."
-4. ✅ **Human editing defeats detection; machine editing does not.** Beemo
-   ([2025.naacl-long.357](https://aclanthology.org/2025.naacl-long.357/)): "expert-based editing evades
-   MGT detection, while LLM-edited texts are unlikely to be recognized as human-written."
+**Start with what the field counts as its own priorities.** Of those 334 detection papers: **102**
+address robustness and evasion, **29** watermarking, **18** calibration — and **6** address false
+positives, **5** fairness. **The field spends about 30% of its detection effort making detectors
+harder to evade and under 2% on what happens when one is wrong about a person.** That is the gap this
+repo sits in, now counted rather than asserted.
 
-**Together these force one conclusion, and none of it depends on an unverified source: a false-positive
-rate is not a property of a detector. It is a property of a detector, a population, a domain and an
-editing history.** A vendor-published FPR therefore says nothing about any particular deployment, and
-the only measurement worth anything is the one taken on that deployment's own corpus, per subgroup.
+Five refereed results then fix the shape of the problem:
 
-That is this repo's thesis, and as of this pass it is a consequence of four independently verified
-results rather than a position.
+1. ✅ **Detector failure under domain shift is distributional, not a quality defect.** DivScore
+   ([2025.emnlp-main.971](https://aclanthology.org/2025.emnlp-main.971/)) gives a theoretical account
+   tying zero-shot detector failure in specialized domains to "the KL divergence between human,
+   detector, and source text distributions."
+2. ✅ **Moving a writer's style moves the verdict, both ways.** Liang et al. (*Patterns*,
+   [DOI](https://doi.org/10.1016/j.patter.2023.100779)): enriching non-native TOEFL vocabulary cut the
+   average false-positive rate **61.3% → 11.6%**; simplifying native essays *raised* misclassification.
+3. ✅ **Bias is real, multi-attribute, and inconsistent between systems.** *Identifying Bias in
+   Machine-generated Text Detection* ([2026.acl-long.109](https://aclanthology.org/2026.acl-long.109/))
+   tests **16 detection systems** on student essays across gender, race/ethnicity, ELL status and
+   economic status: ELL essays are more likely to be called machine-generated, and **non-White ELL
+   essays disproportionately so relative to their White counterparts** — but the biases are "generally
+   inconsistent across systems."
+4. ✅ **Minimal polishing is already enough to be flagged.** *Almost AI, Almost Human*
+   ([2025.findings-acl.1303](https://aclanthology.org/2025.findings-acl.1303/)) evaluates **twelve
+   detectors** on 15K graded-involvement samples: they "frequently flag even minimally polished text as
+   AI-generated" and cannot distinguish degrees of AI involvement.
+5. ✅ **And a detector at 0.00% FPR can be the most biased in the same study.** Pratama (*PeerJ CS*,
+   [DOI](https://doi.org/10.7717/peerj-cs.2953)): GPTZero, 97.22% accuracy at **0.00% FPR** on clean
+   human-vs-AI, then worst of three for non-native authors on assisted text (**25% vs 11%**
+   over-detection). Ensemble exposure: **FAR 44.44%**, **MFAR 4.17%**.
 
-> **A framing we do not lean on.** *AI Detectors Fail Diverse Student Populations*
-> ([arXiv:2603.20254](https://arxiv.org/abs/2603.20254)) argues the same conclusion formally: detection
-> theory assumes one human distribution, an institution has none, and under a composite null any
-> text-only detector with useful power must produce false accusations at a rate set by population
-> diversity — independent of model quality, unfixable by engineering. It is an elegant statement of
-> exactly what the four results above measure. **It is also single-authored, arXiv-only, from outside
-> the NLP community, and this environment cannot reach it.** So it is recorded as a lead worth an
-> independent read, and **nothing in this roadmap rests on it.** The four Tier-A findings do the work
-> on their own.
+✗ **And one refereed result cuts against us, which is why the conclusion holds.** *Different Time,
+Different Language* ([2026.eacl-srw.20](https://aclanthology.org/2026.eacl-srw.20/)) repeats the Liang
+test in **Czech** and finds non-native perplexity is *not* lower, **no systematic bias across three
+detector families**, and modern detectors not relying on perplexity at all. One language, a student
+workshop — it does not overturn Liang. But it does kill "non-native writers are biased against" as a
+universal, and our documents had been treating it as one.
 
-> **The sharpest phrasing of the same failure, also recorded as a lead.** Karr, Khvatskii, Hua and
-> Chawla (Notre Dame, **ACM AILS '26** — a peer-reviewed venue, but reachable here only through
-> indexes, so the figures are corroborated rather than read): guideline-compliant "refine abstract
-> only" edits are flagged at **64–80% by Pangram and 38–49% by GPTZero**, while after humanization
-> **more than 96% of AI-labelled rewrites evade both**. *A deployed detector is hardest on the people
-> not cheating and nearly blind to the people who are.* It is the best one-sentence summary of the
-> problem, and the four verified results above establish the plan without it.
+**That disconfirmation is the strongest evidence for the thesis, not against it.** Bias appears in
+English TOEFL and ICNALE data and not in Czech; detector biases are "inconsistent across systems";
+detection is bound to domain and generator; no detector wins across scenarios
+([2026.acl-industry.9](https://aclanthology.org/2026.acl-industry.9/)). Every one of those is a
+refereed statement that the answer depends on which detector meets which population in which domain.
+
+**So: a false-positive rate is not a property of a detector. It is a property of a detector, a
+population, a domain and an editing history — and it cannot be inherited from anyone else's paper,
+ours included.** The only measurement worth anything is the one taken on the deployment's own corpus,
+per subgroup. That is the thesis, and it now rests on five refereed results and one refereed
+disconfirmation, none of which this environment had to take on trust.
+
+> **The framing we no longer need.** *AI Detectors Fail Diverse Student Populations*
+> ([arXiv:2603.20254](https://arxiv.org/abs/2603.20254)) argues the same conclusion formally from a
+> composite null. It is single-authored, arXiv-only, and unreachable from here. DivScore now supplies
+> a refereed version of the same idea, so this is kept as an elegant statement of the argument and
+> **nothing rests on it.**
 
 **What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
 population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.
@@ -491,7 +503,18 @@ population, per subgroup, at the vendor's threshold and at a calibrated one, and
   whether that marking survives ordinary use, and the evidence says it does not — ✅ with exact
   numbers, read from the authors' repo ([githshine/SynGuard](https://github.com/githshine/SynGuard)):
   SynthID-Text detection F1 falls from **1.000 to 0.842** under paraphrase, **0.788** under
-  copy-and-paste and **0.714** under re-translation. Its mean score also has a published
+  copy-and-paste and **0.714** under re-translation.
+
+  ✗ **But do not overstate fragility — a refereed result cuts the other way.** *Sandcastles in the
+  Storm* ([2025.acl-long.1436](https://aclanthology.org/2025.acl-long.1436/)) tests random-walk
+  erasure empirically: mixing is slow, **100% of perturbed texts retain traces of origin after
+  hundreds of edits**, quality oracles misjudge edits (77% accuracy), and automated attacks remove
+  watermarks **just 26% of the time, falling to 10% under human quality review**. The reconciled
+  position, and the one to build to: **detectability degrades under ordinary editing while complete
+  removal stays hard.** Those are different claims and both are Tier A. A mark that mostly survives is
+  worth measuring precisely, which makes this item more attractive, not less.
+
+  SynthID's mean score also has a published
   layer-inflation attack ([arXiv:2603.03410](https://arxiv.org/abs/2603.03410)), and a legal-technical
   analysis finds machine-verifiable marks "fragile under standard data processing"
   ([arXiv:2603.26983](https://arxiv.org/html/2603.26983v1), LREC 2026), independently corroborating

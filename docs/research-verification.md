@@ -235,3 +235,115 @@ Three things, in order, for anyone with unrestricted access:
 
 Everything else either reads at source from PubMed, the ACL Anthology or an author's repository, or
 does not carry a decision.
+
+---
+
+# Round three — a systematic pass over the ACL Anthology
+
+The first two rounds spot-checked papers we already knew about. That is not the same as knowing what
+the field contains. This round downloaded **16 Anthology volumes** (ACL, EMNLP, NAACL, EACL, COLING,
+LREC, TACL and *Computational Linguistics*, 2024–2026; ≈48 MB), parsed **20,875 abstracts**, and
+classified the **334** that concern machine-generated-text detection.
+
+## The field's own priorities, counted
+
+Of those 334 detection papers, the number addressing each topic:
+
+| Topic | Papers |
+|---|---|
+| Robustness / paraphrase / evasion | **102** |
+| Human–AI mixed or edited text | 32 |
+| Watermarking | 29 |
+| Education / academic integrity | 20 |
+| Calibration / thresholds / operating points | 18 |
+| **Fairness or non-native bias** | **5** |
+| **False positives or false accusation** | **6** |
+
+**Roughly 30% of the field's detection effort goes to making detectors harder to evade, and under 2%
+to what happens when they are wrong about a person.** That is untell's gap, and it is now a count
+over the primary literature rather than an assertion.
+
+## What this pass found that changes our positions
+
+### ✅ Tier A replacements for claims that were Tier B
+
+- **The H2L case is fully covered, peer-reviewed, with a public dataset.** *Almost AI, Almost Human:
+  The Challenge of Detecting AI-Polished Writing* ([2025.findings-acl.1303](https://aclanthology.org/2025.findings-acl.1303/))
+  evaluates **twelve detectors** on **APT-Eval**, 15K samples at varying AI-involvement levels, and
+  finds detectors "frequently flag even minimally polished text as AI-generated, struggle to
+  differentiate between degrees of AI involvement, and exhibit biases against older and smaller
+  models." We no longer need Karr or ARB to carry this item.
+- **The multi-attribute fairness study is real and is Tier A.** *Identifying Bias in Machine-generated
+  Text Detection* ([2026.acl-long.109](https://aclanthology.org/2026.acl-long.109/)): student essays,
+  **16 detection systems**, four attributes — gender, race/ethnicity, English-language-learner status,
+  economic status — with regression and subgroup analysis. Biases are "generally inconsistent across
+  systems", **ELL essays are more likely to be classified machine-generated**, and **non-White ELL
+  essays are disproportionately classified as machine-generated relative to their White counterparts**.
+  This was previously in our documents as a Tier-C lead; it is now read at source.
+- **And its most useful finding is one nobody quotes: humans are worse at this task but fairer.** The
+  same paper's human annotation shows people "perform generally poorly at the detection task" yet
+  "show no significant biases on the studied attributes." A human reader is the *less accurate and
+  less discriminatory* option — which is a different argument from the one usually made in either
+  direction.
+- **Detector failure under domain shift has a peer-reviewed theoretical account.** DivScore
+  ([2025.emnlp-main.971](https://aclanthology.org/2025.emnlp-main.971/)) shows zero-shot detector
+  failure in specialized domains "is fundamentally linked to the KL divergence between human,
+  detector, and source text distributions." That is the composite-null intuition, published and
+  refereed, and it lets the roadmap drop its reliance on the arXiv-only preprint.
+- **Our own bundled detectors are named in a practical evaluation.** *A Practical Examination of
+  AI-Generated Text Detectors* ([2025.findings-naacl.271](https://aclanthology.org/2025.findings-naacl.271/))
+  tests RADAR, Fast-DetectGPT and Binoculars — three we ship — on unseen domains, and reports
+  **TPR@1%FPR as low as 0%**.
+
+### ✗ Two of our positions are wrong or overstated
+
+**1. The non-native bias result is not universal.** *Different Time, Different Language: Revisiting the
+Bias Against Non-Native Speakers in GPT Detectors*
+([2026.eacl-srw.20](https://aclanthology.org/2026.eacl-srw.20/)) repeats the Liang test in Czech and
+finds **the perplexity of non-native Czech text is not lower than native**, **no systematic bias across
+three detector families**, and that contemporary detectors "operate effectively without relying on
+perplexity." It is a student-research-workshop paper on one language, so it does not overturn Liang —
+but our documents present non-native bias as a settled universal, and it is not. It is
+**language-, era- and detector-specific.**
+
+That is a disconfirmation, and it makes the argument *stronger* rather than weaker: if bias appears in
+English TOEFL essays and ICNALE data but not in Czech, then bias is a property of a particular
+population meeting a particular detector — which is exactly why it has to be measured locally instead
+of assumed from a citation. This is the first Tier-A evidence we have for the composite-null
+conclusion arriving from a *negative* result.
+
+**2. Watermark removal is harder than we implied.** *Sandcastles in the Storm: Revisiting the
+(Im)possibility of Strong Watermarking* ([2025.acl-long.1436](https://aclanthology.org/2025.acl-long.1436/))
+tests the random-walk erasure argument empirically: mixing is **slow** — 100% of perturbed texts retain
+traces of origin after hundreds of edits — quality oracles misjudge edits (77% accuracy), and automated
+attacks remove watermarks **just 26% of the time, dropping to 10% under human quality review**.
+
+Reconciled with SynGuard's Tier-A degradation table, the honest position is a distinction we were not
+drawing: **watermark *detectability degrades* under ordinary editing (F1 1.000 → 0.714 under
+re-translation), while *complete removal* is much harder than theory predicts.** Those are different
+claims and both are true. It makes the Article 50 audit *more* attractive, not less — a mark that
+mostly survives is worth measuring precisely.
+
+**3. And no detector wins everywhere.** *Watermark vs. Automatic Detection*
+([2026.acl-industry.9](https://aclanthology.org/2026.acl-industry.9/)) sweeps six Qwen sizes, six
+watermarking schemes, two automatic detectors, three obfuscation methods and two datasets: "there is no
+detector that consistently outperforms on all scenarios."
+
+## Corpora this pass found that we did not have
+
+| Corpus | What it is | Source |
+|---|---|---|
+| **APT-Eval** | 15K samples at graded AI-polishing levels, 12 detectors | [2025.findings-acl.1303](https://aclanthology.org/2025.findings-acl.1303/) |
+| **MixSet** | First dedicated mixed human/AI corpus (AI-revised HWT and human-revised MGT) | [2024.findings-naacl.29](https://aclanthology.org/2024.findings-naacl.29/), [code](https://github.com/Dongping-Chen/MixSet) |
+| **FAIDSet** | Multilingual, multi-domain, multi-generator; human / LLM / collaborative, plus generator family | [2026.eacl-long.151](https://aclanthology.org/2026.eacl-long.151/), [code](https://github.com/mbzuai-nlp/FAID) |
+| **HERO's four-way split** | human / machine-generated / machine-**polished** / machine-translated, length-robust | [2025.findings-emnlp.812](https://aclanthology.org/2025.findings-emnlp.812/) |
+| **CoCoNUTS** | 315,535 peer reviews, six human-AI collaboration modes; 3.89% FPR on permissible polishing | [2026.acl-long.1240](https://aclanthology.org/2026.acl-long.1240/) |
+| **ICNALE-based bias study** | Gender, CEFR proficiency, academic field, language environment, ANOVA + WLS | [2025.acl-long.1292](https://aclanthology.org/2025.acl-long.1292/) |
+| **Multi-dialectal hybrid corpus** | 693 participants, five English dialects, paired within-individual over four weeks | [2026.lrec-1.882](https://aclanthology.org/2026.lrec-1.882/) |
+
+That last one also nuances §2 of the map: it finds LLM assistance **raises lexical diversity without
+raising syntactic complexity** — homogenization is not uniform across linguistic dimensions.
+
+**Net effect on the verification problem:** the strategy no longer depends on any arXiv-only preprint.
+Every load-bearing claim now has a peer-reviewed source read at source. The unreachable preprints
+remain listed as leads, and nothing rests on them.

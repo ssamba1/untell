@@ -210,6 +210,16 @@ it is a ready-made fairness corpus with ground truth and a permissive licence.
 | **DetectRL-X** | 8 languages, 6 domains, commercial LLMs, **and polish/expand/condense ops** | [arXiv:2605.15518](https://arxiv.org/abs/2605.15518), ACL 2026 |
 | **M4GT-Bench** | Mixed human-machine **boundary** task | [arXiv:2402.11175](https://arxiv.org/abs/2402.11175) |
 | **SHIELD** | Controllable **hardness** parameter for graded difficulty | [arXiv:2507.15286](https://arxiv.org/abs/2507.15286) |
+| ✅ **APT-Eval** | **15K samples graded by degree of AI polishing**, 12 detectors — the H2L axis, refereed | [2025.findings-acl.1303](https://aclanthology.org/2025.findings-acl.1303/) |
+| ✅ **MixSet** | First dedicated mixed corpus: AI-revised human text *and* human-revised machine text | [2024.findings-naacl.29](https://aclanthology.org/2024.findings-naacl.29/) |
+| ✅ **FAIDSet** | Multilingual/multi-domain human / LLM / **collaborative**, plus generator family | [2026.eacl-long.151](https://aclanthology.org/2026.eacl-long.151/) |
+| ✅ **HERO split** | human / generated / **polished** / translated, length-robust by construction | [2025.findings-emnlp.812](https://aclanthology.org/2025.findings-emnlp.812/) |
+| ✅ **CoCoNUTS** | 315,535 peer reviews, six human–AI collaboration modes | [2026.acl-long.1240](https://aclanthology.org/2026.acl-long.1240/) |
+| ✅ **ICNALE bias study** | Gender, CEFR proficiency, academic field, language environment; ANOVA + WLS | [2025.acl-long.1292](https://aclanthology.org/2025.acl-long.1292/) |
+
+**Prefer the ✅ rows.** They are refereed, public, and graded by *degree* of AI involvement, which is
+the axis untell actually measures. A systematic pass over 20,875 ACL abstracts found them; the first
+draft of this document reached for arXiv preprints because it had only searched, not read.
 
 DetectRL-X's *polish / expand / condense* operations deserve their own note: they are AI-**assistance**
 operations rather than AI generation, they are what people actually do, and `untell/languages.py`
