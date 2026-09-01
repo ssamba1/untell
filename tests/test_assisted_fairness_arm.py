@@ -118,3 +118,16 @@ def test_mixed_counts_as_a_flag():
 
     assert "mixed" in FLAG_LABELS and "ai" in FLAG_LABELS
     assert "human" not in FLAG_LABELS
+
+
+def test_the_report_says_the_subgroup_label_is_a_proxy():
+    """`Status` is institutional country, not language background. The literature names that
+    substitution as a defect (doi:10.1016/j.jdin.2025.10.017), so a reader of the table has to see it
+    — a caveat only in the docstring is a caveat nobody reads."""
+    report = {
+        "tier": "lite", "false_accusation_arms": list(HUMAN_AUTHORED),
+        "arms": {"human": {"Native": {"flagged": 1, "n": 10, "rate": 0.1, "ci95": [0.0, 0.4]}}},
+    }
+    rendered = _render(report)
+    assert "INSTITUTIONAL COUNTRY" in rendered
+    assert "not language background" in rendered

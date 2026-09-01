@@ -21,6 +21,16 @@ human by construction — the original abstract, two fully AI-generated versions
 **AI-assisted** versions where an LLM was asked only to improve clarity and readability. Authors are
 stratified 36 native / 36 non-native by institutional country, across three discipline groups.
 
+⚠️ **The subgroup label is a proxy, and a criticised one.** ``Status`` is assigned from the authors'
+institutional country, so it separates "affiliated in an Anglosphere country" from "affiliated
+elsewhere" — not native from non-native speakers. Du & Koga
+(`doi:10.1016/j.jdin.2025.10.017 <https://doi.org/10.1016/j.jdin.2025.10.017>`_) name exactly this
+substitution as a defect: "many U.S.-affiliated authors trained or grew up in non-English
+environments, affiliation alone may not capture language background," and they ask for a
+pre-specified sampling frame instead. Every subgroup number this module prints inherits that
+misclassification. It is reported rather than hidden, and a corpus with self-reported language
+background would be strictly better evidence.
+
 Two things this reports that a single verdict cannot:
 
 * **Over-detection on assisted text, per subgroup.** A human wrote it; an assistant polished it.
@@ -158,6 +168,8 @@ def _render(report: dict) -> str:
         f"Author-stratified flag rates (tier={report['tier']}).",
         "Originals are 2021 abstracts — pre-ChatGPT — so on the human and assisted arms",
         "every flag is a false accusation of the person who wrote it.",
+        "Native/Non-Native here is INSTITUTIONAL COUNTRY, not language background — a proxy the",
+        "literature criticises (doi:10.1016/j.jdin.2025.10.017). Read subgroup rows accordingly.",
         "",
         f"{'arm':<20} {'group':<12} {'n':>4} {'flagged':>8}   95% CI",
     ]

@@ -1080,3 +1080,68 @@ is here so that lands as a requirement rather than as a surprise.
 **2025.acl-long.1292** in this ledger — the same paper, two identifiers, in one repository. Now cited
 by venue in both places. That is the mundane defect a citation audit is actually for, and nothing
 would have found it by reading.
+
+---
+
+# Round thirteen — the systematic PubMed screen, and the sharpest fairness result yet
+
+Earlier PubMed work was high-precision querying. This round screened the field-specific literature
+systematically. According to PubMed, a tightened query — AI-generated-text / AI-detector terms
+crossed with false-positive, bias, fairness, accuracy or reliability — returns **128 records**, a
+tractable set rather than the 1,408 the broad query gave.
+
+**A finding about that corpus first: most of it is commentary, not measurement.** Editorials and
+narrative reviews on publication ethics dominate the top results. The measurement papers are a
+minority, which is why targeted querying found them and a broad sweep mostly returns opinion.
+
+## ✅ The strongest statement of the H2L effect anywhere in this ledger
+
+Du & Koga (*JAAD International*, [DOI](https://doi.org/10.1016/j.jdin.2025.10.017)), reporting on
+Wang et al.'s cohort study of human-authored letters:
+
+> "At baseline, **97% to 100% of originals were classified as human**; however, after polishing,
+> **75% to 85% were flagged as AI-generated, including 15% to 25% at high confidence.**"
+
+Karr et al. put light edits at 38–80% flagged. This is **75–85%, from near-perfect baseline
+accuracy**, on the same documents. Polishing your own writing is, on this measurement, close to a
+coin flip away from being called a machine — and the detector was *right about those same documents*
+before the polish.
+
+## ✅ And the fairness observation that reframes the whole problem
+
+From the same letter, reading Wang et al.'s figures:
+
+> "the AI-generated probability for **non-English-speaking authors in 2020** may exceed that for
+> **U.S. authors in 2024**, a difference that predates the post-2022 rise in AI-assisted writing and
+> points to a baseline pattern rather than a new effect."
+
+**A non-native author writing in 2020 — before ChatGPT existed — can score as more AI-like than a US
+author writing in 2024.** The bias against language background is larger than the signal the detector
+exists to measure. Every other fairness result in this ledger reports a *rate* difference; this one
+says the confound exceeds the effect.
+
+The letter adds that at baseline, original letters from non-native authors receive fewer "human
+(high)" labels than US-authored ones despite all being human-written — "consistent with sensitivity
+to nativeness or fluency rather than AI-like features."
+
+## ⚠️ A methodological warning aimed squarely at our stratification design
+
+The same authors criticise using **US institutional affiliation as a proxy for native-English
+status**: "many U.S.-affiliated authors trained or grew up in non-English environments, affiliation
+alone may not capture language background," and they call for "a pre-specified sampling frame."
+
+`eval/assisted_fairness.py` stratifies on exactly that proxy, because Pratama's corpus is built from
+institutional country. **So our per-subgroup numbers inherit a misclassification the literature has
+already flagged**, and the module should say so rather than presenting `Status` as ground truth about
+language background. That is a documentation fix in the module, not a reason to drop the arm.
+
+## ✅ Another pre-LLM baseline study, corroborating our probe design
+
+Erol et al. (*Acta Neurochirurgica*, [DOI](https://doi.org/10.1007/s00701-025-06622-4)) score 250
+human-authored articles **from the pre-ChatGPT era** against 750 ChatGPT-generated texts across four
+neurosurgery journals, using GPTZero, ZeroGPT and Corrector App. **AUC 0.75–1.00, and "none of the
+detectors achieved 100% reliability"**, with the authors noting "false positives pose risks to
+researchers."
+
+Independent use of the same design as `eval/pre_llm_fpr.py` — pre-ChatGPT text as unfalsifiable human
+ground truth — now in a third field, after Wikipedia and craniofacial surgery.
