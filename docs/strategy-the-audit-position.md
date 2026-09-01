@@ -431,6 +431,13 @@ same way once you read them together — the more fluent or more advantaged writ
 — which is exactly what the burstiness mechanism predicts, now shown on two independent corpora.
 Disability is the exception and points the other way.
 
+**A third corpus made this sharper still.** PELIC — adult university ESL, 20+ first languages
+— shows the false-positive rate varying by the writer's **first language** (Arabic 40.9% vs
+Turkish 29.7%, 1.38x, separated), and shows the proficiency effect running the *opposite* way to
+ELLIPSE's. Same detector, same kind of subgroup, opposite direction, because the population and
+the task differ. Disparity direction is not a property of a detector at all — it is a property of
+a detector *applied to a population*.
+
 **The practical consequence is the point of the whole instrument.** "Detectors are biased against
 non-native speakers" is true of the tools that were measured and false of this one, and nobody can
 tell which they have without measuring. A published bias direction does not transfer across

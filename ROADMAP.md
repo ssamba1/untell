@@ -114,6 +114,14 @@ known-human ESL essays, where every flag is an error by construction:
   writers more predictable — lower perplexity, the machine-like end — on both corpora
   (*d* −0.320 ELLIPSE, −0.491 ASAP). The lite tier's stoplist ratio points the other way,
   so it is not a stand-in for the thing it is named after.
+- **A third corpus reverses the direction, and that is the point.** PELIC (17,144 adult
+  university ESL texts, 20+ first languages, from GitHub LFS) adds a new axis: **first
+  language changes the false-positive rate** — Arabic 40.9% (n=5,818) vs Turkish 29.7%
+  (n=536), 1.38x, separated. And its proficiency effect runs the OPPOSITE way to ELLIPSE's:
+  falling from 52.9% to 36.5% as level rises, where ELLIPSE rose. Same detector, same kind
+  of subgroup, opposite direction — so disparity direction is not a property of the detector
+  alone but of the population and task. **You cannot predict who a detector fails from a
+  published result; it has to be measured on the people who will actually be judged.**
 - **A real transformer confirms it, more strongly.** GPT-2 124M via ONNX (weights from GitHub
   LFS, BPE from OpenAI's published vocab, onnxruntime from pypi — no HuggingFace): non-ELL
   *d* −0.671 and high-proficiency *d* −1.320, both larger than the bigram model's −0.491 and
@@ -150,7 +158,7 @@ Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
 `ellipse-lite-signal-decomposition`, `ellipse-proficiency-replication`,
 `ellipse-component-ablation`, `ellipse-raw-signal-effect-sizes` and
 `asap-subgroup-fpr`, `burstiness-formulation-robustness` and
-`true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` in
+`true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` and `pelic-l1-and-level` in
 `.claude/measurements.jsonl`.
 
 

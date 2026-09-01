@@ -1,4 +1,4 @@
-# Measured: who a detector fails, on 21,211 essays nobody wrote with a machine
+# Measured: who a detector fails, on 38,355 texts nobody wrote with a machine
 
 Every number here is a **false-positive rate on known-human writing**. The corpora are essays by
 real students, so a flag is an error by construction — there is no labelling to dispute and no
@@ -22,7 +22,7 @@ untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_statu
 
 Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`,
 `burstiness-formulation-robustness`, `true-ngram-perplexity-contrast`,
-`gpt2-transformer-perplexity-contrast`.
+`gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`.
 
 ## The corpora
 
@@ -204,14 +204,58 @@ generous"; it is that **I called something impossible after four probes and it t
 **Limits.** GPT-2 small, sampled at n=250 per group, 384-token cap. A perplexity *signal*, never a
 detector verdict.
 
+## Result 9 — a third corpus, a new axis, and a direction reversal
+
+[PELIC](https://github.com/ELI-Data-Mining-Group/PELIC-dataset) — 17,144 texts (of 46,204) from
+**adult university ESL** students across 20+ first languages. A different age band, a different
+task, and a different L1 mix from both corpora above. Overall FPR 39.1%.
+
+**New axis: your first language changes your false-positive rate.**
+
+| L1 | n | FPR |
+|---|---|---|
+| Arabic | 5,818 | **40.9%** |
+| Japanese | 1,115 | 41.2% |
+| Spanish | 784 | 39.5% |
+| Korean | 3,556 | 39.3% |
+| Chinese | 3,226 | 38.1% |
+| Thai | 583 | 33.6% |
+| Turkish | 536 | **29.7%** |
+
+Arabic vs Turkish is **1.38x, intervals separate**, and both are well sampled. (The tool's own
+worst-vs-best line reports German 59.6% against Hebrew 26.2%, 2.27x — but those rest on n=52 and
+n=61, and the large-n pair is the figure that should be quoted.)
+
+**And the proficiency effect runs the opposite way to Result 2.**
+
+| PELIC level | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|
+| FPR | **52.9%** | 40.9% | 39.9% | **36.5%** |
+
+Monotonically *decreasing* with proficiency, 1.45x, separated — where ELLIPSE showed it
+*increasing* (33.2% → 44.2%). Same detector, same kind of subgroup, **opposite direction**.
+
+ELLIPSE is US school students writing full independent essays; PELIC is adult university ESL
+classroom writing. So the direction of a proficiency disparity is **not a property of the detector
+alone** — it depends on the population and the task.
+
+**This is the strongest form of the argument for the instrument.** You cannot predict who a
+detector fails from a published result, *even a published result about the same detector and the
+same kind of subgroup*. It has to be measured on the population that will actually be judged.
+
+Gender does not separate here (1.03x, overlapping) — consistent with ELLIPSE and ASAP.
+
+**Caveat.** PELIC's median text is 23 words, so the ≥60-word floor keeps 37% of it and may select
+for longer, more elaborated answers.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
   which is the mechanism, not a shipped detector. No commercial or neural detector was run.
 - **Nothing about any commercial detector.** Those need keys and are out of scope here exactly as
   they are in `free-ceiling-measured.md`.
-- **Nothing outside US school-age writing.** Both corpora are US students in grades 6–12. Adult,
-  non-US and professional writing are unmeasured, and the effect sizes on ASAP are already
+- **Nothing about professional or published writing.** Result 9 adds adult university ESL across
+  20+ first languages, but professional and published prose are still unmeasured, and the effect sizes on ASAP are already
   materially smaller than on ELLIPSE, so domain sensitivity is demonstrated rather than assumed.
 - **Nothing about any individual document.** Every rate here describes a *detector*. A per-group
   false-positive rate says nothing about whether a particular text was machine-written, and must
