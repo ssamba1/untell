@@ -118,9 +118,19 @@ known-human ESL essays, where every flag is an error by construction:
   0.70, 3.25x). Which students a detector wrongly accuses is a function of an operating point
   somebody chose, usually without knowing that is what they were choosing.
 - No demographic axis — race, gender, economic status, grade — separated at 95% confidence.
+- **The bias is in the FEATURES, not our calibration.** Raw signals, before any detector touches
+  them: more proficient learners are less bursty (Cohen's *d* −0.394, held-out −0.363) and use
+  fewer common words (−0.476, held-out −0.537). Any detector treating low sentence-length variance
+  as machine-like inherits a penalty on writing maturity. **Scope:** GPTZero popularised the
+  feature but moved to a neural architecture in 2023, so this is not a claim about current
+  GPTZero — it is about the heuristic tier, ours included. Whether a modern neural detector
+  learned the same correlation is the open question, and needs weights this environment's egress
+  policy blocks from downloading.
 
-Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency` and
-`ellipse-lite-signal-decomposition` in `.claude/measurements.jsonl`.
+Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
+`ellipse-lite-signal-decomposition`, `ellipse-proficiency-replication`,
+`ellipse-component-ablation` and `ellipse-raw-signal-effect-sizes` in
+`.claude/measurements.jsonl`.
 
 
 ## 1. What we cannot win — say it once, then stop spending on it
