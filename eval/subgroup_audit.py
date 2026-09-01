@@ -76,6 +76,18 @@ _MISSING = {"na", "n/a", "unknown", "none", "null", "not reported", "unspecified
 # MONOTONICALLY with proficiency, 33.7% at level 2 to 53.1% at level 4.5. `grade` is here because
 # a perplexity-keyed detector should flag younger writers more, which is a checkable prediction.
 DEFAULT_AXES = ("Overall", "race_ethnicity", "gender", "SES", "grade")
+# ...but those are ELLIPSE's column names. ASAP carries different ones, and the two it is most
+# valuable for -- `ell_status` and `student_disability_status` -- are in neither the default list
+# nor ELLIPSE. MEASURED 2026-09-01: `--corpus asap` with default axes therefore reported four
+# empty headings and nothing about English-language learners or students with disabilities, on a
+# corpus that labels 2,269 of the first and 1,921 of the second. The `missing` flag made the
+# emptiness visible; it did not make the default useful.
+CORPUS_AXES = {
+    "asap": ("ell_status", "student_disability_status", "race_ethnicity", "gender",
+             "economically_disadvantaged", "grade_level", "race_ethnicity*ell_status"),
+    "liang": ("population", "machine_edited"),
+    "liang-paired": ("population",),
+}
 
 
 def wilson(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -577,12 +589,12 @@ def main(argv: list[str] | None = None) -> int:
     # carries its own axes. `--by` is only overridden when the caller left it at the default,
     # because ELLIPSE's demographic axes do not exist here and would render as empty headings.
     if a.corpus in ("liang", "liang-paired") and a.csv is None:
-        paired = a.corpus == "liang-paired"
-        rows = load_liang_paired() if paired else load_liang()
-        if a.by == ",".join(DEFAULT_AXES):
-            a.by = "population" if paired else "population,machine_edited"
+        rows = load_liang_paired() if a.corpus == "liang-paired" else load_liang()
     else:
         rows = load_labelled(a.corpus, csv_path=a.csv)
+    # A corpus the caller did not name axes for gets the ones it actually carries.
+    if a.csv is None and a.by == ",".join(DEFAULT_AXES) and a.corpus in CORPUS_AXES:
+        a.by = ",".join(CORPUS_AXES[a.corpus])
     if a.n and a.n < len(rows):
         random.Random(a.seed).shuffle(rows)
         rows = rows[: a.n]

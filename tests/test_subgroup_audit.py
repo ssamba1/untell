@@ -630,3 +630,26 @@ class TestCrossedAxes:
         assert got["groups"]["White x No"]["status"] == "reported"
         assert got["groups"]["Asian x Yes"]["status"] == "insufficient"
         assert got["groups"]["Asian x Yes"]["fpr"] is None, "a 5-row cell was given a rate"
+
+
+def test_default_axes_match_the_corpus_that_was_loaded():
+    """`--corpus asap` with defaults reported four empty headings and nothing that matters.
+
+    DEFAULT_AXES carries ELLIPSE's column names. ASAP's are different, and the two it is most
+    valuable for — `ell_status` and `student_disability_status` — appear in neither. MEASURED
+    2026-09-01: a default ASAP run said nothing about English-language learners or students with
+    disabilities on a corpus that labels 2,269 of the first and 1,921 of the second. The `missing`
+    flag made the emptiness visible; it did not make the default useful.
+    """
+    from eval.datasets import _ASAP_LABELS
+    from eval.subgroup_audit import CORPUS_AXES, DEFAULT_AXES
+
+    asap = CORPUS_AXES["asap"]
+    assert "ell_status" in asap and "student_disability_status" in asap, asap
+    for axis in asap:
+        for part in axis.split("*"):
+            assert part in _ASAP_LABELS, f"{part!r} is not a column ASAP carries"
+    # `gender` and `race_ethnicity` are in both corpora, so overlap is expected and correct. What
+    # must hold is that the ASAP list adds what the ELLIPSE defaults cannot supply.
+    assert set(asap) - set(DEFAULT_AXES) >= {"ell_status", "student_disability_status"}, asap
+    assert "SES" not in asap, "ASAP names that column `economically_disadvantaged`"

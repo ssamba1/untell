@@ -39,7 +39,7 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 `liang-threshold-sweep`, `liang-component-ablation`, `liang-paired-equalised-odds`,
 `liang-paired-separation`, `liang-paired-fnr-disparity`,
 `liang-prompt-engineered-evasion`, `liang-gpt-simplify-reversal`,
-`asap-intersectional-race-by-ell`.
+`asap-intersectional-race-by-ell`, `asap-disability-and-ell`.
 
 ## The corpora
 
@@ -649,6 +649,36 @@ is about the method, not the harm: cross the axes, because single-axis reporting
 Two cells fall below the 30-row floor and are reported as insufficient rather than compared —
 `American Indian/Alaskan Native × ELL` has one row. Crossing splits a corpus fast, which is why
 the floor matters more here rather than less, and why the worst cell above is not the smallest.
+
+## Result 20 — students with disabilities are flagged more, and it cancels the ELL effect
+
+The literature names neurodivergent students — autism, ADHD, dyslexia — as disproportionately
+flagged by AI detectors. ASAP labels 1,921 essays *Identified as having disability* against 11,367
+*Not identified*, and this instrument had never looked: `student_disability_status` was not in the
+default axes, so a default ASAP run reported nothing about it. All 17,307 essays, threshold 0.50:
+
+| axis | worst | best | ratio | intervals |
+|---|---|---|---|---|
+| `student_disability_status` | identified **38.3%** | not identified 34.8% | 1.10x | **separate** |
+| `economically_disadvantaged` | **not** disadvantaged 38.1% | disadvantaged 33.7% | 1.13x | separate |
+| `student_disability_status*ell_status` | identified × non-ELL **38.5%** | not identified × ELL **26.0%** | **1.48x** | **separate** |
+
+**This is the first axis in this document where the direction matches the field's expectation.**
+Everything above reverses it — non-ELL flagged more than ELL, non-disadvantaged more than
+disadvantaged, professionals more than students. Here the disadvantaged group really is the one
+paying: students identified as having a disability are flagged more, and the gap separates.
+
+**The crossed row is the finding.** This detector treats ELL status as *protective* — Result 19
+measured 26.7% for ELL against 32.2% for non-ELL. That protection is essentially absent for
+students with disabilities: not-identified ELL writers are flagged **26.0%**, identified ELL
+writers **36.9%**. Being identified as having a disability cancels the only thing that was
+helping. Neither single axis shows this: disability alone is 1.10x, and the ELL axis alone points
+the other way entirely.
+
+That is the second independent case in this document — after [Result 19](#result-19--crossing-two-axes-finds-a-gap-neither-shows-alone-on-17307-essays) —
+where crossing changed the answer rather than refining it, and it is why the defaults now follow
+the corpus: `--corpus asap` reports `ell_status`, `student_disability_status` and their cross
+without being asked, because a heading a caller never thinks to request is a group nobody measures.
 
 ## What these results do not establish
 
