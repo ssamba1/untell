@@ -133,6 +133,58 @@ def _burstiness(sentences: list[str]) -> float:
     return math.sqrt(var) / mean
 
 
+def burstiness_bias_corrected(sentences: list[str]) -> float:
+    """Coefficient of variation of sentence lengths, corrected for small-sample bias.
+
+    **`_burstiness` is biased downward, and that bias is the mechanism behind this detector's
+    length effect.** It divides by ``n`` rather than ``n - 1`` and applies no small-sample
+    correction, and a coefficient of variation estimated from a handful of sentences underestimates
+    the true one badly.
+
+    MEASURED on sentence lengths drawn from ONE fixed distribution whose true CV is 0.5000, so any
+    gradient with ``n`` is estimator bias and nothing about the writing:
+
+    ==========  =============  =========  ===============
+    sentences   `_burstiness`  + Bessel   + Bessel & 1/4n
+    ==========  =============  =========  ===============
+    3           0.3778         0.4627     0.5013
+    4           0.4135         0.4775     0.5073
+    10          0.4588         0.4837     0.4958
+    100         0.4837         0.4861     0.4873
+    ==========  =============  =========  ===============
+
+    The shipped estimator ranges over **0.106** on sample size alone; this one over **0.014**, and
+    around the right value. Since ``burst_signal`` is ``(0.55 - cv) / 0.55`` at weight 0.6, that
+    0.106 is **0.116 of score** handed to whichever documents happen to have fewer sentences.
+
+    On the real corpus it is the whole story. MEASURED across 6,810 pre-LLM abstracts, mean
+    ``burst_signal`` runs 0.4850 at 60-100 words (4.3 sentences) to 0.3335 at 200+ (9.2 sentences),
+    while ``common_signal`` moves the other way — so burstiness accounts for the length gap and the
+    common-word signal partly offsets it.
+
+    ⚠️ **This is NOT the shipped default, deliberately.** Swapping it in takes the pre-LLM
+    false-positive rate from **19.44% to 12.41%** — MEASURED, at the shipped verdict threshold —
+    which looks like a straight win and is only half a measurement. It lowers every score (mean
+    0.3366 -> 0.2934), and a detector that fires less always has fewer false positives. **The cost
+    in detection power cannot be measured in this environment**: it needs an AI-labelled corpus, and
+    HC3 and RAID both require network access this sandbox denies.
+
+    Changing a detector's operating point on the half of the trade-off that flatters it is the exact
+    error this repository exists to document. So the correction is here, tested, and quantified, and
+    the default is unchanged until someone can run the other half.
+    """
+    lengths = [len(_WORD.findall(s)) for s in sentences]
+    lengths = [n for n in lengths if n > 0]
+    if len(lengths) < 2:
+        return 0.0
+    mean = sum(lengths) / len(lengths)
+    if mean == 0:
+        return 0.0
+    # Bessel: n - 1. Then the first-order small-sample correction for a coefficient of variation.
+    var = sum((n - mean) ** 2 for n in lengths) / (len(lengths) - 1)
+    return (math.sqrt(var) / mean) * (1 + 1 / (4 * len(lengths)))
+
+
 def _common_ratio(text: str) -> float:
     """Fraction of tokens that are very common words. High => predictable => AI-like."""
     words = [w.lower() for w in _WORD.findall(text)]

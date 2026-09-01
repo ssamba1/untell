@@ -5073,3 +5073,78 @@ each. **A diagnosis that said "mean shift" for everything would have reproduced 
 answer by luck** — that case is the one that makes the real one worth anything.
 
 ⚠️ One detector, one corpus, one register. The mechanism is not claimed beyond that.
+
+---
+
+# Round seventy-five — the length bias is a small-sample bias in a coefficient of variation
+
+Round seventy-four established that short documents are scored *higher*, not just noisier. This round
+asks which term does it, and the answer is mechanical.
+
+The lite score is `max(rep, 0.6·burst_signal + 0.4·common_signal)`, where `burst_signal` is
+`(0.55 − cv) / 0.55` and `cv` is the coefficient of variation of sentence word-counts. MEASURED
+across 3,000 abstracts:
+
+| band (words) | sentences | burstiness CV | burst_signal | common_signal |
+|---|---|---|---|---|
+| 60–100 | 4.3 | 0.2848 | **0.4850** | 0.2023 |
+| 100–150 | 5.9 | 0.3183 | 0.4274 | 0.2119 |
+| 150–200 | 7.6 | 0.3442 | 0.3809 | 0.2432 |
+| 200+ | 9.2 | 0.3706 | **0.3335** | 0.2691 |
+
+`burst_signal` falls by 0.1515 across the range — **0.0909 of score at its 0.6 weight** — while
+`common_signal` moves the *other* way and gives back 0.0267. Net 0.0642, against a MEASURED mean
+score shift of 0.052. **Burstiness is the entire length effect and then some.**
+
+## And the CV gradient is not about the writing
+
+`_burstiness` divides by `n`, not `n − 1`, and applies no small-sample correction. A CV estimated
+from four sentences underestimates the true one badly.
+
+MEASURED on sentence lengths drawn from **one fixed distribution** whose true CV is 0.5000 — so any
+gradient with sentence count is estimator bias by construction:
+
+| sentences | `_burstiness` | + Bessel | + Bessel and 1/4n |
+|---|---|---|---|
+| 3 | 0.3778 | 0.4627 | 0.5013 |
+| 4 | 0.4135 | 0.4775 | 0.5073 |
+| 10 | 0.4588 | 0.4837 | 0.4958 |
+| 100 | 0.4837 | 0.4861 | 0.4873 |
+
+**The shipped estimator ranges over 0.106 on sample size alone; the corrected one over 0.014.** At
+the 0.6 weight that is **0.116 of score handed to whichever documents happen to have fewer
+sentences** — larger than the 0.052 shift actually observed, so the corpus effect is entirely
+consistent with estimator bias.
+
+Three rounds of measurement — flag rates, then mean-versus-variance, then components — end at a
+missing `− 1` in a variance denominator.
+
+## ⚠️ The correction is shipped and is NOT the default, deliberately
+
+`burstiness_bias_corrected` is in `untell/detectors/perplexity_burstiness.py`, tested, and unused by
+the scoring path. Swapping it in gives, MEASURED on all 6,810 abstracts at the shipped verdict
+threshold:
+
+| band | current | corrected |
+|---|---|---|
+| 60–100 | 28.69% | **16.42%** |
+| 100–150 | 20.65% | 12.80% |
+| 150–200 | 17.19% | 11.76% |
+| 200+ | 12.77% | 8.51% |
+| **all** | **19.44%** | **12.41%** |
+
+A 36% relative cut in false positives, and the length ratio narrows from 2.25× to 1.93×.
+
+✗ **That is half a measurement and the flattering half.** The correction raises every CV, which
+lowers every score — mean 0.3366 → 0.2934 — and **a detector that fires less always has fewer false
+positives.** The cost in detection power is not measurable here: it needs an AI-labelled corpus, and
+HC3 and RAID both require network access this environment denies.
+
+**Changing a detector's operating point on the half of the trade-off that flatters it is the exact
+error this repository exists to document.** So the estimator is here with its evidence, the default
+is untouched, and a test fails if anyone wires it into `lite_score` without doing the other half
+first — naming, in its failure message, the measurement that has to come first.
+
+That test is the deliverable as much as the function is. **A correct fix, held back for want of the
+measurement that would justify it, is a different thing from a fix nobody found** — and only one of
+them is honest to ship.
