@@ -152,3 +152,68 @@ def test_a_paper_about_some_other_kind_of_detection_is_not_counted(pid):
     if pid not in index:
         pytest.skip(f"{pid} not in the cached volumes")
     assert not _matches(index[pid]), f"{pid} is not machine-generated-text detection but counts as it"
+
+
+# --- the noise floor ------------------------------------------------------------------------------
+#
+# Round fifty-seven measured that 13.8% of the detection corpus is a different detection problem —
+# hallucination, fake news, toxicity — and that removing all of it moves no topic share by more than
+# 1.7 points. That was a one-off script. Shipping it means anyone reproducing the survey gets the
+# error term with the count, instead of a number carrying an implied precision it does not have.
+
+
+def test_a_paper_about_another_detection_problem_is_counted_as_noise():
+    corpus = [
+        # Must pass DETECTION first, or it never reaches the noise check — real hallucination
+        # papers in the corpus do, because they name LLMs. The first version of this fixture did
+        # not, so it tested nothing.
+        _paper("a.1", "Detecting Hallucinations in Domain-specific Question Answering",
+               "An LLM hallucination detection method for question answering."),
+        _paper("a.2", "Machine-generated text detection under paraphrase",
+               "We detect AI-generated text after adversarial paraphrasing."),
+    ]
+    report = litreview.noise_floor(corpus)
+    assert report["other_detection_problem"] == 1
+    assert report["examples"] == ["a.1"]
+
+
+def test_a_paper_naming_both_is_kept():
+    """The exclusion this must not make. A genuine machine-generated-text paper that frames itself
+    around misinformation is on topic, and dropping it is exactly the recall loss round thirty
+    rejected — that filter dropped the Czech result disconfirming this project's own thesis."""
+    corpus = [_paper("b.1", "Detecting machine-generated text in fake news pipelines",
+                     "We study AI-generated text detection for misinformation.")]
+    assert litreview.noise_floor(corpus)["other_detection_problem"] == 0
+
+
+def test_the_report_gives_every_topic_share_both_ways():
+    """A count with no error term invites being read as exact. Both columns, always."""
+    corpus = [
+        _paper("c.1", "Toxicity detection with a neural detector", "We detect toxic language."),
+        _paper("c.2", "AI-generated text detection under paraphrase attack",
+               "Adversarial paraphrasing evades the detector."),
+    ]
+    report = litreview.noise_floor(corpus)
+    assert set(report["topics"]) == set(litreview.TOPICS)
+    for row in report["topics"].values():
+        assert "with" in row and "without" in row
+
+
+def test_an_empty_corpus_does_not_divide_by_zero():
+    report = litreview.noise_floor([])
+    assert report["detection_papers"] == 0
+    assert report["off_topic_share"] == 0.0
+
+
+@needs_corpus
+def test_the_shipped_measurement_reproduces_round_fifty_sevens_numbers():
+    """The figures the ledger publishes: 80 of 578, and no share moving by more than 1.7 points. If
+    the corpus or the patterns change, this fails and names the drift rather than letting a stale
+    number stand."""
+    report = litreview.noise_floor(litreview.load_abstracts(CACHE))
+    assert report["other_detection_problem"] == 80, report["other_detection_problem"]
+    assert report["detection_papers"] == 578, report["detection_papers"]
+    assert report["largest_share_move"] <= 2.0, (
+        f"a topic share moved {report['largest_share_move']} points when the off-topic papers were "
+        f"removed — the noise is no longer flat across topics, and the ratio needs re-examining"
+    )

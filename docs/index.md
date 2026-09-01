@@ -89,7 +89,9 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **Reproduce the survey yourself:** `python -m eval.litreview --download` re-derives the count the
   strategy rests on (108 volumes, 38,231 abstracts; 153 papers on evasion robustness against 11 on
   false positives and 12 on fairness — and 77 on multilingual detection, six times the fairness row
-  for the same population). **The shares matter, not the counts** — 27% against 2% —
+  for the same population). `--noise-floor` reports the error term on those counts: 13.8% of the
+  corpus is a different detection problem, and removing all of it moves no share by more than 1.7
+  points. **The shares matter, not the counts** — 27% against 2% —
   because they hold across three different detection filters; see round thirty of the ledger
 
 ## License

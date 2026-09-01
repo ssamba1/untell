@@ -223,6 +223,63 @@ def load_abstracts(cache: Path) -> list[dict[str, str]]:
     return papers
 
 
+# Detection problems that are not machine-generated-text detection. A paper whose TITLE names one
+# of these and does not name MGT is about hallucination, or fake news, or toxicity — a different
+# question that shares the word "detection".
+#
+# This is measured rather than excluded, and that is a deliberate choice. Round thirty established
+# that a stricter filter scores better on precision and drops `2026.eacl-srw.20`, the Czech result
+# that disconfirms part of this project's own thesis. For a RATIO, losing on-topic papers biases the
+# topics unevenly while noise is roughly flat — MEASURED in round fifty-seven, removing all 80 of
+# them moves no topic share by more than 1.7 points. So the survey reports its error term instead of
+# claiming a precision it does not have.
+OTHER_DETECTION = re.compile(
+    r"hallucinat|factual (in)?consisten|fake news|misinformation|disinformation|hate speech"
+    r"|abus(e|ive)|toxic|spam|bot detection|stance detection|out-of-distribution|out-of-domain"
+    r"|spelling", re.I)
+
+NAMES_MGT = re.compile(
+    r"machine[- ]generated text|AI-generated text|LLM-generated text|MGT detection|AI text detect"
+    r"|machine-generated content|authorship", re.I)
+
+
+def noise_floor(papers: list[dict]) -> dict:
+    """How much of the detection corpus is a different detection problem, and what it costs.
+
+    Returns the off-topic count and every topic's share with and without them, so a reader can see
+    the error term on the ratio this project argues from rather than take the count on trust.
+    """
+    detection = [p for p in papers if DETECTION.search(p["title"] + " " + p["abstract"])]
+    off = [p for p in detection
+           if OTHER_DETECTION.search(p["title"]) and not NAMES_MGT.search(p["title"])]
+    kept = [p for p in detection if p not in off]
+
+    def share(subset: list[dict], pattern: re.Pattern[str]) -> float:
+        if not subset:
+            return 0.0
+        n = sum(1 for p in subset if pattern.search(p["title"] + " " + p["abstract"]))
+        return round(100.0 * n / len(subset), 1)
+
+    topics = {
+        name: {"with": share(detection, rx), "without": share(kept, rx)}
+        for name, rx in TOPICS.items()
+    }
+    moves = [abs(v["with"] - v["without"]) for v in topics.values()]
+    return {
+        "detection_papers": len(detection),
+        "other_detection_problem": len(off),
+        "off_topic_share": round(100.0 * len(off) / len(detection), 1) if detection else 0.0,
+        "topics": topics,
+        "largest_share_move": round(max(moves), 1) if moves else 0.0,
+        "examples": [p["id"] for p in off[:5]],
+        "note": (
+            "These are measured, not excluded. A stricter filter scores better on precision and "
+            "drops on-topic papers unevenly across topics — including one that disconfirms this "
+            "project's own thesis. See rounds 30 and 57 of docs/research-verification.md."
+        ),
+    }
+
+
 def survey(papers: list[dict[str, str]]) -> dict[str, object]:
     """Counts per topic over the detection subset, plus the corpus sizes that give them meaning."""
     detection = [p for p in papers if DETECTION.search(f"{p['title']} {p['abstract']}")]
@@ -424,6 +481,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="list bolded figures that do not appear in the cited paper's abstract "
                              "(a review list, not a pass/fail check)")
     parser.add_argument("--repo-root", type=Path, default=Path("."))
+    parser.add_argument("--noise-floor", action="store_true", dest="noise",
+                        help="how much of the corpus is a different detection problem, and what "
+                             "excluding it would do to every topic share")
     parser.add_argument("--json", action="store_true", dest="as_json", help="machine-readable output")
     args = parser.parse_args(argv)
 
@@ -461,6 +521,21 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     papers = load_abstracts(args.cache)
+
+    if args.noise:
+        report = noise_floor(papers)
+        if args.as_json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"{report['other_detection_problem']} of {report['detection_papers']} detection "
+                  f"papers ({report['off_topic_share']}%) name a different detection problem.")
+            print(f"e.g. {', '.join(report['examples'])}\n")
+            print(f"{'topic':<32} {'with':>7} {'without':>9}")
+            for name, row in report["topics"].items():
+                print(f"{name:<32} {row['with']:>6.1f}% {row['without']:>8.1f}%")
+            print(f"\nLargest share move: {report['largest_share_move']} points.")
+            print(f"\n{report['note']}")
+        return 0
 
     if args.topic:
         hits = papers_for_topic(papers, args.topic)

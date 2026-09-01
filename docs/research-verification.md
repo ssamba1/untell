@@ -3869,3 +3869,24 @@ re-running the topic counts with the off-topic papers removed. The single match 
 counterexample, and now shown to be the only thing standing between that row and zero. The claim that
 **no study examines whether AI-text detectors flag neurodivergent or disabled writers** is exactly
 true, in both corpora, with nothing to qualify.
+
+## Shipped, so the error term travels with the count
+
+Round fifty-seven's measurement was a one-off script. `python -m eval.litreview --noise-floor` now
+reports it: how many detection papers name a different problem, and every topic's share with and
+without them.
+
+The point is not the convenience. **A count with no error term invites being read as exact**, and
+this project spends most of its pages arguing that other people's numbers carry unstated conditions.
+The survey's own figures had exactly that shape — 153 robustness papers against 11 on false
+positives, with no statement of how much of the denominator was hallucination detection.
+
+Five tests hold it, including one that pins the published figures — 80 of 578, no share moving more
+than 1.7 points — so a change to the corpus or the patterns fails and names the drift instead of
+letting a stale number stand.
+
+⚠️ **And the first fixture tested nothing.** The synthetic hallucination paper written to prove the
+noise check fires did not pass `DETECTION` at all, so it never reached the check. Real hallucination
+papers in the corpus do pass it, because they name LLMs; the fixture did not. **The test asserted a
+count of one and got zero for a reason unrelated to what it was testing** — the same shape as rounds
+forty to forty-two, in a fixture this time.
