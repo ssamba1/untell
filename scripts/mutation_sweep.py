@@ -140,6 +140,31 @@ MUTANTS: tuple[tuple[str, str, str, str, str], ...] = (
      "if len(text.split()) < min_words:", "if len(text.split()) < 0:",
      "tests/test_the_fairness_arms_check_for_the_length_confound.py",
      "the length-balance check stops applying its own word floor"),
+    # --- fourth sweep: DATA, not functions ----------------------------------------------------
+    #
+    # Round forty-six's finding. Every mutant above breaks a function body, and eleven of the twelve
+    # test files that survived the repo-wide vacuity sweep import only module-level DATA —
+    # catalogues, compiled regexes, thresholds. Function-body sabotage is blind to all of it, which
+    # means the most consequential asset in this repository was the least covered by its own
+    # mutation testing: the tells catalogue is not a detail of the tells system, it IS the tells
+    # system, and a silently emptied category would read as a clean corpus.
+    ("untell/scripts/tells.py",
+     '_AI_VOCAB_RE = re.compile(r"\\b(" + "|".join(_AI_VOCAB) + r")\\b", re.IGNORECASE)',
+     '_AI_VOCAB_RE = re.compile(r"(?!x)x")',
+     "tests/test_tells.py",
+     "the AI-vocabulary regex matches nothing: a whole tell category goes silent"),
+    ("untell/scripts/tells.py",
+     "_AI_VOCAB = [", "_AI_VOCAB = []\n_UNUSED_AI_VOCAB = [",
+     "tests/test_tells.py",
+     "the AI-vocabulary catalogue is emptied"),
+    ("untell/rewriter/structural.py",
+     "_OPENERS = (", "_OPENERS = ()\n_UNUSED_OPENERS = (",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py",
+     "the opener catalogue is emptied: the closed-category test has nothing to check"),
+    ("untell/attacks/word_importance.py",
+     "_PARTICLES = frozenset(", "_PARTICLES = frozenset()\n_UNUSED_PARTICLES = frozenset(",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py",
+     "the particle set is emptied: substitutions stop keeping their prepositions"),
 )
 
 

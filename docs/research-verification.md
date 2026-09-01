@@ -3302,3 +3302,50 @@ catalogue is what the tells system actually is.
 **The reusable warning is about the instrument, not the suite.** Five plausible, publishable,
 wrong numbers came out of a 60-line harness before a right one did, and every one of them was
 biased toward finding fault with someone else's work.
+
+---
+
+# Round forty-seven — mutating the data, and the vacuous universal it exposed
+
+Round forty-six's incidental finding was that **eleven of the twelve test files it could not break
+import only module-level data** — catalogues, compiled regexes, thresholds — and that function-body
+sabotage is blind to all of it. That is the wrong thing to leave uncovered here: **the tells
+catalogue is not a detail of the tells system, it is the tells system.**
+
+Four data mutants, and two of them found a real hole.
+
+## ✗ A universal over an empty collection
+
+Emptying `_OPENERS` broke nothing. `test_no_conjunction_opener_is_emittable.py` asserts the category
+is **closed** — that no opener the rewriter can emit is a bare conjunction — and that is **vacuously
+true when there are no openers.** Emptying `_PARTICLES` survived for the same reason: the test asserts
+substitutions keep their prepositions, and with no particles there is nothing to keep.
+
+**The catalogues could have been deleted outright and the suite would have stayed green.** This is
+the oldest vacuous-test bug there is, sitting in the assertions guarding this repository's most
+consequential data, and no amount of function mutation could ever have surfaced it.
+
+Nine tests now assert the collections are populated, so every "no member does X" elsewhere has
+something to quantify over. The sizes are **floors, not exact counts** — an exact count fails on
+every legitimate addition, and a check that fails on correct changes gets deleted. Plus a check that
+every entry in `_AI_VOCAB` is matched by the regex built from it, which catches an emptied catalogue
+and a regex that stopped being derived from one, and cannot drift the way a hard-coded example would.
+
+## ⚠️ And three of my four mutants did not mutate
+
+The first versions emptied the containers with `_AI_VOCAB = [] or [...]`. **`[] or [...]` evaluates to
+the non-empty list.** Same for `() or (...)` and `frozenset() or frozenset(...)`. All three changed
+the file and none changed the value, so the sweep reported three survivors that were really
+no-ops — and the "survivors" pointed at tests that were, at that moment, entirely innocent.
+
+The round-forty-two guard exists to catch exactly this and could not: it asserts
+`source.replace(old, new) != source`, which is **true here.** The text changed. Textual difference is
+a weaker property than semantic difference, and the gap between them is where a mutation can look
+applied and do nothing.
+
+Caught by the same move as every round since forty: the result was implausible. A test named
+*no conjunction opener is emittable* cannot be indifferent to the opener catalogue vanishing — so
+either the test was broken or the mutation was, and checking took one line in a REPL.
+
+Once the mutants actually emptied the containers, two of the four were **real** — which is the part
+worth keeping. The no-op versions were hiding a genuine defect behind a bug of mine.
