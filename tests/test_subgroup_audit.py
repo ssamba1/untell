@@ -775,3 +775,66 @@ def test_a_two_group_axis_still_reads_plainly():
     text = sa.render(rep)
     assert "widened for a pick" not in text, text
     assert "intervals separate" in text, text
+
+
+class TestRaidPerDomainThresholds:
+    """Result 21's evidence: 46 real detectors' own per-domain calibration.
+
+    RAID's leaderboard requires each submission to publish, per text domain, the threshold at
+    which that detector's false-positive rate on human text is 5% — `find_threshold` in
+    `raid/evaluate.py` fits it separately on each domain's human, unattacked texts. A
+    domain-stable detector would report eight near-identical numbers. The median span across 46
+    detectors is 0.610 of the 0-1 range.
+
+    The extract is committed rather than the 3.4 GB clone, so these guard the extract against
+    the claims the document makes from it.
+    """
+
+    @staticmethod
+    def _load():
+        import json
+        import pathlib
+
+        p = (pathlib.Path(__file__).resolve().parent.parent
+             / ".claude" / "probes" / "raid-per-domain-thresholds.json")
+        return json.loads(p.read_text(encoding="utf-8"))
+
+    def test_every_row_has_all_eight_domains_on_a_unit_scale(self):
+        rows = self._load()
+        assert len(rows) == 46, f"the document says 46 detectors; extract has {len(rows)}"
+        for r in rows:
+            th = r["thresholds_at_5pct_fpr"]
+            assert len(th) == 8, f"{r['detector']} has {len(th)} domains"
+            for dom, v in th.items():
+                assert 0.0 <= v <= 1.0, (
+                    f"{r['detector']}/{dom} = {v} is off a 0-1 scale, so an absolute span is "
+                    f"not the right statistic for it"
+                )
+
+    def test_the_median_span_is_what_the_document_quotes(self):
+        import statistics
+
+        spans = [r["span"] for r in self._load()]
+        assert statistics.median(spans) == pytest.approx(0.610, abs=0.005)
+        assert sum(1 for s in spans if s > 0.5) == 25
+        assert sum(1 for s in spans if s > 0.9) == 13
+
+    def test_binoculars_is_the_stable_counterexample(self):
+        """One well-behaved detector is what makes the other 45 a finding and not an artifact."""
+        rows = {r["detector"]: r for r in self._load()}
+        assert rows["Binoculars"]["span"] < 0.05, rows["Binoculars"]
+        assert rows["GPTZero"]["span"] > 0.7, rows["GPTZero"]
+
+    def test_the_domain_ordering_is_consistent_across_detectors(self):
+        """`recipes` needing the most permissive threshold is a property of the text, not a model."""
+        import collections
+        import statistics
+
+        ranks = collections.defaultdict(list)
+        for r in self._load():
+            th = r["thresholds_at_5pct_fpr"]
+            for i, dom in enumerate(sorted(th, key=th.get)):
+                ranks[dom].append(i)
+        mean_rank = {d: statistics.mean(v) for d, v in ranks.items()}
+        assert min(mean_rank, key=mean_rank.get) == "recipes", mean_rank
+        assert max(mean_rank, key=mean_rank.get) == "books", mean_rank

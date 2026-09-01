@@ -770,6 +770,64 @@ clears it by a distance — a channel that flags 100.0% of one population and 0.
 a marginal finding, and the correction says so. **A conservative test is only useful if it still
 passes real effects**, and this is the evidence that it does.
 
+## Result 21 — 46 real detectors, and their own calibration data says one threshold cannot work
+
+Every result above measures untell's own lite tier, and the document has said repeatedly that this
+generalises to nothing. **This one is about 46 real detectors, including GPTZero, QuillBot, RADAR,
+Binoculars and Fast-DetectGPT**, and it needs no access to any of them.
+
+[RAID](https://github.com/liamdugan/raid)'s public leaderboard requires every submission to
+publish, for each of eight text domains, **the threshold at which that detector's false-positive
+rate on human-written text equals 5%**. The calibration is per domain by construction —
+`find_threshold` in `raid/evaluate.py` fits it separately on each domain's human, unattacked
+texts. So the numbers are the detectors' authors' own answer to: *what do I have to set my
+threshold to, on this kind of writing, to accuse 5% of innocent people?*
+
+**If a detector were domain-stable, those eight numbers would be nearly identical.** They are not.
+
+| | span of the required threshold, across 8 domains, on a 0–1 scale |
+|---|---|
+| **median across 46 detectors** | **0.610** |
+| span > 25% of the scale | 33 / 46 |
+| span > 50% | 25 / 46 |
+| span > 90% | 13 / 46 |
+
+Named ones:
+
+| detector | lowest domain | highest domain | span |
+|---|---|---|---|
+| RADAR | 0.0159 (recipes) | 0.9984 (reviews) | **0.982** |
+| RoBERTa (ChatGPT) | 0.0055 (abstracts) | 0.9986 (books) | 0.993 |
+| QuillBot | 0.0001 (abstracts) | 0.9359 (reviews) | 0.936 |
+| **GPTZero** | **0.0033 (reddit)** | **0.7797 (poetry)** | **0.776** |
+| Fast-DetectGPT | 0.7296 | 0.9200 | 0.190 |
+| **Binoculars** | 0.0787 (abstracts) | 0.1091 (reviews) | **0.030** |
+
+**What this means.** These tools ship *one* threshold. A student gets one score and one verdict.
+But their own submitted calibration says that holding the false-positive rate at 5% requires a
+threshold that moves across most of the score range depending on what kind of text it is given. A
+single deployed threshold therefore cannot hold a uniform false-positive rate — it is necessarily
+close to right for one or two domains and wrong for the rest, and "wrong" here means a
+false-accusation rate that is some unknown multiple of the advertised one.
+
+This is [Result 13](#result-13--raising-the-threshold-cuts-the-error-rate-and-widens-the-gap)'s
+finding — that an operating point which looks fine in aggregate is not fine per group — established
+on commercial and research detectors that actually accuse people, from numbers their own authors
+published.
+
+**Two things keep it honest.** The spread is *not* universal: **Binoculars needs a span of 0.030**,
+and is genuinely domain-stable. That one detector behaves well is what makes the other 45
+credible rather than an artifact of the method. And the domains are ordered consistently —
+averaged over all 46 detectors, `recipes` needs the most permissive threshold and `books` and
+`reviews` the strictest, which is a property of the text rather than of any one model.
+
+**What it does not show.** RAID's domains are text *types*, not writer groups, so this is the
+generalisation of Result 13 and not of Results 19–20. And a large span is not itself a measure of
+harm — it says the calibration is domain-specific, not what any particular deployment's error rate
+actually is. Establishing that needs the score distributions, which the leaderboard does not
+publish. The dataset itself is hosted at `raid-bench.xyz`, which this environment's egress policy
+denies; only the leaderboard submissions travel with the repository.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
