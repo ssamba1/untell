@@ -1423,3 +1423,61 @@ finding.
 
 Row 28's justification in ROADMAP §7 now states what these studies measured, and no longer asserts a
 trait list that no source supports.
+
+---
+
+# Round eighteen — checking every cited figure against the paper it is credited to
+
+Round seventeen found an unsourced claim by reading one paragraph carefully. That does not scale, and
+the failure it belongs to has bitten twice now: **Beemo was published here as "11 detectors across 33
+configurations" when its abstract says only 33** (the 11 came from the authors' repository), and the
+citation resolved perfectly the whole time. `verify_citations` proves a paper exists. Nothing proved
+the *number* beside it was one that paper reports.
+
+`eval/litreview.py --cross-check` is the mechanical version. For every paragraph citing exactly one
+Anthology paper, it compares each bolded figure against that paper's cached abstract and reports the
+ones absent.
+
+## Two defects in the checker, found before trusting it
+
+**1. It compared figures against titles.** The first run reported essentially the whole corpus as
+unsupported — including the journalism audit, whose numbers this document quotes verbatim.
+`paper_index` returns *titles*; the check needed abstracts. **A checker that reports everything is
+worse than no checker**, because the one real finding is invisible in the noise. `abstract_index` is
+now a separate function whose docstring says why it exists.
+
+**2. It treated a markdown table as one attribution unit.** A table has no blank lines, so a single
+Anthology link anywhere in it captured every row's figures. That is how MASH
+([2026.findings-acl.1487](https://aclanthology.org/2026.findings-acl.1487/)) came to be checked
+against **−87.88%**, **97.6%**, **70.3% → 4.6%** — four numbers belonging to a different paper cited
+in its own row two lines away. Each row carries its own citation, so each row is now its own unit.
+Fixing these took the report from **35 findings to 25**, and every removed one was the checker's
+fault, not the document's.
+
+## The triage, recorded
+
+All 25 remaining were read. **None is a misattribution.** They fall into three groups:
+
+| Cluster | Figures | Verdict |
+|---|---|---|
+| Beemo paragraph, ROADMAP §7 | 64–80%, 38–49%, 9–15% | **Benign.** Credited in the same sentence to *Karr et al.*, by name. The checker only reads Anthology URLs, so an author named in prose is invisible to it |
+| `2024.acl-long.674` bullet | 5 of 30, CI 7.3%–33.6%, CI 40.9%–92.9% | **Benign.** Our own `wilson_interval` output over our own README figures; the bullet says so outright |
+| `2025.acl-long.1292` bullet | 26.7%, 16.9%, 61.3% → 11.6% | **Benign.** Our own `eval.pre_llm_fpr --by-length` measurements, with the command named on the line above, plus Liang's intervention figures |
+
+**So the answer is that every figure this repository credits to an Anthology paper is either in that
+paper's abstract or is explicitly credited elsewhere in its own sentence.** That is a real result and
+it is the first time it has been checked rather than assumed.
+
+## What it is, and what it is not
+
+It is a **review list, not a pass/fail check**, and that is deliberate. A paragraph legitimately
+mixes a cited paper's numbers with our own measurements and with figures credited to another author
+by name — three things a regex cannot tell apart. Making it fail the build would force the prose to
+be rewritten around the checker, which is the failure mode round fifteen's checker fixes were
+careful to avoid. A hit means *confirm a reader cannot misattribute this*, not *this is wrong*.
+
+Its limits, stated: it only sees **Anthology** citations, so DOIs and PMIDs are unchecked; it only
+sees **cached** volumes; it only reads **abstracts**, so a figure from a paper's body reads as
+unsupported; and it cannot see attribution by author name, which is the largest source of the 25.
+`tests/test_cited_figures_appear_in_the_paper.py` pins the mechanics, including that a fabricated
+figure is caught and that a verbatim quotation is not.

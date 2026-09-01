@@ -235,6 +235,114 @@ def paper_index(cache: Path) -> dict[str, str]:
     return index
 
 
+def abstract_index(cache: Path) -> dict[str, str]:
+    """Anthology id -> title and abstract, for every paper in the cached volumes.
+
+    `paper_index` deliberately returns titles only. Cross-checking a figure needs the abstract, and
+    reaching for the wrong one silently compares every number against a title — which reports the
+    whole corpus as unsupported and looks exactly like a catastrophic finding.
+    """
+    index: dict[str, str] = {}
+    for path in sorted(cache.glob("*.xml")):
+        try:
+            root = ET.parse(path).getroot()
+        except ET.ParseError:
+            continue
+        collection = root.get("id")
+        for volume in root.findall("volume"):
+            for paper in volume.findall("paper"):
+                pid = f"{collection}-{volume.get('id')}.{paper.get('id')}"
+                index[pid] = (_flatten(paper.find("title")) + " "
+                              + _flatten(paper.find("abstract")))
+    return index
+
+
+_FIGURE = re.compile(r"\d+(?:\.\d+)?[kKmM]?%?")
+_BOLD_RUN = re.compile(r"\*\*([^*\n]{0,160}?)\*\*")
+_CITATION = re.compile(r"aclanthology\.org/([0-9A-Za-z._-]+?)/")
+
+
+def _figure_forms(token: str) -> set[str]:
+    """The spellings one figure can take between a paper's abstract and a document quoting it."""
+    core = token.rstrip("%").lower()
+    forms = {token.lower(), core}
+    if core.endswith("k"):
+        forms |= {core[:-1] + "000", core[:-1] + ",000"}
+    if core.endswith("m"):
+        forms |= {core[:-1] + "000000", core[:-1] + ",000,000"}
+    if "." in core:
+        forms.add(core.rstrip("0").rstrip("."))
+    return {f for f in forms if f}
+
+
+def _normalise(text: str) -> str:
+    return re.sub(r"\s+", " ", text.lower().replace(",", "").replace("\u00d7", " times "))
+
+
+def _attribution_units(body: str) -> list[str]:
+    """Split a document into the spans over which one citation can be said to attribute a figure.
+
+    Paragraphs, except that a markdown TABLE is not one span. A table has no blank lines in it, so
+    treating it as a paragraph credits every row's figures to whichever single paper happens to be
+    linked anywhere in the table — which is how MASH's abstract came to be checked against another
+    paper's evasion numbers from a different row. Each row carries its own citation, so each row is
+    its own unit.
+    """
+    units: list[str] = []
+    for para in re.split(r"\n\s*\n", body):
+        if any(line.lstrip().startswith("|") for line in para.splitlines()):
+            units.extend(para.splitlines())
+        else:
+            units.append(para)
+    return units
+
+
+def unsupported_figures(repo_root: Path, cache: Path) -> list[dict[str, str]]:
+    """Bolded figures stated in a paragraph that cites exactly one Anthology paper, and that do not
+    appear in that paper's abstract.
+
+    This is a REVIEW TOOL, not a pass/fail check, and the distinction matters. A paragraph routinely
+    and legitimately mixes a cited paper's numbers with our own measurements and with figures
+    credited to another author by name — none of which are in the cited abstract. So a hit means
+    "read this and confirm the reader cannot misattribute it", not "this is wrong".
+
+    It exists because the failure it looks for is real: Beemo was published here as "11 detectors
+    across 33 configurations" when its abstract says only 33 configurations, the 11 coming from the
+    authors' repository. Nothing caught that except reading the abstract by hand.
+    """
+    index = abstract_index(cache)
+    out: list[dict[str, str]] = []
+    docs = sorted([*repo_root.glob("*.md"), *(repo_root / "docs").glob("*.md")])
+    for path in docs:
+        try:
+            body = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for para in _attribution_units(body):
+            cited = set(_CITATION.findall(para))
+            if len(cited) != 1:
+                continue  # zero or several papers: attribution is not unambiguous, so say nothing
+            paper = cited.pop()
+            abstract = index.get(paper)
+            if not abstract:
+                continue  # not in the cached volumes; `verify_citations` covers resolution
+            haystack = _normalise(abstract)
+            for run in _BOLD_RUN.finditer(para):
+                claim = run.group(1)
+                # A leading list ordinal is not a figure, and neither is a bare identifier.
+                if "arXiv:" in claim or "arxiv.org" in claim:
+                    continue  # an identifier mapping, not a measurement
+                stripped = re.sub(r"^\d+\.\s+", "", claim)
+                for token in _FIGURE.findall(stripped):
+                    if re.fullmatch(r"(19|20|21|25|26)\d\d", token.rstrip("%")):
+                        continue  # a year
+                    if any(form in haystack for form in _figure_forms(token)):
+                        continue
+                    out.append({"document": path.name, "paper": paper,
+                                "figure": token, "context": claim.strip()[:120]})
+    return out
+
+
 def verify_citations(repo_root: Path, cache: Path) -> dict:
     """Check that every Anthology id this repo cites resolves to a real paper."""
     cited = cited_acl_ids(repo_root)
@@ -266,6 +374,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--topic", choices=sorted(TOPICS), help="list the papers behind one row")
     parser.add_argument("--verify-citations", action="store_true",
                         help="check every ACL id this repo cites against the cached corpus")
+    parser.add_argument("--cross-check", action="store_true",
+                        help="list bolded figures that do not appear in the cited paper's abstract "
+                             "(a review list, not a pass/fail check)")
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--json", action="store_true", dest="as_json", help="machine-readable output")
     args = parser.parse_args(argv)
@@ -289,6 +400,19 @@ def main(argv: list[str] | None = None) -> int:
             for cid, where in sorted(report["unresolved"].items()):
                 print(f"  UNRESOLVED {cid} — cited in {', '.join(sorted(set(where)))}")
         return 1 if report["unresolved"] else 0
+
+    if args.cross_check:
+        findings = unsupported_figures(args.repo_root, args.cache)
+        if args.as_json:
+            print(json.dumps(findings, indent=2))
+        else:
+            print(f"{len(findings)} bolded figure(s) not found in the cited abstract.")
+            print("Each needs a human read: a paragraph may legitimately mix the cited paper's "
+                  "numbers\nwith our own measurements and with figures credited to another author "
+                  "by name.\n")
+            for f in findings:
+                print(f"  {f['document']} [{f['paper']}] {f['figure']!r} in: {f['context']}")
+        return 0
 
     papers = load_abstracts(args.cache)
 
