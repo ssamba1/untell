@@ -48,7 +48,9 @@ no decision, no native speaker and no GPU, only the work.
 | 20 | The base-vs-instruct audit arm | 🔜 open | **nobody — buildable now.** CPU only, ~1 day, no new dependency. |
 | 21 | SynthID-Text detector adapter (Article 50 marking audit) | 🔜 open | **nobody — buildable now.** `synthid-text` is open source and in HF Transformers; the attack side already exists. |
 | 22 | Confidence intervals on every published rate | 🔜 open | **nobody — buildable now.** Arithmetic over data already collected. |
-| 23 | AI-assisted arm + FAR/MFAR + per-subgroup stratification | 🔜 open | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
+| 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
+| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **15.8% measured**, CI [10.4%, 23.4%] | — |
+| 25 | AI-assisted arm + per-subgroup stratification | 🔜 open | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -508,10 +510,20 @@ a fact about HC3, and the 0-to-61% range is the reason to say so every time we q
   anchored at 44.44% / 4.17% / ~0%. **The gap between those three rows is the institution's policy
   decision, and nobody puts it in front of them.**
 
-  **Also steal Bohler et al.'s probe** ([DOI](https://doi.org/10.1097/SCS.0000000000012366)): they
-  scored 659 manuscripts from **2014**, necessarily pre-LLM, and got **8.6%** — a pure false-positive
-  rate with unfalsifiable ground truth and no labelling. A pre-2022 corpus arm is the cheapest honest
-  FPR probe in existence and we should ship one.
+  ✅ **Shipped** as `untell/scripts/score.py::agreement`, on every score, with the degenerate
+  single-detector case named rather than printed as consensus.
+
+  ✅ **Bohler et al.'s probe is shipped too** ([DOI](https://doi.org/10.1097/SCS.0000000000012366) —
+  they scored 659 manuscripts from **2014** and got **8.6%**). `eval/pre_llm_fpr.py` builds the
+  corpus for free from ACL Anthology volumes published through 2021: thousands of human abstracts in
+  the technical register detectors are worst on, where **every flag is a false positive by
+  construction** — no labels, nothing to dispute.
+
+  **First measurement: 15.8% of 120 pre-LLM abstracts flagged, 95% CI [10.4%, 23.4%], lite tier.**
+  That is now the most defensible false-positive number this repo has, because its ground truth
+  cannot be argued with, and it is roughly double the 8.6% Bohler measured with ZeroGPT on older
+  medical text. It also demonstrates the interval discipline item 22 asks for: `wilson_interval`
+  confirms the worked example this roadmap quotes — 5 of 30 is 17% with a range of **7.3% to 33.6%**.
 
 - 🔜 **Calibrated thresholds, so the negative result stops being only a complaint.** Multiscaled
   conformal prediction ([2025.acl-long.601](https://aclanthology.org/2025.acl-long.601/); Zhu, Ren,
