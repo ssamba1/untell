@@ -1615,6 +1615,33 @@ def check_source_comment_counts(report: Report) -> None:
     )
 
 
+def flatten_prose(text: str) -> str:
+    """Lower-case, emphasis-stripped, whitespace-collapsed text, for matching a phrase in prose.
+
+    A multi-word phrase matched against raw document text is defeated by a line break, and these
+    documents hard-wrap. Round seventy found the retraction guard blind to a claim for fifty-three
+    rounds for exactly this reason; round seventy-one found `check_demo_privacy_claims` blind the
+    same way, and that one guards the sentence "your text is never uploaded".
+
+    VERIFIED before the fix: the identical false claim FAILED the check written on one line and
+    PASSED it written across two. A checker any line break defeats is worse than none, because it
+    reports PASS.
+
+    Emphasis markers become spaces rather than being deleted, for the reason
+    `check_corpus_bound_claims` already records: the README writes a claim as
+    "to **zero while preserving meaning**", and asterisks inside a phrase defeat a matcher just as
+    a newline does.
+
+    ⚠️ **Code spans are blanked first, and that is not optional here.** Writing round seventy-one up
+    meant quoting the phrases this check looks for, and the newly wrap-safe check reported the
+    ledger entry describing it — the fourth time in this project that documenting a defect
+    reproduced it. Round fifty-five settled the rule for the count checks: inline code is a
+    mention, not a claim. This is that rule reaching the privacy check, three rounds after the same
+    lesson arrived twice already.
+    """
+    return re.sub(r"\s+", " ", re.sub(r"[*_`]", " ", without_code_spans(text).lower()))
+
+
 def check_demo_privacy_claims(report: Report) -> None:
     """Fail if a document says the browser demo scores locally while the page calls out.
 
@@ -1637,7 +1664,7 @@ def check_demo_privacy_claims(report: Report) -> None:
             doc = REPO / rel
             if not doc.exists():
                 continue
-            text = doc.read_text(encoding="utf-8", errors="replace").lower()
+            text = flatten_prose(doc.read_text(encoding="utf-8", errors="replace"))
             offenders += [f"{rel}: {p}" for p in _LOCAL_SCORING_CLAIMS if p in text]
     report.check(
         "no document claims the browser demo scores locally",

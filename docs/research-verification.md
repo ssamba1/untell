@@ -4806,3 +4806,86 @@ comment and a later commit. This one: **a guard and the typography of the docume
 Each time the check was correct on its own terms and blind to a case nobody had thought to construct.
 The pattern was right, the table was right, the retraction was recorded in the right place — and a
 line break decided whether any of it did anything.
+
+---
+
+# Round seventy-one — the same blind spot, in the check that guards a privacy claim
+
+Round seventy fixed the retraction guard's line-based matching. The obvious next question is what
+else has that shape, and the answer was the highest-stakes check in the audit.
+
+`check_demo_privacy_claims` exists to stop a document telling users their text never leaves their
+machine while `demo.html` POSTs it to an API. It matched its phrases — `nothing uploaded`,
+`never uploaded`, `runs entirely in your browser` — as substrings of the raw document.
+
+MEASURED by planting the identical false claim in `docs/index.md` two ways:
+
+| how the claim is written | verdict |
+|---|---|
+| `The demo runs entirely in your browser, so nothing leaves your machine.` | **FAIL** — caught |
+| the same sentence, wrapped between `your` and `browser` | **PASS** — missed |
+
+**A line break was the difference between a privacy claim being caught and being published.**
+
+## One check already knew, and the knowledge did not travel
+
+`check_corpus_bound_claims` collapses whitespace before matching, and its comment says why:
+
+> the first version matched the raw text and missed the exact sentence it was written for, because
+> the README writes the claim as "to **zero while preserving meaning**" and the asterisks sit inside
+> the phrase. A checker that any bold-face defeats is worse than none: it reports PASS.
+
+Whoever wrote that had the whole insight — a phrase matcher is defeated by anything that inserts a
+character mid-phrase — and applied it to emphasis markers in one check. **Newlines do the same thing,
+and the sibling check twenty lines away never learned either lesson.**
+
+`audit.flatten_prose` is now the shared answer: lower-case, emphasis stripped, whitespace collapsed.
+Both checks use it.
+
+## The durable part
+
+`tests/test_a_line_break_does_not_defeat_a_document_check.py` plants a claim each phrase-matching
+check must report **twice** — once on a line, once split at its midpoint — into a real copy of the
+repository, and requires both to be caught. It asserts the unwrapped case first, so a probe that
+tests nothing fails loudly rather than passing vacuously; that is the shape round sixty-seven hit
+twice while writing mutations.
+
+VERIFIED to fire: reverting the one-line fix in `check_demo_privacy_claims` fails it, naming the
+check, the claim and the remedy.
+
+## ⚠️ And writing this up tripped the check it describes
+
+Quoting the three phrases the check looks for made the newly wrap-safe check report *this entry* —
+the fourth time in this project that documenting a defect reproduced it. Round fifty-five settled the
+rule for the count checks: inline code is a mention, not a claim, so `without_code_spans` blanks it
+before matching. **The privacy check never inherited that rule either.** It does now, composed with
+the whitespace fix: `flatten_prose` blanks code spans first.
+
+Two rules, both already written down in this repository, neither of which had reached this check —
+in the same round, in the same function.
+
+✅ **And then the pre-commit hook caught the third instance**, before it reached the remote. The
+roadmap row written for this round used the phrase itself, which the check duly reported. The hook —
+added in round fifty-three precisely because four self-triggers had been pushed — refused the commit
+and named the guard.
+
+**Then the sentence you are reading did it a fourth time**, by quoting the phrase again while
+explaining the third. Both are in backticks now. Round fifty-five's rule works exactly as designed
+and is easy to forget in the same paragraph that invokes it: **describing a defect is the single most
+reliable way to reproduce it**, and the only defence that has ever held is structural — a mention
+marked as a mention, and a hook that refuses the commit when it is not.
+
+## Three rounds, one lesson, arriving three times
+
+| round | the two things that disagreed |
+|---|---|
+| sixty-two | a checker and its own auto-fixer, about what a claim is |
+| sixty-six | a comment and a commit that landed after it |
+| seventy | a guard and the typography of the documents it guards |
+| **seventy-one** | **two sibling checks, one of which had already learned it** |
+
+The last is the one worth sitting with. This was not an unknown failure mode: it was written down,
+in the same file, in a comment explaining a bug of exactly this kind. **A lesson recorded in a
+comment beside one call site is not a lesson the next call site inherits** — which is the argument
+for `flatten_prose` being a function rather than a fixed regex, and the same argument round
+sixty-two made for `_MODULE_CLAIM` and round sixty-three made for `eval/arms.py`.
