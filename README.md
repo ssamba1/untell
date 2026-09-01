@@ -44,6 +44,14 @@ The rewriting loop is the *probe*, not the product: it is how you test whether a
 meaning-preserving editing. The answer it produced is a negative one — the loop moves the detectors it
 optimises against, and **does not move a detector it has never seen** (4/10 flagged, every seed, every
 objective, every rewriter).
+
+⚠️ **Read that as a fact about this loop, not about evasion.** Stronger methods do transfer, and the
+peer-reviewed literature is clear about it: RAFT compromises every detector it tests by up to 99% and
+is [transferable across source models](https://aclanthology.org/2024.emnlp-main.939/); MASH reaches
+[92% attack success rate black-box across five detectors](https://aclanthology.org/2026.findings-acl.1487/);
+evasive soft prompts [transfer from one model to another](https://aclanthology.org/2023.findings-emnlp.94/).
+Non-transfer here is the ceiling of a CPU-only black-box loop with no training — it is not evidence
+that detectors are safe from transfer attacks, and it should never be quoted as if it were.
 [What the measurements establish →](#-the-measured-free-ceiling)
 
 </div>

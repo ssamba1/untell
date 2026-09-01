@@ -808,3 +808,58 @@ it does not by itself make it accuse more humans. Our §7 wording should not blu
 **Method note.** The complete-corpus route is a partial clone rather than the volume list in
 `eval/litreview.py`, which remains the reproducible sample. Both are documented; the clone is the
 census.
+
+---
+
+# Round eight — screening all 763 detection papers against *this repo's* claims
+
+Earlier rounds read papers by topic cluster, which is a way of finding what you went looking for. This
+round screened every one of the 763 detection papers in the census against the claims **this
+repository makes**, rather than against generic topics:
+
+| claim this repo makes | papers bearing on it |
+|---|---|
+| ensembles / aggregation effects | 63 |
+| paraphrase or rewriting defeats detection | 51 |
+| evasion transfers to unseen detectors | 41 |
+| perplexity and burstiness are the signal | 16 |
+| em-dash and lexical tells | 16 |
+| short text is unreliable | 15 |
+| watermarks are fragile | 15 |
+| commercial detector claims | 10 |
+| humans cannot detect | 3 |
+
+## ✅ A claim already published here, confirmed verbatim — and upgraded
+
+`humanizer-research-report.md` cites MASH from preprint 2601.08564 as "92% ASR across 5 detectors /
+6 datasets, beat 11 baselines, quality preserved, no white-box access."
+
+It is **peer-reviewed** — [2026.findings-acl.1487](https://aclanthology.org/2026.findings-acl.1487/) —
+and the published abstract confirms every part: "across 6 datasets and 5 detectors… over 11 baseline
+evaders… an average Attack Success Rate (ASR) of 92%… while maintaining superior linguistic quality."
+It adds one figure we did not have: **it beats the strongest baseline by an average of 24%.** The
+citation is updated from preprint to venue.
+
+## ⚠️ The finding that most constrains how this repo states its headline
+
+untell's headline negative result is that its loop "moves the detectors it optimises against, and
+**does not move a detector it has never seen**." That is measured and true *of untell*. The screen
+shows it must not be read as a statement about evasion in general, because transfer is repeatedly
+demonstrated by stronger methods:
+
+- **RAFT** ([2024.emnlp-main.939](https://aclanthology.org/2024.emnlp-main.939/)) — a grammar-error-free
+  black-box word-level attack that "effectively compromises **all detectors** in the study across
+  various domains **by up to 99%**", is **transferable across source models**, and whose outputs human
+  raters found "realistic and indistinguishable from original human-written text."
+- **MASH** — 92% ASR black-box across 5 detectors, no white-box access.
+- **Evasive soft prompts** ([2023.findings-emnlp.94](https://aclanthology.org/2023.findings-emnlp.94/))
+  — explicitly exploits "the transferability of soft prompts to transfer the learned evasive soft
+  prompt from one PLM to another."
+
+So the honest framing, which the README mostly keeps and should keep strictly: **non-transfer is a
+property of this repo's CPU-only black-box loop, not a property of evasion.** Anyone reading
+"does not move a detector it has never seen" as evidence that detectors are safe from transfer
+attacks has been misled, and the three results above are the correction.
+
+RAFT also reports the constructive half, which belongs beside it: its adversarial examples **can be
+used to train adversarially robust detectors.**
