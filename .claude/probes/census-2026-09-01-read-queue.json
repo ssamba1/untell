@@ -1,0 +1,2063 @@
+[
+  {
+    "name": "ilyautov/humanizer-ru",
+    "stars": 266,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness",
+        "perplexity",
+        "originality.ai",
+        "gptzero"
+      ],
+      "meaning_verification": [
+        "cosine_similarity"
+      ],
+      "subgroup_fairness": [
+        "false positive rate"
+      ],
+      "hidden_characters": [
+        "zero-width"
+      ]
+    },
+    "readme": "# humanizer-ru > [Русская версия: основная](README.md) Claude Code / Cowork plugin. Kills AI smell in Russian text. The English [humanizer](https://github.com/blader/humanizer) won't help here. Russian AI markers are their own beast: bureaucratic noun-chains (канцелярит), English-syntax calques, missing particles like \"же\" and \"ведь\" that make Russian sound alive. 📖 **Docs & write-ups (RU):** [humanizer-ru.aifrontier.tech](https://humanizer-ru.aifrontier.tech/): do AI detectors work on Russian, the 64 markers, plagiarism vs AI detection. ## What you get 64 patterns across 14 categories: канцелярит, English calques, emotional sterility, persuasion tricks, information rhythm, hedging specifics",
+    "top": [
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "CONTRIBUTORS.md",
+      "LICENSE",
+      "PRIVACY_POLICY.md",
+      "README.en.md",
+      "README.md",
+      "SECURITY.md",
+      "SOURCES.md",
+      "assets",
+      "commands",
+      "docs",
+      "eval",
+      "gemini-extension.json"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "MadsDoodle/Detecting-the-Machine-A-Comprehensive-Benchmark-of-AI-Generated-Text-Detectors-Across-Architectures",
+    "stars": 7,
+    "category_prior": "fine-tuned-model",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity",
+        "burstiness"
+      ],
+      "meaning_verification": [
+        "cosine_similarity"
+      ],
+      "subgroup_fairness": [
+        "false positive rate",
+        "fpr",
+        "fnr",
+        "tpr"
+      ],
+      "trains_a_model": [
+        "trainer("
+      ]
+    },
+    "readme": "# Detecting the Machine ### A Comprehensive Benchmark of AI-Generated Text Detectors Across Architectures, Domains, and Adversarial Conditions --- ## 📄 Abstract The rapid proliferation of large language models has created an urgent need for robust, generalizable detectors of machine-generated text. Existing benchmarks evaluate a single detector family on a single dataset under ideal conditions, leaving critical questions about cross-domain transfer, cross-LLM generalization, and adversarial robustness unanswered. This work presents a **comprehensive, multi-stage benchmark** evaluating **six detector families** across two corpora: **HC3** (Human–ChatGPT, multi-domain, 46,726 samples) and **EL",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "assets",
+      "notebooks",
+      "requirements.txt",
+      "src"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "skymanbp/sci-paper",
+    "stars": 5,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity",
+        "burstiness"
+      ],
+      "meaning_verification": [
+        "sentence-transformers",
+        "sentence_transformers"
+      ],
+      "subgroup_fairness": [
+        "false_positive_rate",
+        "fpr",
+        "tpr"
+      ],
+      "hidden_characters": [
+        "zero-width"
+      ]
+    },
+    "readme": "# sci-paper **A Claude Code plugin that writes, reviews, de-AIs, and condenses scientific manuscripts for top-tier journals — under one typed standard, with every claim traced to a source and every unavailable measurement labelled as unavailable.** Built for ApJ / MNRAS / PRD / JCAP-class papers and NSF / NIH proposals. **12 skills · 35 tools · 393 tests · one normative contract · zero authorship verdicts.** [中文文档](README.zh-CN.md) — [What it does](#what-it-does) · [How it works](#how-it-works) · [See it work](#see-it-work) · [Benchmarks](#benchmark-dashboard) · [Install](#install) · [Skills](#skills-12) · [Tools](#tools-35) · [Limitations](#status-known-limitations-and-roadmap) · [The stand",
+    "top": [
+      "ACKNOWLEDGMENTS.md",
+      "CHANGELOG-ARCHIVE-EARLY.md",
+      "CHANGELOG-ARCHIVE-RECENT.md",
+      "CHANGELOG-ARCHIVE.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "LICENSE",
+      "README.md",
+      "README.zh-CN.md",
+      "docs",
+      "examples",
+      "requirements.txt",
+      "skills",
+      "style-corpus"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "ppegggyy/peggywritesforyou",
+    "stars": 3,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity",
+        "sapling",
+        "roberta-base-openai-detector",
+        "zerogpt",
+        "burstiness"
+      ]
+    },
+    "readme": "# PeggyWritesForYou: SOTA Adversarial Text Humanizer An advanced, multi-agent adversarial pipeline designed to restructure AI-generated text to bypass modern detection systems (like GPTZero, Sapling, Turnitin, and Originality.ai). Unlike standard \"humanizer\" scripts that rely on simple paraphrasing (which modern detectors are trained to flag), this project implements a Live Adversarial Feedback Loop backed by a Multi-Detector Ensemble, running efficiently on consumer-grade hardware (4GB VRAM / 16GB RAM). ## The V2 Architecture (How It Works) Recent NLP research indicates that blind LLM paraphrasing actually increases AI detection rates because the token probability distribution remains mathe",
+    "top": [
+      "README.md",
+      "app.py",
+      "banned_phrases.py",
+      "config.py",
+      "contractions.py",
+      "nlp_utils.py",
+      "phrase_map.py",
+      "pipeline.py",
+      "prompts.py",
+      "requirements.txt",
+      "templates"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "lakshitha-dev/ai-humanizer-skill",
+    "stars": 2,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "detectgpt",
+        "binoculars",
+        "gptzero",
+        "perplexity",
+        "burstiness"
+      ],
+      "hidden_characters": [
+        "zero-width"
+      ]
+    },
+    "readme": "# ai-humanizer-skill A [Claude](https://claude.com/claude-code) skill that rewrites AI-generated text so it reads as natural human writing **and** holds up against AI detectors. It goes beyond surface \"signs of AI writing\" and targets the signals detectors actually measure, then ships a scorer that estimates a before/after detection-risk number. > **Honest disclaimer.** AI detectors are unreliable and uncalibrated. A Stanford study (Liang et al., 2023) found they flagged **61% of non-native-English essays** as AI. There is a proven impossibility result: as models approach human text, the best detector approaches a coin flip. This tool is for legitimate writing improvement — polishing AI-assi",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "bin",
+      "package.json",
+      "skill"
+    ],
+    "is_detector": true,
+    "fairness_words": [
+      "non-native"
+    ]
+  },
+  {
+    "name": "devswha/patina",
+    "stars": 331,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness",
+        "perplexity"
+      ],
+      "subgroup_fairness": [
+        "fpr",
+        "tpr",
+        "false positive rate",
+        "wilson"
+      ],
+      "hidden_characters": [
+        "zero-width"
+      ]
+    },
+    "readme": "한국어 | **[English](README.md)** | **[中文](README_ZH.md)** | **[日本語](README_JA.md)** # patina 브라우저에서 바로 써보기 — 설치 없음 > **AI 포장만 벗기고, 의미는 그대로.** patina는 한국어·영어·중국어·일본어를 위한 결정론적 패턴 기반 휴머나이저입니다. AI가 쓴 듯한 표현을 찾아내고, 원문의 주장·수치·극성·인과관계를 바꾸지 않은 채 문장만 다시 씁니다. 블랙박스형 패러프레이저도, 작성자 판별기도, 탐지기 우회 도구도 아닙니다. patina는 AI 도움을 받아도 되는 상황에서 초안을 다듬으려는 작성자를 위한 도구입니다 — 더 깔끔한 문체, 감사 추적, 그리고 의미 보존 검사를 원하는 경우에 맞춰져 있습니다. ## 데모 AI 티가 나는 글을 **[playground](https://patina.vibetip.help/)** 에 붙여넣으면 patina가 그 자리에서 다시 씁니다. 의미 하한이 재작성을 검증하고(여기서는 **MPS 100 / Fidelity 75** — \"30개 템플릿\"이라는 사실이 살아남습니다), 결정론적 AI 시그널을 before → after로 측정합니다. 핫 문단 비율은 **100 → 0** 으로 떨어지고, 과장 표현(\"thrilled to announce\", \"revolutionize your workflow\", \"unlock th",
+    "top": [
+      "CHANGELOG.md",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "CONTRIBUTING_KR.md",
+      "DESIGN.md",
+      "Dockerfile",
+      "GOVERNANCE.md",
+      "INSTALLATION.md",
+      "LICENSE",
+      "MAINTAINERS.md",
+      "NOTICE",
+      "README.md",
+      "README_JA.md",
+      "README_KR.md"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "MohamedAbdallah-14/unslop",
+    "stars": 121,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity",
+        "burstiness",
+        "gptzero"
+      ],
+      "subgroup_fairness": [
+        "tpr",
+        "fpr"
+      ]
+    },
+    "readme": "Claude rewrote my resume and I couldn't send it. The polish was perfect; the voice wasn't mine. So I built this. It strips the AI residue and leaves the rest alone. ```bash # Claude Code — paste both lines into any session, restart, type /unslop /plugin marketplace add MohamedAbdallah-14/unslop /plugin install unslop ``` Cursor, Windsurf, Cline, Gemini CLI, Codex, or the CLI work too. Install options → Demo &nbsp;·&nbsp; Quick start &nbsp;·&nbsp; Features &nbsp;·&nbsp; Research &nbsp;·&nbsp; Comparison &nbsp;·&nbsp; FAQ &nbsp;·&nbsp; Non-technical guide <img alt=\"PyPI version\" src=\"https://img.shields.io/pypi/v/unslop?style=flat-square",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "Dockerfile",
+      "GEMINI.md",
+      "GETTING_STARTED.md",
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "assets",
+      "benchmarks",
+      "commands"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "xeiroh/Cross-Lingual-Summarization-on-LLM-Watermarking",
+    "stars": 1,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "meaning_verification": [
+        "bertscore",
+        "rouge"
+      ],
+      "subgroup_fairness": [
+        "fpr",
+        "fnr",
+        "tpr"
+      ]
+    },
+    "readme": "# CLSA: Cross-Lingual Summarization Attack on LLM Watermarking ## Research Paper **[ Read the Full Paper](Styles/clsa_independent.pdf)** - *CLSA: Cross-Lingual Summarization Attack on LLM Watermarking* --- ## Key Results Summary CLSA consistently degrades watermark detection across all tested schemes, pushing detection performance toward chance levels: *Figure: Summary metrics across detectors and languages. CLSA consistently drives AUROC toward chance (lower effective separability), increases EER, and collapses TPR@1% FPR toward zero while keeping utility high.* *Figure: AUROC by detector and language. CLSA consistently trends toward chance performance across all evaluated combinations.* *F",
+    "top": [
+      "KGW_detections.json",
+      "README.md",
+      "Styles",
+      "Unigram_detections.json",
+      "XSIR_detections.json",
+      "data",
+      "neurips_2025.aux",
+      "neurips_2025.fdb_latexmk",
+      "neurips_2025.fls",
+      "public",
+      "requirements.txt",
+      "results_copy",
+      "scripts",
+      "tags"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "abhi25072002/NLP-Project",
+    "stars": 0,
+    "category_prior": "fine-tuned-model",
+    "signals": {
+      "detector_in_loop": [
+        "binoculars",
+        "perplexity"
+      ],
+      "subgroup_fairness": [
+        "fpr",
+        "tpr"
+      ],
+      "trains_a_model": [
+        "trainer("
+      ]
+    },
+    "readme": "**Can AI-text detectors survive a change of decoding knobs or a paraphrase attack? This project pits Binoculars (zero-shot, cross-perplexity) against supervised detectors (TF-IDF + LR, Kim CNN, RoBERTa) on matched human/LLM text pairs, then shifts the generation distribution and watches what breaks.** Georgia Tech graduate NLP team project. --- ## The idea Supervised detectors look unbeatable when the machine text at test time comes from the same generator settings they trained on. The interesting question is what happens under distribution shift: - **Decoding shifts:** temperature sweeps (0.1 to 1.5), top-p sweeps (0.8 to 0.99), greedy, beam search, top-k - **Paraphrase attacks:** back-tran",
+    "top": [
+      "EXPERIMENTS.md",
+      "LICENSE",
+      "README.md",
+      "configs",
+      "data",
+      "docs",
+      "merge_results.py",
+      "requirements.txt",
+      "run_all_experiments.sh",
+      "run_zero_shot_master_table.py",
+      "scripts",
+      "src"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "lynote-ai/humanize-text-skill",
+    "stars": 234,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness",
+        "gptzero",
+        "perplexity"
+      ],
+      "hidden_characters": [
+        "zerowidth",
+        "zero-width",
+        "homoglyph"
+      ]
+    },
+    "readme": "# humanize-text-skill ### Make AI-written text sound human, not just less AI. **Bilingual zh/en engine · zero dependencies · detector + rewrite skill + voice pull** `humanize-text-skill` is a bilingual writing skill for removing AI-shaped prose and pulling the result toward a target human voice. It does two jobs: - **Subtraction**: remove AI-shaped vocabulary, structure, rhythm, and chatbot residue. - **Addition**: pull the cleaned text toward a target voice such as `casual`, `professional`, or `technical`. Unlike simple AI-writing detectors, this project is built as a full skill: - it detects issues - it decides what is safe to rewrite - it protects facts, commands, paths, and quoted text -",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "SKILL.md",
+      "cursor-rules",
+      "detector",
+      "docs",
+      "evals",
+      "install",
+      "package.json",
+      "plugins"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "Sappymukherjee214/AI-Humanizer",
+    "stars": 2,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "gptzero",
+        "originality.ai",
+        "roberta-base-openai-detector"
+      ]
+    },
+    "readme": "# 🧠 AI Humanizer: The Ultimate AI-to-Human Text Transformer [GitHub Repository](https://github.com/Sappymukherjee214/AI-Humanizer) **A high-performance, research-grade platform designed to bypass AI detection and transform machine-generated content into high-quality, undetectable human-like prose.** ## 📋 Table of Contents - [Overview](#-overview) - [Architecture](#-architecture) - [Key Features](#-key-features) - [Quick Start](#-quick-start) - [Installation](#-installation) - [Usage](#-usage) - [Development](#-development) - [Testing](#-testing) - [Contributing](#-contributing) - [FAQ](#-faq) - [License](#-license) --- ## 🎯 Overview AI Humanizer is an advanced, full-stack application that so",
+    "top": [
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "assets",
+      "backend",
+      "frontend"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "Vladimir-Human/humanizer-ru",
+    "stars": 120,
+    "category_prior": "prompt-guide",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity",
+        "burstiness"
+      ],
+      "subgroup_fairness": [
+        "wilson"
+      ],
+      "hidden_characters": [
+        "\\u200b",
+        "\\u200c",
+        "\\u200d",
+        "\\ufeff",
+        "\\u202a",
+        "\\u2060",
+        "\\u00ad",
+        "\\ufe0f",
+        "zero_width",
+        "zero-width",
+        "0x200b",
+        "0xfeff",
+        "0x2060",
+        "0xfe0f"
+      ]
+    },
+    "readme": "# Humanizer-ru — Russian AI text humanizer **[Русская версия → README.md](README.md)** An agent skill that finds and removes traces of machine generation from Russian-language text. It rewrites AI-sounding prose into human prose without distorting the meaning, and it leaves live human writing alone: a false positive costs more than a miss. It ships 58 patterns (25 base + 33 Russian-specific extensions) and 40 testable regex markers (38 with a full evidence record) split into hard copy-paste artifacts and contextual indicators; all checks run automatically in CI. The [skills.sh](https://www.skills.sh/vladimir-human/humanizer-ru/humanizer-ru) catalog runs security audits on the skill; the hist",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CITATION.cff",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "GOVERNANCE.md",
+      "LEADERBOARD.md",
+      "LICENSE",
+      "PERSONA.md",
+      "PRIVACY_POLICY.md",
+      "README.en.md",
+      "README.md",
+      "SECURITY.en.md",
+      "SECURITY.md"
+    ],
+    "is_detector": false,
+    "fairness_words": [
+      "false positive"
+    ]
+  },
+  {
+    "name": "multi-zhangyang/fuck-your-ai-detection-rate",
+    "stars": 62,
+    "category_prior": "detector-with-evasion",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness",
+        "gptzero"
+      ],
+      "subgroup_fairness": [
+        "wilson"
+      ],
+      "hidden_characters": [
+        "\\ufeff",
+        "zero-width"
+      ]
+    },
+    "readme": "FYADR 论文 AI 降检平台 文档导入 · 模型路由 · 分轮改写 · Diff 审阅 · TXT / DOCX 导出 FYADR 是一个可自部署的论文改写与审阅工作台。它将 OpenAI-compatible 模型接入、长文档分轮处理、段落级 Diff、质量诊断、历史恢复和 DOCX 导出整合在同一套界面中，并在导出前提供差异审阅、人工选择和可恢复的处理历史。 > [!IMPORTANT] > FYADR 是写作辅助与审阅工具，不是 AIGC 检测器，也不承诺任何检测平台的结果。使用者应核对事实、引用和最终文稿，并遵守所在机构的学术诚信要求。 ## 核心能力 - **TXT 与 DOCX 工作流**：导入文档、分轮处理、审阅差异并导出结果。 - **OpenAI-compatible 模型接入**：支持 Chat Completions、Responses、流式响应、多服务商和按轮次路由。 - **长文档并发处理**：正文分块并行请求，结果按原文顺序合并；并发数可在 `1–16` 之间配置。 - **段落级人工审阅**：逐块比较原文和改写，保留原文、采用改写或录入人工版本。 - **相对质量诊断**：比较同一文档处理前后的可读性和风险信号变化，不模拟第三方检测平台。 - **历史与恢复**：支持中断后继续处理、恢复历史版本和压缩备份运行数据。 - **DOCX 结构保护**：限定可编辑正文范围，将标题、目录、公式、表格、参考文献等结构排除在模型改写之外。 ## 界面预览 工作台与 Diff 运行文档任务并逐段审阅改写结果。 相对质量诊断 查看质量维度变化和需要复核的段落。",
+    "top": [
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "DEPLOY.md",
+      "Dockerfile",
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "app",
+      "assets-source",
+      "docker-compose.yml",
+      "docker-entrypoint.sh",
+      "docs",
+      "prompts",
+      "pyproject.toml"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "manavmishra/ZeroSlop",
+    "stars": 24,
+    "category_prior": "prompt-guide",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity",
+        "burstiness"
+      ],
+      "subgroup_fairness": [
+        "wilson"
+      ],
+      "hidden_characters": [
+        "\\u200b",
+        "\\u200d",
+        "\\ufeff",
+        "\\u2060",
+        "zero_width",
+        "zero-width"
+      ]
+    },
+    "readme": "# Zero Slop: AI Writing Editor and Slop Detector **Less slop, more pop.** Zero Slop is an Agent Skill. Claude, GPT, or another compatible model edits the draft; Zero Slop supplies the workflow and local source checks. Its 0-to-100 writing score points to flagged phrases, flat rhythm, dense passages, and distracting formatting. It says nothing about who wrote the text. In the references, human writing scored from 9 to 21; unedited AI drafts averaged 77. Treat those as reference points, not universal cutoffs. ## Install Zero Slop Paste this prompt into Claude Code, Codex, Cursor, OpenCode, Warp, Zed, or another Agent Skills-compatible assistant: ```text Install or update Zero Slop from https:/",
+    "top": [
+      "AGENTS.md",
+      "EVALUATION.html",
+      "LICENSE",
+      "ONE-PAGER.md",
+      "README-nas-edit.md",
+      "README.md",
+      "SECURITY.md",
+      "SKILL.md",
+      "agents",
+      "assets",
+      "bench",
+      "bin",
+      "data",
+      "dist"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "peopleworks/SignsofAI",
+    "stars": 20,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness",
+        "perplexity"
+      ],
+      "subgroup_fairness": [
+        "wilson"
+      ],
+      "hidden_characters": [
+        "zero-width",
+        "variation selector",
+        "0x200c",
+        "0x200d",
+        "0x200b",
+        "0xfeff",
+        "0x2060",
+        "0xfe0f",
+        "zero width"
+      ]
+    },
+    "readme": "# ✍︎ Signs of AI Writing **[Are you a teacher? Start here &rarr;](https://peopleworks.github.io/SignsofAI/why.html)** — what this does and what it cannot do, in plain language, with the error rate drawn rather than tabulated. No badges, no interval notation, nothing to install. English & Spanish. **[Try the live demo &rarr;](https://peopleworks.github.io/SignsofAI/)** — English & Spanish, runs in your browser. No signup, and the analysis uploads nothing. **[Download the Windows app &rarr;](https://github.com/peopleworks/SignsofAI/releases?q=desktop&expanded=true)** — the same tool in a window. Nothing to install alongside it: the .NET runtime is bundled. Real recording of the li",
+    "top": [
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "Directory.Build.props",
+      "Dockerfile",
+      "Docs",
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "SKILL.md",
+      "SignsOfAI.Desktop.slnx",
+      "SignsOfAI.slnx",
+      "commands",
+      "skill",
+      "src"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "DadaNanjesha/AI-Text-Humanizer-App",
+    "stars": 421,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "meaning_verification": [
+        "sentence-transformers",
+        "sentence_transformers"
+      ]
+    },
+    "readme": "# ✨ AI Text Humanizer App ✨ Transform AI-generated text into **formal, human-like, and academic writing** with ease, avoids AI detector! 🚀 ## Note : (Try It ) Building new version of this project here in this repos [https://github.com/DadaNanjesha/AI-content-detector-Humanizer](https://github.com/DadaNanjesha/AI-content-detector-Humanizer) ## 📌 Features ✅ **AI-Powered Text Refinement**: Converts AI-generated or informal text into a more **academic** and **human-like** format. ✅ **Expand Contractions**: Transforms \"don't\" → \"do not\", \"it's\" → \"it is\", making text **formal**. ✅ **Add Academic Transitions**: Enhances coherence with phrases like **\"Moreover\"**, **\"Therefore\"**, etc. ✅ **Passive ",
+    "top": [
+      "LICENSE",
+      "Procfile",
+      "README.md",
+      "main.py",
+      "media",
+      "requirements.txt",
+      "setup.sh",
+      "transformer"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "Stars-OC/thesis-creator",
+    "stars": 206,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness",
+        "perplexity"
+      ]
+    },
+    "readme": "# 论文创作 Agent 系统 **面向中国本科生的毕业论文全流程写作辅助系统** 从选题到交稿，一句话搞定 [功能特性](#功能特性) • [快速开始](#快速开始) • [使用文档](docs/usage_guide.md) • [贡献指南](CONTRIBUTING.md) --- ## 简介 论文创作 Agent 系统是一个基于 Claude Code 的毕业论文写作辅助工具。通过智能化的 10 步工作流，帮助本科生高效完成毕业论文创作，同时提供降重优化、AIGC 检测和文献真实性验证功能。 > [!IMPORTANT] > **v2.0 多学科 Beta 预告**：`main` 当前默认支持 CS / SE 学科。 > 已在 [`multi-discipline-beta`](https://github.com/Stars-OC/thesis-creator/tree/multi-discipline-beta) 分支提供 **9 个学科模板包**（计算机/经管/法学/教育/人文/医护/工科/理科/艺术设计）+ **状态机产物对账** + **图片管线双格式**。 > 教育学测试用例已端到端跑通（Step 0→9 全部 completed，AIGC 6.1%）。 > 完整路线请见 [docs/ROADMAP.md](docs/ROADMAP.md#v200-beta开发中分支-multi-discipline-beta)。 ## 功能特性 | 特性 | 说明 | | :---------------- | :-----------------------------",
+    "top": [
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "SKILL.md",
+      "config",
+      "docs",
+      "prompts",
+      "references",
+      "scripts",
+      "templates",
+      "test",
+      "workflows"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "smixs/humanizer-ru",
+    "stars": 143,
+    "category_prior": "prompt-guide",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity",
+        "burstiness"
+      ],
+      "hidden_characters": [
+        "zero_width",
+        "zero-width"
+      ]
+    },
+    "readme": "# Humanizer RU Скилл для AI-агентов: Claude Code, Codex, OpenClaw, Hermes и любых других, читающих SKILL.md. Берёт русский текст после нейросети и убирает всё, по чему его палят: канцелярит, «не просто X, а Y», длинные тире, штампы, воду. Факты и цифры не трогает. Работает в три шага. Сначала ищет проблемы по справочнику из 38 паттернов, потом чинит только найденное, в конце гоняет чистовик через линтер - питоновский скрипт, который ловит жёсткие запреты. Чистый текст возвращает как есть: повторная редактура хорошего текста его портит. ## Что нового 🔥 - **[05.08.2026] v1.6.1** 🎯 Паттерн 13 перестал флагать обычное «не только X» без второго члена контраста - фикс с самотестами из [PR #3](http",
+    "top": [
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "SKILL.md",
+      "banner.webp",
+      "evals",
+      "knowledge",
+      "references",
+      "scripts"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "haveanicedaymydear/AI-Text-Cascade-Detect",
+    "stars": 20,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity"
+      ],
+      "meaning_verification": [
+        "cosine_similarity"
+      ]
+    },
+    "readme": "Fast when confident. Deeper when uncertain. A sole-author research artifact for uncertainty-aware, evidence-assisted AI-text detection. ## Overview **DTD-LRC** is a two-stage cascade for open-world machine-generated text detection: - **DTD** performs fast, lightweight first-stage detection from lexical, stylistic, syntactic, punctuation, and repetition features. - **MS-LRC** is activated only inside an uncertainty band and examines cross-family, cross-scale language-model evidence. - The system returns not only a decision, but also uncertainty and diagnostic evidence intended for human review. The workshop manuscript, **“DTD-LRC: Uncertainty-Gated Evidence Escalation for Open-World Machine-G",
+    "top": [
+      "ARTIFACT_LINKS.md",
+      "CITATION.cff",
+      "Dockerfile",
+      "EMNLP_DEMO_CHECKLIST.md",
+      "Final Project Code",
+      "LICENSE",
+      "README.md",
+      "app.py",
+      "docs",
+      "dtd_lrc_final.py",
+      "examples",
+      "models",
+      "optimized_dtd_model.pkl",
+      "paper"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "Croups/is-it-ai",
+    "stars": 17,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "fast-detectgpt",
+        "detectgpt"
+      ]
+    },
+    "readme": "# IsItAI — Self-Hostable AI Text Detector A self-hostable, **bring-your-own-calibration** AI text detector based on the [Fast-DetectGPT](https://arxiv.org/abs/2310.05130) algorithm. Unlike hosted services, IsItAI lets you plug in any HuggingFace causal LM, calibrate on your own domain data, and run inference locally or on a Modal GPU — all with no data leaving your infrastructure. It splits text into sentence-aligned chunks, scores each chunk using a language model's log-probability discrepancy, and aggregates the results into an overall AI probability. > **Key idea:** AI-generated text tends to sit near local maxima of a language model's probability surface. The *discrepancy score* — the di",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "ai_detector.py",
+      "calibrate_local.py",
+      "chunker.py",
+      "modal_deployment",
+      "models.py",
+      "prepare_dataset.py",
+      "pyproject.toml",
+      "samples",
+      "uv.lock"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "kinit-sk/mAO",
+    "stars": 4,
+    "category_prior": "fine-tuned-model",
+    "signals": {
+      "detector_in_loop": [
+        "roberta-base-openai-detector"
+      ],
+      "trains_a_model": [
+        "trainer("
+      ],
+      "hidden_characters": [
+        "homoglyph"
+      ]
+    },
+    "readme": "# Authorship Obfuscation in Multilingual Machine-Generated Text Detection Source code for replication of the experiments in the paper [accepted](https://arxiv.org/abs/2401.07867) to EMNLP 2024 Findings. ## Cite If you use the data, code, or the information in this repository, cite the following paper, please (also available on [arXiv](https://arxiv.org/abs/2401.07867)). ```bibtex @misc{macko2024authorshipobfuscationmultilingualmachinegenerated, title={Authorship Obfuscation in Multilingual Machine-Generated Text Detection}, author={Dominik Macko and Robert Moro and Adaku Uchendu and Ivan Srba and Jason Samuel Lucas and Michiharu Yamashita and Nafis Irtiza Tripto and Dongwon Lee and Jakub Sim",
+    "top": [
+      "01_backtranslation.py",
+      "01_chatgpt_paraphrase.py",
+      "01_homoglyphattack.py",
+      "01_pegasus_paraphrase.py",
+      "02_text_quality.ipynb",
+      "03_finetune_detector.py",
+      "04_test_detector.py",
+      "04_test_longformer.py",
+      "05_results_analysis.ipynb",
+      "LICENSE",
+      "README.md",
+      "dataset",
+      "results"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "kinit-sk/CEAID",
+    "stars": 0,
+    "category_prior": "fine-tuned-model",
+    "signals": {
+      "trains_a_model": [
+        "peft",
+        "get_peft_model",
+        "loraconfig"
+      ]
+    },
+    "readme": "# CEAID: Benchmark of Multilingual Machine-Generated Text Detection Methods for Central European Languages Source code for replication of the experiments in the paper [accepted](https://arxiv.org/abs/2509.26051) to the Findings of the ACL 2025 conference. CEAID dataset covering machine-generated and human-written texts in news and social-media domains for 7 Central European languages is available [here](https://zenodo.org/records/20391070). An extension of the dataset for evaluation of adversarial robustness is available [here](https://zenodo.org/records/20397173). ## Cite If you use the data, code, or the information in this repository, cite the following paper, please (also available on [a",
+    "top": [
+      "01_finetune.py",
+      "02_infer.py",
+      "03_results_analysis.ipynb",
+      "LICENSE",
+      "README.md"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "Aboudjem/humanizer-skill",
+    "stars": 207,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness"
+      ]
+    },
+    "readme": "# Humanizer English | 简体中文 Humanizer is a free, open-source AI writing humanizer and detector. One Markdown file. 55 patterns, 5 voices, zero setup, and nothing leaves your machine. Try it in your browser &nbsp;&middot;&nbsp; Install in 5 seconds &nbsp;&middot;&nbsp; Read the source Same idea, two writers. The AI line stays flat. The human line jumps around. That jumpiness is the tell. --- ## Install Works in Claude Code, Cursor, Codex, opencode, and 70+ other AI editors through [**vercel-labs/skills**](https://github.com/vercel-labs/sk",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "README.zh-CN.md",
+      "SECURITY.md",
+      "cli",
+      "docs",
+      "docs-site",
+      "examples",
+      "landing",
+      "llms.txt"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "seyedehsanhadi/sloptrim",
+    "stars": 205,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "perplexity"
+      ],
+      "hidden_characters": [
+        "0xfeff",
+        "0x200b",
+        "0x200c",
+        "0x200d",
+        "0xfe0f",
+        "zero-width",
+        "variation selector",
+        "homoglyph"
+      ]
+    },
+    "readme": "**A local detector for AI-writing patterns. It scores the first 256 KB of extracted prose in files saved through supported file-edit tools, and asks for the flagged spans to be fixed. Plain text is accepted up to 512 KB, supported archives up to 4 MB.** Python standard library only, no network, no model. Prose only, never code. [Install](#install) &middot; [What it does](#what-it-does) &middot; [Measured](#measured) &middot; [Limits](#what-it-cannot-do) &middot; [Patterns](references/patterns.md) &middot; [Ethics](ETHICS.md) > [!IMPORTANT] > **This is a command-line tool and an agent plugin. There is no website and no hosted version.** > Nothing you write is uploaded, there is no account, an",
+    "top": [
+      "CHANGELOG.md",
+      "CITATION.cff",
+      "CONTRIBUTING.md",
+      "ETHICS.md",
+      "LICENSE.txt",
+      "NOTICE",
+      "README.md",
+      "SECURITY.md",
+      "SKILL.md",
+      "assets",
+      "docs",
+      "hooks",
+      "install",
+      "record"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "marmbiz/humanizer-de",
+    "stars": 131,
+    "category_prior": "prompt-guide",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness"
+      ],
+      "hidden_characters": [
+        "\\ufeff",
+        "\\u200d",
+        "\\ufe0e",
+        "\\ufe0f",
+        "0x200b",
+        "0x200d",
+        "0xfeff",
+        "0x2060",
+        "0xfe0f"
+      ]
+    },
+    "readme": "**[Was ist das?](#was-ist-das)** · **[Installation](#installation)** · **[Benutzung](#benutzung)** · **[Beispiele](#beispiele)** · **[Messen & Audit](#messen-und-audit)** · **[Fakten & Grenzen](#fakten-grenzen-und-datenschutz)** · **[Wie es arbeitet](#wie-der-skill-arbeitet)** · **[Optionale Werkzeuge](#optionale-werkzeuge)** · **[72 Muster](#72-muster-in-10-kategorien)** · **[Für AI-Assistenten](#für-ai-assistenten)** · **[Entwicklung](#entwicklung-und-verifikation)** · **[Was ist neu?](#was-ist-neu)** German AI Text Humanizer · Claude Humanizer Deutsch · KI-Texte humanisieren Deutsch · Supports Claude Code and Codex · Von [Martin Moeller](https://martin-moeller.biz) · basiert auf den Wikip",
+    "top": [
+      "CHANGELOG.md",
+      "CITATION.cff",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "Makefile",
+      "NOTICE",
+      "README.md",
+      "SECURITY.md",
+      "SKILL.md",
+      "WARP.md",
+      "agents",
+      "assets",
+      "docs"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "heyongxin233/DeTeCtive",
+    "stars": 62,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "meaning_verification": [
+        "cosine_similarity"
+      ]
+    },
+    "readme": "[NeurIPS 2024] DeTeCtive: Detecting AI-generated Text via Multi-Level Contrastive Learning **Note**: Our latest work, [DETree: DEtecting Human-AI Collaborative Texts via Tree-Structured Hierarchical Representation Learning](https://arxiv.org/abs/2510.17489), has also been accepted to **NeurIPS 2025**. For more details, please refer to the [project](https://github.com/heyongxin233/DETree). ## 📌 Table of Contents - [Introduction](#-introduction) - [Dataset](#-dataset) - [Installation](#-installation) - [Testing](#-testing) - [Training](#computer-training) - [Citation](#-citation) ## 🚀 Introduction Recent advances in large language models (LLMs) have enabled the generation of text that closely ",
+    "top": [
+      "README.md",
+      "fig",
+      "gen_database.py",
+      "infer.py",
+      "requirements.txt",
+      "script",
+      "src",
+      "test_from_database.py",
+      "test_knn.py",
+      "train_classifier.py",
+      "utils"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "samrand96/Undetectable-AI",
+    "stars": 46,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "zerogpt"
+      ]
+    },
+    "readme": "# Undetectable-AI Welcome to the Undetectable AI Tool! This script is designed to huminize ChatGPT and other text-based content. It offers efficient DOCX file manipulation, including text translation, humanization, grammar correction, and content evaluation. Powered by leading Python libraries and external services, it provides a seamless solution for automating document workflows. With customizable options via command-line arguments, it's perfect for professionals and enthusiasts looking to streamline text processing tasks. ## Usage To use the Python DOCX Processor, follow these steps: 1. Clone the repository to your local machine: ```bash git clone https://github.com/samrand96/Undetectable",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "main.py",
+      "requirements.txt"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "199-biotechnologies/humanise-text-skill",
+    "stars": 12,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "gptzero"
+      ]
+    },
+    "readme": "# Humanise Text — AI Writing De-Slopper for Claude Code **Strip every detectable sign of AI from your writing. One command.** &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; --- AI-generated text has tells. \"Leverage\", \"delve\", \"it's important to note\", ascending tricolons, uniform sentence length, synonym cycling. Readers spot it. Editors reject it. Detection tools flag it. This skill finds every AI pattern in your text and rewrites it so it reads like a person wrote it — with the same meaning, in a fraction of the time manual editing takes. [Install](#install) | [How It Works](#how-it-works) | [Before vs After](#before-vs-after) | [Features](#features) | [What's Inside](#whats-inside) | [Contributing](#",
+    "top": [
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "SKILL.md",
+      "examples",
+      "reference",
+      "scripts"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "kinit-sk/mgt-detection-benchmark",
+    "stars": 12,
+    "category_prior": "fine-tuned-model",
+    "signals": {
+      "trains_a_model": [
+        "trainer(",
+        "peft"
+      ]
+    },
+    "readme": "# MULTITuDE: Large-Scale Multilingual Machine-Generated Text Detection Benchmark Source code for replication of the experiments in the paper [accepted](https://arxiv.org/abs/2310.13606) to the EMNLP 2023 conference. The MULTITuDE dataset can be downloaded from [Zenodo](https://zenodo.org/records/10013755). ## Cite If you use the data, code, or the information in this repository, cite the following paper, please (also available on [arXiv](https://arxiv.org/abs/2310.13606)). ```bibtex @inproceedings{ macko2023multitude, title={{MULTIT}u{DE}: Large-Scale Multilingual Machine-Generated Text Detection Benchmark}, author={Dominik Macko and Robert Moro and Adaku Uchendu and Jason S Lucas and Michih",
+    "top": [
+      "01_dataset_creation.ipynb",
+      "02_generate_text.py",
+      "03_finetune_detector.py",
+      "04_test_detector.py",
+      "05_entropy_rf_tuned.py",
+      "06_results_analysis.ipynb",
+      "LICENSE",
+      "README.md",
+      "multitude.yaml",
+      "results"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "qiuxinyuan321/novel-writer-master",
+    "stars": 7,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness"
+      ]
+    },
+    "readme": "``` ╔══════════════════════════════════════════════════════════════════╗ ║ ║ ║ ║ ║ 小 说 伴 写 大 师 ║ ║ Novel Writer Master ║ ║ ║ ║ ╭─────────────────────╮ ║ ║ │ 笔 · 墨 · 丹 · 青 │ ║ ║ ╰─────────────────────╯ ║ ║ ║ ║ ─── AI 辅助小说写作 · 内置降 AI 率引擎 ─── ║ ║ ║ ╚══════════════════════════════════════════════════════════════════╝ ``` **「工欲善其事，必先利其器。笔墨纸砚之外，今有伴写大师。」** --- ### 『 三 大 痛 点 · 一 器 破 之 』 ### 🏮 降 AI 率 **「文以载道，笔墨当随人心。」** 332 词条黑名单 · 多维统计分析 · 定向改写 **对标朱雀 AI 检测**，让 AI 之文， 化为人笔之迹。 ### 🏯 主线不偏 **「纲举目张，大纲既定，万事可期。」** 分层大纲 · 检查点约束 · 叙事里程碑 以**大纲为纲**，以**检查点为目**， AI 虽千变万化，不出方寸之间。 ### 🏛️ 跨章记忆 **「前事不忘，后事之师。」** 角色口癖 · 世界观硬规则 · 伏笔追踪 **Story Bible** 为小说之唯一真相， 百章千回，人物如一。 --- ## ⚡ 快速开始 ```bash # 一、克隆仓库 git clone https:/",
+    "top": [
+      "README.md",
+      "config.example.yaml",
+      "data",
+      "pyproject.toml",
+      "src"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "searchingsocialc/humanizador-texto-ia",
+    "stars": 0,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "detector_in_loop": [
+        "burstiness"
+      ]
+    },
+    "readme": "",
+    "top": [
+      "app.py",
+      "requirements.txt"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "talkstream/ru-text",
+    "stars": 222,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "subgroup_fairness": [
+        "fnr"
+      ]
+    },
+    "readme": "# ru-text [Русский](README.md) · [Install](INSTALL.en.md) · [What changed](CHANGELOG.md) · [Sources](skills/ru-text/references/sources.md) Your AI agent is already putting your thoughts into Russian, and it shows: straight quotes where the language wants guillemets, a hyphen where it wants an em dash, \"в целях повышения эффективности\" (\"with a view to increasing the efficiency of\"), \"Отличный вопрос!\" (\"Great question!\"). The thought is yours; the voice is a machine's. ru-text is a Russian proofreading skill for AI agents. It works inside the agent and cleans this up as it goes: typography, bureaucratic register, and seventeen tells of machine-written text (neuroslop). For every edit it give",
+    "top": [
+      "CHANGELOG.md",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "INSTALL.en.md",
+      "INSTALL.md",
+      "LICENSE",
+      "PRIVACY_POLICY.md",
+      "README.en.md",
+      "README.md",
+      "SECURITY.md",
+      "TERMS.md",
+      "assets",
+      "docs",
+      "gemini-extension.json"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "epoko77-ai/im-not-ai",
+    "stars": 5143,
+    "category_prior": "prompt-guide",
+    "signals": {
+      "hidden_characters": [
+        "0x200b",
+        "0x200c",
+        "0x200d",
+        "0xfeff",
+        "0x2060"
+      ]
+    },
+    "readme": "# im-not-ai (Humanize KR) — a de-AI-ifier for Korean text > 한국어 문서: [`README.md`](README.md) LLMs write Korean that *reads* like translated English. Native speakers spot it instantly, and no amount of prompting (\"write naturally in Korean\") fixes it — the tells are structural, not stylistic. **im-not-ai** rewrites AI-written Korean into natural Korean **without changing a single fact** — style, rhythm and phrasing only. MIT licensed, runs as a CLI skill inside Claude Code, GitHub Copilot CLI, OpenAI Codex CLI and Gemini CLI. ``` \"AI 기술을 통해 효율을 높일 수 있다\" → \"AI로 효율을 높인다\" \"이에 있어서 중요한 점은\" → \"여기서 중요한 건\" \"~에 의해 생성된\" → \"~가 만든\" \"결론적으로, 이는 시사하는 바가 크다\" → (deleted) ``` ## Documentation | | | |---|---| |",
+    "top": [
+      "CLAUDE.md",
+      "CONTRIBUTORS.md",
+      "GEMINI.md",
+      "INSTALL.md",
+      "LICENSE",
+      "README.en.md",
+      "README.md",
+      "RELEASING.md",
+      "agents",
+      "assets",
+      "codex",
+      "commands",
+      "docs",
+      "gemini-extension.json"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "chi111i/BypassAIGC",
+    "stars": 2063,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "hidden_characters": [
+        "\\ufeff"
+      ]
+    },
+    "readme": "## AI 学术写作助手 专业论文润色与语言优化系统 ## 效果 示例一 修改优化后 例二 修改优化后 gptzero ## 快速开始 无需安装任何开发环境，下载即可使用！ 1. 从 [Releases](https://github.com/chi111i/BypassAIGC/releases) 页面下载对应平台的可执行文件： - Windows: `AI学术写作助手-Windows-vX.X.X.zip` - macOS: `AI学术写作助手-macOS-vX.X.X.tar.gz` - Linux: `AI学术写作助手-Linux-vX.X.X.tar.gz` 2. 解压到任意目录 3. 首次运行会自动创建 `.env` 配置文件模板，编辑配置文件填入： - API Key（POLISH_API_KEY、ENHANCE_API_KEY 等） - 管理员密码（ADMIN_PASSWORD） - JWT 密钥（SECRET_KEY） 4. 再次运行程序，将自动打开浏览器 5. 访问管理后台创建卡密 > 💡 提示：数据库文件 `ai_polish.db` 和配置文件 `.env` 都保存在可执行文件同目录，方便备份和迁移。 ### 配置文件说明 `.env` 配置文件包含以下重要配置项： ```properties # 数据库配置 DATABASE_URL=sqlite:///./ai_polish.db # 或使用 PostgreSQL: postgresql://user:password@IP/ai_polish # Redis 配置 (用于并发控制和队列) REDIS",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "package"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Raymondhou0917/speak-human-tw",
+    "stars": 919,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# 說人話 speak-human-tw ### *字都對，卻不像人講的話？那就是 AI 味。* 🤖 &nbsp;AI 幫你把稿子寫好了，你自己讀一遍卻覺得哪裡怪，但又說不出來哪裡怪？ 📮 &nbsp;電子報資訊全對，讀起來卻像新聞稿，不像你在跟讀者講話？ 😮‍💨 &nbsp;每次都要一句一句抓「這句好 AI 味」，叫它重寫，改到最後比自己從頭寫還累？ ### ✨ 這些，`說人話.skill` 都能解決。 一個專門校對繁體中文的 skill：抓出 35+ 種 AI 中文寫作痕跡，順手把中國用語和半形標點改成台灣的寫法，改寫成讀起來像人寫的版本，還附一份交稿前能自己打分數的檢核表。 給 Claude Code、Codex、Cursor 和任何能讀 Markdown 的 AI agent 用。 **內容創作 · 行銷文案 · 日常辦公** —— 電子報 · 社群貼文 · 銷售頁 · 客服回信 · 簡報 · 公告 · Email **先保住事實 → 再清掉 AI 味 → 最後才加人味** 不是把你的稿子洗成機器人，是把 AI 味洗掉、把你洗回來。 --- ### 應用說明：真人手寫 vs. AI 代寫辨識 **案例一：2024 年手寫電子報 → 那年根本沒有 AI 幫忙。丟進去使用 /speak-human-tw，它說沒有 AI 痕跡，感動。** **案例二：AI 代寫的回覆 → 抓到 6 處 AI 味＆提供建議修改方向** **這個對比只能證明一件事：同一份 skill，能助你分得出 AI 味，它不代表你可以拿來當「萬用內容寫作」skill 用。** 它做的是校對，不是創作：拿一篇",
+    "top": [
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "SKILL.md",
+      "assets",
+      "evals",
+      "install",
+      "references",
+      "scripts"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "LearnPrompt/humanize-ppt",
+    "stars": 916,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "🌐 中文 · English # Humanize PPT > *A template library can spread one concept across a dozen pretty HTML pages. What you have to stand up and deliver is the line that pushes the audience forward, one page at a time.* **A presentation system, born for the talk.** Good-looking templates are everywhere; what's missing is the line that lets you *deliver* one. Humanize uses AST (audience-state-transfer) to weave material into that line, assigns real images, SVG diagrams, or Remotion clips where needed, and runs a presentation checkup after rendering. The result can be an HTML presenter mode with its visual system intact or a native, element-editable PPTX with speaker notes. The downstream skill stil",
+    "top": [
+      "LICENSE",
+      "README.en.md",
+      "README.md",
+      "SKILL.md",
+      "SPEC.md",
+      "adapters",
+      "contracts",
+      "docs",
+      "examples",
+      "humanize_ppt_v2.py",
+      "references",
+      "registry",
+      "scripts",
+      "tests"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "P1kaj1uu/ChattyPlay-Agent",
+    "stars": 879,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "hidden_characters": [
+        "\\ufeff"
+      ]
+    },
+    "readme": "ChattyPlay-Agent ## 📄 免责声明 ### 本项目提供音乐、影视解析下载、实时黄金及K线图、动漫漫画、Hugging Face论文、思维导图、闲鱼助手和ChatGPT相关服务，仅供学习使用，请勿用于任何商业用途。如你有更好的想法、建议、或不解的问题，欢迎提PR或Issues！如有侵权，请联系我！ > License：ChattyPlay-Agent is licensed under the Apache-2.0 License. See the [LICENSE](https://github.com/P1kaj1uu/ChattyPlay-Agent/blob/master/LICENSE) file for more information. > 项目描述参考信息可跳转WiKi：https://github.com/P1kaj1uu/ChattyPlay-Agent/wiki/%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3 > PC端、移动端均已适配 ## 🚀 在线体验 - 体验地址： 在线体验 （需要科学上网工具访问） - 视频预览： 录频视频 - 备注：如使用ChatGPT服务，我的APIKey配额有限，希望大家能省点用谢谢！ ## 📖 版本迭代 - v1.0版本已完成（2023.1.7凌晨） - v1.1版本优化观看页面的提示内容（2023.1.7上午） - v1.2版本优化解析接口（2023.1.8下午） - v1.3版本优化帮助内容页面（2023.1.8下午） - v1.4版本优化分离加载爱心跳动效果（2023.1.9",
+    "top": [
+      "Dockerfile",
+      "LICENSE",
+      "README.md",
+      "api",
+      "deploy.sh",
+      "docker-compose.yml",
+      "email.config.d.ts",
+      "email.config.js",
+      "goofish_backend",
+      "index.html",
+      "jsconfig.json",
+      "office_pixel",
+      "package-lock.json",
+      "package.json"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "wapmorgan/Morphos",
+    "stars": 828,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# English * [Pluralization](#pluralization) * [Numerals](#numerals) * [Cardinal](#cardinal) * [Ordinal](#ordinal) * [Time units and intervals](#time-units-and-intervals) English morphology shortcuts: - `morphos\\English\\NounPluralization::pluralize($word, $count)` - `morphos\\English\\CardinalNumeralGenerator::generate($number)` - `morphos\\English\\OrdinalNumeralGenerator::generate($number)` - `morphos\\English\\TimeSpeller::spellInterval(DateInterval $interval)` English class hierarchy: ```php morphos\\ English\\ CardinalNumeralGenerator OrdinalNumeralGenerator NounPluralization TimeSpeller ``` ## Pluralization Pluralization a word in English is possible with `NounPluralization` class: ```php use f",
+    "top": [
+      "CONTRIBUTING.md",
+      "Dockerfile",
+      "LICENSE.md",
+      "README-en.md",
+      "README-ru.md",
+      "README.md",
+      "_config.yml",
+      "bin",
+      "composer.json",
+      "phpstan.neon",
+      "phpunit.xml.dist",
+      "src",
+      "tests",
+      "web"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "fromleda/text-humanizer",
+    "stars": 734,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# text-humanizer English | 中文 # 项目概述 text-Humanizer 是一个完全免费且开源的项目，旨在通过基于大语言模型（LLM）的多语言重写流程，对 AI 生成的文本进行“人性化”处理。系统利用大语言模型在保持原始语义不变的前提下，对文本进行改写，使其具备更自然的句式结构、更丰富的语言表达模式以及更高的文风多样性，并支持多种语言。 ## 功能特性 * 在提升文本自然度的同时保留原始含义 * 可绕过大多数 AI 内容检测器 * 完全免费且开源 * 支持适配不同写作风格和语气 * 支持 8 种语言（en、ja、zh、ko、de、fr、es） # 工作原理 ## 第一步：LLM 重写（DeepSeek） 使用 DeepSeek 大语言模型对文本进行改写，生成语义等价但句式结构、措辞方式和信息组织形式不同的新版本。在此阶段，模型还会将内容翻译为中文作为中间表示，以引入结构变化并减少原始语言模式的影响。 ## 第二步：Google 翻译（EN → TR） 将第一步生成的文本通过 Google Translate 翻译为土耳其语。由于不同语言之间在语法规则和翻译策略上的差异，该步骤会进一步引入句法层面的变化和跨语言表达差异。 ## 第三步：DeepL 翻译（可选，TR → JA） 如果提供了 DeepL API Key，则会使用 DeepL API 将土耳其语文本进一步翻译为日语。该可选步骤通过引入第二个独立的翻译引擎，进一步提升语言多样性。 ## 第四步：最终重构（DeepSeek） 使用 DeepSeek 将得到的文本重新翻译回原始输入语言。此步骤会",
+    "top": [
+      "LICENSE",
+      "README-zh.md",
+      "README.md",
+      "config",
+      "docker",
+      "docker-compose.yml",
+      "main.py",
+      "requirements.txt",
+      "src",
+      "tests"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "scanaislop/aislop",
+    "stars": 589,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# aislop **Catch the slop AI coding agents leave in your code.** The patterns Claude Code, Cursor, Codex, and OpenCode leave behind: narrative comments above self-explanatory code, swallowed exceptions, hidden fallbacks, `as any` casts, hallucinated imports, duplicated helpers, dead code, todo stubs, oversized functions. Tests pass. Lint passes. The code rots anyway. aislop catches them. 50+ rules across 10 language targets (TypeScript, JavaScript, Expo / React Native, Python, Go, Rust, Ruby, PHP, C#, C/C++). Scores every change 0–100. Sub-second. Deterministic: no LLM in the runtime path, same code in, same score out. MIT-licensed, free CLI. ## Quick start ```bash npx aislop@latest scan ```",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "GEMINI.md",
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "action.yml",
+      "assets",
+      "biome.json",
+      "docs",
+      "editors"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Gluesunurture/undetectable-browser-zen",
+    "stars": 424,
+    "category_prior": "prompt-guide",
+    "signals": {},
+    "readme": "# Undetectable Browser Zen _A handy Windows tool that stays out of your way._ ## Description Enterprise-grade **Undetectable Browser Zen** security solution providing comprehensive protection, privacy, and threat detection. It's aimed at everyday users as much as power users. ## What you get - **Real-Time Protection:** Advanced threat detection with zero-day exploit prevention. - **Privacy Shield:** Encrypted connections and identity protection across all networks. - **Multi-Platform Coverage:** Unified security management across desktop and mobile devices. ## Before you start - Works on Windows - ~100 MB free space ## Download & Docs ➡️ **[Grab the latest version](https://undetectable-brows",
+    "top": [
+      "README.md"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "NulightJens/humanizer-stack",
+    "stars": 249,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# humanizer-stack A two-pass pipeline for removing the signs of AI writing from outward-facing text, packaged as [Claude Code Skills](https://code.claude.com/docs/en/skills). Most humanizers only fix words. That is the easy half, and it is the half that is decaying fastest. This repo pairs a surface pass with a structural pass, because the research says structure is where the durable fingerprint lives. > **Free community.** I build tools like this in the open inside the > [Jens AI Community](https://www.skool.com/jens-ai-community-1306), a free Skool group > for putting AI to work in your business. If this repo is useful to you, come join us: > https://www.skool.com/jens-ai-community-1306 ##",
+    "top": [
+      "ATTRIBUTION.md",
+      "LICENSE",
+      "README.md",
+      "docs",
+      "install.sh",
+      "scripts",
+      "skills"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "TheGP/Imposter",
+    "stars": 136,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# The Imposter The most advanced humanizing wrapper over Puppeteer. Ever. # Features * Only human like actions: type, click, scroll, read * Blocks & automatic replay of previous actions on fail. * Magic methods & helpers to make your life easy: `isThere`, `getAttribute`, `findChildEl`, `findElNearBy`, `chooseRandom`, `findFirstElementOnScreen`, `random`, `chance`, `randInt` etc. * If need access Puppeter directly using `.page` & `.browser`, Ghost Cursor: `.cursor` # Warning: the package is in active development, can be breaking changes Consists following packages: * Forked [Puppeteer Humanize](https://github.com/force-adverse/puppeteer-humanize) for typing with mistakes and delays * Improved",
+    "top": [
+      "LICENSE.md",
+      "README.md",
+      "nodemon.json",
+      "package-lock.json",
+      "package.json",
+      "src",
+      "test.js",
+      "tsconfig.json"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "ThisIsLittleSky/WaterPaper",
+    "stars": 112,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "💧 水论文.skill WaterPaper · 一句话出论文 \"优秀太累了，我只想方便、及格、然后交掉。\" 🌐 中文 · English 快速开始 · 为什么你需要这个 · 文献数据源 · 论文结构 · 图表类型 · 常见问题 · 工作流 · 项目结构 一句话出选题 → 自动查找 真实文献 → 调节 标准格式 → 降低 AI率 → 降低 查重率 → 交付 .docx 不是真的水——而是把体力活自动化，让你的时间用在更有价值的事情上。 --- ## 效果展示 --- ## 快速开始 把本项目的 GitHub 地址或下载到本地的文件夹路径，发给你的 AI 编程助手（Claude Code / Codex / Trae / Cursor 等），然后说： ``` 帮我安装这个 skill：https://github.com/ThisIsLittleSky/WaterPaper.git ``` AI agent会自动完成配置 装好之后，直接说你的需求： ``` 用这个skill帮我写一篇关于移动通讯技术的期末论文，4000 字，格式模板是模板.docx 帮我给我的论文降低AI率，【论文路径】、【查重报告.html（可选）】 ``` AI 会走完整流程：**要模板 → 出选题 → 爬文献 → 出大纲 → 写正文 → 出图 → 交 .docx** ## 为什么你需要这个 期末周，N 篇课程论文压过来。每篇的流程都一样： > 想题目 → 搜文献 → 看文献 → 写大纲 → 凑字数 → 调格式 → 降低AI率 → 交付 【水论文.skill】把这些事自动化了： | 环节 | 手工方式 | 大",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "README_EN.md",
+      "SKILL.md",
+      "images",
+      "prompts",
+      "references",
+      "requirements.txt",
+      "tools"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "flamehaven01/AI-SLOP-Detector",
+    "stars": 83,
+    "category_prior": "rule-based-rewriter",
+    "signals": {
+      "hidden_characters": [
+        "\\ufe0f"
+      ]
+    },
+    "readme": "AI-SLOP Detector Find AI-generated code that looks finished but isn't. Catches what a normal linter passes over: empty functions with real-looking bodies, imports of things that don't exist, pipelines wired to nothing, copy-pasted logic, and docs that oversell what the code actually does. Runs fully offline &middot; deterministic core scoring &middot; no API key, no model download, nothing leaves your machine. **Release track** - Stable tag: `v3.8.9` - Previous stable tag: `v3.8.8` - `v3.8.9` makes the analysis boundary inspectable: project reports now show finding totals, severity, scan coverage, and ML capability state; `--include-tests` is explicit; strictness controls reduce covered inte",
+    "top": [
+      "CHANGELOG.md",
+      "CLAIM_VERIFICATION.md",
+      "CONTRIBUTING.md",
+      "Dockerfile",
+      "LICENSE",
+      "MANIFEST.in",
+      "Makefile",
+      "README.md",
+      "ROADMAP.md",
+      "claude-skills",
+      "docker-compose.yml",
+      "docs",
+      "models",
+      "npm-wrapper"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "tbhb/vale-ai-tells",
+    "stars": 82,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# vale-ai-tells A [Vale](https://vale.sh) package for detecting linguistic patterns commonly associated with AI-generated prose. Based on 2024-2025 research into vocabulary fingerprints and structural tells. This package targets **technical documentation**, where clarity and directness matter more than style. Less useful for creative writing, marketing copy, or other contexts where some of these patterns may represent intentional choices. > [!NOTE] > The author created this package to help clean up AI-assisted technical documentation, not to disguise AI-generated content as human-written. ## Installation Add the package to your `.vale.ini`: ```ini StylesPath = styles MinAlertLevel = suggesti",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CITATION.cff",
+      "CLAUDE.md",
+      "EXPERIMENTAL.md",
+      "LICENSE",
+      "README.md",
+      "TODO.md",
+      "apm.lock.yaml",
+      "apm.yml",
+      "biome.json",
+      "cog.toml",
+      "mise.lock",
+      "mise.toml"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Laith0003/ux-skill",
+    "stars": 65,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "[English](README.md) · [العربية](README.ar.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [हिन्दी](README.hi.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md) · [ไทย](README.th.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · **Español** · [Português](README.pt-BR.md) · [Italiano](README.it.md) · [Русский](README.ru.md) · [Türkçe](README.tr.md) # ux-skill — el motor de inteligencia de diseño para Claude Code, Cursor y todas las demás herramientas de codificación con IA > **v3.1.0 estable — THE BRAIN.** El plugin de UX más potente para la codificación con IA. Un núcleo de razonamiento en Python con 12 manifiestos ",
+    "top": [
+      "CHANGELOG.md",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "PRIVACY.md",
+      "README.ar.md",
+      "README.de.md",
+      "README.es.md",
+      "README.fr.md",
+      "README.hi.md",
+      "README.id.md",
+      "README.it.md",
+      "README.ja.md",
+      "README.ko.md"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "ZAYUVALYA/AI-Text-Humanizer",
+    "stars": 52,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# ZAYUVALYA - AI Humanizer ZAYUVALYA - AI Humanizer is a free, open-source tool designed to help users rephrase and humanize text effortlessly. Built with simplicity and efficiency in mind, this tool ensures that your text is transformed into a more natural and human-like form while preserving its original meaning. ZAYUVALYA - AI Humanizer operates entirely in the browser, making it accessible, private, and 100% free to use without any login required. --- ## Key Features 1. **Context-Aware Paraphrasing**: - Uses advanced logic to replace words with contextually appropriate synonyms. - Identifies proper nouns and fixed terms to avoid altering essential information. 2. **Highlight Changes**: -",
+    "top": [
+      "README.md",
+      "eng_synonyms.json",
+      "fixedterms.json",
+      "googleafbc8fe099c9771e.html",
+      "index.html",
+      "robots.txt",
+      "script.js",
+      "sitemap.xml",
+      "stop_words.json",
+      "styles.css"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "TRocket-Labs/vectorlint",
+    "stars": 48,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# VectorLint VectorLint is a content review harness that turns observable quality standards into measurable feedback for agents. VectorLint reviews content against rules that describe observable traits. It returns structured, source-grounded findings and quality scores, giving agents repeatable signals they can use to revise content and review it again. ## Installation ### Option 1: Global Installation Install globally from npm: ```bash npm install -g vectorlint ``` VectorLint currently requires Node.js `20.6+`. Verify installation: ```bash vectorlint --help ``` ### Option 2: Zero-Install with npx Run VectorLint without installing: ```bash npx vectorlint path/to/article.md ``` ## Define Your",
+    "top": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "CONFIGURATION.md",
+      "CONTEXT.md",
+      "CREATING_RULES.md",
+      "LICENSE.md",
+      "README.md",
+      "assets",
+      "docs",
+      "eslint.config.mjs",
+      "package-lock.json",
+      "package.json",
+      "presets",
+      "src"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "ZeroOneCN/Articlecheck",
+    "stars": 44,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# 文章降重助手 一个基于百度翻译API的智能文章论文降重工具，通过多语言转换实现文本论文降重与AIGC降重，支持多种降重模式。 ## 效果显示 维普AIGC检测 维普文章检测 ## 功能特点 - 🎯 智能降重：通过多语言转换实现文本降重 - 📊 实时统计：显示字符数和词数统计 - 🔍 文本对比：直观显示原文和降重后的差异 - 📝 格式保持：支持宋体字体和首行缩进 - ✔ 多种模式：提供初级、中级、高级三种降重模式 - 📋 一键操作：支持一键复制和粘贴 - 📈 进度显示：实时显示降重进度 - 💯 降重率计算：自动计算并显示降重效果 - 💾 配置持久化：自动保存API配置，无需重复输入 - 🔐 安全验证：严格的API凭证格式验证和连接测试 ## 安装说明 1. 可直接下载EXE文件使用 2. 确保已安装Python 3.6或更高版本 3. 安装所需依赖： ```bash pip install PyQt5 requests ``` ## 使用说明 ### 1. API配置 - 访问[百度翻译开放平台](https://fanyi-api.baidu.com/)注册账号 - 1、登录后进入管理控制台（首次用户） - 2、注册成为百度翻译开发者（选择个人） - 3、进入管理控制台即可看到APPID和APPKEY - 4、立即开通-通用文本翻译-标准版-提交申请 - 5、在软件中配置API信息并测试连接 - APPID必须为纯数字格式 - APPKEY必须符合最小长度要求 - 系统会自动验证API凭证的有效性 - API配置会自动保存到本地配置文件（config.json），下次启动无",
+    "top": [
+      "README.md",
+      "image",
+      "main.py"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "ItsssssJack/SlopMonster",
+    "stars": 44,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# SlopMonster **Turn AI-written copy into copy a human would ship.** AI writing has a smell. `delve`, `seamless`, `unlock`, `it's not just a tool, it's a journey`. Readers catch it now, and a page that smells of it is a page they stop trusting. Most tools that fix this are built on the same public research. This one adds the two things the others skip. **It scores your copy out of 5 and it can fail your build.** No opinions, no vibes, just patterns. Developers call this a linter. Everyone else can call it a checker that will not let you ship. **A rival model does the cleaning.** If Claude wrote the draft, GPT cleans it. A model cannot hear its own accent, the same way you cannot hear yours. ",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "SKILL.md",
+      "docs",
+      "examples",
+      "prompts",
+      "references",
+      "tools"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "numen-tech/slopornot",
+    "stars": 42,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# SlopOrNot: AI humanizer and on-device AI detector for agents SlopOrNot is a plugin bundle for Claude, Codex, Hermes Agent, OpenClaw, OpenCode, Cursor, Gemini CLI, and other AI agents. It ships two skills: - `agentic-humanizer`: an AI humanizer that rewrites AI-generated text with a full 5-pass workflow in English and six other languages, saved preferences, and optional voice matching. - `slop-check`: a one-shot on-device AI detector for AI text detection, AI image detection, readability, Text Cleanup, raw OmniAID scores when explicitly requested, and Pro status. **Agentic Humanizer does not need Slop or Not for its core functionality.** Without Slop or Not, it still runs the full rewrite w",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "Makefile",
+      "README.md",
+      "WARP.md",
+      "claude-skills",
+      "docs",
+      "plugins",
+      "scripts",
+      "skills"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "stephenlzc/humanize-mba-text-skill",
+    "stars": 40,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Humanize MBA Text - AI 글쓰기 흔적 감지 및 제거 중국 MBA 졸업 논문을 위한 전문 AI 글쓰기 흔적 감지 및 제거 도구 #AI-Detection #Academic-Writing #MBA-Thesis #Claude-Skill #Text-Humanization #ChatGPT-Alternative #LLM-Writing #Research-Tools #Academic-Integrity #Chinese-NLP --- ## 🎯 프로젝트 소개 이 도구는 **중국 MBA 졸업 논문**을 위해 특별히 설계된 AI 글쓰기 흔적 감지 및 제거 도구입니다. MBA 논문의 학술 규범과 실무 요구사항을 기반으로 하여, 다차원 감지 방법을 통해 텍스트의 AI 생성 특징을 식별하고 구체적인 수정 제안을 제공하여 AI 생성 텍스트를 자연스럽고 인간적인 학술 글쓰기 스타일로 변환하는 데 도움을 줍니다. ### ✨ 버전 1.5 새로운 기능 (단락 수준 문장 길이 CV + 보고서 가독성 향상) - 📐 **단락 수준 문장 길이 CV**: `AI_artifact_detection` 방법을 참고하여 단락 내 문장 길이 변동 계수(CV)를 핵심 AI 신호로 사용. 중국어는 CJK 문자 수, 영어는 단어 수로 계산 - 📊 **중국어 CV 보고서**: Markdown 감지 보고서 끝에 5개 섹션으로 구성된 CV 보고서를 자동 추가 — 전체 통계 / CV",
+    "top": [
+      "FEATURE.md",
+      "LICENSE",
+      "README.md",
+      "README_EN.md",
+      "README_JP.md",
+      "README_KR.md",
+      "SKILL.md",
+      "examples",
+      "references",
+      "scripts"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "lbgyyds/AIGC-weight-reduction",
+    "stars": 39,
+    "category_prior": "prompt-guide",
+    "signals": {},
+    "readme": "# 果子AIGC降重平台 （已经停运 谢谢 ） 欢迎访问 **果子AIGC降重平台**，一个专为学生、研究者、自媒体创作者量身打造的智能文本改写工具！我们虽然开源托管于此，但我们的目标是吸引更多用户实际使用我们的降重服务。以下是平台简介及使用指南： --- ## 🚀 平台亮点 - **高效降重**：采用最新AIGC模型，智能语义理解，确保内容通顺自然、语义不变。 - **支持多语言**：j支持中文aigc降重 - **实时处理**：无需等待，文本提交后数秒内返回结果。 - **安全私密**：用户数据仅用于生成降重结果，绝不外泄。 - **免费试用**：新用户每日可免费额度1500字，无需注册即可使用部分功能。超出可联系作者领取额度！ - **权威效果**：经过多轮查重，知网知网查重降重均达到95%以上降重效果，如果降重高于10%全额退款！！！ --- ## 🚀 平台亮点 --- ## 🌐 立即体验 👉 **访问平台：[https://aiguozi.top](https://aiguozi.top)** 无需注册、无需下载，打开即用。体验一键降重、AI改写、语义润色等多种实用功能。 > 🎯 果子AIGC旨在打造“更懂中文语境的智能降重平台”，让文字表达更精准、更自然。 --- ## 🧩 常见使用场景 - 📝 **毕业论文降重**：避免查重雷区，提升原创性。 - 📚 **学术资料整理**：快速提炼和改写核心内容。 - ✍️ **自媒体内容改写**：智能调整措辞，提升表达吸引力。 - 📢 **营销文案优化**：AI帮你润色更具说服力的语句。 --- ## 📎 联系我们 如果您在使用",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "Snipaste_2025-07-15_09-03-52.png",
+      "Snipaste_2025-07-15_09-04-30.png",
+      "Snipaste_2025-07-15_09-04-41.png",
+      "Snipaste_2025-07-15_09-05-32.png",
+      "Snipaste_2025-07-15_09-05-54.png",
+      "Snipaste_2025-07-16_11-35-57.png",
+      "Snipaste_2025-07-16_11-45-04.png",
+      "Snipaste_2025-10-07_12-57-11.png",
+      "微信图片_2025-07-15_085928_339.jpg",
+      "微信图片_20251004145133_8_2.jpg"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "CodeDeficient/KarpeSlop",
+    "stars": 38,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# KarpeSlop > \"Because `any` is the mind virus of our generation.\" > — probably @karpathy ## What is KarpeSlop? **KarpeSlop is a fast, opinionated linter for detecting AI-generated code problems in TypeScript and JavaScript.** Inspired by Andrej Karpathy's call for an \"AI Slop Index,\" it detects the three axes of AI slop: 1. **Information Utility (Noise)** — Redundant comments, boilerplate, debug logs 2. **Information Quality (Lies)** — Hallucinated imports, incorrect assumptions, TODO placeholders 3. **Style / Taste (Soul)** — Overconfident comments, hedging language, \"vibe coding\" patterns **Use case:** Clean up code generated by Copilot, ChatGPT, Claude, or other AI coding assistants. ## ",
+    "top": [
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "Screenshot.png",
+      "ai-slop-detector.ts",
+      "babel.config.json",
+      "clean-code-javascript",
+      "clean-human-code.ts",
+      "codemeta.json",
+      "detector_output.txt",
+      "dist",
+      "karpeslop-cli.js",
+      "package-lock.json"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "mmartoccia/grain",
+    "stars": 33,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# grain **Anti-slop linter for AI-assisted codebases.** Detects AI-generated code patterns before they land in version control -- and generates structured work queues so AI agents can repair them automatically. --- ## The loop ``` grain check --all --json > violations.json # scan ↓ AI agent reads violations.json # plan ↓ agent fixes file by file, re-runs grain # execute ↓ grain check --all --json # verify ↓ exit when empty # done ``` Grain is designed for both sides of this loop: it's the quality gate *and* the task queue. Most linters are human-facing gates. Grain is built to drive agentic remediation workflows. --- ## Agentic workflow ### `--json` output ```bash grain check --all --json ``",
+    "top": [
+      "README.md",
+      "VALIDATION.md",
+      "docs",
+      "grain",
+      "pyproject.toml",
+      "tests"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "yuvrajangadsingh/vibecheck",
+    "stars": 25,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# vibecheck **39 rules for catching AI-generated code smells.** ESLint for AI slop. ```bash npx @yuvrajangadsingh/vibecheck . ``` ``` src/api/routes.ts 12:5 error no-hardcoded-secrets Hardcoded secret detected. Use environment variables instead. 45:3 error no-empty-catch Empty catch block swallows errors silently. 89:1 warn no-console-pollution console.log left in production code. src/utils/db.ts 34:5 warn no-sql-concat SQL query built with string concatenation. 4 problems (2 errors, 2 warnings) 2 files with issues out of 47 scanned (0.8s) ``` ## Why AI coding tools generate code that *works* but cuts corners. Empty catch blocks, hardcoded secrets, `as any` everywhere, comments that restate ",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "action",
+      "action.yml",
+      "article",
+      "demo-slop.ts",
+      "demo.gif",
+      "demo.tape",
+      "package-lock.json",
+      "package.json",
+      "scripts",
+      "slop.svg",
+      "src"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "mario-montanari/italiano-scrittura-anti-ai",
+    "stars": 22,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# italiano-scrittura-anti-ai [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F455",
+    "top": [
+      "CHANGELOG.md",
+      "CITATION.cff",
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "SECURITY.md",
+      "SKILL.md",
+      "assets",
+      "commands",
+      "extras",
+      "references",
+      "scripts"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Toloka/beemo",
+    "stars": 11,
+    "category_prior": "fine-tuned-model",
+    "signals": {},
+    "readme": "# Beemo [GIF Source.](https://slackmojis.com/emojis/67173-bmo) ## Dataset Description Beemo (**B**enchmark of **e**xpert-**e**dited **m**achine-generated **o**utputs) is a benchmark for fine-grained machine-generated text detection, which consists of 6.5k texts written by humans, generated by ten open-source instruction-finetuned LLMs and edited by expert annotators for various use cases. Furthermore, each machine-generated text is edited by two state-of-the-art LLMs using several diverse editing prompts, which results in 13.1k machine-generated & LLM-edited texts. We make one of the first attempts to address more practical machine-generated text detection scenarios, where the user refines t",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "beemo.gif",
+      "beemo.jpg",
+      "dataset.parquet",
+      "guidelines"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "haidrrrry/humanize-ai-writing",
+    "stars": 10,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Humanize AI Writing — Anti-AI-Slop Prompt & Skill for ChatGPT, Claude, Gemini, Grok & Kimi A free, open-source system prompt and AI skill that forces any chatbot — **ChatGPT, Claude, Gemini, Grok, Kimi, DeepSeek** — to write like a human and stop producing \"AI slop.\" It bans the words and patterns that flag text as machine-generated (delve, tapestry, \"not just X but Y,\" em-dash overuse, fake significance, promotional filler) and rewrites prose to read naturally. Built from [Wikipedia's catalog of \"Signs of AI writing\"](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) — turned into enforceable rules any model can follow. > ## 🪄 Let your AI set it up (if it has file access) > If ",
+    "top": [
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "EXAMPLES.md",
+      "INSTALL-FOR-AI.md",
+      "INSTALL.md",
+      "LICENSE",
+      "PROMPT.md",
+      "README.md",
+      "USAGE-IN-AI-TOOLS.md",
+      "bin",
+      "blog",
+      "for-ai-tools",
+      "humanize-ai-writing",
+      "humanize-ai-writing.zip"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "xszcs546/ai-text-humanizer",
+    "stars": 10,
+    "category_prior": "prompt-guide",
+    "signals": {},
+    "readme": "# Latest AI Text Humanizer Collection (Including Detector Bypass Analysis) Content creators face a daily dilemma—AI tools speed up writing, but detection software flags the results. Whether you're a student submitting essays, a marketer publishing blog posts, or a freelancer delivering client work, AI-generated text that reads too robotic gets rejected or downgraded. The challenge isn't using AI; it's making AI-assisted content sound authentically human. AI humanizer tools solve this by transforming robotic patterns into natural, conversational writing. These platforms adjust sentence structure, vary rhythm, and remove telltale AI markers while preserving your original message. From free opt",
+    "top": [
+      "README.md",
+      "image"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "yanbiai8/ai-humanizer-paper",
+    "stars": 9,
+    "category_prior": "prompt-guide",
+    "signals": {},
+    "readme": "# 🎯 免费降ai/降重/降aigc在线工具 - 言笔降ai **一键降低论文AIGC率 | 智能降重 | 保持原意 | 通过检测** [🚀 立即使用](https://www.yanbiai.com/tools/paper-pass?ly=github) | [📖 使用教程](https://www.yanbiai.com/tools/paper-pass?ly=github) | [💡 实战案例](https://www.yanbiai.com/tools/paper-pass?ly=github) --- ## ⚡ 核心功能 ### 🎓 专业降AIGC - ✅ **显著效果**: AIGC率从100%降至20%以下 - ✅ **多平台支持**: 适配知网、维普、万方、朱雀检测 - ✅ **智能算法**: 语义优化+风格重构，非简单替换 - ✅ **三个版本**: 学术版/口语版/朱雀版 ### 🔧 智能降重工具 - 📝 论文写作辅助 - 🔄 AIGC降重优化 - ✨ 改写润色 - 📊 文章扩写 --- ## 📊 实测效果对比 | 检测平台 | 优化前 | 优化后 | 降低幅度 | |---------|--------|--------|----------| | 知网CNKI | 82.6% | 12.8% | ⬇️ 69.8% | | 维普VIP | 78.3% | 15.2% | ⬇️ 63.1% | | 万方 | 85.1% | 18.9% | ⬇️ 66.2% | --- ## 🚀 快速开始 访问 [言笔降ai降重](https://www.yanbiai.co",
+    "top": [
+      "README.md"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "thakares/nx9-chronoseal-rs",
+    "stars": 7,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# ChronoSeal Unix-native cryptographic attestation daemon for browser session continuity. Privacy-first | Deterministic WASM parity | Silent rejection | Low overhead = 1.87\"> --- ChronoSeal is a Linux-native cryptographic attestation service for browser session continuity and anti-automation defense. It runs as a small daemon, serves a browser WASM runtime, and validates signed heartbeat requests through deterministic server/client state progression. The core idea is simple: a real browser session should be able to keep advancing a private cryptographic state, a hash chain, and a deterministic synthetic gene mutation chain. Basic HTTP clients, stale replay attempts, and incomplete automation",
+    "top": [
+      "CODE_OF_CONDUCT.md",
+      "CONTRIBUTING.md",
+      "Cargo.lock",
+      "Cargo.toml",
+      "Dockerfile",
+      "LICENSE",
+      "LICENSE-APACHE",
+      "README.md",
+      "SECURITY.md",
+      "chronoseal-replay",
+      "chronoseal.service",
+      "docker-compose.yml",
+      "docs",
+      "frontend"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "kevin-wijaya/AI-Generated-Text-Detection-with-Deep-Learning-Approach-on-Indonesian-Text",
+    "stars": 6,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# AI Generated Text Detection with Deep Learning Approach on Indonesian Text ## Table of Contents + [About](#about) + [Tech Stack](#techstack) + [Getting Started](#getting_started) + [Usage](#usage) + [Reports](#reports) + [Screenshots](#screenshots) + [Author](#author) + [License](LICENSE) ## About Artificial intelligence (AI) has become a popular technology that is now widely used by the public. That is due to the emergence of intelligent chatbots from OpenAI, namely ChatGPT. Various groups of people use ChatGPT for different purposes, one of them is students who use ChatGPT to understand material, do assignments, compose essays and paraphrase journals. Paraphrasing on ChatGPT and using pa",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "app.py",
+      "package.json",
+      "requirements.txt",
+      "research",
+      "run.py",
+      "static",
+      "tailwind.config.js",
+      "templates"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "tuwulalo/ai-slop-cleaner-en-ru",
+    "stars": 6,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "**English** · [Русский](README.ru.md) # ai-slop-cleaner-en-ru **An AI-slop cleaner and detector for Claude Code / the Claude Agent SDK.** A bilingual (EN + RU) skill: above all it **cleans the AI out of text**, rewriting clichés into natural prose while preserving meaning, facts and terms, and it also diagnoses \"AI-likeness\" (how machine-written a passage is, by which markers, with what confidence). ## Demo **Screen text:** > \"When it comes to performance, caching is not just useful, it's essential. Let's > dive in. Moreover, it scales. In conclusion, a seamless experience.\" 🚀 > > → **Almost certainly AI (~95/100).** Tells: \"not just… it's\", \"let's dive in\", > the \"moreover / in conclusion\" ",
+    "top": [
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "README.ru.md",
+      "SKILL.md",
+      "autotest",
+      "reference",
+      "validate.mjs"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "gongstudent/Paper-Rewrite-Studio",
+    "stars": 5,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# 论文降重工具 v1 面向学生、研究者与学术写作者的本地论文优化工作台。项目围绕“上传 -> 排除范围 -> 检测 -> 改写 -> 复检 -> 导出”这条闭环流程构建，强调可解释、可控制、可回退，而不是只给一个黑盒结果。 ## 界面展示 ### 工作台首页 ### 我的论文 ### 模型配置 ## 项目定位 - 适合需要对论文进行相似性风险排查、AIGC 风险排查、段落级改写和复检的本地单人使用场景。 - 适合想保留术语、引用和原始结构，只替换特定风险段落的论文优化流程。 - 不定位为“保证过审”工具，也不承诺将结果降到某个固定阈值。 ## 核心能力 - 上传 `txt`、`docx`、`pdf` 论文并自动解析结构 - 在论文详情页设置封面、目录、参考文献、附录和手动段落排除 - 发起查重与 AIGC 风险检测，查看段落级风险结果 - 进入改写台逐段比较、采纳候选版本、回退原文、手动微调 - 发起复检，对比改写前后的风险变化 - 从“我的论文”导出最终论文 导出规则： - 只替换你在平台中已经采纳或手动修改过的段落 - 未修改段落保持原文 - 导入类型为 `txt`、`docx`、`pdf` 时，导出文件类型保持一致 ## 推荐使用流程 1. 在工作台上传论文文件。 2. 进入论文详情页确认排除范围。 3. 发起检测并查看高风险段落。 4. 进入改写台，只处理需要优化的段落。 5. 采纳或手动微调后发起复检。 6. 在“我的论文”中导出最终文件。 ## 界面与模块 - `工作台`：查看概览、最近论文、活跃任务和快捷入口 - `我的论文`：查看论文列表、删除论文、导出最终文",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "backend",
+      "docs",
+      "frontend",
+      "img",
+      "package-lock.json",
+      "package.json",
+      "pnpm-workspace.yaml"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Xircth/thesis-workflow-skill",
+    "stars": 3,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Thesis Workflow Agent Skill `thesis-workflow-agent` 是一套面向论文编写、修改、优化、降 AIGC、参考文献补证、论文插图与 Word 正式落地的 Codex Skill。它以总控 Skill 的方式编排论文全流程，并内嵌两个核心子 Skill： - `skills/minimax-docx`：负责 `.docx` 创建、编辑、套模板、排版、OpenXML 校验。 - `skills/thesis-optimizer`：负责论文章节诊断、扩写、删减、润色、转义、降重、降低 AIGC 风险。 ## 安装 查看仓库中可被 `skills` CLI 发现的 Skill： ```bash npx skills add Xircth/thesis-workflow-skill --list ``` 安装到 Codex 全局 Skill 目录： ```bash npx skills add Xircth/thesis-workflow-skill -g -a codex ``` ## 适用场景 - 从零编写论文，先生成目录结构树，再逐章写作。 - 基于学校模板创建论文文档。 - 在已有论文基础上修改、扩写、删减、润色、转义或格式整理。 - 根据 Paperyy 等检测报告做 AIGC/查重定向优化。 - 补充研究现状、参考文献候选与章节证据。 - 规划论文插图，并可选使用内嵌 Suxi `gpt-image-2-vip` MCP 生成位图插图。 - 使用 `minimax-docx` 将稳定内容写入正式 Word 文档。 ## 目录结构",
+    "top": [
+      "README.md",
+      "SKILL.md",
+      "agents",
+      "mcp",
+      "references",
+      "scripts",
+      "skills",
+      "template"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "aloth/provenance-linkage",
+    "stars": 2,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Reproducibility bundle: a benchmark audit of an AI-text detection evaluation This bundle accompanies the manuscript *One Prediction Set, Two Reported Results: Provenance Linkage and a Reproducible Benchmark-Audit Sequence for AI-Text Detection*. It contains the audit scripts, the archived per-item predictions they consume, and the per-run metric files, so that every count, rate, and ranking metric reported in the paper can be re-derived without retraining a model. ## What is here ``` scripts/ nine audit scripts (the seven-step sequence plus the table recompute) predictions/ archived per-item predictions, stripped of corpus text metrics/ per-run metric files (accuracy, macro F1, per-class r",
+    "top": [
+      "CITATION.cff",
+      "LICENSE",
+      "LICENSE-DATA",
+      "MANIFEST.json",
+      "README.md",
+      "analysis",
+      "build_bundle.py",
+      "data",
+      "outreach",
+      "run_audit.py",
+      "scripts"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "dabhunt/krita-certified-human-made",
+    "stars": 1,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Certified Human-Made (CHM) - Krita Plugin **Prove your digital art is human-made, not AI-generated.** A privacy-first verification system for Krita that captures your creative process and generates cryptographic proof of human authorship — **no blockchain, no crypto, no complexity**. --- ## 🎯 What is CHM? ### Why This Matters In a world where AI can generate photorealistic art in seconds, **human creativity needs authentication**. Artists spend years developing their skills, and this system helps them prove it. **How do you prove you actually drew something?** CHM is a **complete verification ecosystem** for digital art: **🎨 Krita Plugin** (This Repository): - ✅ **Captures** your drawing p",
+    "top": [
+      "BFROS-LOGGING-ADDED.md",
+      "CONTRIBUTING.md",
+      "CREATE-GITHUB-RELEASE.md",
+      "Cargo.lock",
+      "Cargo.toml",
+      "DEV-SETUP-COMPLETE.md",
+      "ENVIRONMENT-TESTING-READY.md",
+      "GITHUB-RELEASE-BODY.md",
+      "LICENSE",
+      "QUICK-FIX-API-URL.md",
+      "README.md",
+      "RELEASE-CHECKLIST.md",
+      "RELEASE-NOTES-v1.0.0.md",
+      "RELEASE-QUICK-START.md"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Yigit-Sert/machine-generated-text-detection",
+    "stars": 1,
+    "category_prior": "dataset",
+    "signals": {},
+    "readme": "# Detecting Machine-Generated Text This project focuses on the supervised binary classification of human-authored versus machine-generated text, as part of the **SemEval-2024 Task 8** challenge (Subtask A). ## Project Overview The rapid proliferation of Large Language Models (LLMs) such as GPT-4, Claude, and Gemini poses significant challenges to academic integrity, cybersecurity, and the spread of misinformation. This project explores various machine learning and deep learning strategies to distinguish between human and machine-generated content. ## Contents - `PRESENTATION.pptx.pdf`: Detailed presentation of the project methodology, exploratory pipeline, and comparative analysis of results",
+    "top": [
+      "PRESENTATION.pptx.pdf",
+      "README.md",
+      "project_1.ipynb",
+      "project_2.ipynb"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "soufyec/thesisfy-mvp",
+    "stars": 1,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Thesisfy.edu MVP **Academic integrity through AI regulation, not detection. The anti-Turnitin.** Thesisfy monitors the writing process in real-time instead of trying to detect AI after submission. Students can use AI tools transparently within defined boundaries, and professors see a complete integrity profile based on actual writing behavior. ## Tech Stack - **Framework**: Next.js 14 (App Router) - **Frontend**: React 18, Tailwind CSS - **Backend**: Next.js API Routes - **AI Integration**: Claude API (Anthropic) with fallback to simulated responses - **Auth**: JWT-based with httpOnly cookies - **Deployment**: Vercel ## Quick Start ```bash npm install cp .env.example .env npm run dev ``` O",
+    "top": [
+      "README.md",
+      "next.config.js",
+      "package-lock.json",
+      "package.json",
+      "postcss.config.js",
+      "src",
+      "tailwind.config.ts",
+      "tsconfig.json"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "BrunoQuiodetto/Humanizador-de-Chamados-AI",
+    "stars": 1,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# 🤖 AI Text Humanizer API Uma API REST moderna para **humanização de textos e chamados** usando inteligência artificial. Transforme comunicação técnica e formal em mensagens empáticas e humanizadas. ## ✨ Características - 🤖 **IA Avançada:** Integração com OpenRouter para múltiplos modelos - 📱 **Interface Moderna:** Design responsivo inspirado no Apple - 🎯 **Fácil de Usar:** API REST simples e intuitiva - 🔧 **Configurável:** Sistema flexível de configuração - 🛡️ **Robusto:** Tratamento completo de erros - 📖 **Bem Documentado:** Código limpo e documentação completa ## 🚀 Instalação Rápida ```bash # Via Composer composer create-project brunoquiodetto/ai-text-humanizer-api # Ou como dependência c",
+    "top": [
+      "CHANGELOG.md",
+      "LICENSE",
+      "QUICK_START.md",
+      "README.md",
+      "composer.json",
+      "config",
+      "public",
+      "src",
+      "start.bat",
+      "start.ps1",
+      "start.sh"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "hexonMD/tellmark",
+    "stars": 0,
+    "category_prior": "prompt-guide",
+    "signals": {},
+    "readme": "# Tellmark **An honest, in-browser model of how AI-text watermarks are planted with a secret key — and detected.** A watermark like Google's [SynthID-Text](https://deepmind.google/technologies/synthid/) is a statistical *tell*: it doesn't add hidden characters or metadata, it quietly biases *which words a model chooses* using a secret key, in a way that's invisible to read but measurable in bulk. Tellmark lets you plant that mark on a passage, then watch a detector recover it — and watch it go dark the instant the key is wrong. Everything runs client-side in a single HTML file. No backend, no build step, no text ever leaves the page. **Live:** enable GitHub Pages on this repo (Settings → Pag",
+    "top": [
+      "LICENSE",
+      "README.md",
+      "index.html"
+    ],
+    "is_detector": true,
+    "fairness_words": [
+      "bias"
+    ]
+  },
+  {
+    "name": "rbehzadan/awesome-ai-content-detection",
+    "stars": 0,
+    "category_prior": "detector-with-evasion",
+    "signals": {},
+    "readme": "# Awesome AI Content Detection 🔍🤖 A curated list of web services and tools to detect AI-generated text, including free tools, academic research projects, and professional enterprise solutions. ## 🌐 Web-Based AI Detection Tools ### ✅ Popular and Actively Maintained - [Humbot AI Checker](https://humbot.ai/ai-checker) – Free AI text detector with a clean UI. - [GPTZero](https://gptzero.me/) – Widely used by educators and professionals. - [ZeroGPT](https://www.zerogpt.com/) – Free and simple AI detection service. - [Sapling AI Detector](https://sapling.ai/ai-content-detector) – Provides AI detection along with grammar tools. - [Winston AI](https://gowinston.ai/) – Designed for educators and cont",
+    "top": [
+      "LICENSE",
+      "README.md"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "api-evangelist/turnitin",
+    "stars": 0,
+    "category_prior": "detector-with-evasion",
+    "signals": {},
+    "readme": "# Turnitin > ### About this repository > > **This is not our API.** This repository is an independent, third-party profile of a company's > **publicly available** API surface, maintained by [API Evangelist](https://apievangelist.com). > API Evangelist does not operate, host, resell, or support this company's APIs, and is not > affiliated with or endorsed by the company unless stated on the profile. > > **Where the information came from.** Everything here is assembled from material a member of the > public can reach with a browser and no credentials — the company's own website, developer portal > and documentation, the specifications it publishes for public use (OpenAPI, AsyncAPI, JSON Schema",
+    "top": [
+      "README.md",
+      "apis.yml",
+      "authentication",
+      "blogs",
+      "conformance",
+      "conventions",
+      "kin",
+      "lifecycle",
+      "llms",
+      "sandbox",
+      "security",
+      "well-known"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Asadobhaya/Veritas-AI",
+    "stars": 0,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Veritas AI 🛡️ > The next-generation, privacy-first academic integrity and writing analysis platform. Veritas AI is a high-performance, fully offline desktop application designed to analyze document originalities, discover similarities, detect AI-assistance likelihood, and track citation attributions securely. --- ## ✨ Features - 📁 **Offline Multi-Format Extraction**: Extract raw text from standard academic documents (`.docx`, `.pdf`, `.txt`, `.md`, and `.wps`) completely offline without parsing servers. - 🧬 **Dual Plagiarism Engine**: - **Lexical Check**: Computes similarity using n-gram overlap with Jaccard coefficient indices. - **Semantic Check**: Uses cosine similarities over normalize",
+    "top": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "README.md",
+      "ROADMAP.md",
+      "SECURITY.md",
+      "Veritas AI.lnk",
+      "docker-compose.yml",
+      "eslint.config.mjs",
+      "next-env.d.ts",
+      "next.config.ts",
+      "package-lock.json"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "menpente/humanizador",
+    "stars": 0,
+    "category_prior": "prompt-guide",
+    "signals": {},
+    "readme": "",
+    "top": [
+      "humanizador-ia-espanol-v2-con-transformers.html"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "sebastiantixe-hub/humanizador-tesis",
+    "stars": 0,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "",
+    "top": [
+      "app.py",
+      "requirements.txt",
+      "templates"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "bqbdev/humanizadordeIA",
+    "stars": 0,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Clareia — Editor Universal de Texto IA Editor profissional de texto em português, preparado para GitHub Pages. O Clareia funciona integralmente no navegador, sem chaves de API, contas ou envio do texto a serviços externos. ## Recursos - Reescrita completa e adaptação de público/estilo, sem acrescentar ideias. - Geração de novas variações preservando as informações originais. - Parser e tokenizer próprios, sem enviar dados para análise. - Métricas de palavras, frases, parágrafos, diversidade lexical, legibilidade e leitura. - Alertas para frases/parágrafos longos, repetições, redundâncias, voz passiva e advérbios. - Comparação por palavras, com adições e remoções destacadas. - Limite de 2.0",
+    "top": [
+      "README.md",
+      "clareia.png",
+      "index.html",
+      "package-lock.json",
+      "package.json",
+      "public",
+      "src",
+      "vite.config.js",
+      "zerochat.png"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Everzon-Oajaca/humanizador-de-texto",
+    "stars": 0,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# Getting Started with Create React App This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). ## Available Scripts In the project directory, you can run: ### `npm start` Runs the app in the development mode.\\ Open [http://localhost:3000](http://localhost:3000) to view it in your browser. The page will reload when you make changes.\\ You may also see any lint errors in the console. ### `npm test` Launches the test runner in the interactive watch mode.\\ See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information. ### `npm run build` Builds the app for production to the `build` folder.\\ ",
+    "top": [
+      "README.md",
+      "package-lock.json",
+      "package.json",
+      "public",
+      "src"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "davicrsc512-maker/Humanizador-de-texto",
+    "stars": 0,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "",
+    "top": [
+      "Humanizador de textos.tsx"
+    ],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "logistica1350-byte/humanizador-",
+    "stars": 0,
+    "category_prior": "prompt-guide",
+    "signals": {},
+    "readme": "",
+    "top": [],
+    "is_detector": false,
+    "fairness_words": []
+  },
+  {
+    "name": "Djhayes72195/llm-paraphrasing-attacks",
+    "stars": 0,
+    "category_prior": "detector-with-evasion",
+    "signals": {},
+    "readme": "# llm-paraphrasing-attacks Paraphrasing attacks are a technique where AI-generated text is perturbed by a paraphraser model to evade detection. This project explores the robustness of AI-text detection methods against such attacks. We: - Used a RoBERTa model trained by OpenAI to detect GPT-2 outputs as a baseline. - Measured its effectiveness before and after paraphrasing the machine-generated text. - Fine-tuned the RoBERTa model to detect GPT-3-generated scientific abstracts. - Likewise evaluated the fine-tuned model’s performance before and after the paraphrasing attack. Results: - The GPT-2 detector’s recall dropped by ~8% under paraphrasing. - The fine-tuned GPT-3 detector was unaffected",
+    "top": [
+      "README.md",
+      "writeup.pdf"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  },
+  {
+    "name": "TaskiranEmlak/undetectable-ai-bypass-api",
+    "stars": 0,
+    "category_prior": "rule-based-rewriter",
+    "signals": {},
+    "readme": "# 🤖 Undetectable AI Bypass API - ZeroBay Humanizer Bypass 99% of modern AI detectors including **GPTZero, Turnitin, CopyLeaks, and Winston AI** using the powerful ZeroBay AI Humanizer API. This repository contains an open-source web interface client built with Python and Streamlit to test your text rewrites live. ## 🚀 Get Your API Key To run this application or integrate the humanizer engine into your own custom bots/SaaS tools, grab your API Key from our official RapidAPI portal: * **Free Tier Available:** 30 free requests per month for testing. * **Commercial Tiers:** Premium automated workflow plans starting at $29/mo for high-volume SEO agencies and developers. --- ## 🛠️ Installation & S",
+    "top": [
+      "README.md",
+      "app.py"
+    ],
+    "is_detector": true,
+    "fairness_words": []
+  }
+]

@@ -604,6 +604,51 @@ called it `rule-based-rewriter`, because it is 12,878 lines of Python with no ve
 That is the design working as intended and as documented: a mention cannot carry a verdict, and it
 is the most useful thing to hand a reader.
 
+### The queue, read to the end
+
+All **93** rows of the read queue were read at source on 2026-09-01 — 9 by hand, 84 through
+`.claude/probes/read_queue.py`, which clones each repo shallowly, extracts what a reader needs and
+deletes the checkout before the next one. Nothing was unreachable. The record is
+`.claude/probes/census-2026-09-01-read-queue.json`.
+
+**34 of the 93 are detector- or benchmark-flavoured.** The field is not short of technical
+seriousness, and four of these are worth naming beside SlopTotal:
+
+- **[`Croups/is-it-ai`](https://github.com/Croups/is-it-ai)** — a self-hostable Fast-DetectGPT
+  with **bring-your-own-calibration**: plug in any HuggingFace causal LM and fit the detector on
+  your own domain data, nothing leaving your infrastructure. It is the closest thing in the sweep
+  to the per-deployment seam this repository has on its roadmap — and it calibrates a detector to
+  a **domain**, never to a population.
+- **[`kinit-sk/mgt-detection-benchmark`](https://github.com/kinit-sk/mgt-detection-benchmark)**
+  (MULTITuDE, EMNLP 2023) and **[`kinit-sk/multisocial`](https://github.com/kinit-sk/multisocial)**
+  (ACL 2025) — large multilingual detection benchmarks from a real lab. Language is the nearest
+  thing to a writer axis anyone in this sweep uses, and it is used to measure *coverage*, not harm.
+- **[`heyongxin233/DETree`](https://github.com/heyongxin233/DETree)** — detecting **human-AI
+  collaborative** text, which is the question Results 12 and 18 are about, treated as a research
+  problem rather than a caveat.
+- **[`Aboudjem/humanizer-skill`](https://github.com/Aboudjem/humanizer-skill)** (207★) — a
+  humanizer *and* detector in one Markdown file, 55 patterns, nothing leaving the machine. The
+  closest positioning to untell's own in the sweep.
+
+**And the count that matters.** Across all 93, the number of READMEs mentioning *any* fairness
+word — bias, fairness, subgroup, demographic, dialect, non-native, false positive — is **three**,
+each in passing:
+
+| repo | ★ | the word |
+|---|---|---|
+| `Vladimir-Human/humanizer-ru` | 120 | "false positive" |
+| `lakshitha-dev/ai-humanizer-skill` | 2 | "non-native" |
+| `hexonMD/tellmark` | 0 | "bias" |
+
+Set beside the source-level probe over all 131 repos, which found **zero** occurrences of
+*subgroup*, *demographic parity*, *equalised odds*, *disparate impact*, *protected attribute*,
+Aequitas, AIF360 or Fairlearn, the claim in
+[`strategy-the-audit-position.md`](strategy-the-audit-position.md) now rests on a full read rather
+than a sample: **the field has sophisticated answers to "is this text AI" — 23-engine local
+aggregation, per-domain calibration, multilingual benchmarks, human-AI collaborative detection —
+and essentially no one asks who the errors land on.** That is a claim about the question being
+asked, not about anyone's competence, and it is the only form of it this evidence supports.
+
 ### Two defects the run exposed in the tooling
 
 Both are fixed and pinned by tests, and both were only visible because the run was big enough.

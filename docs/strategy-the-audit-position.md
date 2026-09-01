@@ -176,8 +176,22 @@ So the question is being asked in the literature. What is still missing is diffe
    Its corpora are **domains and eras, not writers**. Searched across its source and docs: zero
    occurrences of *subgroup*, *non-native*, *ESL*, *demographic* or *dialect*. It answers "how
    accurate is this detector" with more rigour than most published work and never asks **who it
-   fails**. The gap this document describes is not a gap in the field's competence. It is a gap in
-   the question the field asks.
+   fails**.
+
+   Nor is it alone in either respect. The census sweep's entire 93-repo read queue was read at
+   source on 2026-09-01 ([the survey](research-tooling-survey.md) has the pass): 34 of the 93 are
+   detector- or benchmark-flavoured, including a self-hostable Fast-DetectGPT with
+   bring-your-own-**domain** calibration, two multilingual benchmarks from a lab publishing at
+   EMNLP and ACL, and a method for detecting human–AI *collaborative* text. Across all 93, the
+   number of READMEs mentioning any fairness word at all — bias, fairness, subgroup, demographic,
+   dialect, non-native, false positive — is **three**, each in passing; across all 131 repos read
+   at source, the number using any algorithmic-fairness vocabulary is **zero**.
+
+   So the gap this document describes is not a gap in the field's competence, and after this
+   session's corrections it is not a claim that the work does not exist. **It is a gap in the
+   question being asked.** The field has excellent answers to "is this text AI" and no habit of
+   asking who its errors land on — and that, stated against the best case rather than an empty
+   one, is the whole position.
 
 This document used to rest on "the research exists and the instrument does not". Point 2 retired
 that sentence: the instrument exists, someone built a good one first, and the census missed it
