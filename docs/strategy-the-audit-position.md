@@ -166,7 +166,7 @@ So the question is being asked in the literature. What is still missing is diffe
 
 6. **And the strongest open detector in the field does not ask either — which is the version of
    this argument that is worth making.** [`pablocaeg/sloptotal`](https://github.com/pablocaeg/sloptotal),
-   found by reading the census sweep's own queue on 2026-09-01, runs 23 local detection engines
+   found by reading the census sweep's own queue on 2026-09-01, runs 23 detection engines entirely on the user's own hardware
    (Binoculars, Fast-DetectGPT, GLTR, log-rank, plus nine neural classifiers), reports AUC 0.974,
    and publishes its harness and raw per-sample results. It even arrives independently at this
    document's central measurement idea: its control corpus is Project Gutenberg prose from
