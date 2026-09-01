@@ -234,6 +234,41 @@ shows it alone. `subgroup_audit` reported one axis at a time until 2026-09-01. I
 them (`--by "race_ethnicity*ell_status"`), with the missing-data rule applied to every part so a
 row lacking either lands nowhere rather than in a cell named after absent data.
 
+### The one measurement with no better-resourced prior version
+
+Everything else in this document is a narrowing. BAID benchmarks detector bias across seven
+dimensions; Pindrop's ACL 2026 paper does 16 detectors against real demographic labels;
+`satyamshivam13/AI_Text_Detector` shipped per-population false-positive rates in July 2026;
+Garland publishes the institutional auditing protocol itself. Better-resourced groups got there
+first on every axis this repository measures.
+
+**Except one.** Searched 2026-09-01: the non-native English bias is quantified — Liang's 61.3%,
+replicated repeatedly. The bias against **neurodivergent writers** is not. The literature
+describes the mechanism (repeated phrasing, constrained vocabulary, the writing patterns of
+autistic, ADHD and dyslexic students reading as machine-like), documents individual cases, and
+says plainly that **no peer-reviewed study puts a rate on it.**
+
+[Result 20](detector-fairness-measured.md) puts a rate on it: 1,921 ASAP essays by students
+identified as having a disability, flagged **38.3%** against 34.8%, separating at 95%; and
+crossed with ELL status, **1.48x** — because this detector's apparent protection for
+English-language learners disappears for students with disabilities. Neither single axis shows
+that.
+
+**Why this one and not the others.** Not insight. The corpus was already on disk for other
+results, the label was already in the file, and the axis was one line of configuration away —
+`student_disability_status` simply was not in the default axes, so nobody had asked. The
+generalisable point is the uncomfortable one: **the gap in the field was not a hard measurement,
+it was an unasked question**, and the same was true here until the default was changed. That is
+the whole audit position in one result, and it is also the warning attached to it.
+
+**Its limits are as important as the number.** ASAP records an administrative category —
+*identified as having a disability* — which includes physical and sensory disability and misses
+every undiagnosed student, so it is a proxy for neurodivergence and not a measurement of it. It is
+one detector, and bias is model-specific. And 1.10x on the single axis is small; the intersection
+is where it matters. A serious version of this needs a corpus labelled for neurodivergence
+specifically, which does not appear to exist publicly — and that, rather than another detector or
+another threshold, is the most valuable thing anyone could build next in this area.
+
 ### The thing a black-box benchmark structurally cannot report
 
 BAID, RAID, IMGTB and every other benchmark audits a detector as an opaque scorer. Run

@@ -653,9 +653,17 @@ the floor matters more here rather than less, and why the worst cell above is no
 ## Result 20 — students with disabilities are flagged more, and it cancels the ELL effect
 
 The literature names neurodivergent students — autism, ADHD, dyslexia — as disproportionately
-flagged by AI detectors. ASAP labels 1,921 essays *Identified as having disability* against 11,367
-*Not identified*, and this instrument had never looked: `student_disability_status` was not in the
-default axes, so a default ASAP run reported nothing about it. All 17,307 essays, threshold 0.50:
+flagged by AI detectors, and says the mechanism is reliance on repeated phrasing and vocabulary.
+
+**It also says the rate has never been measured.** Searched 2026-09-01: unlike the non-native
+English bias, which Liang et al. put at 61.3% and half a dozen groups have since replicated, there
+is **no peer-reviewed study quantifying how often neurodivergent writers are falsely flagged**.
+The evidence is documented mechanisms and individual cases — a student with autism given a zero on
+a detector's say-so — not a rate with an interval on it.
+
+ASAP labels 1,921 essays *Identified as having disability* against 11,367 *Not identified*, and
+this instrument had never looked: `student_disability_status` was not in the default axes, so a
+default ASAP run reported nothing about it. All 17,307 essays, threshold 0.50:
 
 | axis | worst | best | ratio | intervals |
 |---|---|---|---|---|
@@ -679,6 +687,24 @@ That is the second independent case in this document — after [Result 19](#resu
 where crossing changed the answer rather than refining it, and it is why the defaults now follow
 the corpus: `--corpus asap` reports `ell_status`, `student_disability_status` and their cross
 without being asked, because a heading a caller never thinks to request is a group nobody measures.
+
+**What this is, and three things it is not.** It is a rate with an interval, on a labelled corpus
+of 13,288 essays, for a population the literature describes qualitatively and has not quantified.
+That is the one result in this document with no better-resourced prior version, and it exists
+because the corpus was already on disk and the axis was one line of configuration away.
+
+It is **not** a measurement of neurodivergence. ASAP records *identified as having a disability*,
+an administrative category that includes physical and sensory disabilities and misses every
+undiagnosed or unregistered student. The overlap with autism, ADHD and dyslexia is real but
+partial and unmeasured here.
+
+It is **not** a general claim about detectors. Bias is model-specific — Pindrop's 16-detector
+study says so and every reversal in this document demonstrates it. This is untell's lite tier and
+nothing else.
+
+And 1.10x is **not** a large disparity. It separates because n is large; the intersectional gap
+at 1.48x is the one that matters. A single-axis reading of this result would understate it, which
+is the point of the row below it.
 
 ## What these results do not establish
 
