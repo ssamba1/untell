@@ -93,7 +93,13 @@ The idea is **not** novel and the strategy doc says so: [BAID](https://arxiv.org
 samples. What is missing is the instrument. BAID's subgroup text is **synthetic** — LLM
 imitations of how a group writes — where ELLIPSE is real essays by real learners; no code
 repository for BAID was findable; and of 435 repos in the census plus 131 in the re-run, **zero**
-ship a tool a university could point at the detector it is about to license. Aequitas, AIF360 and
+ship a tool a university could point at the detector it is about to license. The statistic itself
+is *not* unprecedented and this document used to imply it was: `suraj-ranganath/StealthRL` —
+located and read at source on 2026-09-01, having been cited here from its paper — computes the
+ESL-versus-native false-positive gap as a **weighted training reward** (`−w₄·F′`,
+`fairness_weight: 0.2`, "Minimize ESL bias"), to shrink the gap while evading rather than to
+report it. No reporting surface, one axis, a hardcoded 0.5 threshold. See
+[the strategy doc](docs/strategy-the-audit-position.md) for the corrected claim. Aequitas, AIF360 and
 Fairlearn compute the right statistic and none is wired to a text detector. RAID, IMGTB and
 `kinit-sk/mAO` rank accuracy or obfuscation strength, a different question. **The research exists;
 the instrument does not.**

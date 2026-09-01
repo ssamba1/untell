@@ -335,7 +335,17 @@ sweep), `LearnPrompt/humanize-ppt` (916★), `fromleda/text-humanizer` (734★, 
    machine-generated text detection". This is a published benchmark for exactly what the rewriting
    loop does, from the group behind IMGTB, and the README does not cite it.
 3. **`suraj-ranganath/StealthRL`** — the actual repo behind the StealthRL numbers `ROADMAP.md`
-   quotes as the thing untell cannot beat. It was cited from the paper, never located.
+   quotes as the thing untell cannot beat. It was cited from the paper, never located. **Now
+   located and read**: 138 product files, 38k lines, LoRA/PEFT/TRL training against ten named
+   detectors. Two claims in this repository turned on what is inside it, and reading it settled
+   both. It ships `rewards/fairness_reward.py`, computing the ESL-versus-native false-positive
+   gap as a live reward term — which **falsified** the strategy doc's "zero repos compute this
+   statistic" and forced that claim to be narrowed to the one that survives (a reward term is not
+   an instrument). And its semantic term is a *soft* one: `_normalize_semantics` clamps the
+   similarity bonus to zero below a floor while the evasion term keeps paying, so destroying
+   meaning is unrewarded rather than punished — which **confirms** `absolute-ceiling-buildplan.md`,
+   whose hard `−1.0` return is a different mechanism and is now verified against source rather
+   than inferred from the paper.
 4. **`aloth/provenance-linkage`** and **`wolfvswhale.github.io`** — two 2026-08 projects on how
    AI-text-detection benchmarks get *evaluated* and where the evaluation goes wrong. That is
    untell's own honesty thesis, being worked on elsewhere.
@@ -415,6 +425,9 @@ repos the census hand-read from source, years before this tool existed:
 |---|---|---|
 | `classify` (metadata) | 2 / 34 — **6%** | 2 / 2 |
 | `inspect` (file tree) | 11 / 34 — **32%** | 10 / 11 — **91%** |
+
+(`classify` decides 10.7% of the *full* 131-repo sweep and only 6% here, because the overlap is
+the harder half by construction: these are the repos the census thought worth reading.)
 
 Five times the reach at comparable precision, and the read queue it hands over is briefed rather
 than blind: each unsure row now carries its product file count, its own line count net of bundled
