@@ -165,8 +165,49 @@ def _targeting_is_unrankable(rows: list[dict]) -> bool:
     return (max(scores) - min(scores)) < _TARGETING_SPREAD_BAR
 
 
+_EVIDENCE_NOTE = (
+    "`evidence` lists catalogue tells found INSIDE each sentence. These CORROBORATE a score, they "
+    "do not explain it: `ai` comes from the detector ensemble (perplexity/burstiness or ML "
+    "weights), which never consults this catalogue. A sentence can score high with no tells, and "
+    "carry tells while scoring low. Read it as a second, human-checkable opinion — not as the "
+    "reason the detector decided."
+)
+
+
+def _evidence_for(sentence: str) -> dict:
+    """Human-checkable markers inside one sentence.
+
+    Refereed work now treats interpretability as a requirement rather than a nicety: ExaGPT
+    (2026.findings-acl.380) argues a detection decision must let a user "judge how reliably correct
+    its prediction is", and shows in a human study that per-span evidence helps people do exactly
+    that; DAMASHA (2026.findings-eacl.326) ships attribution overlays for the same reason. This
+    repository's round-five finding is why it matters here: a bare label changes how a reader judges
+    the text even when the label is wrong, so "a human will review the flag" fails when the flag is
+    all the human gets.
+
+    What this is NOT, stated because the overclaim would be exactly the kind this repo corrects:
+    the tells catalogue is not the detector. ExaGPT's evidence *is* its decision procedure; ours is
+    a separate heuristic run over the same sentence. Presenting it as "why the detector scored this"
+    would be a fabricated explanation, which is worse than none.
+    """
+    from untell.scripts.tells import score_tells
+
+    scored = score_tells(sentence, include_matches=True)
+    return {
+        "tells": scored["tells"],
+        "by_category": scored.get("by_category", {}),
+        "by_evidence": scored.get("by_evidence", {}),
+        "matches": scored.get("matches", {}),
+        "low_burstiness": scored.get("low_burstiness"),
+    }
+
+
 def score_sentences(
-    text: str, tier: str = "lite", threshold: float = DEFAULT_THRESHOLD, top: int | None = None
+    text: str,
+    tier: str = "lite",
+    threshold: float = DEFAULT_THRESHOLD,
+    top: int | None = None,
+    evidence: bool = False,
 ) -> dict:
     if not isinstance(text, str):
         # Fuzz-found: bytes input leaked "a bytes-like object is required, not 'str'"
@@ -176,6 +217,8 @@ def score_sentences(
         raise TypeError(f"tier must be str, got {type(tier).__name__}")
     if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
         raise TypeError(f"threshold must be a number, got {type(threshold).__name__}")
+    if not isinstance(evidence, bool):
+        raise TypeError(f"evidence must be bool, got {type(evidence).__name__}")
     """Score each sentence; flag the WORST ones to rewrite first.
 
     Per-sentence scores are noisy — short sentences especially, where signals like burstiness are
@@ -230,7 +273,10 @@ def score_sentences(
     flagged: list[str] = []
     for i, (s, ai) in enumerate(scored):
         is_flagged = i in flag_idx
-        rows.append({"text": s, "ai": round(ai, 4), "flagged": is_flagged})
+        row = {"text": s, "ai": round(ai, 4), "flagged": is_flagged}
+        if evidence:
+            row["evidence"] = _evidence_for(s)
+        rows.append(row)
         if is_flagged:
             flagged.append(s)
     return {
@@ -240,6 +286,7 @@ def score_sentences(
         "flagged": flagged,
         "note": "per-sentence scores are noisy (esp. short sentences); 'flagged' = the worst "
         "sentences to rewrite first, not an absolute verdict",
+        **({"evidence_note": _EVIDENCE_NOTE} if evidence else {}),
         # The caveat that matters most is the one a machine client could not see: the log line
         # above fires once per PROCESS, so an API server tells its first caller and nobody else.
         **(
@@ -327,6 +374,10 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Flag at most this many of the worst sentences (default: ~the worst third).",
     )
+    parser.add_argument(
+        "--evidence", action="store_true",
+        help="show the catalogue tells found inside each sentence — markers that CORROBORATE a "
+             "score, not the detector's reason for it")
     parser.add_argument("--json", action="store_true", help="emit the full result as JSON")
     args = parser.parse_args(argv)
 
@@ -352,15 +403,21 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": "empty input"}))
         return 2
 
-    result = score_sentences(text, tier=args.tier, threshold=args.threshold, top=args.top)
+    result = score_sentences(text, tier=args.tier, threshold=args.threshold, top=args.top,
+                             evidence=args.evidence)
     if args.json:
         print(json.dumps(result, ensure_ascii=True, indent=2))
     else:
         for row in result["sentences"]:
             mark = "AI " if row["flagged"] else "ok "
             print(f"[{mark}{row['ai']:.2f}] {row['text']}")
+            found = row.get("evidence", {}).get("matches") or {}
+            for category, hits in sorted(found.items()):
+                print(f"          evidence · {category}: {', '.join(hits)}")
         print(f"\n{len(result['flagged'])}/{len(result['sentences'])} sentences flagged to rewrite first.")
         print(f"note: {result['note']}")
+        if result.get("evidence_note"):
+            print(f"evidence: {result['evidence_note']}")
     # 2 when the catalogue and detectors cannot read this script at all — the same code and reasoning
     # `untell-verify`, `untell-score`, `untell-tells` and `untell-humanness` use. MEASURED on a
     # Chinese paragraph, this command printed `[ok 0.00]` beside the text and exited 0: a per-sentence

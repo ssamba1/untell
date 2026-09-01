@@ -2127,3 +2127,55 @@ The methodological note is the reusable part: **a truncated log cannot support a
 Round twenty-five's `tail -50` was a convenience that quietly reduced a set comparison to a comparison
 of two arbitrary windows, and it produced a diff with entries on both sides that were artefacts of
 where each window happened to start. The counts were right; the diff was noise.
+
+---
+
+# Round twenty-eight — building the thing round twenty-seven found
+
+Round twenty-seven established that interpretability is a **refereed requirement**, not a nicety:
+ExaGPT ([2026.findings-acl.380](https://aclanthology.org/2026.findings-acl.380/)) shows in a human
+study that per-span evidence helps people judge whether a detection decision is correct, and DAMASHA
+([2026.findings-eacl.326](https://aclanthology.org/2026.findings-eacl.326/)) ships attribution
+overlays for the same reason. Round five is why it matters here: a bare label changes how a reader
+judges text **even when the label is wrong**, so "a human will review the flag" fails when the flag is
+all the human gets.
+
+`untell-sentences --evidence` now names the catalogue tells found inside each sentence, with the
+literal strings:
+
+```
+[AI 0.83] It is important to note that the framework leverages robust methodology.
+          evidence · ai_vocab: robust
+          evidence · cliche: It is important to note
+[ok 0.00] Rain fell.
+```
+
+Built from machinery that already existed — `score_tells(include_matches=True)` and the per-sentence
+targeting in `untell/scripts/sentences.py` — so it needs no network, no model weights and no new
+dependency, which matters in an environment where the ML detectors cannot load at all.
+
+## The hard part was refusing to overclaim
+
+**The tells catalogue is not the detector.** `ai` comes from the detector ensemble — perplexity and
+burstiness, or ML weights — which never consults the catalogue. ExaGPT's evidence *is* its decision
+procedure; ours is a separate heuristic run over the same sentence. So a sentence can score high with
+no tells, and carry tells while scoring low.
+
+Presenting corroboration as explanation would be **a fabricated rationale for a number produced by
+something that never saw the evidence** — which is worse than offering no evidence, and is precisely
+the class of error this ledger has spent nine rounds correcting in other people's work and its own.
+The output says so in the note, the CLI prints the note, and a test asserts the wording still denies
+it:
+
+> "These CORROBORATE a score, they do not explain it: `ai` comes from the detector ensemble …, which
+> never consults this catalogue."
+
+Eight tests pin both halves — that the evidence appears, names strings that genuinely occur in the
+sentence, invents nothing for a clean sentence, is sourced from the catalogue rather than derived
+from the score, and that the disclaimer survives. **The one that matters is the last.** A future edit
+trimming that note for brevity would turn an honest feature into a lie, and nothing else in the suite
+would notice.
+
+Shipped as status row 29. Row 28 kept its number deliberately: three entries in this ledger refer to
+"row 28" as the disability arm, and renumbering would have silently invalidated them — the same
+propagation failure round twenty-three is about, one level up.

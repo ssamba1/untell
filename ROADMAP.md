@@ -54,6 +54,7 @@ no decision, no native speaker and no GPU, only the work.
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
 | 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody.** PubMed returns zero studies on whether detectors flag neurodivergent or disabled writers; the blocker is a consented corpus with disability metadata, not method. |
+| 29 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
