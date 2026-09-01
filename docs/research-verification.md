@@ -1812,3 +1812,59 @@ nothing was checking that. Twenty-two rounds of verification produced a document
 itself three lines apart, in its most-quoted sentence, and no provenance check, citation check or
 attribution check could see it — because every version of the number had a source, and the source
 said it.
+
+---
+
+# Round twenty-four — the sweep that was actually a spot-check
+
+Round twenty-three built a guard against retracted claims coming back, and pinned six retired forms.
+**Those six were the ones I happened to remember.** The guard was as good as my recall, which is the
+same weakness the guard exists to fix, one level up.
+
+So this round enumerated the retractions instead of recalling them: **39 correction markers across
+the four research documents**, read one by one. About a dozen are genuine claim retractions with a
+retired form that could still be alive somewhere; the rest are section headings, legend rows, or
+*external* results cutting against us, which are not our retractions. Six retired forms were not in
+the guard at all.
+
+## ✗ One more escape, the same shape as the last
+
+`research-to-build.md` states, as fact: *"MCP's **length-conditioned quantiles** are the principled
+version of the `verdict_threshold` split."* Eleven lines above it, the same document says:
+
+> ✗ Two details this document previously asserted are **not in the published abstract**: that the
+> quantiles are *length-conditioned* …
+
+**The correction and the uncorrected restatement, in one document, eleven lines apart** — exactly the
+Karr pattern from round twenty-three, in a different document, about a different paper. Now hedged:
+the conformal bound is what the paper supports, and the length-conditioning is named as the Tier B
+claim it is, with the note that **the bound does not depend on it.**
+
+## ✅ And one thing the sweep got wrong
+
+It also flagged `| humans cannot detect | 3 |` in the ledger. That is a **census row counting how
+many surveyed papers assert the claim** — not the ledger asserting it. Reading a count as an
+assertion would force the census to be reworded to satisfy a checker, which is the failure mode round
+fifteen was careful to avoid. The guard now skips two-column count rows, and **that suppression is
+itself pinned**: a three-column findings row, or one carrying a percentage rather than a count, is
+still read.
+
+## Where the guard stands
+
+Eleven retired forms are pinned, not six: the Karr range, MGTEVAL's "26 detectors", Bohler's "pure
+false-positive rate", Hyatt's "190 students' essays", the Goodman AUC comparison, the
+autistic-writing trait list, MCP's "length-conditioned", the TiCS "2–8×" figure, and the three
+"nobody does this" primacy claims (H2L, the stratified audit, stylistic distance). Fifteen tests.
+
+⚠️ **And the guard failed on this very entry**, which is worth keeping. Listing the pinned forms
+above put "26 detectors" and "2–8×" into a paragraph the checker did not read as a correction,
+because its marker vocabulary knew *retract* but not *retired*. The fix was the regex, not the prose:
+a checker that forces a document to avoid the words it needs is the failure mode round fifteen
+warned about, and the third time in this ledger that the first version of a checker was wrong before
+the thing it checked was.
+
+**The honest summary of two rounds:** the propagation problem has now produced escapes in three
+separate places — Karr twice, MCP once — and each was found only by looking for it deliberately. The
+first search was scoped by memory and missed a third of the retractions. **A guard built from recall
+inherits the failure of recall**, and the fix was to enumerate the source of truth rather than to
+remember it.

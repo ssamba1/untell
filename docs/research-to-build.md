@@ -36,8 +36,10 @@ what threshold should I use?"** — and it answers it with a bound rather than a
 It also lands directly on a finding the repo already has and currently reports as a wart:
 `docs/../untell/references/thresholds.md` documents that lite and full tiers diverge with document
 length, and that a single `threshold` doing double duty as stop target and verdict bar is the source of
-the 52% → 18% cut. MCP's length-conditioned quantiles are the principled version of the
-`verdict_threshold` split that was arrived at empirically.
+the 52% → 18% cut. MCP's conformal quantiles are the principled version of the `verdict_threshold`
+split that was arrived at empirically — and if they are also **length-conditioned**, as secondary
+summaries claim but the published abstract does not say (⚠️ Tier B, see the correction above), that
+maps onto the length divergence exactly. The bound does not depend on it.
 
 **Build:** `untell/calibrate.py` — fit quantiles from a human-only calibration set at a user-chosen α,
 emit a per-detector, per-length-bucket threshold table; `score_text` gains a `calibrated_verdict`

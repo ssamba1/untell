@@ -27,7 +27,7 @@ DOCS = ("ROADMAP.md", "ai-writing-research.md", "docs/research-to-build.md",
 
 # Words that mark a line as *discussing* a correction rather than making the retired claim.
 _CORRECTING = re.compile(
-    r"✗|⚠️|correct|retract|imprecise|misattribut|earlier (draft|version)|used to read"
+    r"✗|⚠️|correct|retract|retired|imprecise|misattribut|earlier (draft|version)|used to read"
     r"|superseded|stale|we wrote|no source says|no source supports|asserted, not sourced|unsourced"
     r"|collapsed|not reproducible|round \w+ (fixed|removed|corrected)",
     re.I,
@@ -46,7 +46,24 @@ RETIRED: dict[str, tuple[str, str]] = {
                                    "an accuracy cannot be ranked against GPTZero's AUC"),
     r"low burstiness, regular sentence length": (
         "the autistic-writing trait list", "no source supports it; see round seventeen"),
+    r"length-conditioned quantile": (
+        "MCP's quantiles described as length-conditioned",
+        "Tier B — the published abstract does not say this, so it must stay hedged"),
+    r"nobody publishes what detectors": (
+        "the H2L primacy claim", "false — Pratama ran exactly that experiment"),
+    r"nobody ships the stratified audit": (
+        "the stratified-audit primacy claim", "false — BAID is a bias-assessment benchmark"),
+    r"nobody had connected": (
+        "the stylistic-distance primacy claim",
+        "false — Liang ran the intervention in both directions in 2023"),
+    r"2[–-]8×": ("the semantic-diversity figure",
+                 "misattributed to the TiCS review, whose abstract states no numbers"),
 }
+
+# A table row that merely *counts* how many papers make a claim is not making that claim. The
+# ledger's census tables carry rows like `| humans cannot detect | 3 |`, and reading those as
+# assertions would force the census to be reworded to satisfy a checker.
+_COUNT_ROW = re.compile(r"^\|[^|]+\|\s*\d+\s*\|$")
 
 
 def _offending_lines(pattern: str) -> list[str]:
@@ -65,7 +82,7 @@ def _offending_lines(pattern: str) -> list[str]:
             continue
         lines = path.read_text(encoding="utf-8").splitlines()
         for i, line in enumerate(lines):
-            if not rx.search(line):
+            if not rx.search(line) or _COUNT_ROW.match(line.strip()):
                 continue
             window = "\n".join(lines[max(0, i - 3): i + 4])
             if not _CORRECTING.search(window):
@@ -93,3 +110,19 @@ def test_a_line_that_records_the_correction_is_allowed():
     """The ledger must be able to quote what it retracts, or it cannot document anything."""
     line = '✗ An earlier draft said "38–80%"; the paper splits it by detector.'
     assert _CORRECTING.search(line)
+
+
+def test_a_census_row_counting_a_claim_is_not_making_it():
+    """The suppression rule, pinned. `| humans cannot detect | 3 |` is the ledger counting how many
+    papers assert something — reading it as an assertion would force the census to be reworded to
+    satisfy a checker."""
+    assert _COUNT_ROW.match("| humans cannot detect | 3 |")
+
+
+def test_the_suppression_does_not_swallow_prose_or_data_rows():
+    """A skip rule that is too broad hides real hits, which is worse than no rule at all."""
+    assert not _COUNT_ROW.match("detectors flag light editing at 38-80% of the time")
+    # A results row carrying a claim plus a non-integer measurement must still be read.
+    assert not _COUNT_ROW.match("| humans cannot detect | 27.2% |")
+    # Three columns is a findings table, not a claim count.
+    assert not _COUNT_ROW.match("| humans cannot detect | 3 | source |")
