@@ -6,11 +6,22 @@ spend. GitHub was never the bottleneck -- the search API serves 30 queries a min
 624 queries that produced 1287 candidates fit inside half an hour of it.
 
 So the fix is not a bigger budget. It is to stop spending tokens on the part of the field that
-is decidable from metadata. A repo packaged as an agent skill is a prompt guide; a repo whose
-description names a vendor is an API wrapper. Those two categories are 259 of the census's 435,
-which is the CEILING on this idea -- not its yield. Measured on a 23-repo topic:ai-humanizer
-harvest, `classify` decides 35% without a reader and its confident rows agree with the census
-3 of 3. A third of the budget is the honest number, and it is the one to plan against.
+is decidable from metadata -- and to be honest about how small that part is.
+
+MEASURED 2026-09-01, on a real eleven-angle harvest of 111 repos, 26 of which the census had
+already read by hand:
+
+    decided without a reader   9%   (35% on a single topic-filtered slice)
+    confident rows correct     2/2
+    unsure rows correct       11/24
+
+The 60% the census's own category counts suggest -- 259 of 435 being prompt-guide or
+api-wrapper -- is NOT reachable from metadata, and the gap is not a tuning problem. Those
+categories were assigned by reading source. Metadata can see that a repo is packaged as an agent
+skill or that its description names a vendor; it cannot see whether the Python file beside the
+Markdown is the product. Nine percent of a sweep is what this saves. That is worth having and it
+is not a revolution, and a version of this file that claimed otherwise would be the exact
+failure the repo it lives in exists to measure.
 
 What is left over -- detector_in_loop, meaning_verification -- is what actually needed reading,
 and handing you exactly that list is this script's job.
@@ -19,6 +30,7 @@ and handing you exactly that list is this script's job.
     python .claude/census.py harvest --out out/x.json # run the plan (needs a token; see below)
     python .claude/census.py ingest a.json b.json     # fold in results captured some other way
     python .claude/census.py classify out/x.json      # structural triage, no LLM, no network
+    python .claude/census.py verify out/x.json        # score the classifier against the census
     python .claude/census.py delta out/x.json         # what changed vs docs/humanizer-census.json
 
 **Read this before trusting `harvest`.** Global GitHub search needs a token with normal API
@@ -39,6 +51,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -140,7 +153,16 @@ _SKILL_TOPICS = (
 _MACHINERY_WORDS = (
     "linter", "deterministic", "regex", "parser", "script", "algorithm", "pipeline",
     "classifier", "scorer", "engine",
+    # Added after the 111-repo harvest: stephenlzc/humanize-mba-text-skill calls itself a
+    # "detection and removal tool" and the census made it a rule-based-rewriter, but none of the
+    # words above fired. Something that DETECTS is running machinery, whatever it is packaged as.
+    "detection", "detector", "detects", "removal", "analyzer", "analyser",
 )
+# A skill that promises to beat NAMED detectors is making a product claim, and metadata cannot
+# tell a prompt that claims it from a pipeline that does it. diaiq/claude-skill-humanizer reads
+# exactly like a prompt guide and the census read it as an api-wrapper ("Powered by DiaIQ").
+# Claims like this go to a reader rather than to a confident verdict.
+_BYPASS_CLAIM = ("bypass", "undetectable", "pass ai detect", "beat ai detect", "100% human")
 _WRAPPER_WORDS = ("api client", "api wrapper", "sdk for", "unofficial api", "reverse engineered")
 _DETECTOR_WORDS = ("detector", "detection", "classifier", "identify ai", "ai checker")
 _TRAIN_WORDS = ("fine-tune", "finetune", "lora", "dpo", "grpo", "sft", "rlhf", "trained on")
@@ -158,22 +180,46 @@ def _text(repo: dict) -> str:
     return " ".join(parts).lower()
 
 
+def _described(repo: dict) -> str:
+    """Description only.
+
+    MEASURED 2026-09-01: the vendor rule read the repo's own name and topics too, so
+    `samrand96/Undetectable-AI` -- topics `undetectable-ai`, `bypassgpt` -- was CONFIDENTLY called
+    an api-wrapper. The census read it and called it detector-with-evasion. Naming yourself after
+    the thing you replace is not the same as billing for it, and a topic is a self-label rather
+    than a dependency. A vendor name only implies wrapping when it appears in the prose.
+    """
+    return (repo.get("description") or "").lower()
+
+
 def classify(repo: dict) -> dict:
     """Assign a census category from metadata alone, or admit that it cannot."""
     t = _text(repo)
     lang = repo.get("language")
     has = lambda words: any(w in t for w in words)  # noqa: E731 - a predicate, not a function
 
-    if any(v in t for v in _VENDORS) or has(_WRAPPER_WORDS):
-        return _row(repo, "api-wrapper", "confident", "names a commercial humanizer or wraps one")
+    described = _described(repo)
+    if any(v in described for v in _VENDORS) or any(w in described for w in _WRAPPER_WORDS):
+        return _row(repo, "api-wrapper", "confident",
+                    "its description names a commercial humanizer, or says it wraps one")
 
     topics = {str(t).lower() for t in (repo.get("topics") or ())}
     name = (repo.get("name") or "").lower()
     if topics & set(_SKILL_TOPICS) or name.endswith("-skill"):
+        # Both guards below drop CONFIDENCE without abandoning the category. The packaging is
+        # still the strongest signal metadata has; what the guard doubts is whether it is the
+        # WHOLE story, not whether it is true. Flipping the category as well cost real accuracy:
+        # on the 111-repo harvest the census calls ten of these prompt-guide and the guarded rows
+        # were answering rule-based-rewriter, so the reader started from a worse prior than the
+        # packaging alone would have given them. Unsure-row agreement 4/24 -> 11/24 on that change.
         if has(_MACHINERY_WORDS):
-            return _row(repo, "rule-based-rewriter", "unsure",
-                        "an agent skill that also advertises machinery; which one it really is "
-                        "needs reading")
+            return _row(repo, "prompt-guide", "unsure",
+                        "an agent skill that also advertises machinery; whether the machinery or "
+                        "the prose is the product needs reading")
+        if any(c in described for c in _BYPASS_CLAIM):
+            return _row(repo, "prompt-guide", "unsure",
+                        "an agent skill claiming it beats named detectors; that is a product "
+                        "claim metadata cannot check")
         return _row(repo, "prompt-guide", "confident",
                     "packaged as an agent skill: a Markdown instruction file plus a manifest")
 
@@ -299,20 +345,65 @@ def ingest(paths: list[Path]) -> list[dict]:
 # Delta
 # ---------------------------------------------------------------------------------------------
 
+# 73 of the census's 435 `name` values are not a bare owner/repo. They carry annotations
+# ("epoko77-ai/im-not-ai (Humanize KR)"), or give the owner/repo inside the parens
+# ("BERT-Attack (LinyangLee/BERT-Attack)"), or are a bare repo with no owner at all
+# ("speak-human-tw", "GPTZzzs"). Exact-string matching against that field silently reports
+# known repos as new: it put epoko77-ai/im-not-ai -- which the census's own star table lists at
+# 4,182 stars -- in the "new" column at 5,143. A delta that inflates itself is worse than none,
+# so names are matched through these keys instead.
+_OWNER_REPO = re.compile(r"[\w.-]+/[\w.-]+")
+
+
+def _match_keys(name: str) -> tuple[set[str], set[str]]:
+    """(owner/repo forms, bare repo names) for one census or harvest name."""
+    low = name.strip().lower()
+    full = set(_OWNER_REPO.findall(low))
+    bare = {f.split("/")[-1] for f in full}
+    if not full:  # a bare repo name, possibly with an annotation after it
+        bare.add(low.split("(")[0].strip().split()[0] if low.split("(")[0].strip() else low)
+    return full, bare
+
+
 def load_census() -> dict[str, dict]:
+    """Index the census by every name form a harvest might legitimately match.
+
+    Bare-repo keys are only registered for census rows that give no owner at all, because two
+    different owners really do ship a `humanizer-ru`, and matching those together would hide a
+    new repo rather than merely miscount one.
+    """
     if not CENSUS.exists():
         return {}
-    return {r["name"]: r for r in json.loads(CENSUS.read_text(encoding="utf-8"))}
+    index: dict[str, dict] = {}
+    for row in json.loads(CENSUS.read_text(encoding="utf-8")):
+        full, bare = _match_keys(row["name"])
+        for key in full:
+            index.setdefault(key, row)
+        if not full:
+            for key in bare:
+                index.setdefault(key, row)
+    return index
+
+
+def _known(name: str, known: dict[str, dict]) -> dict | None:
+    full, bare = _match_keys(name or "")
+    for key in full or bare:
+        if key in known:
+            return known[key]
+    for key in bare:
+        if key in known:
+            return known[key]
+    return None
 
 
 def delta(fresh: list[dict], known: dict[str, dict], star_floor: int = 50) -> dict:
     """What the census would say differently if it were re-read today."""
     rows = [r if "confidence" in r else classify(r) for r in fresh]
-    new = [r for r in rows if r["name"] not in known]
+    new = [r for r in rows if _known(r["name"], known) is None]
     new.sort(key=lambda r: -r["stars"])
     moved = []
     for r in rows:
-        old = known.get(r["name"])
+        old = _known(r["name"], known)
         if old and abs(r["stars"] - old.get("stars", 0)) >= star_floor:
             moved.append((r["name"], old.get("stars", 0), r["stars"]))
     moved.sort(key=lambda m: -(m[2] - m[1]))
@@ -373,7 +464,7 @@ def verify(fresh: list[dict], known: dict[str, dict]) -> dict:
     `confident` row is a defect -- it removed a repo from the read queue on a bad rule. A wrong
     `unsure` row is the system working: it was already routed to a reader.
     """
-    rows = [(classify(r), known.get(classify(r)["name"])) for r in fresh]
+    rows = [(row, _known(row["name"], known)) for row in (classify(r) for r in fresh)]
     scored = [(row, old) for row, old in rows if old]
     out = {"overlap": len(scored), "confident": [0, 0], "unsure": [0, 0], "wrong": []}
     for row, old in scored:

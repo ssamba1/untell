@@ -116,11 +116,13 @@ can triage**:
 2. **Classify cheaply first.** The census's own categories (`prompt-guide`, `api-wrapper`,
    `rule-based-rewriter`, …) are partly decidable from metadata: a repo packaged as an agent skill
    is a prompt guide; a repo whose description names a vendor is an API wrapper. Those two
-   categories are 60% of the census (259 of 435), which is the *ceiling* on this idea, not the
-   yield. **Measured**, on a 23-repo `topic:ai-humanizer` harvest: `.claude/census.py classify`
-   decides **35%** without a reader, and on the 11 of those the census had already read by hand
-   its confident rows agree **3 of 3**. A third of the budget, not two thirds — and the honest
-   number is the one worth planning against.
+   categories are 60% of the census (259 of 435), which is the *ceiling* on this idea, and the
+   ceiling is not reachable. **Measured on the real eleven-angle harvest** (111 repos, 26 of them
+   already read by the census): `classify` decides **9%** without a reader — 35% on a single
+   topic-filtered slice, but 9% across the full sweep. Confident rows agree **2 of 2**, unsure
+   rows **11 of 24**. The gap to 60% is not a tuning problem: those census categories were
+   assigned by *reading source*, and metadata cannot see whether the Python file beside the
+   Markdown is the product. A tenth of the reading is the honest saving.
 3. **Spend the LLM on the tail.** The interesting classes (`detector_in_loop`,
    `meaning_verification`) are the ones that need reading. That is where the budget should have gone
    the first time.
@@ -281,16 +283,55 @@ truth, and the classifier is scored against it rather than trusted. It reports t
 separately because they promise different things — a wrong *confident* row is a defect (it dropped
 a repo from the read queue on a bad rule), a wrong *unsure* row is the system working.
 
-Its first real run says the census has decayed further than §1 showed. One angle
-(`topic:ai-humanizer`, 23 repos) turns up **12 not in the census, 5 of them at ≥100 stars** —
-including `seyedehsanhadi/sloptrim` (205★, created 2026-08-13), a zero-dependency stdlib-only prose
-detector that is unusually close to this repo's own lite tier. Two known repos also moved by more
-than 50 stars. That is one angle of twelve.
+**The eleven-angle run is done.** 111 distinct repos captured across the plan's angles, folded
+in with `ingest`, and diffed against the census. Raw harvest committed at
+`.claude/probes/census-2026-09-01-multiangle.json`.
+
+| | |
+|---|---|
+| repos seen | 111 |
+| already in the census | 33 |
+| **new** | **78** (16 of them at ≥100 stars) |
+| moved by ≥50 stars | 7 |
+| still need a reader | 70 |
+
+The largest newcomers: `Nanako0129/sepia` (1,269★, **created 2026-08-28** — three weeks after the
+sweep), `LearnPrompt/humanize-ppt` (916★), `fromleda/text-humanizer` (734★, created 2026-08-10),
+`LifelongLazyLearner/qu-ai-wei` (510★). Among the movers, `epoko77-ai/im-not-ai` went
+**4,182 → 5,143** and `speak-human-tw` 752 → 919.
+
+### Four findings that bear on this repo's own claims
+
+1. **`Vladimir-Human/humanizer-ru`** (120★) is the closest thing to untell's thesis found so far:
+   58 patterns, 40 regex markers with an evidence registry, a **"detectability delta before/after"
+   axis with false-positive control**, C2PA/EXIF/XMP mark removal, a PyPI package, 193 tests. In
+   Russian. The "measured, honest, tested" position is less empty than the census implied.
+2. **`kinit-sk/mAO`** — "Benchmark of authorship obfuscation methods in multilingual
+   machine-generated text detection". This is a published benchmark for exactly what the rewriting
+   loop does, from the group behind IMGTB, and the README does not cite it.
+3. **`suraj-ranganath/StealthRL`** — the actual repo behind the StealthRL numbers `ROADMAP.md`
+   quotes as the thing untell cannot beat. It was cited from the paper, never located.
+4. **`aloth/provenance-linkage`** and **`wolfvswhale.github.io`** — two 2026-08 projects on how
+   AI-text-detection benchmarks get *evaluated* and where the evaluation goes wrong. That is
+   untell's own honesty thesis, being worked on elsewhere.
+
+### Two defects the run exposed in the tooling
+
+Both are fixed and pinned by tests, and both were only visible because the run was big enough.
+
+- **Confident rows broke at scale.** 3/3 on 23 repos became 6/9 on 111. `Undetectable-AI` matched
+  the vendor rule on *its own name*; two agent-skill repos were confidently called prompt guides.
+  The vendor rule now reads the description only, and skills that advertise machinery or claim to
+  beat named detectors go to a reader. Confident is 2/2 again, and coverage fell to the honest 9%.
+- **The delta was inflating itself.** 73 of the census's 435 names are not a bare `owner/repo` —
+  annotations, missing owners, owner/repo inside parentheses. Exact matching reported
+  `epoko77-ai/im-not-ai` as a *new* 5,143-star repo while the census's own star table lists it at
+  4,182. The headline was 85 new; corrected, it is 78.
 
 **Left, in order:**
 
-1. **Run the other eleven angles** and fold the result into `docs/humanizer-census.json`. The tool
-   is built; the read queue it produces is the only part that needs an LLM.
+1. **Read the 70-row queue** and fold the result into `docs/humanizer-census.json`. The harvest is
+   done; reading is the only part that needs an LLM, and it is now a bounded list rather than 435.
 2. **`raid-bench` as an external check** (§6) — MIT, pip-installable, aimed at a benchmark this repo
    already streams data from, and it attacks the weakest published claim (sample size) with somebody
    else's leaderboard rather than our own harness.
