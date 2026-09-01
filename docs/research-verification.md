@@ -1364,3 +1364,62 @@ the review names the tension — "the danger of false misconduct accusations" �
 corpus follows an accused student through an appeal.** The literature measures the flag and stops
 before the consequence, which is the same shape as round fourteen's finding that the humanizer
 literature is absent where deployment is dense.
+
+---
+
+# Round seventeen — checking my own unsourced claim, and finding it backwards
+
+Round sixteen justified status row 28 with this sentence:
+
+> "The traits detectors key on — formulaic phrasing, low burstiness, regular sentence length,
+> restricted vocabulary, template adherence — are documented features of some autistic writing."
+
+**That was asserted, not sourced.** It passed `untell-audit` only because a DOI for a different claim
+happened to fall inside the attribution window — a checker limitation, not a verification. It is
+load-bearing (it is the entire argument for row 28), so it had to be checked. According to PubMed it
+is **wrong as stated**, and the correct version is a better argument.
+
+## What the literature actually reports
+
+| Study | Population | Finding |
+|---|---|---|
+| Finnegan & Accardo, **meta-analysis** of 13 studies ([DOI](https://doi.org/10.1007/s10803-017-3385-9)) | ASD vs typically developing | Differences in **length, legibility, handwriting size, speed, spelling, overall structure** |
+| Baixauli et al. ([DOI](https://doi.org/10.3389/fpsyg.2021.646849)) | 30 autistic vs 26 TD adolescents | Lower **productivity, lexical diversity, and overall coherence** |
+| Shevchuk-Hill et al. ([DOI](https://doi.org/10.1007/s10803-022-05516-z)) | 19 autistic vs 23 non-autistic **university** students | "Writings were **more similar than different**"; autistic stories at a **higher reading level** (p = .013) and with **fewer grammatical errors** (p = .02); less likely to include a climax (p = .026) |
+| Gillespie-Lynch et al. ([DOI](https://doi.org/10.1177/1362361320929453)) | Autistic vs non-autistic university students | "Autistic university students in our study were **better writers** than nonautistic students" |
+
+**The specific list I published — burstiness, sentence-length regularity, template adherence — appears
+nowhere.** Most of the meta-analytic differences are *mechanics and motor production*: handwriting
+size, legibility, speed. Those do not survive into typed application text at all, which is the only
+kind a detector ever sees.
+
+## Why the corrected version is stronger
+
+Two of the measured differences **are** documented detector signals, and they point the same way:
+
+- **Fewer grammatical errors** (p = .02, university students). Error-freeness is one of the oldest
+  machine-text cues.
+- **Higher reading level** (p = .013), and **lower lexical diversity** in the adolescent sample.
+
+So the risk is real — but it is *not* the deficit story my sentence implied. In the population that
+actually matters here, applicants and university students, **autistic writers were rated equal or
+better.** Gillespie-Lynch et al. say better outright; Shevchuk-Hill et al. say more similar than
+different.
+
+**That is the point, and it is the DivScore argument again** ([2025.emnlp-main.971](https://aclanthology.org/2025.emnlp-main.971/)):
+detector failure tracks the *distance* between a writer's distribution and the detector's human
+reference, not the *quality* of the writing. A writer who is cleaner and more precise than the
+reference population is further from it, and cleanliness is the direction machine text also lies in.
+**Writing well is a risk factor.** That is a sharper and more uncomfortable claim than the one I
+originally made, and unlike that one it follows from measurements.
+
+⚠️ **Tier, honestly.** The meta-analysis is Tier A but concerns mechanics. The two university studies
+are the on-point ones and they are **small — n = 19 vs 23 and a participatory design** — so they are
+Tier B: enough to retire my sentence and to justify row 28 as an open question, **not** enough to
+assert that detectors do flag autistic writers. Nobody has run that experiment; that is still the
+finding.
+
+## The correction
+
+Row 28's justification in ROADMAP §7 now states what these studies measured, and no longer asserts a
+trait list that no source supports.

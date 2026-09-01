@@ -447,7 +447,22 @@ and ADHD), and across the **526 detection papers** in the cached Anthology corpu
 in **zero** titles or abstracts — the only matches are `accessible`, `accessibility` and `assistive`
 used incidentally. **The number of studies on whether detectors flag neurodivergent or disabled
 writers is zero, in both.** Not for want of expertise: the same Anthology publishes autism detection
-in speech, ADHD proxy detection and sign-language accessibility work. The traits detectors key on — formulaic phrasing, low burstiness, regular
+in speech, ADHD proxy detection and sign-language accessibility work.
+
+✗ **An earlier version of this paragraph justified that gap by asserting that "formulaic phrasing,
+low burstiness, regular sentence length" are documented features of autistic writing. No source says
+that, and checking it reversed the argument.** According to the measurements — a meta-analysis of 13
+studies ([DOI](https://doi.org/10.1007/s10803-017-3385-9)) plus two university-student comparisons
+([DOI](https://doi.org/10.1007/s10803-022-05516-z),
+[DOI](https://doi.org/10.1177/1362361320929453)) — most reported differences are *mechanics*
+(handwriting, legibility, speed) that never reach a detector. What does reach one is that autistic
+university students wrote with **fewer grammatical errors** (p = .02) and at a **higher reading
+level** (p = .013), and were rated **equal or better** writers overall. Error-freeness and register
+are exactly what detectors read as machine-like. **So the exposure is real and the mechanism is
+distributional distance, not deficit** — the DivScore argument again: being further from the
+reference population is the risk, and writing cleanly moves you further. Row 28 stands as an open
+question on that basis; the studies are small (n = 19 vs 23), so this justifies measuring, not
+concluding. The traits detectors key on — formulaic phrasing, low burstiness, regular
 sentence length, template adherence — are documented features of some autistic writing and of writing
 produced with assistive tools, so this is not a gap for its own sake. It is status row 28, and the
 blocker is a consented corpus carrying disability metadata, not method: `eval/assisted_fairness.py`
