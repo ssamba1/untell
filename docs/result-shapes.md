@@ -30,8 +30,8 @@ Generated from live calls, not from reading the source.
 ## Full key lists
 
 ```
-score_text        ai_percent, detector_modes, detectors, flagged, max, mean, threshold,
-                  tier, tier_requested, verdict_threshold, warning
+score_text        agreement, ai_percent, detector_modes, detectors, flagged, max, mean,
+                  threshold, tier, tier_requested, verdict_threshold, warning
                   + failed_detectors and detector_errors, only when a detector raised
 
 score_tells       burstiness_cv, by_category, by_evidence, language_supported,
@@ -60,6 +60,16 @@ verify            configured, n_configured, n_passing, passes_all, results, thre
 - **`tier` is not `tier_requested`.** `score_text` reports the tier that actually produced numbers.
   Ask for `full` on a broken ML stack and you get `tier: "lite"` with a `warning` — the honest
   answer, and not the one a caller who only reads `tier_requested` will see.
+- **`agreement` carries the two verdicts `flagged` does not.** `flagged` is the *union* rule: it is
+  true when **any** detector clears the threshold. `agreement` reports that alongside `majority` and
+  `unanimous`, with `detectors_scoring` and `detectors_flagging` behind them. The rule matters more
+  than the detector: scoring abstracts with three tools, [Pratama](https://doi.org/10.7717/peerj-cs.2953)
+  measured a false-accusation rate of **44.44%** under the union rule against **4.17%** under
+  majority, and [Hyatt et al.](https://doi.org/10.1152/advan.00235.2024) took four detectors from
+  1.3% individually to **near 0%** by requiring agreement. `degenerate` is true when only one
+  detector scored, where all three rules are the same number and none of them means agreement.
+  Absent entirely when nothing scored.
+
 - **`flagged` is decided by `verdict_threshold`, not `threshold`.** `threshold` is what the rewrite
   loop optimises toward; the verdict bar is calibrated separately, because reusing one number made
   the lite tier flag 60% of genuinely human text.

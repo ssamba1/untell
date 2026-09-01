@@ -343,6 +343,52 @@ def _verdict_threshold(threshold: float, scores: dict, modes: dict) -> float:
     return max(threshold, _STDLIB_PERPLEXITY_VERDICT_THRESHOLD)
 
 
+def agreement(scores: dict, verdict_threshold: float) -> dict | None:
+    """How many detectors flag, under each of the three aggregation rules.
+
+    The ensemble reports ``max``: it flags if **any** member flags. That is the *union* rule, and
+    the published literature measures exactly what it costs. Scoring scholarly abstracts with three
+    tools, Pratama (*PeerJ CS*, `doi:10.7717/peerj-cs.2953 <https://doi.org/10.7717/peerj-cs.2953>`_)
+    reports a **False Accusation Rate of 44.44%** — the share of genuine human documents flagged by
+    at least one tool — against a **Majority False Accusation Rate of 4.17%**. Hyatt et al.
+    (`doi:10.1152/advan.00235.2024 <https://doi.org/10.1152/advan.00235.2024>`_) scored 190
+    students' essays with four detectors and found individual false positives at 1.3% falling to
+    **near 0% when the detectors were required to agree**.
+
+    So the aggregation rule moves the false-positive rate by more than the choice of detector does,
+    and a single reported verdict hides that. This returns all three so a caller can see the spread:
+
+    ``any``
+        at least one detector at or above the verdict threshold — the union rule, what ``flagged``
+        reports, and the one that maximises false accusations by construction.
+    ``majority``
+        more than half of the scoring detectors.
+    ``unanimous``
+        every scoring detector.
+
+    ``max`` remains correct as the rewrite loop's *stop target* — beating the hardest detector is
+    the honest bar — and remains the worst available choice as a *verdict*. Nothing here changes
+    ``flagged``; it adds the two rows a reader needs in order to disagree with it.
+
+    Returns ``None`` when nothing scored. With a single live detector the three rules are
+    arithmetically identical, and ``degenerate`` says so rather than implying an agreement that one
+    detector cannot supply.
+    """
+    numeric = [v for v in scores.values() if isinstance(v, (int, float))]
+    if not numeric:
+        return None
+    flagging = sum(1 for v in numeric if v >= verdict_threshold)
+    total = len(numeric)
+    return {
+        "detectors_scoring": total,
+        "detectors_flagging": flagging,
+        "any": flagging >= 1,
+        "majority": flagging * 2 > total,
+        "unanimous": flagging == total,
+        "degenerate": total == 1,
+    }
+
+
 def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHOLD) -> dict:
     """Score ``text`` with the available detector ensemble; return the result dict.
 
@@ -891,6 +937,11 @@ def _score_with_detectors_uncached(
     verdict_threshold = _verdict_threshold(threshold, scores, modes_of(live))
     result["verdict_threshold"] = verdict_threshold
     result["flagged"] = bool(numeric) and mx >= verdict_threshold
+    # `flagged` is the union rule. Publish the other two aggregations beside it, because the rule
+    # moves the false-positive rate further than the detector choice does — see `agreement`.
+    spread = agreement(scores, verdict_threshold)
+    if spread is not None:
+        result["agreement"] = spread
     if failed:
         result["failed_detectors"] = failed
     # Some detectors have more than one scoring path under one name, and which one ran changes the
