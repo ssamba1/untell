@@ -159,8 +159,25 @@ So the question is being asked in the literature. What is still missing is diffe
    IBM AIF360 (70+ metrics) and Microsoft Fairlearn compute exactly the right statistics and none
    is wired to a text detector; they expect a tabular classifier with subgroup columns.
 5. **The benchmarks that ship code measure the other thing.** RAID, IMGTB,
-   [`kinit-sk/mAO`](https://github.com/kinit-sk/mAO) and Toloka/beemo rank detector accuracy or
-   obfuscation strength. Ranking AUROC is not "who does this detector fail, and by how much".
+   [`kinit-sk/mAO`](https://github.com/kinit-sk/mAO), its group's ACL 2025
+   [MultiSocial](https://github.com/kinit-sk/multisocial) benchmark, and Toloka/beemo rank
+   detector accuracy or obfuscation strength. Ranking AUROC is not "who does this detector fail,
+   and by how much".
+
+6. **And the strongest open detector in the field does not ask either — which is the version of
+   this argument that is worth making.** [`pablocaeg/sloptotal`](https://github.com/pablocaeg/sloptotal),
+   found by reading the census sweep's own queue on 2026-09-01, runs 23 local detection engines
+   (Binoculars, Fast-DetectGPT, GLTR, log-rank, plus nine neural classifiers), reports AUC 0.974,
+   and publishes its harness and raw per-sample results. It even arrives independently at this
+   document's central measurement idea: its control corpus is Project Gutenberg prose from
+   1532–1915, chosen because a flag there "cannot be anything but an error", and it reports 0 of
+   26 flagged. That is real discipline, applied to the right kind of evidence.
+
+   Its corpora are **domains and eras, not writers**. Searched across its source and docs: zero
+   occurrences of *subgroup*, *non-native*, *ESL*, *demographic* or *dialect*. It answers "how
+   accurate is this detector" with more rigour than most published work and never asks **who it
+   fails**. The gap this document describes is not a gap in the field's competence. It is a gap in
+   the question the field asks.
 
 This document used to rest on "the research exists and the instrument does not". Point 2 retired
 that sentence: the instrument exists, someone built a good one first, and the census missed it

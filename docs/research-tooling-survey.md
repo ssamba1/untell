@@ -560,6 +560,50 @@ census ran 624 queries and read source by hand; this sweep ran 11 angles and rea
 They are not comparable samples measured the same way, and the honest answer to "what is the field
 made of in September" is that this sweep does not establish it.
 
+### Actually reading the read queue, which is the whole point of building one
+
+The argument in §1 is *stop paying a reader for what a script can triage, and spend the reader on
+the tail*. The triage was built, measured and shipped, and then the queue sat unread — 93 repos,
+each briefed with its product-file count, its own line count, and which detector and
+meaning-check names appear in its source. Ranking that queue by signal density and reading the
+top of it took minutes and produced the sweep's most important competitive finding.
+
+**[`pablocaeg/sloptotal`](https://github.com/pablocaeg/sloptotal) — "VirusTotal for AI slop
+detection".** 23 detection engines running locally, MIT, CI, a live site. The engine list is not
+a toy: Binoculars, Fast-DetectGPT, GLTR, log-rank, cross-perplexity and burstiness alongside nine
+neural classifiers (BERT-RAID, desklib, e5, OpenAI's, RemoDetect, SuperAnnotate, TMR). It reports
+**AUC 0.974**, publishes its harness and raw per-sample results, and carries a "what does not
+work" section. For scale, `competitive-gap-plan.md` credits untell with 8 local adapters, 5 on by
+default.
+
+Two things about it matter more than the engine count.
+
+**It independently arrived at this repository's central measurement idea.** Its second corpus is
+Project Gutenberg prose published 1532–1915 — Machiavelli, Austen, Melville — chosen because "a
+high score there cannot be anything but an error: the writing predates language models by a
+century or more." That is exactly the known-human logic
+[`detector-fairness-measured.md`](detector-fairness-measured.md) is built on, reached by someone
+else and used as a calibration guard: they report 0 of 26 literary passages flagged, and note that
+optimising on the AI corpus alone produces a threshold that mislabels literature. Their honesty
+note that "hand-edited AI loses fingerprints with every rewriting" is the same phenomenon as
+Results 12 and 18.
+
+**And it does no subgroup work whatsoever.** Searched across its source and docs: zero occurrences
+of *subgroup*, *non-native*, *ESL*, *demographic*, or *dialect*. Its corpora are RAID (110 texts)
+and Gutenberg (26) — domains and eras, not writers. So the strongest open detector in this sweep,
+built by someone with real measurement discipline, still answers "how accurate is this detector"
+and never "**who does it fail**". After the corrections in this document — after finding that two
+repositories already compute per-population false-positive rates — that is the sharpest the audit
+position has looked, because it is now stated against the best case rather than against an empty
+field.
+
+**The triage design is what surfaced it.** The tree reader's *category* for SlopTotal was wrong: it
+called it `rule-based-rewriter`, because it is 12,878 lines of Python with no vendor call. Its
+*routing* was right — unsure, queued — and the note it attached, "source names detectors
+(fast-detectgpt, detectgpt, binoculars…)", is precisely what made this repo pick itself out of 93.
+That is the design working as intended and as documented: a mention cannot carry a verdict, and it
+is the most useful thing to hand a reader.
+
 ### Two defects the run exposed in the tooling
 
 Both are fixed and pinned by tests, and both were only visible because the run was big enough.
