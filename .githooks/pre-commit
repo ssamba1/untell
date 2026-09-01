@@ -21,6 +21,24 @@ changed=$(git diff --cached --name-only --diff-filter=ACM)
 
 fail() { printf '\n\033[31mpre-commit: %s\033[0m\n' "$1" >&2; exit 1; }
 
+# Never commit a sabotaged module. `scripts/mutation_sweep.py` rewrites source files in place —
+# replacing every public function body with a raise — and restores them when it finishes. While it
+# runs, `git status` reports the module it is working on as modified, and a `git add -A` would
+# commit a file whose every function raises. The sweep refuses to START on a dirty tree; nothing
+# stopped a commit landing mid-sweep. This does.
+#
+# Deliberately keyed on the marker rather than a lockfile: it catches sabotage from any source,
+# including a crashed run that never restored its file, which is the case a lockfile would miss.
+# Scoped to the directories the sweep actually rewrites. The first version grepped the whole staged
+# diff and refused the commit that ADDED it — this hook and its tests contain the marker as a
+# literal, which is not sabotage. A guard that cannot tell a broken module from a file discussing
+# broken modules is a guard that gets bypassed.
+for f in $(printf '%s\n' "$changed" | grep -E '^(untell|eval)/.*\.py$' || true); do
+    if git show ":$f" 2>/dev/null | grep -q 'raise AssertionError("sabotaged")'; then
+        fail "$f is staged with the mutation-sweep sabotage marker in it. A sweep is probably running, or one crashed without restoring. Restore it with \`git checkout $f\`."
+    fi
+done
+
 if printf '%s\n' "$changed" | grep -qE '\.py$'; then
     command -v ruff >/dev/null 2>&1 || { echo "pre-commit: ruff not installed, skipping lint" >&2; }
     if command -v ruff >/dev/null 2>&1; then

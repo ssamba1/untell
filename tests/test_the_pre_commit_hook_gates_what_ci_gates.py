@@ -67,3 +67,54 @@ def test_installation_is_documented_where_a_contributor_will_look():
     assert "core.hooksPath" in contributing, (
         "CONTRIBUTING.md must say how to install the hook — it does nothing until configured"
     )
+
+
+# --- the sabotage guard ---------------------------------------------------------------------------
+
+
+def test_the_hook_refuses_a_staged_sabotaged_file():
+    """`scripts/mutation_sweep.py` rewrites source files in place and restores them when it
+    finishes. While it runs, `git status` reports the module under test as modified — and a
+    `git add -A` would commit a file whose every public function raises.
+
+    This happened twice during round forty-six: the stop-hook reported uncommitted changes, and both
+    times the "change" was a module the sweep was holding. Neither was committed, but only because
+    each was checked by hand first. The sweep refuses to START on a dirty tree; nothing stopped a
+    commit landing mid-sweep.
+    """
+    body = HOOK.read_text(encoding="utf-8")
+    assert 'raise AssertionError("sabotaged")' in body, (
+        "the hook must refuse a staged file carrying the sabotage marker"
+    )
+    assert 'git show ":$f"' in body, "it has to inspect what is STAGED, not the working tree"
+
+
+def test_the_guard_is_scoped_to_the_directories_the_sweep_rewrites():
+    """The first version grepped the whole staged diff and refused the commit that ADDED it: this
+    hook and this test file both contain the marker as a literal, which is not sabotage. A guard
+    that cannot tell a broken module from a file discussing broken modules is a guard that gets
+    bypassed with --no-verify — which here would commit the sabotaged file it exists to stop."""
+    body = HOOK.read_text(encoding="utf-8")
+    assert "^(untell|eval)/" in body, (
+        "the sabotage check must be scoped to the directories mutation_sweep rewrites, or it fires "
+        "on its own source"
+    )
+
+
+def test_the_guard_keys_on_the_marker_the_sweep_actually_writes():
+    """If the two drifted apart the guard would pass every sabotaged file. The marker is a literal
+    in both places, so this is the only thing holding them together."""
+    import inspect
+
+    import scripts.mutation_sweep as sweep
+
+    marker = 'raise AssertionError("sabotaged")'
+    assert marker in inspect.getsource(sweep.sabotage), "the sweep no longer writes this marker"
+    assert marker in HOOK.read_text(encoding="utf-8"), "the hook no longer looks for it"
+
+
+def test_the_guard_explains_how_to_recover():
+    """A refusal that does not say what to do gets bypassed with --no-verify, which in this case
+    would commit the sabotaged file."""
+    body = HOOK.read_text(encoding="utf-8")
+    assert "git checkout" in body, "the message must say how to restore the file"
