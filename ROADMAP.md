@@ -430,13 +430,14 @@ A systematic pass over **16 ACL Anthology volumes, 20,875 abstracts, 334 detecti
 and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
 below is refereed and was read from the Anthology's own metadata.
 
-**Start with what the field counts as its own priorities.** Re-run over **98 Anthology volumes,
-33,053 abstracts, 536 detection papers** (an earlier pass sampled 28 volumes and undercounted by
-3.5×): **139** address robustness and evasion, **33** watermarking, **13** calibration — and **13**
-address false positives, **8** fairness. **The field spends about a quarter of its detection effort
-making detectors harder to evade and under 2.5% on what happens when one is wrong about a person.**
-The ratio barely moved across a 3.5× expansion, which is what makes it a fact about the field rather
-than about our sample. Reproduce with `python -m eval.litreview --download`.
+**Start with what the field counts as its own priorities.** Not a sample — a **census of the entire
+ACL Anthology, 1,718 volumes, 82,352 abstracts, 763 detection papers**, 1952 to 2026: **164** address
+robustness and evasion, **33** watermarking, **19** calibration — and **20** address false positives,
+**13** fairness. **Across the whole published history of the field, twenty papers concern detector
+false positives and thirteen concern fairness.** The ratio survived three expansions (28 → 98 →
+1,718 volumes) essentially unchanged, which is what turns it from an artefact of sampling into a
+fact about the field. Reproduce the sample with `python -m eval.litreview --download`; the census is
+a partial clone of the Anthology, documented in the ledger.
 
 ✅ **Two results from `2025.genaidetect` — a COLING workshop devoted to this exact problem, which the
 first survey missed entirely — set the bounds on everything else here.**
@@ -541,6 +542,25 @@ disconfirm parts of it.
 > composite null. It is single-authored, arXiv-only, and unreachable from here. DivScore now supplies
 > a refereed version of the same idea, so this is kept as an elegant statement of the argument and
 > **nothing rests on it.**
+
+✗ **The census also retired three things this roadmap had claimed were unoccupied**, and the honest
+version is narrower on all three. **BAID** ([2026.customnlp4u-1.1](https://aclanthology.org/2026.customnlp4u-1.1/))
+already builds a bias-assessment benchmark for AI detectors across seven sociolinguistic categories —
+so "nobody ships the stratified audit" is false, and what remains ours is that **BAID is a fixed
+benchmark with its own corpora while untell points at yours**, which by this section's own argument
+is the part that transfers. A **bounded group-wise false-alarm-rate objective** already exists,
+derived with its optimal policy, in test-security research
+([2025.aimecon-sessions.13](https://aclanthology.org/2025.aimecon-sessions.13/)) — cite it rather
+than reinvent it. And calibrating on pre-LLM text was done properly on Wikipedia before we did it
+([2024.wikinlp-1.12](https://aclanthology.org/2024.wikinlp-1.12/): thresholds set to 1% FPR on
+pre-GPT-3.5 articles, then >5% of new English articles flagged), which is a better citation for the
+method than the one item 24 currently carries.
+
+⚠️ **And one sharpening that cuts against a claim here.** Detectors trained on one generator
+misclassify another generator's text as *human* — false negatives — **without producing more false
+positives on human writing** ([2025.aimecon-sessions.11](https://aclanthology.org/2025.aimecon-sessions.11/)).
+Generator mismatch costs recall, not precision, so "detection is generator-bound" must not be blurred
+into "an unseen generator makes a detector accuse more humans." It does not.
 
 **What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
 population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.

@@ -733,3 +733,78 @@ another population. **"Does this detector work?" has no answer; "does it work he
 **Method note.** `eval/litreview.py` now carries all 98 volumes, so the expanded survey re-runs with
 `python -m eval.litreview --download`. The lesson is the ordinary one: the gap was not in the
 literature or in the access policy, it was in assuming a sample was the population.
+
+---
+
+# Round seven — the census, and three claims it retires
+
+Round six sampled 98 volumes and called that thorough. It was still a sample. A partial clone of the
+Anthology (`git clone --filter=blob:none --sparse`, then `sparse-checkout set data/xml`) gives the
+**complete file list: 1,718 volumes, 181 MB**. Surveying all of it:
+
+**82,352 abstracts. 763 detection papers.** Not a sample of the ACL Anthology — the whole of it,
+1952 to 2026.
+
+| topic | papers | share |
+|---|---|---|
+| robustness / paraphrase | 164 | 21.5% |
+| human–AI mixed / edited | 73 | 9.6% |
+| education / integrity | 49 | 6.4% |
+| watermark | 33 | 4.3% |
+| **false positives / accusation** | **20** | **2.6%** |
+| calibration / thresholds | 19 | 2.5% |
+| **fairness / non-native bias** | **13** | **1.7%** |
+
+The ratio has now survived three expansions (28 → 98 → 1,718 volumes) and barely moved. **Across the
+entire published history of the field, twenty papers concern detector false positives and thirteen
+concern fairness.** That is a census, not an estimate.
+
+## ✗ Three "nobody does this" claims, retired
+
+Reading the newly visible papers cost this repo three differentiators it had been claiming. All three
+were stated in earlier rounds and all three were wrong.
+
+**1. "The stratified auditing protocol is specified in the literature and nobody ships it."**
+**BAID** ([2026.customnlp4u-1.1](https://aclanthology.org/2026.customnlp4u-1.1/)) is a bias-assessment
+benchmark for AI detectors with targeted datasets across **seven categories — demographics, age,
+educational grade level, dialect, formality, political leaning and topic** — evaluating four
+open-source detectors and offering itself explicitly as "a scalable, transparent approach for
+auditing AI detectors". That is the audit, built. What remains ours is narrower and should be stated
+narrowly: **BAID is a fixed benchmark with its own corpora; untell points at yours.** A benchmark
+tells an institution how detectors behave on BAID's texts, which by this repo's own central argument
+is not transferable to that institution's population.
+
+It also carries a finding that runs against our framing: the disparity it measures is **low recall
+for underrepresented groups** — under-detection — not only the over-flagging the ELL literature
+emphasises. Bias in these systems is not all in one direction.
+
+**2. "Bounded per-subgroup false-positive rates are an idea nobody has formalised."**
+[2025.aimecon-sessions.13](https://aclanthology.org/2025.aimecon-sessions.13/) proposes exactly that:
+a detection objective based on **bounded group-wise false alarm rates**, derives the optimal
+detection policy under it, and compares it to a standard likelihood-ratio test. It comes from test
+security and psychometrics rather than NLP, which is why our NLP-shaped searches never surfaced it.
+It is the formal statement of what §7's calibration item builds informally, and it should be cited
+rather than reinvented.
+
+**3. "Calibrating on pre-LLM text is a probe we should steal from a medical-journal study."**
+[2024.wikinlp-1.12](https://aclanthology.org/2024.wikinlp-1.12/) does it properly and earlier: it
+calibrates GPTZero and Binoculars **to a 1% false-positive rate on pre-GPT-3.5 Wikipedia articles**,
+then reports that **over 5% of newly created English Wikipedia articles** trip the resulting
+threshold, with lower rates in German, French and Italian. That is our `eval/pre_llm_fpr.py` method,
+independently, with the calibration step included — and it is a better citation for the technique
+than Bohler et al., because it calibrates rather than merely measuring.
+
+## ✅ One finding that sharpens a claim rather than retiring it
+
+[2025.aimecon-sessions.11](https://aclanthology.org/2025.aimecon-sessions.11/) trains eight detectors
+on standardized English-proficiency essays across GPT-3.5 and GPT-4 generations. Detectors trained on
+one generator **misclassify the other generator's essays as human — false negatives — but do not
+produce more false positives on human essays.**
+
+So generator mismatch costs *recall*, not precision. That is a real constraint on how far the
+"detection is generator-bound" argument reaches: an unseen generator makes a detector miss AI text,
+it does not by itself make it accuse more humans. Our §7 wording should not blur the two.
+
+**Method note.** The complete-corpus route is a partial clone rather than the volume list in
+`eval/litreview.py`, which remains the reproducible sample. Both are documented; the clone is the
+census.
