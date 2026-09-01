@@ -391,6 +391,28 @@ def print_humanize_result(
     table.add_row("P(AI) max", f"{before_max:.2f}", f"{after_max:.2f}", f"[{delta_style}]{delta_str}[/]")
     table.add_row("Verdict", _verdict(before_max), _verdict(after_max), "")
 
+    # The verdict above is the UNION rule: it fires when any single detector clears the cut. That is
+    # the rule with the highest false-accusation rate by construction, and the spread between it and
+    # requiring agreement is large enough to be the whole decision. MEASURED on 72 human abstracts
+    # scored by three detectors (Pratama, doi:10.7717/peerj-cs.2953, reproduced by
+    # eval/assisted_fairness.py::published_spread): union flags 32 of 72, a majority flags 3, and
+    # unanimity flags 0. Showing only the union verdict tells a reader the worst of three answers
+    # and calls it the answer.
+    spread = post_score.get("agreement")
+    if spread:
+        if spread.get("degenerate"):
+            # One detector cannot agree with anything. Saying "unanimous" here would be the most
+            # flattering available way to be wrong, so name the situation instead.
+            table.add_row("Agreement", "—", "1 detector only", "")
+        else:
+            rules = "/".join(k for k in ("any", "majority", "unanimous") if spread.get(k)) or "none"
+            table.add_row(
+                "Agreement",
+                "",
+                f"{spread['detectors_flagging']}/{spread['detectors_scoring']} flag ({rules})",
+                "",
+            )
+
     # AI tells, when the caller has them. On a saturating corpus this is the only row that moves:
     # MEASURED on 4 HC3 documents at full tier, P(AI) max gained +0.0000 on 4 of 4 while tells fell
     # 4->0, 1->0 and 1->0. Without this row the table read "P(AI) 1.00 -> 1.00, delta 0" on text
