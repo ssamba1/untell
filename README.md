@@ -21,10 +21,24 @@ Free. Open source. Its headline result is a negative one, and it says so.
 **What this is for: finding out how much a detector's verdict is worth.** Detectors are increasingly
 used to make consequential accusations, and this repository exists to measure how well that holds up.
 Measured here, at each tool's own shipped threshold: the full local ensemble flags **17% of genuine
-human writing** (5 of 30 real HC3 answers); the lite tier flagged **30%** on conversational prose;
-one bundled detector flags **6 of 8** human documents and another flags **89%** of them — that second
-one was demoted out of its tier for it. Before a calibration fix, the ensemble flagged **95% of human
-documents**.
+human writing** (5 of 30 real HC3 answers — 95% CI **7.3%–33.6%**); the lite tier flagged **30%** on
+conversational prose; one bundled detector flags **6 of 8** human documents (CI **40.9%–92.9%**) and
+another flags **89%** of them — that second one was demoted out of its tier for it. Before a
+calibration fix, the ensemble flagged **95% of human documents**.
+
+**The strongest of these numbers is the newest, because its ground truth cannot be argued with.**
+Scored against ACL abstracts published through 2021 — before ChatGPT, so every flag is a false
+positive by construction — the lite tier flags **15.8%** of them (19 of 120, CI **10.4%–23.4%**), and
+**26.7%** of the same text truncated to 50 words or fewer. Reproduce with
+`python -m eval.pre_llm_fpr --download`.
+
+**And there is now an answer, not just a complaint.** `untell/calibrate.py` derives a threshold with
+a *bounded* false-positive rate from a human-only corpus. On that same corpus the shipped 0.45 flags
+17.3% (n = 150); **0.5215 bounds it at 4.7%**. Seven hundredths of a threshold is the difference.
+
+⚠️ **Every rate above is a proportion with a sample size, and the intervals are wide.** That is the
+point rather than a caveat: this repo's own measurements move by more than 15 points between n = 20
+and n = 60, so a bare detector percentage — ours, or a vendor's — is not a fact about a detector.
 
 The rewriting loop is the *probe*, not the product: it is how you test whether a verdict survives
 meaning-preserving editing. The answer it produced is a negative one — the loop moves the detectors it
