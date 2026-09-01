@@ -22,7 +22,8 @@ untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_statu
 
 Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`,
 `burstiness-formulation-robustness`, `true-ngram-perplexity-contrast`,
-`gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`, `published-vs-student-fpr`.
+`gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`, `published-vs-student-fpr`,
+`published-vs-student-threshold-sweep`.
 
 ## The corpora
 
@@ -268,6 +269,18 @@ The practical reading: **a detector validated on "human writing" — which in pr
 published, edited, professional text — will look excellent and then fail catastrophically on
 students, who are the population it is actually deployed against.** That is a plausible mechanism
 for vendors publishing sub-1% false-positive rates that nobody can reproduce in a classroom.
+
+**The gap holds at every operating point, and is worst at the shipped one.**
+
+| threshold | Brown | Gutenberg | ELLIPSE students |
+|---|---|---|---|
+| **0.30 (shipped)** | 25.0% | 47.2% | **97.4%** |
+| 0.50 | 3.2% | 1.4% | 38.7% |
+| 0.70 | 0.0% | 0.0% | 3.2% |
+
+So it is not an artifact of threshold choice. (Gutenberg scoring worse than Brown at 0.30 is left
+unexplained rather than rationalised: 19th-century literary prose is its own genre, and the
+ordering *among* professional corpora is not stable — only their distance from student writing is.)
 
 **Confounds, and they are substantial.** Brown, Gutenberg and Reuters are professionally edited,
 drawn from different genres and registers, and chunked into 350-word slices of longer works; the
