@@ -97,31 +97,48 @@ So the question is being asked in the literature. What is still missing is diffe
    writes*. ELLIPSE is 3,904 essays actually written by actual English language learners, carrying
    their real demographic and proficiency metadata. Both are legitimate; they answer different
    questions, and only one of them is evidence about real students.
-2. **No runnable artifact — but the statistic is not novel, and this claim needed narrowing.**
-   No code repository for BAID was findable. The rest of this point used to say that of the 435
-   census repos plus 131 in the re-run, *zero* ship a tool that measures a detector's
-   false-positive rate by writer subgroup. **That is false as written**, and it was only
-   checkable once the census tooling gained source access: `suraj-ranganath/StealthRL` — the
-   repository this repo's own ROADMAP quotes for its evasion numbers, cited from the paper and
-   never located until 2026-09-01 — ships
-   [`stealthrl/rewards/fairness_reward.py`](https://github.com/suraj-ranganath/StealthRL), which
-   computes the **ESL-versus-native false-positive-rate gap** at a detection threshold on
-   human-written validation text. It is wired in, not vestigial: the composite reward carries it
-   as `−w₄·F′` with `fairness_weight: 0.2` across several shipped configs, commented "Minimize
-   ESL bias".
+2. **The instrument existed, and this document said it did not.** No code repository for BAID
+   was findable — that part holds. The rest of this point used to say that of the 435 census
+   repos plus 131 in the re-run, *zero* ship a tool that measures a detector's false-positive
+   rate by writer subgroup. **That was false, and it was false about two repositories in the
+   sweep it cites.** Both were invisible for the same reason: the census read READMEs, and
+   neither repository advertises this in its README. Reading source found them.
 
-   What survives, and it is the part that matters: it is a **reward term, not an instrument**.
-   The gap shapes an evader's training objective; it is not reported to anyone. There is no
-   reporting surface, no confidence interval, no minimum group size, no saturation check, no
-   axis beyond ESL/native, and its threshold is a hardcoded `0.5` rather than a detector's own
-   shipped operating point. A university cannot point it at the detector it is about to license,
-   which is the actual claim — but "nobody has computed this number" was never the claim to make,
-   and it should not have been made.
+   **[`satyamshivam13/AI_Text_Detector`](https://github.com/satyamshivam13/AI_Text_Detector)**
+   ships `scripts/fpr_by_population.py`, dated July 2026 and therefore predating this document.
+   It runs an analyzer over a human-only corpus so that any flag is a false positive by
+   construction; reports the rate **per population with Wilson 95% intervals**; builds its corpus
+   from **Liang et al. (2023)** directly — the same TOEFL non-native, US 8th-grade, college
+   admission and CS224N essays, plus five HC3 domains; holds GPT-4-polished TOEFL essays out as
+   machine-edited and *not* a plain false positive; applies an **n ≥ 30 floor** before comparing;
+   and prints worst-served population, best-served population and a disparity ratio, with the
+   divide-by-zero case handled. That is this instrument's design, arrived at independently, and
+   in one respect a better one: it uses Liang's canonical corpus, which this repository does not.
 
-   The direction of use is worth noticing. StealthRL measures the ESL false-positive gap in order
-   to *minimise it while evading*; this repository measures it in order to *report it*. Same
-   statistic, opposite purpose — which strengthens the audit position rather than weakening it,
-   but only if it is said out loud.
+   **`suraj-ranganath/StealthRL`** — the repository this repo's ROADMAP quotes for its evasion
+   numbers, cited from the paper and never located until 2026-09-01 — ships
+   `stealthrl/rewards/fairness_reward.py`, computing the **ESL-versus-native false-positive-rate
+   gap** at a threshold on human-written text, wired into the composite reward as `−w₄·F′` with
+   `fairness_weight: 0.2`, commented "Minimize ESL bias". Not an instrument: it shapes an
+   evader's training objective and is reported to nobody. But it computes the number.
+
+   **What is actually left of the differentiation**, stated without the inflation:
+
+   - *Subgroups within a corpus, not corpora as subgroups.* `AI_Text_Detector` splits by
+     population-of-origin — TOEFL vs 8th grade vs CS224N. This instrument splits by demographic
+     attributes recorded *inside* one corpus: ELLIPSE's race/ethnicity, gender, SES and grade,
+     ASAP's `ell_status`. Both are legitimate and they answer different questions; only the
+     second supports a claim about groups of writers holding genre constant, which is what made
+     [the essay-form finding](detector-fairness-measured.md) legible as a confound rather than a
+     result.
+   - *Four things it does that neither does.* Component ablation at equal power, a threshold
+     sweep, saturation detection, and per-subgroup false-NEGATIVE rates for equalised odds.
+   - *And one claim this document should stop making.* "A tool a university could point at the
+     detector it is about to license" is not shipped **here either**. `audit()` calls
+     `untell.scripts.score` and audits untell's own tiers, exactly as `fpr_by_population.py`
+     audits its own four analyzers. Neither has a seam for a commercial detector. That is a
+     roadmap item, not a differentiator, and it was being quoted as one.
+
 3. **Nobody reports at the detector's own shipped threshold.** Papers report AUROC or curves. The
    number that decides whether a student is accused is the rate at the operating point the vendor
    ships, and that is what this instrument reports.
@@ -132,8 +149,13 @@ So the question is being asked in the literature. What is still missing is diffe
    [`kinit-sk/mAO`](https://github.com/kinit-sk/mAO) and Toloka/beemo rank detector accuracy or
    obfuscation strength. Ranking AUROC is not "who does this detector fail, and by how much".
 
-The revised claim, and the one this document rests on: **the research exists and the instrument
-does not** — and the instrument sees something the research cannot.
+This document used to rest on "the research exists and the instrument does not". Point 2 retired
+that sentence: the instrument exists, someone built a good one first, and the census missed it
+because the census read READMEs. **What is left is narrower and still worth having: this
+instrument opens the detector up.** Every tool named above — BAID, `fpr_by_population.py`,
+Aequitas, RAID — treats the scorer as a black box and reports a rate per group. The next section
+is what stops being invisible when you take the scorer apart instead, and it is the one claim in
+this document that no other artifact in the sweep can make.
 
 ### The thing a black-box benchmark structurally cannot report
 

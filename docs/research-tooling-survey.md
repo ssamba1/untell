@@ -479,6 +479,58 @@ as an upper bound, and re-scored against a fresh overlap when one exists. Third,
 *not* cheaper than `classify`: it is a clone and a full-tree read per repo, roughly 1 MB and a
 second each. It is cheaper than a reader, which is the comparison that matters.
 
+### The full sweep, and the claim it falsified
+
+All 131 harvested repos were cloned and read on 2026-09-01
+(`.claude/probes/census-2026-09-01-multiangle.inspected.json`, ~11 minutes, none unreachable).
+The tree decided **38 of 131 — 29%**, against the metadata classifier's 14, and revised 55
+categories.
+
+The sweep also carries a `subgroup_fairness` probe. It decides nothing — a test fails if any
+branch starts ruling on it — and it exists to check the claim `ROADMAP.md` and
+`strategy-the-audit-position.md` both rest on: that no repo in the census or the re-run measures
+a detector's false-positive rate by writer subgroup. That claim had only ever been checked
+against READMEs, which is the weakest possible evidence for a negative.
+
+**It is false, and it is false about repos inside this very sweep.**
+
+- **`satyamshivam13/AI_Text_Detector`** ships `scripts/fpr_by_population.py`, dated **July
+  2026**. Human-only corpus so every flag is a false positive by construction; per-population
+  rates with **Wilson 95% intervals**; the corpus built from **Liang et al. (2023)** directly —
+  the same TOEFL non-native, US 8th-grade, college-admission and CS224N essays this field's
+  bias literature is founded on, plus five HC3 domains; GPT-4-polished TOEFL essays held out as
+  machine-edited rather than counted as plain false positives; an **n ≥ 30 floor**; worst-served
+  and best-served population and a disparity ratio. It is this repository's instrument, designed
+  independently and first, and in one respect better — it uses Liang's canonical corpus, which
+  untell does not.
+- **`suraj-ranganath/StealthRL`** computes the ESL-versus-native false-positive gap as a live
+  training reward (`−w₄·F′`, `fairness_weight: 0.2`, "Minimize ESL bias"). Not an instrument, but
+  it computes the number.
+
+Both corrections are written into `ROADMAP.md` and the strategy doc, along with the part that
+does survive and the part that turned out not to differentiate anything at all.
+
+**Why a 435-repo census and a 131-repo re-run both missed it, twice over.** Neither repo says any
+of this in its README, so a survey that reads READMEs cannot see it. But the sharper reason is
+visible in the probe's own results: of 131 repos read at source, the number using *any*
+algorithmic-fairness vocabulary is **zero**.
+
+| term | repos |
+|---|---|
+| `subgroup`, `demographic parity`, `equalised/equalized odds` | 0 |
+| `disparate impact`, `protected attribute`, `bias audit` | 0 |
+| Aequitas, AIF360, Fairlearn | 0 |
+| `fpr` / `false positive rate` / `wilson` | 20 |
+
+The two repositories doing subgroup fairness work call their groups **populations** and **ESL
+versus native**. They are not in conversation with the fairness literature and do not use its
+words, which is why a vocabulary probe built from that literature nearly missed them too — what
+actually found them was `wilson` and `fpr`. The field and the fairness field share no vocabulary,
+and a survey searching either one's terms will keep concluding the other does not exist.
+
+Most of the other 18 hits are ordinary ROC bookkeeping — `fpr`/`tpr` in a benchmark loop. Two
+are worth a reader: `stef41/lmscan` and `Jroo1053/MGTMark`.
+
 ### Two defects the run exposed in the tooling
 
 Both are fixed and pinned by tests, and both were only visible because the run was big enough.

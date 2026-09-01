@@ -1,0 +1,4493 @@
+[
+  {
+    "name": "lynote-ai/humanize-text",
+    "stars": 1580,
+    "language": "Python",
+    "pushed_at": "2026-08-31T16:23:00Z",
+    "created_at": "2026-05-18T10:12:15Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "20 product files, 1152 lines, no vendor call in them; source names detectors (binoculars, roberta-base-openai-detector, perplexity) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 72,
+      "code_files": 27,
+      "product_code_files": 20,
+      "product_loc": 1152,
+      "own_loc": 1152,
+      "md_files": 24,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "binoculars",
+          "roberta-base-openai-detector",
+          "perplexity"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "fromleda/text-humanizer",
+    "stars": 734,
+    "language": "Python",
+    "pushed_at": "2026-09-01T04:45:45Z",
+    "created_at": "2026-08-10T13:14:23Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "25 product files, 3475 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 34,
+      "code_files": 27,
+      "product_code_files": 25,
+      "product_loc": 3475,
+      "own_loc": 3475,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Gluesunurture/undetectable-browser-zen",
+    "stars": 424,
+    "language": null,
+    "pushed_at": "2026-08-31T12:03:16Z",
+    "created_at": "2026-08-06T01:45:38Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 1,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "DadaNanjesha/AI-Text-Humanizer-App",
+    "stars": 421,
+    "language": "Python",
+    "pushed_at": "2026-09-01T01:07:24Z",
+    "created_at": "2025-02-07T22:50:07Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "4 product files, 376 lines, no vendor call in them; and meaning checks (sentence-transformers, sentence_transformers)",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 12,
+      "code_files": 4,
+      "product_code_files": 4,
+      "product_loc": 376,
+      "own_loc": 376,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [
+          "sentence-transformers",
+          "sentence_transformers"
+        ],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "harshaneel/humanize",
+    "stars": 405,
+    "language": "HTML",
+    "pushed_at": "2026-08-31T23:19:03Z",
+    "created_at": "2026-05-26T02:58:44Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "5 Markdown files and 89 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 15,
+      "code_files": 3,
+      "product_code_files": 1,
+      "product_loc": 89,
+      "own_loc": 89,
+      "md_files": 5,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "devswha/patina",
+    "stars": 331,
+    "language": "JavaScript",
+    "pushed_at": "2026-08-31T22:17:02Z",
+    "created_at": "2026-02-24T06:59:15Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "161 product files, 42550 lines, no vendor call in them; source names detectors (burstiness, perplexity) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 1156,
+      "code_files": 329,
+      "product_code_files": 161,
+      "product_loc": 42550,
+      "own_loc": 42550,
+      "md_files": 686,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness",
+          "perplexity"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "fpr",
+          "tpr",
+          "false positive rate",
+          "wilson"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "lynote-ai/humanize-text-skill",
+    "stars": 234,
+    "language": "JavaScript",
+    "pushed_at": "2026-08-29T16:41:54Z",
+    "created_at": "2026-07-04T00:48:19Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names burstiness, gptzero, perplexity; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 79,
+      "code_files": 24,
+      "product_code_files": 18,
+      "product_loc": 2667,
+      "own_loc": 2667,
+      "md_files": 33,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness",
+          "gptzero",
+          "perplexity"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zerowidth",
+          "zero-width",
+          "homoglyph"
+        ]
+      }
+    }
+  },
+  {
+    "name": "Aboudjem/humanizer-skill",
+    "stars": 207,
+    "language": "JavaScript",
+    "pushed_at": "2026-08-31T21:56:15Z",
+    "created_at": "2026-03-06T01:48:03Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "10 product files, 896 lines, no vendor call in them; source names detectors (burstiness) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 80,
+      "code_files": 12,
+      "product_code_files": 10,
+      "product_loc": 896,
+      "own_loc": 896,
+      "md_files": 29,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "seyedehsanhadi/sloptrim",
+    "stars": 205,
+    "language": "Python",
+    "pushed_at": "2026-08-30T20:20:40Z",
+    "created_at": "2026-08-13T08:09:10Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names perplexity; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 57,
+      "code_files": 28,
+      "product_code_files": 11,
+      "product_loc": 4581,
+      "own_loc": 4581,
+      "md_files": 10,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "0xfeff",
+          "0x200b",
+          "0x200c",
+          "0x200d",
+          "0xfe0f",
+          "zero-width",
+          "variation selector",
+          "homoglyph"
+        ]
+      }
+    }
+  },
+  {
+    "name": "smixs/humanizer-ru",
+    "stars": 143,
+    "language": "Python",
+    "pushed_at": "2026-08-30T04:35:55Z",
+    "created_at": "2026-01-27T11:05:51Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names perplexity, burstiness; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 9,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 390,
+      "own_loc": 390,
+      "md_files": 5,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zero_width",
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "marmbiz/humanizer-de",
+    "stars": 131,
+    "language": "Python",
+    "pushed_at": "2026-08-31T14:33:47Z",
+    "created_at": "2026-01-21T07:23:03Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names burstiness; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 170,
+      "code_files": 51,
+      "product_code_files": 19,
+      "product_loc": 6938,
+      "own_loc": 6938,
+      "md_files": 35,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\ufeff",
+          "\\u200d",
+          "\\ufe0e",
+          "\\ufe0f",
+          "0x200b",
+          "0x200d",
+          "0xfeff",
+          "0x2060",
+          "0xfe0f"
+        ]
+      }
+    }
+  },
+  {
+    "name": "rudra496/StealthHumanizer",
+    "stars": 109,
+    "language": "TypeScript",
+    "pushed_at": "2026-08-31T22:17:13Z",
+    "created_at": "2026-03-31T08:32:56Z",
+    "category": "api-wrapper",
+    "confidence": "confident",
+    "rule": "source calls a commercial humanizer: undetectable.ai, quillbot",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 252,
+      "code_files": 135,
+      "product_code_files": 122,
+      "product_loc": 20217,
+      "own_loc": 20217,
+      "md_files": 16,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "gptzero",
+          "perplexity",
+          "burstiness",
+          "originality.ai",
+          "zerogpt"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "fpr",
+          "tpr"
+        ],
+        "vendor_api": [
+          "undetectable.ai",
+          "quillbot"
+        ],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u00ad",
+          "\\ufeff"
+        ]
+      }
+    }
+  },
+  {
+    "name": "bushrabeg/turkce-humanizer",
+    "stars": 80,
+    "language": null,
+    "pushed_at": "2026-08-26T18:49:10Z",
+    "created_at": "2026-08-08T11:33:42Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "7 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 9,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 7,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "asavvin-pixel/unslop",
+    "stars": 59,
+    "language": null,
+    "pushed_at": "2026-08-28T12:08:34Z",
+    "created_at": "2026-07-14T15:04:26Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "6 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 8,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 6,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "ZAYUVALYA/AI-Text-Humanizer",
+    "stars": 52,
+    "language": "HTML",
+    "pushed_at": "2026-08-15T16:29:38Z",
+    "created_at": "2024-12-26T09:19:05Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "1 product files, 127 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 10,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 127,
+      "own_loc": 127,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "numen-tech/slopornot",
+    "stars": 42,
+    "language": "JavaScript",
+    "pushed_at": "2026-08-29T19:48:30Z",
+    "created_at": "2026-05-06T22:58:18Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "12 product files, 1111 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 151,
+      "code_files": 12,
+      "product_code_files": 12,
+      "product_loc": 1111,
+      "own_loc": 1111,
+      "md_files": 118,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "gabelul/slopbuster",
+    "stars": 38,
+    "language": null,
+    "pushed_at": "2026-08-31T22:17:11Z",
+    "created_at": "2026-03-24T00:38:39Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "26 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 30,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 26,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "thevseprod/humanizer-ru",
+    "stars": 37,
+    "language": "Python",
+    "pushed_at": "2026-08-28T04:33:09Z",
+    "created_at": "2026-06-10T09:27:45Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "4 Markdown files and 82 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 10,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 82,
+      "own_loc": 82,
+      "md_files": 4,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "manavmishra/ZeroSlop",
+    "stars": 24,
+    "language": "Python",
+    "pushed_at": "2026-08-31T23:24:16Z",
+    "created_at": "2026-08-03T18:55:48Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names perplexity, burstiness; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 428,
+      "code_files": 69,
+      "product_code_files": 66,
+      "product_loc": 18942,
+      "own_loc": 13467,
+      "md_files": 73,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "wilson"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u200b",
+          "\\u200d",
+          "\\ufeff",
+          "\\u2060",
+          "zero_width",
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "peopleworks/SignsofAI",
+    "stars": 20,
+    "language": "C#",
+    "pushed_at": "2026-09-01T02:29:39Z",
+    "created_at": "2026-07-06T03:02:31Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names burstiness, perplexity; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 441,
+      "code_files": 162,
+      "product_code_files": 116,
+      "product_loc": 16544,
+      "own_loc": 16544,
+      "md_files": 46,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness",
+          "perplexity"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "wilson"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zero-width",
+          "variation selector",
+          "0x200c",
+          "0x200d",
+          "0x200b",
+          "0xfeff",
+          "0x2060",
+          "0xfe0f",
+          "zero width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "Hakku/finnish-humanizer",
+    "stars": 19,
+    "language": "Python",
+    "pushed_at": "2026-06-20T12:49:27Z",
+    "created_at": "2026-02-15T10:02:39Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "15 Markdown files and 0 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 22,
+      "code_files": 2,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 15,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "itsjwill/humanizer-x",
+    "stars": 13,
+    "language": null,
+    "pushed_at": "2026-08-19T05:30:31Z",
+    "created_at": "2026-03-11T23:44:21Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "2 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 3,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 2,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Sappymukherjee214/AI-Humanizer",
+    "stars": 2,
+    "language": "TypeScript",
+    "pushed_at": "2026-08-31T03:37:50Z",
+    "created_at": "2026-03-18T22:11:07Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "33 product files, 3323 lines, no vendor call in them; source names detectors (gptzero, originality.ai, roberta-base-openai-detector) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 60,
+      "code_files": 33,
+      "product_code_files": 33,
+      "product_loc": 3323,
+      "own_loc": 3323,
+      "md_files": 7,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "gptzero",
+          "originality.ai",
+          "roberta-base-openai-detector"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "epoko77-ai/im-not-ai",
+    "stars": 5143,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-24T12:48:40Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but it is packaged as a skill; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 118,
+      "code_files": 50,
+      "product_code_files": 23,
+      "product_loc": 6439,
+      "own_loc": 5198,
+      "md_files": 37,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "0x200b",
+          "0x200c",
+          "0x200d",
+          "0xfeff",
+          "0x2060"
+        ]
+      }
+    }
+  },
+  {
+    "name": "Nanako0129/sepia",
+    "stars": 1269,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-08-28T05:56:49Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "26 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 33,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 26,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Raymondhou0917/speak-human-tw",
+    "stars": 919,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-07-08T09:23:53Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "1 product files, 247 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 29,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 247,
+      "own_loc": 247,
+      "md_files": 19,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "LearnPrompt/humanize-ppt",
+    "stars": 916,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-05-14T05:37:41Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "11 product files, 5417 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 288,
+      "code_files": 34,
+      "product_code_files": 11,
+      "product_loc": 5417,
+      "own_loc": 5417,
+      "md_files": 86,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "wapmorgan/Morphos",
+    "stars": 828,
+    "language": "PHP",
+    "pushed_at": null,
+    "created_at": "2014-11-12T00:23:55Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "37 product files, 6450 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 76,
+      "code_files": 58,
+      "product_code_files": 37,
+      "product_loc": 6450,
+      "own_loc": 6450,
+      "md_files": 5,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "LifelongLazyLearner/qu-ai-wei",
+    "stars": 510,
+    "language": "Shell",
+    "pushed_at": null,
+    "created_at": "2026-04-21T08:55:49Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "29 Markdown files and 0 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 45,
+      "code_files": 4,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 29,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "ilyautov/humanizer-ru",
+    "stars": 266,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-03T08:33:05Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "30 product files, 4324 lines, no vendor call in them; source names detectors (burstiness, perplexity, originality.ai, gptzero) -- check whether they are CALLED; and meaning checks (cosine_similarity)",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 113,
+      "code_files": 36,
+      "product_code_files": 30,
+      "product_loc": 5433,
+      "own_loc": 4324,
+      "md_files": 24,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness",
+          "perplexity",
+          "originality.ai",
+          "gptzero"
+        ],
+        "meaning_verification": [
+          "cosine_similarity"
+        ],
+        "subgroup_fairness": [
+          "false positive rate"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "NulightJens/humanizer-stack",
+    "stars": 249,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-07-23T15:47:07Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "3 product files, 240 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 13,
+      "code_files": 3,
+      "product_code_files": 3,
+      "product_loc": 469,
+      "own_loc": 240,
+      "md_files": 8,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "DaleSeo/korean-skills",
+    "stars": 182,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-01-27T04:06:54Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "38 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 44,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 38,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "TheGP/Imposter",
+    "stars": 136,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2024-02-15T14:39:13Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "2 product files, 2909 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 8,
+      "code_files": 2,
+      "product_code_files": 2,
+      "product_loc": 2909,
+      "own_loc": 2909,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Imalwayshere/Open-Detector",
+    "stars": 238,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-11-01T14:47:33Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "3 Markdown files and 58 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 9,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 58,
+      "own_loc": 58,
+      "md_files": 3,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "talkstream/ru-text",
+    "stars": 222,
+    "language": "Shell",
+    "pushed_at": null,
+    "created_at": "2026-03-28T16:00:17Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "17 product files, 5496 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 159,
+      "code_files": 17,
+      "product_code_files": 17,
+      "product_loc": 5496,
+      "own_loc": 5496,
+      "md_files": 108,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "fnr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "tbhb/vale-ai-tells",
+    "stars": 82,
+    "language": "Shell",
+    "pushed_at": null,
+    "created_at": "2025-12-02T20:36:50Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "82 product files, 263 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 372,
+      "code_files": 82,
+      "product_code_files": 82,
+      "product_loc": 14646,
+      "own_loc": 263,
+      "md_files": 54,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "heyongxin233/DeTeCtive",
+    "stars": 62,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2024-10-17T14:59:11Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "19 product files, 1518 lines, no vendor call in them; and meaning checks (cosine_similarity)",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 24,
+      "code_files": 21,
+      "product_code_files": 19,
+      "product_loc": 1518,
+      "own_loc": 1518,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [
+          "cosine_similarity"
+        ],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "stef41/lmscan",
+    "stars": 27,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-10T18:55:46Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "17 product files, 4354 lines, no vendor call in them; source names detectors (burstiness, perplexity, gptzero, log_likelihood) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 59,
+      "code_files": 36,
+      "product_code_files": 17,
+      "product_loc": 4354,
+      "own_loc": 4354,
+      "md_files": 6,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness",
+          "perplexity",
+          "gptzero",
+          "log_likelihood"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "false positive rate",
+          "fpr",
+          "fnr",
+          "tpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\ufe0f"
+        ]
+      }
+    }
+  },
+  {
+    "name": "haveanicedaymydear/AI-Text-Cascade-Detect",
+    "stars": 20,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-03-17T06:31:51Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "12 product files, 5115 lines, no vendor call in them; source names detectors (perplexity) -- check whether they are CALLED; and meaning checks (cosine_similarity)",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 56,
+      "code_files": 13,
+      "product_code_files": 12,
+      "product_loc": 5115,
+      "own_loc": 5115,
+      "md_files": 7,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity"
+        ],
+        "meaning_verification": [
+          "cosine_similarity"
+        ],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "heyongxin233/DETree",
+    "stars": 19,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-09-19T06:11:05Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (peft, get_peft_model, loraconfig); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 61,
+      "code_files": 49,
+      "product_code_files": 44,
+      "product_loc": 5038,
+      "own_loc": 5038,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "detectgpt",
+          "log_likelihood",
+          "binoculars",
+          "perplexity"
+        ],
+        "meaning_verification": [
+          "cosine_similarity"
+        ],
+        "subgroup_fairness": [
+          "fpr",
+          "tpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [
+          "peft",
+          "get_peft_model",
+          "loraconfig",
+          "deepspeed"
+        ],
+        "hidden_characters": [
+          "homoglyph",
+          "\\u200b"
+        ]
+      }
+    }
+  },
+  {
+    "name": "199-biotechnologies/humanise-text-skill",
+    "stars": 12,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-02T19:53:38Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "3 product files, 2781 lines, no vendor call in them; source names detectors (gptzero) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 13,
+      "code_files": 3,
+      "product_code_files": 3,
+      "product_loc": 2781,
+      "own_loc": 2781,
+      "md_files": 9,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "gptzero"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "pablocaeg/sloptotal",
+    "stars": 11,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-03-21T22:43:56Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "79 product files, 12878 lines, no vendor call in them; source names detectors (fast-detectgpt, detectgpt, binoculars, fast_detectgpt) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 194,
+      "code_files": 98,
+      "product_code_files": 79,
+      "product_loc": 12878,
+      "own_loc": 12878,
+      "md_files": 24,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "fast-detectgpt",
+          "detectgpt",
+          "binoculars",
+          "fast_detectgpt",
+          "perplexity",
+          "burstiness",
+          "roberta-base-openai-detector"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "fpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "kevin-wijaya/AI-Generated-Text-Detection-with-Deep-Learning-Approach-on-Indonesian-Text",
+    "stars": 6,
+    "language": "Jupyter Notebook",
+    "pushed_at": null,
+    "created_at": "2023-08-15T00:36:53Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "3 product files, 163 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 14,
+      "code_files": 3,
+      "product_code_files": 3,
+      "product_loc": 163,
+      "own_loc": 163,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "tuwulalo/ai-slop-cleaner-en-ru",
+    "stars": 6,
+    "language": "JavaScript",
+    "pushed_at": null,
+    "created_at": "2026-06-13T14:15:49Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "2 product files, 198 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 22,
+      "code_files": 2,
+      "product_code_files": 2,
+      "product_loc": 198,
+      "own_loc": 198,
+      "md_files": 15,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "skymanbp/sci-paper",
+    "stars": 5,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-28T19:49:34Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "35 product files, 13162 lines, no vendor call in them; source names detectors (perplexity, burstiness) -- check whether they are CALLED; and meaning checks (sentence-transformers, sentence_transformers)",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 110,
+      "code_files": 57,
+      "product_code_files": 35,
+      "product_loc": 13162,
+      "own_loc": 13162,
+      "md_files": 40,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "burstiness"
+        ],
+        "meaning_verification": [
+          "sentence-transformers",
+          "sentence_transformers"
+        ],
+        "subgroup_fairness": [
+          "false_positive_rate",
+          "fpr",
+          "tpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "satyamshivam13/AI_Text_Detector",
+    "stars": 2,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-06-06T10:51:46Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "31 product files, 6137 lines, no vendor call in them; source names detectors (binoculars, perplexity, burstiness) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 148,
+      "code_files": 57,
+      "product_code_files": 31,
+      "product_loc": 6137,
+      "own_loc": 6137,
+      "md_files": 58,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "binoculars",
+          "perplexity",
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "false_positive_rate",
+          "fpr",
+          "tpr",
+          "wilson",
+          "fnr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "aloth/provenance-linkage",
+    "stars": 2,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-08-19T10:32:51Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "20 product files, 3641 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 128,
+      "code_files": 20,
+      "product_code_files": 20,
+      "product_loc": 3641,
+      "own_loc": 3641,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "ThisIsLittleSky/WaterPaper",
+    "stars": 112,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-06-21T10:52:41Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "8 product files, 3595 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 37,
+      "code_files": 8,
+      "product_code_files": 8,
+      "product_loc": 3595,
+      "own_loc": 3595,
+      "md_files": 22,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "samrand96/Undetectable-AI",
+    "stars": 46,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2024-04-11T02:30:59Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "1 product files, 272 lines, no vendor call in them; source names detectors (zerogpt) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 4,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 272,
+      "own_loc": 272,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "zerogpt"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "mario-montanari/italiano-scrittura-anti-ai",
+    "stars": 22,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-18T11:54:08Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "3 product files, 4938 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 40,
+      "code_files": 3,
+      "product_code_files": 3,
+      "product_loc": 4938,
+      "own_loc": 4938,
+      "md_files": 26,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "haidrrrry/humanize-ai-writing",
+    "stars": 10,
+    "language": "JavaScript",
+    "pushed_at": null,
+    "created_at": "2026-06-30T10:21:13Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "2 product files, 157 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 35,
+      "code_files": 2,
+      "product_code_files": 2,
+      "product_loc": 157,
+      "own_loc": 157,
+      "md_files": 22,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Byk3y/no-slop",
+    "stars": 10,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-04-08T01:01:31Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "9 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 10,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 9,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "thakares/nx9-chronoseal-rs",
+    "stars": 7,
+    "language": "Rust",
+    "pushed_at": null,
+    "created_at": "2026-05-07T16:29:28Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "50 product files, 7269 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 144,
+      "code_files": 51,
+      "product_code_files": 50,
+      "product_loc": 7269,
+      "own_loc": 7269,
+      "md_files": 21,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "qiuxinyuan321/novel-writer-master",
+    "stars": 7,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-10T14:14:16Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "44 product files, 4122 lines, no vendor call in them; source names detectors (burstiness) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 53,
+      "code_files": 44,
+      "product_code_files": 44,
+      "product_loc": 4122,
+      "own_loc": 4122,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "TaewoooPark/personal-humanizer-maker",
+    "stars": 4,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-07-01T15:55:13Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "11 Markdown files and 50 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 30,
+      "code_files": 10,
+      "product_code_files": 5,
+      "product_loc": 1278,
+      "own_loc": 50,
+      "md_files": 11,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "lyt0407/crypto-writer-skill",
+    "stars": 3,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-06-07T07:57:00Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "6 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 6,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 6,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "lakshitha-dev/ai-humanizer-skill",
+    "stars": 2,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-06-26T17:56:47Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "2 product files, 307 lines, no vendor call in them; source names detectors (detectgpt, binoculars, gptzero, perplexity) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 9,
+      "code_files": 2,
+      "product_code_files": 2,
+      "product_loc": 307,
+      "own_loc": 307,
+      "md_files": 4,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "detectgpt",
+          "binoculars",
+          "gptzero",
+          "perplexity",
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "dabhunt/krita-certified-human-made",
+    "stars": 1,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-12-29T21:23:50Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "71 product files, 17953 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 116,
+      "code_files": 76,
+      "product_code_files": 71,
+      "product_loc": 17953,
+      "own_loc": 17953,
+      "md_files": 23,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "seriousespali/zerogpt-bypass-2026",
+    "stars": 1,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-08-21T21:48:20Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "2 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 3,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "mrshibly/Humanizer",
+    "stars": 1,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-05-08T23:45:26Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "6 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 8,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 6,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "kinit-sk/mgt-detection-benchmark",
+    "stars": 12,
+    "language": "Jupyter Notebook",
+    "pushed_at": null,
+    "created_at": "2023-03-15T00:00:00Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (trainer(, peft); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 334,
+      "code_files": 4,
+      "product_code_files": 4,
+      "product_loc": 503,
+      "own_loc": 503,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [
+          "trainer(",
+          "peft"
+        ],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "kinit-sk/mAO",
+    "stars": 4,
+    "language": "Jupyter Notebook",
+    "pushed_at": null,
+    "created_at": "2024-06-11T00:00:00Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (trainer(); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 1191,
+      "code_files": 7,
+      "product_code_files": 7,
+      "product_loc": 931,
+      "own_loc": 931,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "roberta-base-openai-detector"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [
+          "trainer("
+        ],
+        "hidden_characters": [
+          "homoglyph"
+        ]
+      }
+    }
+  },
+  {
+    "name": "kinit-sk/multisocial",
+    "stars": 6,
+    "language": "Jupyter Notebook",
+    "pushed_at": null,
+    "created_at": "2024-06-11T00:00:00Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (trainer(, peft, get_peft_model); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 93,
+      "code_files": 4,
+      "product_code_files": 4,
+      "product_loc": 1464,
+      "own_loc": 1464,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [
+          "bertscore",
+          "cosine_similarity",
+          "meteor"
+        ],
+        "subgroup_fairness": [
+          "fpr",
+          "tpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [
+          "trainer(",
+          "peft",
+          "get_peft_model",
+          "loraconfig"
+        ],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "kinit-sk/CEAID",
+    "stars": 0,
+    "language": "Jupyter Notebook",
+    "pushed_at": null,
+    "created_at": "2026-04-08T00:00:00Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (peft, get_peft_model, loraconfig); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 5,
+      "code_files": 2,
+      "product_code_files": 2,
+      "product_loc": 456,
+      "own_loc": 456,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [
+          "peft",
+          "get_peft_model",
+          "loraconfig"
+        ],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Toloka/beemo",
+    "stars": 11,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2024-09-16T00:00:00Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 7,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Jroo1053/MGTMark",
+    "stars": 0,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2024-05-14T00:00:00Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "9 product files, 1191 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 20,
+      "code_files": 10,
+      "product_code_files": 9,
+      "product_loc": 1191,
+      "own_loc": 1191,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "fpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "homoglyph"
+        ]
+      }
+    }
+  },
+  {
+    "name": "wolfvswhale/wolfvswhale.github.io",
+    "stars": 0,
+    "language": "Ruby",
+    "pushed_at": null,
+    "created_at": "2026-08-05T00:00:00Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "5 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 9,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 5,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "MadsDoodle/Detecting-the-Machine-A-Comprehensive-Benchmark-of-AI-Generated-Text-Detectors-Across-Architectures",
+    "stars": 7,
+    "language": "Jupyter Notebook",
+    "pushed_at": null,
+    "created_at": "2026-02-08T00:00:00Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (trainer(); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 30,
+      "code_files": 15,
+      "product_code_files": 15,
+      "product_loc": 4303,
+      "own_loc": 4303,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "burstiness"
+        ],
+        "meaning_verification": [
+          "cosine_similarity"
+        ],
+        "subgroup_fairness": [
+          "false positive rate",
+          "fpr",
+          "fnr",
+          "tpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [
+          "trainer("
+        ],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Yigit-Sert/machine-generated-text-detection",
+    "stars": 1,
+    "language": "Jupyter Notebook",
+    "pushed_at": null,
+    "created_at": "2026-05-22T00:00:00Z",
+    "category": "dataset",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 4,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "suraj-ranganath/StealthRL",
+    "stars": 19,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-11-26T06:33:08Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (peft, get_peft_model, loraconfig); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 205,
+      "code_files": 166,
+      "product_code_files": 138,
+      "product_loc": 38108,
+      "own_loc": 38108,
+      "md_files": 10,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "fast_detectgpt",
+          "perplexity",
+          "binoculars",
+          "fast-detectgpt",
+          "detectgpt",
+          "roberta-base-openai-detector",
+          "log_likelihood",
+          "gptzero",
+          "originality.ai",
+          "sapling"
+        ],
+        "meaning_verification": [
+          "bertscore",
+          "bert_score",
+          "semantic_similarity",
+          "sentence_transformers",
+          "cosine_similarity"
+        ],
+        "subgroup_fairness": [
+          "false positive rate",
+          "fpr",
+          "tpr",
+          "false_positive_rate"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [
+          "peft",
+          "get_peft_model",
+          "loraconfig",
+          "trl"
+        ],
+        "hidden_characters": [
+          "homoglyph",
+          "\\u200b",
+          "\\u200c",
+          "\\u200d",
+          "\\ufeff",
+          "\\u2060",
+          "\\u00ad",
+          "zero width",
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "AryamanSi17/claude-watermark-remover",
+    "stars": 2,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-08-17T19:33:29Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: 0x200b, 0x200c, 0x200d, 0xfeff",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 69,
+      "code_files": 52,
+      "product_code_files": 24,
+      "product_loc": 2992,
+      "own_loc": 2992,
+      "md_files": 9,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "0x200b",
+          "0x200c",
+          "0x200d",
+          "0xfeff",
+          "0x2060",
+          "zero_width",
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "xuange520/unmark",
+    "stars": 1,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-08-17T02:09:56Z",
+    "category": "unicode-trickery",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names perplexity, burstiness, fast-detectgpt; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 27,
+      "code_files": 16,
+      "product_code_files": 10,
+      "product_loc": 1138,
+      "own_loc": 1138,
+      "md_files": 5,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "burstiness",
+          "fast-detectgpt",
+          "detectgpt",
+          "binoculars"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "zero-width",
+          "\\u200b",
+          "\\u200c",
+          "\\u200d",
+          "\\ufeff",
+          "\\u202a",
+          "\\u2060",
+          "\\u00ad"
+        ]
+      }
+    }
+  },
+  {
+    "name": "xeiroh/Cross-Lingual-Summarization-on-LLM-Watermarking",
+    "stars": 1,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-09-12T01:29:34Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "13 product files, 2714 lines, no vendor call in them; and meaning checks (bertscore, rouge)",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 268,
+      "code_files": 13,
+      "product_code_files": 13,
+      "product_loc": 2714,
+      "own_loc": 2714,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [
+          "bertscore",
+          "rouge"
+        ],
+        "subgroup_fairness": [
+          "fpr",
+          "fnr",
+          "tpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "hexonMD/tellmark",
+    "stars": 0,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-08-15T01:49:13Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 4,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Vladimir-Human/humanizer-ru",
+    "stars": 120,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-01-21T15:02:29Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names perplexity, burstiness; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 747,
+      "code_files": 77,
+      "product_code_files": 73,
+      "product_loc": 24015,
+      "own_loc": 24015,
+      "md_files": 148,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "wilson"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u200b",
+          "\\u200c",
+          "\\u200d",
+          "\\ufeff",
+          "\\u202a",
+          "\\u2060",
+          "\\u00ad",
+          "\\ufe0f",
+          "zero_width",
+          "zero-width",
+          "0x200b",
+          "0xfeff",
+          "0x2060",
+          "0xfe0f"
+        ]
+      }
+    }
+  },
+  {
+    "name": "adenaufal/anti-slop-writing",
+    "stars": 121,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-02-28T19:45:28Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "21 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 25,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 21,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "MohamedAbdallah-14/unslop",
+    "stars": 121,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-19T21:31:00Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "70 product files, 9479 lines, no vendor call in them; source names detectors (perplexity, burstiness, gptzero) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 483,
+      "code_files": 95,
+      "product_code_files": 70,
+      "product_loc": 22187,
+      "own_loc": 9479,
+      "md_files": 313,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "burstiness",
+          "gptzero"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "tpr",
+          "fpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "flamehaven01/AI-SLOP-Detector",
+    "stars": 83,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-01-08T15:19:48Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "130 product files, 29412 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 258,
+      "code_files": 182,
+      "product_code_files": 130,
+      "product_loc": 29412,
+      "own_loc": 29412,
+      "md_files": 34,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\ufe0f"
+        ]
+      }
+    }
+  },
+  {
+    "name": "multi-zhangyang/fuck-your-ai-detection-rate",
+    "stars": 62,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-27T15:52:01Z",
+    "category": "detector-with-evasion",
+    "confidence": "unsure",
+    "rule": "handles hidden code points, but its source also names burstiness, gptzero; carrier, cleaner or one feature among many needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 758,
+      "code_files": 702,
+      "product_code_files": 702,
+      "product_loc": 139808,
+      "own_loc": 139808,
+      "md_files": 22,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness",
+          "gptzero"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "wilson"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\ufeff",
+          "zero-width"
+        ]
+      }
+    }
+  },
+  {
+    "name": "stephenlzc/humanize-mba-text-skill",
+    "stars": 40,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-02-04T16:11:53Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "18 product files, 5971 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 52,
+      "code_files": 18,
+      "product_code_files": 18,
+      "product_loc": 5971,
+      "own_loc": 5971,
+      "md_files": 17,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Croups/is-it-ai",
+    "stars": 17,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-03-23T21:28:36Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "7 product files, 1794 lines, no vendor call in them; source names detectors (fast-detectgpt, detectgpt) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 16,
+      "code_files": 7,
+      "product_code_files": 7,
+      "product_loc": 1794,
+      "own_loc": 1794,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "fast-detectgpt",
+          "detectgpt"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "aixarizzo/kill-slop",
+    "stars": 17,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-07-31T16:36:32Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "8 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 9,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 8,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "ppegggyy/peggywritesforyou",
+    "stars": 3,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-03-24T05:45:24Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "8 product files, 1921 lines, no vendor call in them; source names detectors (perplexity, sapling, roberta-base-openai-detector, zerogpt) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 12,
+      "code_files": 8,
+      "product_code_files": 8,
+      "product_loc": 1921,
+      "own_loc": 1921,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "perplexity",
+          "sapling",
+          "roberta-base-openai-detector",
+          "zerogpt",
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "imsv1301/unmask-ai",
+    "stars": 3,
+    "language": "HTML",
+    "pushed_at": null,
+    "created_at": "2026-03-31T06:24:53Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "3 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 5,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 3,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "xszcs546/ai-text-humanizer",
+    "stars": 10,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2025-10-14T02:43:01Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 14,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "diaiq/claude-skill-humanizer",
+    "stars": 6,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-04-10T23:21:43Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "2 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 4,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 2,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "rudra496/awesome-ai-humanizers",
+    "stars": 4,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-06-24T20:02:10Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "4 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 9,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 4,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "rbehzadan/awesome-ai-content-detection",
+    "stars": 0,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2025-03-26T14:25:28Z",
+    "category": "detector-with-evasion",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 2,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "api-evangelist/turnitin",
+    "stars": 0,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-08-02T06:54:03Z",
+    "category": "detector-with-evasion",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 65,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Asadobhaya/Veritas-AI",
+    "stars": 0,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2026-08-15T06:47:42Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "5 product files, 183 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 22,
+      "code_files": 5,
+      "product_code_files": 5,
+      "product_loc": 183,
+      "own_loc": 183,
+      "md_files": 7,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "soufyec/thesisfy-mvp",
+    "stars": 1,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2026-02-18T10:55:37Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "26 product files, 3332 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 33,
+      "code_files": 26,
+      "product_code_files": 26,
+      "product_loc": 3332,
+      "own_loc": 3332,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "chi111i/BypassAIGC",
+    "stars": 2063,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-11-02T14:09:42Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "63 product files, 20310 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 89,
+      "code_files": 63,
+      "product_code_files": 63,
+      "product_loc": 20310,
+      "own_loc": 20310,
+      "md_files": 12,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\ufeff"
+        ]
+      }
+    }
+  },
+  {
+    "name": "P1kaj1uu/ChattyPlay-Agent",
+    "stars": 879,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2023-01-04T07:22:50Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "339 product files, 50994 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 538,
+      "code_files": 339,
+      "product_code_files": 339,
+      "product_loc": 50994,
+      "own_loc": 50994,
+      "md_files": 6,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\ufeff"
+        ]
+      }
+    }
+  },
+  {
+    "name": "Stars-OC/thesis-creator",
+    "stars": 206,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-03-06T11:15:18Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "58 product files, 16870 lines, no vendor call in them; source names detectors (burstiness, perplexity) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 165,
+      "code_files": 93,
+      "product_code_files": 58,
+      "product_loc": 16870,
+      "own_loc": 16870,
+      "md_files": 48,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness",
+          "perplexity"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "ZeroOneCN/Articlecheck",
+    "stars": 44,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-04-29T20:08:56Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "1 product files, 842 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 6,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 842,
+      "own_loc": 842,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "lbgyyds/AIGC-weight-reduction",
+    "stars": 39,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2025-07-16T00:54:00Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 12,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "qingshanliuci/cnki-aigc---skill",
+    "stars": 37,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-05-01T02:21:14Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "4 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 6,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 4,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "khusdasz-cmd/aigc-dedup-tool",
+    "stars": 11,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-05-14T19:20:33Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "7 Markdown files and 0 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 12,
+      "code_files": 2,
+      "product_code_files": 2,
+      "product_loc": 949,
+      "own_loc": 0,
+      "md_files": 7,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "yanbiai8/ai-humanizer-paper",
+    "stars": 9,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2025-11-09T02:43:16Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 1,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "gongstudent/Paper-Rewrite-Studio",
+    "stars": 5,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2026-04-13T12:25:08Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "62 product files, 9067 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 102,
+      "code_files": 65,
+      "product_code_files": 62,
+      "product_loc": 9067,
+      "own_loc": 9067,
+      "md_files": 13,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Xircth/thesis-workflow-skill",
+    "stars": 3,
+    "language": "C#",
+    "pushed_at": null,
+    "created_at": "2026-05-06T16:02:26Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "28 product files, 374 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 101,
+      "code_files": 44,
+      "product_code_files": 28,
+      "product_loc": 4090,
+      "own_loc": 374,
+      "md_files": 34,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "AndreAlmeidaDC/humanizador",
+    "stars": 8,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-14T19:55:06Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "7 Markdown files and 0 lines of its own product code (build and test code only)",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 10,
+      "code_files": 1,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 7,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "profdorly/humanizador",
+    "stars": 6,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-04-18T15:43:43Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "3 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 4,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 3,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "menpente/humanizador",
+    "stars": 0,
+    "language": "HTML",
+    "pushed_at": null,
+    "created_at": "2026-02-08T10:52:07Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 1,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 0,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "sebastiantixe-hub/humanizador-tesis",
+    "stars": 0,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-06-16T04:49:54Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "1 product files, 225 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 3,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 225,
+      "own_loc": 225,
+      "md_files": 0,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "BrunoQuiodetto/Humanizador-de-Chamados-AI",
+    "stars": 1,
+    "language": "HTML",
+    "pushed_at": null,
+    "created_at": "2025-09-11T12:42:37Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "7 product files, 471 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 18,
+      "code_files": 7,
+      "product_code_files": 7,
+      "product_loc": 471,
+      "own_loc": 471,
+      "md_files": 3,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "searchingsocialc/humanizador-texto-ia",
+    "stars": 0,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-04-11T23:19:05Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "1 product files, 502 lines, no vendor call in them; source names detectors (burstiness) -- check whether they are CALLED",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 3,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 502,
+      "own_loc": 502,
+      "md_files": 0,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "burstiness"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "bqbdev/humanizadordeIA",
+    "stars": 0,
+    "language": "JavaScript",
+    "pushed_at": null,
+    "created_at": "2026-07-25T15:07:23Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "14 product files, 766 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 30,
+      "code_files": 14,
+      "product_code_files": 14,
+      "product_loc": 766,
+      "own_loc": 766,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Everzon-Oajaca/humanizador-de-texto",
+    "stars": 0,
+    "language": "JavaScript",
+    "pushed_at": null,
+    "created_at": "2025-05-10T01:27:08Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "3 product files, 169 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 8,
+      "code_files": 3,
+      "product_code_files": 3,
+      "product_loc": 169,
+      "own_loc": 169,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "davicrsc512-maker/Humanizador-de-texto",
+    "stars": 0,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2025-09-10T16:10:33Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "1 product files, 249 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 1,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 249,
+      "own_loc": 249,
+      "md_files": 0,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "logistica1350-byte/humanizador-",
+    "stars": 0,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2026-07-30T15:21:48Z",
+    "category": "prompt-guide",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 0,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 0,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "scanaislop/aislop",
+    "stars": 589,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2026-03-06T13:05:19Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "323 product files, 42076 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 599,
+      "code_files": 527,
+      "product_code_files": 323,
+      "product_loc": 42076,
+      "own_loc": 42076,
+      "md_files": 23,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "berelevant-ai/slopless",
+    "stars": 323,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2026-05-16T20:44:14Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: 0x200b, 0x200c, 0x200d, 0xfeff",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 1383,
+      "code_files": 274,
+      "product_code_files": 274,
+      "product_loc": 32011,
+      "own_loc": 32011,
+      "md_files": 610,
+      "skill_manifest": true,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "0x200b",
+          "0x200c",
+          "0x200d",
+          "0xfeff",
+          "0x2060",
+          "zero width",
+          "\\u200c"
+        ]
+      }
+    }
+  },
+  {
+    "name": "elixir-vibe/ex_slop",
+    "stars": 151,
+    "language": "Elixir",
+    "pushed_at": null,
+    "created_at": "2026-03-07T15:02:41Z",
+    "category": "prompt-guide",
+    "confidence": "confident",
+    "rule": "3 Markdown files and 0 lines of its own product code",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 86,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 3,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Laith0003/ux-skill",
+    "stars": 65,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-05-24T11:48:19Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "76 product files, 19711 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 968,
+      "code_files": 102,
+      "product_code_files": 76,
+      "product_loc": 19711,
+      "own_loc": 19711,
+      "md_files": 355,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "TRocket-Labs/vectorlint",
+    "stars": 48,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2025-09-22T06:38:08Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "92 product files, 7448 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 265,
+      "code_files": 149,
+      "product_code_files": 92,
+      "product_loc": 7448,
+      "own_loc": 7448,
+      "md_files": 59,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "ItsssssJack/SlopMonster",
+    "stars": 44,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-08-29T18:05:19Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "2 product files, 399 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 21,
+      "code_files": 3,
+      "product_code_files": 2,
+      "product_loc": 399,
+      "own_loc": 399,
+      "md_files": 7,
+      "skill_manifest": true,
+      "root_skill_manifest": true,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "CodeDeficient/KarpeSlop",
+    "stars": 38,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2025-11-29T19:13:32Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "10 product files, 2232 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 46,
+      "code_files": 25,
+      "product_code_files": 10,
+      "product_loc": 2232,
+      "own_loc": 2232,
+      "md_files": 3,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "mmartoccia/grain",
+    "stars": 33,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-03-04T15:33:46Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "11 product files, 1991 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 28,
+      "code_files": 19,
+      "product_code_files": 11,
+      "product_loc": 1991,
+      "own_loc": 1991,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "yuvrajangadsingh/vibecheck",
+    "stars": 25,
+    "language": "TypeScript",
+    "pushed_at": null,
+    "created_at": "2026-02-26T21:01:46Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "30 product files, 4838 lines, no vendor call in them",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 70,
+      "code_files": 48,
+      "product_code_files": 30,
+      "product_loc": 4838,
+      "own_loc": 4838,
+      "md_files": 6,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "skew202/antislop",
+    "stars": 11,
+    "language": "HTML",
+    "pushed_at": null,
+    "created_at": "2025-12-31T09:24:18Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: \\u200b, \\u200c, \\u200d, \\u00ad",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 203,
+      "code_files": 66,
+      "product_code_files": 46,
+      "product_loc": 9441,
+      "own_loc": 9441,
+      "md_files": 20,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u200b",
+          "\\u200c",
+          "\\u200d",
+          "\\u00ad"
+        ]
+      }
+    }
+  },
+  {
+    "name": "abhi25072002/NLP-Project",
+    "stars": 0,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-07-17T17:13:09Z",
+    "category": "fine-tuned-model",
+    "confidence": "unsure",
+    "rule": "source trains a model (trainer(); whether it SHIPS one, or is research code, needs reading",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 44,
+      "code_files": 31,
+      "product_code_files": 31,
+      "product_loc": 2745,
+      "own_loc": 2745,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [
+          "binoculars",
+          "perplexity"
+        ],
+        "meaning_verification": [],
+        "subgroup_fairness": [
+          "fpr",
+          "tpr"
+        ],
+        "vendor_api": [],
+        "trains_a_model": [
+          "trainer("
+        ],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Djhayes72195/llm-paraphrasing-attacks",
+    "stars": 0,
+    "language": null,
+    "pushed_at": null,
+    "created_at": "2025-04-08T03:33:11Z",
+    "category": "detector-with-evasion",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 2,
+      "code_files": 0,
+      "product_code_files": 0,
+      "product_loc": 0,
+      "own_loc": 0,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "msannikov03/undetectable-mcp",
+    "stars": 0,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-05-11T04:14:07Z",
+    "category": "api-wrapper",
+    "confidence": "confident",
+    "rule": "source calls a commercial humanizer: undetectable.ai",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 5,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 423,
+      "own_loc": 423,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [
+          "undetectable.ai"
+        ],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "Maclean-D/UndetectableAIDiscord",
+    "stars": 2,
+    "language": "JavaScript",
+    "pushed_at": null,
+    "created_at": "2023-05-03T23:46:27Z",
+    "category": "api-wrapper",
+    "confidence": "confident",
+    "rule": "source calls a commercial humanizer: undetectable.ai",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 3060,
+      "code_files": 2339,
+      "product_code_files": 3,
+      "product_loc": 192,
+      "own_loc": 192,
+      "md_files": 96,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [
+          "undetectable.ai"
+        ],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "TaskiranEmlak/undetectable-ai-bypass-api",
+    "stars": 0,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-07-01T11:14:23Z",
+    "category": "rule-based-rewriter",
+    "confidence": "unsure",
+    "rule": "almost no code and almost no prose; nothing in the tree to decide on",
+    "needs_read": true,
+    "evidence": "source",
+    "tree": {
+      "files": 2,
+      "code_files": 1,
+      "product_code_files": 1,
+      "product_loc": 80,
+      "own_loc": 80,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": []
+      }
+    }
+  },
+  {
+    "name": "darkshadow2bd/Project-Invisible",
+    "stars": 19,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2026-05-12T14:18:22Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: \\u200b, \\u200c, \\u200d, \\u2060",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 4,
+      "code_files": 2,
+      "product_code_files": 2,
+      "product_loc": 1037,
+      "own_loc": 1037,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u200b",
+          "\\u200c",
+          "\\u200d",
+          "\\u2060"
+        ]
+      }
+    }
+  },
+  {
+    "name": "chinmay29hub/stegmoji",
+    "stars": 5,
+    "language": "JavaScript",
+    "pushed_at": null,
+    "created_at": "2025-09-27T06:55:20Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: \\ufe0e, \\ufe0f, zero-width, 0x200b",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 100,
+      "code_files": 64,
+      "product_code_files": 34,
+      "product_loc": 5780,
+      "own_loc": 5780,
+      "md_files": 6,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\ufe0e",
+          "\\ufe0f",
+          "zero-width",
+          "0x200b",
+          "0x200c",
+          "0x200d",
+          "0xfeff",
+          "0x2060",
+          "0xfe0f",
+          "zero width",
+          "variation selector"
+        ]
+      }
+    }
+  },
+  {
+    "name": "dapperfu/whitespace-stego",
+    "stars": 2,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2025-06-12T15:17:31Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: \\u200b, \\u200c, \\u2060, zero width",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 84,
+      "code_files": 45,
+      "product_code_files": 30,
+      "product_loc": 2572,
+      "own_loc": 2572,
+      "md_files": 4,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u200b",
+          "\\u200c",
+          "\\u2060",
+          "zero width",
+          "0x200b",
+          "0x200c",
+          "0x2060"
+        ]
+      }
+    }
+  },
+  {
+    "name": "v1sc0/zwcs",
+    "stars": 1,
+    "language": "JavaScript",
+    "pushed_at": null,
+    "created_at": "2024-11-10T15:13:17Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: \\u200c, \\u200d, \\ufeff, \\ufe0f",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 8,
+      "code_files": 4,
+      "product_code_files": 4,
+      "product_loc": 491,
+      "own_loc": 491,
+      "md_files": 1,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u200c",
+          "\\u200d",
+          "\\ufeff",
+          "\\ufe0f",
+          "zero width",
+          "zero-width",
+          "\\u200b",
+          "\\u202a"
+        ]
+      }
+    }
+  },
+  {
+    "name": "lorossi/zero-width-steganography",
+    "stars": 12,
+    "language": "Python",
+    "pushed_at": null,
+    "created_at": "2020-06-17T09:29:12Z",
+    "category": "unicode-trickery",
+    "confidence": "confident",
+    "rule": "source enumerates hidden code points: \\u200b, \\ufeff, zerowidth, zero width",
+    "needs_read": false,
+    "evidence": "source",
+    "tree": {
+      "files": 8,
+      "code_files": 3,
+      "product_code_files": 3,
+      "product_loc": 449,
+      "own_loc": 449,
+      "md_files": 2,
+      "skill_manifest": false,
+      "root_skill_manifest": false,
+      "ships_weights": false,
+      "signals": {
+        "detector_in_loop": [],
+        "meaning_verification": [],
+        "subgroup_fairness": [],
+        "vendor_api": [],
+        "trains_a_model": [],
+        "hidden_characters": [
+          "\\u200b",
+          "\\ufeff",
+          "zerowidth",
+          "zero width"
+        ]
+      }
+    }
+  }
+]

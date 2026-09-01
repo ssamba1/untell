@@ -101,8 +101,19 @@ ESL-versus-native false-positive gap as a **weighted training reward** (`−w₄
 report it. No reporting surface, one axis, a hardcoded 0.5 threshold. See
 [the strategy doc](docs/strategy-the-audit-position.md) for the corrected claim. Aequitas, AIF360 and
 Fairlearn compute the right statistic and none is wired to a text detector. RAID, IMGTB and
-`kinit-sk/mAO` rank accuracy or obfuscation strength, a different question. **The research exists;
-the instrument does not.**
+`kinit-sk/mAO` rank accuracy or obfuscation strength, a different question.
+
+**Correction, 2026-09-01.** "The research exists; the instrument does not" was wrong, and wrong
+about a repository inside the 131-repo sweep this paragraph cites.
+[`satyamshivam13/AI_Text_Detector`](https://github.com/satyamshivam13/AI_Text_Detector) shipped
+`scripts/fpr_by_population.py` in July 2026: per-population false-positive rates with Wilson 95%
+intervals, on Liang et al.'s own TOEFL/8th-grade/CS224N corpus, machine-edited text held out as
+ambiguous, an n≥30 floor, and a disparity ratio. The census missed it because the census read
+READMEs and the tool lives in `scripts/`. What survives is subgroups *within* a corpus rather than
+corpora as subgroups, plus ablation, threshold sweep, saturation detection and per-subgroup false
+negatives — and **not** "a tool you can point at the detector you are about to license", which is
+a roadmap item here too, not a difference. See
+[the strategy doc](docs/strategy-the-audit-position.md) for the full correction.
 
 Built and measured 2026-09-01 (`untell-subgroup-audit`, `eval/subgroup_audit.py`, 34 tests,
 ELLIPSE fetched not vendored because it is CC BY-NC-SA and this package is MIT). On 3,904
