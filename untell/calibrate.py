@@ -1,7 +1,7 @@
 """Turn a human-only corpus into a threshold with a *bounded* false-positive rate.
 
 This repo's headline result is that vendor thresholds produce false-positive rates nobody would
-accept if they saw them measured: 15.8% of pre-LLM abstracts, 44.44% under the union rule in the
+accept if they saw them measured: 20.5% of pre-LLM abstracts, 44.44% under the union rule in the
 published literature. The obvious next question — *then what threshold should I use?* — had no
 answer here, which made the result a complaint rather than a tool.
 
@@ -95,7 +95,7 @@ def calibrate_by_length(
 ) -> dict:
     """Per-length-band thresholds, because one threshold across all lengths is one average.
 
-    This repo measured 26.7% false positives at 50 words or fewer against 15.6% at 50-100 on the
+    This repo measured 30.0% false positives at 50 words or fewer against 21.7% at 50-100 on the
     same corpus and detector. A single threshold set on the mixture is too strict for long documents
     and too loose for short ones, and it is short documents where a wrong verdict is least
     recoverable.

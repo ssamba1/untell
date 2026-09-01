@@ -25,6 +25,17 @@ REPO = Path(__file__).resolve().parent.parent
 DOCS = ("ROADMAP.md", "ai-writing-research.md", "docs/research-to-build.md",
         "docs/research-verification.md", "docs/strategy-options.md")
 
+# Code carries measured figures too, in docstrings that explain WHY a threshold or a band boundary
+# is what it is. Round thirty-one re-measured the pre-LLM false-positive rate and updated every
+# document; `untell/calibrate.py` went on quoting 15.8% and "26.7% at 50 words or fewer" for seven
+# rounds, because `untell-audit` scans documents and nothing scanned source. A stale number in a
+# docstring is worse than one in a document: it is the stated justification for a shipped default.
+CODE = tuple(
+    str(p.relative_to(REPO))
+    for directory in ("untell", "eval")
+    for p in (REPO / directory).rglob("*.py")
+)
+
 # Words that mark a line as *discussing* a correction rather than making the retired claim.
 _CORRECTING = re.compile(
     r"✗|⚠️|correct|retract|retired|imprecise|misattribut|earlier (draft|version)|used to read"
@@ -126,3 +137,46 @@ def test_the_suppression_does_not_swallow_prose_or_data_rows():
     assert not _COUNT_ROW.match("| humans cannot detect | 27.2% |")
     # Three columns is a findings table, not a claim count.
     assert not _COUNT_ROW.match("| humans cannot detect | 3 | source |")
+
+
+# --- superseded measurements must not survive in source ------------------------------------------
+
+# Figures this repository re-measured and replaced. Each maps to what it became, so a failure names
+# the fix rather than only the fault. Historical references are allowed only where the surrounding
+# text says the number is historical — see `_is_historical` below.
+SUPERSEDED: tuple[tuple[str, str], ...] = (
+    ("15.8%", "20.5% — re-measured in round 31 on the restored pre-LLM corpus"),
+    ("26.7%", "30.0% at <=50 words — re-measured in round 31"),
+    ("15.6%", "21.7% at 50-100 words — re-measured in round 31"),
+)
+
+
+def _is_historical(line: str) -> bool:
+    """A line allowed to quote a superseded figure because it is describing the correction."""
+    markers = ("round 31", "round thirty-one", "was published", "used to", "no longer",
+               "could not be reproduced", "most-quoted", "which `ROADMAP.md` called")
+    return any(m in line.lower() for m in markers)
+
+
+@pytest.mark.parametrize("stale,replacement", SUPERSEDED, ids=[s for s, _ in SUPERSEDED])
+def test_no_source_file_still_quotes_a_superseded_measurement(stale, replacement):
+    """`untell-audit` scans documents. Nothing scanned source, so `untell/calibrate.py` justified its
+    per-band thresholds with '26.7% at 50 words or fewer' for seven rounds after that number was
+    replaced. A stale figure in a docstring is worse than one in a document: it is the stated reason
+    a shipped default is what it is."""
+    offenders = []
+    for rel in CODE:
+        for i, line in enumerate((REPO / rel).read_text(encoding="utf-8").splitlines(), 1):
+            if stale in line and not _is_historical(line):
+                offenders.append(f"{rel}:{i}: {line.strip()[:90]}")
+    assert not offenders, (
+        f"superseded figure {stale} still stated as current — it is now {replacement}:\n"
+        + "\n".join(offenders)
+    )
+
+
+def test_the_historical_exemption_cannot_swallow_everything():
+    """Guards the guard. If `_is_historical` matched ordinary lines, the check above would pass on a
+    genuinely stale docstring."""
+    assert not _is_historical("This repo measured 26.7% false positives at 50 words or fewer.")
+    assert _is_historical("the number published before round 31 was 15.8%")

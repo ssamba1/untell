@@ -2865,3 +2865,62 @@ Seven tests hold it, including the identity case — a corpus standardized again
 return its own crude rate — and the coverage rule: a band with no measured rate is dropped and
 **reported as dropped**, because silently treating it as 0% would bias every figure downward while
 looking exactly the same.
+
+---
+
+# Round thirty-nine — proving the arithmetic, and a stale number in a docstring
+
+Round thirty-eight's lesson was that a check against arithmetic beats a check against a source,
+because it can catch an error in the method rather than in the reporting. This round applies that to
+the two computations everything else here depends on.
+
+## ✅ The aggregation ordering, proved rather than sampled
+
+Every claim this project makes about aggregation rests on one relationship: **unanimous implies
+majority implies union**. The published spreads — 44.44% / 4.17% / 0.0% on Pratama's abstracts,
+36.6% / 21.2% in a live residency match — are only interpretable if that ordering cannot break.
+
+The existing tests checked chosen cases. There are now tests that **enumerate every possible flag
+pattern for one to seven detectors — 254 outcomes**, which is not a sample of the input space, it is
+all of it. They pin the ordering, the consistency of the counts with the verdicts, and monotonicity
+(an extra flagging detector can never turn a rule off).
+
+Two are worth naming. **One detector makes the three rules identical** — the claim behind the
+`degenerate` warning both tools print, now proved for every single-detector outcome rather than
+asserted in a comment. And a **guard on the guard**: at least one hundred of the 254 patterns must
+separate the three rules, because every other assertion in the file would hold vacuously if they
+always agreed.
+
+## ✅ The intervals, pinned to Wilson specifically
+
+169 published proportions carry intervals and a test fails if one does not. That guarded *presence*.
+Nothing guarded *correctness* — and the intervals are what every "the gap is not evidence of a
+disparity" verdict in rounds thirty-four to thirty-seven turns on. **A systematically narrow interval
+would have converted those honest negatives into findings.**
+
+Now checked: the interval stays inside [0, 1], contains its point estimate, narrows with n (the
+property the whole n = 120 → 599 → 2,400 → 6,810 progression relies on), leans upward near zero, and
+**matches two textbook Wilson values to three decimals** — because every other property would hold
+for a formula wrong by a constant factor.
+
+Also pinned: **0 of 15 must not imply a rate near zero.** The 200+ word band reads 0.0% and the
+roadmap quotes its interval to 37.9%; a zero-width interval there would make that row read as proof.
+
+## ✗ And a stale number in a docstring, seven rounds old
+
+Round thirty-one re-measured the pre-LLM rate and updated every document. `untell/calibrate.py` went
+on saying:
+
+> "This repo measured **26.7%** false positives at 50 words or fewer against **15.6%** at 50-100"
+
+Those are the superseded figures. The current ones are **30.0%** and **21.7%**. Its module docstring
+likewise still offered **15.8%** where the measurement is now **20.5%**.
+
+**`untell-audit` scans documents and nothing scanned source.** That is the gap, and a stale figure in
+a docstring is worse than one in a document: this one is the **stated justification for a shipped
+default** — the reason `calibrate_by_length` sets per-band thresholds at all.
+
+The retraction guard now scans `untell/` and `eval/` as well as the documents, with an exemption for
+lines that explicitly describe a figure as historical, and a test asserting that exemption cannot
+swallow an ordinary docstring. Three superseded figures are pinned by the replacement they became, so
+a failure names the fix rather than only the fault.
