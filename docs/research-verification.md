@@ -347,3 +347,83 @@ raising syntactic complexity** — homogenization is not uniform across linguist
 **Net effect on the verification problem:** the strategy no longer depends on any arXiv-only preprint.
 Every load-bearing claim now has a peer-reviewed source read at source. The unreachable preprints
 remain listed as leads, and nothing rests on them.
+
+---
+
+# Round four — the PubMed pass, and the number that settles the argument
+
+Round three covered NLP venues. It did not cover the medical, education and publishing literature,
+where these tools are actually deployed. This round searched PubMed systematically and read the
+high-precision intersection at source.
+
+## Measured false-positive rates on genuine human writing, all Tier A
+
+Assembled from studies that each report a false-positive rate on text known to be human:
+
+| Setting | Detectors | Measured FPR on human text | Source |
+|---|---|---|---|
+| Undergraduate anatomy essays, **4 detectors in aggregate** | 4 | **~0%** | PMID 40105702, [DOI](https://doi.org/10.1152/advan.00235.2024) |
+| Same study, individual detectors | 4 | **1.3%** | same |
+| Same study, **human raters** | 9 raters | **5.0%** | same |
+| *J. Craniofacial Surgery* manuscripts from **2014** — necessarily pre-LLM | ZeroGPT | **8.6%** | PMID 41474280, [DOI](https://doi.org/10.1097/SCS.0000000000012366) |
+| Behavioral-health articles 2016–18, free detector | 1 | **27.2%** (median) | PMID 38516933, [DOI](https://doi.org/10.1080/08989621.2024.2331757) |
+| Scholarly abstracts, **flagged by ≥1 of 3 tools** (FAR) | 3 | **44.44%** | PMID 40989485, [DOI](https://doi.org/10.7717/peerj-cs.2953) |
+| TOEFL essays by non-native writers | 7 | **61.3%** | PMID 37521038, [DOI](https://doi.org/10.1016/j.patter.2023.100779) |
+
+**That is the same technology, on genuine human writing, ranging from about 0% to 61%.** Not a
+disagreement between studies — every row is a correct measurement of a different population, domain,
+detector set and aggregation rule.
+
+**This is the argument for this repo, and it no longer needs a theory to make it.** A published
+false-positive rate is not transferable. An institution that reads "1.3%" in a physiology journal and
+deploys against ESL applicants has imported a number from the wrong end of a 47× range.
+
+## The most actionable finding in four rounds: aggregation is the lever
+
+Hyatt et al. (PMID 40105702, [DOI](https://doi.org/10.1152/advan.00235.2024)) tested 190 students'
+hand-written essays against AI-generated answers to the same prompt. Individual detectors produced
+1.3% false positives; **used in aggregate — requiring consensus — the false-positive rate fell to
+nearly 0%**, validated against human-rater-labelled false positives.
+
+✗ **This cuts against how untell currently reports.** Our `max` aggregation is the *union* rule: it
+flags if **any** detector flags, which is precisely the FAR that Pratama measured at 44.44%. It is the
+correct choice as the rewrite loop's *stop target* — beating the hardest detector is the honest bar —
+and it is the **worst possible choice as a verdict**, because it maximises false accusations by
+construction.
+
+**What untell should report is the spread, not a number:**
+
+| Rule | Meaning | Published anchor |
+|---|---|---|
+| **FAR** — union | flagged by ≥1 detector | 44.44% (Pratama) |
+| **MFAR** — majority | flagged by most detectors | 4.17% (Pratama) |
+| **Consensus** — unanimous | flagged by all | ~0% (Hyatt) |
+
+The gap between those three rows *is* the institution's policy decision, and no tool currently puts
+it in front of them. That is a concrete product change, derived from refereed measurement.
+
+## A ground-truth probe we should steal
+
+Bohler et al. analysed **1,490 manuscripts**, 659 from **2014** and 831 from 2024. Because 2014 text
+is necessarily pre-LLM, **its detector score is a pure false-positive rate: 8.6%**. The authors
+conclude the modest rise to 10.7% "likely reflect[s] detection software behavior and evolving writing
+structure rather than widespread use of generative AI."
+
+Two things follow. First, **scoring a pre-2022 corpus is the cleanest FPR probe available** — no
+labelling, no ambiguity, unfalsifiable ground truth — and untell should ship it as an arm. Second,
+**it puts a caveat under §1 of the literature map**: prevalence estimates derived from detectors are
+partly measuring the detector, which is why the excess-vocabulary method (Kobak) is the more
+trustworthy family.
+
+## The evidence is not uniformly anti-detector, and saying so matters
+
+Round three found a Czech replication showing no non-native bias. This round finds detectors at 1.3%
+individually and ~0% in aggregate on STEM student writing, **outperforming human raters at 5.0%**, and
+expert radiology editors identifying AI-written editorials only 58–70% of the time (PMID 39288967,
+[DOI](https://doi.org/10.3174/ajnr.A8505)) while showing a positive bias toward text they believed
+human-written.
+
+A document that only collected anti-detector findings would have missed all of this. The honest
+position — and the stronger one — is that **detectors are neither reliable nor useless in general,
+because "in general" is not a property they have.** Everything depends on the deployment, which is
+exactly what this repo exists to measure.

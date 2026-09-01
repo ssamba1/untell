@@ -428,11 +428,31 @@ detection is bound to domain and generator; no detector wins across scenarios
 ([2026.acl-industry.9](https://aclanthology.org/2026.acl-industry.9/)). Every one of those is a
 refereed statement that the answer depends on which detector meets which population in which domain.
 
+### The number that settles it
+
+A PubMed pass then assembled every refereed study that reports a false-positive rate **on text known
+to be human**:
+
+| Setting | Measured FPR | Source |
+|---|---|---|
+| Anatomy essays, **4 detectors in aggregate** | **~0%** | [DOI](https://doi.org/10.1152/advan.00235.2024) |
+| Same study, single detectors | 1.3% | same |
+| Same study, **9 human raters** | 5.0% | same |
+| *J. Craniofacial Surgery* manuscripts from **2014** — necessarily pre-LLM | **8.6%** | [DOI](https://doi.org/10.1097/SCS.0000000000012366) |
+| Behavioral-health articles, free detector | 27.2% | [DOI](https://doi.org/10.1080/08989621.2024.2331757) |
+| Abstracts, flagged by ≥1 of 3 tools | 44.44% | [DOI](https://doi.org/10.7717/peerj-cs.2953) |
+| TOEFL essays, non-native writers, 7 detectors | 61.3% | [DOI](https://doi.org/10.1016/j.patter.2023.100779) |
+
+**Same technology, on real human writing, from about 0% to 61%.** These do not contradict each other;
+each is a correct measurement of a different population, domain, detector set and aggregation rule.
+
 **So: a false-positive rate is not a property of a detector. It is a property of a detector, a
-population, a domain and an editing history — and it cannot be inherited from anyone else's paper,
-ours included.** The only measurement worth anything is the one taken on the deployment's own corpus,
-per subgroup. That is the thesis, and it now rests on five refereed results and one refereed
-disconfirmation, none of which this environment had to take on trust.
+population, a domain, an editing history and an aggregation rule — and it cannot be inherited from
+anyone else's paper, ours included.** An institution that reads 1.3% in a physiology journal and
+deploys against ESL applicants has imported a number from the wrong end of a 47× range. The only
+measurement worth anything is the one taken on the deployment's own corpus, per subgroup. That is the
+thesis, and it now rests on refereed results this environment read at source — including two that
+disconfirm parts of it.
 
 > **The framing we no longer need.** *AI Detectors Fail Diverse Student Populations*
 > ([arXiv:2603.20254](https://arxiv.org/abs/2603.20254)) argues the same conclusion formally from a
@@ -453,6 +473,20 @@ population, per subgroup, at the vendor's threshold and at a calibrated one, and
   **FAR** (flagged by ≥1 tool; measured **44.44%**), which is exactly what our `max` aggregation
   computes, and **MFAR** (flagged by a majority; **4.17%**). Adopt both verbatim, add an AI-assisted
   arm, and stratify by subgroup — the auditing protocol the literature specifies and nobody ships.
+
+  ✗ **And a refereed result says our aggregation is the wrong verdict rule.** Hyatt et al.
+  ([DOI](https://doi.org/10.1152/advan.00235.2024)) found single detectors at **1.3%** false positives
+  on 190 students' essays and **~0% when required to agree**. Our `max` is the *union* rule — flag if
+  **any** detector flags — which is exactly the FAR measured at 44.44%, and it maximises false
+  accusations by construction. It is right as the loop's **stop target** and wrong as a **verdict**.
+  So report the spread rather than a number: **union (FAR) / majority (MFAR) / unanimous (consensus)**,
+  anchored at 44.44% / 4.17% / ~0%. **The gap between those three rows is the institution's policy
+  decision, and nobody puts it in front of them.**
+
+  **Also steal Bohler et al.'s probe** ([DOI](https://doi.org/10.1097/SCS.0000000000012366)): they
+  scored 659 manuscripts from **2014**, necessarily pre-LLM, and got **8.6%** — a pure false-positive
+  rate with unfalsifiable ground truth and no labelling. A pre-2022 corpus arm is the cheapest honest
+  FPR probe in existence and we should ship one.
 
 - 🔜 **Calibrated thresholds, so the negative result stops being only a complaint.** Multiscaled
   conformal prediction ([2025.acl-long.601](https://aclanthology.org/2025.acl-long.601/); Zhu, Ren,
