@@ -5689,6 +5689,146 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round eighty-six — the number nobody chose, swept from 0 to 400
+
+Round eighty-five found that the survey's count moves with concatenation order. That is a defect in
+how the instrument is called. This round asks the harder question about the same instrument: **what
+is inside it that nobody ever chose?**
+
+One thing, and it carries everything. `DETECTION` matches a detection term only when an AI term sits
+within `DETECTION_WINDOW` characters of it. Round fifty-seven wrote that rule to cut a 40% noise rate
+and needed *a* window; the value in the source is 40, and it is what that round happened to use. No measurement selected it. Every count in ROADMAP section 7, every share in
+`docs/index.md`, and the ratio this project's entire strategy rests on sit downstream of it.
+
+`DETECTION_WINDOW`, `detection_pattern(window)` and `window_sensitivity()` exist so that number can
+be varied. The regex is now built by a function rather than frozen in a string literal — checked
+byte-identical against the published one, because a refactor that changes the pattern changes every
+figure in the repository. `python -m eval.litreview --window-sweep` reruns the whole thing, and
+`eval/data/window_sweep.json` commits the result so it can be checked without the 99 MB corpus.
+
+## What the sweep found
+
+**The windows nest.** MEASURED: widening from 0 to 400 in nine steps loses **zero** papers at every
+step. So the parameter is a recall dial along one axis, not nine different corpora, and nothing
+below is a reshuffling artefact.
+
+**The corpus size is very sensitive to it. The shares are not.**
+
+| window | detection papers | off-topic floor | robustness | false positives | fairness |
+|---|---|---|---|---|---|
+| 0 | 343 | 3.2% | 27.1% | 2.9% | 1.7% |
+| 20 | 525 | 11.4% | 26.1% | 2.3% | 2.3% |
+| **40 (published)** | **612** | **13.2%** | **25.7%** | **2.1%** | **2.1%** |
+| 80 | 708 | 14.5% | 24.2% | 1.8% | 2.3% |
+| 200 | 764 | 15.4% | 23.8% | 1.7% | 2.4% |
+| 400 | 768 | 15.5% | 23.7% | 1.7% | 2.3% |
+
+A **2.2x range** in the corpus produces a largest share move of **4.3 points**, and no topic ever
+overtakes another. The shares drift downward because the denominator takes on noise as the filter
+loosens — which is why a share is now quoted with its window rather than on its own.
+
+## ✅ The finding is not the stability. It is the saturation.
+
+MEASURED, absolute counts across the sweep:
+
+| topic | w=0 | w=40 | w=400 | saturates at | further papers entering with none of them this topic |
+|---|---|---|---|---|---|
+| robustness/paraphrase | 93 | 157 | 182 | w=200 | 4 |
+| multilingual/cross-lingual | 57 | 82 | 102 | w=400 | 0 |
+| calibration/thresholds | 9 | 22 | 28 | w=200 | 4 |
+| fairness/non-native bias | 6 | 13 | 18 | w=120 | 24 |
+| **false positives/accusation** | **10** | **13** | **13** | **w=30** | **192** |
+| **disability/neurodivergence** | **0** | **1** | **1** | **w=20** | **243** |
+
+**The false-positives row reaches 13 papers at a 30-character window and never moves again.**
+Between there and w=400 the corpus admits **192 further detection papers and not one of them is
+about false positives**, while robustness nearly doubles across the same sweep and multilingual work
+is still growing at the widest setting.
+
+This answers an objection that until now could only be met with a defence. "Your filter is too
+strict to find the false-positive literature" is a testable claim, and it is false: buying recall at
+any price in precision recruits none of that literature, because there is none to recruit. The
+documented near-zero on disability is the same result harder — one paper at w=20, and 243 further
+papers enter behind it without a second.
+
+**And the ratio moves against the objection.** Robustness-to-false-positives is **9.3x at the
+tightest window and 14.0x at the widest**. The published **12.1x** is an interior point, not the
+sweep's best case — so the window was not, and could not have been, chosen to flatter the claim.
+`tests/test_the_survey_ratio_survives_every_recall_setting.py` asserts exactly that: the published
+window must lie strictly between the sweep's extremes.
+
+## ✗ And a figure that matched nothing
+
+`docs/index.md` summarised the survey as "**27% against 2%**". No row in this repository produces
+27%. The published share is **25.7%**, the sweep's maximum is 28.0% at w=10, and the figure carried
+no `MEASURED` attribution — so it had survived every attribution check by never claiming to be a
+measurement. It now reads **24–28% against under 3%, at every filter setting swept**, which is the
+range the sweep actually establishes and is a stronger statement than the point estimate it replaces.
+
+That is the fourth time a number in this repository turned out to be unattributed rather than wrong,
+and the second time (after round eighty-four) that building a way to *rerun* a measurement was what
+exposed a figure nobody could rerun.
+
+## ✗✗ And staging the sweep exposed the worst defect in this ledger
+
+`git add -A` did not pick up `eval/data/window_sweep.json`. `.gitignore` carries `data/` for
+downloaded corpora, and that pattern matches `eval/data/` at any depth. Checking what else it had
+swallowed:
+
+    $ git ls-files eval/data/
+    $
+
+**Nothing. Four artefacts, built across rounds seventy-nine to eighty-five and described in this
+document as committed, were never in the repository at all:**
+
+| artefact | what it is | rounds resting on it |
+|---|---|---|
+| `eval/data/generated_abstracts.py` | the 70 machine-written abstracts — **the entire AI arm** | 76–86 |
+| `eval/data/generated_registers.py` | the same-author register corpus | 79–83 |
+| `eval/data/survey_counts.json` | the survey figures the audit checks documents against | 82–86 |
+| `eval/data/tell_base_rates.json` | how often humans use each tell | 81–86 |
+
+The consequences are as bad as they look. **The most consequential measurement in this repository —
+that the detector's ordering is inverted on academic abstracts — was not reproducible from the
+repository.** `python -m eval.detection_power --run` names its download when the Anthology cache is
+missing, but nothing can download the machine arm: a language model wrote it, and outside this
+working tree it did not exist. Every test reading those files passed here and would have failed on a
+fresh clone. Round eighty-four's whole point was making the arc rerunnable; it made it rerunnable on
+one disk.
+
+**Nothing caught this, and the reason is general.** Every check in this repository — the audit, the
+doc guards, the whole suite — runs in a working tree where the files are present. `git status` was
+clean because ignored files do not appear in it. The document asserting the artefacts were
+reproducible was itself the only evidence offered that they were.
+
+`.gitignore` now un-excludes `eval/data/` explicitly, with the reason written next to the rule (git
+cannot re-include a file whose parent directory is excluded, so the directory has to be un-excluded
+rather than the files re-added). All five artefacts are committed.
+`tests/test_every_artefact_the_tests_rely_on_is_actually_committed.py` asks **git** rather than the
+filesystem, and fails on any untracked file under `eval/data/` — verified against a probe file, not
+just asserted. It deliberately does not test `.gitignore`'s text: the rule that caused this was
+correct for its purpose and wrong only in reach, so the thing worth asserting is the outcome.
+
+⚠️ **This is the third distinct defect this round, and the first two were found by looking.** The
+window sweep was a deliberate investigation; the unattributed 27% turned up inside it; this one
+turned up because `git add -A` printed one fewer line than expected. The ratio of defects-found to
+defects-looked-for is not encouraging about what an eighty-six-round audit trail is worth as
+evidence that a repository is in the state it says it is in.
+
+## What this round is an instance of
+
+Rounds thirty and fifty-seven established the corpus and the noise floor as conditions on the
+survey's numbers. This one establishes the third: the filter's recall. All three point the same way
+— **the shares are robust and the counts are not**, so the counts travel with their conditions.
+
+The general lesson is narrower and worth stating plainly: **a parameter that cannot be varied has
+not been tested, and a constant regex is a parameter that cannot be varied.** `{0,40}` sat inside a
+string literal for twenty-nine rounds, visible to every reader and testable by none of them, under a
+ratio that carries the project's strategy. Making it an argument took eleven lines. Finding out what
+it was worth took one command.
+
+---
+
 # Round eighty-five — the survey's own count depends on which order it reads a paper
 
 Rounds seventy-six to eighty-four produced a method: **hold authorship constant and vary register.**

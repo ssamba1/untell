@@ -108,8 +108,13 @@ limits — one model, one register, 56 machine documents — are in round sevent
   false positives and 13 on fairness — and 82 on multilingual detection, six times the fairness row
   for the same population). `--noise-floor` reports the error term on those counts: 13.2% of the
   corpus is a different detection problem, and removing all of it moves no share by more than 1.4
-  points. **The shares matter, not the counts** — 27% against 2% —
-  because they hold across three different detection filters; see round thirty of the ledger
+  points. **The shares matter, not the counts** — 24–28% against under 3%, at every filter setting
+  swept — because they hold across three different detection filters; see round thirty of the ledger
+- **And the filter's own recall is swept, not assumed:** `--window-sweep` varies the one number the
+  survey rests on from 0 to 400 characters. The corpus runs 343–768 papers over that range and no
+  topic share moves more than 4.3 points — but the finding is that **false positives saturates at 13
+  papers early and 192 further detection papers enter behind it without one of them being about
+  false positives**, while robustness nearly doubles. The gap is in the literature, not the filter
 
 ## License
 

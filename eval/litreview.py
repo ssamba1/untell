@@ -133,17 +133,35 @@ VOLUMES: tuple[str, ...] = (
 # 2026.eacl-srw.20 — the Czech result that disconfirms part of our own thesis, and one of the most
 # load-bearing citations we have. For a RATIO, losing on-topic papers is worse than keeping some
 # off-topic ones, because recall loss biases the topics unevenly while noise is roughly flat.
-DETECTION = re.compile(
-    r"machine[- ]generated text|AI-generated text|LLM-generated text|MGT detection"
-    r"|AI text detect"
-    # \b around AI/LLM/GPT is not cosmetic: with re.I a bare `AI` matches inside "training",
-    # "domain" and "certain", which let a Chinese-spelling-correction paper in through the phrase
-    # "detector or corrector and training".
-    r"|(?:\bAI\b|\bLLM\b|\bGPT|machine-generated|machine generated|synthetic text|watermark)"
-    r"[\w\s\-,]{0,40}?detect(?:or|ion)"
-    r"|detect(?:or|ion)[\w\s\-,]{0,40}?(?:\bAI\b|\bLLM\b|\bGPT|machine-generated|synthetic text)",
-    re.I,
-)
+# The proximity window, in characters. Nobody chose 40 deliberately — round fifty-seven needed *a*
+# number and this one worked. Round eighty-six swept it from 0 to 400 rather than leave a hidden
+# parameter under a published ratio; `detection_pattern` and `--window-sweep` exist so the sweep is
+# rerunnable rather than a one-off script. What it found is in `window_sensitivity`.
+DETECTION_WINDOW = 40
+
+
+def detection_pattern(window: int = DETECTION_WINDOW) -> re.Pattern[str]:
+    """The detection filter at a given proximity window, so the window can be varied.
+
+    `DETECTION` is this at the default. Building it in a function is what makes the parameter
+    checkable: a constant regex hides `{0,40}` inside a string where no reader can vary it, and a
+    number nobody can vary is a number nobody has tested.
+    """
+    return re.compile(
+        r"machine[- ]generated text|AI-generated text|LLM-generated text|MGT detection"
+        r"|AI text detect"
+        # \b around AI/LLM/GPT is not cosmetic: with re.I a bare `AI` matches inside "training",
+        # "domain" and "certain", which let a Chinese-spelling-correction paper in through the phrase
+        # "detector or corrector and training".
+        r"|(?:\bAI\b|\bLLM\b|\bGPT|machine-generated|machine generated|synthetic text|watermark)"
+        rf"[\w\s\-,]{{0,{window}}}?detect(?:or|ion)"
+        rf"|detect(?:or|ion)[\w\s\-,]{{0,{window}}}?"
+        r"(?:\bAI\b|\bLLM\b|\bGPT|machine-generated|synthetic text)",
+        re.I,
+    )
+
+
+DETECTION = detection_pattern()
 
 TOPICS: dict[str, re.Pattern[str]] = {
     "robustness/paraphrase": re.compile(r"paraphras|adversarial|robustness|evad", re.I),
@@ -395,6 +413,91 @@ def noise_floor(papers: list[dict]) -> dict:
     }
 
 
+SWEEP_WINDOWS = (0, 10, 20, 30, 40, 60, 80, 120, 200, 400)
+
+
+def window_sensitivity(
+    papers: list[dict[str, str]], windows: tuple[int, ...] = SWEEP_WINDOWS,
+) -> dict[str, object]:
+    """Every published survey figure, recomputed at each proximity window.
+
+    The survey's counts rest on a filter whose recall is set by one number, `DETECTION_WINDOW`, that
+    nobody chose deliberately. This varies it and reports what moves. Three things it establishes,
+    MEASURED on the 186-volume corpus:
+
+    **The windows nest.** Every wider window is a strict superset of every narrower one — 0 papers
+    lost at any step from 0 to 400. So the parameter trades recall against precision along a single
+    axis; it does not shuffle the corpus, and no result here is a reshuffling artefact.
+
+    **The corpus size is very sensitive and the topic shares are not.** Detection papers run 343 at
+    w=0 to 768 at w=400, a 2.2x range, while the off-topic noise floor climbs 3.2% to 15.5%. Across
+    that whole range the largest move in any topic share is **4.3 points** (robustness, 28.0% down
+    to 23.7%). The shares drift because the denominator takes on noise, so a share is quoted with
+    its window; the ordering of the topics never changes.
+
+    **The false-positives row saturates, and that is the finding.** It reaches 13 papers at w=30 and
+    stays at 13 through w=400 — 192 further detection papers enter behind it and **not one of them
+    is about false positives.** Robustness nearly doubles over the same sweep (93 to 182) and
+    multilingual work is still growing at w=400. So the imbalance this project argues from is not
+    the filter being too strict to find the false-positive literature: buying recall at any price in
+    precision recruits none of it. `disability/neurodivergence` is the same story harder — 1 paper
+    at w=20, and 243 further papers enter without a second.
+
+    The ratio therefore moves *against* the objection: robustness-to-false-positives is 9.3x at the
+    tightest window and 14.0x at the widest, with the published 12.1x sitting between them. There is
+    no window at which the survey's claim gets weaker than the one it publishes by more than a
+    third, and none at which it inverts.
+    """
+    texts = [searchable(p) for p in papers]
+    rows: list[dict[str, object]] = []
+    seen: dict[int, set[int]] = {}
+    for window in windows:
+        pattern = detection_pattern(window)
+        hits = {i for i, text in enumerate(texts) if pattern.search(text)}
+        seen[window] = hits
+        detection = [texts[i] for i in sorted(hits)]
+        off = sum(
+            1 for i in sorted(hits)
+            if OTHER_DETECTION.search(papers[i]["title"])
+            and not NAMES_MGT.search(papers[i]["title"])
+        )
+        counts = {name: sum(1 for t in detection if rx.search(t)) for name, rx in TOPICS.items()}
+        rows.append({
+            "window": window,
+            "detection_papers": len(hits),
+            "off_topic_share": round(100.0 * off / len(hits), 1) if hits else 0.0,
+            "topics": counts,
+            "shares": {
+                name: round(100.0 * n / len(hits), 1) if hits else 0.0
+                for name, n in counts.items()
+            },
+        })
+
+    lost = {
+        f"{a}->{b}": len(seen[a] - seen[b]) for a, b in zip(windows, windows[1:])
+    }
+    widest = max(windows)
+    saturates: dict[str, dict[str, int]] = {}
+    for name in TOPICS:
+        final = next(r for r in rows if r["window"] == widest)["topics"][name]
+        at = next(r["window"] for r in rows if r["topics"][name] == final)
+        after = next(r for r in rows if r["window"] == widest)["detection_papers"] - next(
+            r for r in rows if r["window"] == at)["detection_papers"]
+        saturates[name] = {"papers": final, "window": at, "papers_entering_after": after}
+
+    moves = [
+        max(r["shares"][name] for r in rows) - min(r["shares"][name] for r in rows)
+        for name in TOPICS
+    ]
+    return {
+        "rows": rows,
+        "papers_lost_when_widening": lost,
+        "nested": all(v == 0 for v in lost.values()),
+        "saturates": saturates,
+        "largest_share_move": round(max(moves), 1) if moves else 0.0,
+    }
+
+
 def survey(papers: list[dict[str, str]]) -> dict[str, object]:
     """Counts per topic over the detection subset, plus the corpus sizes that give them meaning."""
     detection = [p for p in papers if DETECTION.search(searchable(p))]
@@ -599,6 +702,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--noise-floor", action="store_true", dest="noise",
                         help="how much of the corpus is a different detection problem, and what "
                              "excluding it would do to every topic share")
+    parser.add_argument("--window-sweep", action="store_true", dest="sweep",
+                        help="recompute every figure at each proximity window, since the survey's "
+                             "recall rests on one number nobody chose deliberately")
     parser.add_argument("--gaps", action="store_true",
                         help="volumes the Anthology has that VOLUMES does not; a review list, since "
                              "widening a survey's scope is an editorial call")
@@ -664,6 +770,26 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{name:<32} {row['with']:>6.1f}% {row['without']:>8.1f}%")
             print(f"\nLargest share move: {report['largest_share_move']} points.")
             print(f"\n{report['note']}")
+        return 0
+
+    if args.sweep:
+        report = window_sensitivity(papers)
+        if args.as_json:
+            print(json.dumps(report, indent=2))
+        else:
+            names = list(TOPICS)
+            head = "  ".join(f"{n[:13]:>13}" for n in names)
+            print(f"{'window':>6} {'papers':>7} {'noise':>7}  {head}")
+            for row in report["rows"]:
+                shares = "  ".join(f"{row['shares'][n]:>12.1f}%" for n in names)
+                print(f"{row['window']:>6} {row['detection_papers']:>7} "
+                      f"{row['off_topic_share']:>6.1f}%  {shares}")
+            print(f"\nnested (no paper lost by widening): {report['nested']}")
+            print(f"largest share move across the sweep: {report['largest_share_move']} points\n")
+            print(f"{'topic':<32} {'papers':>7} {'saturates':>10} {'entering after':>15}")
+            for name, sat in report["saturates"].items():
+                print(f"{name:<32} {sat['papers']:>7} {'w=' + str(sat['window']):>10} "
+                      f"{sat['papers_entering_after']:>15}")
         return 0
 
     if args.topic:

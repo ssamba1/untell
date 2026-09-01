@@ -1,0 +1,22 @@
+{
+  "abstracts": 46905,
+  "detection_papers": 612,
+  "topics": {
+    "robustness/paraphrase": 157,
+    "human-AI mixed/edited": 66,
+    "watermark": 44,
+    "education/integrity": 47,
+    "calibration/thresholds": 22,
+    "false positives/accusation": 13,
+    "multilingual/cross-lingual": 82,
+    "fairness/non-native bias": 13,
+    "disability/neurodivergence": 1
+  },
+  "volumes": 186,
+  "noise_floor": {
+    "other_detection_problem": 81,
+    "detection_papers": 612,
+    "off_topic_share": 13.2,
+    "largest_share_move": 1.4
+  }
+}

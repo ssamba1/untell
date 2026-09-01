@@ -13,6 +13,13 @@ venv*/
 
 # Data & model caches (gitignored — pulled at runtime)
 data/
+# ...but `eval/data/` is not a cache. It holds hand-authored evidence that cannot be re-downloaded:
+# the machine-written arm behind the AUROC inversion, and the small JSON artefacts that let the
+# survey and tell counts be checked without the 99 MB Anthology corpus. `data/` matched it, so for
+# eight rounds this repository documented those files as committed while none of them was tracked —
+# every test reading them passed locally and would have failed on a fresh clone. Git cannot
+# re-include a file whose parent directory is excluded, so the directory is un-excluded here.
+!eval/data/
 *.cache
 .cache/
 models/

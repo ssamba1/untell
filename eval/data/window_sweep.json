@@ -1,0 +1,334 @@
+{
+  "rows": [
+    {
+      "window": 0,
+      "detection_papers": 343,
+      "off_topic_share": 3.2,
+      "topics": {
+        "robustness/paraphrase": 93,
+        "human-AI mixed/edited": 41,
+        "watermark": 29,
+        "education/integrity": 36,
+        "calibration/thresholds": 9,
+        "false positives/accusation": 10,
+        "multilingual/cross-lingual": 57,
+        "fairness/non-native bias": 6,
+        "disability/neurodivergence": 0
+      },
+      "shares": {
+        "robustness/paraphrase": 27.1,
+        "human-AI mixed/edited": 12.0,
+        "watermark": 8.5,
+        "education/integrity": 10.5,
+        "calibration/thresholds": 2.6,
+        "false positives/accusation": 2.9,
+        "multilingual/cross-lingual": 16.6,
+        "fairness/non-native bias": 1.7,
+        "disability/neurodivergence": 0.0
+      }
+    },
+    {
+      "window": 10,
+      "detection_papers": 450,
+      "off_topic_share": 6.7,
+      "topics": {
+        "robustness/paraphrase": 126,
+        "human-AI mixed/edited": 58,
+        "watermark": 38,
+        "education/integrity": 40,
+        "calibration/thresholds": 13,
+        "false positives/accusation": 12,
+        "multilingual/cross-lingual": 68,
+        "fairness/non-native bias": 10,
+        "disability/neurodivergence": 0
+      },
+      "shares": {
+        "robustness/paraphrase": 28.0,
+        "human-AI mixed/edited": 12.9,
+        "watermark": 8.4,
+        "education/integrity": 8.9,
+        "calibration/thresholds": 2.9,
+        "false positives/accusation": 2.7,
+        "multilingual/cross-lingual": 15.1,
+        "fairness/non-native bias": 2.2,
+        "disability/neurodivergence": 0.0
+      }
+    },
+    {
+      "window": 20,
+      "detection_papers": 525,
+      "off_topic_share": 11.4,
+      "topics": {
+        "robustness/paraphrase": 137,
+        "human-AI mixed/edited": 61,
+        "watermark": 42,
+        "education/integrity": 44,
+        "calibration/thresholds": 18,
+        "false positives/accusation": 12,
+        "multilingual/cross-lingual": 74,
+        "fairness/non-native bias": 12,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 26.1,
+        "human-AI mixed/edited": 11.6,
+        "watermark": 8.0,
+        "education/integrity": 8.4,
+        "calibration/thresholds": 3.4,
+        "false positives/accusation": 2.3,
+        "multilingual/cross-lingual": 14.1,
+        "fairness/non-native bias": 2.3,
+        "disability/neurodivergence": 0.2
+      }
+    },
+    {
+      "window": 30,
+      "detection_papers": 576,
+      "off_topic_share": 12.0,
+      "topics": {
+        "robustness/paraphrase": 150,
+        "human-AI mixed/edited": 63,
+        "watermark": 44,
+        "education/integrity": 46,
+        "calibration/thresholds": 20,
+        "false positives/accusation": 13,
+        "multilingual/cross-lingual": 77,
+        "fairness/non-native bias": 13,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 26.0,
+        "human-AI mixed/edited": 10.9,
+        "watermark": 7.6,
+        "education/integrity": 8.0,
+        "calibration/thresholds": 3.5,
+        "false positives/accusation": 2.3,
+        "multilingual/cross-lingual": 13.4,
+        "fairness/non-native bias": 2.3,
+        "disability/neurodivergence": 0.2
+      }
+    },
+    {
+      "window": 40,
+      "detection_papers": 612,
+      "off_topic_share": 13.2,
+      "topics": {
+        "robustness/paraphrase": 157,
+        "human-AI mixed/edited": 66,
+        "watermark": 44,
+        "education/integrity": 47,
+        "calibration/thresholds": 22,
+        "false positives/accusation": 13,
+        "multilingual/cross-lingual": 82,
+        "fairness/non-native bias": 13,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 25.7,
+        "human-AI mixed/edited": 10.8,
+        "watermark": 7.2,
+        "education/integrity": 7.7,
+        "calibration/thresholds": 3.6,
+        "false positives/accusation": 2.1,
+        "multilingual/cross-lingual": 13.4,
+        "fairness/non-native bias": 2.1,
+        "disability/neurodivergence": 0.2
+      }
+    },
+    {
+      "window": 60,
+      "detection_papers": 673,
+      "off_topic_share": 13.8,
+      "topics": {
+        "robustness/paraphrase": 168,
+        "human-AI mixed/edited": 70,
+        "watermark": 45,
+        "education/integrity": 48,
+        "calibration/thresholds": 23,
+        "false positives/accusation": 13,
+        "multilingual/cross-lingual": 88,
+        "fairness/non-native bias": 15,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 25.0,
+        "human-AI mixed/edited": 10.4,
+        "watermark": 6.7,
+        "education/integrity": 7.1,
+        "calibration/thresholds": 3.4,
+        "false positives/accusation": 1.9,
+        "multilingual/cross-lingual": 13.1,
+        "fairness/non-native bias": 2.2,
+        "disability/neurodivergence": 0.1
+      }
+    },
+    {
+      "window": 80,
+      "detection_papers": 708,
+      "off_topic_share": 14.5,
+      "topics": {
+        "robustness/paraphrase": 171,
+        "human-AI mixed/edited": 70,
+        "watermark": 46,
+        "education/integrity": 49,
+        "calibration/thresholds": 26,
+        "false positives/accusation": 13,
+        "multilingual/cross-lingual": 95,
+        "fairness/non-native bias": 16,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 24.2,
+        "human-AI mixed/edited": 9.9,
+        "watermark": 6.5,
+        "education/integrity": 6.9,
+        "calibration/thresholds": 3.7,
+        "false positives/accusation": 1.8,
+        "multilingual/cross-lingual": 13.4,
+        "fairness/non-native bias": 2.3,
+        "disability/neurodivergence": 0.1
+      }
+    },
+    {
+      "window": 120,
+      "detection_papers": 744,
+      "off_topic_share": 14.8,
+      "topics": {
+        "robustness/paraphrase": 178,
+        "human-AI mixed/edited": 73,
+        "watermark": 47,
+        "education/integrity": 50,
+        "calibration/thresholds": 27,
+        "false positives/accusation": 13,
+        "multilingual/cross-lingual": 98,
+        "fairness/non-native bias": 18,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 23.9,
+        "human-AI mixed/edited": 9.8,
+        "watermark": 6.3,
+        "education/integrity": 6.7,
+        "calibration/thresholds": 3.6,
+        "false positives/accusation": 1.7,
+        "multilingual/cross-lingual": 13.2,
+        "fairness/non-native bias": 2.4,
+        "disability/neurodivergence": 0.1
+      }
+    },
+    {
+      "window": 200,
+      "detection_papers": 764,
+      "off_topic_share": 15.4,
+      "topics": {
+        "robustness/paraphrase": 182,
+        "human-AI mixed/edited": 74,
+        "watermark": 48,
+        "education/integrity": 51,
+        "calibration/thresholds": 28,
+        "false positives/accusation": 13,
+        "multilingual/cross-lingual": 101,
+        "fairness/non-native bias": 18,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 23.8,
+        "human-AI mixed/edited": 9.7,
+        "watermark": 6.3,
+        "education/integrity": 6.7,
+        "calibration/thresholds": 3.7,
+        "false positives/accusation": 1.7,
+        "multilingual/cross-lingual": 13.2,
+        "fairness/non-native bias": 2.4,
+        "disability/neurodivergence": 0.1
+      }
+    },
+    {
+      "window": 400,
+      "detection_papers": 768,
+      "off_topic_share": 15.5,
+      "topics": {
+        "robustness/paraphrase": 182,
+        "human-AI mixed/edited": 74,
+        "watermark": 48,
+        "education/integrity": 52,
+        "calibration/thresholds": 28,
+        "false positives/accusation": 13,
+        "multilingual/cross-lingual": 102,
+        "fairness/non-native bias": 18,
+        "disability/neurodivergence": 1
+      },
+      "shares": {
+        "robustness/paraphrase": 23.7,
+        "human-AI mixed/edited": 9.6,
+        "watermark": 6.2,
+        "education/integrity": 6.8,
+        "calibration/thresholds": 3.6,
+        "false positives/accusation": 1.7,
+        "multilingual/cross-lingual": 13.3,
+        "fairness/non-native bias": 2.3,
+        "disability/neurodivergence": 0.1
+      }
+    }
+  ],
+  "papers_lost_when_widening": {
+    "0->10": 0,
+    "10->20": 0,
+    "20->30": 0,
+    "30->40": 0,
+    "40->60": 0,
+    "60->80": 0,
+    "80->120": 0,
+    "120->200": 0,
+    "200->400": 0
+  },
+  "nested": true,
+  "saturates": {
+    "robustness/paraphrase": {
+      "papers": 182,
+      "window": 200,
+      "papers_entering_after": 4
+    },
+    "human-AI mixed/edited": {
+      "papers": 74,
+      "window": 200,
+      "papers_entering_after": 4
+    },
+    "watermark": {
+      "papers": 48,
+      "window": 200,
+      "papers_entering_after": 4
+    },
+    "education/integrity": {
+      "papers": 52,
+      "window": 400,
+      "papers_entering_after": 0
+    },
+    "calibration/thresholds": {
+      "papers": 28,
+      "window": 200,
+      "papers_entering_after": 4
+    },
+    "false positives/accusation": {
+      "papers": 13,
+      "window": 30,
+      "papers_entering_after": 192
+    },
+    "multilingual/cross-lingual": {
+      "papers": 102,
+      "window": 400,
+      "papers_entering_after": 0
+    },
+    "fairness/non-native bias": {
+      "papers": 18,
+      "window": 120,
+      "papers_entering_after": 24
+    },
+    "disability/neurodivergence": {
+      "papers": 1,
+      "window": 20,
+      "papers_entering_after": 243
+    }
+  },
+  "largest_share_move": 4.3
+}

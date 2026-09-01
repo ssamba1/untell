@@ -91,6 +91,8 @@ no decision, no native speaker and no GPU, only the work.
 | 63 | Settle whether the full tier can be measured here | ✅ done — it cannot, and it is policy rather than effort. `torch` and `transformers` absent, no model cached, PyPI reachable, and **`huggingface.co` returns 403 at the egress proxy by organization policy**. Recorded so nobody repeats the investigation | — |
 | 64 | Ask whether anyone else holds authorship constant | ✅ done, and carefully — **0 of 612 detection abstracts** use any phrase for it, against 70 (11.6%) that mention register, genre or domain. ⚠️ That is a fact about abstracts, not about the field: rounds 22, 23 and 30 each retracted a "nobody does X" claim a keyword search had supported | — |
 | 65 | Make the survey read one string per paper | ✅ done — `DETECTION` is proximity-based, so **title-first gives 612 detection papers and abstract-first gives 604**. Eight flip on concatenation order alone, and they are the noise-floor cases the proximity rule exists to adjudicate. Four call sites did it inline, **two in each order by luck**; `searchable()` is now the only one | — |
+| 66 | Vary the one number the whole survey rests on | ✅ done — the proximity window was never chosen; swept 0→400 it moves the corpus **343→768 papers** and no topic share by more than **4.3 points**. The finding is sharper than stability: **false positives saturates at 13 papers by w=30**, and **192 further detection papers enter behind it, none of them about false positives**, while robustness nearly doubles. The scarcity is in the literature, not the filter | — |
+| 67 | Ask whether the repository is in the state it claims | ✅ done, and it was not — `.gitignore`'s `data/` rule matches `eval/data/` at any depth, so **four artefacts this ledger called committed were never tracked**, including the 70 machine-written abstracts that are the entire AI arm of the inversion finding. Nothing caught it because every check runs where the files exist. Fixed, committed, and guarded by a test that asks git rather than the filesystem | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -478,6 +480,28 @@ MultiSocial, detection in Urdu, Korean and Bangla — that literature asks wheth
 handle a language. The fairness row asks whether handling it *harms* the writer. **The field studies
 the capability roughly six times more than the cost**, which is the same asymmetry as robustness
 against false positives, in a place nobody had counted.
+
+✅ **The imbalance is not the filter being too strict, and that is now measured rather than
+argued.** Every count above rests on one number — `DETECTION_WINDOW`, the 40 characters a paper's
+AI term may sit from its detection term. Nobody chose 40; round fifty-seven needed a window and this
+one worked. Swept from 0 to 400 characters (`python -m eval.litreview --window-sweep`), the corpus
+runs **343 to 768 detection papers, a 2.2x range**, and the windows **nest** — no paper is ever lost
+by widening, so the parameter is a recall dial and nothing here is a reshuffling artefact.
+
+**The false-positives row saturates at 13 papers by a 30-character window and never moves again.**
+Widening to 400 admits **192 further detection papers and not one of them is about false
+positives**, while robustness nearly doubles over the same sweep (93 → 182) and multilingual work is
+still growing at the widest setting. Buying recall at any price in precision recruits none of the
+false-positive literature, because there is none to recruit. The documented near-zero on
+disability/neurodivergence is the same result harder: **1 paper at a 20-character window, and 243
+further papers enter without a second.**
+
+⚠️ **The shares move with the window and the counts do not, so a share is quoted with its window.**
+Across the whole sweep the largest move in any topic share is **4.3 points** (robustness 28.0% →
+23.7%), because the denominator takes on noise as the filter loosens — the off-topic floor climbs
+3.2% → 15.5%. No topic ever overtakes another. And the ratio moves *against* the objection it
+answers: robustness-to-false-positives is **9.3x at the tightest window and 14.0x at the widest**,
+with the published **12.1x** an interior point rather than the sweep's best case.
 
 **Start with what the field counts as its own priorities.** Not a sample — a **census of the entire
 ACL Anthology, 1,718 volumes, 82,352 abstracts, 763 detection papers**, 1952 to 2026: **164** address
