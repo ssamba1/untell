@@ -23,7 +23,8 @@ untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_statu
 Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`,
 `burstiness-formulation-robustness`, `true-ngram-perplexity-contrast`,
 `gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`, `published-vs-student-fpr`,
-`published-vs-student-threshold-sweep`.
+`published-vs-student-threshold-sweep`,
+`genre-controlled-professional-vs-student`, `ellipse-threshold-for-target-fpr`.
 
 ## The corpora
 
@@ -282,15 +283,46 @@ So it is not an artifact of threshold choice. (Gutenberg scoring worse than Brow
 unexplained rather than rationalised: 19th-century literary prose is its own genre, and the
 ordering *among* professional corpora is not stable — only their distance from student writing is.)
 
-**Confounds, and they are substantial.** Brown, Gutenberg and Reuters are professionally edited,
-drawn from different genres and registers, and chunked into 350-word slices of longer works; the
-student corpora are first-draft responses to assigned prompts. Genre, editing and task all vary
-alongside "professional vs student", so this is not a clean single-variable contrast. Reuters
-n=26 has a very wide interval and must not be quoted alone.
+**Genre does not explain it — controlling for genre makes the gap wider.** Brown carries genre
+codes, so its *editorial* section is argumentative prose, the genre match for student
+argumentative essays. Chunked to ~400 words to match the median student essay (ELLIPSE 402).
+
+| population | n | FPR @ 0.30 | FPR @ 0.50 |
+|---|---|---|---|
+| Brown **editorial** (argumentative) | 162 | 42.6% | **0.6%** |
+| Brown essays / belles-lettres | 450 | 54.9% | 4.7% |
+| Brown press reportage (narrative control) | 267 | 30.0% | 2.2% |
+| **ELLIPSE student argumentative** | 3,904 | **97.4%** | **38.7%** |
+
+At 0.50 the genre-matched contrast is **0.6% vs 38.7% — a 64x ratio**, wider than the
+un-matched comparison, because editorial prose is the *lowest*-scoring professional category.
+Matching the genre made the professionals look better, not worse.
+
+**The confound that remains.** Genre and length are now controlled; **editing is not**. These are
+copyedited, finished, published pieces, and the student corpora are first drafts. Separating
+"professional" from "edited" would need unpublished professional drafts, which none of these
+corpora contain. Reuters n=26 has a very wide interval and must not be quoted alone.
 
 What it does establish: **the population a detector is validated on can differ from its deployment
 population by an order of magnitude in false-positive rate.** Any published FPR that does not name
 its population is uninformative about the students it will be used on.
+
+## Result 11 — the threshold that would make the lite tier safe on student writing
+
+Empirical quantiles of the shipped lite scorer over 3,904 known-human ESL essays.
+
+| target false-positive rate | threshold required |
+|---|---|
+| 30% | 0.532 |
+| 10% | 0.625 |
+| 5% | 0.671 |
+| **1%** | **0.775** |
+| *shipped 0.300* | *actual 97.4%* |
+
+**This is not a recommendation to change the default.** Raising the threshold trades false
+positives for false negatives, and the rewriting loop's behaviour is calibrated around 0.30
+throughout the package. It is the number a maintainer needs in order to make that choice
+deliberately rather than inherit it.
 
 ## What these results do not establish
 

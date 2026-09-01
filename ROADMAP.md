@@ -114,7 +114,17 @@ known-human ESL essays, where every flag is an error by construction:
   writers more predictable — lower perplexity, the machine-like end — on both corpora
   (*d* −0.320 ELLIPSE, −0.491 ASAP). The lite tier's stoplist ratio points the other way,
   so it is not a stand-in for the thing it is named after.
-- **The biggest disparity is not demographic — it is professional-vs-student, ~10x.** Same
+- **The biggest disparity is not demographic — it is professional-vs-student, and genre does
+  not explain it.** With genre AND length matched (Brown *editorial* argumentative prose vs
+  student argumentative essays, both ~400 words), threshold 0.50 gives **0.6% vs 38.7% — a
+  64x ratio**, wider than the unmatched comparison. Editing remains confounded and is stated
+  as such. A detector validated on published prose looks excellent and then fails on the
+  students it judges.
+- **The threshold that would make our lite tier safe on student writing is 0.775 for a 1%
+  false-positive rate** (0.671 for 5%, 0.625 for 10%), against the 0.300 we ship, which
+  yields 97.4%. Not a recommendation — raising it trades false positives for false negatives
+  and the loop is calibrated around 0.30 — but it is the number needed to choose deliberately.
+- **The professional-vs-student gap, ungenre-matched, ~10x.** Same
   detector, same threshold: Gutenberg 1.4%, Brown 3.2%, Reuters 3.8% against ASAP 31.6%,
   ELLIPSE 38.7%, PELIC 39.1%. An order of magnitude larger than any subgroup gap here. A
   detector validated on published, edited prose will look excellent and then fail on the
@@ -164,7 +174,8 @@ Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
 `ellipse-lite-signal-decomposition`, `ellipse-proficiency-replication`,
 `ellipse-component-ablation`, `ellipse-raw-signal-effect-sizes` and
 `asap-subgroup-fpr`, `burstiness-formulation-robustness` and
-`true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` `pelic-l1-and-level` and `published-vs-student-fpr` in
+`true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` `pelic-l1-and-level` and `published-vs-student-fpr`,
+`genre-controlled-professional-vs-student` and `ellipse-threshold-for-target-fpr` in
 `.claude/measurements.jsonl`.
 
 
