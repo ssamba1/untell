@@ -50,7 +50,8 @@ no decision, no native speaker and no GPU, only the work.
 | 22 | Confidence intervals on every published rate | 🔜 open | **nobody — buildable now.** Arithmetic over data already collected. |
 | 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
 | 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **15.8% measured**, CI [10.4%, 23.4%] | — |
-| 25 | AI-assisted arm + per-subgroup stratification | 🔜 open | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
+| 25 | Length-conditioned false-positive curve | ✅ done — **26.7% at ≤50 words against 15.6% at 50–100** | — |
+| 26 | AI-assisted arm + per-subgroup stratification | 🔜 open | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /

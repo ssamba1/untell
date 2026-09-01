@@ -92,3 +92,36 @@ def test_a_multi_detector_run_does_not_carry_the_warning():
 def test_intervals_stay_inside_zero_and_one(successes, total):
     low, high = wilson_interval(successes, total)
     assert 0.0 <= low <= high <= 1.0
+
+
+def test_length_bands_cover_the_literature_boundaries():
+    """The bands are the literature's floors — ~50 words for any verdict, 100-120 for statistical
+    methods, ~200 for strong LLMs — not round numbers we liked."""
+    from eval.pre_llm_fpr import LENGTH_BANDS, _band
+
+    assert [low for low, _ in LENGTH_BANDS] == [0, 50, 100, 200]
+    assert _band(0) == "0-50"
+    assert _band(150) == "100-200"
+    assert _band(5000) == "200+"
+
+
+def test_a_tiny_band_reports_an_interval_wide_enough_to_be_useless():
+    """The point of the intervals. A 0/5 band renders as 0.0%, which would be quoted as 'no false
+    positives' — the CI has to make clear it means nothing."""
+    low, high = wilson_interval(0, 5)
+    assert low == 0.0
+    assert high > 0.4, "n=5 must not license a claim of zero false positives"
+
+
+def test_by_length_render_orders_bands_numerically():
+    """String sort would put '100-200' before '50-100' and quietly invert the trend the table exists
+    to show."""
+    from eval.pre_llm_fpr import _render_by_length
+
+    report = {"tier": "lite", "by_length": {
+        "100-200": {"flagged": 1, "n": 10, "fpr": 0.1, "ci95": [0.0, 0.4]},
+        "50-100": {"flagged": 2, "n": 10, "fpr": 0.2, "ci95": [0.1, 0.5]},
+        "0-50": {"flagged": 3, "n": 10, "fpr": 0.3, "ci95": [0.1, 0.6]},
+    }}
+    rendered = _render_by_length(report)
+    assert rendered.index("0-50") < rendered.index("50-100") < rendered.index("100-200")

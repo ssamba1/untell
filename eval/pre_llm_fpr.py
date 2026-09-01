@@ -127,6 +127,70 @@ def probe(texts: list[str], tier: str = "lite") -> dict:
     }
 
 
+# Word-count bands. The boundaries are the literature's, not ours: reliable detection is put at a
+# floor of roughly 50 words, with statistical and fine-tuned methods needing 100-120 to reach their
+# potential and ~200 for strong LLMs, and false positives observed clustering around 34 words.
+LENGTH_BANDS: tuple[tuple[int, int], ...] = ((0, 50), (50, 100), (100, 200), (200, 10**9))
+
+
+def _band(words: int) -> str:
+    for low, high in LENGTH_BANDS:
+        if low <= words < high:
+            return f"{low}-{high}" if high < 10**9 else f"{low}+"
+    return "?"
+
+
+def probe_by_length(texts: list[str], tier: str = "lite") -> dict:
+    """False-positive rate per word-count band, on text that cannot be AI-generated.
+
+    A single false-positive rate averages over lengths, and length is the variable the literature is
+    most explicit about: below about 50 words there is not enough signal for any verdict, and this
+    repo has separately measured one ensemble member flagging 100% of human text at 40 words while
+    flagging 17% of the same corpus at 200. An institution scoring short answers and an institution
+    scoring theses are not running the same tool, and a single number tells them they are.
+
+    Truncation is deliberate rather than opportunistic: each abstract is cut to the *top* of its band
+    so a band's texts are comparable in length, which is what makes the bands mean anything.
+    """
+    from untell.scripts.score import score_text
+
+    bands: dict[str, list[int]] = {}
+    for text in texts:
+        words = text.split()
+        for low, high in LENGTH_BANDS:
+            if len(words) < low:
+                continue
+            clipped = " ".join(words[: high if high < 10**9 else len(words)])
+            result = score_text(clipped, tier=tier)
+            if not result.get("agreement"):
+                continue
+            bands.setdefault(_band(low), []).append(int(bool(result["flagged"])))
+
+    out = {}
+    for band, hits in bands.items():
+        low, high = wilson_interval(sum(hits), len(hits))
+        out[band] = {
+            "flagged": sum(hits), "n": len(hits),
+            "fpr": round(sum(hits) / len(hits), 4) if hits else None,
+            "ci95": [round(low, 4), round(high, 4)],
+        }
+    return {"tier": tier, "by_length": out}
+
+
+def _render_by_length(report: dict) -> str:
+    lines = [
+        f"False positives by length, on pre-LLM human text (tier={report['tier']}).",
+        "Each row truncates to the top of its band, so lengths are comparable within a row.",
+        "",
+        f"{'words':<12} {'n':>5} {'FPR':>8}   95% CI",
+    ]
+    for band in sorted(report["by_length"], key=lambda b: int(b.split("-")[0].rstrip("+"))):
+        row = report["by_length"][band]
+        ci = f"[{row['ci95'][0]:.1%}, {row['ci95'][1]:.1%}]"
+        lines.append(f"{band:<12} {row['n']:>5} {row['fpr']:>7.1%}   {ci}")
+    return "\n".join(lines)
+
+
 def _render(report: dict) -> str:
     lines = [
         f"Pre-LLM human abstracts scored: {report['n_scored']} (tier={report['tier']})",
@@ -163,6 +227,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--min-words", type=int, default=60)
     parser.add_argument("--max-year", type=int, default=2021)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--by-length", action="store_true",
+                        help="report the false-positive rate per word-count band")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
 
@@ -175,7 +241,12 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 1
     random.Random(args.seed).shuffle(texts)
-    report = probe(texts[: args.n], tier=args.tier)
+    sample = texts[: args.n]
+    if args.by_length:
+        report = probe_by_length(sample, tier=args.tier)
+        print(json.dumps(report, indent=2) if args.as_json else _render_by_length(report))
+        return 0
+    report = probe(sample, tier=args.tier)
     print(json.dumps(report, indent=2) if args.as_json else _render(report))
     return 0
 
