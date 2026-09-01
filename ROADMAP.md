@@ -429,7 +429,7 @@ aggregation rule itself, one level down.
 
 ### The result that should organise everything else — all of it peer-reviewed and read at source
 
-A systematic pass over **96 ACL Anthology volumes, 31,387 abstracts, 565 detection papers** (method
+A systematic pass over **108 ACL Anthology volumes, 38,231 abstracts, 578 detection papers** (method
 and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
 below is refereed and was read from the Anthology's own metadata.
 

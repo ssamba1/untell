@@ -2411,3 +2411,62 @@ sounding like it does. A test asserts the report still denies it.
 
 Shipped as status row 29. Row 28 stays open and its blocker line is rewritten: the obstacle was never
 method, it was that we had not read the paper that solved it.
+
+---
+
+# Round thirty-two — the guard that would have caught round thirty-one, and what it found
+
+Round thirty-one's defect was not that a number was wrong. It was that **every unit test of
+`eval/pre_llm_fpr.py` passed while its corpus was empty**, because they all use synthetic text. A
+module can be fully covered and completely unable to run.
+
+`tests/test_every_corpus_the_evals_need_can_still_be_built.py` tests the thing those did not: that
+the shipped configuration can still build the corpora the published measurements rest on. It skips
+when the cache is absent — a contributor should not need a 180 MB download to see green — but a
+present cache that yields nothing is the round-thirty-one failure, and it fails.
+
+Two of its checks need no cache at all, because **the defect was in the configuration, not the
+download**: `VOLUMES` must span the `max_year` cut-off that `pre_llm_abstracts` reads (taken from the
+function's own signature, so the two cannot drift), and there must be at least five volumes below it,
+since round fifteen found two volume names that never existed and a single point of failure here is
+not hypothetical.
+
+## ✗ It failed on its first run, on volumes added the round before
+
+`2018.acl`, `2018.emnlp`, `2019.acl` and `2019.naacl` were **cached and yielded nothing**. MEASURED
+directly against the Anthology repository, they return **HTTP 200 with a 743-byte stub containing
+zero papers** — the Anthology used the old `P18-1001` id
+scheme at that vintage, in differently-named files. The 200-byte floor in `_fetch` passed them,
+because 743 > 200.
+
+**So round thirty-one's fix for a missing corpus itself shipped four volumes that contribute nothing**,
+and the guard written to catch that class of defect caught it one round later on the round that
+created it. That is now twice — round twenty-seven's cross-check did the same.
+
+## The fix is in the tool, not the list
+
+`download` now parses each volume before caching it and rejects one that yields **zero papers** or is
+not XML at all. A byte floor cannot tell a stub from a volume; a paper count can. The four dead names
+are gone, and three tests pin the behaviour — a stub is rejected, an HTML error page served as 200 is
+rejected, and **a real volume still passes**, because a floor that rejected everything would empty
+the corpus silently, which is round thirty-one with extra steps.
+
+Fixing that also exposed an unrealistic fixture: the shared `VOLUME` used by the download tests was
+`<collection>` wrapped around 500 x's, with no paper in it. It had been standing in for a real volume
+while being exactly the shape the new check rejects.
+
+## Where the corpus now stands
+
+MEASURED by `python -m eval.litreview --download --json` and
+`python -c "from eval.pre_llm_fpr import pre_llm_abstracts; ..."`:
+
+| | before round 31 | now |
+|---|---|---|
+| volumes | 96 | **108** |
+| abstracts | 31,387 | **38,231** |
+| detection papers | 565 | **578** |
+| pre-LLM abstracts | **0** | **6,811** |
+
+Thirteen detection papers across twelve added volumes, which is the expected shape: they predate the
+field, and they are here for the false-positive ground truth rather than the survey. **The ratio is
+unmoved.** All quotations updated.

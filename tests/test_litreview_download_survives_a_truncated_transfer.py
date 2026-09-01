@@ -36,7 +36,14 @@ class _Response:
         return self._body
 
 
-VOLUME = b"<collection>" + b"x" * 500 + b"</collection>"
+# A volume the downloader will accept: over the byte floor AND containing a real paper, since
+# a paperless file is now rejected (2018.acl returns exactly that with HTTP 200).
+VOLUME = (
+    b"<collection id='2025.acl'><volume id='long'><paper id='1'>"
+    b"<title>A paper about detection</title>"
+    b"<abstract>" + b"An abstract sentence. " * 20 + b"</abstract>"
+    b"</paper></volume></collection>"
+)
 
 
 def test_a_truncated_transfer_is_retried_rather_than_cached(monkeypatch):
@@ -102,3 +109,36 @@ def test_every_configured_volume_name_is_plausible():
 def test_the_two_volumes_that_never_existed_are_gone(dead):
     """Pins the round-fifteen correction so the names cannot drift back in."""
     assert dead not in litreview.VOLUMES
+
+
+def test_a_volume_that_parses_to_zero_papers_is_rejected(monkeypatch):
+    """The byte floor was not enough. `2018.acl` and `2019.acl` return HTTP 200 with a 743-byte stub
+    containing no papers at all — the Anthology used the old `P18-1001` id scheme then, in
+    differently-named files. Cached, those look like successful downloads forever, and four of them
+    sat in the volume list for a full round contributing nothing."""
+    stub = b"<collection id='2018.acl'>" + b" " * 400 + b"</collection>"
+    monkeypatch.setattr(
+        litreview.urllib.request, "urlopen", lambda url, timeout=0: _Response(stub)
+    )
+    assert litreview._fetch("http://x/2018.acl.xml", "2018.acl") is None
+
+
+def test_unparseable_xml_is_rejected_rather_than_cached():
+    """An error page served with HTTP 200 is longer than the byte floor and is not XML."""
+    import unittest.mock as mock
+
+    page = b"<html><body>" + b"Service Unavailable " * 40 + b"</body></html>"
+    with mock.patch.object(litreview.urllib.request, "urlopen",
+                           lambda url, timeout=0: _Response(page)):
+        assert litreview._fetch("http://x/v.xml", "v") is None
+
+
+def test_a_real_volume_still_passes():
+    """Guards the guard: a floor that rejected everything would empty the corpus silently, which is
+    the round-thirty-one failure with extra steps."""
+    import unittest.mock as mock
+
+    real = VOLUME  # over the byte floor and containing a paper
+    with mock.patch.object(litreview.urllib.request, "urlopen",
+                           lambda url, timeout=0: _Response(real)):
+        assert litreview._fetch("http://x/v.xml", "v") == real

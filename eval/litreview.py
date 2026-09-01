@@ -51,8 +51,8 @@ VOLUMES: tuple[str, ...] = (
     # builds its ground truth from Anthology text published no later than 2021, and without them it
     # returns ZERO abstracts: the repository's most-quoted false-positive number, "15.8% of 120
     # pre-LLM abstracts", could not be reproduced by the shipped tool at all. Verified to resolve;
-    # note the Anthology uses year-only ids here (2021.acl, not 2021.acl-long).
-    "2018.acl", "2018.emnlp", "2019.acl", "2019.naacl",
+    # note the Anthology uses year-only ids here (2021.acl, not 2021.acl-long), and that this
+    # scheme only goes back to 2020 — 2018.acl and 2019.acl return 200 with an empty stub.
     "2020.acl", "2020.emnlp", "2020.coling", "2020.lrec", "2020.findings",
     "2021.acl", "2021.emnlp", "2021.naacl", "2021.eacl", "2021.findings", "2021.tacl", "2021.cl",
     "2023.acl", "2023.emnlp", "2023.findings", "2023.tacl", "2023.ijcnlp",
@@ -160,6 +160,18 @@ def _fetch(url: str, name: str, attempts: int = 3) -> bytes | None:
             continue
         if len(body) < 200:
             logger.warning("skipping %s: response too small to be a volume", name)
+            return None
+        # A byte floor is not enough. `2018.acl` and `2019.acl` return HTTP 200 with a 743-byte
+        # stub containing zero papers — the Anthology used the old `P18-1001` id scheme then, in
+        # differently-named files. Cached, those look like successful downloads forever and
+        # contribute nothing, which is how four dead volumes sat in the list for a whole round.
+        try:
+            papers = len(ET.fromstring(body).findall(".//paper"))
+        except ET.ParseError as exc:
+            logger.warning("skipping %s: not parseable XML: %s", name, exc)
+            return None
+        if papers == 0:
+            logger.warning("skipping %s: parses to zero papers", name)
             return None
         return body
     return None
