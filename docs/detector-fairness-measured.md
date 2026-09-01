@@ -1,4 +1,4 @@
-# Measured: who a detector fails, on 38,805 texts nobody wrote with a machine
+# Measured: who a detector fails, on 39,290 texts nobody wrote with a machine
 
 Every number here is a **false-positive rate on known-human writing**. The corpora are essays by
 real students, so a flag is an error by construction — there is no labelling to dispute and no
@@ -16,6 +16,8 @@ withdrawals kept visible.
 untell-subgroup-audit --corpus ellipse --tier lite --sweep
 untell-subgroup-audit --corpus asap --tier lite --by ell_status
 untell-subgroup-audit --corpus ellipse --ablate
+untell-subgroup-audit --corpus liang --tier lite --n 0                          # Results 12, 13
+untell-subgroup-audit --corpus liang --n 0 --ablate --band-axis population      # Result 14
 untell-ngram-lm train && untell-ngram-lm score --csv <corpus>.csv --by ell_status
 untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_status
 ```
@@ -25,7 +27,8 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 `gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`, `published-vs-student-fpr`,
 `published-vs-student-threshold-sweep`,
 `genre-controlled-professional-vs-student`, `ellipse-threshold-for-target-fpr`,
-`unedited-adult-writing`.
+`unedited-adult-writing`, `liang-population-fpr`, `liang-paired-gpt4-polish`,
+`liang-threshold-sweep`, `liang-component-ablation`.
 
 ## The corpora
 
