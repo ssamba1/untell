@@ -1,0 +1,165 @@
+"""Does this detector separate machine text from human text at all, at matched length?
+
+Every false-positive measurement in this repository — 19.47% on pre-LLM abstracts, 28.69% at 60-100
+words — answers half a question. A detector that flags nothing has no false positives, and one that
+flags everything catches every machine document. **Neither number means anything without the other**,
+and the other was unmeasurable here: HC3 and RAID both require network access this environment
+denies.
+
+`eval/data/generated_abstracts.py` supplies the missing arm. Its texts were written by a large
+language model, so the label is provenance rather than annotation — the one property those corpora
+buy with a download.
+
+MEASURED at the shipped verdict threshold of 0.45, matched by length against pre-LLM ACL abstracts:
+
+    band       machine                        human
+    40-60       9.7%  [3.3%, 24.9%]  n=31     64.5%  [46.9%, 78.9%]  n=31
+    60-100     12.0%  [4.2%, 30.0%]  n=25     28.7%  [25.2%, 32.4%]  n=603
+    100+        7.1%  [1.3%, 31.5%]  n=14     18.6%  [17.6%, 19.6%]  n=6,207
+
+    40-100     10.7%  [5.0%, 21.5%]  n=56     30.4%  [27.0%, 34.1%]  n=634
+
+**In every band the detector flags human text more often than machine text**, and over the matched
+40-100 range the intervals do not overlap. Mean score is 0.2962 for the machine arm against 0.3718
+for the human one.
+
+That is not a weak detector. On this register it is pointed the wrong way.
+
+⚠️ **What this does and does not support.** One model's output, one register, n=56. The machine
+abstracts were written across many topics and deliberately varied, which may make them more
+sentence-length-varied than typical model output — and since the detector's largest term rewards
+uniformity, that would bias the machine arm's score DOWN. So the true separation could be better
+than this shows. It could not plausibly be reversed: the human arm is 634 real abstracts and its rate
+is measured to within a few points.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+
+from eval.pre_llm_fpr import wilson_interval
+
+DEFAULT_THRESHOLD = 0.45
+# Matched to the human corpus's own bands. Comparing arms of different lengths is the confound
+# `eval/arms.py` exists for, and this detector's length effect is large enough to swamp any real
+# signal if the arms are not matched.
+BANDS: tuple[tuple[int, int], ...] = ((40, 60), (60, 100), (100, 10**9))
+
+
+def _rate(scores: list[float], threshold: float) -> dict:
+    flagged = sum(s >= threshold for s in scores)
+    low, high = wilson_interval(flagged, len(scores)) if scores else (0.0, 1.0)
+    return {
+        "n": len(scores),
+        "flagged": flagged,
+        "rate": round(flagged / len(scores), 4) if scores else None,
+        "ci95": [round(low, 4), round(high, 4)],
+    }
+
+
+def compare(
+    machine: list[tuple[int, float]], human: list[tuple[int, float]],
+    threshold: float = DEFAULT_THRESHOLD,
+) -> dict:
+    """Flag rates for both arms, per matched length band and pooled over the overlapping range.
+
+    ``machine`` and ``human`` are ``(word_count, score)`` pairs. Bands where either arm is empty are
+    reported as ``None`` rather than dropped silently — a band present in one arm and not the other
+    is exactly what an unmatched comparison hides.
+    """
+    bands: dict[str, dict] = {}
+    pooled_machine: list[float] = []
+    pooled_human: list[float] = []
+    for low, high in BANDS:
+        label = f"{low}-{high}" if high < 10**9 else f"{low}+"
+        m = [s for words, s in machine if low <= words < high]
+        h = [s for words, s in human if low <= words < high]
+        bands[label] = {
+            "machine": _rate(m, threshold) if m else None,
+            "human": _rate(h, threshold) if h else None,
+        }
+        # Pool only where BOTH arms have data, which is what "matched" means.
+        if m and h and high <= 100:
+            pooled_machine += m
+            pooled_human += h
+    machine_pooled, human_pooled = _rate(pooled_machine, threshold), _rate(pooled_human, threshold)
+    separated = (
+        bool(pooled_machine) and bool(pooled_human)
+        and machine_pooled["ci95"][1] < human_pooled["ci95"][0]
+    )
+    return {
+        "threshold": threshold,
+        "bands": bands,
+        "matched": {"machine": machine_pooled, "human": human_pooled},
+        # True when the machine arm is flagged LESS than the human one with non-overlapping
+        # intervals: the detector is pointed the wrong way, not merely weak.
+        "inverted": separated,
+    }
+
+
+def render(report: dict) -> str:
+    lines = [
+        f"Flag rates at threshold {report['threshold']}, matched by length.",
+        "Every flag on the human arm is a false positive; every miss on the machine arm is a "
+        "false negative.",
+        "",
+        f"{'band':<10} {'machine':>22}   {'human':>22}",
+    ]
+    for label, row in report["bands"].items():
+        def cell(entry: dict | None) -> str:
+            if not entry or entry["rate"] is None:
+                return f"{'-':>22}"
+            return (f"{entry['rate']:>7.1%} [{entry['ci95'][0]:.1%},{entry['ci95'][1]:.1%}]"
+                    f" n={entry['n']}")
+        lines.append(f"{label:<10} {cell(row['machine']):>22}   {cell(row['human']):>22}")
+    matched = report["matched"]
+    lines += ["", "matched range (both arms present):"]
+    for arm in ("machine", "human"):
+        entry = matched[arm]
+        if entry["rate"] is not None:
+            lines.append(f"  {arm:<8} {entry['flagged']}/{entry['n']} = {entry['rate']:.1%}  "
+                         f"[{entry['ci95'][0]:.1%}, {entry['ci95'][1]:.1%}]")
+    if report["inverted"]:
+        lines += [
+            "",
+            "INVERTED: the machine arm is flagged LESS than the human arm, intervals not "
+            "overlapping.",
+            "On this register the detector is pointed the wrong way — not weak, reversed.",
+        ]
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--machine", type=str, default=None,
+                        help="JSON [[words, score], ...]; defaults to scoring the packaged corpus")
+    parser.add_argument("--human", type=str, required=True,
+                        help="JSON [[words, score], ...] from a known-human corpus")
+    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
+    parser.add_argument("--json", action="store_true", dest="as_json")
+    args = parser.parse_args(argv)
+
+    if args.machine:
+        machine = [tuple(x) for x in json.loads(open(args.machine).read())]
+    else:
+        from eval.data.generated_abstracts import ABSTRACTS
+        from untell.scripts.score import score_text
+
+        machine = []
+        for abstract in ABSTRACTS:
+            text = " ".join(abstract.split())
+            result = score_text(text, tier="lite")
+            values = [v for v in result.get("detectors", {}).values()
+                      if isinstance(v, (int, float))]
+            if values:
+                machine.append((len(text.split()), values[0]))
+    human = [tuple(x) for x in json.loads(open(args.human).read())]
+    report = compare(machine, human, args.threshold)
+    print(json.dumps(report, indent=2) if args.as_json else render(report))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

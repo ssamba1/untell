@@ -5148,3 +5148,66 @@ first — naming, in its failure message, the measurement that has to come first
 That test is the deliverable as much as the function is. **A correct fix, held back for want of the
 measurement that would justify it, is a different thing from a fix nobody found** — and only one of
 them is honest to ship.
+
+---
+
+# Round seventy-six — the detector flags human abstracts more often than machine ones
+
+Round seventy-five could not decide whether correcting `_burstiness` was worth doing, because the
+decision needs AI-labelled text and both HC3 and RAID require network access this environment denies.
+The instruction was to find a way.
+
+**There is one. A language model wrote the corpus.** `eval/data/generated_abstracts.py` holds 70
+academic abstracts across NLP subfields, written to match the human arm's register and length range
+and nothing else. The label is not an annotation — it is the provenance, which is the one property
+those downloadable corpora buy.
+
+MEASURED at the shipped verdict threshold of 0.45, matched by length against pre-LLM ACL abstracts:
+
+| band (words) | machine | human |
+|---|---|---|
+| 40–60 | **9.7%** [3.4%, 24.9%] n=31 | **64.5%** [46.9%, 78.9%] n=31 |
+| 60–100 | **12.0%** [4.2%, 30.0%] n=25 | **28.7%** [25.2%, 32.4%] n=603 |
+| 100+ | **7.1%** [1.3%, 31.5%] n=14 | **18.6%** [17.6%, 19.6%] n=6,207 |
+| **40–100 pooled** | **10.7%** [5.0%, 21.5%] n=56 | **30.4%** [27.0%, 34.1%] n=634 |
+
+**In every band the detector flags human text more often than machine text.** Over the matched
+40–100 range the intervals do not overlap — 21.5% against 27.0% — and the mean score is **0.2962 for
+the machine arm against 0.3718 for the human one.**
+
+✗ **This is not a weak detector on this register. It is pointed the wrong way.**
+
+## Why that is the result and not an artefact of arm construction
+
+The arms are matched by length, because this detector's length effect is large enough to swamp
+authorship — rounds seventy-two to seventy-five measured exactly that. Pooling happens only where
+both arms have data; `eval/detection_power.py` reports a band present in one arm and absent from the
+other rather than dropping it, since dropping it is what makes an unmatched comparison look matched.
+
+The mechanism is round seventy-five's. The score's largest term rewards **uniform sentence length**,
+and academic abstracts are uniform: 4.3 sentences at 60–100 words, tightly clustered in length
+because the genre demands it. Machine abstracts written across seventy different topics vary more.
+The detector is measuring genre conformity and calling it authorship.
+
+## ⚠️ What this supports, and what it does not
+
+* **One model, one register, n=56 in the machine arm.** No claim beyond academic abstracts.
+* **These were written deliberately varied**, across seventy distinct topics. Typical model output —
+  many completions of one prompt — would be more uniform and would score *higher*. So the true
+  separation may be better than this shows.
+* **It could not plausibly be reversed.** The human arm is 634 real abstracts and its rate is pinned
+  to within a few points. Whatever the machine arm's true rate, the human arm is flagged at 30.4%.
+
+## What it does to round seventy-five
+
+Round seventy-five held back the `_burstiness` correction because it cut false positives from 19.44%
+to 12.41% and the cost in detection power was unmeasurable. It is measurable now: MEASURED on the matched
+60–100 band, the correction takes the machine arm from 12.0% to **8.0%** while taking the human arm
+from 28.7% to **16.4%**.
+
+**Both fall. The ratio improves. And both remain the wrong way round.** The correction is a real
+improvement to a detector that, on this register, does not work — so the case for adopting it is
+stronger than round seventy-five could show, and still not the case for trusting the thing.
+
+The default stays unchanged, for the reason it always was: this is one register, and a change to a
+shipped detector wants evidence from more than one.
