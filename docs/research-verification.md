@@ -5563,3 +5563,67 @@ MEASURED, both detectors on both questions:
 That is the fairest account this project can give of its own two detectors, and it took holding
 authorship constant to get it — which is available to anyone with a language model and was not
 available with a downloaded corpus, because a downloaded corpus cannot hold the author fixed.
+
+---
+
+# Round eighty-three — a machine-written abstract is judged more human than a real one
+
+Rounds eighty-one and eighty-two measured the two detectors. `humanness` is the number a user
+actually reads — a 0-100 score `untell` puts in front of people — and it inherits both.
+
+MEASURED at matched length, 60–100 words, lite path:
+
+| arm | n | mean humanness |
+|---|---|---|
+| **machine: academic** | 25 | **80.8** |
+| human: academic | 603 | **75.4** |
+| machine: assistant | 12 | 71.7 |
+
+> P(machine academic reads MORE human than human academic) = **0.6733** — should be below 0.5
+> P(human academic reads MORE human than machine assistant) = **0.6009** — should be above 0.5
+
+**A machine-written abstract is judged more human than a real one, two times in three.**
+
+## The 0.978 was in the file all along, and it is a property of the corpus
+
+`untell/humanness.py` already recorded AUROC **0.978** on HC3 pairs at full length. HC3 is chatbot
+question-and-answer text — **the register a language model is stereotyped for, and the one the tell
+catalogue was built from.**
+
+So the same score, on three comparisons:
+
+| what it is asked to separate | MEASURED |
+|---|---|
+| HC3: assistant-register machine text from human answers | **0.978** — excellent |
+| machine assistant text from human academic text | 0.6009 — right way, weak |
+| machine academic text from human academic text | **0.6733 the wrong way** |
+
+**Same tool, three verdicts, and the variable is register.** Round eighty-two established why by
+holding authorship constant: the tell catalogue separates registers perfectly (AUROC 1.0000, one
+author) and separates authorship worse than a coin flip (0.2697). A score built on those signals
+inherits both properties exactly.
+
+The 0.978 and the reversal now sit in the same comment, because a figure recorded without the
+condition that produced it gets read as a property of the score. That is round sixty-five's finding
+and round seventy-seven's, arriving a third time in the file that a user's number comes from.
+
+## ✅ And the score orders the machine registers correctly
+
+Authorship held constant, the MEASURED means are academic **80.3**, assistant **71.7** and
+promotional **66.4** — the ordering anyone would give. **It is a working instrument pointed at the wrong quantity.** That is
+a more useful thing to know than "it is broken", and it is the third time this arc has landed there:
+the catalogue is a perfect register classifier, the score is a decent register orderer, and neither
+is an authorship classifier.
+
+## ⚠️ Two mistakes while measuring it
+
+✗ **`humanness()` returns a float, not a dict.** My verification script called `.get("score")` on it
+and died. The measurement was already right — the first script handled both shapes — but the check
+written to confirm the direction convention was the thing that broke, which would have been a poor
+reason to doubt a correct number.
+
+✗ **The direction convention is worth spelling out, not inferring.** Higher humanness means *more
+human*, so a working tool puts machine text BELOW human text, and an AUROC computed the usual way
+(P(positive > negative)) reads backwards for this score. The figures above are printed with the
+direction named in the same line — `should be below 0.5`, `should be above 0.5` — because a sign
+error here would invert the headline and read as a fix.

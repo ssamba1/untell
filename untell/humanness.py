@@ -107,6 +107,28 @@ def _warn_too_short() -> str:
 # not merely noisy, it is biased against the human writer — which is the direction that costs
 # someone an accusation.
 #
+# ✗ **AND THE 0.978 IS A PROPERTY OF THE REGISTER, NOT OF THE SCORE.** HC3 is chatbot question-and-
+# answer text — the register a language model is stereotyped for, and the one this repository's tell
+# catalogue was built from. MEASURED on academic abstracts at matched length, 60-100 words, lite
+# path:
+#
+#     human academic     n=603   mean humanness 75.4
+#     machine academic   n= 25   mean humanness 80.8
+#     machine assistant  n= 12   mean humanness 71.7
+#
+#     P(machine academic reads MORE human than human academic)  = 0.6733   should be below 0.5
+#     P(human academic reads MORE human than machine assistant) = 0.6009   should be above 0.5
+#
+# **A machine-written abstract is judged more human than a real one.** Same tool, opposite verdicts,
+# and the variable is register: it works on the register it was measured on (0.978 on HC3), works
+# weakly when a machine writes in an assistant register (0.6009 the right way), and is REVERSED when
+# a machine writes in an academic one (0.6733 the wrong way).
+#
+# Round eighty-two established why, by holding authorship constant: the tell catalogue separates
+# registers perfectly (AUROC 1.0000, same author) and separates authorship worse than a coin flip
+# (0.2697). A humanness score built on those signals inherits both properties. See rounds eighty-one
+# to eighty-three of docs/research-verification.md.
+#
 # The number is still returned. Callers store and compare it, and withholding it silently would
 # break them for a reason they cannot see — the same reasoning `score_text` records for leaving
 # `max` alone. What changes is that the caveat now reaches them.
