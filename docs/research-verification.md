@@ -2933,7 +2933,7 @@ collect four torch-dependent files, so the documented count sat above what this 
 
 This round's 600-odd new tests pushed the collected count past the documented one and **the assertion
 flipped to its other side**: the doc now understated by 708, which the same test also catches. The
-figure is updated to **9,958 tests across 614 modules**.
+figure is updated to **9,958 tests across 620 modules**.
 
 Worth stating plainly: **9,958 is a floor, not a count** — MEASURED by
 `UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q`, which reports it alongside 4 collection errors.
@@ -3173,8 +3173,13 @@ referenced (the repo dispatches by string name) and that `score_text` does **not
 
 Applying that broke a test, which turned out to be unrelated and older. `check_test_count_claims`
 matches `(\d{3,5})\s+tests`, and the round-thirty-nine footnote says **"9,958 tests"**. The digit run
-stops at the comma, so the check read it as 958 — MEASURED, it reported the document as claiming
-958 tests where the suite collects 10,061.
+stops at the comma, so the check read it as 958 — MEASURED, it reported the document as claiming a
+count of 958 where the suite collects 10,061.
+
+*(That sentence is deliberately not written as "958" followed by the word tests. Phrased the obvious
+way it trips the very check it describes, which is what happened when this entry was first written
+and is the second time in this ledger that describing a defect has re-triggered it — the first was a
+sentence about "N commercial LLMs" in round twenty-nine.)*
 
 **A false alarm accusing a correct document of understating by an order of magnitude** — the kind
 that gets a check switched off. The pattern now accepts `[\d,]` and strips the separators.
@@ -3238,7 +3243,7 @@ check it never ran, which would be this failure one level up again.
 # Round forty-six — a repo-wide vacuity sweep, and five wrong answers before the right one
 
 Round forty-five checked eleven test files for vacuity. This one extended it to the whole suite:
-**512 test files auto-paired to the 63 modules they most import**, each module sabotaged in turn.
+**512 test files auto-paired to the 63 source modules they most import**, each module sabotaged in turn.
 
 The result is worth stating before the process: **zero confirmed vacuous test files.**
 
@@ -3576,3 +3581,69 @@ disagree.
 `eval/assisted_fairness.py` keeps its own `length_balance`, which does something this cannot: it
 reports medians **per arm per author status** across five arms. The shared function is for the
 two-arm case; the specialised one is not a duplicate of it.
+
+---
+
+# Round fifty-two — two papers say the category is the problem, not the accuracy
+
+Round forty-nine recorded *Frankentext* as **the first result this repository's arms cannot
+represent**: human words, machine arrangement, 72% misclassified as human by Pangram. Reading further
+into the robustness topic shows it is not the first and not alone.
+
+## ✅ The Ship of Theseus problem, stated as authorship rather than accuracy
+
+*A Ship of Theseus* ([2024.acl-long.357](https://aclanthology.org/2024.acl-long.357/)) asks whether a
+text retains its authorship after repeated paraphrasing — "whether authorship should be attributed to
+the original human" once an LLM has rewritten it enough times. That is the **same question as
+Frankentext from the opposite direction**: Frankentext keeps human words and machine-arranges them;
+iterated paraphrase keeps human structure and machine-replaces the words.
+
+**Both attack the category rather than the classifier.** Every arm this repository audits — human,
+AI-assisted, machine-humanized, fully generated — presumes a fact of the matter about who authored
+the words. These two say that fact dissolves under ordinary operations, and no threshold, ensemble or
+calibration addresses it.
+
+This upgrades round forty-nine from *one awkward result* to **a converging line of work**, and it
+changes what the honest limitation section of this strategy has to say: not "our taxonomy has a gap"
+but "the taxonomy is a simplification that two refereed results show breaking down at the edges."
+
+## The evasion numbers, for the record
+
+- ✗ **Detectors reverse on minor perturbations.** *Are AI-Generated Text Detectors Robust to
+  Adversarial Perturbations?* ([2024.acl-long.327](https://aclanthology.org/2024.acl-long.327/)):
+  "even minor changes in characters or words caus[e] a **reversal** in distinguishing between
+  human-created and AI-generated text." Independent corroboration of SilverSpeak's homoglyph result
+  by a different attack family.
+- ✗ **Evasion no longer needs a trained paraphraser.** CoPA
+  ([2025.emnlp-main.433](https://aclanthology.org/2025.emnlp-main.433/)) is **training-free**, using
+  off-the-shelf LLMs and crafted instructions. Previous attacks "require substantial data and
+  computational budgets"; this removes the barrier.
+- ✗ **And the largest single figure in this ledger.** TempParaphraser
+  ([2025.emnlp-main.1607](https://aclanthology.org/2025.emnlp-main.1607/)) simulates high-temperature
+  sampling through multiple normal-temperature generations and **reduces detector accuracy by an
+  average of 82.5%** while preserving text quality. Against *Stumbling Blocks*' 35% average drop
+  across four attack families, this is one attack, more than twice as effective.
+
+⚠️ **Both papers also report the defence**, and reporting only the attack would be selective. CoPA's
+authors and TempParaphraser's both note that training on augmented data improves robustness, and
+`2024.acl-long.327` proposes SCRN, a detector built to be robust to exactly these perturbations. The
+picture is an arms race with movement on both sides, not a rout — which is the same correction this
+ledger made in round twenty-one about watermark fragility.
+
+## The full-suite check, and a failure that was my own prose
+
+MEASURED after round fifty-one: **9,803 passed, 75 failed** across 40 files, against 40 failing files
+on `main`. **One file failed on the branch and not on base** — `test_every_audit_check_can_fail.py` —
+and it was not a code regression.
+
+`check_test_count_claims` reported *"claims 958 tests"*. That is the **round-forty-four comma bug**,
+whose fix is still in place and working. What it had found was the ledger entry **describing** that
+bug, which contained the literal string it warns about. The check was right; the prose was the claim.
+
+**Third time in this ledger.** Round twenty-nine's sentence about "N commercial LLMs" did it, round
+forty-four's about the comma did it, and round forty-six's "the 63 modules they most import" read as
+a test-module count. All three are now phrased around the trigger, with a note saying why — because
+the obvious rewording is to relax the checker, and the checker is right every time.
+
+The remaining drift was real: six test files added this round took the module count from 614 to 620,
+repaired with `--fix-counts`.
