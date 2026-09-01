@@ -49,12 +49,13 @@ no decision, no native speaker and no GPU, only the work.
 | 21 | Third-party watermark audit (Article 50 marking) | 🔜 open | **WaterPark already audits watermark robustness**; what is open is a *key-free third-party* audit in the TTP-Detect sense, at segment level. Blueprint corrected in §7. |
 | 22 | Confidence intervals on every published rate | ✅ done — **169 proportions tabulated**, and a test fails if one appears without an interval | — |
 | 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
-| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **15.8% measured**, CI [10.4%, 23.4%] | — |
-| 25 | Length-conditioned false-positive curve | ✅ done — **26.7% at ≤50 words against 15.6% at 50–100** | — |
+| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **19.2% measured**, CI [13.1%, 27.1%] (re-measured in round 31 on the corpus the shipped tool actually builds) | — |
+| 25 | Length-conditioned false-positive curve | ✅ done — **30.0% at ≤50 words against 21.7% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
 | 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody**, and **the corpus blocker has a way around it**: *Centering the Margins* measures harm to marginalised groups by outlier detection, needing no subgroup labels at all. Method in §7. |
-| 29 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
+| 29 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; **margin 13.3% vs centre 12.5%, intervals overlap**, so no disparity measurable with one detector | — |
+| 30 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -390,7 +391,7 @@ Six claims changed on contact with their sources; the ledger lists all of them.
 > HuggingFace, which its egress policy blocks, so `--tier full` resolves to the same single detector
 > as `--tier lite`. Consequences, and they are not small:
 >
-> - **15.8% on pre-LLM abstracts, 26.7% at ≤50 words, 17.3% at the shipped threshold** are that one
+> - **19.2% on pre-LLM abstracts, 30.0% at ≤50 words, 17.3% at the shipped threshold** are that one
 >   detector's false-positive rates. The ensemble's would differ, and this repo has separately
 >   measured `mage` alone driving the ensemble's rate through `max`.
 > - **The FAR/MFAR/consensus spread cannot be measured on our own stack here.** With one detector the
@@ -769,7 +770,7 @@ a fact about HC3, and the 0-to-61% range is the reason to say so every time we q
   the technical register detectors are worst on, where **every flag is a false positive by
   construction** — no labels, nothing to dispute.
 
-  **First measurement: 15.8% of 120 pre-LLM abstracts flagged, 95% CI [10.4%, 23.4%], lite tier.**
+  **Measured: 19.2% of 120 pre-LLM abstracts flagged, 95% CI [13.1%, 27.1%], lite tier.**
   That is now the most defensible false-positive number this repo has, because its ground truth
   cannot be argued with. ✗ **It is not comparable to Bohler's 8.6%**, which an earlier draft of this
   paragraph called "roughly double" — ours is the share of documents flagged, theirs is the mean
@@ -863,8 +864,8 @@ Localization* ([2024.findings-acl.495](https://aclanthology.org/2024.findings-ac
 in-depth study" of finding *which parts* of a document are machine-generated, and its central
 obstacle is ours: "short spans of text, e.g., a single sentence, provides little information
 indicating if it is machine generated due to its short length." **That is the same wall our own
-measurement hit** — per-sentence AUROC 0.513 on the stdlib path, and 26.7% of pre-LLM human text
-flagged at ≤50 words against 15.6% at 50–100. Their answer is to **predict over several sentences at
+measurement hit** — per-sentence AUROC 0.513 on the stdlib path, and 30.0% of pre-LLM human text
+flagged at ≤50 words against 21.7% at 50–100. Their answer is to **predict over several sentences at
 once** so style and content *changes* carry the signal, worth **4–13% mAP** over prior work. Our
 `score_sentences` scores each sentence independently, so this is a named, measured improvement path
 rather than a research question. ⛔ It needs model weights to implement and evaluate, which this

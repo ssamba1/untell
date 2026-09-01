@@ -233,8 +233,8 @@ already exists but has no multilingual evaluation data behind it.
 
 - ✅ **Length-conditioned verdicts — now measured, not just recommended.**
   `python -m eval.pre_llm_fpr --by-length` scores pre-LLM abstracts truncated to each band. On 90 of
-  them at lite tier: **26.7% flagged at ≤50 words (CI 18.6–36.6%)**, **15.6% at 50–100
-  (CI 9.5–24.4%)**, 16.9% at 100–200. The 200+ band reads 0.0% on n=5 with a CI to **43.5%** — the
+  them at lite tier: **30.0% flagged at ≤50 words (CI 22.5–38.7%)**, **21.7% at 50–100
+  (CI 15.2–29.8%)**, 18.5% at 100–200. The 200+ band reads 13.3% on n=15 with a CI to **37.9%** — the
   interval discipline paying for itself immediately, since that row would otherwise be quoted as
   "no false positives". The floor is real and sits where the literature puts it.
 - **The evidence behind those bands.** The literature converges on: ~50 words is the floor for any

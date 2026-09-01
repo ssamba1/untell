@@ -2338,3 +2338,76 @@ this roadmap that a fairness result and a detection-theory result have landed on
 
 **Worth noting how it was found.** Not by searching for it. By checking three papers that a topic row
 had miscounted, and following the miscount to its cause.
+
+---
+
+# Round thirty-one — the most defensible number in this repo could not be reproduced
+
+Building the outlier fairness arm required the pre-LLM corpus. It did not exist.
+
+## ✗ `eval/pre_llm_fpr.py` returned zero abstracts
+
+`pre_llm_abstracts` selects Anthology text published **no later than 2021**. `VOLUMES` began at
+**2023**. MEASURED: **0 pre-LLM abstracts** available to the shipped tool, and the command exits with
+"no pre-2022 abstracts in .anthology-cache".
+
+That corpus is the ground truth behind the number this roadmap calls "**the most defensible
+false-positive number this repo has, because its ground truth cannot be argued with**" — 15.8% of 120
+pre-LLM abstracts, CI [10.4%, 23.4%] — and behind the whole length-conditioned curve. **None of it
+could be re-derived by anyone who cloned this repository.** The measurement was real when it was
+taken, against a cache that held older volumes; the shipped configuration then stopped producing
+them, and nothing noticed, because every test of that module uses synthetic text.
+
+**Thirteen pre-2022 volumes are now in `VOLUMES`**, verified to resolve — note the Anthology uses
+year-only ids at that vintage (`2021.acl`, not `2021.acl-long`, which 404s). The corpus is **6,811
+pre-LLM abstracts**. They add 13 detection papers to the survey and nothing to its ratio, which is
+expected: they predate the field.
+
+## The re-measured numbers, and they moved
+
+| | published | re-measured |
+|---|---|---|
+| pre-LLM FPR, n = 120 | 15.8% [10.4%, 23.4%] | **19.2% [13.1%, 27.1%]** |
+| ≤50 words | 26.7% | **30.0% [22.5%, 38.7%]** |
+| 50–100 | 15.6% | **21.7% [15.2%, 29.8%]** |
+| 100–200 | 16.9% | **18.5% [12.3%, 26.9%]** |
+| 200+ | 0.0% on n=5 | **13.3% on n=15 [3.7%, 37.9%]** |
+
+The intervals overlap throughout, so nothing is *contradicted* — but the point estimates all moved
+up, the shape of the length curve is unchanged and steeper, and the published figures were describing
+a corpus that no longer exists. Every quotation of them across `ROADMAP.md` and
+`research-to-build.md` is updated.
+
+**This is round fifteen's defect in the repository's own headline measurement**, and it is worse than
+round fifteen's: that was a survey count drifting between documents, this is a number whose *input*
+had silently disappeared while the number stayed published as reproducible.
+
+## ✅ And the arm itself: `eval/outlier_fairness.py`
+
+*Centering the Margins* ([2023.emnlp-main.579](https://aclanthology.org/2023.emnlp-main.579/)) finds
+the margins of a dataset by **outlier detection** rather than by subgroup label. This is that method
+pointed at AI-text detection, which as of round thirty nobody has published. Five stdlib stylometric
+features, a **median/MAD** distance from the corpus centre — robust statistics on purpose, since with
+mean and standard deviation an outlier inflates the scale it is measured against and reports itself
+as ordinary — then the false-positive rate for the furthest 20% against the rest, with Wilson
+intervals on both.
+
+MEASURED on 150 pre-LLM abstracts at lite tier:
+
+| group | n | FPR | 95% CI |
+|---|---|---|---|
+| margin (furthest 20%) | 30 | 13.3% | [5.3%, 29.7%] |
+| centre | 120 | 12.5% | [7.7%, 19.6%] |
+
+**Gap +0.8%, and the intervals overlap, so this is not evidence of a disparity.** That is the honest
+result and the tool says it in those words. One weak detector on academic abstracts is close to the
+least likely place to find one; the arm exists so the question can be asked on a deployment's own
+corpus, where it matters.
+
+**What it must never claim.** Outlier status is not a protected attribute. "Further from the norm"
+collects non-native writers, disabled writers, unusual subject matter and anyone with a strong
+idiolect — the method's whole value is that it does not need to know which, and its whole risk is
+sounding like it does. A test asserts the report still denies it.
+
+Shipped as status row 29. Row 28 stays open and its blocker line is rewritten: the obstacle was never
+method, it was that we had not read the paper that solved it.

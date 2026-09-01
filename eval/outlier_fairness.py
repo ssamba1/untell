@@ -1,0 +1,209 @@
+"""Measure what a detector does to writers furthest from a corpus's norm — without asking anyone.
+
+Every fairness arm in this repository needs a protected attribute: `eval/assisted_fairness.py`
+stratifies by an author-status column, and status row 28 (detectors against neurodivergent and
+disabled writers) has stayed open since round sixteen because no corpus carries that label with
+consent. Asking applicants to declare a disability so a detector can be audited against them is not
+a workable protocol, and it is not one this project would propose.
+
+*Centering the Margins* (Mendelsohn et al., 2023.emnlp-main.579) supplies the way around it. Drawing
+on disability studies — "people farther from the norm face greater adversity" — it operationalises
+the margins of a dataset **by outlier detection**, finding text about people whose attributes are
+distant from the norm rather than by subgroup label, and reports toxicity-model error up to 70.4%
+worse for those outliers. That paper is about toxicity detection; this module is the same method
+pointed at AI-text detection, which as of round thirty nobody has published.
+
+It is also DivScore (2025.emnlp-main.971) from the other end. DivScore ties zero-shot detector
+failure to the divergence between a text's distribution and the detector's reference; this measures
+distance from the *corpus's* centre and asks whether the false-positive rate rises with it. Both say
+the risk is distance from a norm, and neither needs to know why a given writer is distant — which is
+the point, because "further from the norm" collects non-native writers, disabled writers, unusual
+subject matter and anyone with a strong idiolect, without requiring them to be identified.
+
+**What this can and cannot show.** Run on pre-LLM text, every flag is a false positive by
+construction, so a gap between outliers and the rest is a real disparity in false accusations. It
+does NOT say which attribute drives it — outlier status is not a protected characteristic, and this
+module never claims a text belongs to any group.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import statistics
+import sys
+from pathlib import Path
+
+from eval.pre_llm_fpr import pre_llm_abstracts, wilson_interval
+
+_WORD = re.compile(r"[A-Za-z']+")
+_SENT = re.compile(r"[.!?]+\s+")
+
+
+def features(text: str) -> dict[str, float]:
+    """Stylometric features, all pure stdlib.
+
+    Deliberately the plainest possible set: anything needing a model would put this behind the same
+    egress wall that keeps the ML detectors from loading, and an audit nobody can run is not an
+    audit. These are the axes the resume-corpus paper (2026.lrec-1.581) reports separating its
+    classes — length, lexical diversity, sentence uniformity, punctuation — so they are at least the
+    right family.
+    """
+    words = _WORD.findall(text.lower())
+    if not words:
+        return {"words": 0.0, "ttr": 0.0, "mean_word_len": 0.0, "sent_len_cv": 0.0, "punct_rate": 0.0}
+    sentences = [s for s in _SENT.split(text) if s.strip()] or [text]
+    lengths = [len(_WORD.findall(s)) for s in sentences]
+    mean_len = statistics.fmean(lengths) if lengths else 0.0
+    sd = statistics.pstdev(lengths) if len(lengths) > 1 else 0.0
+    return {
+        "words": float(len(words)),
+        "ttr": len(set(words)) / len(words),
+        "mean_word_len": statistics.fmean(len(w) for w in words),
+        # Coefficient of variation of sentence length — "burstiness" by another name, and the one
+        # feature here the detectors themselves also use.
+        "sent_len_cv": (sd / mean_len) if mean_len else 0.0,
+        "punct_rate": sum(c in ",;:—-()" for c in text) / max(len(words), 1),
+    }
+
+
+def outlier_scores(texts: list[str]) -> list[float]:
+    """Distance from the corpus centre, as a mean absolute z-score across features.
+
+    Robust statistics on purpose: the median and the median absolute deviation, not the mean and
+    standard deviation. The outliers are what is being measured, and letting them set the centre and
+    the scale is how an outlier analysis quietly reports that nothing is unusual.
+    """
+    rows = [features(t) for t in texts]
+    keys = [k for k in rows[0] if k != "words"] + ["words"]
+    centre, scale = {}, {}
+    for key in keys:
+        values = [r[key] for r in rows]
+        med = statistics.median(values)
+        mad = statistics.median([abs(v - med) for v in values]) or 1e-9
+        centre[key], scale[key] = med, mad
+    return [
+        statistics.fmean(abs(r[key] - centre[key]) / scale[key] for key in keys) for r in rows
+    ]
+
+
+def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.2) -> dict:
+    """False-positive rate for the most distant `quantile` of a corpus, against the rest.
+
+    Returns ``None`` for the comparison rather than a number when either side is too small to say
+    anything — the same refusal `untell/calibrate.py` makes. A disparity claim from four documents
+    would be the kind of finding this repository exists to argue against.
+    """
+    from untell.scripts.score import score_text
+
+    if not 0 < quantile < 0.5:
+        raise ValueError(f"quantile must be in (0, 0.5), got {quantile}")
+    if len(texts) < 10:
+        return {"n": len(texts), "error": "need at least 10 texts to split a corpus into margins"}
+
+    distances = outlier_scores(texts)
+    cut = sorted(distances, reverse=True)[max(1, int(len(texts) * quantile)) - 1]
+    groups: dict[str, list[int]] = {"margin": [], "centre": []}
+    detectors_seen: set[str] = set()
+    for text, distance in zip(texts, distances):
+        result = score_text(text, tier=tier)
+        spread = result.get("agreement")
+        if not spread:
+            continue
+        detectors_seen.update(
+            n for n, v in result["detectors"].items() if isinstance(v, (int, float))
+        )
+        groups["margin" if distance >= cut else "centre"].append(int(bool(spread["any"])))
+
+    def _rate(hits: list[int]) -> dict:
+        low, high = wilson_interval(sum(hits), len(hits))
+        return {
+            "n": len(hits),
+            "flagged": sum(hits),
+            "fpr": round(sum(hits) / len(hits), 4) if hits else None,
+            "ci95": [round(low, 4), round(high, 4)],
+        }
+
+    margin, centre = _rate(groups["margin"]), _rate(groups["centre"])
+    comparable = margin["n"] >= 5 and centre["n"] >= 5
+    gap = None
+    if comparable and margin["fpr"] is not None and centre["fpr"] is not None:
+        gap = round(margin["fpr"] - centre["fpr"], 4)
+    return {
+        "tier": tier,
+        "quantile": quantile,
+        "detectors_scoring": len(detectors_seen),
+        "distance_cut": round(cut, 4),
+        "margin": margin,
+        "centre": centre,
+        "gap": gap,
+        # The intervals decide whether a gap means anything, and on the corpus sizes this runs at
+        # they usually overlap. Saying so is the whole discipline of this repo applied to its own
+        # newest number.
+        "intervals_overlap": (
+            None if not comparable
+            else not (margin["ci95"][0] > centre["ci95"][1] or centre["ci95"][0] > margin["ci95"][1])
+        ),
+        "note": (
+            "Outlier status is NOT a protected attribute and this says nothing about which "
+            "attribute drives any gap. On pre-LLM text every flag is a false positive by "
+            "construction, so a gap is a real disparity in false accusations between writers far "
+            "from the corpus norm and writers near it."
+        ),
+    }
+
+
+def _render(report: dict) -> str:
+    if "error" in report:
+        return f"cannot run: {report['error']}"
+    lines = [
+        f"False positives by distance from the corpus norm (tier={report['tier']}, "
+        f"margin = furthest {report['quantile']:.0%}).",
+        "",
+        f"{'group':<10} {'n':>5} {'FPR':>8}   95% CI",
+    ]
+    for name in ("margin", "centre"):
+        row = report[name]
+        if row["fpr"] is None:
+            lines.append(f"{name:<10} {row['n']:>5}        —")
+            continue
+        ci = f"[{row['ci95'][0]:.1%}, {row['ci95'][1]:.1%}]"
+        lines.append(f"{name:<10} {row['n']:>5} {row['fpr']:>7.1%}   {ci}")
+    if report["gap"] is None:
+        lines += ["", "Too few documents on one side to compare."]
+    else:
+        lines += ["", f"gap: {report['gap']:+.1%}"]
+        lines.append(
+            "The intervals OVERLAP, so this gap is not evidence of a disparity."
+            if report["intervals_overlap"]
+            else "The intervals do NOT overlap."
+        )
+    if report["detectors_scoring"] < 2:
+        lines += ["", "NOTE: one detector scored; this is that detector's disparity, not an "
+                      "ensemble's."]
+    lines += ["", report["note"]]
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("--cache", type=Path, default=Path(".anthology-cache"))
+    parser.add_argument("--tier", default="lite")
+    parser.add_argument("--limit", type=int, default=120)
+    parser.add_argument("--quantile", type=float, default=0.2)
+    parser.add_argument("--json", action="store_true", dest="as_json")
+    args = parser.parse_args(argv)
+
+    texts = pre_llm_abstracts(args.cache)[: args.limit]
+    if not texts:
+        print(f"no pre-LLM abstracts in {args.cache} — run "
+              f"`python -m eval.litreview --download` first", file=sys.stderr)
+        return 1
+    report = probe_by_distance(texts, tier=args.tier, quantile=args.quantile)
+    print(json.dumps(report, indent=2) if args.as_json else _render(report))
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

@@ -46,6 +46,15 @@ ANTHOLOGY_XML = "https://raw.githubusercontent.com/acl-org/acl-anthology/master/
 # not exist yet is skipped with a warning rather than failing the run, because the Anthology
 # publishes them as conferences complete.
 VOLUMES: tuple[str, ...] = (
+    # PRE-LLM VOLUMES. Not for the survey — every one of these predates ChatGPT, so they contribute
+    # almost nothing to a count of detection papers. They are here because `eval/pre_llm_fpr.py`
+    # builds its ground truth from Anthology text published no later than 2021, and without them it
+    # returns ZERO abstracts: the repository's most-quoted false-positive number, "15.8% of 120
+    # pre-LLM abstracts", could not be reproduced by the shipped tool at all. Verified to resolve;
+    # note the Anthology uses year-only ids here (2021.acl, not 2021.acl-long).
+    "2018.acl", "2018.emnlp", "2019.acl", "2019.naacl",
+    "2020.acl", "2020.emnlp", "2020.coling", "2020.lrec", "2020.findings",
+    "2021.acl", "2021.emnlp", "2021.naacl", "2021.eacl", "2021.findings", "2021.tacl", "2021.cl",
     "2023.acl", "2023.emnlp", "2023.findings", "2023.tacl", "2023.ijcnlp",
     "2024.acl", "2024.emnlp", "2024.findings", "2024.naacl", "2024.lrec", "2024.tacl", "2024.inlg",
     "2025.acl", "2025.emnlp", "2025.findings", "2025.naacl", "2025.coling", "2025.tacl", "2025.cl",
