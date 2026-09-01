@@ -24,7 +24,8 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 `burstiness-formulation-robustness`, `true-ngram-perplexity-contrast`,
 `gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`, `published-vs-student-fpr`,
 `published-vs-student-threshold-sweep`,
-`genre-controlled-professional-vs-student`, `ellipse-threshold-for-target-fpr`.
+`genre-controlled-professional-vs-student`, `ellipse-threshold-for-target-fpr`,
+`unedited-adult-writing`.
 
 ## The corpora
 
@@ -298,10 +299,35 @@ At 0.50 the genre-matched contrast is **0.6% vs 38.7% — a 64x ratio**, wider t
 un-matched comparison, because editorial prose is the *lowest*-scoring professional category.
 Matching the genre made the professionals look better, not worse.
 
-**The confound that remains.** Genre and length are now controlled; **editing is not**. These are
-copyedited, finished, published pieces, and the student corpora are first drafts. Separating
-"professional" from "edited" would need unpublished professional drafts, which none of these
-corpora contain. Reuters n=26 has a very wide interval and must not be quoted alone.
+**Editing is ruled out too, and the answer is sharper than "professionals vs students".** I said
+separating "professional" from "edited" needed unpublished professional drafts that no reachable
+corpus contained. NLTK ships them: forum posts and consumer reviews are unedited adult first-draft
+writing.
+
+| population | edited? | n | FPR @ 0.30 | FPR @ 0.50 |
+|---|---|---|---|---|
+| Wine reviews | **no** | 64 | **0.0%** | 0.0% |
+| Firefox forum posts | **no** | 80 | **2.5%** | 0.0% |
+| Product reviews | **no** | 80 | 26.2% | 1.2% |
+| Brown editorial | yes | 162 | 42.6% | 0.6% |
+| Brown essays / belles-lettres | yes | 450 | 54.9% | 4.7% |
+| **ELLIPSE student essays** | **no** | 3,904 | **97.4%** | 38.7% |
+
+Unedited adult writing scores like professionals — better, in fact. Forum posts at 2.5% beat
+*edited* Brown editorial at 42.6%. **Editing is not the driver.**
+
+What the ordering actually tracks is **essay register**: informal adult writing (0.0–2.5%) <
+consumer reviews (26.2%) < formal published essays (42.6–54.9%) < student essays (97.4%). That is
+a gradient in formality and structural uniformity, and it is exactly what the burstiness mechanism
+predicts — informal writing has wildly varied sentence lengths, and a formal assigned essay is the
+most uniform text a person produces.
+
+**So the sharpest statement of this result is not "professionals vs students". It is that the
+detector penalises the essay form — and the essay is precisely the artifact students are required
+to produce and be judged on.**
+
+Limits: n=64–80 per unedited population, so those intervals are wide, and register now covaries
+with population in the opposite direction from before. Reuters n=26 must not be quoted alone.
 
 What it does establish: **the population a detector is validated on can differ from its deployment
 population by an order of magnitude in false-positive rate.** Any published FPR that does not name

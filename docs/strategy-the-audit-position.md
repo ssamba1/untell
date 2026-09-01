@@ -439,6 +439,13 @@ then fail on students, who are the population it is deployed against. Confounded
 editing and task, and reported that way — but it means **any published false-positive rate that
 does not name its population is uninformative about the students it will judge.**
 
+**And it is not editing, nor adulthood — it is the essay form.** Unedited adult writing (forum
+posts 2.5%, wine reviews 0.0% at 0.30) scores better than *edited* professional prose (42.6%).
+The gradient runs informal adult < consumer reviews < formal published essays < student essays,
+which is exactly what a burstiness-weighted detector predicts: a formal assigned essay is the
+most structurally uniform text a person produces. **The detector penalises the essay form, and
+the essay is the artifact students are required to produce and be judged on.**
+
 **A third corpus made this sharper still.** PELIC — adult university ESL, 20+ first languages
 — shows the false-positive rate varying by the writer's **first language** (Arabic 40.9% vs
 Turkish 29.7%, 1.38x, separated), and shows the proficiency effect running the *opposite* way to

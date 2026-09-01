@@ -118,8 +118,12 @@ known-human ESL essays, where every flag is an error by construction:
   not explain it.** With genre AND length matched (Brown *editorial* argumentative prose vs
   student argumentative essays, both ~400 words), threshold 0.50 gives **0.6% vs 38.7% — a
   64x ratio**, wider than the unmatched comparison. Editing remains confounded and is stated
-  as such. A detector validated on published prose looks excellent and then fails on the
-  students it judges.
+  as such. **Editing is ruled out too**: unedited adult writing (forum posts 2.5%, wine
+  reviews 0.0% at threshold 0.30) scores BETTER than edited professional prose (42.6%). The
+  ordering tracks **essay register** — informal adult 0.0–2.5% < consumer reviews 26.2% <
+  formal published essays 42.6–54.9% < student essays 97.4% — which is what the burstiness
+  mechanism predicts. **The detector penalises the essay form, and the essay is the artifact
+  students are required to produce and be judged on.**
 - **The threshold that would make our lite tier safe on student writing is 0.775 for a 1%
   false-positive rate** (0.671 for 5%, 0.625 for 10%), against the 0.300 we ship, which
   yields 97.4%. Not a recommendation — raising it trades false positives for false negatives
@@ -175,7 +179,7 @@ Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
 `ellipse-component-ablation`, `ellipse-raw-signal-effect-sizes` and
 `asap-subgroup-fpr`, `burstiness-formulation-robustness` and
 `true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` `pelic-l1-and-level` and `published-vs-student-fpr`,
-`genre-controlled-professional-vs-student` and `ellipse-threshold-for-target-fpr` in
+`genre-controlled-professional-vs-student` `ellipse-threshold-for-target-fpr` and `unedited-adult-writing` in
 `.claude/measurements.jsonl`.
 
 
