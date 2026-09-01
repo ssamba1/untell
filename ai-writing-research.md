@@ -67,7 +67,16 @@ Survey 2026](https://www.hepi.ac.uk/reports/student-generative-ai-survey-2026/) 
 in written assessments; [Muck Rack's 2026 State of Journalism](https://www.globenewswire.com/news-release/2026/03/19/3259178/0/en/muck-rack-s-2026-state-of-journalism-report-finds-82-of-journalists-use-ai.html)
 reports 82% of 1,044 journalists using at least one AI tool. The measured — rather than self-reported —
 counterpart is **"AI use in American newspapers is widespread, uneven, and rarely disclosed"**
-([arXiv:2510.18774](https://arxiv.org/pdf/2510.18774)); *rarely disclosed* is the part that matters.
+✅ **now read at source, and far richer than this line implied**
+([2026.acl-long.663](https://aclanthology.org/2026.acl-long.663/), formerly arXiv:2510.18774). It
+audits **186K articles from 1.5K American newspapers** in summer 2025 with Pangram: **~9% are partly
+or fully AI-generated**, concentrated in smaller local outlets and in weather and technology.
+**45K opinion pieces from the Washington Post, New York Times and Wall Street Journal are 6.4× more
+likely to contain AI content than news from the same mastheads**, many under prominent bylines. A
+manual audit of 100 flagged articles found **five disclosures**. And the finding this map did not
+have at all: **AI-generated articles are 8.2× more likely to contain hallucinated claims** than
+human-written news — the first direct link in this document between AI authorship and factual error,
+rather than between AI authorship and style.
 
 ## 2. What AI does to the writing itself
 
@@ -211,7 +220,7 @@ sharpen it.
 |---|---|
 | **Adversarial Paraphrasing** ([arXiv:2506.07001](https://arxiv.org/abs/2506.07001)) | Training-free, detector-guided paraphrase; broadly effective and *transferable* across detection systems |
 | **StealthRL** ([arXiv:2602.08934](https://arxiv.org/html/2602.08934)) | RL paraphrase policy trained against a multi-detector ensemble; transfers to **held-out** detectors |
-| **Paraphrasing Attack Resilience of Various AI-Generated Text Detection Methods** ([arXiv:2605.14240](https://arxiv.org/abs/2605.14240)) | Frames the core result as a **performance-vs-resilience dichotomy**: the detectors that score best are not the ones that survive paraphrase |
+| ✅ **Paraphrasing Attack Resilience of Various AI-Generated Text Detection Methods** ([2025.naacl-srw.46](https://aclanthology.org/2025.naacl-srw.46/), formerly arXiv:2605.14240) | Read at source. Confirms the **performance-vs-resilience dichotomy** verbatim — and names the case that matters to this repo: it evaluates fine-tuned RoBERTa, **Binoculars** and feature analysis, and finds **Binoculars-inclusive ensembles yield the strongest results and suffer the most significant losses under attack.** untell ships Binoculars |
 | **DIPPER** ([arXiv:2303.13408](https://arxiv.org/abs/2303.13408)) | The original controllable-paraphrase result; still the baseline everything is measured against |
 
 That dichotomy is the most useful framing to have entered the literature recently, and it is precisely

@@ -983,3 +983,52 @@ reported unresolved, because a checker that cannot fail is not a checker.
 environment, so "39/39" is a complete result for one citation class and silence about the larger one.
 Anyone with unrestricted access can extend `verify_citations` to arXiv in a few lines; the extraction
 already collects the ids.
+
+
+---
+
+# Round eleven — recovering published versions of preprint citations
+
+Round ten resolved the 39 Anthology citations and left the 71 arXiv ones unverifiable. That was a
+boundary, not a wall: **a preprint cited here may have been published since**, and the venue version
+sits in the local index even though the preprint host does not.
+
+Matching cited arXiv ids against paper titles in their surrounding text, across the 125,598-title
+index, recovered two — and both were considerably thinner in our documents than in their published
+form.
+
+**1. arXiv:2605.14240 → [2025.naacl-srw.46](https://aclanthology.org/2025.naacl-srw.46/)**
+
+Our one-line citation said it "frames the core result as a performance-vs-resilience dichotomy",
+which the abstract confirms verbatim. What we did not have is the part that names our own stack: the
+paper evaluates fine-tuned RoBERTa, **Binoculars**, and feature analysis with Random Forest
+ensembles, and finds **"Binoculars-inclusive ensembles yield the strongest results, but they also
+suffer the most significant losses during attacks."**
+
+untell ships Binoculars. So the single strongest member of our tier is also the most attack-fragile,
+by an external measurement, which is exactly the trade the dichotomy describes and a reason the
+holdout arm in `eval/holdout.py` matters more than its size suggests.
+
+**2. arXiv:2510.18774 → [2026.acl-long.663](https://aclanthology.org/2026.acl-long.663/)**
+
+Cited here as a single clause about disclosure. Read at source it is an audit of **186K articles from
+1.5K American newspapers**, and it carries four findings we had none of:
+
+- **~9%** of newly published articles are partly or fully AI-generated, concentrated in smaller local
+  outlets and in weather and technology.
+- **Opinion pieces are 6.4× more likely to contain AI content than news** from the same three
+  mastheads, many under prominent bylines.
+- A manual audit of 100 flagged articles found **five disclosures**.
+- **AI-generated articles are 8.2× more likely to contain hallucinated claims** than human-written
+  news.
+
+That last one matters beyond the citation. Everything else in this ledger connects AI authorship to
+*style* — perplexity, burstiness, lexical fingerprints, register. This connects it to **factual
+error**, which is a different and more consequential claim, and it is the only measurement of that
+kind anywhere in these documents.
+
+**Method note.** The match is title-in-context, so it produced three false positives from a table row
+where several arXiv ids sat near one title; those were discarded by checking adjacency by hand. A
+tighter implementation would bound the window. The remaining 69 arXiv citations have no Anthology
+version findable this way — which means either they are unpublished, published outside the Anthology,
+or published under a changed title. Only the first is verifiable from here.
