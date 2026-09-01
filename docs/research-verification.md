@@ -3349,3 +3349,63 @@ either the test was broken or the mutation was, and checking took one line in a 
 
 Once the mutants actually emptied the containers, two of the four were **real** — which is the part
 worth keeping. The no-op versions were hiding a genuine defect behind a bug of mine.
+
+---
+
+# Round forty-eight — the same scan across the whole suite, and eight false alarms
+
+Round forty-seven found two vacuous universals by hand-picking four collections. That is not a
+method. A static scan of **every test file** for `for x in COLLECTION: assert ...` and
+`assert all(... for x in COLLECTION)` — where `COLLECTION` is imported from `untell/` or `eval/` and
+**nothing anywhere in the suite asserts its size** — proposed fifteen candidates, nine of them real
+collections rather than scalars caught incidentally.
+
+## ✅ Mutation disposed of eight
+
+Emptying each and running its test file:
+
+| collection | emptied → |
+|---|---|
+| `_ADVERB_SLOT_ONLY` | caught (4 failures) |
+| `_ACADEMIC_HUMAN_TRANSITIONS` | caught |
+| `_NEEDS_PRIOR_DISCOURSE` | caught (2) |
+| `_MERGE_WEIGHTS` | caught (17) |
+| `_TIER_RANK` | caught (2) |
+| `_SCALE` | caught (15) |
+| `HUMAN_AUTHORED` | caught (5) |
+| `SELECTION_ON_BARE_MAX_ALLOWED` | caught by `untell-audit` |
+| **`_BARE_ARTICLES`** | **survived — all 8 tests still pass** |
+
+**Static analysis proposes; mutation disposes.** Eight of nine candidates were already guarded, just
+not by an explicit size assertion — the behavioural tests around them fail on their own. Reporting
+the scan's output as nine gaps would have been nine times the truth.
+
+## ✗ The one that was real
+
+`test_no_output_stacks_two_determiners` reads:
+
+```python
+for article in ("a", "an", "the"):
+    for second in _BARE_ARTICLES:
+        assert f" {article} {second} " not in out
+```
+
+The inner loop runs zero times when `_BARE_ARTICLES` is empty. **The rewriter would be free to emit
+"the the" and the assertion written to prevent exactly that would not fire.** Now guarded, and the
+guard is checked against the mutant.
+
+## ⚠️ Two of my own measurements in this round were wrong
+
+`SELECTION_ON_BARE_MAX_ALLOWED` first came back as a survivor, and `untell-audit` reported
+**"5 sites, all accounted for"** with the allowlist supposedly emptied. Both were the same mistake:
+the override was appended to the **end of the module**, after
+`if __name__ == "__main__": raise SystemExit(main())`. `main()` had already run and exited; the
+override never executed.
+
+Re-run in-process, the audit catches it immediately — `ok = False`, naming every unlisted site. The
+guard was working the whole time and my probe was measuring nothing, which is the same defect this
+ledger has now recorded in four consecutive rounds, this time in a three-line shell command.
+
+**Appending to a module is not a safe way to override a constant.** It is only safe for a module
+with no entry point — which is why the `_BARE_ARTICLES` result stands: `untell/rewriter/structural.py`
+contains no `__main__` guard, and that was verified before the finding was believed.

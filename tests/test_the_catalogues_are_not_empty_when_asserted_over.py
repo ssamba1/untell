@@ -99,3 +99,36 @@ def test_the_ai_vocabulary_regex_matches_its_own_catalogue():
 
     missed = [w for w in _AI_VOCAB if not _AI_VOCAB_RE.search(f"the {w} here")]
     assert not missed, f"the regex built from _AI_VOCAB does not match these entries: {missed[:5]}"
+
+
+# --- found by scanning the whole suite for the same pattern ---------------------------------------
+#
+# Round forty-seven fixed two vacuous universals found by hand-picking four collections. A static
+# scan of every test file for `for x in COLLECTION: assert ...` and `assert all(... for x in
+# COLLECTION)`, where COLLECTION is imported from `untell/` or `eval/` and nothing anywhere asserts
+# its size, proposed **nine** more candidates.
+#
+# Mutation disposed of eight of them: emptying `_ADVERB_SLOT_ONLY`, `_ACADEMIC_HUMAN_TRANSITIONS`,
+# `_NEEDS_PRIOR_DISCOURSE`, `_MERGE_WEIGHTS`, `_TIER_RANK`, `_SCALE` and `HUMAN_AUTHORED` is caught
+# by behavioural tests elsewhere, and emptying `SELECTION_ON_BARE_MAX_ALLOWED` is caught by
+# `untell-audit` itself. Static analysis proposes; mutation disposes.
+
+
+def test_the_bare_article_set_is_populated():
+    """The one survivor of nine. `test_no_output_stacks_two_determiners` reads
+
+        for article in ("a", "an", "the"):
+            for second in _BARE_ARTICLES:
+                assert f" {article} {second} " not in out
+
+    and the inner loop runs zero times when `_BARE_ARTICLES` is empty. MEASURED: emptying it leaves
+    all 8 tests in that file passing. The rewriter would be free to emit "the the" and the assertion
+    written to prevent exactly that would not fire.
+    """
+    from untell.rewriter.structural import _BARE_ARTICLES
+
+    _floor("_BARE_ARTICLES", _BARE_ARTICLES, 3)
+    assert {"a", "an", "the"} <= set(_BARE_ARTICLES), (
+        "the English bare articles are the point of this set; a version missing one would let the "
+        "determiner-stacking test pass on the case it omits"
+    )
