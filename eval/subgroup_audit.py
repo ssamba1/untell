@@ -189,14 +189,44 @@ def sweep(rows: list[dict], tier: str, thresholds: tuple[float, ...],
     return out
 
 
+# Crossed axes. MEASURED BY OTHERS, and this instrument could not: "Identifying Bias in
+# Machine-generated Text Detection" (Pindrop, ACL 2026 Main, aclanthology.org/2026.acl-long.109)
+# evaluated 16 detectors against a demographically labelled corpus and found that bias is "most
+# dangerous where attributes intersect" -- non-White English-language learners were flagged far
+# more often than their White peers, a gap neither axis shows on its own. Every axis here was
+# reported one at a time, so this instrument would have missed exactly that.
+#
+# `race_ethnicity*ell_status` crosses two columns. The MIN_GROUP floor does the rest of the work
+# and does it strictly: crossing splits a corpus fast, and a cell under 30 rows is reported as
+# insufficient rather than quietly compared.
+CROSS = "*"
+
+
+def _axis_value(row: dict, axis: str) -> str | None:
+    """One row's value on an axis, which may be a crossed one. None when unusable.
+
+    A crossed cell needs EVERY part present: a row missing `ell_status` cannot be placed in a
+    race-by-ELL cell, and putting it in one labelled "White x NA" would recreate the missing-data
+    subgroup bug that `_MISSING` exists to prevent.
+    """
+    parts = axis.split(CROSS) if CROSS in axis else [axis]
+    out = []
+    for part in parts:
+        v = row.get(part)
+        if v is None or str(v).strip().lower() in _MISSING:
+            return None
+        out.append(str(v).strip())
+    return " x ".join(out)
+
+
 def _group(scored: list[dict], axes: tuple[str, ...]) -> dict:
     axes_out = {}
     for axis in axes:
         groups: dict[str, list[dict]] = {}
         for r in scored:
-            v = r.get(axis)
-            if v is not None and str(v).strip().lower() not in _MISSING:
-                groups.setdefault(str(v), []).append(r)
+            v = _axis_value(r, axis)
+            if v is not None:
+                groups.setdefault(v, []).append(r)
         rendered = {}
         for name, members in sorted(groups.items()):
             hits = sum(1 for m in members if m["flagged"])
@@ -283,11 +313,10 @@ def equalised_odds(rows: list[dict], tier: str = "lite", threshold: float | None
 
     for axis in axes:
         groups: dict[str, dict] = {}
-        names = {str(r[axis]) for r in scored
-                 if r.get(axis) is not None and str(r[axis]).strip().lower() not in _MISSING}
+        names = {v for v in (_axis_value(r, axis) for r in scored) if v is not None}
         for name in sorted(names):
-            h = [r for r in humans if str(r.get(axis)) == name]
-            a = [r for r in ais if str(r.get(axis)) == name]
+            h = [r for r in humans if _axis_value(r, axis) == name]
+            a = [r for r in ais if _axis_value(r, axis) == name]
             if len(h) < MIN_GROUP or len(a) < MIN_GROUP:
                 groups[name] = {"human_n": len(h), "ai_n": len(a), "status": "insufficient"}
                 continue

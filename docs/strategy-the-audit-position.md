@@ -201,6 +201,39 @@ Aequitas, RAID — treats the scorer as a black box and reports a rate per group
 is what stops being invisible when you take the scorer apart instead, and it is the one claim in
 this document that no other artifact in the sweep can make.
 
+### The literature, searched properly for the first time
+
+Everything above was, until 2026-09-01, built on papers encountered *incidentally* — cited in a
+README, or already in this repository. Four papers had URLs in the whole repo. A systematic search
+had never been run, and calling that "the research" was a category error this document was making:
+what had been surveyed thoroughly was the **software**, 131 repositories read at source. The
+literature is a different corpus and it says more than the software does.
+
+| work | what it establishes | what it does to this document |
+|---|---|---|
+| **[Identifying Bias in Machine-generated Text Detection](https://aclanthology.org/2026.acl-long.109.pdf)** (Pindrop, **ACL 2026 Main**) — 16 detectors against a demographically labelled corpus | English-language learners flagged more, and **non-White ELL students flagged far more than their White peers**. Bias is real, **model-specific**, and worst where attributes intersect; no detector was uniformly fair or unfair | The strongest prior art there is, and a **peer-reviewed main-conference** version of this audit. It also names the mechanism this repo measured independently: non-native writing is **lower-perplexity and lower-burstiness**, which is [Result 14](detector-fairness-measured.md)'s two channels |
+| **[AI Detectors Fail Diverse Student Populations](https://arxiv.org/abs/2603.20254)** (Garland, 2026) | Reframes detection as **composite** hypothesis testing: there is no single "human distribution", the null varies per writer and is unknown, so the limits are **structural** rather than a tuning failure | The theory this instrument is the empirical half of. It argues *why* no threshold works; [Result 15](detector-fairness-measured.md) measures a detector for which none does |
+| **[The accuracy-bias trade-offs in AI text detection tools](https://doi.org/10.7717/peerj-cs.2953)** (Pratama, *PeerJ CS* 2025; via PubMed, PMID 40989485) — GPTZero, ZeroGPT, DetectGPT on human vs LLM-generated and **LLM-enhanced** abstracts | Accuracy and bias trade off against each other, disproportionately hitting non-native speakers and some disciplines; **the most accurate tool carried the strongest bias** | Independent confirmation of [Result 13](detector-fairness-measured.md) — the aggregate improves while the disparity widens — on different tools and a different corpus. Its LLM-enhanced arm is Results 12 and 18's question |
+| **[GPT detectors are biased against non-native English writers](https://doi.org/10.1016/j.patter.2023.100779)** (Liang et al., *Patterns* 2023) | 61.3% mean false-positive rate on 91 TOEFL essays across seven detectors; near-zero on US student essays | Already used — it is the corpus behind Results 12–18. Now cited as the paper, not just the data |
+| [Towards Possibilities & Impossibilities of AI-generated Text Detection](https://arxiv.org/abs/2310.15264) · [Contra generative AI detection in higher education](https://arxiv.org/abs/2312.05241) | survey, and the case against detection in assessment | Context for §1's "we cannot win raw evasion" |
+
+**Two of these change what this document may claim.**
+
+First, **the audit exists in the literature at main-conference quality.** BAID was already named
+here; ACL 2026 long paper 109 is stronger — 16 detectors, real demographic labels, an
+intersectional finding. Combined with the two repositories found in the census sweep that compute
+per-population false-positive rates, the honest position is now narrow and stable: *the research
+is well established, the measurements have been made by better-resourced groups, and what remains
+scarce is a runnable instrument a school can point at a detector.* Nothing in this document should
+imply the question is unasked. It is asked, and answered, in venues this repository does not
+publish in.
+
+Second, **the strongest finding in that paper was one this instrument could not have produced.**
+Pindrop's result is intersectional — the gap appears at *non-White* × *ELL*, and neither axis
+shows it alone. `subgroup_audit` reported one axis at a time until 2026-09-01. It now crosses
+them (`--by "race_ethnicity*ell_status"`), with the missing-data rule applied to every part so a
+row lacking either lands nowhere rather than in a cell named after absent data.
+
 ### The thing a black-box benchmark structurally cannot report
 
 BAID, RAID, IMGTB and every other benchmark audits a detector as an opaque scorer. Run

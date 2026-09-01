@@ -574,3 +574,59 @@ def test_the_prompt_engineered_arm_is_a_separate_corpus_not_a_pooled_one():
     )
     for folder in (*LIANG_MACHINE.values(), *LIANG_MACHINE_PROMPT_ENGINEERED.values()):
         assert folder.startswith("GPT_Data/"), f"{folder} is not machine-written data"
+
+
+class TestCrossedAxes:
+    """Bias concentrates where attributes intersect, and this instrument could not look there.
+
+    "Identifying Bias in Machine-generated Text Detection" (Pindrop, ACL 2026 Main) evaluated 16
+    detectors against a demographically labelled corpus and found non-White English-language
+    learners flagged far more often than their White peers — a gap neither axis shows alone.
+    Every axis here was reported one at a time, so this instrument would have missed exactly that.
+    """
+
+    @staticmethod
+    def _rows(spec):
+        out = []
+        for race, ell, n in spec:
+            out += [{"text": "x", "race_ethnicity": race, "ell_status": ell} for _ in range(n)]
+        return out
+
+    def test_a_crossed_axis_splits_on_both_columns(self):
+        import eval.subgroup_audit as sa
+
+        rows = self._rows([("White", "No", 40), ("White", "Yes", 40),
+                           ("Asian", "No", 40), ("Asian", "Yes", 40)])
+        for r in rows:
+            r["flagged"] = False
+        got = sa._group(rows, ("race_ethnicity*ell_status",))
+        cells = set(got["race_ethnicity*ell_status"]["groups"])
+        assert cells == {"White x No", "White x Yes", "Asian x No", "Asian x Yes"}, cells
+
+    def test_a_row_missing_either_part_is_dropped_not_labelled_NA(self):
+        """The missing-data subgroup bug, which crossing makes twice as easy to reintroduce.
+
+        ASAP codes absent demography as "NA". A row with a race but no ELL status must not land
+        in a cell called "White x NA" — that cell would be a measurement of the registrar's data
+        entry, and it once produced a phantom 2.01x disparity on a single axis.
+        """
+        import eval.subgroup_audit as sa
+
+        assert sa._axis_value({"race_ethnicity": "White", "ell_status": "Yes"},
+                              "race_ethnicity*ell_status") == "White x Yes"
+        for bad in ({"race_ethnicity": "White", "ell_status": "NA"},
+                    {"race_ethnicity": "White"},
+                    {"race_ethnicity": "  ", "ell_status": "Yes"}):
+            assert sa._axis_value(bad, "race_ethnicity*ell_status") is None, bad
+
+    def test_crossing_keeps_the_minimum_group_floor(self):
+        """Crossing splits a corpus fast, so the floor matters more here, not less."""
+        import eval.subgroup_audit as sa
+
+        rows = self._rows([("White", "No", 40), ("Asian", "Yes", 5)])
+        for r in rows:
+            r["flagged"] = False
+        got = sa._group(rows, ("race_ethnicity*ell_status",))["race_ethnicity*ell_status"]
+        assert got["groups"]["White x No"]["status"] == "reported"
+        assert got["groups"]["Asian x Yes"]["status"] == "insufficient"
+        assert got["groups"]["Asian x Yes"]["fpr"] is None, "a 5-row cell was given a rate"
