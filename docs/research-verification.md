@@ -495,3 +495,40 @@ direction. It is settled at the population level and contested at the individual
 - **Keystroke logging of English learners** ([2024.lrec-main.938](https://aclanthology.org/2024.lrec-main.938/))
   — process-level data, which is the one evidence type that could establish authorship without a
   detector at all.
+
+
+---
+
+# Verification standard — decided, not defaulted
+
+Five rounds established what this environment can and cannot reach. The residual — five arXiv-only
+2026 preprints behind an organization egress policy — was put to the repository owner on 2026-09-01
+with the options of accepting the standard, unblocking arXiv access, extending coverage elsewhere, or
+moving to implementation.
+
+**Decision: accept the current standard.** So this is the bar these documents are held to, and a
+future contributor should hold them to the same one rather than guessing:
+
+1. **Every claim a decision rests on is read at source** — a publisher, PubMed/PMC, the ACL
+   Anthology's own metadata, or the authors' repository. The verified set and the load-bearing set
+   are the same set.
+2. **Corroborated-but-unread claims are marked and carry no decision.** They appear as leads, with
+   the tier stated inline.
+3. **Disconfirming evidence is recorded beside the evidence it disconfirms.** Five separate results
+   in these rounds cut against positions the repo had taken, and all five are in the documents: the
+   Czech non-bias replication, Sandcastles on watermark durability, aggregate detectors beating human
+   raters, the individual-vs-population disagreement on lexical diversity, and the two corrections to
+   claims we had already published.
+4. **Coverage is stated as a boundary, never as completeness.** What was searched: 28 ACL Anthology
+   volumes (28,120 abstracts, 2023–2026) and PubMed. What was not: arXiv-only preprints, and any
+   venue indexed by neither.
+
+The three papers worth an outside read if anyone ever has unrestricted access remain, in order:
+**arXiv:2603.20254**, **arXiv:2608.11256**, **arXiv:2607.29539**.
+
+**What this standard is not.** It is not a claim to have validated the world's research on AI
+writing. No process does that, and a document claiming it would be exactly the kind of unfalsifiable
+assertion this repository exists to argue against. It is a claim that the strategy in
+[`../ROADMAP.md`](https://github.com/ssamba1/untell/blob/main/ROADMAP.md) rests only on evidence that
+was read, that the evidence against it was sought and kept, and that the boundary of the search is
+written down.
