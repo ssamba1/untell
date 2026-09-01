@@ -96,3 +96,43 @@ def test_band_rates_come_from_whole_documents_not_truncated_ones(monkeypatch):
     ls.rates_by_natural_length(_texts([(150, 3)]), tier="lite")
     assert len(scored) == 3, f"3 documents should produce 3 scorings, got {len(scored)}"
     assert all(n > 100 for n in scored), "documents must be scored whole, not truncated into bands"
+
+
+def test_a_document_exactly_on_a_band_boundary_is_counted_once():
+    """MUTATION-CHECKED. `low <= words < high` mutated to `low <= words <= high` and survived, because
+    every length in these tests sat comfortably inside a band. At a boundary the mutant puts one
+    document in TWO bands, so the profile sums above 1.0 and every standardized rate computed from it
+    is inflated — silently, and only for corpora that happen to contain a boundary-length document.
+    """
+    from eval.pre_llm_fpr import LENGTH_BANDS
+
+    boundaries = [low for low, _ in LENGTH_BANDS if low > 0]
+    # `_texts` appends "end.", so ask for one fewer word to land exactly on the boundary.
+    exact = [f"{'word ' * (b - 1)}end." for b in boundaries]
+    assert [len(t.split()) for t in exact] == boundaries, "the fixture must hit the boundaries exactly"
+
+    profile = ls.length_profile(exact)
+    assert sum(profile.values()) == pytest.approx(1.0), (
+        f"a boundary-length document was counted in more than one band: {profile}"
+    )
+    # Summing to 1.0 is not enough. `length_profile` breaks after the first matching band, so an
+    # inclusive upper bound does not double-count — it MISASSIGNS: a 100-word document matches
+    # (50, 100] first and lands in "50-100" instead of "100-200". That moves a document from a band
+    # with one measured rate to a band with another, and the profile still sums to one the whole
+    # time. The mutation survived a sum-only assertion for exactly this reason.
+    for words, band_low in zip((len(t.split()) for t in exact), boundaries):
+        one = ls.length_profile([f"{'word ' * (words - 1)}end."])
+        landed = next(band for band, share in one.items() if share)
+        assert landed.startswith(str(band_low)), (
+            f"a document of exactly {words} words landed in band {landed!r}; a band's lower bound "
+            f"is inclusive and its upper bound is not, so it belongs to the band starting at "
+            f"{band_low}"
+        )
+
+
+def test_the_profile_sums_to_one_for_a_corpus_spanning_every_band():
+    from eval.pre_llm_fpr import LENGTH_BANDS
+
+    lengths = [low + 1 for low, _ in LENGTH_BANDS] + [low + 5 for low, _ in LENGTH_BANDS]
+    profile = ls.length_profile([f"{'word ' * (n - 1)}end." for n in lengths])
+    assert sum(profile.values()) == pytest.approx(1.0)

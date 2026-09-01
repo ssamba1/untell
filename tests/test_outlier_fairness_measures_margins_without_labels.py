@@ -263,3 +263,34 @@ def test_the_cut_is_right_at_every_quantile_the_sweep_uses(quantile, expected):
     margin, centre, _ = of._split([float(i) for i in range(100)], [0] * 100, quantile)
     assert margin["n"] == expected
     assert margin["n"] + centre["n"] == 100
+
+
+def test_every_feature_actually_varies_with_the_thing_it_names():
+    """MUTATION-CHECKED. `ttr` mutated to `len(words) / len(words)` — a constant 1.0 — and survived
+    every test in this file, because nothing asked whether the five features are informative. A
+    feature stuck at a constant contributes zero to the distance and silently reduces a five-signal
+    margin to a four-signal one, which is invisible in every number the module prints.
+    """
+    diverse = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu."
+    repetitive = "same same same same same same same same same same same same."
+    long_words = "extraordinarily sophisticated internationalisation demonstrations."
+    dense = "a, b; c: d — e, f; g: h — i, j."
+
+    assert of.features(diverse)["ttr"] > of.features(repetitive)["ttr"], "ttr does not vary"
+    assert of.features(long_words)["mean_word_len"] > of.features(repetitive)["mean_word_len"]
+    assert of.features(dense)["punct_rate"] > of.features(repetitive)["punct_rate"]
+    assert of.features("word " * 50)["words"] > of.features("word " * 5)["words"]
+
+    varied = "Short. A considerably longer sentence follows this one, with more clauses in it."
+    even = "One two three four. Five six seven eight. Nine ten eleven twelve."
+    assert of.features(varied)["sent_len_cv"] > of.features(even)["sent_len_cv"]
+
+
+def test_a_constant_feature_would_not_be_silently_tolerated():
+    """The consequence, stated as its own assertion: if a feature never varies it cannot separate a
+    margin from a centre, and the module would keep reporting a distance computed from four signals
+    while its docstring claims five."""
+    rows = [of.features(t) for t in (UNIFORM + ODD)]
+    for key in rows[0]:
+        values = {round(r[key], 6) for r in rows}
+        assert len(values) > 1, f"feature {key!r} is constant across the corpus — it cannot separate"

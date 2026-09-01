@@ -3044,3 +3044,51 @@ right and fired on a perfectly good mutation: one mutant drops a trailing `+ ["w
 replacement is a *substring* of the original. The property that matters is not whether the mutated
 text is absent but whether performing the replacement changes anything — `source.replace(old, new) !=
 source`. **A test written to catch no-op mutations was itself nearly a no-op.**
+
+---
+
+# Round forty-two — the second sweep, and a survivor that needed the right question
+
+Round forty-one's sweep covered nine lines. This one adds eight more, across the calibration, the
+agreement flags, the length-balance bar and the corpus filter — everywhere a wrong answer would be
+invisible in the output.
+
+**Six of the eight died immediately**, including both mutations of the conformal threshold (dropping
+the finite-sample correction, and an off-by-one in the rank), the `degenerate` flag never firing, and
+the length-balance bar loosened tenfold so nothing is ever reported as unmatched. That last one
+mattering is the point: a confound check whose threshold has been quietly widened looks exactly like
+a confound check that passes.
+
+## ✗ Two survived
+
+**Type-token ratio mutated to a constant and nothing noticed** — MEASURED by
+`python scripts/mutation_sweep.py`, replacing `len(set(words)) / len(words)` with
+`len(words) / len(words)`. No test asked whether the five
+stylometric features are *informative* — a feature stuck at a constant contributes nothing to the
+distance, silently reducing a five-signal margin to a four-signal one, invisibly in every number the
+module prints. Two tests now cover it: each feature must vary with the thing it names, and **no
+feature may be constant across the corpus**, because a constant cannot separate anything.
+
+**And the band-boundary mutant took two attempts to kill**, which is the more instructive one.
+
+## ⚠️ A killing test that did not kill
+
+`low <= words < high` mutated to `low <= words <= high`. The obvious consequence is double-counting,
+so the obvious test is that the profile still sums to 1.0. **It does — and the mutant survived it.**
+
+`length_profile` **breaks after the first matching band**, so an inclusive upper bound cannot
+double-count. What it does instead is **misassign**: a document of exactly 100 words matches
+`(50, 100]` first and lands in the 50–100 band rather than 100–200. It moves between bands with
+different measured rates, and the profile sums to one the whole way.
+
+**The test asserted the consequence I imagined rather than the one the code has.** Round forty-one
+found tests whose assertions were weaker than their docstrings; this is a test whose assertion was
+about the wrong mechanism entirely, and it looked more rigorous than the one that works. The
+assertion that kills it checks *which band* a boundary document lands in.
+
+Then it failed on unmutated code, because the top band is named `200+` and not `200-`, and I had
+written `startswith(f"{low}-")`. **Three attempts to state one boundary condition correctly** — which
+is a reasonable argument for having a mutation sweep at all, rather than trusting that a test written
+carefully is a test that works.
+
+**17 of 17 now killed.**
