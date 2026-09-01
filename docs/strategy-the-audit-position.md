@@ -133,6 +133,35 @@ detector understates both of its biases**, and a benchmark that treats the detec
 cannot recover them. Averaging two large opposing biases yields a small number and a false
 reassurance.
 
+### The bias is in the features, not in our calibration
+
+The obvious objection to all of this is that it is a bug report about one weak stdlib detector.
+It is not, and the check is cheap: measure the **raw signals** before any detector touches them.
+
+| signal | low proficiency | high proficiency | Cohen's *d* | held-out *d* |
+|---|---|---|---|---|
+| sentence-length CV (burstiness) | 0.5214 | 0.4555 | **−0.394** | **−0.363** |
+| common-word ratio | 0.6045 | 0.5803 | **−0.476** | **−0.537** |
+
+More proficient learners are measurably **less bursty** and use measurably **fewer common words**,
+both replicated on held-out data. Nothing about untell is involved in those numbers — they are
+properties of the writing and of the two features.
+
+So the generalisation is not about our implementation: **any detector that treats low
+sentence-length variance as machine-like inherits a penalty on writing maturity**, and any
+detector that treats predictable vocabulary as machine-like inherits the opposite penalty. A
+detector carrying both, weighted differently from ours, lands somewhere else on that line — which
+is precisely why the operating point and the component weighting have to be *measured* per
+detector rather than assumed.
+
+**Scope, stated because it would otherwise be overclaimed.** Burstiness is the feature GPTZero
+popularised and still explains publicly, but GPTZero migrated to a deep-learning architecture in
+autumn 2023, so none of this is a claim about current GPTZero. It applies to detectors that still
+use the heuristic — untell's own lite tier, and much of the open-source tier the census
+enumerated. Whether a modern neural detector has learned the same correlation is an open question
+this instrument is built to answer and has not yet answered, because the weights need a download
+this environment cannot make.
+
 That is the defensible position, and it is narrow enough to be true: *component-level* fairness
 auditing of text detectors, on real learner writing, at shipped thresholds, as a runnable tool.
 The tool detects the opposed-bias condition itself and says so in its own output rather than
