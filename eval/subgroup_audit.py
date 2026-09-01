@@ -47,9 +47,11 @@ from pathlib import Path
 # make a group "reportable" is precisely the failure this constant exists to prevent.
 MIN_GROUP = 30
 
-# Subgroup axes ELLIPSE carries. `grade` is included because a detector keyed on perplexity should
-# be expected to flag younger writers more, and that is a checkable prediction rather than a guess.
-DEFAULT_AXES = ("race_ethnicity", "gender", "SES", "grade")
+# Subgroup axes ELLIPSE carries. `Overall` is the writer's rated English proficiency and is the
+# axis that actually separates: at threshold 0.50 the lite tier's false-positive rate rises
+# MONOTONICALLY with proficiency, 33.7% at level 2 to 53.1% at level 4.5. `grade` is here because
+# a perplexity-keyed detector should flag younger writers more, which is a checkable prediction.
+DEFAULT_AXES = ("Overall", "race_ethnicity", "gender", "SES", "grade")
 
 
 def wilson(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:

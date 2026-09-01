@@ -207,10 +207,41 @@ been shipping it with a threshold tuned on a corpus that does not resemble the w
 to be accused. That is exactly the class of finding this repository exists to produce, and it was
 produced by the first run of the first tool built under this strategy.
 
-**Finding 2 — the disparity question needs more than one corpus.** Not one subgroup ratio
-separated at 95% confidence, at any threshold, on any axis. Point estimates ranged from 1.00x to
-1.66x; every Wilson interval overlapped. The honest reading is *no demonstrated per-group
-disparity in this corpus*, and the tool says that rather than quoting the 1.66x.
+**Finding 2 — the axis that separates, and it inverts the literature.** Race, gender, economic
+status and grade produced no separated disparity: point estimates 1.00x–1.66x, every Wilson
+interval overlapping. **English proficiency does separate**, and the direction is the surprise.
+At the 0.50 operating point the false-positive rate rises *monotonically across all six
+reportable proficiency levels*:
+
+| rated proficiency | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 |
+|---|---|---|---|---|---|---|
+| false-positive rate | 33.7% | 34.0% | 37.0% | 42.7% | 45.4% | **53.1%** |
+
+1.57x worst-to-best, intervals separate. **The better a learner's English, the more likely our
+lite tier calls their writing machine-generated.**
+
+That is the opposite of the story the literature tells. The perplexity account — Liang et al.,
+and the reason TOEFL essays get flagged at 61% — says *low*-proficiency writing is predictable,
+therefore low-perplexity, therefore machine-like. Our lite tier is not perplexity-keyed; it is
+tells-keyed, and it scores polish. Standard, fluent, well-formed prose is what an AI-tells
+catalogue is built to recognise, so within a learner population the most accomplished writers
+look most artificial to it. Both mechanisms produce false accusations. **They accuse opposite
+students.**
+
+**Finding 3 — the disparity reverses with the threshold.** At 0.70 the ordering is no longer
+monotonic and the worst group flips to the *lowest* proficiency (6.2% vs 1.9%, ratio 3.25x, also
+separated). So which students a detector wrongly accuses is not a fixed property of the detector:
+it is a function of the operating point somebody chose, often without knowing that is what they
+were choosing. A single-threshold audit would have reported one of these two directions and
+never seen the other. This is the strongest argument in the document for why `--sweep` is not a
+convenience feature.
+
+**Finding 4 — the demographic axes showed nothing, and that is worth stating plainly.** On race
+and ethnicity, gender, economic status and grade, **no ratio separated at 95% confidence at any
+threshold**. Point estimates ran 1.00x to 1.66x and every Wilson interval overlapped. The honest
+reading is *no demonstrated demographic disparity in this corpus* — not "none exists", and not
+the 1.66x. It is also the expected shape: ELLIPSE is one population of US school-age learners, and
+the separating variable turned out to be how well they write English, not who they are.
 
 **The methodological finding that makes the tool worth having.** At 0.30 the detector flags
 everyone, so it cannot discriminate between groups — a disparity ratio computed there is not "no
