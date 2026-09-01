@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import statistics
 import sys
 from pathlib import Path
 
@@ -138,6 +139,73 @@ def compare(reference: list[str], target: list[str], tier: str = "lite") -> dict
         ),
     }
 
+
+
+def decompose_length_gap(
+    samples: list[tuple[int, float]], threshold: float,
+    short: tuple[int, int] = (0, 100), long: tuple[int, int] = (200, 10**9),
+) -> dict | None:
+    """How much of the short-vs-long flag gap is a shifted mean, and how much is a wider spread.
+
+    The distinction decides the fix. **Extra variance** at short lengths means the detector cannot
+    tell, and the honest response is abstention — say so and score nothing. **A shifted mean** means
+    it can tell and is systematically wrong, and the response is a per-length threshold, because the
+    signal is there and the bar is in the wrong place.
+
+    Two counterfactuals on the short band, one variable at a time: give it the long band's mean while
+    keeping its own spread, then its spread while keeping its own mean. Whichever closes more of the
+    gap is the mechanism.
+
+    MEASURED on all 6,810 pre-LLM abstracts at the shipped verdict threshold of 0.45 — 60-100 words
+    against 200+, a gap of 15.92 points:
+
+        matching the mean    28.69% -> 15.75%   closes **81%** of the gap
+        matching the spread  28.69% -> 25.04%   closes 23%
+        matching both        28.69% -> 13.60%   against a long-band 12.77%
+
+    **It is the mean.** Short human text is not scored more noisily, it is scored more
+    machine-like — so `untell.calibrate.calibrate_by_length` is the right answer and abstention is
+    not. The two closures sum past 100% because the effects are not additive; together they close
+    95%.
+
+    ⚠️ One detector, one corpus, one register. The mechanism is not claimed beyond that.
+
+    Returns ``None`` when either band is too small to have a spread.
+    """
+    lows = [s for words, s in samples if short[0] <= words < short[1]]
+    highs = [s for words, s in samples if long[0] <= words < long[1]]
+    if len(lows) < 2 or len(highs) < 2:
+        return None
+    mean_low, sd_low = statistics.mean(lows), statistics.pstdev(lows)
+    mean_high, sd_high = statistics.mean(highs), statistics.pstdev(highs)
+    if sd_low == 0:
+        return None
+
+    def rate(values: list[float]) -> float:
+        return sum(v >= threshold for v in values) / len(values)
+
+    observed, reference = rate(lows), rate(highs)
+    gap = observed - reference
+    as_mean = rate([(v - mean_low) + mean_high for v in lows])
+    as_spread = rate([(v - mean_low) * (sd_high / sd_low) + mean_low for v in lows])
+    both = rate([(v - mean_low) * (sd_high / sd_low) + mean_high for v in lows])
+    share = lambda counterfactual: (  # noqa: E731
+        round((observed - counterfactual) / gap, 4) if gap else None)
+    return {
+        "threshold": threshold,
+        "short": {"n": len(lows), "mean": round(mean_low, 4), "sd": round(sd_low, 4),
+                  "flagged": round(observed, 4)},
+        "long": {"n": len(highs), "mean": round(mean_high, 4), "sd": round(sd_high, 4),
+                 "flagged": round(reference, 4)},
+        "gap": round(gap, 4),
+        "matching_mean": {"flagged": round(as_mean, 4), "closes": share(as_mean)},
+        "matching_spread": {"flagged": round(as_spread, 4), "closes": share(as_spread)},
+        "matching_both": {"flagged": round(both, 4), "closes": share(both)},
+        # The name of the fix this implies, so a caller does not have to reason it out.
+        "mechanism": ("mean shift — use a per-length threshold"
+                      if (observed - as_mean) > (observed - as_spread)
+                      else "variance — abstain rather than threshold"),
+    }
 
 def _render(report: dict) -> str:
     lines = [

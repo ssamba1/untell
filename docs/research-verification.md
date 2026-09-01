@@ -5008,3 +5008,68 @@ before, not weaker — the case it used to cover by accident is now covered on p
 40–60 words is not measured: the pre-LLM corpus floors at 60. The rate there is **higher**, since it
 rises as text shortens — this repo separately measured 30.0% at 50 words or fewer — so the note says
 so instead of quoting a number nobody derived.
+
+---
+
+# Round seventy-four — it is not that short text is noisy, it is that short text is mis-scored
+
+Rounds seventy-two and seventy-three measured *flag rates* by length and recommended per-length
+thresholds. Neither asked **why** short documents are flagged more, and the answer decides whether
+that recommendation is right.
+
+Two mechanisms produce the same flag rate:
+
+* **Extra variance** — the detector cannot tell at short lengths, and the tail crosses the bar by
+  accident. The honest response is *abstention*: say the score means nothing here.
+* **A shifted mean** — the detector can tell and is systematically wrong. The response is a
+  *per-length threshold*, because the signal is there and the bar is in the wrong place.
+
+The distributions, MEASURED across all 6,810 abstracts:
+
+| band (words) | n | mean | sd | IQR |
+|---|---|---|---|---|
+| 60–80 | 158 | 0.3792 | 0.1525 | 0.2115 |
+| 80–100 | 445 | 0.3612 | 0.1373 | 0.2012 |
+| 100–125 | 1,279 | 0.3477 | 0.1361 | 0.1864 |
+| 125–150 | 1,753 | 0.3340 | 0.1255 | 0.1741 |
+| 150–175 | 1,681 | 0.3328 | 0.1260 | 0.1726 |
+| 175–200 | 1,024 | 0.3267 | 0.1216 | 0.1657 |
+| 200–250 | 436 | 0.3122 | 0.1252 | 0.1626 |
+
+**Both move.** The mean falls monotonically with length and so does the spread, so the table alone
+cannot separate them.
+
+## One variable at a time
+
+Give the short band the long band's mean while keeping its own spread, then its spread while keeping
+its own mean. MEASURED at the shipped 0.45, 60–100 words against 200+, a gap of **15.92 points**:
+
+| counterfactual | flagged | share of the gap closed |
+|---|---|---|
+| matching the mean | 28.69% → **15.75%** | **81%** |
+| matching the spread | 28.69% → 25.04% | 23% |
+| matching both | 28.69% → 13.60% | 95% |
+
+against a long-band rate of 12.77%. The two closures sum past 100% because the effects are not
+independent.
+
+✅ **It is the mean, four to one.** Short human text is not scored more *noisily* by this detector —
+it is scored more *machine-like*. That is a worse finding than noise and a more tractable one: it
+means `calibrate_by_length` is the correct fix, and abstention would be throwing away a signal that
+is present.
+
+**It also sharpens what the MEASURED 28.69% means.** A 60-to-100-word human abstract is not an
+unmeasurable input; it is an input this detector systematically reads as more artificial — by 0.052
+of mean score — for no reason having to do with who wrote it.
+
+## Shipped rather than left as a script
+
+`eval.length_standardized.decompose_length_gap` computes it, and reports the mechanism by name so a
+caller does not have to reason it out. Round fifty-seven's rule: **a measurement that stays in a
+one-off script does not travel with the number it qualifies.**
+
+The tests give it a pure mean shift and a pure variance difference and require the right answer to
+each. **A diagnosis that said "mean shift" for everything would have reproduced the real corpus's
+answer by luck** — that case is the one that makes the real one worth anything.
+
+⚠️ One detector, one corpus, one register. The mechanism is not claimed beyond that.
