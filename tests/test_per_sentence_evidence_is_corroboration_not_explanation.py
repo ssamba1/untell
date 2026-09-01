@@ -18,6 +18,8 @@ the evidence is there, and it does not lie about itself.
 
 from __future__ import annotations
 
+import inspect
+
 import pytest
 
 from untell.scripts.sentences import score_sentences
@@ -95,3 +97,66 @@ def test_the_cli_stays_quiet_without_the_flag(capsys):
 
     assert main([TELL_HEAVY]) == 0
     assert "evidence · " not in capsys.readouterr().out
+
+
+# --- the same feature on every surface -----------------------------------------------------------
+#
+# `untell/mcp_server.py` carries comments about `tier` and `threshold` having once disagreed between
+# REST and MCP: the same named operation answered differently depending on which door a caller used.
+# Shipping `--evidence` on the CLI alone would have rebuilt that defect deliberately, three rounds
+# after writing it down. These tests hold the three surfaces together.
+
+
+def _api_client():
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+
+    from untell.api_server import app
+
+    return TestClient(app)
+
+
+def test_the_rest_endpoint_offers_evidence_too():
+    body = {"text": TELL_HEAVY, "evidence": True}
+    payload = _api_client().post("/sentences", json=body).json()
+    assert "evidence_note" in payload
+    matches = payload["sentences"][0]["evidence"]["matches"]
+    assert any(hits for hits in matches.values()), "REST returned no markers for a tell-heavy line"
+
+
+def test_the_rest_response_shape_is_unchanged_by_default():
+    """Every caller that predates this feature must see exactly what it saw before."""
+    payload = _api_client().post("/sentences", json={"text": TELL_HEAVY}).json()
+    assert "evidence_note" not in payload
+    assert all("evidence" not in row for row in payload["sentences"])
+
+
+def test_the_rest_schema_declares_the_note():
+    """An undeclared field is the round-25 defect: /score returned `agreement` for releases without
+    the schema mentioning it, so a generated client had no entry for it."""
+    from untell.api_server import _SENTENCES_RESPONSES
+
+    def walk(node):
+        if isinstance(node, dict):
+            if "note" in node and "sentences" in node:
+                return node
+            for value in node.values():
+                found = walk(value)
+                if found is not None:
+                    return found
+        return None
+
+    props = walk(_SENTENCES_RESPONSES)
+    assert props is not None, "could not find the /sentences property map"
+    assert "evidence_note" in props, "the schema must declare `evidence_note`"
+    described = props["evidence_note"]["description"].lower()
+    assert "corroborate" in described and "not explain" in described
+
+
+def test_the_mcp_tool_takes_evidence_and_carries_the_caveat():
+    mcp = pytest.importorskip("untell.mcp_server")
+    source = inspect.getsource(mcp)
+    assert "evidence: bool = False" in source, "the MCP sentences tool must accept `evidence`"
+    assert "fabricated" in source or "do not explain" in source, (
+        "the MCP docstring must carry the corroboration caveat, not just REST and the CLI"
+    )

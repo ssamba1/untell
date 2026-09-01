@@ -472,6 +472,8 @@ class SentencesRequest(_Request):
     threshold: _Probability = DEFAULT_THRESHOLD
     # Unset means the worst ~third, which is what this endpoint always returned.
     top: _Top | None = None
+    # Off by default so the response shape is unchanged for every existing caller.
+    evidence: bool = False
 
 
 class VerifyRequest(_Request):
@@ -836,6 +838,15 @@ _SENTENCES_RESPONSES = _obj(
         "sentences": {"type": "array", "items": {"type": "object", "additionalProperties": True}},
         "flagged": {"type": "array", "items": _STR},
         "note": {**_STR, "description": "caveat about what this tier's targeting is worth"},
+        # Present only when the request set `evidence: true`. The wording of this description is
+        # load-bearing: the catalogue tells are NOT what the detector scored on, and a client that
+        # renders them as the reason for the score would be showing a fabricated rationale.
+        "evidence_note": {
+            **_STR,
+            "description": "present only when `evidence` was requested: says that the per-sentence "
+                           "markers CORROBORATE a score and do not explain it, because `ai` comes "
+                           "from the detector ensemble, which never consults the tells catalogue",
+        },
         # Not the same thing as `note`, which is always present and is about per-sentence noise in
         # general. This appears only when the configured tier cannot rank sentences at all —
         # MEASURED, the pure-stdlib path returns 6 distinct values across 100 sentences, 91 of them
@@ -1187,7 +1198,8 @@ async def scrub(body: ScrubRequest) -> dict:
 async def sentences(body: SentencesRequest) -> dict:
     """Per-sentence AI scores. Flags the worst ~third of sentences for rewrite targeting."""
     return await _offload(
-        score_sentences, body.text, tier=body.tier, threshold=body.threshold, top=body.top
+        score_sentences, body.text, tier=body.tier, threshold=body.threshold, top=body.top,
+        evidence=body.evidence,
     )
 
 

@@ -186,15 +186,24 @@ def _server():
         # flagged — the whole output of this tool — so a client could not ask the question the
         # CLI answers and always got the worst-third default. Unset keeps that default.
         top: int | None = None,
+        # Shipped on the CLI first. A feature on one surface only is the same defect as `tier` and
+        # `threshold` disagreeing between REST and MCP, which is why those comments exist above.
+        evidence: bool = False,
     ) -> dict:
         """Per-sentence AI scores and the list of sentences flagged as AI (the worst ~third).
 
         `top` caps how many come back flagged; unset means the worst ~third.
+
+        `evidence` attaches the catalogue tells found inside each sentence. They CORROBORATE a
+        score and do not explain it: `ai` comes from the detector ensemble, which never consults
+        the catalogue, so rendering them as the reason for the score would be a fabricated
+        rationale.
         """
         bad = _bad_args(
             tier=(tier, "tier"), threshold=(threshold, "probability"), top=(top, "top")
         )
-        return bad or _text_too_long(text) or score_sentences(text, tier=tier, threshold=threshold, top=top)
+        return bad or _text_too_long(text) or score_sentences(
+            text, tier=tier, threshold=threshold, top=top, evidence=evidence)
 
     @server.tool()
     def tells(text: str, include_matches: bool = False) -> dict:

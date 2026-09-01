@@ -61,6 +61,11 @@ CONDITIONAL = {
     "warning", "voice_warning", "rewriter_warning", "error",
     "detector_errors", "failed_detectors", "matches", "suggestion",
     "out_of_range_detectors", "out_of_range_raw", "unrankable",
+    # Returned by /sentences only when the request sets `evidence: true`. It is declared in the
+    # schema on purpose — an undeclared field is the round-25 defect, where /score returned
+    # `agreement` for several releases with nothing in the schema saying so, and a generated client
+    # had no entry for the one field the tool exists to surface.
+    "evidence_note",
 }
 
 

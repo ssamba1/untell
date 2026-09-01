@@ -2179,3 +2179,24 @@ would notice.
 Shipped as status row 29. Row 28 kept its number deliberately: three entries in this ledger refer to
 "row 28" as the disability arm, and renumbering would have silently invalidated them — the same
 propagation failure round twenty-three is about, one level up.
+
+## The same feature on every surface
+
+`--evidence` shipped on the CLI first, and for one commit that is all it was. `untell/mcp_server.py`
+carries comments about `tier` and `threshold` having once disagreed between REST and MCP — the same
+named operation answering differently depending on which door a caller used — so shipping this on one
+surface would have rebuilt a defect this repository had already written down.
+
+`POST /sentences` and the MCP `sentences` tool now take `evidence` too, and both carry the
+corroboration caveat in their own words rather than by reference. Four more tests hold the three
+surfaces together, including one that reads the MCP docstring, because a caveat that exists only in
+the REST schema is not a caveat a Claude client ever sees.
+
+⚠️ **And declaring the field broke two schema tests, which is the system working.** `evidence_note`
+appears only when the caller asks for it, so "every documented field is returned" failed the moment
+it was documented. The fix was to add it to `CONDITIONAL`, the allowlist of fields that can be absent
+on a normal call — **not** to leave it out of the schema. Leaving it out is exactly the round-25
+defect, where `/score` returned `agreement` for several releases with nothing in the schema saying
+so, and a client generated from `/openapi.json` had no entry for the one field this tool exists to
+surface. **The cheap way to make those two tests pass was to reintroduce the bug they did not
+cover.**
