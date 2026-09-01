@@ -2470,3 +2470,79 @@ MEASURED by `python -m eval.litreview --download --json` and
 Thirteen detection papers across twelve added volumes, which is the expected shape: they predate the
 field, and they are here for the false-positive ground truth rather than the survey. **The ratio is
 unmoved.** All quotations updated.
+
+---
+
+# Round thirty-three — measuring at the scale the corpus now allows, and reading the pre-ChatGPT field
+
+Round thirty-one restored a corpus of **6,811 pre-LLM abstracts** where the shipped tool had been
+building zero. The headline numbers were still being published from **n = 120**, which was the size
+that had been available. There was no longer any reason for that.
+
+## ✅ The false-positive rate, at n = 599
+
+| | n = 120 | **n = 599** |
+|---|---|---|
+| pre-LLM FPR | 19.2% | **20.5%** |
+| 95% CI | [13.1%, 27.1%] | **[17.5%, 24.0%]** |
+| interval width | 14.0 points | **6.5 points** |
+
+The point estimate barely moved and the interval more than halved. **This is now the best-supported
+number in the repository**: known-human text by construction, 599 documents, and a command anyone can
+re-run.
+
+## ⚠️ The outlier arm at n = 600 — a gap that grew and still does not clear the bar
+
+| group | n | FPR | 95% CI |
+|---|---|---|---|
+| margin (furthest 20%) | 120 | **21.7%** | [15.2%, 29.9%] |
+| centre | 480 | **16.9%** | [13.8%, 20.5%] |
+
+**Gap +4.8%, up from +0.8% at n = 150 — and the intervals still overlap.** Writers whose prose sits
+furthest from the corpus norm were falsely accused at 21.7% against 16.9% for everyone else, on text
+that predates the models entirely.
+
+**That is not a finding, and it is important not to round it into one.** The margin interval runs from
+15.2% to 29.9% and the centre's upper bound is 20.5%; they overlap, so the honest statement is that
+the direction is consistent with *Centering the Margins* and the magnitude is now large enough to be
+worth chasing, on one weak detector, in a single domain. The tool prints "the intervals OVERLAP, so
+this gap is not evidence of a disparity" and that sentence is the result.
+
+What makes it worth recording rather than discarding: **the gap grew fourfold when the sample grew
+fourfold**, which is what a real effect does and what noise usually does not. It is the first thing
+in this repository that would obviously be worth re-running with the full ensemble.
+
+## The field before ChatGPT, now visible for the first time
+
+The 2020–2021 volumes added for ground truth also brought **13 pre-ChatGPT detection papers** into
+view. Three are foundational and had never been cited here:
+
+✅ **Detection is easiest exactly when humans are worst.** *Automatic Detection of Generated Text is
+Easiest when Humans are Fooled* ([2020.acl-main.164](https://aclanthology.org/2020.acl-main.164/))
+benchmarks top-k, nucleus and untruncated sampling and finds that "improvements in decoding methods
+have primarily optimized for fooling humans. **This comes at the expense of introducing statistical
+abnormalities that make detection easy for automatic systems.**" And: "even multi-sentence excerpts
+can fool expert human raters **over 30% of the time**."
+
+**This inverts the usual framing of human review.** Round five established that a label corrupts a
+reviewer's judgment; round nine that most humans detect poorly. This adds the mechanism: the two
+failure modes are *anti-correlated by construction*, because generators are tuned against human
+perception. A human reviewer is least able to help precisely where the detector is most confident,
+and most needed where the detector is weakest. **From 2020**, and the strategy had never carried it.
+
+✅ **Untrained human evaluators are at chance on GPT-3.** *All That's 'Human' Is Not Gold*
+([2021.acl-long.565](https://aclanthology.org/2021.acl-long.565/)): non-experts "distinguished
+between GPT3- and human-authored text at **random chance level**", and three training regimes lifted
+accuracy only to **55%**, not significantly across stories, news and recipes. That is the pre-ChatGPT
+baseline for "a human will review the flag", and it was already chance-level three years before the
+tools this repository audits were deployed.
+
+✅ **The field had a critical survey before the boom.** *Automatic Detection of Machine Generated
+Text: A Critical Survey* ([2020.coling-main.208](https://aclanthology.org/2020.coling-main.208/))
+surveys the literature and runs "an in-depth error analysis of the state-of-the-art detector."
+
+**What the pre-ChatGPT slice shows.** Thirteen detection papers across two years of the Anthology's
+main venues, against 578 in the corpus overall. The field is almost entirely post-2022 — which is the
+context for every "nobody has done this" claim in these documents, and part of why four of them have
+turned out to be false: a literature that grew this fast is one where the thing nobody had done last
+year was published this year.

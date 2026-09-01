@@ -49,12 +49,12 @@ no decision, no native speaker and no GPU, only the work.
 | 21 | Third-party watermark audit (Article 50 marking) | 🔜 open | **WaterPark already audits watermark robustness**; what is open is a *key-free third-party* audit in the TTP-Detect sense, at segment level. Blueprint corrected in §7. |
 | 22 | Confidence intervals on every published rate | ✅ done — **169 proportions tabulated**, and a test fails if one appears without an interval | — |
 | 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
-| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **19.2% measured**, CI [13.1%, 27.1%] (re-measured in round 31 on the corpus the shipped tool actually builds) | — |
+| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **20.5% measured on n = 599**, CI [17.5%, 24.0%] | — |
 | 25 | Length-conditioned false-positive curve | ✅ done — **30.0% at ≤50 words against 21.7% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
 | 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody**, and **the corpus blocker has a way around it**: *Centering the Margins* measures harm to marginalised groups by outlier detection, needing no subgroup labels at all. Method in §7. |
-| 29 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; **margin 13.3% vs centre 12.5%, intervals overlap**, so no disparity measurable with one detector | — |
+| 29 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; on n = 600 **margin 21.7% vs centre 16.9%, gap +4.8%**, intervals still overlap | — |
 | 30 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
@@ -391,7 +391,7 @@ Six claims changed on contact with their sources; the ledger lists all of them.
 > HuggingFace, which its egress policy blocks, so `--tier full` resolves to the same single detector
 > as `--tier lite`. Consequences, and they are not small:
 >
-> - **19.2% on pre-LLM abstracts, 30.0% at ≤50 words, 17.3% at the shipped threshold** are that one
+> - **20.5% on pre-LLM abstracts, 30.0% at ≤50 words, 17.3% at the shipped threshold** are that one
 >   detector's false-positive rates. The ensemble's would differ, and this repo has separately
 >   measured `mage` alone driving the ensemble's rate through `max`.
 > - **The FAR/MFAR/consensus spread cannot be measured on our own stack here.** With one detector the
@@ -770,7 +770,9 @@ a fact about HC3, and the 0-to-61% range is the reason to say so every time we q
   the technical register detectors are worst on, where **every flag is a false positive by
   construction** — no labels, nothing to dispute.
 
-  **Measured: 19.2% of 120 pre-LLM abstracts flagged, 95% CI [13.1%, 27.1%], lite tier.**
+  **Measured: 20.5% of 599 pre-LLM abstracts flagged, 95% CI [17.5%, 24.0%], lite tier.** At n = 120
+  it read 19.2% with an interval more than twice as wide, [13.1%, 27.1%]; the corpus added in round
+  thirty-one is 6,811 abstracts, so there was no reason to keep publishing the small sample.
   That is now the most defensible false-positive number this repo has, because its ground truth
   cannot be argued with. ✗ **It is not comparable to Bohler's 8.6%**, which an earlier draft of this
   paragraph called "roughly double" — ours is the share of documents flagged, theirs is the mean
