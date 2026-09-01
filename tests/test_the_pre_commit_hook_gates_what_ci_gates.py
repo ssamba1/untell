@@ -48,7 +48,15 @@ def test_the_hook_is_executable():
                                    # they warned about, re-triggered the check, and reached the
                                    # remote — because the hook ran the other three doc guards and
                                    # not this one.
-                                   "test_every_audit_check_can_fail"])
+                                   "test_every_audit_check_can_fail",
+                                   # Added in round 54. CI runs `mkdocs build --strict` as a LINK
+                                   # CHECKER — its first run there found 47 broken cross-references
+                                   # — and this hook's author ran it by hand every round for
+                                   # fifty-three rounds, which is the clearest possible sign it
+                                   # belonged in the gate. A dead link is invisible to every other
+                                   # guard: the audit reads claims, the doc tests read counts, and
+                                   # neither follows a href.
+                                   "mkdocs build --strict"])
 def test_the_hook_still_runs_every_gate_ci_runs(check):
     """The drift that matters. Dropping a check from this script makes the hook faster and makes it
     stop protecting the thing it was written for, with no visible difference."""
@@ -126,3 +134,31 @@ def test_the_guard_explains_how_to_recover():
     would commit the sabotaged file."""
     body = HOOK.read_text(encoding="utf-8")
     assert "git checkout" in body, "the message must say how to restore the file"
+
+
+def test_the_hook_degrades_when_an_optional_tool_is_absent():
+    """`ruff` and `mkdocs` are dev dependencies, not guarantees. A hook that fails hard when one is
+    missing gets uninstalled by the first contributor who has not run `pip install -e .[dev]`, and
+    then guards nothing at all. Both are guarded by `command -v`."""
+    body = HOOK.read_text(encoding="utf-8")
+    assert body.count("command -v") >= 2, (
+        "every optional tool the hook invokes must be probed before it is run"
+    )
+
+
+def test_the_hook_checks_links_only_when_documentation_changed():
+    """Scoping is what keeps the gate fast enough to survive. A link check on every Python commit
+    would add seconds to changes that cannot break a link."""
+    lines = HOOK.read_text(encoding="utf-8").splitlines()
+    # The COMMAND, not the comment above it explaining what the command is for. The first version of
+    # this test matched the comment — which mentions `mkdocs build --strict` while describing it —
+    # and then checked the wrong three lines. Prose matched instead of the thing, in a test written
+    # for a hook added because prose kept matching instead of the thing.
+    command_lines = [i for i, line in enumerate(lines)
+                     if line.strip().startswith("mkdocs build")]
+    assert command_lines, "the hook does not actually invoke mkdocs"
+    for i in command_lines:
+        preceding = "\n".join(lines[max(0, i - 3):i + 1])
+        assert "docs_changed" in preceding, (
+            f"the link check on line {i + 1} is not gated on a Markdown change"
+        )

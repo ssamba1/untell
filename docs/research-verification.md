@@ -3681,3 +3681,45 @@ commit be refused. It costs about twenty-five seconds and only on a Markdown cha
 none should be loosened — was correct and incomplete. A check that is right and runs too late is a
 check that documents failures rather than preventing them. The four instances were not a prose
 problem; they were a **scheduling** problem, and the prose was where it happened to show.
+
+---
+
+# Round fifty-four — auditing the gate against the thing it is supposed to mirror
+
+Round fifty-three closed one hole in the pre-commit hook. That prompts the obvious question nobody
+had asked: **the hook exists to refuse what CI would reject, so what else does CI run that it does
+not?**
+
+Comparing the two directly found `mkdocs build --strict` — the **link checker**, whose first run in
+CI found 47 broken cross-references. It was absent from the hook, and **this ledger's author had been
+running it by hand at the end of every round for fifty-three rounds.** A step performed manually
+every single time is the clearest possible sign it belongs in the gate.
+
+A dead link is invisible to every other guard here: `untell-audit` reads claims, the doc tests read
+counts, and neither follows a href. It is now in the hook, gated on a Markdown change, verified by
+staging a link to a file that does not exist and watching the commit be refused.
+
+## Two properties the tests now hold
+
+**Graceful degradation.** `ruff` and `mkdocs` are dev dependencies, not guarantees. A hook that fails
+hard when one is absent gets uninstalled by the first contributor who has not run
+`pip install -e .[dev]`, and then guards nothing at all. Both are behind `command -v`, and a test
+counts the probes.
+
+**Scoping.** The link check runs only when Markdown changed. A gate that adds seconds to every Python
+commit is a gate that gets bypassed, and the mkdocs step cannot find anything on a change that
+touches no documents.
+
+## ⚠️ And the test for the scoping matched the wrong line
+
+The first version located the mkdocs invocation with `if "mkdocs build" in line` — and found **the
+comment above it**, which mentions `mkdocs build --strict` while explaining what it is for. It then
+checked the three lines before the comment, found no gating condition, and failed.
+
+**Prose matched instead of the thing, in a test written for a hook added because prose kept matching
+instead of the thing.** It now anchors on lines whose *stripped* form starts with the command, and
+checks every such line rather than the first.
+
+That is the fifth instance of this shape in three rounds, and the first where it appeared in a test
+rather than in a document. The failure mode is not about counts or about Markdown: it is that **a
+description of a thing looks exactly like the thing to anything matching on text.**

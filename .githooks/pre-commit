@@ -62,6 +62,16 @@ if [ -n "$docs_changed" ]; then
         >/dev/null 2>&1 || fail "documentation guards failed. Run them to see which."
 fi
 
+# The link check CI runs as a gate, and the one this hook's author ran by hand every round for
+# fifty-three rounds — which is the clearest possible sign it belonged here. `mkdocs build --strict`
+# is a LINK CHECKER, not a publish step: its first run in CI found 47 broken cross-references. A
+# dead link in a document is invisible to every other guard, because the audit reads claims and the
+# doc tests read counts, and neither follows a href.
+if [ -n "$docs_changed" ] && command -v mkdocs >/dev/null 2>&1; then
+    mkdocs build --strict --site-dir /tmp/untell-hook-site >/dev/null 2>&1 \
+        || fail "mkdocs --strict failed: a documentation link does not resolve. Run \`mkdocs build --strict\`."
+fi
+
 # The live documents are the ones `untell-audit` reads; nothing else triggers the slow check.
 if printf '%s\n' "$docs_changed" | grep -qE '^(README|ROADMAP|ai-writing-research)\.md$|^docs/'; then
     python -m untell.scripts.audit >/dev/null 2>&1 \
