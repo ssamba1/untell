@@ -430,11 +430,30 @@ A systematic pass over **16 ACL Anthology volumes, 20,875 abstracts, 334 detecti
 and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
 below is refereed and was read from the Anthology's own metadata.
 
-**Start with what the field counts as its own priorities.** Of those 334 detection papers: **102**
-address robustness and evasion, **29** watermarking, **18** calibration — and **6** address false
-positives, **5** fairness. **The field spends about 30% of its detection effort making detectors
-harder to evade and under 2% on what happens when one is wrong about a person.** That is the gap this
-repo sits in, now counted rather than asserted.
+**Start with what the field counts as its own priorities.** Re-run over **98 Anthology volumes,
+33,053 abstracts, 536 detection papers** (an earlier pass sampled 28 volumes and undercounted by
+3.5×): **139** address robustness and evasion, **33** watermarking, **13** calibration — and **13**
+address false positives, **8** fairness. **The field spends about a quarter of its detection effort
+making detectors harder to evade and under 2.5% on what happens when one is wrong about a person.**
+The ratio barely moved across a 3.5× expansion, which is what makes it a fact about the field rather
+than about our sample. Reproduce with `python -m eval.litreview --download`.
+
+✅ **Two results from `2025.genaidetect` — a COLING workshop devoted to this exact problem, which the
+first survey missed entirely — set the bounds on everything else here.**
+
+- **Detection in distribution is close to solved.** On RAID, across many domains and generators all
+  seen in training, **multiple teams cleared 99% accuracy at a 5% false-positive rate**
+  ([2025.genaidetect-1.45](https://aclanthology.org/2025.genaidetect-1.45/)); academic-essay systems
+  exceeded **0.98 F1** in English and Arabic ([-1.37](https://aclanthology.org/2025.genaidetect-1.37/)).
+- **And homoglyphs destroy it.** SilverSpeak ([-1.1](https://aclanthology.org/2025.genaidetect-1.1/))
+  attacks seven detectors — **Binoculars and Fast-DetectGPT among them, both of which we ship** —
+  and drives mean Matthews correlation from **0.64 to −0.01**, pinning detectors to a single class.
+
+Those two together are the whole argument. **"Does this detector work?" has no answer. "Does it work
+*here*?" has a good one**, and the difference between them is a deployment, which is what this repo
+measures. It also promotes a feature we undersell: **the hidden-character scrubber is a precondition
+for auditing, not hygiene.** If a few homoglyphs can pin a detector to a constant, a false-positive
+rate measured on unscrubbed text is partly measuring the encoding.
 
 Five refereed results then fix the shape of the problem:
 

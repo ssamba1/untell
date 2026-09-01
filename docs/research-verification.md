@@ -661,3 +661,75 @@ and spaCy's models are on GitHub releases. Installing them took collection error
 
 Every measurement reported above was correct for the environment it ran in. The environment was just
 narrower than assumed, and nothing checked. `CONTRIBUTING.md` now documents the trap.
+
+---
+
+# Round six — the venue I missed, and what it changes
+
+The survey sampled 28 Anthology collections. **The Anthology holds roughly 1,700.** Probing venue
+names rather than assuming took it to **98 volumes, 33,053 abstracts, 536 detection papers** — a
+3.5× expansion — and among the additions was **`2025.genaidetect`: an entire COLING workshop on
+detecting AI-generated content**, 45 papers, the single most on-topic venue that exists. Missing it
+was the largest coverage failure in this whole effort.
+
+**The headline ratio survived the expansion**, which is the strongest evidence yet that it is real
+rather than an artefact of which volumes were sampled:
+
+| topic | round 3 (28 vols) | round 6 (98 vols) |
+|---|---|---|
+| robustness / paraphrase | 102 (30.6%) | **139 (25.9%)** |
+| false positives | 6 (1.8%) | **13 (2.4%)** |
+| fairness / non-native bias | 5 (1.5%) | **8 (1.5%)** |
+
+## ✅ The finding that most directly concerns this repo
+
+**SilverSpeak** ([2025.genaidetect-1.1](https://aclanthology.org/2025.genaidetect-1.1/)) attacks
+seven detectors with homoglyph substitution ('A' → Cyrillic 'А') across five datasets. The detectors
+include **Binoculars, Fast-DetectGPT, DetectGPT, Ghostbuster, OpenAI's detector and watermarking** —
+two of which this repo ships. The result: **mean Matthews correlation falls from 0.64 to −0.01**,
+with detectors driven to classify *every* text as one class.
+
+Two consequences, and the second is the one we had not stated:
+
+1. It is peer-reviewed confirmation that `untell/attacks/unicode_tricks.py` implements an attack that
+   dismantles the detectors in our own tier list.
+2. **It makes the hidden-character scrubber a precondition for auditing, not a side feature.** If a
+   handful of homoglyphs can pin a detector to a constant, then any false-positive rate measured on
+   unscrubbed text is measuring the text's encoding as much as the detector. The README sells
+   scrubbing as a Trojan-Source hygiene feature; it is also the thing that makes every other number
+   in an audit meaningful.
+
+## ✅ And the evidence that cuts hardest *against* the pessimistic reading
+
+**GenAI Content Detection Task 3** ([2025.genaidetect-1.45](https://aclanthology.org/2025.genaidetect-1.45/))
+ran on RAID across many domains and generators, all seen during training: **multiple teams exceeded
+99% accuracy while holding a 5% false-positive rate.** Task 2
+([2025.genaidetect-1.37](https://aclanthology.org/2025.genaidetect-1.37/)) saw top systems above
+**0.98 F1** on academic essays in English and Arabic.
+
+Detection *in distribution* is close to solved. Which is exactly the thesis, stated from the other
+side: these systems were trained on the domains and generators they were tested on, and the failures
+this repo documents all live outside that condition — unseen generators, edited text, homoglyphs,
+another population. **"Does this detector work?" has no answer; "does it work here?" has a good one.**
+
+## ✅ Two more that change existing text
+
+- **DAMAGE is peer-reviewed**, not the preprint our earlier notes called it
+  ([2025.genaidetect-1.9](https://aclanthology.org/2025.genaidetect-1.9/)): 19 humanizer tools
+  studied, many detectors shown to fail on humanized text, and a detector that survives an attack
+  the authors mount against their own model.
+- **Humans are below chance when they are not the interrogator.**
+  [2025.genaidetect-1.7](https://aclanthology.org/2025.genaidetect-1.7/) ran displaced and inverted
+  Turing tests: displaced human judges *and* GPT-3.5/GPT-4 judges were **less accurate than
+  interactive interrogators and below chance overall**, and all three judged the best GPT-4 witness
+  human *more often than they judged actual humans human*. Combined with round five's label-effect
+  result, "a person will review the flag" is not a safeguard in either direction: reviewers are
+  below chance, and once they see a label they follow it.
+- **Fingerprints explain the generator-bound result.**
+  [2025.genaidetect-1.6](https://aclanthology.org/2025.genaidetect-1.6/) finds n-gram and
+  part-of-speech classifiers robust in *and* out of domain, with per-model-family fingerprints that
+  transfer within a family (13B LLaMA ≈ 65B LLaMA) and not across.
+
+**Method note.** `eval/litreview.py` now carries all 98 volumes, so the expanded survey re-runs with
+`python -m eval.litreview --download`. The lesson is the ordinary one: the gap was not in the
+literature or in the access policy, it was in assuming a sample was the population.

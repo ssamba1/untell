@@ -50,6 +50,23 @@ VOLUMES: tuple[str, ...] = (
     "2025.acl", "2025.emnlp", "2025.findings", "2025.naacl", "2025.coling", "2025.tacl", "2025.cl",
     "2025.aacl", "2025.inlg", "2025.wmt", "2025.naacl-srw",
     "2026.acl", "2026.findings", "2026.eacl", "2026.lrec", "2026.tacl", "2026.cl", "2026.aacl",
+    # Workshops. Easy to forget and the reason an earlier version of this survey undercounted by
+    # 3.5x: the Anthology holds ~1,700 volume files and the first pass sampled 28 of them. The
+    # omission that mattered most was **2025.genaidetect** — an entire COLING workshop on detecting
+    # AI-generated content, i.e. the single most on-topic venue that exists.
+    "2024.trustnlp", "2024.wnut", "2024.bea", "2024.blackboxnlp", "2024.insights", "2024.nlpcss",
+    "2024.argmining", "2024.wassa", "2024.sdp", "2024.semeval", "2024.conll", "2024.starsem",
+    "2024.sigdial", "2024.paclic", "2024.alta", "2024.privatenlp", "2024.nlp4dh", "2024.clpsych",
+    "2024.law", "2024.crac", "2024.codi", "2024.mrl", "2024.sicon", "2024.customnlp4u",
+    "2024.nlp4pi", "2024.luhme",
+    "2025.genaidetect", "2025.trustnlp", "2025.wnut", "2025.bea", "2025.blackboxnlp", "2025.gem",
+    "2025.insights", "2025.argmining", "2025.sdp", "2025.semeval", "2025.conll", "2025.starsem",
+    "2025.sigdial", "2025.ranlp", "2025.paclic", "2025.alta", "2025.privatenlp", "2025.nlp4dh",
+    "2025.clpsych", "2025.law", "2025.crac", "2025.codi", "2025.mrl", "2025.sicon", "2025.nlp4pi",
+    "2025.luhme",
+    "2026.trustnlp", "2026.bea", "2026.gem", "2026.nlpcss", "2026.argmining", "2026.wassa",
+    "2026.semeval", "2026.conll", "2026.starsem", "2026.sigdial", "2026.privatenlp", "2026.nlp4dh",
+    "2026.clpsych", "2026.law", "2026.codi", "2026.customnlp4u",
 )
 
 # A paper counts as detection-related if it talks about detecting generated text at all. Kept broad
