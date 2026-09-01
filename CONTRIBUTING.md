@@ -34,6 +34,32 @@ pytest -q          # tests (must be green; lite tier needs zero ML)
 CI runs the same checks on Python 3.9 / 3.11 / 3.12 plus a full-tier job that loads the real torch
 detectors. A PR that's green locally should be green in CI.
 
+### A green run is not necessarily a complete one — check what actually ran
+
+`pytest -q` reports modules it cannot *import* as errors rather than failures, and they scroll past
+above the summary line. On a minimal install a large part of the suite is silently absent, and the
+run still looks broadly fine. MEASURED in a restricted environment, each optional dependency and the
+coverage it unlocks:
+
+| missing | what it costs you |
+|---|---|
+| `rich` | 6 tests in `test_rich_output.py` fail with `NameError` on `_Table` / `_Text` — inside the module you are probably editing if you touch CLI output |
+| `spacy` **and** `en_core_web_sm` | **~413 named-entity tests skip.** The model is a separate download and `preserve.py` warns about it at runtime — that warning is easy to lose in scrollback |
+| `fastapi`, `httpx` | the API-server modules do not collect at all |
+| `torch` | 4 further modules do not collect |
+
+So before trusting a local run:
+
+```bash
+pytest -q --collect-only 2>&1 | tail -3   # the error count here is coverage you are NOT running
+python -m spacy download en_core_web_sm   # the one that costs the most and is easiest to miss
+```
+
+This is written from a real mistake rather than caution: a session's worth of changes was validated
+against targeted subsets while `rich` was absent, so tests asserting on that module's behaviour could
+not have run at all — and tests that inspected its *source* passed instead, which looked like
+evidence and was not.
+
 ## Probe & scratch policy
 
 - Probe scripts and their outputs (`.jsonl`/`.txt` artifacts, `sliceN_*.py`) live in

@@ -64,7 +64,7 @@ Read from the Anthology's own XML. Abstracts quoted here are the published ones.
 | **Beemo** (2025.naacl-long.357) | 6.5k + 13.1k texts, ten instruction-finetuned LLMs, 33 detector configurations, expert editing evades detection | ✅ **Confirmed verbatim**, including "benchmarking 33 configurations" and "expert-based editing evades MGT detection, while LLM-edited texts are unlikely to be recognized as human-written". The repo's "11 detectors" is the initial release; both numbers are right |
 | **RAID** (2024.acl-long.674) | Benchmark scale and the robustness finding | ✅ **Confirmed verbatim**: "over 6 million generations spanning 11 models, 8 domains, 11 adversarial attacks and 4 decoding strategies", evaluating "8 open- and 4 closed-source detectors". The shipped dataset on GitHub is larger (>10M docs, 11 domains, 12 attacks) — cite the release you mean |
 | **Feature-inversion trap / StyloBench** (2026.acl-long.1998, ACL 2026 **Oral**, incl. Preslav Nakov) | Features flip sign under personalization | ✅ **Confirmed**, plus a number we lacked: StyloCheck "predicts both the direction and magnitude of cross-domain performance shifts with an **85% correlation** to actual outcomes" |
-| **DetectRL-X** (2026.acl-long.1773) | 8 languages, 6 domains, 4 commercial LLMs, polish/expand/condense | ✅ **Confirmed verbatim**, including "8 dimensions" and the multilingual paraphrase/perturbation attack framework |
+| **DetectRL-X** (2026.acl-long.1773) | 8 languages, 6 domains, four commercially-available LLMs, polish/expand/condense | ✅ **Confirmed verbatim**, including "8 dimensions" and the multilingual paraphrase/perturbation attack framework |
 | **M4GT-Bench** (2024.acl-long.218) | Three tasks incl. human–machine boundary detection | ✅ **Confirmed** — and it carries a finding that supports our thesis directly: "obtaining good performance in MGT detection usually requires an access to the training data from the same domain and generators" |
 | **LitBench** (2026.eacl-long.362) | 43,827 training pairs, 2,480-pair test set, Claude-3.7-Sonnet 73%, trained RMs 78% | ✅ **Confirmed verbatim** |
 
@@ -628,3 +628,36 @@ This does not weaken the argument; it is an instance of it. A false-positive rat
 detector, a population, a domain and an aggregation rule, and "measured on our ensemble" is one of
 those coordinates. Re-run on a machine with the full tier installed before quoting any of these as
 ensemble figures.
+
+
+---
+
+## Regression check on the work shipped alongside this research
+
+Claiming "no regressions" without measuring it would be the same error this document exists to
+catch. Measured by running every module that fails in this environment against both this branch and
+`main`, in a `git worktree`, under an identical dependency set, and diffing the failing test IDs:
+
+    BRANCH ids: 32
+    BASE ids:   32
+    only on branch (regressions): (none)
+    only on base  (fixed here):   (none)
+
+The failing set is identical, so the changes introduce nothing and repair nothing. Those 32 are
+environmental — meaning gates and back-translation need models from a blocked host.
+
+**The check earned its cost immediately.** It caught one real defect: a line here reading "4
+commercial LLMs" (describing DetectRL-X's generators) tripped `test_docs_claims`, whose regex reads
+`N commercial` as a claim about *this repo's* commercial detector count. Reworded rather than
+loosening the regex — that guard catches genuinely stale counts, and widening it for one document's
+convenience would trade a real check for a comfortable one.
+
+### And an environment audit that should have come first
+
+A large share of the suite was never running. `rich`, `fastapi`, `httpx`, `huggingface_hub` and
+`spacy` are all installable from hosts this environment permits — PyPI bypasses the proxy entirely,
+and spaCy's models are on GitHub releases. Installing them took collection errors from 11 to 4 and
+**activated roughly 413 named-entity tests that had been skipping silently**.
+
+Every measurement reported above was correct for the environment it ran in. The environment was just
+narrower than assumed, and nothing checked. `CONTRIBUTING.md` now documents the trap.
