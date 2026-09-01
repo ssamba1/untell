@@ -118,8 +118,8 @@ can triage**:
    is a prompt guide; a repo whose description names a vendor is an API wrapper. Those two
    categories are 60% of the census (259 of 435), which is the *ceiling* on this idea, and the
    ceiling is not reachable. **Measured on the real eleven-angle harvest** (111 repos, 26 of them
-   already read by the census): `classify` decides **9%** without a reader — 35% on a single
-   topic-filtered slice, but 9% across the full sweep. Confident rows agree **2 of 2**, unsure
+   already read by the census): `classify` decides **12%** without a reader — 35% on a single
+   topic-filtered slice, but 12% across the full 131-repo sweep. Confident rows agree **2 of 2**, unsure
    rows **11 of 24**. The gap to 60% is not a tuning problem: those census categories were
    assigned by *reading source*, and metadata cannot see whether the Python file beside the
    Markdown is the product. A tenth of the reading is the honest saving.
@@ -289,15 +289,17 @@ in with `ingest`, and diffed against the census. Raw harvest committed at
 
 | | |
 |---|---|
-| repos seen | 111 |
-| already in the census | 33 |
-| **new** | **78** (16 of them at ≥100 stars) |
+| repos seen | 131 |
+| already in the census | 34 |
+| **new** | **97** (19 of them at ≥100 stars) |
 | moved by ≥50 stars | 7 |
-| still need a reader | 70 |
+
+Reproduce it: `python .claude/census.py delta .claude/probes/census-2026-09-01-multiangle.json`
 
 The largest newcomers: `Nanako0129/sepia` (1,269★, **created 2026-08-28** — three weeks after the
 sweep), `LearnPrompt/humanize-ppt` (916★), `fromleda/text-humanizer` (734★, created 2026-08-10),
-`LifelongLazyLearner/qu-ai-wei` (510★). Among the movers, `epoko77-ai/im-not-ai` went
+`scanaislop/aislop` (589★), `LifelongLazyLearner/qu-ai-wei` (510★),
+`berelevant-ai/slopless` (323★). Among the movers, `epoko77-ai/im-not-ai` went
 **4,182 → 5,143** and `speak-human-tw` 752 → 919.
 
 ### Four findings that bear on this repo's own claims
@@ -330,7 +332,7 @@ Both are fixed and pinned by tests, and both were only visible because the run w
 
 **Left, in order:**
 
-1. **Read the 70-row queue** and fold the result into `docs/humanizer-census.json`. The harvest is
+1. **Read the 83-row queue** and fold the result into `docs/humanizer-census.json`. The harvest is
    done; reading is the only part that needs an LLM, and it is now a bounded list rather than 435.
 2. **`raid-bench` as an external check** (§6) — MIT, pip-installable, aimed at a benchmark this repo
    already streams data from, and it attacks the weakest published claim (sample size) with somebody

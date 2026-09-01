@@ -8,18 +8,18 @@ spend. GitHub was never the bottleneck -- the search API serves 30 queries a min
 So the fix is not a bigger budget. It is to stop spending tokens on the part of the field that
 is decidable from metadata -- and to be honest about how small that part is.
 
-MEASURED 2026-09-01, on a real eleven-angle harvest of 111 repos, 26 of which the census had
-already read by hand:
+MEASURED 2026-09-01, on a real thirteen-angle harvest of 131 repos, 34 of which the census
+had already read by hand:
 
-    decided without a reader   9%   (35% on a single topic-filtered slice)
+    decided without a reader  12%   (35% on a single topic-filtered slice)
     confident rows correct     2/2
-    unsure rows correct       11/24
+    unsure rows correct       15/32
 
 The 60% the census's own category counts suggest -- 259 of 435 being prompt-guide or
 api-wrapper -- is NOT reachable from metadata, and the gap is not a tuning problem. Those
 categories were assigned by reading source. Metadata can see that a repo is packaged as an agent
 skill or that its description names a vendor; it cannot see whether the Python file beside the
-Markdown is the product. Nine percent of a sweep is what this saves. That is worth having and it
+Markdown is the product. Twelve percent of a sweep is what this saves. That is worth having and it
 is not a revolution, and a version of this file that claimed otherwise would be the exact
 failure the repo it lives in exists to measure.
 
