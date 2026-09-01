@@ -246,3 +246,64 @@ class TestComponentAblation:
 
         res = sa.ablate([{"text": "x", "Overall": "3"}], "Overall", lambda v: None)
         assert "error" in res
+
+
+class TestMissingDataIsNotASubgroup:
+    """A missing-data bucket is not a population and must never be a comparison arm.
+
+    MEASURED 2026-09-01 on ASAP 2.0: 4,019 of 17,307 essays code economic and disability status
+    as the string "NA". Those rows scored 19.1% where every real group scored 30-38%, so treating
+    "NA" as a group made it the "best" arm on two axes and produced a 2.01x headline ratio against
+    what is really a data-collection artifact. The number was wrong and the direction was wrong.
+    """
+
+    def test_na_rows_are_excluded_from_every_group(self):
+        rows = ([{"g": "NA", "flagged": False}] * 100
+                + [{"g": "real", "flagged": True}] * 100)
+        groups = _group(rows, ("g",))["g"]["groups"]
+        assert "NA" not in groups, "missing data was reported as a subgroup"
+        assert groups["real"]["n"] == 100
+
+    def test_the_common_spellings_of_missing_are_all_caught(self):
+        for token in ("NA", "n/a", "Unknown", "", "  ", "None", "not reported"):
+            rows = ([{"g": token, "flagged": False}] * 50
+                    + [{"g": "real", "flagged": True}] * 50)
+            groups = _group(rows, ("g",))["g"]["groups"]
+            assert list(groups) == ["real"], f"{token!r} survived as a subgroup: {list(groups)}"
+
+    def test_a_missing_bucket_cannot_become_the_disparity_arm(self):
+        """The exact ASAP failure: NA scoring far lower than everyone made it the 'best' group."""
+        rows = ([{"g": "NA", "flagged": False}] * 400
+                + [{"g": "a", "flagged": True}] * 200
+                + [{"g": "b", "flagged": False}] * 200)
+        d = _group(rows, ("g",))["g"]["disparity"]
+        assert d is not None
+        assert "NA" not in (d["worst"], d["best"]), f"disparity compared against NA: {d}"
+
+
+class TestAnAxisWithNoDataSaysSo:
+    """An empty axis rendered as a bare heading reads as 'no disparity here'.
+
+    MEASURED 2026-09-01: a --csv label-filter bug dropped `ell_status` from an ASAP load, and the
+    report printed "by ell_status" with nothing under it. That is the worst shape for a bug --
+    silent, and reassuring in the wrong direction.
+    """
+
+    def test_an_absent_axis_is_marked_missing(self):
+        block = _group([{"other": "x", "flagged": True}] * 50, ("ell_status",))["ell_status"]
+        assert block["missing"] is True
+
+    def test_a_populated_axis_is_not_marked_missing(self):
+        block = _group([{"g": "a", "flagged": True}] * 50, ("g",))["g"]
+        assert block["missing"] is False
+
+    def test_render_announces_the_missing_axis(self):
+        from eval.subgroup_audit import render
+
+        report = {
+            "corpus_n": 50, "scored_n": 50, "tier": "lite", "threshold": 0.5,
+            "overall_fpr": 0.5, "overall_ci": [0.4, 0.6], "min_group": MIN_GROUP,
+            "saturation": None,
+            "axes": {"ell_status": {"groups": {}, "disparity": None, "missing": True}},
+        }
+        assert "nothing measured here" in render(report)

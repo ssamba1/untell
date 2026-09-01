@@ -262,7 +262,7 @@ step has not been tried is a guess.
   prints the CC BY-NC-SA licence and the Crossley et al. citation at load. Nothing vendored.
 - **`eval/subgroup_audit.py`** — false-positive rate by subgroup, Wilson intervals, a `MIN_GROUP`
   floor of 30 below which a group gets a count and no rate, and a threshold `--sweep`.
-- **`tests/test_subgroup_audit.py`** — 28 tests, all on the ways the module could overstate.
+- **`tests/test_subgroup_audit.py`** — 34 tests, all on the ways the module could overstate.
 - One row in `.claude/measurements.jsonl`, recipe `ellipse-subgroup-fpr`.
 
 ### The result
@@ -340,12 +340,48 @@ were choosing. A single-threshold audit would have reported one of these two dir
 never seen the other. This is the strongest argument in the document for why `--sweep` is not a
 convenience feature.
 
-**Finding 4 — the demographic axes showed nothing, and that is worth stating plainly.** On race
-and ethnicity, gender, economic status and grade, **no ratio separated at 95% confidence at any
-threshold**. Point estimates ran 1.00x to 1.66x and every Wilson interval overlapped. The honest
-reading is *no demonstrated demographic disparity in this corpus* — not "none exists", and not
-the 1.66x. It is also the expected shape: ELLIPSE is one population of US school-age learners, and
-the separating variable turned out to be how well they write English, not who they are.
+**Finding 4 — no demographic axis separated *in ELLIPSE*, and a second corpus explains why.** On
+race, gender, economic status and grade, no ratio separated at 95% in ELLIPSE. That is the
+expected shape for that corpus: 71% of its writers are Hispanic/Latino and *all* of them are
+English language learners, so it is close to demographically homogeneous and cannot compare
+learners to anyone but each other.
+
+**Finding 5 — the independent corpus, and it separates on everything.** [ASAP 2.0](https://github.com/scrosseye/ASAP_2.0)
+(Crossley et al., **CC BY 4.0**, hosted on GitHub) is 17,307 source-based essays — a different
+writing task, a different sample, 4.4x the size, demographically diverse, and it carries
+`ell_status`, the native-versus-learner contrast ELLIPSE structurally cannot provide. At the same
+0.50 operating point, overall false-positive rate 31.6%:
+
+| axis | flagged more | flagged less | ratio | separate |
+|---|---|---|---|---|
+| **ELL status** | **non-ELL 32.2%** (n=14,798) | ELL 26.7% (n=2,269) | 1.21x | yes |
+| economic status | **not disadvantaged 38.1%** | disadvantaged 33.7% | 1.13x | yes |
+| race/ethnicity | White 33.1% (n=6,989) | Asian/Pacific Islander 23.4% | 1.41x | yes |
+| disability | **identified 38.3%** | not identified 34.8% | 1.10x | yes |
+
+**All four separate at 95%.** And the first row is the one that matters: **non-native English
+speakers are flagged *less* than native ones** — the reverse of the finding that made detector
+bias a public issue.
+
+This is not a refutation of Liang et al. They tested commercial detectors on TOEFL essays and
+found 61% false positives on non-native writing. This is a burstiness-weighted heuristic, a
+different class of tool, and it carries the **opposite** bias. Three of the four axes point the
+same way once you read them together — the more fluent or more advantaged writer is flagged more
+— which is exactly what the burstiness mechanism predicts, now shown on two independent corpora.
+Disability is the exception and points the other way.
+
+**The practical consequence is the point of the whole instrument.** "Detectors are biased against
+non-native speakers" is true of the tools that were measured and false of this one, and nobody can
+tell which they have without measuring. A published bias direction does not transfer across
+detector classes, so it has to be measured per detector — which is the argument for shipping a
+tool rather than citing a paper.
+
+**Two defects in the instrument surfaced doing this, and both are now pinned by tests.** ASAP
+codes missing demography as the string `"NA"`; 4,019 rows carried it, they scored 19.1% where
+every real group scored 30–38%, and the tool made that the "best" group and reported a 2.01x
+disparity against a data-collection artifact. And a `--csv` label filter silently dropped
+`ell_status`, rendering an empty axis — a heading with nothing under it, which reads as "no
+disparity here". Both were found only by pointing the tool at a corpus it was not built around.
 
 **The methodological finding that makes the tool worth having.** At 0.30 the detector flags
 everyone, so it cannot discriminate between groups — a disparity ratio computed there is not "no

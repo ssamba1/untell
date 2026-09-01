@@ -688,7 +688,8 @@ untell-detector-audit --pairs 100    # the real measurement: AUROC on labelled h
 
 # Who does a detector fail? False-positive rate by WRITER SUBGROUP on known-human student essays,
 # where every flag is an error by construction. Fetches ELLIPSE (CC BY-NC-SA, not vendored).
-untell-subgroup-audit --tier lite            # by proficiency, race, gender, economic status, grade
+untell-subgroup-audit --tier lite                    # ELLIPSE: by proficiency, race, gender, SES
+untell-subgroup-audit --corpus asap --tier lite      # ASAP 2.0: adds ELL status and disability
 untell-subgroup-audit --tier lite --sweep    # across thresholds: a saturated detector cannot be
                                              # compared between groups, and this says so
 untell-subgroup-audit --ablate               # per COMPONENT: the two halves of the lite detector

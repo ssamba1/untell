@@ -431,6 +431,54 @@ def _ellipse_cache():
     return _P(base) / "ellipse_train.csv"
 
 
+# ASAP 2.0 (Crossley et al. 2025). The independent second corpus, and the one that carries the
+# contrast ELLIPSE structurally cannot: ELLIPSE writers are ALL English language learners, so it
+# can compare learners to each other but never to native speakers. ASAP has `ell_status`, which is
+# the Liang et al. question directly. Different task type (source-based rather than independent
+# writing), different sampling, 4x the size, and CC BY 4.0 rather than NC-SA -- so unlike ELLIPSE
+# it is only the file size, not the licence, that keeps it out of the tree.
+ASAP_URL = ("https://raw.githubusercontent.com/scrosseye/ASAP_2.0/main/"
+            "ASAP_2_Final_github_train.zip")
+ASAP_CITATION = (
+    "ASAP 2.0 corpus -- Crossley, S., et al., 'A large-scale corpus for assessing source-based "
+    "writing quality: ASAP 2.0', Assessing Writing. Licence: CC BY 4.0. "
+    "Source: https://github.com/scrosseye/ASAP_2.0"
+)
+_ASAP_LABELS = ("ell_status", "race_ethnicity", "gender", "economically_disadvantaged",
+                "student_disability_status", "grade_level", "score")
+
+_CORPORA = {
+    "ellipse": {"url": None, "text_col": "full_text"},
+    "asap": {"url": ASAP_URL, "text_col": "full_text"},
+}
+
+
+def _asap_cache():
+    import os
+    from pathlib import Path as _P
+
+    base = os.environ.get("UNTELL_CORPUS_DIR") or os.path.join(
+        os.path.expanduser("~"), ".cache", "untell-corpora"
+    )
+    return _P(base) / "asap_train.csv"
+
+
+def _fetch_asap(path) -> None:
+    """Download the zip and extract the single CSV, skipping the __MACOSX sidecar."""
+    import io
+    import urllib.request
+    import zipfile
+
+    logger.warning("fetching ASAP 2.0 (~11MB) to %s\n%s", path, ASAP_CITATION)
+    with urllib.request.urlopen(ASAP_URL, timeout=180) as fh:  # noqa: S310 - fixed https URL
+        blob = fh.read()
+    with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+        name = next(n for n in zf.namelist()
+                    if n.endswith(".csv") and not n.startswith("__MACOSX"))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(zf.read(name))
+
+
 def load_labelled(corpus: str = "ellipse", csv_path=None, min_words: int = 60) -> list[dict]:
     """Known-human texts with writer labels, as ``{"text": ..., <label>: ...}`` dicts.
 
@@ -439,18 +487,36 @@ def load_labelled(corpus: str = "ellipse", csv_path=None, min_words: int = 60) -
     """
     import csv as _csv
 
-    if corpus != "ellipse" and csv_path is None:
-        raise ValueError(f"unknown labelled corpus {corpus!r}; known: 'ellipse'")
+    text_col = "full_text"
 
-    path = csv_path or _ellipse_cache()
-    if csv_path is None and not path.exists():
-        import urllib.request
+    if corpus not in _CORPORA and csv_path is None:
+        raise ValueError(f"unknown labelled corpus {corpus!r}; known: {sorted(_CORPORA)}")
 
-        path.parent.mkdir(parents=True, exist_ok=True)
-        logger.warning("fetching ELLIPSE (~10MB) to %s\n%s", path, ELLIPSE_CITATION)
-        urllib.request.urlretrieve(ELLIPSE_URL, path)  # noqa: S310 - fixed https URL above
+    # A user-supplied CSV keeps ALL of its columns. MEASURED 2026-09-01: with an explicit --csv
+    # the corpus argument still defaulted to "ellipse", so an ASAP file was filtered through the
+    # ELLIPSE allowlist and `ell_status` -- the whole reason to load ASAP -- silently vanished.
+    # The audit then rendered an empty axis rather than an error, which is the worst shape for a
+    # bug to take: a heading with nothing under it reads as "no disparity here".
+    labels = None if csv_path is not None else (_ASAP_LABELS if corpus == "asap"
+                                                else _ELLIPSE_LABELS)
+    if csv_path is not None:
+        path = csv_path
+    elif corpus == "asap":
+        path = _asap_cache()
+        if not path.exists():
+            _fetch_asap(path)
+        else:
+            logger.info("%s", ASAP_CITATION)
     else:
-        logger.info("%s", ELLIPSE_CITATION)
+        path = _ellipse_cache()
+        if not path.exists():
+            import urllib.request
+
+            path.parent.mkdir(parents=True, exist_ok=True)
+            logger.warning("fetching ELLIPSE (~10MB) to %s\n%s", path, ELLIPSE_CITATION)
+            urllib.request.urlretrieve(ELLIPSE_URL, path)  # noqa: S310 - fixed https URL above
+        else:
+            logger.info("%s", ELLIPSE_CITATION)
 
     rows: list[dict] = []
     with open(path, encoding="utf-8", errors="replace") as fh:
@@ -458,8 +524,9 @@ def load_labelled(corpus: str = "ellipse", csv_path=None, min_words: int = 60) -
             text = (raw.get("full_text") or "").strip()
             if len(text.split()) < min_words:
                 continue
+            keep = raw.keys() if labels is None else [k for k in labels if k in raw]
             rows.append({"text": text,
-                         **{k: raw.get(k) for k in _ELLIPSE_LABELS if k in raw}})
+                         **{k: raw.get(k) for k in keep if k != text_col}})
     if not rows:
         raise DatasetUnavailable(f"{corpus}: no rows survived the {min_words}-word floor")
     return rows

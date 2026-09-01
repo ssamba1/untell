@@ -47,6 +47,14 @@ from pathlib import Path
 # make a group "reportable" is precisely the failure this constant exists to prevent.
 MIN_GROUP = 30
 
+# Values that mean "we do not know", not "this group". MEASURED 2026-09-01: ASAP 2.0 codes
+# missing demography as the string "NA", and 4,019 of its 17,307 essays lack economic and
+# disability status. Those rows scored 19.1% where every real group scored 30-38%, so treating
+# "NA" as a subgroup made it the "best" group on two axes and produced a 2.01x headline ratio
+# against a data-collection artifact. A missing-data bucket is not a population and must never be
+# a comparison arm.
+_MISSING = {"na", "n/a", "unknown", "none", "null", "not reported", "unspecified", "-", ""}
+
 # Subgroup axes ELLIPSE carries. `Overall` is the writer's rated English proficiency and is the
 # axis that actually separates: at threshold 0.50 the lite tier's false-positive rate rises
 # MONOTONICALLY with proficiency, 33.7% at level 2 to 53.1% at level 4.5. `grade` is here because
@@ -170,8 +178,9 @@ def _group(scored: list[dict], axes: tuple[str, ...]) -> dict:
     for axis in axes:
         groups: dict[str, list[dict]] = {}
         for r in scored:
-            if r.get(axis) not in (None, ""):
-                groups.setdefault(str(r[axis]), []).append(r)
+            v = r.get(axis)
+            if v is not None and str(v).strip().lower() not in _MISSING:
+                groups.setdefault(str(v), []).append(r)
         rendered = {}
         for name, members in sorted(groups.items()):
             hits = sum(1 for m in members if m["flagged"])
@@ -183,7 +192,11 @@ def _group(scored: list[dict], axes: tuple[str, ...]) -> dict:
             rendered[name] = {"n": len(members), "flagged": hits,
                               "fpr": round(hits / len(members), 4),
                               "ci": [round(lo, 4), round(hi, 4)], "status": "reported"}
-        axes_out[axis] = {"groups": rendered, "disparity": _disparity(rendered)}
+        # An axis the corpus does not carry must SAY so. It rendered as a bare heading with
+        # nothing under it once (a --csv label-filter bug dropped `ell_status`), and a heading
+        # with no rows reads exactly like "no disparity found here" to anyone skimming.
+        axes_out[axis] = {"groups": rendered, "disparity": _disparity(rendered),
+                          "missing": not rendered}
     return axes_out
 
 
@@ -227,6 +240,9 @@ def render(report: dict) -> str:
     for axis, block in report["axes"].items():
         out.append("")
         out.append(f"by {axis}")
+        if block.get("missing"):
+            out.append("  !! this corpus carries no values for this axis - nothing measured here")
+            continue
         for name, g in sorted(block["groups"].items(),
                               key=lambda kv: (kv[1]["fpr"] is None, -(kv[1]["fpr"] or 0))):
             if g["status"] == "insufficient":

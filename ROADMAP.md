@@ -97,7 +97,7 @@ Fairlearn compute the right statistic and none is wired to a text detector. RAID
 `kinit-sk/mAO` rank accuracy or obfuscation strength, a different question. **The research exists;
 the instrument does not.**
 
-Built and measured 2026-09-01 (`untell-subgroup-audit`, `eval/subgroup_audit.py`, 28 tests,
+Built and measured 2026-09-01 (`untell-subgroup-audit`, `eval/subgroup_audit.py`, 34 tests,
 ELLIPSE fetched not vendored because it is CC BY-NC-SA and this package is MIT). On 3,904
 known-human ESL essays, where every flag is an error by construction:
 
@@ -116,7 +116,16 @@ known-human ESL essays, where every flag is an error by construction:
 - **The disparity reverses with the threshold** (worst group flips to the *lowest* proficiency at
   0.70, 3.25x). Which students a detector wrongly accuses is a function of an operating point
   somebody chose, usually without knowing that is what they were choosing.
-- No demographic axis — race, gender, economic status, grade — separated at 95% confidence.
+- No demographic axis separated **in ELLIPSE** — which is the expected shape, since 71% of its
+  writers are Hispanic/Latino and all of them are learners.
+- **Replicated on an independent corpus, where everything separates.** [ASAP 2.0](https://github.com/scrosseye/ASAP_2.0)
+  (CC BY 4.0, on GitHub, 17,307 source-based essays, demographically diverse) at the same 0.50
+  operating point: **non-ELL writers flagged MORE than English language learners, 32.2% vs 26.7%,
+  1.21x, separated**; not-economically-disadvantaged 38.1% vs disadvantaged 33.7%; White 33.1% vs
+  Asian/Pacific Islander 23.4%; identified-as-disabled 38.3% vs not 34.8%. All four separate at
+  95%. The ELL row reverses the finding that made detector bias a public issue — not a refutation
+  of Liang et al., who measured commercial detectors, but evidence that **bias direction does not
+  transfer across detector classes** and therefore has to be measured per detector.
 - **The bias is in the FEATURES, not our calibration.** Raw signals, before any detector touches
   them: more proficient learners are less bursty (Cohen's *d* −0.394, held-out −0.363) and use
   fewer common words (−0.476, held-out −0.537). Any detector treating low sentence-length variance
@@ -128,7 +137,8 @@ known-human ESL essays, where every flag is an error by construction:
 
 Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
 `ellipse-lite-signal-decomposition`, `ellipse-proficiency-replication`,
-`ellipse-component-ablation` and `ellipse-raw-signal-effect-sizes` in
+`ellipse-component-ablation`, `ellipse-raw-signal-effect-sizes` and
+`asap-subgroup-fpr` in
 `.claude/measurements.jsonl`.
 
 
