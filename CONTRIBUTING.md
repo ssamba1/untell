@@ -63,6 +63,20 @@ because it edits source files and restores them from memory.
 python scripts/mutation_sweep.py --vacuity   # break each module entirely; its test file must fail
 ```
 
+```bash
+python scripts/mutation_sweep.py --collections   # empty each catalogue; something must fail
+```
+
+The third mode, and the one aimed at this repository's most consequential data. `for x in C: assert
+P(x)` is **vacuously true when C is empty**, so a catalogue could be deleted and the assertions over
+it would still pass. Two were: emptying `_OPENERS` and `_PARTICLES` broke nothing, and a scan of the
+whole suite then found `_BARE_ARTICLES` in the same state — the rewriter would have been free to emit
+"the the" while the test written to prevent it ran zero iterations.
+
+The override is inserted **next to the assignment**, never appended to the file. Appending puts it
+after `if __name__ == "__main__"`, where it never runs: that produced two wrong findings before it
+was noticed.
+
 The coarse companion. A mutant asks whether a test notices *one* broken line; this asks whether a
 test file notices its module being broken *entirely*. It cannot catch a weak assertion — one alert
 test carries the file — but it catches the failure that recurred four rounds running: a test passing

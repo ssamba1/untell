@@ -148,3 +148,58 @@ def test_sabotage_handles_a_class_with_only_dunders():
     broken = MUT.sabotage(source)
     ast.parse(broken)
     assert "sabotaged" not in broken
+
+
+# --- the collections sweep -------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("module,name,testfile", MUT.COLLECTIONS,
+                         ids=[f"{n}" for _m, n, _t in MUT.COLLECTIONS])
+def test_every_collection_case_points_at_files_that_exist(module, name, testfile):
+    assert (REPO / module).exists(), f"{name}: missing module {module}"
+    assert (REPO / testfile).exists(), f"{name}: missing test file {testfile}"
+
+
+@pytest.mark.parametrize("module,name,testfile", MUT.COLLECTIONS,
+                         ids=[f"{n}" for _m, n, _t in MUT.COLLECTIONS])
+def test_every_named_collection_still_exists_at_module_level(module, name, testfile):
+    """A renamed or relocated constant turns its case into a no-op. `empty_collection` returns None
+    for that, and `collections_sweep` counts it as a survivor rather than a pass — but only when
+    somebody runs it. This fails in the ordinary suite."""
+    source = (REPO / module).read_text(encoding="utf-8")
+    assert MUT.empty_collection(source, name) is not None, (
+        f"{name} has no module-level assignment in {module} — its emptying case is a no-op"
+    )
+
+
+def test_the_override_lands_before_any_entry_point():
+    """The mistake this helper exists to prevent, tested rather than described.
+
+    Appending the override to the end of `untell/scripts/audit.py` puts it AFTER
+    `if __name__ == "__main__": raise SystemExit(main())`. `main()` has already run and exited, so
+    the override never executes — and the probe reports whatever the unmutated code does. That
+    produced two wrong findings in round forty-eight, including `untell-audit` cheerfully reporting
+    "5 sites, all accounted for" with the allowlist supposedly emptied.
+    """
+    source = (REPO / "untell" / "scripts" / "audit.py").read_text(encoding="utf-8")
+    assert "__main__" in source, "this test needs a module WITH an entry point to be meaningful"
+    mutated = MUT.empty_collection(source, "SELECTION_ON_BARE_MAX_ALLOWED")
+    assert mutated is not None
+    assert mutated.index("emptied by mutation_sweep") < mutated.index("__main__"), (
+        "the override must be inserted next to the assignment, not appended after the entry point"
+    )
+
+
+def test_the_override_really_empties_the_container():
+    """`[] or [...]` looked like an emptying and evaluated to the non-empty list — round
+    forty-seven's no-op mutants. `type(X)()` cannot do that."""
+    source = "import re\nTHINGS = ['a', 'b', 'c']\nOTHER = 1\n"
+    mutated = MUT.empty_collection(source, "THINGS")
+    namespace: dict = {}
+    exec(compile(mutated, "<m>", "exec"), namespace)  # noqa: S102
+    assert namespace["THINGS"] == [], f"expected empty, got {namespace['THINGS']!r}"
+    assert namespace["OTHER"] == 1, "nothing else may change"
+
+
+def test_a_missing_collection_is_reported_rather_than_silently_skipped():
+    assert MUT.empty_collection("X = 1\n", "NOT_THERE") is None

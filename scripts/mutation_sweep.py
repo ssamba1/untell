@@ -251,6 +251,89 @@ def vacuity(pairs=VACUITY_PAIRS) -> int:
     return 1 if vacuous else 0
 
 
+def empty_collection(source: str, name: str) -> str | None:
+    """Return `source` with module-level `name` rebound to an empty container of its own type.
+
+    The override is inserted **immediately after the assignment it overrides**, not appended to the
+    end of the file. That is not a style choice. Appending to the end of `untell/scripts/audit.py`
+    puts the override *after* `if __name__ == "__main__": raise SystemExit(main())` — `main()` has
+    already run and exited, so the override never executes and the probe measures nothing. That
+    mistake produced two wrong findings in round forty-eight, including `untell-audit` reporting
+    "5 sites, all accounted for" with the allowlist supposedly emptied.
+
+    Returns ``None`` when the name has no module-level assignment, so a caller can tell "no such
+    collection" from "emptied and nothing noticed".
+    """
+    import ast
+
+    tree = ast.parse(source)
+    for node in tree.body:
+        targets = node.targets if isinstance(node, ast.Assign) else (
+            [node.target] if isinstance(node, ast.AnnAssign) else [])
+        if not any(isinstance(t, ast.Name) and t.id == name for t in targets):
+            continue
+        lines = source.splitlines(keepends=True)
+        at = node.end_lineno  # 1-based, exclusive as a 0-based index
+        lines.insert(at, f"{name} = type({name})()  # emptied by mutation_sweep\n")
+        return "".join(lines)
+    return None
+
+
+# Collections a test asserts a universal over. `for x in C: assert ...` and `assert all(... for x in
+# C)` are both vacuously true when C is empty, so emptying each must make something fail.
+COLLECTIONS: tuple[tuple[str, str, str], ...] = (
+    ("untell/scripts/tells.py", "_AI_VOCAB",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py"),
+    ("untell/scripts/tells.py", "_TRANSITIONS",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py"),
+    ("untell/rewriter/structural.py", "_OPENERS",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py"),
+    ("untell/rewriter/structural.py", "_BARE_ARTICLES",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py"),
+    ("untell/attacks/word_importance.py", "_PARTICLES",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py"),
+    ("untell/attacks/word_importance.py", "_SYN",
+     "tests/test_the_catalogues_are_not_empty_when_asserted_over.py"),
+    ("untell/rewriter/structural.py", "_ADVERB_SLOT_ONLY",
+     "tests/test_adverb_slot_substitutions.py"),
+    ("untell/rewriter/structural.py", "_NEEDS_PRIOR_DISCOURSE",
+     "tests/test_openers_that_need_prior_discourse.py"),
+    ("untell/rewriter/structural.py", "_MERGE_WEIGHTS", "tests/test_structural_grammar.py"),
+    ("untell/detectors/base.py", "_TIER_RANK", "tests/test_score.py"),
+    ("untell/scripts/voice.py", "_SCALE", "tests/test_voice.py"),
+    ("eval/assisted_fairness.py", "HUMAN_AUTHORED", "tests/test_assisted_fairness_arm.py"),
+)
+
+
+def collections_sweep(cases=COLLECTIONS) -> int:
+    survivors = []
+    for module, name, testfile in cases:
+        source = REPO / module
+        original = source.read_text(encoding="utf-8")
+        mutated = empty_collection(original, name)
+        if mutated is None:
+            print(f"STALE     {name}: no module-level assignment in {module}")
+            survivors.append(f"{name} ({module})")
+            continue
+        try:
+            source.write_text(mutated, encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", testfile, "-q", "-p", "no:randomly", "-x"],
+                cwd=REPO, capture_output=True, text=True, timeout=900)
+            killed = result.returncode != 0
+        finally:
+            source.write_text(original, encoding="utf-8")
+        print(f"{'KILLED  ' if killed else 'SURVIVED'}  {name:<28} <- {testfile}")
+        if not killed:
+            survivors.append(f"{name} ({module})")
+    print(f"\n{len(cases) - len(survivors)}/{len(cases)} killed")
+    if survivors:
+        print("\nEmptying these breaks nothing — every universal over them is vacuous:")
+        for s in survivors:
+            print(f"  - {s}")
+    return 1 if survivors else 0
+
+
 def _dirty() -> bool:
     out = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
                          capture_output=True, text=True).stdout
@@ -288,6 +371,9 @@ def run(mutants=MUTANTS) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--list", action="store_true", help="show the mutants without running them")
+    parser.add_argument("--collections", action="store_true",
+                        help="empty each catalogue a test asserts a universal over; something must "
+                             "fail")
     parser.add_argument("--vacuity", action="store_true",
                         help="coarse check: break each module entirely, require its test file to "
                              "fail")
@@ -300,6 +386,8 @@ def main(argv: list[str] | None = None) -> int:
         print("refusing to run on a dirty working tree: this edits source files and restores them "
               "from memory, so a crash between the two would lose uncommitted work.", file=sys.stderr)
         return 2
+    if args.collections:
+        return collections_sweep()
     return vacuity() if args.vacuity else run()
 
 

@@ -3409,3 +3409,21 @@ ledger has now recorded in four consecutive rounds, this time in a three-line sh
 **Appending to a module is not a safe way to override a constant.** It is only safe for a module
 with no entry point — which is why the `_BARE_ARTICLES` result stands: `untell/rewriter/structural.py`
 contains no `__main__` guard, and that was verified before the finding was believed.
+
+## The sweep now carries all three modes
+
+Round forty-eight's scan was a one-off script. `--collections` makes it standing: twelve catalogues
+that a test asserts a universal over, each emptied in turn. MEASURED by
+`python scripts/mutation_sweep.py --collections`: **12 of 12 killed** once round forty-seven's and
+forty-eight's guards were in place.
+
+The helper that does the emptying inserts its override **immediately after the assignment**, never
+at the end of the file, and a test proves it lands before `untell/scripts/audit.py`'s `__main__`
+guard. That is the round-forty-eight mistake made structurally impossible rather than merely
+documented — and `type(X)()` cannot silently evaluate to the original the way `[] or [...]` did in
+round forty-seven.
+
+Five more tests guard the mode itself: every named collection must still exist at module level (a
+rename turns its case into a no-op), the override must actually empty the container, and a missing
+name must be reported rather than skipped. `mutation_sweep.py` now has three modes — one broken line,
+one broken module, one emptied catalogue — and each has been wrong at least once, so each is tested.
