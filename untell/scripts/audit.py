@@ -492,6 +492,7 @@ def check_derivable(report: Report) -> None:
 
     check_demo_privacy_claims(report)
     check_source_comment_counts(report)
+    check_survey_counts(report)
     check_corpus_bound_claims(report)
     check_dynamic_env_vars(report)
     check_skill_commands(report)
@@ -1562,6 +1563,71 @@ def check_corpus_bound_claims(report: Report) -> None:
         "no headline states a corpus-bound result without naming the corpus",
         not offenders,
         "; ".join(offenders) if offenders else f"{len(_CORPUS_BOUND_CLAIMS)} phrases checked",
+    )
+
+
+def check_survey_counts(report: Report) -> None:
+    """Every survey figure a document publishes, re-derived from the survey's own output.
+
+    Round seventy-nine found `docs/index.md` still publishing **12** fairness papers and **77**
+    multilingual, ten rounds after round sixty-nine widened the corpus from 108 volumes to 186 and
+    made them 13 and 82. Nothing caught it, and the reason is structural: **a number that is merely
+    superseded has no marker to search for.** The retraction guard looks for retired *forms*, and
+    nothing was retracted — the figures were correct when written and the corpus grew underneath
+    them.
+
+    The census already solves this by committing its raw data and re-deriving every published count
+    from it (`check_census_counts`). The survey could not, because its corpus is 186 Anthology XML
+    files that are downloaded rather than committed. `eval/data/survey_counts.json` is the small
+    artefact that closes the gap: `python -m eval.litreview --json` regenerates it, and this check
+    reads documents against it.
+
+    So the corpus stays a download and the counts stay checkable, which is the property that
+    mattered.
+    """
+    counts_path = REPO / "eval" / "data" / "survey_counts.json"
+    if not counts_path.exists():
+        return
+    counts = json.loads(counts_path.read_text(encoding="utf-8"))
+    topics = counts["topics"]
+
+    # ⚠️ COMPOSITE patterns, matching whole published sentences, because this repository runs TWO
+    # surveys and single-number patterns cannot tell them apart. The sample is `eval/litreview` over
+    # 186 volumes; the CENSUS is the entire Anthology, 1,718 volumes and 82,352 abstracts, 1952 to
+    # 2026, from a partial clone. A first version matched "(N) detection papers" and reported the
+    # census's 763 as drift against the sample's 612 — two correct numbers for two different
+    # measurements, and a checker that confuses them teaches people to ignore it.
+    #
+    # Each entry is a regex whose groups must equal the listed values in order.
+    composites: tuple[tuple[str, tuple[int, ...], str], ...] = (
+        (r"(\d[\d,]*) ACL Anthology volumes,\s*(\d[\d,]*) abstracts,\s*(\d[\d,]*) detection papers",
+         (counts["volumes"], counts["abstracts"], counts["detection_papers"]),
+         "volumes / abstracts / detection papers"),
+        (r"\((\d[\d,]*) volumes,\s*(\d[\d,]*) abstracts;\s*(\d[\d,]*) papers on evasion "
+         r"robustness against (\d[\d,]*) on\s+false positives and (\d[\d,]*) on fairness"
+         r"[^)]*?(\d[\d,]*) on multilingual",
+         (counts["volumes"], counts["abstracts"], topics["robustness/paraphrase"],
+          topics["false positives/accusation"], topics["fairness/non-native bias"],
+          topics["multilingual/cross-lingual"]),
+         "the index page's survey sentence"),
+    )
+    wrong: list[str] = []
+    checked = 0
+    for rel in LIVE_DOCS:
+        path = REPO / rel
+        if not path.exists() or rel == LEDGER:
+            continue
+        text = flatten_prose(without_code_spans(path.read_text(encoding="utf-8")))
+        for pattern, expected, label in composites:
+            for match in re.finditer(pattern, text, re.I):
+                checked += 1
+                found = tuple(int(g.replace(",", "")) for g in match.groups())
+                if found != expected:
+                    wrong.append(f"{rel}: {label} reads {found}, the survey says {expected}")
+    report.check(
+        "every survey count a document publishes matches the survey",
+        not wrong,
+        "; ".join(sorted(set(wrong))) if wrong else f"{checked} composite claim(s) agree",
     )
 
 

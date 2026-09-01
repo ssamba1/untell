@@ -279,6 +279,41 @@ def test_demo_privacy_claims(repo) -> None:
         _restore(victim, original)
 
 
+def test_survey_counts(repo) -> None:
+    """The drift round seventy-nine found by reading, ten rounds after it started.
+
+    `docs/index.md` published 12 fairness papers and 77 multilingual after round sixty-nine widened
+    the corpus and made them 13 and 82. Nothing caught it: a superseded number has no retired form
+    to search for, so the retraction guard cannot see it.
+    """
+    assert_passes("check_survey_counts")
+    victim = repo / "docs" / "index.md"
+    original = victim.read_bytes()
+    try:
+        body = victim.read_text(encoding="utf-8")
+        edited = body.replace("13 on fairness", "12 on fairness")
+        assert edited != body, "premise: the index must publish the survey's fairness count"
+        victim.write_text(edited, encoding="utf-8")
+        assert_fails("check_survey_counts", "a survey count the survey does not support")
+    finally:
+        _restore(victim, original)
+
+
+def test_survey_counts_does_not_confuse_the_census_with_the_sample(repo) -> None:
+    """This repository runs two surveys: the `eval/litreview` sample over 186 volumes, and a census
+    of the entire Anthology — 1,718 volumes, 82,352 abstracts, 763 detection papers.
+
+    A first version of the check matched single numbers and reported the census's 763 as drift
+    against the sample's 612. Two correct numbers for two different measurements, and a checker that
+    confuses them teaches people to ignore it.
+    """
+    assert_passes("check_survey_counts")
+    roadmap = (repo / "ROADMAP.md").read_text(encoding="utf-8")
+    assert "763 detection papers" in roadmap, (
+        "premise: the roadmap must publish the census figures the check has to leave alone")
+    assert "82,352 abstracts" in roadmap
+
+
 def test_corpus_bound_claims(repo) -> None:
     assert_passes("check_corpus_bound_claims")
     victim = repo / "docs" / "index.md"

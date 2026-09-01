@@ -5381,3 +5381,49 @@ silently detach it from its source**, and what the audit reports is the number r
 insertion that moved it. It has caught something real every time, and every time the fix has been to
 put a marker on the line rather than to widen the window — a wider window would attribute numbers to
 sources that merely happen to be nearby.
+
+---
+
+# Round eighty — a superseded number has no retired form to search for
+
+Round seventy-nine found `docs/index.md` publishing **12** fairness papers and **77** multilingual,
+ten rounds after round sixty-nine widened the corpus from 108 volumes to 186 and made them **13** and
+**82**. It was found by reading, which is not a method.
+
+Nothing could have caught it. The retraction guard searches for retired *forms* — a phrase somebody
+withdrew — and **nothing was withdrawn.** Those numbers were correct when written and the corpus grew
+underneath them. There is no string to look for, only a value to re-derive.
+
+The census already solved this shape: it commits its raw data and re-derives every published count
+from it. The survey could not, because its corpus is 186 Anthology XML files that are downloaded
+rather than committed. `eval/data/survey_counts.json` is the artefact that closes the gap —
+`python -m eval.litreview --json` regenerates it — so the corpus stays a download and the counts
+stay checkable, which is the property that mattered.
+
+`check_survey_counts` reads every live document against it. VERIFIED to fire: reverting the round
+seventy-nine fix fails it and prints both tuples.
+
+## ⚠️ The first version was wrong, and the way it was wrong matters
+
+It matched single numbers — `(N) detection papers`, `(N) on fairness` — and reported fifteen
+violations. Most were not violations.
+
+**This repository runs two surveys.** The sample is `eval/litreview` over 186 volumes and 46,905
+abstracts. The **census** is the entire ACL Anthology — **1,718 volumes, 82,352 abstracts, 763
+detection papers, 1952 to 2026** — built from a partial clone, and it is what the roadmap's headline
+argument quotes: 164 robustness papers against 20 on false positives, across the whole published
+history of the field.
+
+So the check was reporting the census's 763 as drift against the sample's 612. **Two correct numbers
+for two different measurements.** It also flagged `70 abstracts` (the generated machine corpus),
+`6,810 abstracts` (the pre-LLM corpus) and `2021 abstracts` — a year.
+
+A checker that reports correct numbers as errors gets ignored, which is the failure mode this
+project has now recorded four separate ways. The fix is composite patterns matching **whole published
+sentences** rather than numbers in isolation: the volumes, abstracts and detection-paper counts have
+to appear together, in the order and phrasing the sample's own sentence uses. Two such sentences
+exist and both agree.
+
+**Reading the hits before believing them is what separated the one real defect from fourteen
+false alarms** — and the false alarms were the more interesting half, because they surfaced that the
+repository's two surveys are easy to confuse and nothing had said so in one place.
