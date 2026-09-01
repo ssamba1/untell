@@ -24,6 +24,7 @@ untell-subgroup-audit --corpus ellipse --ablate
 untell-subgroup-audit --corpus liang --tier lite --n 0                          # Results 12, 13
 untell-subgroup-audit --corpus liang --n 0 --ablate --band-axis population      # Result 14
 untell-subgroup-audit --corpus liang-paired --n 0 --odds --threshold 0.775      # Results 15, 16
+untell-subgroup-audit --corpus asap --n 0 --by "race_ethnicity*ell_status"      # Result 19
 python -c "from eval.datasets import load_liang_paired as L; print(len(L(prompt_engineered=True)))"  # Result 17
 untell-ngram-lm train && untell-ngram-lm score --csv <corpus>.csv --by ell_status
 untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_status
@@ -37,7 +38,8 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 `unedited-adult-writing`, `liang-population-fpr`, `liang-paired-gpt4-polish`,
 `liang-threshold-sweep`, `liang-component-ablation`, `liang-paired-equalised-odds`,
 `liang-paired-separation`, `liang-paired-fnr-disparity`,
-`liang-prompt-engineered-evasion`, `liang-gpt-simplify-reversal`.
+`liang-prompt-engineered-evasion`, `liang-gpt-simplify-reversal`,
+`asap-intersectional-race-by-ell`.
 
 ## The corpora
 
@@ -613,6 +615,40 @@ only describing a static ranking. What is refuted is the tidier story built on t
 honest form of Result 12 is: **an LLM edit moves a text along two channels that disagree, and
 whether the detector then flags it more or less is a property of the population and the edit, not
 of language models in general.**
+
+## Result 19 — crossing two axes finds a gap neither shows alone, on 17,307 essays
+
+Added after reading [Identifying Bias in Machine-generated Text Detection](https://aclanthology.org/2026.acl-long.109.pdf)
+(Pindrop, ACL 2026 Main), which evaluated 16 detectors against a demographically labelled corpus
+and found bias "most dangerous where attributes intersect" — non-White English-language learners
+flagged far more than their White peers, a gap neither axis shows on its own. Every axis in this
+document was reported one at a time until 2026-09-01, so this instrument could not have found it.
+
+All 17,307 ASAP essays, lite tier at threshold 0.50:
+
+| axis | worst | best | ratio | intervals |
+|---|---|---|---|---|
+| `ell_status` | non-ELL 32.2% | ELL 26.7% | 1.21x | separate |
+| `race_ethnicity` | Am. Indian/Alaskan Native 36.3% | Asian/Pacific Islander 23.4% | 1.55x | separate |
+| **`race_ethnicity*ell_status`** | Am. Indian/Alaskan Native × non-ELL **35.2%** | Asian/Pacific Islander × ELL **16.5%** | **2.14x** | **separate** |
+
+**The structural claim replicates.** Crossing genuinely finds more than either axis alone —
+1.21x and 1.55x separately, 2.14x crossed, and the crossed gap separates at 95% on cells of 108
+and 364. That is the ACL 2026 finding reproduced on a different corpus and a different detector,
+which is the strongest form of support this instrument can give another group's result.
+
+**The directional claim does not, and that is also their finding.** Pindrop reports non-White ELL
+students flagged *most*. Here the ELL arm is flagged *less* at every level — non-ELL 32.2% against
+ELL 26.7% — and Asian/Pacific Islander ELL writers are the best-served cell in the corpus at
+16.5%. This reverses the field's default assumption, consistently with
+[Result 9](#result-9--a-third-corpus-a-new-axis-and-a-direction-reversal), and it is exactly what
+Pindrop concludes when they say bias is **model-specific** and "no single detector was uniformly
+fair or unfair". A different detector, a different direction. **The generalisation that survives
+is about the method, not the harm: cross the axes, because single-axis reporting understates.**
+
+Two cells fall below the 30-row floor and are reported as insufficient rather than compared —
+`American Indian/Alaskan Native × ELL` has one row. Crossing splits a corpus fast, which is why
+the floor matters more here rather than less, and why the worst cell above is not the smallest.
 
 ## What these results do not establish
 
