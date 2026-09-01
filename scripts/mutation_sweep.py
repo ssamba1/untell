@@ -165,18 +165,37 @@ VACUITY_PAIRS: tuple[tuple[str, str], ...] = (
 
 
 def sabotage(source: str) -> str:
-    """Replace every public top-level function body with a raise."""
+    """Replace every public function body — module level AND inside classes — with a raise.
+
+    Methods matter as much as functions here, and for a while this walked only `tree.body`. Most of
+    this repository's detectors and rewriters are CLASSES, so their substance was never touched: the
+    sweep reported `test_binoculars_dead_latch.py` as passing against a "broken"
+    `untell/detectors/binoculars.py` when `BinocularsDetector` had not been altered at all. Twelve
+    of the thirty-two apparent survivors were that.
+
+    Dunders are left alone deliberately. `__init__` and `__getattr__` are how a module and its
+    objects load, so breaking them turns "the test noticed" into "nothing could import", which is a
+    different and much weaker signal.
+    """
     import ast
 
     tree = ast.parse(source)
     lines = source.splitlines(keepends=True)
     edits = []
-    for node in tree.body:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and not node.name.startswith("__"):
-            start = node.body[0].lineno - 1
-            indent = len(lines[start]) - len(lines[start].lstrip())
-            edits.append((start, node.body[-1].end_lineno,
-                          " " * indent + 'raise AssertionError("sabotaged")\n'))
+
+    def collect(body):
+        for node in body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name.startswith("__"):
+                    continue
+                start = node.body[0].lineno - 1
+                indent = len(lines[start]) - len(lines[start].lstrip())
+                edits.append((start, node.body[-1].end_lineno,
+                              " " * indent + 'raise AssertionError("sabotaged")\n'))
+            elif isinstance(node, ast.ClassDef):
+                collect(node.body)
+
+    collect(tree.body)
     for start, end, replacement in sorted(edits, reverse=True):
         lines[start:end] = [replacement]
     return "".join(lines)

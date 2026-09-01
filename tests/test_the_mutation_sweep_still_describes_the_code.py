@@ -110,3 +110,41 @@ def test_the_vacuity_check_covers_the_modules_written_this_session():
                      "eval/pre_llm_fpr.py", "untell/scripts/score.py",
                      "untell/scripts/sentences.py", "eval/assisted_fairness.py"):
         assert required in covered, f"no vacuity pair exercises {required}"
+
+
+def test_sabotage_reaches_methods_inside_classes():
+    """For a while it walked only module-level `tree.body`. Most of this repository's detectors and
+    rewriters are CLASSES, so their substance was never touched — the sweep reported
+    `test_binoculars_dead_latch.py` as passing against a "broken" binoculars module when
+    `BinocularsDetector` had not been altered at all. Twelve of thirty-two apparent survivors were
+    that, and the fix moved the repo-wide figure by more than any of the parser bugs before it.
+    """
+    import ast
+
+    source = ("class Thing:\n"
+              "    def __init__(self):\n"
+              "        self.x = 1\n\n"
+              "    def method(self):\n"
+              "        return self.x\n\n\n"
+              "def top_level():\n"
+              "    return 2\n")
+    broken = MUT.sabotage(source)
+    ast.parse(broken)
+    assert broken.count("sabotaged") == 2, "both `method` and `top_level` must be sabotaged"
+    assert "self.x = 1" in broken, "__init__ must be left alone or nothing can be constructed"
+
+    namespace: dict = {}
+    exec(compile(broken, "<sabotaged>", "exec"), namespace)  # noqa: S102
+    thing = namespace["Thing"]()  # __init__ still works
+    with pytest.raises(AssertionError, match="sabotaged"):
+        thing.method()
+
+
+def test_sabotage_handles_a_class_with_only_dunders():
+    """A class of nothing but dunders must come back untouched rather than syntactically broken."""
+    import ast
+
+    source = "class OnlyDunders:\n    def __repr__(self):\n        return 'x'\n"
+    broken = MUT.sabotage(source)
+    ast.parse(broken)
+    assert "sabotaged" not in broken
