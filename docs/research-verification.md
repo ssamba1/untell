@@ -1868,3 +1868,57 @@ separate places — Karr twice, MCP once — and each was found only by looking 
 first search was scoped by memory and missed a third of the retractions. **A guard built from recall
 inherits the failure of recall**, and the fix was to enumerate the source of truth rather than to
 remember it.
+
+---
+
+# Round twenty-five — the check I had not run, and the three regressions it found
+
+Twenty-four rounds of checking documents, and the thing I had *not* done was run the test suite.
+Every round since fifteen shipped code — `LIVE_DOCS` and two new rules in `untell/scripts/audit.py`,
+and `_fetch`, `_attribution_units`, `abstract_index`, `unsupported_figures`, a new `TOPICS` row and
+two removed volumes in `eval/litreview.py` — verified only against targeted subsets. A full run
+against `main` in a worktree, the same method used earlier in this session, found **three
+regressions, all mine.**
+
+MEASURED by `python -m pytest tests/ -q -p no:randomly --continue-on-collection-errors`, run once on
+this branch and once on a `git worktree` at `main` (b054e67):
+
+| | branch | base (`main`) |
+|---|---|---|
+| failed | **77** | 74 |
+| passed | 8,920 | 8,803 |
+
+## ✗ 1–2. The API told clients something untrue
+
+`/score` has returned an **`agreement`** object since early in this session — the union / majority /
+unanimous spread, the single feature this whole strategy argues nobody ships. **It was never declared
+in the response schema.** Two tests caught it, one against the published schema and one against
+`/openapi.json`:
+
+> `/score returns fields the schema does not list: ['agreement']`
+
+So a client generated from the OpenAPI document had no entry for the field this repository exists to
+surface. The schema now declares it and every sub-field, including `degenerate` — the flag that says
+only one detector scored, so the three rules are arithmetically identical and the spread is not
+measurable on that run.
+
+**This is the sharpest instance of the pattern these rounds keep finding.** Twenty-four rounds
+verified what the *documents* say about other people's numbers. Meanwhile the repository's own API
+was shipping an undeclared field, and no amount of citation checking would ever have looked there.
+
+## ✗ 3. Lint, on files I added
+
+`ruff check .` failed on `tests/test_cited_papers_resolve.py` (two semicolon-joined statements) and
+`tests/test_litreview_download_survives_a_truncated_transfer.py` (a quoted type annotation that no
+longer needs quoting). Trivial, and it would have failed CI on push.
+
+## What this round is evidence of
+
+The guards built in rounds sixteen to twenty-four all check **claims against sources**. None of them
+runs the code. A repository that audits detectors for a living had, in its own tree, an undeclared
+API field and a lint failure — both found in one command that costs an hour of wall time and had not
+been run in twenty rounds.
+
+**The rule: after any round that touches code, run the suite against base before believing the round
+is finished.** Targeted tests confirm the thing you were thinking about. Only the full run catches
+what you were not.

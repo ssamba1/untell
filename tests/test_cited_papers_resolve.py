@@ -46,9 +46,12 @@ def test_extraction_finds_ids_in_both_markdown_and_python(tmp_path):
 
 def test_a_bad_id_is_reported_as_unresolved(tmp_path):
     """The failure this exists to catch: a plausible-looking id that is not a paper."""
-    (tmp_path / "docs").mkdir(); (tmp_path / "untell").mkdir(); (tmp_path / "eval").mkdir()
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "untell").mkdir()
+    (tmp_path / "eval").mkdir()
     (tmp_path / "a.md").write_text("https://aclanthology.org/2025.acl-long.99999/", "utf-8")
-    cache = tmp_path / "cache"; cache.mkdir()
+    cache = tmp_path / "cache"
+    cache.mkdir()
     (cache / "v.xml").write_text(
         "<collection id='2025.acl'><volume id='long'><paper id='601'>"
         "<title>Real</title><abstract>x</abstract></paper></volume></collection>", "utf-8")

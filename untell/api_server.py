@@ -712,6 +712,29 @@ _SCORE_RESPONSES = _obj(
             "description": "the calibrated bar `flagged` is decided on; not always `threshold`",
         },
         "flagged": _BOOL,
+        # The aggregation spread behind `flagged`. `flagged` is the union rule — any detector over
+        # the bar — and the literature this repo argues from measures union at 44.44% against
+        # unanimous at ~0% on the same corpus, so a client that can see only `flagged` cannot tell
+        # which of those it is looking at. This field was returned by /score for several releases
+        # before it was declared here, which is the gap this schema exists to close.
+        "agreement": {
+            "type": "object",
+            "description": "how many detectors scored, how many flagged, and the verdict under "
+                           "each aggregation rule. Absent when no detector returned a number.",
+            "properties": {
+                "detectors_scoring": {**_INT, "description": "detectors that returned a number"},
+                "detectors_flagging": {**_INT, "description": "of those, how many met the bar"},
+                "any": {**_BOOL, "description": "union rule — what `flagged` reports"},
+                "majority": {**_BOOL, "description": "more than half of the scoring detectors"},
+                "unanimous": {**_BOOL, "description": "consensus rule — every scoring detector"},
+                "degenerate": {
+                    **_BOOL,
+                    "description": "true when only one detector scored, in which case the three "
+                                   "rules are arithmetically identical and the spread is not "
+                                   "measurable on this run",
+                },
+            },
+        },
         "warning": {**_STR, "description": "present only when the effective tier was downgraded"},
         # score.py clamps any detector value outside [0, 1] and records the raw value separately,
         # so the clamped numeric makes it into `detectors` while the original is still visible.
