@@ -3232,3 +3232,73 @@ them turns "the test noticed" into "the module would not import", a different an
 And the pairs themselves are checked — both files must exist, and the six modules written this
 session must all be covered — because a vacuity list naming a deleted test file reports a pass for a
 check it never ran, which would be this failure one level up again.
+
+---
+
+# Round forty-six — a repo-wide vacuity sweep, and five wrong answers before the right one
+
+Round forty-five checked eleven test files for vacuity. This one extended it to the whole suite:
+**512 test files auto-paired to the 63 modules they most import**, each module sabotaged in turn.
+
+The result is worth stating before the process: **zero confirmed vacuous test files.**
+
+## ✗ The instrument was wrong five times, always in the same direction
+
+MEASURED by sabotaging each module and running its paired test files, once per fix:
+
+| run | "noticed" | what was wrong |
+|---|---|---|
+| 1st | 336/512 | no `--continue-on-collection-errors` — sabotaging a widely-imported module aborted the whole group before anything ran |
+| 2nd | 399/512 | `-rf` reports failures only; **collection errors are excluded from that summary** |
+| 3rd | 433/512 | `ERROR path - reason` — the ` - reason` suffix was never stripped, so those files matched nothing |
+| 4th | 480/512 | *(parser correct)* |
+| 5th | **489/512** | `sabotage` walked only `tree.body`, so classes were never touched |
+
+**336 → 489 across the five runs in the table above, and not one correction moved the number down.** Every bug made real tests look
+decorative. The first run's headline would have been "176 test files do not notice their module
+breaking", wrong by at least 153.
+
+The class bug was the largest. Most of this repository's detectors and rewriters *are* classes, so
+for those modules the sweep changed nothing and then reported their tests as indifferent.
+`test_binoculars_dead_latch.py` ranked **top** of the triage list as the most module-focused
+survivor — and `BinocularsDetector` had never been altered. With class bodies included it fails
+immediately.
+
+**What caught every one was the same move**: take the least believable entry and check it by hand.
+`test_quality.py` uses eleven of its module's names 87 times; a test that inspects a class for a
+`_dead` attribute cannot be indifferent to that class being destroyed. The verdict had to be wrong,
+not the test.
+
+## The 23 survivors, classified by running each alone
+
+| bucket | n | what it means |
+|---|---|---|
+| **skips** | 10 | optional dependency absent (`mcp`, torch). A skip exits 0 and is indistinguishable from silence. |
+| **already failing** | 1 | cannot be evidence in either direction |
+| **passes** | 12 | the only real candidates |
+
+And **11 of those 12 import only module-level data** — MEASURED by parsing each test file's imports
+against its module's AST — `_CATEGORIES`, `_SYN`, `_TRANSITIONS_RE`,
+`_FRONTABLE_RE`, `MAX_INPUT_CHARS`, `_TRAIN_PROMPT`. `sabotage` replaces **function bodies**, so a
+test asserting properties of a catalogue or a compiled regex is legitimately unaffected. The
+twelfth imports two real functions and **skips five of its six tests** for want of a corpus.
+
+`test_composite_selects_when_max_saturates.py` is the sharpest case: it imports `_selection_key`,
+which is `_selection_key = selection_key` — **an alias to a function defined in another module**.
+Sabotaging `composite.py` cannot touch it.
+
+## ✅ What this actually establishes
+
+**No test file in this repository passes while the module it tests is destroyed.** That is a real
+result and it took five corrections to earn.
+
+It also surfaced something about the suite that was not the question asked: **a large share of these
+tests assert properties of data rather than behaviour** — that no catalogue branch is dead, that no
+`_SYN` entry emits a conjunction opener, that a regex is linear on long inputs. Function-body
+sabotage is blind to all of it, which is a limit of the technique rather than a gap in the tests.
+Catching a bad catalogue entry is arguably worth more than catching a bad function, because the
+catalogue is what the tells system actually is.
+
+**The reusable warning is about the instrument, not the suite.** Five plausible, publishable,
+wrong numbers came out of a 60-line harness before a right one did, and every one of them was
+biased toward finding fault with someone else's work.
