@@ -4304,3 +4304,87 @@ the same compiled object, confirming the fix reaches every module that shares it
 property available — no exception — for an input chosen precisely because it is pathological, and
 then took thirty-nine minutes to report success. **A scale test with no time bound tests the wrong
 half of the scale.** MEASURED after the fix, `tests/test_scale_ceilings.py` runs its 28 cases in **12.0 seconds** total.
+
+---
+
+# Round sixty-four — 88% of a scoring request was the caveat, not the score
+
+Round sixty-three fixed the quadratic regexes and made the whole suite completable: **6 minutes 33
+seconds for 9,953 passing tests**, where before it never finished at all. With the pathological case
+gone it became possible to ask a question the repository had never been able to answer: **what does a
+`/score` request at its own 50,000-character cap actually cost, and where does the time go?**
+
+PROFILED at the cap, `score_text` at `tier=lite`:
+
+| input | total | spaCy NER | share |
+|---|---|---|---|
+| ordinary prose | 3.88s | 3.40s | **87.8%** |
+| `"a,"` repeated | 13.71s | 12.59s | **91.8%** |
+| bullet lines | 3.76s | 3.27s | **87.0%** |
+
+**All of it is `_mostly_locked_warning`** — an advisory sentence saying the rewriter may not touch
+most of the input. The scoring path locks for no other reason. Rewriting locks separately and none of
+this touches it.
+
+## The note almost never fires, and it costs the most when it does not
+
+MEASURED on 400 real pre-LLM abstracts, the locked share runs **median 0.028, p90 0.085, max
+0.190** — against a bar of **0.50**. On 40 long documents built by concatenating them it is
+**0.021–0.059**. The expensive computation answers "no" every time, with an order of magnitude to
+spare.
+
+That is not an argument that the note is useless: it exists for input that genuinely is mostly
+quotation, citation or table, which academic abstracts are not. It is an argument that the answer is
+usually obvious long before the document ends.
+
+## A threshold on a proportion is the one thing you can sample
+
+Which is most of what this repository is about, applied to its own hot path. Long input is read for
+**5,000 characters** and the share estimated from that; the full document is read only when the
+estimate lands within **0.15** of the bar.
+
+MEASURED on those 40 long documents (median 12,471 characters), the prefix estimates the
+full-document share to within **0.0077 median, 0.0180 at p90, 0.0261 at worst** — and **zero verdict
+flips**. The margin is about six times the worst observed error.
+
+| input at the cap | before | after |
+|---|---|---|
+| ordinary prose | 3.88s | **1.20s** |
+| `"a,"` repeated | 13.71s | **1.48s** |
+| bullet lines | 3.76s | **0.50s** |
+
+The note itself is unchanged on **425 real documents** — 400 short ones, which take the exact path
+untouched, and 25 long ones — and still fires on a document that is 96.6% preserved material.
+
+## The test that would fail if the shortcut were the whole story
+
+Every test above passes with the fallback deleted, which is exactly the shape of vacuity rounds
+forty to forty-two and fifty-seven kept finding. So there is one more: a document whose **first 5,000
+characters sit at 0.466 and whose full share is 0.735.** The prefix alone says *no note*; the truth
+says *note*. Verified both ways — the shipped code answers "note", and deleting the fallback fails
+that test and only that test.
+
+## Two things this round did not do
+
+✗ **It did not change what gets locked.** The prefix is read for the *note* only. Every rewrite still
+locks the whole document, so no entity, citation or quotation is less protected than before.
+
+✗ **It did not widen the degenerate-input guard, though that was the first idea.** `preserve.py`
+already skips NER for "a pasted symbol blob", gated on word-character share below 0.10 and on long
+punctuation runs. `"a,"` has a word-character share of **0.500** and no runs, so it sails through —
+the guard measures the wrong quantity, since spaCy's cost is per *token* and that input is 50,000
+one-character tokens where prose of the same length is about 9,000.
+
+A mean-word-length gate separates them cleanly: MEASURED across 3,000 real abstracts the minimum is
+**4.54** and every degenerate shape sits at **1.00**. But it also puts a markdown table and a CSV
+paste at 1.00, and those can hold real names worth locking, so the gate would have traded a
+correctness risk for speed. **The prefix estimate costs nothing in correctness and gets the same 9×,**
+so the guard was left alone and the finding is recorded rather than acted on.
+
+## The suite, finally
+
+Round sixty-three's fix is what made this round possible, and the number is worth stating: the full
+suite runs **9,953 passing tests in 6m33s**. Its 74 failures are identical, test for test, to those
+at the pre-session commit — every one an absent optional dependency (`torch`, `peft`, `sacremoses`)
+or a blocked `huggingface.co`. Verified by running the same 35 files in a worktree at `8f8d09e`:
+**zero regressions in either direction.**
