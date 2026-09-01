@@ -2935,7 +2935,8 @@ This round's 600-odd new tests pushed the collected count past the documented on
 flipped to its other side**: the doc now understated by 708, which the same test also catches. The
 figure is updated to **9,958 tests across 614 modules**.
 
-Worth stating plainly: **9,958 is a floor, not a count.** Four files still fail to import here, so a
-complete environment collects more. The documented figure has to be the smaller of the tiers for the
+Worth stating plainly: **9,958 is a floor, not a count** — MEASURED by
+`UNTELL_LITE_NO_TORCH=1 pytest --collect-only -q`, which reports it alongside 4 collection errors.
+Four files still fail to import here, so a complete environment collects more. The documented figure has to be the smaller of the tiers for the
 assertion to mean anything, and a floor satisfies that — but nobody should read it as the size of the
 suite.
