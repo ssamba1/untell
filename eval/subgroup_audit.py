@@ -16,6 +16,18 @@ that flags it is wrong -- there is no ambiguity to argue about, and no ground-tr
 anyone to dispute. That is what makes a false-positive audit the cleanest measurement available
 against a detector, and it is why this module refuses to score anything but known-human text.
 
+**This measures HALF of a fairness audit, and says so.** The standard toolkits -- Aequitas,
+AIF360, Fairlearn -- compute false-positive-rate parity *and* false-negative-rate parity, because
+equalised odds needs both. This module computes only the first. That is a deliberate limit, not an
+oversight: false negatives require known-AI text from the same writers and the same task, and no
+such corpus exists. Pairing an arbitrary AI corpus against these essays would measure the
+difference between two datasets and report it as a property of a detector.
+
+So a clean bill of health from this tool is **not** a clean bill of health. A detector could show
+perfect false-positive parity here and still miss machine-written work at wildly different rates
+across groups, which would harm exactly the students who are not being flagged. Read every result
+below as "who does this detector wrongly accuse", never as "is this detector fair".
+
 Three rules this module will not bend, because a careless subgroup number does more harm than the
 detectors it audits:
 
