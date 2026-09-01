@@ -79,3 +79,4 @@ site/
 /audit_tmp_*.err
 /.claude/probes/*.out
 .anthology-cache/
+.fairness-cache/
