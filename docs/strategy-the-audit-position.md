@@ -138,7 +138,14 @@ So the question is being asked in the literature. What is still missing is diffe
      [the essay-form finding](detector-fairness-measured.md) legible as a confound rather than a
      result.
    - *Four things it does that neither does.* Component ablation at equal power, a threshold
-     sweep, saturation detection, and per-subgroup false-NEGATIVE rates for equalised odds.
+     sweep, saturation detection, and per-subgroup false-NEGATIVE rates for equalised odds. The
+     fourth is no longer a capability without data: Liang ships GPT-3 essays on the same prompts
+     as its human ones, and running it found that this project's own published "safe" threshold
+     catches nothing at all ([Result 15](detector-fairness-measured.md)), and that at 0.50 a
+     false-positive gap too small to reach significance sits beside a false-negative gap of 4.10x
+     that does. **An FPR-only audit calls that operating point clean.** It is the clearest case
+     this project has for why one error rate is not an audit — and it was found by turning the
+     instrument on the tool it belongs to.
    - *And one claim this document should stop making.* "A tool a university could point at the
      detector it is about to license" is not shipped **here either**. `audit()` calls
      `untell.scripts.score` and audits untell's own tiers, exactly as `fpr_by_population.py`

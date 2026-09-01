@@ -141,10 +141,17 @@ known-human ESL essays, where every flag is an error by construction:
   formal published essays 42.6–54.9% < student essays 97.4% — which is what the burstiness
   mechanism predicts. **The detector penalises the essay form, and the essay is the artifact
   students are required to produce and be judged on.**
-- **The threshold that would make our lite tier safe on student writing is 0.775 for a 1%
-  false-positive rate** (0.671 for 5%, 0.625 for 10%), against the 0.300 we ship, which
-  yields 97.4%. Not a recommendation — raising it trades false positives for false negatives
-  and the loop is calibrated around 0.30 — but it is the number needed to choose deliberately.
+- ~~**The threshold that would make our lite tier safe on student writing is 0.775 for a 1%
+  false-positive rate.**~~ **WITHDRAWN 2026-09-01.** Measured against machine-written text,
+  0.775 misses **100%** of 176 GPT-3 essays — the highest score anything in that corpus receives
+  is 0.7655, so the threshold sits above the scorer's entire range and its 0% false-positive rate
+  is an off switch, not safety. The quantiles (0.671 for 5%, 0.625 for 10%, against the 0.300 we
+  ship, which yields 97.4%) came from a human-only corpus, where any threshold above the score
+  range scores a perfect zero. **With one error rate, "safe" and "inert" are the same number.**
+  The real answer: AUROC is 0.8012, so the ranking carries signal, but both classes compress into
+  ~0.15–0.65 and the best achievable total error is 51.5% at 0.43. The lite tier is a usable
+  ranking signal and is **not** usable as an accusation instrument at any threshold. See
+  [Result 15](docs/detector-fairness-measured.md).
 - **The professional-vs-student gap, ungenre-matched, ~10x.** Same
   detector, same threshold: Gutenberg 1.4%, Brown 3.2%, Reuters 3.8% against ASAP 31.6%,
   ELLIPSE 38.7%, PELIC 39.1%. An order of magnitude larger than any subgroup gap here. A
