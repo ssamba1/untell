@@ -75,6 +75,24 @@ RETIRED: dict[str, tuple[str, str]] = {
         "false — Liang ran the intervention in both directions in 2023"),
     r"2[–-]8×": ("the semantic-diversity figure",
                  "misattributed to the TiCS review, whose abstract states no numbers"),
+    # Round sixty. This one is not a misreading of a source — it is this repository's own
+    # calibration result, derived at alpha=0.05 on a 150-document sample and published as bounding
+    # false positives under 5%. On the 599-document sample drawn from the same 6,811 abstracts with
+    # the same detector it flags 7.5%, so it no longer holds the bound it was derived for. The
+    # threshold that does is 0.5461.
+    r"0\.5215 bounds|bounds it at 4\.7|0\.52 bounds": (
+        "the old conformal threshold's bound",
+        "0.5215 flags 7.5% on the 599-document sample; the alpha=0.05 threshold there is 0.5461"),
+    # The retired table row was `| **0.5215 — alpha = 0.05** | **4.7%** measured, n = 150 |`, which
+    # neither pattern above catches: 0.5215 on its own is not retired (the current table names it as
+    # the threshold that failed), and 4.7% on its own is a legitimate interval bound elsewhere. What
+    # is retired is 4.7% asserted as a *measured* rate.
+    r"4\.7\s*%\*{0,2} measured|\*\*4\.7\s*%\*\* measured": (
+        "4.7% as a measured false-positive rate",
+        "7.5% on the 599-document sample; 4.7% was the rate on the 150-document one"),
+    r"flags\s+17\.3\s*%|17\.3% of pre-LLM": (
+        "the shipped threshold's false-positive rate",
+        "20.5% on n = 599; 17.3% was measured on the 150-document sample"),
 }
 
 # A table row that merely *counts* how many papers make a claim is not making that claim. The

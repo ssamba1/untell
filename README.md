@@ -38,8 +38,16 @@ nobody chose deliberately. There is no such thing as *the* false-positive rate; 
 corpus definition, and every report now carries the definition that produced it.
 
 **And there is now an answer, not just a complaint.** `untell/calibrate.py` derives a threshold with
-a *bounded* false-positive rate from a human-only corpus. On that same corpus the shipped 0.45 flags
-17.3% (n = 150); **0.5215 bounds it at 4.7%**. Seven hundredths of a threshold is the difference.
+a *bounded* false-positive rate from a human-only corpus. On the current corpus (n = 599) the shipped
+0.45 flags **20.5%**, and the conformal threshold at α = 0.05 is **0.5461**. A tenth of a threshold is
+the difference between one human document in five being accused and one in twenty.
+
+⚠️ **And that threshold moved when the corpus did — which is this repository's own argument, made
+against its own number.** An earlier calibration on a smaller corpus gave **0.5215**, published here
+as bounding false positives at 4.7%. On the restored corpus **0.5215 flags 7.5%**: it no longer meets
+the bound it was derived for. Nothing shipped depends on it — the figure was documentation, not a
+default — but it is the clearest demonstration available that **a calibrated threshold is a property
+of the corpus it was calibrated on**, which is what this project says about everyone else's.
 
 ⚠️ **Every rate above is a proportion with a sample size, and the intervals are wide.** That is the
 point rather than a caveat: this repo's own measurements move by more than 15 points between n = 20

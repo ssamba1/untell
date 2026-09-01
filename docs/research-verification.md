@@ -3931,3 +3931,69 @@ Round twenty-seven's entry stated the old length figures as current. The ledger 
 rewriting it would destroy the record, so both lines now carry a pointer to the round that superseded
 them, and the quoted pair is written in backticks — a mention, under round fifty-five's rule, rather
 than a claim.
+
+---
+
+# Round sixty — the threshold this roadmap recommended no longer holds its own bound
+
+Round fifty-nine put `README.md` inside the retraction guard and corrected three stale figures on it.
+The fourth figure on that page was the calibration result, and it turned out to be stale in a way the
+other three were not.
+
+The published claim was that the shipped 0.45 flags **17.3%** of pre-LLM human text and that
+**0.5215** — derived by conformal calibration at α = 0.05 — bounds it at **4.7%**, both on a
+150-document sample. Re-derived on the 599-document sample every other figure in this repository now
+uses, with `>=` as the flagging comparison the probe itself uses:
+
+| threshold | flagged, n = 599 |
+|---|---|
+| 0.30 | 374 — 62.4% |
+| **0.45 — shipped** | 123 — **20.5%** |
+| 0.504 — α = 0.10 here | 60 — 10.0% |
+| **`0.5215` — α = 0.05 on the old sample** | 45 — **7.5%** |
+| **0.5461 — α = 0.05 here** | 30 — **5.0%** |
+
+✗ **`0.5215` does not meet the bound it was derived for.** It was published as holding false
+positives under 5% and it flags 7.5%. The α = 0.05 threshold on this sample is **0.5461** — seven
+thousandths higher, and the difference between a bound that holds and one that does not.
+
+**Nothing shipped depends on it.** `grep` across `untell/` and `eval/` finds `0.5215` in no source
+file and no test; it existed only in `README.md` and `ROADMAP.md`. So this is a claims correction,
+not a broken default — which is the only reason it is a round in a ledger rather than a bug.
+
+## Why this is the most useful thing this project has measured about itself
+
+Every earlier round of this kind found a number that had gone stale because the *corpus* changed —
+120 documents became 599, a word floor moved, a volume list was wrong. This one is different. Both
+samples are pre-2022 ACL Anthology abstracts of 60 or more words, drawn from the **same 6,811
+documents** with the **same detector** and the **same seed**. The only difference between them is how
+many were drawn.
+
+**And the threshold still did not transfer.** A calibrated threshold is a property of the sample it
+was calibrated on, and this repository has now demonstrated that on the friendliest possible case —
+same venue, same years, same register, same detector, same code — where it still failed. Every
+argument this project makes about vendors publishing thresholds without their conditions applies to
+its own published threshold, and now says so on the page.
+
+## What was corrected
+
+`README.md` gained the n = 599 figures and a paragraph stating the failure. `ROADMAP.md`'s
+calibration table was rewritten with all five rows above and the same paragraph, its status row 27
+now reads "0.45 flags 20.5%; 0.5461 bounds it at 5%", and three other lines that quoted `0.5215` or
+17.3% as current were updated. The stale header "Calibrated on 150 pre-LLM ACL abstracts" was
+corrected to 599 — it had survived the table being rewritten beneath it, which is round
+fifty-nine's defect in miniature, one line above the thing that replaced it.
+
+⚠️ **`0.5215` is now written in backticks throughout.** Under round fifty-five's rule it is a
+mention — the name of a superseded threshold — not a claim that anything holds at it.
+
+## The finding that opened the next round
+
+`pre_llm_abstracts` returns **6,811** documents. Every calibration figure above, and every
+false-positive headline in this repository, is measured on **599 of them — 8.8%** — because
+`eval/pre_llm_fpr.py` caps the sample at `--n`, whose default is 100 and which nobody revisited after
+the corpus was restored. The roadmap even says "the corpus added in round thirty-one is 6,811
+abstracts, so there was no reason to keep publishing the small sample", immediately above a number
+computed on a small sample.
+
+There is no reason not to score all of them. That is round sixty-one.
