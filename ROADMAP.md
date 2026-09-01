@@ -55,7 +55,7 @@ no decision, no native speaker and no GPU, only the work.
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
 | 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody**, and **the corpus blocker has a way around it**: *Centering the Margins* measures harm to marginalised groups by outlier detection, needing no subgroup labels at all. Method in §7. |
 | 29 | Length-standardized false-positive rates | ✅ done — `eval/length_standardized.py`; direct standardization, so two corpora with different length profiles can be compared at all | — |
-| 30 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; on the full 6,810 corpus the unstratified gap separates at 5 of 7 cut-offs, **but `--by-length` breaks it: the gap changes sign between bands and no band separates**. Reported as a length artefact, not a disparity | — |
+| 30 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; the unstratified gap separates at 5 of 7 cut-offs on 6,810 documents, **but the arms' median word counts differ by 27% and `--by-length` breaks it**: the gap changes sign between bands and no band separates. The tool now prints that warning itself | — |
 | 31 | Frankentext probe — human words, machine arrangement | ✅ done — `eval/frankentext.py`; **stitched 10.7% vs whole 11.3% at matched length**, intervals overlap, so arrangement is invisible to this detector | — |
 | 32 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
 

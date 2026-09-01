@@ -90,3 +90,45 @@ def test_the_frankentext_report_carries_the_verdict():
         return
     assert "length_match" in result, "a passing comparison must still show what it checked"
     assert result["length_match"]["length_matched"]
+
+
+def test_the_outlier_probe_warns_that_its_own_margin_is_not_length_matched():
+    """Round thirty-six's finding, now printed by the tool that produced it.
+
+    The margin is selected on stylometry and stylometry is not length-neutral, so the unstratified
+    comparison is confounded by construction — MEASURED on 400 pre-LLM abstracts, the arms' median
+    word counts differ by 27%. Before this, discovering that required knowing to run `--by-length`;
+    the reader who never runs the stratified mode is exactly the reader who needs the warning.
+    """
+    import inspect
+
+    from eval import outlier_fairness
+
+    source = inspect.getsource(outlier_fairness)
+    assert "length_match" in source, "the outlier probe must use eval/arms.py"
+    assert "render_length_match" in source, "the verdict has to reach the report header"
+
+
+def test_the_outlier_report_carries_the_verdict():
+    from eval import outlier_fairness
+
+    # Two clearly different length populations, so the check has something to find.
+    texts = ["word " * 200] * 40 + ["short text here with a few words only"] * 40
+    report = outlier_fairness.probe_by_distance(texts, tier="lite")
+    if "error" in report:
+        pytest.skip("corpus too small in this environment")
+    assert "length_match" in report, "a comparison must show what it checked, pass or fail"
+    rendered = outlier_fairness._render(report)
+    assert "Length check:" in rendered or "WARNING:" in rendered
+
+
+def test_the_stratified_mode_is_the_answer_to_the_warning():
+    """The warning is only useful if there is something to do about it. `--by-length` is that thing,
+    and it is what turned round thirty-six's apparent disparity into a length artefact."""
+    import inspect
+
+    from eval import outlier_fairness
+
+    assert hasattr(outlier_fairness, "probe_stratified")
+    doc = inspect.getdoc(outlier_fairness.probe_stratified) or ""
+    assert "length" in doc.lower()

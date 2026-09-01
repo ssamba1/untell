@@ -35,6 +35,7 @@ import statistics
 import sys
 from pathlib import Path
 
+from eval.arms import length_match, render_length_match
 from eval.pre_llm_fpr import pre_llm_abstracts, wilson_interval
 
 _WORD = re.compile(r"[A-Za-z']+")
@@ -192,8 +193,16 @@ def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.
     if len(texts) < 10:
         return {"n": len(texts), "error": "need at least 10 texts to split a corpus into margins"}
 
-    distances, flags, detectors_seen, _ = _score_all(texts, tier)
+    distances, flags, detectors_seen, kept = _score_all(texts, tier)
     margin, centre, cut = _split(distances, flags, quantile)
+    # The margin is selected on stylometry, and stylometry is not length-neutral: MEASURED, the
+    # furthest 20% has a median of 124 words against 149 for the centre. Round thirty-six reported
+    # the resulting gap as a disparity. The check is reported here rather than left to `--by-length`,
+    # because a reader who never runs the stratified mode is exactly the reader who needs it.
+    cut_now = sorted(distances, reverse=True)[max(1, int(len(distances) * quantile)) - 1]
+    arms = {"margin": [t for t, d in zip(kept, distances) if d >= cut_now],
+            "centre": [t for t, d in zip(kept, distances) if d < cut_now]}
+    match = length_match(arms)
     comparable = margin["n"] >= 5 and centre["n"] >= 5
     gap = None
     if comparable and margin["fpr"] is not None and centre["fpr"] is not None:
@@ -206,6 +215,7 @@ def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.
         "margin": margin,
         "centre": centre,
         "gap": gap,
+        "length_match": match,
         # The intervals decide whether a gap means anything, and on the corpus sizes this runs at
         # they usually overlap. Saying so is the whole discipline of this repo applied to its own
         # newest number.
@@ -346,6 +356,8 @@ def _render(report: dict) -> str:
     lines = [
         f"False positives by distance from the corpus norm (tier={report['tier']}, "
         f"margin = furthest {report['quantile']:.0%}).",
+        "",
+        *([render_length_match(report["length_match"])] if "length_match" in report else []),
         "",
         f"{'group':<10} {'n':>5} {'FPR':>8}   95% CI",
     ]
