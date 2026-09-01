@@ -54,7 +54,7 @@ no decision, no native speaker and no GPU, only the work.
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
 | 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody**, and **the corpus blocker has a way around it**: *Centering the Margins* measures harm to marginalised groups by outlier detection, needing no subgroup labels at all. Method in §7. |
-| 29 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; on n = 600 **margin 21.7% vs centre 16.9%, gap +4.8%**, intervals still overlap | — |
+| 29 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py --sweep`; on **n = 2,400** the gap is **positive at all seven cut-offs** and **none separates the intervals** (closest: 0.3 points at the furthest 20%) | — |
 | 30 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw

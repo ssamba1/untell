@@ -2546,3 +2546,78 @@ main venues, against 578 in the corpus overall. The field is almost entirely pos
 context for every "nobody has done this" claim in these documents, and part of why four of them have
 turned out to be false: a literature that grew this fast is one where the thing nobody had done last
 year was published this year.
+
+---
+
+# Round thirty-four — the sensitivity analysis I should have run before publishing the gap
+
+Round thirty-three published one number from the outlier arm: **+4.8%**, the gap at the furthest 20%.
+Where that line falls is a **free parameter**, and a gap that appears at one setting of a free
+parameter is a choice rather than a finding. `--sweep` now reports it at every cut-off from the
+furthest 5% to the furthest 40%, scoring the corpus once and splitting it seven ways.
+
+MEASURED on 600 pre-LLM abstracts, lite tier:
+
+| furthest | margin n | margin FPR | centre FPR | gap | intervals separate? |
+|---|---|---|---|---|---|
+| 5% | 30 | 23.3% | 17.5% | **+5.8%** | no |
+| 10% | 60 | 18.3% | 17.8% | +0.5% | no |
+| 15% | 90 | 21.1% | 17.2% | +3.9% | no |
+| **20%** | 120 | 21.7% | 16.9% | **+4.8%** | no |
+| 25% | 150 | 20.0% | 17.1% | +2.9% | no |
+| 30% | 180 | 19.4% | 17.1% | +2.3% | no |
+| 40% | 240 | 20.0% | 16.4% | +3.6% | no |
+
+**The gap keeps its sign at all seven cut-offs. No cut-off separates the intervals.**
+
+Both halves matter and they say different things. A sign that survives every cut is not what noise
+usually does — the margins are flagged more often than the centre however the margin is defined.
+And not one of the seven comparisons clears its confidence intervals, so **none of them is evidence
+of a disparity**, and the tool prints that sentence.
+
+## The same sweep at n = 2,400 — four times the corpus
+
+MEASURED on 2,400 pre-LLM abstracts:
+
+| furthest | margin n | margin FPR (95% CI) | centre FPR (95% CI) | gap | separate? |
+|---|---|---|---|---|---|
+| 5% | 120 | 20.8% [14.5, 28.9] | 19.9% [18.3, 21.6] | +1.0% | no |
+| 10% | 240 | 20.4% [15.8, 26.0] | 19.9% [18.2, 21.6] | +0.6% | no |
+| 15% | 360 | 22.8% [18.8, 27.4] | 19.4% [17.7, 21.2] | +3.4% | no |
+| **20%** | 480 | **24.0% [20.4, 28.0]** | **18.9% [17.2, 20.7]** | **+5.1%** | **no — by 0.3 points** |
+| 25% | 600 | 22.2% [19.0, 25.7] | 19.2% [17.4, 21.0] | +3.0% | no |
+| 30% | 720 | 21.8% [18.9, 25.0] | 19.1% [17.3, 21.1] | +2.7% | no |
+| 40% | 960 | 22.2% [19.7, 24.9] | 18.4% [16.5, 20.5] | +3.8% | no |
+
+**The sign holds at all seven cut-offs again, and still nothing separates** — but at the 20% cut the
+intervals now miss each other by **0.3 percentage points**, MEASURED from the table above as the
+margin's lower bound 20.4% against the centre's upper bound 20.7%. Quadrupling the corpus moved the 20% gap from +4.8% to +5.1% and shrank
+the overlap from wide to almost nothing.
+
+**It is still not evidence of a disparity, and the tool still says so.** "Almost separating" is not a
+result; a 0.3-point overlap and a 3-point overlap are both overlaps, and treating the first as nearly
+a finding is exactly the reasoning this repository exists to argue against. What can be said: the
+effect is stable in sign across seven cut-offs and two sample sizes, its magnitude at the 20% cut is
+consistent across a fourfold increase in n, and **one weak detector on 2,400 academic abstracts is
+still not enough to establish it.**
+
+## ⚠️ What the sweep says about round thirty-three
+
+**The +4.8% published last round sat near the top of a +0.5% to +5.8% range** — the n = 600 sweep
+table above. Publishing it as *the*
+gap was mildly flattering to the hypothesis — not wrong, since it was the 20% cut chosen before the
+answer was known and the sign held everywhere, but it presented the second-largest of seven available
+numbers as the result. The status row now carries the range and the verdict instead of one figure.
+
+**This is the analysis that should have run before the number was published, not after.** Every other
+guard in this ledger checks whether a claim matches its source; this one checks whether a claim
+survives a choice its author made. Nothing here was testing for that.
+
+## The refactor, and why it is the point
+
+`probe_sweep` scores the corpus **once** and splits it seven ways, and a test asserts `_score_all` is
+called exactly once. If the sweep rescored per cut-off it would cost seven times as much and would
+quietly stop being run — which is how a sensitivity analysis becomes optional and then absent.
+`probe_by_distance` now shares `_split` with it, and a test asserts the two agree at the same
+cut-off, because two implementations of one comparison is how a headline and its own sensitivity
+check drift apart.

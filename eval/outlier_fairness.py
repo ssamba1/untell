@@ -88,23 +88,17 @@ def outlier_scores(texts: list[str]) -> list[float]:
     ]
 
 
-def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.2) -> dict:
-    """False-positive rate for the most distant `quantile` of a corpus, against the rest.
+def _score_all(texts: list[str], tier: str) -> tuple[list[float], list[int], set[str]]:
+    """Score every text once. Split it many ways afterwards.
 
-    Returns ``None`` for the comparison rather than a number when either side is too small to say
-    anything — the same refusal `untell/calibrate.py` makes. A disparity claim from four documents
-    would be the kind of finding this repository exists to argue against.
+    Separated from `probe_by_distance` so `probe_sweep` can vary the margin cut-off without paying
+    for the scoring again — which is what makes the sensitivity analysis cheap enough to always run.
     """
     from untell.scripts.score import score_text
 
-    if not 0 < quantile < 0.5:
-        raise ValueError(f"quantile must be in (0, 0.5), got {quantile}")
-    if len(texts) < 10:
-        return {"n": len(texts), "error": "need at least 10 texts to split a corpus into margins"}
-
     distances = outlier_scores(texts)
-    cut = sorted(distances, reverse=True)[max(1, int(len(texts) * quantile)) - 1]
-    groups: dict[str, list[int]] = {"margin": [], "centre": []}
+    kept_distance: list[float] = []
+    flags: list[int] = []
     detectors_seen: set[str] = set()
     for text, distance in zip(texts, distances):
         result = score_text(text, tier=tier)
@@ -114,7 +108,16 @@ def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.
         detectors_seen.update(
             n for n, v in result["detectors"].items() if isinstance(v, (int, float))
         )
-        groups["margin" if distance >= cut else "centre"].append(int(bool(spread["any"])))
+        kept_distance.append(distance)
+        flags.append(int(bool(spread["any"])))
+    return kept_distance, flags, detectors_seen
+
+
+def _split(distances: list[float], flags: list[int], quantile: float) -> tuple[dict, dict, float]:
+    """False-positive rates either side of the margin cut, with Wilson intervals."""
+    cut = sorted(distances, reverse=True)[max(1, int(len(distances) * quantile)) - 1]
+    margin = [f for d, f in zip(distances, flags) if d >= cut]
+    centre = [f for d, f in zip(distances, flags) if d < cut]
 
     def _rate(hits: list[int]) -> dict:
         low, high = wilson_interval(sum(hits), len(hits))
@@ -125,7 +128,66 @@ def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.
             "ci95": [round(low, 4), round(high, 4)],
         }
 
-    margin, centre = _rate(groups["margin"]), _rate(groups["centre"])
+    return _rate(margin), _rate(centre), cut
+
+
+# Where to draw the line between "the margins" and "everyone else" is a free parameter, and a gap
+# that only appears at one setting of a free parameter is not a gap. Reported across all of these
+# every time, so the choice cannot be made after seeing the answer.
+SWEEP_QUANTILES: tuple[float, ...] = (0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40)
+
+
+def probe_sweep(texts: list[str], tier: str = "lite") -> dict:
+    """The same comparison at every margin cut-off, from the furthest 5% to the furthest 40%.
+
+    This is the analysis that decides whether `probe_by_distance`'s headline is worth anything. If
+    the gap flips sign, or appears only at one cut, the honest reading is that the corpus has no
+    disparity and the single number was a choice.
+    """
+    if len(texts) < 10:
+        return {"n": len(texts), "error": "need at least 10 texts to split a corpus into margins"}
+    distances, flags, detectors = _score_all(texts, tier)
+    rows = []
+    for q in SWEEP_QUANTILES:
+        margin, centre, _ = _split(distances, flags, q)
+        comparable = margin["n"] >= 5 and centre["n"] >= 5
+        rows.append({
+            "quantile": q,
+            "margin": margin,
+            "centre": centre,
+            "gap": (round(margin["fpr"] - centre["fpr"], 4)
+                    if comparable and None not in (margin["fpr"], centre["fpr"]) else None),
+            "intervals_overlap": (
+                None if not comparable
+                else not (margin["ci95"][0] > centre["ci95"][1]
+                          or centre["ci95"][0] > margin["ci95"][1])),
+        })
+    gaps = [r["gap"] for r in rows if r["gap"] is not None]
+    return {
+        "tier": tier,
+        "n_scored": len(flags),
+        "detectors_scoring": len(detectors),
+        "rows": rows,
+        # The two questions a sensitivity analysis exists to answer.
+        "gap_sign_is_consistent": bool(gaps) and (all(g > 0 for g in gaps) or all(g < 0 for g in gaps)),
+        "any_cut_separates": any(r["intervals_overlap"] is False for r in rows),
+    }
+
+
+def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.2) -> dict:
+    """False-positive rate for the most distant `quantile` of a corpus, against the rest.
+
+    Returns ``None`` for the comparison rather than a number when either side is too small to say
+    anything — the same refusal `untell/calibrate.py` makes. A disparity claim from four documents
+    would be the kind of finding this repository exists to argue against.
+    """
+    if not 0 < quantile < 0.5:
+        raise ValueError(f"quantile must be in (0, 0.5), got {quantile}")
+    if len(texts) < 10:
+        return {"n": len(texts), "error": "need at least 10 texts to split a corpus into margins"}
+
+    distances, flags, detectors_seen = _score_all(texts, tier)
+    margin, centre, cut = _split(distances, flags, quantile)
     comparable = margin["n"] >= 5 and centre["n"] >= 5
     gap = None
     if comparable and margin["fpr"] is not None and centre["fpr"] is not None:
@@ -152,6 +214,39 @@ def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.
             "from the corpus norm and writers near it."
         ),
     }
+
+
+def _render_sweep(report: dict) -> str:
+    if "error" in report:
+        return f"cannot run: {report['error']}"
+    lines = [
+        f"Sensitivity of the margin gap to where the line is drawn "
+        f"(tier={report['tier']}, n={report['n_scored']}).",
+        "",
+        f"{'furthest':>9} {'margin n':>9} {'margin':>8} {'centre':>8} {'gap':>8}  separates?",
+    ]
+    for row in report["rows"]:
+        if row["gap"] is None:
+            lines.append(f"{row['quantile']:>8.0%} {row['margin']['n']:>9}      too few to compare")
+            continue
+        lines.append(
+            f"{row['quantile']:>8.0%} {row['margin']['n']:>9} {row['margin']['fpr']:>7.1%} "
+            f"{row['centre']['fpr']:>7.1%} {row['gap']:>+7.1%}  "
+            f"{'no' if row['intervals_overlap'] else 'YES'}"
+        )
+    lines += [""]
+    lines.append(
+        "The gap keeps its sign at every cut-off."
+        if report["gap_sign_is_consistent"]
+        else "The gap CHANGES SIGN across cut-offs — the single-quantile headline is a choice, "
+             "not a finding."
+    )
+    lines.append(
+        "At least one cut-off separates the intervals."
+        if report["any_cut_separates"]
+        else "No cut-off separates the intervals, so none of these gaps is evidence of a disparity."
+    )
+    return "\n".join(lines)
 
 
 def _render(report: dict) -> str:
@@ -192,6 +287,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tier", default="lite")
     parser.add_argument("--limit", type=int, default=120)
     parser.add_argument("--quantile", type=float, default=0.2)
+    parser.add_argument("--sweep", action="store_true",
+                        help="report the gap at every margin cut-off instead of one")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
 
@@ -200,6 +297,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no pre-LLM abstracts in {args.cache} — run "
               f"`python -m eval.litreview --download` first", file=sys.stderr)
         return 1
+    if args.sweep:
+        report = probe_sweep(texts, tier=args.tier)
+        print(json.dumps(report, indent=2) if args.as_json else _render_sweep(report))
+        return 0
     report = probe_by_distance(texts, tier=args.tier, quantile=args.quantile)
     print(json.dumps(report, indent=2) if args.as_json else _render(report))
     return 0

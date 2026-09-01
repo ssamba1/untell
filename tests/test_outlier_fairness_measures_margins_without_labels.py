@@ -91,3 +91,69 @@ def test_the_rendering_says_when_a_gap_means_nothing():
 
 def test_the_rendering_reports_a_corpus_it_could_not_use():
     assert "cannot run" in of._render({"error": "need at least 10 texts", "n": 4})
+
+
+# --- the sensitivity sweep -----------------------------------------------------------------------
+#
+# Where the line falls between "the margins" and "everyone else" is a free parameter. A gap that
+# appears only at one setting of a free parameter is a choice, not a finding — and the first headline
+# this module produced, +4.8% at the furthest 20%, turned out to sit near the TOP of the range the
+# sweep reports (+0.5% to +5.8% at n=600). Quoting it alone would have flattered the hypothesis.
+
+
+def test_the_sweep_reports_every_cut_off_not_a_chosen_one():
+    report = of.probe_sweep(UNIFORM * 6 + ODD * 3, tier="lite")
+    assert [r["quantile"] for r in report["rows"]] == list(of.SWEEP_QUANTILES)
+
+
+def test_the_sweep_says_whether_the_sign_holds():
+    """The question a sensitivity analysis exists to answer. A gap that flips sign across cut-offs
+    is noise, and the report has to say so in a field, not leave it to the reader's arithmetic."""
+    report = of.probe_sweep(UNIFORM * 6 + ODD * 3, tier="lite")
+    assert isinstance(report["gap_sign_is_consistent"], bool)
+    assert isinstance(report["any_cut_separates"], bool)
+
+
+def test_the_sweep_scores_each_text_once():
+    """The refactor's whole point: `probe_sweep` splits one scoring pass seven ways. If it rescored
+    per quantile, the sensitivity analysis would cost 7x and would quietly stop being run."""
+    calls = []
+    real = of._score_all
+
+    def counting(texts, tier):
+        calls.append(len(texts))
+        return real(texts, tier)
+
+    of._score_all, saved = counting, of._score_all
+    try:
+        of.probe_sweep(UNIFORM * 6 + ODD * 3, tier="lite")
+    finally:
+        of._score_all = saved
+    assert len(calls) == 1, f"scored {len(calls)} times for {len(of.SWEEP_QUANTILES)} cut-offs"
+
+
+def test_both_paths_share_the_split_so_they_cannot_disagree():
+    """`probe_by_distance` and `probe_sweep` must give the same numbers at the same cut-off. Two
+    implementations of one comparison is how a headline and its own sensitivity check drift apart."""
+    texts = UNIFORM * 6 + ODD * 3
+    single = of.probe_by_distance(texts, tier="lite", quantile=0.2)
+    swept = next(r for r in of.probe_sweep(texts, tier="lite")["rows"] if r["quantile"] == 0.2)
+    assert single["margin"] == swept["margin"]
+    assert single["centre"] == swept["centre"]
+
+
+def test_the_sweep_rendering_names_the_failure_mode():
+    text = of._render_sweep({
+        "tier": "lite", "n_scored": 600, "detectors_scoring": 1,
+        "rows": [{"quantile": 0.2,
+                  "margin": {"n": 120, "flagged": 26, "fpr": 0.217, "ci95": [0.15, 0.30]},
+                  "centre": {"n": 480, "flagged": 81, "fpr": 0.169, "ci95": [0.14, 0.20]},
+                  "gap": 0.048, "intervals_overlap": True}],
+        "gap_sign_is_consistent": False, "any_cut_separates": False,
+    })
+    assert "CHANGES SIGN" in text
+    assert "none of these gaps is evidence of a disparity" in text
+
+
+def test_the_sweep_refuses_a_corpus_too_small_to_split():
+    assert "error" in of.probe_sweep(["x"] * 4)
