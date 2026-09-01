@@ -89,8 +89,14 @@ adds the half we were missing entirely: **after humanization, more than 96% of A
 evade both detectors.**
 
 **That asymmetry is the most quotable sentence in this whole literature, and it is now Tier A:
-detectors punish legitimate light editing at 38–80% while letting more than 96% of deliberately
-humanized synthetic text through.** They are hardest on exactly the people not cheating.
+detectors punish legitimate light editing at 64–80% (Pangram) and 38–49% (GPTZero) while letting more
+than 96% of deliberately humanized synthetic text through.** They are hardest on exactly the people
+not cheating.
+
+> ✗ **Round twenty-three fixed this sentence.** It used to read "38–80%" — the collapsed range that
+> the paragraph **three lines above it** corrects. The most rhetorically load-bearing line in these
+> documents restated the very number its own correction had just retired, and then that line was
+> copied into `research-to-build.md`.
 
 ## Tier A — findings that were *not* in our documents and change the plan
 
@@ -158,7 +164,7 @@ Everything sourced only from a blocked host. Multiple independent indexes return
 | Claim | Note |
 |---|---|
 | Holzwarth et al., 89% of PubMed Central papers show LLM-vocabulary excess by end-2025; Discussion 68% vs Methods 32% | arXiv:2608.10715. Named author and sectional split newly obtained |
-| Karr et al.: light "refine abstract only" edits flagged at **38–80%**; unmodified 2023–25 originals at **9–15%**; non-STEM ≫ STEM (p<0.001); scores track long-token and Academic Word List density | arXiv:2608.11256 — the closest published work to untell's thesis |
+| Karr et al.: light "refine abstract only" edits flagged at **64–80% by Pangram and 38–49% by GPTZero** (corrected from the collapsed "38–80%" in round twenty-three); unmodified 2023–25 originals at **9–15%**; non-STEM ≫ STEM (p<0.001); scores track long-token and Academic Word List density | arXiv:2608.11256 — the closest published work to untell's thesis |
 | MCP conformal FPR control; RealDet = 15 domains, 22 LLMs, 847k+ texts, 113k+ human, bilingual EN/ZH, with adversarial variants | arXiv:2505.05084, ACL 2025. Far larger than we described |
 | Adversarial Paraphrasing, StealthRL, DIPPER, ARB, StyloBench/feature-inversion, DetectRL-X, SHIELD, M4GT-Bench | All arXiv/ACL — host blocked |
 | Base models judged human by GPTZero and Pangram; HIP works across Llama and Qwen families | arXiv:2605.19516 (Xu, Zhong, Raghunathan, Fang, Kolter). **No numeric FPR is claimed — do not invent one** |
@@ -1748,3 +1754,61 @@ against the body, not only appended to.
 Four of the quantity errors were found by asking one question that no automated check performs. That
 is the durable lesson of rounds twenty to twenty-two: **provenance checking is mechanisable and was
 already green on every one of these; knowing what a number counts is not.**
+
+---
+
+# Round twenty-three — the retractions that never propagated
+
+Round twenty-two ended by naming a class of defect and not acting on it: *"a correction written down
+but not propagated is not a correction … the retraction table should be checked against the body, not
+only appended to."* One instance had been found. Nobody had asked how many there were.
+
+Sweeping every retracted form in this ledger against every research document found **three more**,
+and the worst is embarrassing in a useful way.
+
+## ✗ The corrected number survived in the sentence this ledger calls its best
+
+Round two retracted the collapsed Karr range (Karr, Khvatskii, Hua & Chawla, ACM AILS '26; measured
+on their light-edit arm), writing: *"We wrote 'light edits flagged at 38–80%'. The paper splits by
+detector: 64–80% by Pangram and 38–49% by GPTZero."*
+
+**Three lines below that correction**, the same round wrote what it called "the most quotable
+sentence in this whole literature": *"detectors punish legitimate light editing at 38–80% while
+letting more than 96% of deliberately humanized synthetic text through."*
+
+The retired number, in the most rhetorically load-bearing line in these documents, directly beneath
+its own retraction. **And it propagated**: `research-to-build.md` had copied that sentence verbatim,
+which is where round twenty-two found it. The correction was written, published, and then ignored by
+the paragraph next to it.
+
+## ✗ And two more
+
+- The round-two verification table still recorded the *verified* Karr claim (ACM AILS '26,
+  arXiv:2608.11256) as "flagged at **38–80%**" — the table asserting the claim was checked carried
+  the version the same round had just corrected.
+- `research-to-build.md`'s dataset table listed RealDet's "15 domains, 22 LLMs, 847k+ texts" **in
+  bold and unhedged**, though the ledger had demoted those dimensions to Tier B because none of them
+  appears in the published abstract. Now marked Tier B, with the reason on the row.
+
+All three fixed.
+
+## The guard
+
+`tests/test_retracted_claims_do_not_survive_elsewhere.py` now pins the retired forms that have
+actually escaped — the Karr range, MGTEVAL's "26 detectors", Bohler's "pure false-positive rate",
+Hyatt's "190 students' essays", the Goodman AUC comparison, and the autistic-writing trait list.
+
+The rule it encodes is not "this string must never appear": **a ledger has to quote what it retracts
+or it cannot document anything.** The rule is that a retired form may appear only within a few lines
+of a marker saying it is being corrected. Two mistakes in writing that check were instructive in
+themselves — the first version reported every correction in this document as a violation, because it
+read one line at a time and these documents hard-wrap at 100 columns, so "✗ An earlier draft said…"
+routinely sits two lines above the number it corrects; the second still failed on the one place the
+ledger blockquotes a retracted sentence and corrects it *underneath*.
+
+**What this round is evidence of.** Every correction in this ledger was accurate when written. The
+failure was downstream of accuracy: a correction is only worth as much as its propagation, and
+nothing was checking that. Twenty-two rounds of verification produced a document that contradicted
+itself three lines apart, in its most-quoted sentence, and no provenance check, citation check or
+attribution check could see it — because every version of the number had a source, and the source
+said it.

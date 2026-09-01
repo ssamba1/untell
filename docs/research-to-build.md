@@ -205,7 +205,7 @@ it is a ready-made fairness corpus with ground truth and a permissive licence.
 |---|---|---|
 | **Beemo** | Human **expert** edits of machine text — external control for the rewrite loop | [HF](https://huggingface.co/datasets/toloka/beemo) / [2025.naacl-long.357](https://aclanthology.org/2025.naacl-long.357/) |
 | **ARB** | H2L: human text rewritten by an LLM — the false-accusation case | [arXiv:2607.29539](https://arxiv.org/abs/2607.29539) |
-| **RealDet** | Calibration corpus: **15 domains, 22 LLMs, 847k+ texts, 113k+ human-written**, EN+ZH, plus adversarial paraphrase/edit variants | [arXiv:2505.05084](https://arxiv.org/abs/2505.05084) |
+| **RealDet** ⚠️ Tier B | Calibration corpus: 15 domains, 22 LLMs, 847k+ texts, 113k+ human-written, EN+ZH, plus adversarial paraphrase/edit variants — **none of these dimensions appear in the published abstract**, so they are unverified at source | [arXiv:2505.05084](https://arxiv.org/abs/2505.05084) |
 | **StyloBench** | Personalized/style-imitating machine text — triggers feature inversion | [arXiv:2510.12476](https://arxiv.org/pdf/2510.12476) |
 | **DetectRL-X** | 8 languages, 6 domains, commercial LLMs, **and polish/expand/condense ops** | [arXiv:2605.15518](https://arxiv.org/abs/2605.15518), ACL 2026 |
 | **M4GT-Bench** | Mixed human-machine **boundary** task | [arXiv:2402.11175](https://arxiv.org/abs/2402.11175) |
@@ -252,8 +252,8 @@ already exists but has no multilingual evaluation data behind it.
   average FPR from **61.3% to 11.6%**, and simplifying native essays *raised* misclassification — and
   Karr et al. tie detector scores to long-token and Academic Word List density. The axis is
   established causally, not by correlation. Their asymmetry is the frame for everything here:
-  **detectors flag legitimate light editing at 38–80% while letting >96% of deliberately humanized
-  text through** — hardest on the people not cheating.
+  **detectors flag legitimate light editing at 64–80% (Pangram) and 38–49% (GPTZero) while letting
+  >96% of deliberately humanized text through** — hardest on the people not cheating.
   **What is actually open is narrower and more useful:** a *continuous, centroid-referenced* distance
   measure — embed a corpus, locate the model's stylistic centroid, plot FPR against each writer's
   distance from it — computed **per subgroup**, with modern detectors, at a calibrated operating point.
