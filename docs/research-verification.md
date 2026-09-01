@@ -4659,3 +4659,91 @@ the same number rounds sixty-one through sixty-seven used.
 That is the second time in this session a pinning test has earned its cost by failing — and the
 first time one of them failed for a *good* change rather than a defect. A test that only ever fires
 on mistakes has not been shown to fire on anything else.
+
+---
+
+# Round sixty-nine — the missing venues were the ones most likely to falsify the claim
+
+Round sixty-eight found 2022 missing by hand and stopped there. The systematic sweep that should have
+followed immediately found **forty-three volumes across five years that exist, resolve, and were not
+indexed — 2,892 papers.**
+
+Two are main conferences: `2023.eacl` (335 papers) and `2024.eacl` (281). The rest are journals,
+shared tasks and workshops.
+
+## The venues mattered more than the count
+
+⚠️ **`trustnlp` and `bea` were both absent, in every year.** Trustworthy NLP, and Building
+Educational Applications. Those are precisely where work on false accusation, detector fairness and
+classroom use is published — and this survey's headline finding is that such work is scarce.
+
+**A venue list that omits them under-samples the exact topics whose scarcity it reports.** That is
+selection bias pointing toward this project's own conclusion, which is the worst direction for it to
+point, and it was not deliberate: nothing in the file chose those venues or excluded them.
+
+## So the prediction was made first, then tested
+
+If the omission mattered, adding those venues should raise `education/integrity` and
+`false positives/accusation` specifically. MEASURED, across the three corpus states:
+
+| topic | 108 vols | 115 vols | 158 vols | **186 vols** |
+|---|---|---|---|---|
+| robustness/paraphrase | 26.5% | 26.2% | 26.2% | **25.7%** |
+| multilingual/cross-lingual | 13.3% | 13.3% | 13.3% | 13.4% |
+| human-AI mixed/edited | 11.2% | 11.1% | 11.1% | 10.8% |
+| **education/integrity** | 7.6% | 7.5% | **7.9%** | 7.7% |
+| watermark | 7.6% | 7.5% | 7.4% | 7.2% |
+| calibration/thresholds | 3.8% | 3.7% | 3.7% | 3.6% |
+| **false positives/accusation** | 1.9% | 2.0% | **2.2%** | 2.1% |
+| fairness/non-native bias | 2.1% | 2.2% | 2.2% | 2.1% |
+| disability/neurodivergence | 0.2% | 0.2% | 0.2% | 0.2% |
+
+**The prediction was right in direction and small in size.** At 158 volumes both target topics moved
+up and only those two did; `education/integrity` briefly overtook `watermark`. The headline ratio
+went from **153:11** to **157:13** — from 13.9:1 to 12.1:1.
+
+The last column closes every gap `--gaps` reported. **From 108 volumes to 186 — 72% more volumes,
+23% more abstracts — the largest share move in the table is 0.8 points**, and it is robustness losing
+ground.
+
+✅ **The claim survives the most adversarial widening available to it.** Not a random extra year:
+the specific venues where the allegedly-missing work would live, added on purpose to see whether the
+imbalance was an artefact of not looking there. It was not. There are still twelve times as many
+papers on evading detectors as on the people they wrongly accuse, after searching the two workshops
+devoted to trustworthiness and to education.
+
+Corpus after, MEASURED: **186 volumes, 46,905 abstracts, 612 detection papers**, noise floor
+**81 of 612 (13.2%)** with a largest share move of 1.4 points. The pre-LLM corpus is MEASURED
+unchanged at **6,811** — checked again, because it shares the cache and every calibration figure in
+this repository depends on it.
+
+## `--gaps`, so the next hole is a command rather than a hunch
+
+`python -m eval.litreview --gaps` probes every venue named anywhere in `VOLUMES` against every year
+named anywhere in `VOLUMES`, and lists what exists and is not indexed. The rule it encodes is the one
+that makes a hole detectable at all: **if a venue is worth indexing in one year it is worth indexing
+in the next.**
+
+It reports rather than adds. Which volumes belong in a survey is an editorial decision about scope,
+and a tool that widened the corpus behind its author's back would produce numbers nobody chose — the
+failure this whole ledger is about, arriving through the front door.
+
+✗ **And the first draft of this section claimed it then reported none, which was wrong.** The rule
+is every known venue against every known year, so **closing a gap opens gaps**: adding `trustnlp` for
+2023 makes its absence from every other year a finding. Forty-three closed, twenty appeared; twenty
+closed, sixty-two appeared.
+
+That is not a runaway — it is the rule doing what it says, and **fifty-four of those sixty-two were
+2020 and 2021**, years that are in `VOLUMES` for a different corpus entirely. The file has always
+said so: they exist to give `eval/pre_llm_fpr.py` human ground truth, and they predate the field the
+survey counts. Probing them for survey venues is a category error, so the sweep now starts at
+`SURVEY_FROM_YEAR = "2022"`. The remaining eight were real and are indexed.
+
+The twenty include several venues with nothing to do with detection — `crac` is coreference, `codi`
+is discourse, `law` is linguistic annotation — and they are in anyway. **Keeping only the on-topic
+ones is how a denominator acquires a thumb on it.** The rule that makes a hole visible is venue
+consistency across years, not a judgement about relevance.
+
+✅ **VERIFIED, not asserted this time**: after the eight went in, `--gaps` prints *"no gaps: every
+venue named in VOLUMES is indexed for every year it names"*. The corpus reached a fixed point in
+three iterations.

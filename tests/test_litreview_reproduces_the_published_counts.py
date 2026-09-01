@@ -207,15 +207,17 @@ def test_an_empty_corpus_does_not_divide_by_zero():
 
 @needs_corpus
 def test_the_shipped_measurement_reproduces_round_fifty_sevens_numbers():
-    """The figures the ledger publishes: 81 of 588, and no share moving by more than 1.5 points.
+    """The figures the ledger publishes: 81 of 596, and no share moving by more than 1.5 points.
 
-    It fired for real in round sixty-eight, when seven 2022 volumes were added to a `VOLUMES` list
-    that had silently skipped the year: 80 of 578 became 81 of 588, and the test named the drift
-    instead of letting the old pair stand in five documents.
+    It has now fired twice for real, both times on a widened corpus rather than a defect. Round
+    sixty-eight added seven 2022 volumes the list had silently skipped (80 of 578 -> 81 of 588);
+    round sixty-nine swept for the rest and found sixty-three more, including two main conferences
+    and the TrustNLP and BEA workshops (-> 81 of 612). Each time it named the drift instead of
+    letting a stale pair stand in five documents.
     """
     report = litreview.noise_floor(litreview.load_abstracts(CACHE))
     assert report["other_detection_problem"] == 81, report["other_detection_problem"]
-    assert report["detection_papers"] == 588, report["detection_papers"]
+    assert report["detection_papers"] == 612, report["detection_papers"]
     assert report["largest_share_move"] <= 2.0, (
         f"a topic share moved {report['largest_share_move']} points when the off-topic papers were "
         f"removed — the noise is no longer flat across topics, and the ratio needs re-examining"

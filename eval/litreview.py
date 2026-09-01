@@ -63,6 +63,38 @@ VOLUMES: tuple[str, ...] = (
     # excluded. 4,997 papers across seven volumes.
     "2022.acl", "2022.emnlp", "2022.findings", "2022.naacl", "2022.coling", "2022.lrec",
     "2022.aacl",
+    # ROUND 69. Round sixty-eight found 2022 missing by hand; this is the systematic sweep that
+    # should have followed immediately. Forty-three volumes across five years existed, resolved, and
+    # were not indexed — 2,892 papers.
+    #
+    # ⚠️ The venues matter more than the count. `2023.eacl` (335 papers) and `2024.eacl` (281) are
+    # main conferences. **`trustnlp` and `bea` are worse**: Trustworthy NLP and Building Educational
+    # Applications are precisely where work on false accusation, fairness and classroom use would
+    # appear, and this survey's headline finding is that such work is scarce. A venue list that omits
+    # them under-samples the exact topics whose scarcity it reports — which is selection bias
+    # pointing toward this project's own conclusion, the worst direction for it to point.
+    "2022.tacl", "2022.cl", "2022.conll", "2022.wmt", "2022.semeval",
+    "2022.sigdial", "2022.inlg", "2022.iwslt", "2022.starsem", "2022.bea",
+    "2022.wnut", "2022.blackboxnlp", "2022.trustnlp", "2022.clinicalnlp", "2022.louhi",
+    "2022.nlp4call", "2022.gem", "2023.eacl", "2023.cl", "2023.conll",
+    "2023.wmt", "2023.semeval", "2023.sigdial", "2023.inlg", "2023.iwslt",
+    "2023.starsem", "2023.bea", "2023.blackboxnlp", "2023.trustnlp", "2023.clinicalnlp",
+    "2023.nlp4call", "2023.gem", "2024.eacl", "2024.cl", "2024.wmt",
+    "2024.iwslt", "2024.clinicalnlp", "2024.nlp4call", "2025.iwslt", "2025.clinicalnlp",
+    "2025.nlp4call", "2026.iwslt", "2026.clinicalnlp",
+    # The last twenty, reported by `--gaps` after the forty-three above went in. Specialised
+    # workshops mostly, and several with nothing to do with detection — `crac` is coreference,
+    # `codi` discourse, `law` linguistic annotation. They are here anyway, because the rule that
+    # makes a hole detectable is venue consistency across years, not a judgement about which venues
+    # are on topic. Cherry-picking the on-topic ones is how a denominator acquires a thumb on it.
+    # The eight `--gaps` reported after the twenty above went in: adding a venue for one year makes
+    # its absence in every other year a gap, so the sweep converges by iteration rather than at once.
+    "2022.alta", "2022.argmining", "2022.clpsych", "2022.codi", "2022.crac",
+    "2022.insights", "2022.law", "2022.mrl",
+    "2022.nlp4dh", "2022.nlp4pi", "2022.nlpcss", "2022.paclic", "2022.privatenlp",
+    "2022.sdp", "2022.wassa", "2023.alta", "2023.argmining", "2023.codi",
+    "2023.crac", "2023.insights", "2023.law", "2023.mrl", "2023.nlp4dh",
+    "2023.paclic", "2023.ranlp", "2023.sicon", "2023.wassa", "2025.ijcnlp",
     "2023.acl", "2023.emnlp", "2023.findings", "2023.tacl", "2023.ijcnlp",
     "2024.acl", "2024.emnlp", "2024.findings", "2024.naacl", "2024.lrec", "2024.tacl", "2024.inlg",
     "2025.acl", "2025.emnlp", "2025.findings", "2025.naacl", "2025.coling", "2025.tacl", "2025.cl",
@@ -191,6 +223,62 @@ def _fetch(url: str, name: str, attempts: int = 3) -> bytes | None:
             return None
         return body
     return None
+
+
+
+# Venues the Anthology publishes under a `YEAR.venue` id. Not the whole Anthology — it is every
+# venue any year of `VOLUMES` names, which is what makes a hole detectable: if a venue is worth
+# indexing in one year it is worth indexing in the next, and the gap is the finding.
+# The survey counts detection papers; the 2020-2021 volumes are in VOLUMES for a different corpus
+# entirely (`eval/pre_llm_fpr.py` builds human ground truth from text published no later than 2021)
+# and predate the field. `volume_gaps` starts here so it does not report a workshop's absence from a
+# year the survey does not claim to cover.
+SURVEY_FROM_YEAR = "2022"
+
+
+def known_venues() -> tuple[str, ...]:
+    """Every venue slug appearing anywhere in :data:`VOLUMES`."""
+    return tuple(sorted({v.split(".", 1)[1] for v in VOLUMES if "." in v}))
+
+
+def volume_gaps(years: tuple[str, ...] | None = None) -> list[str]:
+    """Volume ids that exist in the Anthology, are not in :data:`VOLUMES`, and should be.
+
+    Round sixty-eight found 2022 missing by hand. Round sixty-nine swept for the rest and found
+    **forty-three** volumes across five years — 2,892 papers — including `2023.eacl` and
+    `2024.eacl`, two main conferences.
+
+    ⚠️ **The venues mattered more than the count.** `trustnlp` and `bea` — Trustworthy NLP, and
+    Building Educational Applications — are exactly where work on false accusation, fairness and
+    classroom use appears, and this survey's headline finding is that such work is scarce. Omitting
+    them under-samples the topics whose scarcity is being reported, which is selection bias pointing
+    toward the conclusion. Adding them moved `education/integrity` from 7.5% to 7.9% and
+    `false positives/accusation` from 2.0% to 2.2%: the right direction, and small.
+
+    ⚠️ **The rule does not converge on its own, and the first version of this said it had.** Adding
+    a venue for one year makes its absence in every OTHER year a gap, so closing forty-three holes
+    opened sixty-two more. Fifty-four of those were 2020 and 2021 — years that are in `VOLUMES`
+    only to give `eval/pre_llm_fpr.py` its ground truth, as the comment on them says, and that
+    predate the field the survey counts. Probing them for survey venues is a category error, so the
+    sweep starts at :data:`SURVEY_FROM_YEAR`.
+
+    Network-dependent, so this is a tool rather than a unit test — `--gaps` runs it. It reports
+    rather than mutates: which volumes to add is an editorial call about scope, not something a
+    survey should widen behind its author's back.
+    """
+    years = years or tuple(sorted(
+        y for y in {v.split(".", 1)[0] for v in VOLUMES} if y >= SURVEY_FROM_YEAR))
+    have = set(VOLUMES)
+    gaps = []
+    for year in years:
+        for venue in known_venues():
+            vid = f"{year}.{venue}"
+            if vid in have:
+                continue
+            raw = _fetch(f"{ANTHOLOGY_XML}/{vid}.xml", vid, attempts=1)
+            if raw:
+                gaps.append(vid)
+    return gaps
 
 
 def download(cache: Path, volumes: tuple[str, ...] = VOLUMES) -> int:
@@ -492,8 +580,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--noise-floor", action="store_true", dest="noise",
                         help="how much of the corpus is a different detection problem, and what "
                              "excluding it would do to every topic share")
+    parser.add_argument("--gaps", action="store_true",
+                        help="volumes the Anthology has that VOLUMES does not; a review list, since "
+                             "widening a survey's scope is an editorial call")
     parser.add_argument("--json", action="store_true", dest="as_json", help="machine-readable output")
     args = parser.parse_args(argv)
+
+    if args.gaps:
+        gaps = volume_gaps()
+        if gaps:
+            print(f"{len(gaps)} volume(s) exist and are not indexed:", file=sys.stderr)
+            for vid in gaps:
+                print(f"  {vid}")
+        else:
+            print("no gaps: every venue named in VOLUMES is indexed for every year it names",
+                  file=sys.stderr)
+        return 0
 
     if args.download:
         available = download(args.cache)
