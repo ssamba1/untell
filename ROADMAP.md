@@ -426,7 +426,7 @@ aggregation rule itself, one level down.
 
 ### The result that should organise everything else — all of it peer-reviewed and read at source
 
-A systematic pass over **16 ACL Anthology volumes, 20,875 abstracts, 334 detection papers** (method
+A systematic pass over **96 ACL Anthology volumes, 31,387 abstracts, 526 detection papers** (method
 and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
 below is refereed and was read from the Anthology's own metadata.
 
@@ -525,9 +525,16 @@ to be human**:
 | Behavioral-health articles, free detector | 27.2% | [DOI](https://doi.org/10.1080/08989621.2024.2331757) |
 | Abstracts, flagged by ≥1 of 3 tools | 44.44% | [DOI](https://doi.org/10.7717/peerj-cs.2953) |
 | TOEFL essays, non-native writers, 7 detectors | 61.3% | [DOI](https://doi.org/10.1016/j.patter.2023.100779) |
+| **Residency personal statements, 2022–23 cycle — submitted before ChatGPT**, GPTZero | **10.2%** | [DOI](https://doi.org/10.1016/j.jsurg.2025.103566) |
+| Same statements, Copyleaks | 2.6% | same |
+| Same statements, **both tools required to agree** | **1.7%** | same |
 
 **Same technology, on real human writing, from about 0% to 61%.** These do not contradict each other;
 each is a correct measurement of a different population, domain, detector set and aggregation rule.
+
+The last three rows are one study, one corpus, one day, and they are the union/consensus spread again
+— **10.2% against 1.7%, a factor of six** — this time on 1,490 real applications rather than a
+benchmark.
 
 **So: a false-positive rate is not a property of a detector. It is a property of a detector, a
 population, a domain, an editing history and an aggregation rule — and it cannot be inherited from
@@ -561,6 +568,45 @@ misclassify another generator's text as *human* — false negatives — **withou
 positives on human writing** ([2025.aimecon-sessions.11](https://aclanthology.org/2025.aimecon-sessions.11/)).
 Generator mismatch costs recall, not precision, so "detection is generator-bound" must not be blurred
 into "an unseen generator makes a detector accuse more humans." It does not.
+
+### This is not a thought experiment — it is running against applicants now
+
+Everything above is a benchmark. A PubMed pass over the education and admissions literature
+(27 records, exhausted; per-record detail in [the ledger](docs/research-verification.md)) is not:
+these are detectors run against real people in real selection processes, and they show the three
+things this section argues happening at once.
+
+✅ **The aggregation rule, measured in a live match cycle.** Subillaga et al. (*J Surg Educ*,
+[DOI](https://doi.org/10.1016/j.jsurg.2025.103566)) ran GPTZero and Copyleaks over **1,490 surgical
+residency personal statements** across two cycles:
+
+| cycle | GPTZero | Copyleaks | **both agreeing** |
+|---|---|---|---|
+| 2022–23 | 10.2% | 2.6% | **1.7%** |
+| 2023–24 | 36.6% | 22.5% | **21.2%** |
+
+**Which tool a program happened to license changes the accused population by fourteen points.** That
+is the union-versus-consensus spread this repo exists to expose, and it is already deciding who gets
+read charitably. And the flagged group differs from the unflagged one in ways that are not
+authorship: **non-English native language characteristics 38.7% against 19.6% (p<0.001)**, shorter
+statements, shorter sentences. Stern et al. (*J Arthroplasty*,
+[DOI](https://doi.org/10.1016/j.arth.2025.07.072)) find the same skew independently on 421 fellowship
+statements — international graduates and non-US applicants scored higher (P < 0.001).
+
+✅ **And pre-ChatGPT human writing scoring as the technology that did not yet exist.** Cumbo et al.
+(*Cureus*, [DOI](https://doi.org/10.7759/cureus.88969)) ran three detectors over 25 personal
+statements: human statements **written before ChatGPT was released** were scored **64–100%
+AI-generated**. Those are per-document scores, not a rate — the distinction this file insists on
+elsewhere — but a pre-2022 document scoring 100% AI is not a marginal error. It is the measurement
+`eval/pre_llm_fpr.py` takes, arrived at independently, in the setting where being wrong costs
+somebody a career. The authors nonetheless conclude programs "may be able to detect AI use," while
+noting that "the use of invalidated tools may harm honest applicants."
+
+⚠️ **What is missing from this literature is the point.** The dedicated humanizer/evasion query
+returns **one** record. The arms-race research is essentially absent from the corpus where deployment
+against applicants is well represented — **the people running these tools are not reading the work
+showing the tools can be walked around.** That asymmetry is the argument for shipping the audit
+rather than the evasion: the population that needs this evidence is not the one reading NLP venues.
 
 **What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
 population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.

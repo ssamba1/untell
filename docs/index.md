@@ -87,7 +87,8 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **[Verification ledger](research-verification.md)** — every claim, the tier it was checked to, and
   the eight that changed when they were checked. **The corrections are the point of this document.**
 - **Reproduce the survey yourself:** `python -m eval.litreview --download` re-derives the count the
-  strategy rests on (28,120 abstracts; 102 papers on evasion robustness against 6 on false positives)
+  strategy rests on (96 volumes, 31,387 abstracts; 139 papers on evasion robustness against 13 on
+  false positives and 8 on fairness)
 
 ## License
 

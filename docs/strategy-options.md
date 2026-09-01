@@ -13,10 +13,20 @@ The evidence that decides it, in one line each:
   majority 4.17%, unanimous ~0%.
 - **E3** — **The label drives human judgment, not the text**: >30% preference for text labelled
   "human", holding even when labels were swapped.
-- **E4** — The field publishes **102 papers on evasion robustness to 6 on false positives**.
+- **E4** — The field publishes **164 papers on evasion robustness to 20 on false positives** and 13
+  on fairness. That is the *census* — all 1,718 ACL Anthology volumes, a partial clone described in
+  the ledger. The shipped tool covers a 96-volume subset and finds 139 / 13 / 8
+  (`python -m eval.litreview --download --json`); **the ratio is what matters and it is the same
+  either way.** Quote whichever you like, but say which — round fifteen of the ledger exists because
+  these two figures were allowed to blur.
 - **E5** — Detector bias is real but **inconsistent across systems**, and absent entirely in at least
   one language (Czech).
 - **E6** — Minimal AI polishing is already flagged; detectors cannot grade degree of involvement.
+- **E7** — **These tools are already deciding admissions.** On 1,490 surgical residency personal
+  statements GPTZero flagged 36.6% and Copyleaks 22.5% where both agreeing flagged 21.2%; the
+  flagged group had non-English native language characteristics 38.7% against 19.6% (p<0.001); and
+  in a separate study human statements written before ChatGPT existed scored 64–100% AI. The
+  humanizer literature is **one record** in the same corpus.
 
 ---
 
@@ -36,7 +46,7 @@ Score many detectors on shared corpora, publish a leaderboard.
 
 **Rejected on evidence.** MGTEVAL already ships 25+ detectors, 12+ attack families, bootstrap CIs,
 ECE, Brier and risk-coverage, with a web UI. We do not win on breadth or statistics. More
-fundamentally, **E1 says a leaderboard is the wrong object**: a detector's rank on someone else's
+fundamentally, E1 says **a leaderboard is the wrong object**: a detector's rank on someone else's
 corpus does not predict its false-positive rate on yours, so the artefact itself misleads its reader.
 Building a better version of a misleading artefact is not a strategy.
 
@@ -57,8 +67,14 @@ intervals.
   policy decision, and nobody currently shows it.
 - **E6** says the audit must include an AI-assisted arm, because that is where the failure lives and
   where a detector at 0.00% FPR turned out to be the most biased one.
-- **E4** says the niche is empty: the field is not doing this, and 6 papers is the measure of how
-  empty.
+- **E4** says the niche is empty: the field is not doing this, and 20 papers across the Anthology's
+  entire published history is the measure of how empty.
+- **E7** decides between building this and merely describing it. Every other finding is a benchmark
+  result; E7 is the same failures running against applicants who did not consent to being measured,
+  in institutions that are demonstrably not reading the detection literature. **The user is not a
+  researcher comparing detectors — it is the program director who licensed one tool rather than
+  another and has no way to know what that choice did to their applicant pool.** That is a concrete
+  person with a corpus, which is exactly what Option C serves and what B and D do not.
 - **E3** supplies the reason it matters rather than merely being unoccupied. A false positive is not
   a recoverable error; it permanently changes how the work is read. Measuring exposure before
   deployment is the only intervention that acts *before* the label exists.

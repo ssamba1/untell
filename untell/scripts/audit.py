@@ -62,6 +62,14 @@ LIVE_DOCS = (
     "docs/why-best-open-repo.md",
     "docs/index.md",
     "docs/what-would-make-this-the-top-repo.md",
+    # The research documents. These were outside the audit until round fifteen, which is how the
+    # survey count they publish drifted across three files and came to rest on two Anthology volumes
+    # that do not exist. They are the most number-dense pages in the repository, so leaving them
+    # unaudited exempted exactly the claims most worth checking.
+    "ai-writing-research.md",
+    "docs/research-to-build.md",
+    "docs/research-verification.md",
+    "docs/strategy-options.md",
 )
 
 
@@ -1504,6 +1512,17 @@ def check_attribution(report: Report) -> None:
                 # drifted (2473 tests against 2543) with nothing to catch it. Versions and dates
                 # are still skipped below, by patterns that describe versions and dates.
                 if re.fullmatch(r"[A-Za-z, ]*\d{4}-\d{2}-\d{2}[.A-Za-z, ]*", claim):
+                    continue
+                # A cross-reference label is an identifier, not a measurement. The research docs
+                # number their evidence **E1**..**E7** and refer to it by that label dozens of
+                # times; reporting each as an unattributed claim buries the real ones.
+                if re.fullmatch(r"[A-Z]\d{1,2}", claim):
+                    continue
+                # A bolded numbered heading — `**3. A truncated download was counted whole.**` —
+                # carries an ordinal, not a quantity. Strip it and judge what is left: if the
+                # heading really does state a number, that number is still checked.
+                claim = re.sub(r"^\d+\.\s+", "", claim)
+                if not any(c.isdigit() for c in claim):
                     continue
                 # Attribution may sit in the surrounding paragraph, not the same line.
                 window = "\n".join(lines[max(0, i - 12): i + 13])

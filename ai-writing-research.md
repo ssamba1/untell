@@ -182,7 +182,8 @@ What has changed since:
   to verify)*.
 - Vendors now dispute the result on their own products — Pangram reports **0.00%** FPR on a re-test of
   the TOEFL data, which is a first-party figure, not an independent replication *(secondary)*.
-- Independent 2026 tests continue to report L2 writers flagged at roughly **2–3×** the native rate
+- Independent tests published in 2026 continue to report L2 writers flagged at roughly **2–3×** the
+  native rate
   *(secondary — blog-grade, small-n)*.
 
 - ✅ **A detector can post a 0% false-positive rate and still be the most biased one.** Pratama

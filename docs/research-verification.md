@@ -249,7 +249,9 @@ classified the **334** that concern machine-generated-text detection.
 
 ## The field's own priorities, counted
 
-Of those 334 detection papers, the number addressing each topic:
+Of those 334 detection papers, the number addressing each topic. MEASURED by
+`python -m eval.litreview --download --json` at the 16-volume stage; superseded by round six and
+corrected again in round fifteen, both below:
 
 | Topic | Papers |
 |---|---|
@@ -406,7 +408,8 @@ it in front of them. That is a concrete product change, derived from refereed me
 
 ## A ground-truth probe we should steal
 
-Bohler et al. analysed **1,490 manuscripts**, 659 from **2014** and 831 from 2024. Because 2014 text
+Bohler et al. (*J Craniofac Surg*, [DOI](https://doi.org/10.1097/SCS.0000000000012366)) analysed
+**1,490 manuscripts**, 659 from **2014** and 831 from 2024. Because 2014 text
 is necessarily pre-LLM, **its detector score is a pure false-positive rate: 8.6%**. The authors
 conclude the modest rise to 10.7% "likely reflect[s] detection software behavior and evolving writing
 structure rather than widespread use of generative AI."
@@ -551,8 +554,8 @@ be re-run and widened is worth more than an unbounded claim that cannot be check
 `eval/litreview.py` makes the Anthology survey re-runnable. The PubMed half cannot ship the same way:
 `eutils.ncbi.nlm.nih.gov` is blocked here too, so a PubMed code path could be written but **not
 tested**, and this repo does not ship unverified code. The reproducible form is therefore the queries
-themselves, with the counts they returned on 2026-09-01, so anyone can re-run them and see whether
-the corpus has moved:
+themselves, together with the result each one MEASURED against PubMed on 2026-09-01, so anyone can
+re-run them and see whether the corpus has moved:
 
 | Query | Returned | Screened to |
 |---|---|---|
@@ -665,7 +668,8 @@ than to widen it.
 A large share of the suite was never running. `rich`, `fastapi`, `httpx`, `huggingface_hub` and
 `spacy` are all installable from hosts this environment permits — PyPI bypasses the proxy entirely,
 and spaCy's models are on GitHub releases. Installing them took collection errors from 11 to 4 and
-**activated roughly 413 named-entity tests that had been skipping silently**.
+**activated roughly 413 named-entity tests that had been skipping silently** — MEASURED as the
+difference in collected tests before and after the install.
 
 Every measurement reported above was correct for the environment it ran in. The environment was just
 narrower than assumed, and nothing checked. `CONTRIBUTING.md` now documents the trap.
@@ -675,7 +679,9 @@ narrower than assumed, and nothing checked. `CONTRIBUTING.md` now documents the 
 # Round six — the venue I missed, and what it changes
 
 The survey sampled 28 Anthology collections. **The Anthology holds roughly 1,700.** Probing venue
-names rather than assuming took it to **98 volumes, 33,053 abstracts, 536 detection papers** — a
+names rather than assuming took it to **98 volumes, 33,053 abstracts, 536 detection papers**
+(MEASURED by `python -m eval.litreview --download --json`; two of those volume names turned out not
+to exist — see round fifteen) — a
 3.5× expansion — and among the additions was **`2025.genaidetect`: an entire COLING workshop on
 detecting AI-generated content**, 45 papers, the single most on-topic venue that exists. Missing it
 was the largest coverage failure in this whole effort.
@@ -1109,7 +1115,8 @@ before the polish.
 
 ## ✅ And the fairness observation that reframes the whole problem
 
-From the same letter, reading Wang et al.'s figures:
+From the same letter (Du & Koga, *JAAD International*,
+[DOI](https://doi.org/10.1016/j.jdin.2025.10.017)), reading Wang et al.'s figures:
 
 > "the AI-generated probability for **non-English-speaking authors in 2020** may exceed that for
 > **U.S. authors in 2024**, a difference that predates the post-2022 rise in AI-assisted writing and
@@ -1208,3 +1215,59 @@ did to their applicant pool.
 research this repo's own `humanizer-research-report.md` surveys has essentially no presence in the
 biomedical and education literature, while deployment against applicants is well represented — the
 people running these tools are not reading the work showing they can be evaded.
+
+---
+
+# Round fifteen — a documented number that no longer reproduced
+
+Re-running `eval/litreview.py` to check a figure quoted in `docs/index.md` found three separate
+defects, none of which any test would have caught.
+
+**1. The published figure was two rounds stale.** `docs/index.md` told readers the survey re-derives
+"28,120 abstracts; 102 papers on evasion robustness against 6 on false positives". Those are round
+*five's* numbers — the 28-volume sample. Round six expanded the tool to 98 volumes and updated
+ROADMAP and this ledger but not the index, and ROADMAP's own description of the pass still said
+"16 volumes, 20,875 abstracts". **Three documents, three different counts, one tool.** All three now
+carry the figure the tool actually prints.
+
+**2. Two of the 98 volumes never existed.** MEASURED against the Anthology repository:
+`2025.naacl-srw` and `2026.aacl` 404 on every run —
+checked directly against the Anthology repository, while `2025.naacl` and `2025.aacl` return 200. The
+volume list was a guess at names that was never verified against the source, so the tool claimed 98
+volumes and could only ever fetch 96, printing two skip warnings on every run. Both are removed.
+Round six's recorded **33,053 abstracts / 536 detection papers is therefore not reproducible**; the
+count over the 96 volumes that exist is **31,387 abstracts / 526 detection papers**, MEASURED by
+`python -m eval.litreview --download --json`. The ratio is
+unchanged, which is the third time this ratio has survived a change to the corpus under it.
+
+**3. A truncated download was silently counted as a whole volume.** The first re-run lost
+`2025.findings` to an `IncompleteRead` and printed **27,993 abstracts** — a plausible-looking total
+that was **3,394 abstracts short** of the 31,387 the same command MEASURED once the volume
+downloaded intact — with the loss visible only as one warning line above the JSON. The
+200-byte floor did not catch it because a partial read of an 8.7 MB volume is far larger than that.
+`download` now retries transient failures and reports 404s without retrying, and the reason is
+written into the docstring so it is not optimised away later.
+
+**What this round is really about.** Every number in this ledger was verified against its source when
+it was written down. Nothing verified that the numbers *this repository generates itself* still
+reproduce — and the one that carries the strategy had drifted across three documents, rested on two
+volumes that do not exist, and could be silently shortened by a network hiccup. **The tool was built
+so the count would not have to be trusted, and then the count was trusted anyway.**
+
+The current reproducible figure, from `python -m eval.litreview --download --json`:
+
+| | count |
+|---|---|
+| volumes | 96 |
+| abstracts | 31,387 |
+| detection papers | 526 |
+| robustness/paraphrase | 139 |
+| human-AI mixed/edited | 52 |
+| watermark | 33 |
+| education/integrity | 40 |
+| calibration/thresholds | 13 |
+| false positives/accusation | 13 |
+| fairness/non-native bias | 8 |
+
+The full-Anthology census (1,718 volumes: 164 robustness, 20 false positives, 13 fairness) is a
+separate partial clone and is unaffected.

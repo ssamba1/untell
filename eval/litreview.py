@@ -33,6 +33,7 @@ import json
 import logging
 import re
 import sys
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -48,8 +49,8 @@ VOLUMES: tuple[str, ...] = (
     "2023.acl", "2023.emnlp", "2023.findings", "2023.tacl", "2023.ijcnlp",
     "2024.acl", "2024.emnlp", "2024.findings", "2024.naacl", "2024.lrec", "2024.tacl", "2024.inlg",
     "2025.acl", "2025.emnlp", "2025.findings", "2025.naacl", "2025.coling", "2025.tacl", "2025.cl",
-    "2025.aacl", "2025.inlg", "2025.wmt", "2025.naacl-srw",
-    "2026.acl", "2026.findings", "2026.eacl", "2026.lrec", "2026.tacl", "2026.cl", "2026.aacl",
+    "2025.aacl", "2025.inlg", "2025.wmt",
+    "2026.acl", "2026.findings", "2026.eacl", "2026.lrec", "2026.tacl", "2026.cl",
     # Workshops. Easy to forget and the reason an earlier version of this survey undercounted by
     # 3.5x: the Anthology holds ~1,700 volume files and the first pass sampled 28 of them. The
     # omission that mattered most was **2025.genaidetect** — an entire COLING workshop on detecting
@@ -103,6 +104,35 @@ def _flatten(element: ET.Element | None) -> str:
     return re.sub(r"\s+", " ", "".join(element.itertext())).strip()
 
 
+def _fetch(url: str, name: str, attempts: int = 3) -> bytes | None:
+    """Fetch one volume, retrying truncated transfers.
+
+    A cut-off read (``IncompleteRead``) returns a partial body that is far larger than the 200-byte
+    floor checked here, so without a retry it would be cached as if it were the whole volume and every
+    count derived from it would be quietly short. That is not hypothetical: one run of this survey
+    lost 3,394 abstracts to a single truncated volume and still printed a plausible total. A 404 is
+    different — the volume does not exist — so it is reported once and not retried.
+    """
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(url, timeout=240) as response:  # noqa: S310
+                body = response.read()
+        except urllib.error.HTTPError as exc:
+            logger.warning("skipping %s: HTTPError: %s", name, exc)
+            return None
+        except Exception as exc:  # noqa: BLE001 - transient; worth another try
+            if attempt == attempts - 1:
+                logger.warning("skipping %s: %s: %s", name, type(exc).__name__, exc)
+                return None
+            logger.warning("retrying %s after %s: %s", name, type(exc).__name__, exc)
+            continue
+        if len(body) < 200:
+            logger.warning("skipping %s: response too small to be a volume", name)
+            return None
+        return body
+    return None
+
+
 def download(cache: Path, volumes: tuple[str, ...] = VOLUMES) -> int:
     """Fetch volume XML into ``cache``. Returns how many are available locally afterwards."""
     cache.mkdir(parents=True, exist_ok=True)
@@ -111,14 +141,8 @@ def download(cache: Path, volumes: tuple[str, ...] = VOLUMES) -> int:
         if target.exists() and target.stat().st_size > 200:
             continue
         url = f"{ANTHOLOGY_XML}/{name}.xml"
-        try:
-            with urllib.request.urlopen(url, timeout=240) as response:  # noqa: S310
-                body = response.read()
-        except Exception as exc:  # noqa: BLE001 - a missing volume is normal, not an error
-            logger.warning("skipping %s: %s: %s", name, type(exc).__name__, exc)
-            continue
-        if len(body) < 200:
-            logger.warning("skipping %s: response too small to be a volume", name)
+        body = _fetch(url, name)
+        if body is None:
             continue
         target.write_bytes(body)
     return len(list(cache.glob("*.xml")))
