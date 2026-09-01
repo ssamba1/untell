@@ -569,6 +569,34 @@ PubMed pass is high-precision rather than exhaustive: tight queries, every hit r
 is a screening strategy, not a systematic review of PubMed, and it is labelled as one here so nobody
 mistakes the difference.
 
+### Proof that the remaining channel is closed, not merely untried
+
+"I could not reach it" is a claim like any other, so it was tested rather than asserted. Twelve
+routes, all refused:
+
+| Route | Result |
+|---|---|
+| `arxiv.org`, `export.arxiv.org` — WebFetch and curl | 403 at the gateway |
+| `aclanthology.org`, `nature.com`, `science.org`, Springer, `europepmc.org` | 403 |
+| `api.semanticscholar.org`, `api.openalex.org`, `api.crossref.org`, `core.ac.uk`, `openreview.net` | 403 |
+| `huggingface.co`, `digital-strategy.ec.europa.eu`, `artificialintelligenceact.eu` | 403 |
+| `eutils.ncbi.nlm.nih.gov` (direct E-utilities) | 403 |
+| `*.github.io` | unreachable |
+| `api.github.com` | gated to session-scoped repositories |
+| GitHub code search | requires authentication |
+| arXiv daily-mirror repositories on GitHub | stale or off-topic (time-series, CV) |
+| Awesome-list / survey reading-list repositories | do not carry the papers |
+| **PyPI / npm (they bypass the proxy entirely, per `noProxy`)** | **reachable — 200** |
+| **The official `arxiv` PyPI client, installed and run** | **installs, then `ProxyError` on `export.arxiv.org`** |
+
+That last pair is the decisive test. Package registries *are* reachable, so a client can be
+installed — and it still cannot fetch, because the block is on the destination host rather than on
+the tooling. **No client, library or package can route around it**, which is also why none should be
+attempted: the proxy's own documentation says to report policy denials rather than work around them.
+
+The channel is closed. What was reachable — PubMed/PMC, the ACL Anthology's own metadata, and
+authors' repositories — was used to exhaustion instead.
+
 The three papers worth an outside read if anyone ever has unrestricted access remain, in order:
 **arXiv:2603.20254**, **arXiv:2608.11256**, **arXiv:2607.29539**.
 
