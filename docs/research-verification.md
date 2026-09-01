@@ -3144,3 +3144,53 @@ The reasoning was sound and the premise was wrong: in each case the "covering" c
 Checking took one command each. **25 of 25 mutants now killed**, MEASURED by
 `python scripts/mutation_sweep.py`, and the three tests that kill these
 document the exact input each guard exists for, which is what the earlier tests were missing.
+
+---
+
+# Round forty-four — the gate was too slow, and the check that read 9,958 as 958
+
+Round forty-three's commit hit a two-minute timeout while the pre-commit hook ran. That is the
+failure mode the hook's own design note warns about: **a gate slow enough to skip is a gate nobody
+runs.** Profiling rather than guessing found where the time went.
+
+## ✅ 58 of the audit's 70 seconds were one function
+
+`check_no_dead_functions` ran `re.findall(rf"\b{name}\b", corpus)` **once per function** over a
+multi-megabyte corpus — 570 scans, O(functions × codebase). Tokenising the corpus once into a
+`Counter` and looking each name up is O(corpus + functions).
+
+MEASURED: **59.0s against 0.3s, a 212× speedup**, with **identical counts for every name** and an
+identical verdict. `\b\w+\b` is the same match as `\b{name}\b` when the name is a Python identifier,
+which every one of them is. The whole audit went **70s → 10.5s**.
+
+The counts were compared before the change was made, not after. An optimisation that quietly stops
+finding things looks exactly like a fast, passing check — so four tests exercise the check against a
+function that really is dead, including that a name mentioned only in prose still counts as
+referenced (the repo dispatches by string name) and that `score_text` does **not** rescue a dead
+`score` (word boundaries, the property the rewrite had to preserve).
+
+## ✗ And the audit was misreading its own numbers
+
+Applying that broke a test, which turned out to be unrelated and older. `check_test_count_claims`
+matches `(\d{3,5})\s+tests`, and the round-thirty-nine footnote says **"9,958 tests"**. The digit run
+stops at the comma, so the check read it as 958 — MEASURED, it reported the document as claiming
+958 tests where the suite collects 10,061.
+
+**A false alarm accusing a correct document of understating by an order of magnitude** — the kind
+that gets a check switched off. The pattern now accepts `[\d,]` and strips the separators.
+
+## ⚠️ Two of my own tests, again
+
+The tests written to pin the comma fix patched **`LIVE_DOCS`**. `check_test_count_claims` iterates
+**`COMPARATIVE_DOCS`**, so the fixture file was never scanned and **five of the six cases passed
+vacuously.** The sixth — the "guards the guard" case asserting a *wrong* count is still caught — was
+the only one that failed, and it is the reason the vacuity was found at all.
+
+Then, to check the corrected tests were not vacuous either, I reverted the pattern and confirmed
+three of them fail. `git checkout untell/scripts/audit.py` reverted **the whole file**, silently
+discarding the 212× speedup along with it; the audit still passed, ten times slower, and nothing
+would have said so. Both changes were reapplied and re-verified.
+
+**The recurring shape across rounds forty to forty-four:** every one of these was a test or a check
+that passed for a reason unrelated to what it was testing. Four rounds running. The only thing that
+has reliably caught them is deliberately breaking the thing under test and requiring a failure.
