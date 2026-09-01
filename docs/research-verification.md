@@ -1481,3 +1481,80 @@ sees **cached** volumes; it only reads **abstracts**, so a figure from a paper's
 unsupported; and it cannot see attribution by author name, which is the largest source of the 25.
 `tests/test_cited_figures_appear_in_the_paper.py` pins the mechanics, including that a fabricated
 figure is caught and that a verbatim quotation is not.
+
+---
+
+# Round nineteen — extending the cross-check to the half of the citations it could not see
+
+Round eighteen closed with a stated limit: `--cross-check` reads **Anthology** citations only, so the
+24 DOIs and every PMID in these documents were unchecked. That is not a small remainder. **The
+false-positive table — the most load-bearing table in the strategy — is almost entirely DOI-cited.**
+This round checks it.
+
+## ⚠️ A methodological trap, found immediately
+
+Resolving the DOIs and reading the abstracts produced an alarming first result: **the two most-cited
+sources in this repository have abstracts containing no numbers at all.**
+
+- Liang et al. ([DOI](https://doi.org/10.1016/j.patter.2023.100779)): the PubMed abstract is two
+  sentences and states no figure. The repo cites it for **61.3%**, **61.3% → 11.6%**, **19.8%**,
+  **97.8%**, in five places.
+- Pratama ([DOI](https://doi.org/10.7717/peerj-cs.2953)): the abstract says "results reveal notable
+  trade-offs in accuracy and bias" and nothing numeric. The repo cites it for **44.44%**, **4.17%**,
+  **97.22%**, **0.00%**, **25% vs 11%**, in eight places.
+
+**Had the Anthology check been ported to PubMed unchanged, it would have reported the entire
+evidence base as unsupported.** The reason is structural and worth writing down: an ACL abstract
+carries the paper's headline numbers, and a biomedical abstract frequently does not. **The unit of
+verification for a PubMed source is the full text, not the abstract** — which is why this round used
+`get_full_text_article` rather than porting round eighteen's tool.
+
+That is the second time in two rounds a checker would have produced a spectacular false finding
+(round eighteen's compared figures against titles). Both were caught by asking "is this result too
+dramatic to be true?" before believing it.
+
+## ✅ Liang et al., confirmed verbatim from the full text
+
+According to PubMed, PMC10382961 ([DOI](https://doi.org/10.1016/j.patter.2023.100779))
+contains every figure this repository attributes to it:
+
+| Claim as published here | In the full text |
+|---|---|
+| 7 detectors | "seven widely used GPT detectors" |
+| 91 TOEFL, 88 ASAP essays | "91 TOEFL … essays from a Chinese forum and 88 US eighth-grade essays from the Hewlett Foundation's ASAP dataset" |
+| **61.3%** average FPR | "average false-positive rate: 61.3%" |
+| **19.8%** unanimous | "All detectors unanimously identified 19.8%" |
+| **97.8%** flagged by ≥1 | "at least one detector flagged 97.8% of TOEFL essays" |
+| **61.3% → 11.6%** intervention | "dropping by 49.7% (from 61.3% to 11.6%)" |
+| Simplifying native essays raises misclassification | "simplifying the vocabulary in US eighth-grade essays … led to a substantial increase in misclassification" |
+
+Every one verbatim. The ledger's round-one entry — "**Verbatim**, plus exact design" — was correct,
+and is now confirmed against the source rather than against a search result.
+
+## ⚠️ And a tier nuance the ledger did not carry
+
+**PubMed types this article as `News`.** Reading it, the reason is plain: it is a *Patterns*
+perspective in which the authors summarise their own study — "In our recent preprint, we exposed an
+alarming bias…". The numbers are published, peer-reviewed and quoted here correctly. But the
+peer-reviewed artefact is a **commentary reporting the authors' preprint**, not the full study with
+methods and tables.
+
+This does not demote the result — it is the same authors reporting their own figures in a refereed
+venue, and it remains Tier A. It does sharpen what "Tier A" means for the single most-cited fairness
+result in this strategy: **the design details we quote (91 essays, 88 essays, seven detectors) come
+from a summary of a study whose full methods live in a preprint this environment cannot reach.**
+Anyone rebuilding this analysis should know that before treating the sample sizes as fully
+documented.
+
+## What is now checked, and what is not
+
+| Citation class | Count | Status |
+|---|---|---|
+| Anthology ids | 30+ | ✅ resolve, and figures cross-checked against abstracts (round eighteen) |
+| DOIs | 24 | ✅ resolved; the two most-cited verified against **full text** this round |
+| Remaining DOIs | 22 | Resolved and read at abstract level in earlier rounds; not re-verified against full text |
+| arXiv-only | 5 | ⛔ unreachable, and no ✅ claim rests on one (enforced by a test since round sixteen) |
+
+The honest summary: **the two sources carrying the most weight are now verified at full-text depth,
+and the structural trap that would have made a naive port of round eighteen's tool report a
+catastrophe is documented so the next person does not fall into it.**

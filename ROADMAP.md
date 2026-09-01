@@ -494,6 +494,12 @@ Five refereed results then fix the shape of the problem:
 2. ✅ **Moving a writer's style moves the verdict, both ways.** Liang et al. (*Patterns*,
    [DOI](https://doi.org/10.1016/j.patter.2023.100779)): enriching non-native TOEFL vocabulary cut the
    average false-positive rate **61.3% → 11.6%**; simplifying native essays *raised* misclassification.
+   ✅ **Every figure here was confirmed verbatim against the full text** (PMC10382961), including the
+   design — seven detectors, 91 TOEFL and 88 ASAP essays, 19.8% unanimous, 97.8% flagged by at least
+   one. ⚠️ With one nuance worth carrying: PubMed types this article as `News`, and reading it shows
+   why — it is a *Patterns* perspective in which the authors summarise their own preprint. The
+   numbers are refereed and quoted correctly, but **the methods behind them live in a preprint this
+   environment cannot reach**, so treat the sample sizes as reported rather than as fully documented.
 3. ✅ **Bias is real, multi-attribute, and inconsistent between systems.** *Identifying Bias in
    Machine-generated Text Detection* ([2026.acl-long.109](https://aclanthology.org/2026.acl-long.109/))
    tests **16 detection systems** on student essays across gender, race/ethnicity, ELL status and
