@@ -97,15 +97,14 @@ Fairlearn compute the right statistic and none is wired to a text detector. RAID
 `kinit-sk/mAO` rank accuracy or obfuscation strength, a different question. **The research exists;
 the instrument does not.**
 
-Built and measured 2026-09-01 (`untell-subgroup-audit`, `eval/subgroup_audit.py`, 24 tests,
+Built and measured 2026-09-01 (`untell-subgroup-audit`, `eval/subgroup_audit.py`, 28 tests,
 ELLIPSE fetched not vendored because it is CC BY-NC-SA and this package is MIT). On 3,904
 known-human ESL essays, where every flag is an error by construction:
 
 - **Our own lite tier flags 97.4%** of them at its shipped 0.30 threshold, against a documented
   30% on conversational prose. Its threshold was tuned on a corpus that does not resemble the
   writers most likely to be accused.
-- **False-positive rate rises monotonically with English proficiency** at the 0.50 operating
-  point — 33.7% at level 2 to 53.1% at level 4.5, 1.57x, Wilson intervals separate.
+- **False-positive rate rises with English proficiency** at the 0.50 operating point.
 - **Replicated on held-out data.** Banding low (<=2.5) vs high (>=3.5) proficiency: 33.2% vs
   44.2% on the training split, **34.8% vs 43.0% on the 2,571-essay held-out split**, separated at
   95% on both. (Strict six-level monotonicity did *not* replicate and has been withdrawn.)
