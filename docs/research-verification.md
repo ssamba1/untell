@@ -3474,3 +3474,59 @@ open letter, the US Copyright Office statement on machine authorship, the first 
 the earliest paper in this corpus to treat detectability as a **property to be indexed per model**
 rather than a binary, which is the same instinct as this repo's per-deployment framing, two years
 earlier and aimed at generators instead of populations.
+
+---
+
+# Round fifty — turning the Frankentext finding into a measurement, and nearly publishing an artefact
+
+Round forty-nine recorded *Frankentext* ([2026.acl-long.1457](https://aclanthology.org/2026.acl-long.1457/))
+as the first result this repository's arms cannot represent: human words, machine arrangement, **72%
+misclassified as human by Pangram**. A finding recorded is not a finding tested, and the 6,811
+pre-LLM abstracts restored in round thirty-one are enough to ask what our own stack does with that
+input property.
+
+`eval/frankentext.py` stitches each text from sentences drawn from **different** human documents.
+Every token is from a pre-2022 publication, so **every flag is a false positive in the strictest
+sense available here.**
+
+⚠️ **It is not a replication and the report says so.** Frankentexts are assembled *by an LLM* for
+coherence; these are assembled by `random.sample` for none at all. Removing the coherence is what
+isolates arrangement — and it also removes the hard part of that paper.
+
+## ✗ The first run said stitched text evades detection tenfold
+
+MEASURED by `python -m eval.frankentext --n 60` before the arms were matched:
+
+| arm | n | flagged | 95% CI |
+|---|---|---|---|
+| stitched | 60 | 1.7% | [0.3%, 8.9%] |
+| whole | **17** | 17.6% | [6.2%, 41.0%] |
+
+A **−16.0 point gap**. It is the length confound of rounds thirty-six and thirty-seven, a third time.
+The stitched texts averaged **263 words**, few abstracts are that long, so the comparison arm was
+whatever seventeen documents happened to qualify — and short text is flagged far more often.
+
+## ✅ Matched at 130 words with 150 per arm
+
+MEASURED by `python -m eval.frankentext --n 150 --sentences 6`:
+
+| arm | n | flagged | 95% CI |
+|---|---|---|---|
+| stitched | 150 | **10.7%** | [6.7%, 16.6%] |
+| whole | 150 | **11.3%** | [7.2%, 17.4%] |
+
+**Gap −0.7%, intervals overlapping almost entirely. No effect.** Arrangement is invisible to this
+detector, which on reflection is what a perplexity-and-burstiness measure should do: human sentences
+have human perplexity whatever order they arrive in.
+
+That is a **negative result about our stack, not a refutation of the paper.** Pangram is a trained
+classifier and Frankentexts are coherent compositions; neither condition holds here. What it does
+establish is that the Frankentext threat model is invisible to the detector this environment can run,
+so nothing in our measurements would show it.
+
+## The probe now refuses a one-armed comparison
+
+The `whole` arm can come back **empty** when the stitched texts are longer than any single document,
+and the first version returned the stitched rate with `whole` at n = 0 — which reads as a comparison
+and is not one. It now errors with the count and the fix. **Found by a test asserting both arms are
+populated, written after the first run had already been misread once.**
