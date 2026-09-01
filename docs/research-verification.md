@@ -4450,3 +4450,77 @@ below the pre-fix one, VERIFIED by running the file in a worktree at `674d04f` �
 A ceiling the defect clears is decoration, and it took running it against the defect to notice. It now pins the
 steady-state cost after a warm-up call, where the headroom is real and the numbers mean what a server
 would see.
+
+---
+
+# Round sixty-six — the scorer got slower when you ran two of it
+
+The API server offloads every endpoint with `asyncio.to_thread`, so two simultaneous requests run on
+two threads. MEASURED on `score_text`, threads against the same calls made one after another in the
+same process:
+
+| concurrency | sequential | threaded | ratio |
+|---|---|---|---|
+| 2 | 0.176s | 0.640s | **3.65×** |
+| 4 | 0.340s | 1.148s | **3.37×** |
+| 8 | 0.656s | 1.504s | **2.29×** |
+
+**Concurrency made the work take three to four times longer than doing it one request at a time.**
+Not slightly worse — worse than the serial baseline it should have matched.
+
+## It is not the GIL, and proving that took isolating every component
+
+Under the GIL, N CPU-bound Python threads take roughly as long as N sequential calls: a ratio near
+1.0, not 3.5. MEASURED per component at 4 threads:
+
+| component | threaded / sequential |
+|---|---|
+| `_claimed_spans` (pure-Python regex) | 1.17× |
+| `score_tells` | 0.97× |
+| detector `score` | 1.22× |
+| `preserve.lock` | 3.23× |
+| **`_spacy_entity_spans`** | **4.13×** |
+
+Everything written in this repository behaves exactly as the GIL predicts. **One dependency's model
+pass does not**, and at the `score_text` level that is invisible — it just looks like "threads are
+bad here". The component sweep is what turned a symptom into a cause.
+
+✗ **BLAS thread oversubscription was the first hypothesis and it was wrong.** MEASURED with
+`OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1`, the ratio at n=2 moves from 3.65× to
+3.09×. Real but small; the plausible cause accounted for about a fifth of the effect.
+
+## The fix is a lock, which reads backwards until you look at the numbers
+
+`preserve._NER_LOCK` serialises the `nlp(text)` call. MEASURED:
+
+| concurrency | sequential | threaded | threaded, holding the lock |
+|---|---|---|---|
+| 2 | 0.142s | 0.563s (3.97×) | 0.151s (**1.06×**) |
+| 4 | 0.294s | 1.055s (3.59×) | 0.281s (**0.96×**) |
+| 8 | 0.588s | 1.862s (3.17×) | 0.558s (**0.95×**) |
+
+**If running two passes at once costs four times running them in turn, then taking turns is the
+optimisation.** End to end on `score_text` the ratio falls from 3.65×/3.37×/2.29× to
+**1.12×/1.27×/1.26×**, and a single uncontended call is unchanged at a MEASURED 73.2ms median. The
+lock sits inside the uncached implementation, so cache hits still run fully parallel.
+
+⚠️ **The pathology is worse on a loaded machine, which is the wrong direction.** Removing the lock to
+check the tests still fail gave **26.06×** on NER and **23.97×** on `score_text` — against 3-4× when
+the box was idle. It degrades hardest exactly when a server is busiest.
+
+## And a comment that a later commit made false
+
+`run.py`'s `_RNG_LOCK` said it "costs nothing today because the only concurrent caller already
+serialises", and in the same paragraph predicted that offloading the endpoints to a threadpool
+"would have exposed this one". **The offload landed afterwards.** The prediction came true and the
+sentence beside it stayed.
+
+MEASURED on `untell_text`, threads against a single call: 2 concurrent **1.88×**, 4 concurrent
+**3.88×**, 8 concurrent **7.87×** — throughput flat at **0.9 rewrites/second at every level**.
+Rewrites are serial per process and the ceiling does not move with load. That is a real limit rather
+than a defect: serialising is what keeps `--seed` reproducible. The comment now says so, with the
+numbers.
+
+**Nothing tests a comment.** Round sixty-two found a checker and its fixer disagreeing; this is the
+same shape between a comment and a commit that came later, and the only reason it surfaced is that
+someone measured the thing the comment described.

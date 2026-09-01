@@ -813,9 +813,18 @@ def untell_text(
     #
     # A lock rather than a `random.Random(seed)` instance threaded through the call. The instance
     # is the better answer and it is a 27-site change in structural.py plus its callers, which is
-    # not something to do blind — this makes the existing behaviour correct and explicit, and costs
-    # nothing today because the only concurrent caller already serialises. What it does cost is
-    # parallel rewrites INSIDE one process, which nothing currently asks for.
+    # not something to do blind — this makes the existing behaviour correct and explicit.
+    #
+    # ⚠️ It no longer "costs nothing because the only concurrent caller already serialises", which is
+    # what this comment used to say. That was true while every endpoint ran on the event loop; the
+    # offload to `asyncio.to_thread` landed afterwards and made concurrent rewrites real, exactly as
+    # the paragraph above predicted it would. MEASURED on `untell_text` at `tier=lite`, threads
+    # against a single call: 2 concurrent 1.88x, 4 concurrent 3.88x, 8 concurrent 7.87x, with
+    # throughput flat at 0.9 rewrites/second at every level. Rewrites are serial, per process, and
+    # the ceiling does not move with load.
+    #
+    # That is a real limit rather than a defect to fix here: serialising is what keeps `--seed`
+    # reproducible, and the alternative is the threaded `Random` instance above.
     with _RNG_LOCK:
         _rng_state = random.getstate()
         random.seed(effective_seed)

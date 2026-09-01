@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import threading
 from functools import lru_cache
 
 # The environments whose content must not be rewritten, defined once in `latex` and imported here
@@ -913,6 +914,29 @@ def _spacy_entity_spans_cached(text: str, _torch_gated: bool) -> tuple[tuple[int
     return tuple(_spacy_entity_spans_impl(text))
 
 
+# spaCy's model pass is the one thing in this package that gets SLOWER when it is run on threads,
+# and the API server runs every endpoint through `asyncio.to_thread`, so concurrent requests hit it.
+#
+# MEASURED on `_spacy_entity_spans`, threaded against the same calls run one after another:
+#
+#     n=2   sequential 0.142s   threaded 0.563s (3.97x)   threaded holding this lock 0.151s (1.06x)
+#     n=4   sequential 0.294s   threaded 1.055s (3.59x)   threaded holding this lock 0.281s (0.96x)
+#     n=8   sequential 0.588s   threaded 1.862s (3.17x)   threaded holding this lock 0.558s (0.95x)
+#
+# Every other component is unaffected — `_claimed_spans`, `score_tells` and the detector all sit at
+# 0.97x-1.22x, which is what the GIL alone gives — so this is spaCy's own contention and not a
+# general threading cost.
+#
+# Serialising something to make it faster reads backwards, and it is simply what the numbers say: if
+# running two passes at once costs four times running them in turn, then taking turns IS the
+# optimisation. Uncontended the lock is one uncontended acquire, MEASURED below the noise of a
+# single call.
+#
+# It sits inside the uncached implementation on purpose. Cache hits never reach here, so repeated
+# scoring of the same text still runs fully parallel.
+_NER_LOCK = threading.Lock()
+
+
 def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
     """Uncached NER pass; see :func:`_spacy_entity_spans` for the caching wrapper."""
     # Degenerate-input guards FIRST, before the spaCy model is even loaded: a pasted symbol blob
@@ -999,7 +1023,8 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
     except UnicodeEncodeError:
         text = text.encode("utf-8", "replace").decode("utf-8")
     try:
-        doc = nlp(text)
+        with _NER_LOCK:  # see _NER_LOCK: threads make this pass 3-4x slower, not faster
+            doc = nlp(text)
     except (ImportError, OSError):
         return []
     keep = {"PERSON", "ORG", "GPE", "LOC", "WORK_OF_ART", "LAW", "PRODUCT", "EVENT", "NORP", "FAC"}
