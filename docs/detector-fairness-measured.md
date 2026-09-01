@@ -1,9 +1,14 @@
-# Measured: who a detector fails, on 39,290 texts nobody wrote with a machine
+# Measured: who a detector fails — 39,290 human texts, and 176 that a machine wrote
 
-Every number here is a **false-positive rate on known-human writing**. The corpora are essays by
-real students, so a flag is an error by construction — there is no labelling to dispute and no
-ground truth to argue about. That is what makes false positives the cleanest measurement available
-against a detector, and it is the only regime this document reports.
+Results 1–14 are **false-positive rates on known-human writing**. The corpora are essays by real
+students, so a flag is an error by construction — there is no labelling to dispute and no ground
+truth to argue about. That is what makes false positives the cleanest measurement available
+against a detector.
+
+[Results 15 and 16](#result-15--both-error-rates-and-why-result-11s-threshold-recommendation-was-wrong)
+add the other half, on 176 GPT-3 essays written to the same prompts as the human ones. They are
+the two that matter most, because measuring only one error rate is what let this document publish
+a "safe" threshold that catches nothing.
 
 Companion to [`strategy-the-audit-position.md`](strategy-the-audit-position.md), which argues why
 this is the work. This file is the evidence, in the shape
@@ -18,6 +23,7 @@ untell-subgroup-audit --corpus asap --tier lite --by ell_status
 untell-subgroup-audit --corpus ellipse --ablate
 untell-subgroup-audit --corpus liang --tier lite --n 0                          # Results 12, 13
 untell-subgroup-audit --corpus liang --n 0 --ablate --band-axis population      # Result 14
+untell-subgroup-audit --corpus liang-paired --n 0 --odds --threshold 0.775      # Results 15, 16
 untell-ngram-lm train && untell-ngram-lm score --csv <corpus>.csv --by ell_status
 untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_status
 ```
@@ -28,7 +34,8 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 `published-vs-student-threshold-sweep`,
 `genre-controlled-professional-vs-student`, `ellipse-threshold-for-target-fpr`,
 `unedited-adult-writing`, `liang-population-fpr`, `liang-paired-gpt4-polish`,
-`liang-threshold-sweep`, `liang-component-ablation`.
+`liang-threshold-sweep`, `liang-component-ablation`, `liang-paired-equalised-odds`,
+`liang-paired-separation`, `liang-paired-fnr-disparity`.
 
 ## The corpora
 
@@ -341,7 +348,7 @@ What it does establish: **the population a detector is validated on can differ f
 population by an order of magnitude in false-positive rate.** Any published FPR that does not name
 its population is uninformative about the students it will be used on.
 
-## Result 11 — the threshold that would make the lite tier safe on student writing
+## Result 11 — the thresholds that reach a target false-positive rate on student writing (recommendation withdrawn)
 
 Empirical quantiles of the shipped lite scorer over 3,904 known-human ESL essays.
 
@@ -352,6 +359,13 @@ Empirical quantiles of the shipped lite scorer over 3,904 known-human ESL essays
 | 5% | 0.671 |
 | **1%** | **0.775** |
 | *shipped 0.300* | *actual 97.4%* |
+
+> **WITHDRAWN as a recommendation, 2026-09-01.** See [Result 15](#result-15--both-error-rates-and-why-result-11s-threshold-recommendation-was-wrong).
+> Measured against machine-written text, 0.775 misses **100%** of 176 GPT-3 essays — because the
+> highest score anything in that corpus receives is 0.7655, so the threshold sits above the
+> scorer's entire range. The quantiles below are correct and the inference drawn from them was
+> not: derived from a human-only corpus, they cannot distinguish a safe threshold from an inert
+> one. The table stands as a measurement; do not use it to pick an operating point.
 
 **This is not a recommendation to change the default.** Raising the threshold trades false
 positives for false negatives, and the rewriting loop's behaviour is calibrated around 0.30
@@ -451,6 +465,74 @@ what the smaller channel penalises. The vocabulary effect is far larger, so the 
 rate falls: 96.7% → 78.0%. A language model editing an essay does not make it look
 machine-written to this detector — it makes it look like a more fluent human wrote it.
 
+## Result 15 — both error rates, and why Result 11's threshold recommendation was wrong
+
+Every result above this one measures **false positives only**. This document said plainly why:
+equalised odds needs machine-written text from the same writers on the same prompts, and RAID,
+MAGE and HC3 are all HuggingFace-hosted and unreachable here. That was true of those three and
+false in general. **Liang ships the machine half in the same repository** —
+`Data_and_Results/GPT_Data`, one directory across from the human essays this document had already
+been loading for two results: 145 GPT-3 essays on the CS224N prompts, 31 on the college-admission
+prompts, domain-matched to their human counterparts.
+
+215 human and 176 machine essays, lite tier. A false positive is a human essay flagged; a false
+negative is a GPT-3 essay missed:
+
+| threshold | false-positive rate | false-negative rate | total error |
+|---|---|---|---|
+| 0.25 | 80.9% | 0.6% | 81.5% |
+| **0.30** *(shipped)* | **68.4%** | **1.7%** | 70.1% |
+| 0.35 | 55.3% | 8.0% | 63.3% |
+| 0.40 | 35.3% | 19.3% | 54.7% |
+| **0.43** *(minimum total error)* | 24.2% | 27.3% | **51.5%** |
+| 0.50 | 11.6% | 57.4% | 69.0% |
+| 0.60 | 0.5% | 86.9% | 87.4% |
+| **0.775** *(Result 11's recommendation)* | **0.0%** | **100.0%** | 100.0% |
+
+**Result 11 is withdrawn as a recommendation.** It reported that a threshold of 0.775 gives a 1%
+false-positive rate on ELLIPSE, and offered that as the number "a maintainer needs in order to
+make that choice deliberately". Measured against machine text, 0.775 misses **every one** of 176
+GPT-3 essays. The reason is not a trade-off: **the highest score any essay in this corpus
+receives, human or machine, is 0.7655.** The recommended threshold sits above the entire range
+the scorer produces. Its 0% false-positive rate is not safety, it is a detector that has been
+switched off.
+
+Result 11 was derived from FPR quantiles on a human-only corpus, where *any* threshold above the
+score range scores a perfect zero. **With one error rate, "safe" and "inert" are the same
+number.** That is this repository's own argument about detectors, and it went unnoticed in its
+own published recommendation for as long as only half the audit could run. `equalised_odds` now
+refuses to report a near-total false-negative rate quietly: at or above 99% it attaches an
+explicit note that a 0% false-positive rate bought by catching nothing is an off switch.
+
+**What the detector is actually worth.** It is not noise — the ranking carries real signal:
+
+- **AUROC 0.8012** on this corpus (0.5 would be a coin flip).
+- Human scores mean **0.3548**, machine **0.4820**. Both distributions sit in a narrow band and
+  overlap heavily: human 5th–95th percentile 0.154–0.548, machine 0.335–0.652.
+
+So the problem is calibration, not discrimination. A score that ranks well but compresses both
+classes into a 0.15–0.65 band has no threshold that separates them cleanly, which is why the best
+achievable total error is 51.5%. **On this evidence the lite tier is a usable ranking signal and
+is not usable as an accusation instrument at any threshold** — and that, rather than a number to
+move the default to, is the answer to "what should the threshold be".
+
+## Result 16 — false-positive parity looked acceptable while the false-negative gap was 4.1x
+
+The failure mode `equalised_odds` was built to catch, observed on real data rather than in a
+fixture. At threshold 0.50:
+
+| population | false-positive rate | false-negative rate |
+|---|---|---|
+| college admission | 7.1% (3.1–15.7) | 16.1% (7.1–32.6) |
+| Stanford CS224N | 13.8% (9.1–20.4) | **66.2%** (58.2–73.4) |
+| disparity | 1.93x, intervals **overlap** | **4.10x, intervals separate** |
+
+An FPR-only audit at this operating point reports a 1.93x gap that does not reach significance,
+and concludes there is no demonstrated disparity. The detector is in fact missing **two thirds**
+of the machine-written CS224N essays against one sixth of the machine-written college essays, and
+that gap is real. The two populations are not being served equally; the half of the audit that
+could see it is the half that could not be run until the corpus above was found.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
@@ -460,21 +542,22 @@ machine-written to this detector — it makes it look like a more fluent human w
 - **No clean professional-vs-student contrast.** Result 10 measures published prose, but genre,
   editing and task vary alongside the population, and the effect sizes on ASAP are already
   materially smaller than on ELLIPSE, so domain sensitivity is demonstrated rather than assumed.
-- **Only half of a fairness audit *was measured*.** Every result above is a *false-positive* rate.
-  Equalised odds needs false negatives too — Aequitas, AIF360 and Fairlearn all compute both.
-  **A detector could show perfect false-positive parity here and still miss machine-written work at
-  very different rates across groups**, harming precisely the students it declines to flag.
+- **Half of the audit went unmeasured for as long as it did because I looked in the wrong place.**
+  Results 1–14 are false-positive rates. This section used to say equalised odds was blocked for
+  want of a corpus pairing human and machine text from the same writers on the same prompts, and
+  that RAID, MAGE and HC3 — the nearest candidates — are HuggingFace-hosted and unreachable here.
+  All of that was true and the conclusion drawn from it was wrong: **Liang ships the machine half
+  in the same repository as the human half**, and two results had already been computed from the
+  directory next to it. [Results 15 and 16](#result-15--both-error-rates-and-why-result-11s-threshold-recommendation-was-wrong)
+  are what it showed, including that this document's own threshold recommendation was for a
+  setting that catches nothing.
 
-  The *tool* now computes both: `equalised_odds()` reports false-positive and false-negative rates
-  and both parities per subgroup, with a test pinning the exact failure — two groups with identical
-  10% false-positive rates and a 9x false-negative gap, which an FPR-only report calls clean. What
-  is missing is **data, not capability**: it needs a corpus pairing human and machine text from the
-  same writers on the same prompts. Pairing an arbitrary AI corpus against these essays would
-  measure the gap between two datasets and report it as a property of a detector. RAID, MAGE and
-  HC3 are the nearest candidates and all are HuggingFace-hosted, which this environment blocks —
-  one of the few blocks verified rather than assumed. Nothing in this repository substitutes:
-  `.claude/corpora/` is HC3 *human* text, and `eval/detector_audit.py` carries five hand-written AI
-  probes, which is a smoke test and not a sample.
+  What is still missing is narrower. The paired corpus covers **two populations**, CS224N and
+  college admission; **TOEFL has no machine counterpart**, so the population this document is most
+  concerned with — non-native English writers — is exactly the one whose false-negative rate
+  cannot be measured. Inventing a pairing by scoring TOEFL humans against another domain's machine
+  text would measure the distance between two datasets and report it as a property of a detector.
+
 - **Nothing about any individual document.** Every rate here describes a *detector*. A per-group
   false-positive rate says nothing about whether a particular text was machine-written, and must
   never be quoted at a person. The tool prints that line in its own output.

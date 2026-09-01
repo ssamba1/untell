@@ -488,3 +488,66 @@ class TestAblationOnCategoricalAxes:
 
         res = sa.ablate([{"text": "hello there friend", "g": "solo"}], "g", {})
         assert res.get("error"), res
+
+
+class TestBothErrorRatesOnRealData:
+    """The half of the audit that could not run, and the defects its first real run exposed.
+
+    `equalised_odds` existed for weeks with only synthetic fixtures, because this repository
+    believed no reachable corpus paired human and machine text on the same prompts. Liang ships
+    exactly that, in the same upstream repository as the human essays two results already used.
+    """
+
+    @staticmethod
+    def _run(monkeypatch, rows, axes=("g",), threshold=0.5):
+        import untell.scripts.score as sc
+        from eval import subgroup_audit as sa
+
+        seq = iter([1.0 if r["_flag"] else 0.0 for r in rows])
+        monkeypatch.setattr(sc, "score_text", lambda t, **k: {"max": next(seq)})
+        return sa.equalised_odds(rows, axes=axes, threshold=threshold)
+
+    @staticmethod
+    def _rows(spec):
+        out = []
+        for g, is_ai, n, flagged in spec:
+            out += [{"text": "x", "g": g, "is_ai": is_ai, "_flag": i < flagged}
+                    for i in range(n)]
+        return out
+
+    def test_a_zero_false_positive_rate_that_catches_nothing_says_so(self, monkeypatch):
+        """MEASURED: at threshold 0.775 the lite tier misses 100% of 176 GPT-3 essays.
+
+        That threshold is this project's own published recommendation for a "safe" operating
+        point, derived from false-positive quantiles on a human-only corpus -- where any threshold
+        above the score range scores a perfect zero. With one error rate, SAFE and INERT are the
+        same number, so the report has to name the second one out loud.
+        """
+        # Nothing flagged at all: 0% false positives, 100% false negatives.
+        rows = self._rows([("x", False, 60, 0), ("x", True, 60, 0)])
+        rep = self._run(monkeypatch, rows)
+        assert rep["overall_fpr"] == 0.0 and rep["overall_fnr"] == 1.0, rep
+        assert "off switch" in rep.get("useless", ""), (
+            f"a detector that missed every machine text reported no warning: {rep}"
+        )
+
+    def test_the_pooled_pair_is_reported_not_just_per_group(self, monkeypatch):
+        """Per-group rows alone let a total false-negative wipeout pass unnoticed."""
+        rows = self._rows([("x", False, 40, 4), ("x", True, 40, 36)])
+        rep = self._run(monkeypatch, rows)
+        for key in ("overall_fpr", "overall_fpr_ci", "overall_fnr", "overall_fnr_ci"):
+            assert key in rep, f"{key} missing from the report: {sorted(rep)}"
+        assert rep["overall_fpr"] == 0.1 and rep["overall_fnr"] == 0.1, rep
+        assert "useless" not in rep, "a working detector was called an off switch"
+
+    def test_an_axis_the_corpus_does_not_carry_is_flagged_missing(self, monkeypatch):
+        """"Overall" is in DEFAULT_AXES and no row carries a column of that name.
+
+        It rendered as `{"groups": {}, "fpr_disparity": null}` beside two real axes, which reads
+        as "looked here, found nothing" rather than "this axis does not exist" -- the same defect
+        a `--csv` label-filter bug caused once already for `ell_status`.
+        """
+        rows = self._rows([("x", False, 40, 4), ("x", True, 40, 36)])
+        rep = self._run(monkeypatch, rows, axes=("g", "Overall"))
+        assert rep["axes"]["Overall"]["missing"] is True, rep["axes"]["Overall"]
+        assert rep["axes"]["g"]["missing"] is False, rep["axes"]["g"]

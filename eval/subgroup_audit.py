@@ -264,6 +264,23 @@ def equalised_odds(rows: list[dict], tier: str = "lite", threshold: float | None
                         f"{len(humans)} human and {len(ais)} machine-written rows")
         return out
 
+    # The POOLED pair, which nothing here reported. Without it a caller reading only per-group
+    # rows can miss that a threshold has taken the false-negative rate to 1.0 across the board --
+    # measured on Liang's paired corpus, the lite tier at 0.775 has a 0% false-positive rate and
+    # catches none of 176 GPT-3 essays. Both halves belong on the same line or neither is legible.
+    fp_all = sum(1 for r in humans if r["flagged"])
+    fn_all = sum(1 for r in ais if not r["flagged"])
+    lo_p, hi_p = wilson(fp_all, len(humans))
+    lo_n, hi_n = wilson(fn_all, len(ais))
+    out["overall_fpr"] = round(fp_all / len(humans), 4)
+    out["overall_fpr_ci"] = [round(lo_p, 4), round(hi_p, 4)]
+    out["overall_fnr"] = round(fn_all / len(ais), 4)
+    out["overall_fnr_ci"] = [round(lo_n, 4), round(hi_n, 4)]
+    if out["overall_fnr"] >= 0.99:
+        out["useless"] = (f"at threshold {thr} this detector missed {fn_all} of {len(ais)} "
+                          f"machine-written texts. A 0% false-positive rate bought by catching "
+                          f"nothing is not a safe operating point, it is an off switch.")
+
     for axis in axes:
         groups: dict[str, dict] = {}
         names = {str(r[axis]) for r in scored
@@ -285,10 +302,16 @@ def equalised_odds(rows: list[dict], tier: str = "lite", threshold: float | None
                 "status": "reported",
             }
         usable = {k: v for k, v in groups.items() if v["status"] == "reported"}
+        # An axis the corpus does not carry must SAY so, on the same reasoning `_group` already
+        # carries: a heading with nothing under it reads as "no disparity found here". MEASURED
+        # 2026-09-01 on Liang's paired corpus -- "Overall" is in DEFAULT_AXES, no row carries a
+        # column of that name, and this rendered `{"groups": {}, "fpr_disparity": null}` beside
+        # two real axes as though it had looked and found nothing.
         out["axes"][axis] = {
             "groups": groups,
             "fpr_disparity": _rate_disparity(usable, "fpr", "fpr_ci"),
             "fnr_disparity": _rate_disparity(usable, "fnr", "fnr_ci"),
+            "missing": not groups,
         }
     return out
 
@@ -499,7 +522,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--corpus", default="ellipse",
-                    help="ellipse | asap | liang, or use --csv")
+                    help="ellipse | asap | liang | liang-paired, or use --csv")
     ap.add_argument("--csv", type=Path, default=None,
                     help="a local labelled CSV instead of the fetched corpus")
     ap.add_argument("--tier", default="lite")
@@ -514,23 +537,31 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ablate", action="store_true",
                     help="audit each detector component separately (lite tier only)")
     ap.add_argument("--band-axis", default="Overall")
+    ap.add_argument("--odds", action="store_true",
+                    help="report BOTH error rates (needs a corpus carrying is_ai, e.g. "
+                         "--corpus liang-paired)")
     a = ap.parse_args(argv)
 
-    from eval.datasets import load_labelled, load_liang
+    from eval.datasets import load_labelled, load_liang, load_liang_paired
 
     # Liang's populations are corpora, not columns in one CSV, so it loads separately -- and it
     # carries its own axes. `--by` is only overridden when the caller left it at the default,
     # because ELLIPSE's demographic axes do not exist here and would render as empty headings.
-    if a.corpus == "liang" and a.csv is None:
-        rows = load_liang()
+    if a.corpus in ("liang", "liang-paired") and a.csv is None:
+        paired = a.corpus == "liang-paired"
+        rows = load_liang_paired() if paired else load_liang()
         if a.by == ",".join(DEFAULT_AXES):
-            a.by = "population,machine_edited"
+            a.by = "population" if paired else "population,machine_edited"
     else:
         rows = load_labelled(a.corpus, csv_path=a.csv)
     if a.n and a.n < len(rows):
         random.Random(a.seed).shuffle(rows)
         rows = rows[: a.n]
     axes = tuple(x for x in a.by.split(",") if x)
+    if a.odds:
+        rep = equalised_odds(rows, tier=a.tier, threshold=a.threshold, axes=axes)
+        print(json.dumps(rep, indent=2))
+        return 0
     if a.ablate:
         # `ablate` takes either a callable or a value->band dict. The callable below bands a
         # NUMERIC axis into low/high, which is right for ELLIPSE's proficiency score and silently

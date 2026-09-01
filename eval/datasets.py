@@ -559,6 +559,26 @@ LIANG_POPULATIONS = {
 }
 LIANG_MACHINE_EDITED = frozenset({"toefl_gpt4_polished"})
 
+# The other half of the audit. `docs/detector-fairness-measured.md` said for weeks that
+# equalised odds could not be computed because no paired human/machine corpus was reachable --
+# RAID, MAGE and HC3 are all HuggingFace-hosted and blocked here. That was true of those three
+# and false in general: Liang ships GPT-3 essays on the SAME prompts as its human ones, in the
+# same upstream repository, one directory across from the human data that was already being
+# loaded. `machine` rows carry is_ai=True; the `population` axis stays domain-matched, so
+# CS224N human essays are compared against CS224N machine essays rather than against a different
+# domain's.
+LIANG_MACHINE = {
+    "cs224n_student": "GPT_Data/CS224N_gpt3_145",
+    "college_admission": "GPT_Data/CollegeEssay_gpt3_31",
+}
+# Prompt-engineered variants: the same generators told to write less like themselves. Kept
+# separate because "can the detector find GPT-3" and "can it find GPT-3 that is trying" are
+# different questions, and pooling them answers neither.
+LIANG_MACHINE_PROMPT_ENGINEERED = {
+    "cs224n_student": "GPT_Data/CS224N_gpt3PromptEng_145",
+    "college_admission": "GPT_Data/CollegeEssay_gpt3PromptEng_31",
+}
+
 
 def _liang_cache():
     import os
@@ -568,6 +588,63 @@ def _liang_cache():
         os.path.expanduser("~"), ".cache", "untell-corpora"
     )
     return _P(base) / "liang_human.json"
+
+
+def load_liang_paired(prompt_engineered: bool = False, min_words: int = 0) -> list[dict]:
+    """Human AND machine essays from Liang, domain-matched, for an equalised-odds audit.
+
+    Returns rows carrying ``is_ai``, so both error rates are measurable: a false positive is a
+    human essay flagged, a false negative is a machine essay missed. Only the two populations
+    that have a machine counterpart are included -- TOEFL has none, and inventing one by pairing
+    against another domain's machine text would measure the distance between two datasets and
+    report it as a property of a detector, which is the error this corpus exists to avoid.
+    """
+    import json as _json
+
+    cache = _liang_cache().with_name(
+        f"liang_paired{'_prompteng' if prompt_engineered else ''}.json")
+    if cache.exists():
+        logger.info("%s", LIANG_CITATION)
+        payload = _json.loads(cache.read_text(encoding="utf-8"))
+    else:
+        logger.warning("fetching Liang et al. 2023 paired human/machine essays to %s\n%s",
+                       cache, LIANG_CITATION)
+        payload = []
+        for population, folder in LIANG_POPULATIONS.items():
+            if population in LIANG_MACHINE_EDITED or population not in LIANG_MACHINE:
+                continue
+            payload += _liang_fetch(folder, population, is_ai=False)
+        machine = LIANG_MACHINE_PROMPT_ENGINEERED if prompt_engineered else LIANG_MACHINE
+        for population, folder in machine.items():
+            payload += _liang_fetch(folder, population, is_ai=True)
+        if not payload:
+            raise DatasetUnavailable("liang-paired: every arm fetched empty")
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(_json.dumps(payload), encoding="utf-8")
+
+    rows = [dict(r) for r in payload if len(r["text"].split()) >= min_words]
+    if not rows:
+        raise DatasetUnavailable(f"liang-paired: no rows survived the {min_words}-word floor")
+    return rows
+
+
+def _liang_fetch(folder: str, population: str, is_ai: bool) -> list[dict]:
+    """One upstream folder as audit rows. `folder` may carry a leading `GPT_Data/`."""
+    import json as _json
+    import urllib.request
+
+    # LIANG_BASE points at Human_Data; a machine folder carries its own `GPT_Data/` prefix and is
+    # resolved against the parent instead.
+    root = LIANG_BASE.rsplit("/", 1)[0] if "/" in folder else LIANG_BASE
+    url = f"{root}/{folder}/data.json"
+    with urllib.request.urlopen(url, timeout=180) as fh:  # noqa: S310 - fixed https base
+        raw = _json.loads(fh.read())
+    out = []
+    for record in raw:
+        text = " ".join((record.get("document") or "").split()).strip()
+        if text:
+            out.append({"text": text, "population": population, "is_ai": is_ai})
+    return out
 
 
 def load_liang(min_words: int = 0) -> list[dict]:
