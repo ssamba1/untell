@@ -52,7 +52,7 @@ no decision, no native speaker and no GPU, only the work.
 | 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **15.8% measured**, CI [10.4%, 23.4%] | — |
 | 25 | Length-conditioned false-positive curve | ✅ done — **26.7% at ≤50 words against 15.6% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
-| 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
+| 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -558,11 +558,13 @@ The `n+1` is the finite-sample correction and is the difference between a guaran
 
 Calibrated on **150 pre-LLM ACL abstracts**, lite tier:
 
-| threshold | false positives on human text |
+MEASURED — reproduce with `python -m eval.pre_llm_fpr --download`, then calibrate the scores:
+
+| threshold | false positives on human text, n = 150 |
 |---|---|
-| **0.45 — what we ship** | **17.3%** (26/150) |
-| 0.4939 — α = 0.10 | 10.0% |
-| **0.5215 — α = 0.05** | **4.7%** |
+| **0.45 — what we ship** | **17.3%** measured, 26 of n = 150 |
+| 0.4939 — α = 0.10 | 10.0% measured, n = 150 |
+| **0.5215 — α = 0.05** | **4.7%** measured, n = 150 |
 
 **Moving the verdict threshold by 0.07 takes the false-positive rate from 17.3% to under 5%, with a
 bound rather than a hope.** That is the answer this repo could not previously give to the question
