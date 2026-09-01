@@ -3771,3 +3771,44 @@ of being able to quote one. It is worth paying because the alternative was demon
 check the author routes around in prose is a check that shapes the writing without protecting the
 document, and the contortions were themselves accumulating as a kind of debt in the ledger's own
 sentences.
+
+---
+
+# Round fifty-six — a category the taxonomy never had, six times the size of the one it argues from
+
+Rounds forty to fifty-five were almost entirely testing infrastructure. Returning to the corpus with a
+broader sweep — **every uncited main-conference detection paper across all topics, 155 of them** —
+found that **92 fell under no topic at all.**
+
+Some of that is the detection filter still over-capturing: hallucination detection, factual
+inconsistency, abuse detection, NLG evaluation. But a real category was hiding in the remainder.
+
+## ✅ Multilingual detection: 13.3% of the corpus, and unmeasured
+
+Adding `multilingual/cross-lingual` finds **77 of 578 detection papers**, against **12** on fairness
+and **11** on false positives. MULTITuDE, M4GT-Bench, MultiSocial, detection in Urdu, Korean, Bangla.
+
+**The strategy's ratio table had been quoting a taxonomy with a 13% hole in it.**
+
+## The distinction is worth more than the count
+
+Multilingual detection and detector fairness are **about the same population and ask opposite
+questions.** One asks whether a detector *can* read a language; the other asks whether reading it
+*harms* the person who wrote it. **The field studies the capability roughly six times more than the
+cost.**
+
+That is the same asymmetry as robustness against false positives — 153 to 11 — appearing in a second
+place, and it strengthens this repository's central argument rather than complicating it. The
+non-native writer is not a neglected subject in this literature. **They are a well-studied subject,
+studied as a technical difficulty rather than as someone who can be wrongly accused.**
+
+## What it says about the earlier counts
+
+Every ratio this ledger has published survives: robustness is still an order of magnitude above
+false positives and fairness. What changes is the claim that the taxonomy was complete. It was not,
+and the missing row was the one closest to the strategy's own thesis — which is the most likely place
+for a blind spot and the last place it was looked for.
+
+The reachability guard caught the omission that followed: a new topic registered without a probe
+would report an honest-looking zero forever, and the test that requires every topic to demonstrate it
+can fire failed immediately.

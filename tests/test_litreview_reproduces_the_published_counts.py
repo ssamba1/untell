@@ -69,6 +69,7 @@ def test_every_topic_pattern_can_fire(topic):
         "calibration/thresholds": "we calibrate the detector at TPR@1%FPR",
         "false positives/accusation": "the detector's false positive rate on human text",
         "fairness/non-native bias": "detector fairness for non-native writers",
+        "multilingual/cross-lingual": "a multilingual benchmark for machine-generated text",
         "disability/neurodivergence": "do detectors flag autistic and dyslexic writers",
     }
     hit = _paper("p", "AI-generated text detection", probes[topic])

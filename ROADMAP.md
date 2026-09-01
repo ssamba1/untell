@@ -435,6 +435,17 @@ A systematic pass over **108 ACL Anthology volumes, 38,231 abstracts, 578 detect
 and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
 below is refereed and was read from the Anthology's own metadata.
 
+✅ **And a category the survey had no row for, which sharpens the point rather than softening it.**
+Adding `multilingual/cross-lingual` to the taxonomy finds **77 of 578 detection papers — 13.3%**,
+against **12** on fairness and **11** on false positives. Six times as much work on reading
+non-English text as on what reading it costs the people who wrote it.
+
+**The two are about the same population and ask opposite questions.** MULTITuDE, M4GT-Bench,
+MultiSocial, detection in Urdu, Korean and Bangla — that literature asks whether a detector *can*
+handle a language. The fairness row asks whether handling it *harms* the writer. **The field studies
+the capability roughly six times more than the cost**, which is the same asymmetry as robustness
+against false positives, in a place nobody had counted.
+
 **Start with what the field counts as its own priorities.** Not a sample — a **census of the entire
 ACL Anthology, 1,718 volumes, 82,352 abstracts, 763 detection papers**, 1952 to 2026: **164** address
 robustness and evasion, **33** watermarking, **19** calibration — and **20** address false positives,

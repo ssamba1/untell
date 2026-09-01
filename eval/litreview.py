@@ -114,6 +114,14 @@ TOPICS: dict[str, re.Pattern[str]] = {
     "calibration/thresholds": re.compile(r"calibrat|conformal|TPR@|operating point", re.I),
     "false positives/accusation": re.compile(
         r"false positive|false accusation|falsely (flag|accus)|FPR", re.I),
+    # Added in round 56. The taxonomy had no row for it and it is 13.3% of the corpus — six times
+    # the fairness row. The distinction matters more than the count: this work asks whether a
+    # detector CAN read Urdu, Korean or Bangla, while the fairness row asks whether reading it harms
+    # the people who wrote it. Same population, opposite question, and the field studies the
+    # capability far more than the cost.
+    "multilingual/cross-lingual": re.compile(
+        r"multilingual|cross-?lingual|non-English|languages other than English"
+        r"|low-resource language", re.I),
     "fairness/non-native bias": re.compile(
         r"non-native|second language|L2 writer|bias(ed)? against|fairness|demographic", re.I),
     # Deliberately narrow: `accessible` and `assistive` are excluded because they occur throughout
