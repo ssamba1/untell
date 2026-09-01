@@ -691,6 +691,9 @@ untell-detector-audit --pairs 100    # the real measurement: AUROC on labelled h
 untell-subgroup-audit --tier lite            # by proficiency, race, gender, economic status, grade
 untell-subgroup-audit --tier lite --sweep    # across thresholds: a saturated detector cannot be
                                              # compared between groups, and this says so
+untell-subgroup-audit --ablate               # per COMPONENT: the two halves of the lite detector
+                                             # are biased in OPPOSITE directions and partly cancel,
+                                             # so the combined score understates both
 
 # Optimize against a REAL detector for free via its web UI (slow, needs a browser):
 pip install -e ".[browser]" && playwright install chromium

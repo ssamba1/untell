@@ -183,3 +183,66 @@ def test_the_module_is_documented_as_human_only():
 def test_wilson_contains_the_point_estimate(hits, n):
     lo, hi = wilson(hits, n)
     assert lo <= hits / n <= hi
+
+
+class TestComponentAblation:
+    """A composite detector reports one number, and one number can hide two opposite biases.
+
+    MEASURED 2026-09-01 on ELLIPSE and REPLICATED on its held-out split, each component
+    thresholded at its own median so both flag about half the corpus:
+
+        vocabulary half   flags LOW-proficiency writers  1.57x / 1.59x more   separated
+        burstiness half   flags HIGH-proficiency writers 1.42x / 1.35x more   separated
+
+    They point opposite ways, both separate at 95%, and they partly cancel in the combined
+    score. Any aggregate fairness number for this detector therefore understates both, which is
+    the thing a benchmark treating a detector as a black box structurally cannot report.
+    """
+
+    def _recs(self, monkeypatch, spec):
+        """Feed the ablation synthetic component values via the real code path."""
+        from eval import subgroup_audit as sa
+
+        rows = [{"text": f"t{i}", "Overall": band} for i, (band, _, _) in enumerate(spec)]
+        vals = {f"t{i}": (c, b) for i, (_, c, b) in enumerate(spec)}
+        import untell.detectors.perplexity_burstiness as pb
+
+        monkeypatch.setattr(pb, "_common_ratio", lambda t: vals[t][0])
+        monkeypatch.setattr(pb, "_burstiness", lambda s: vals[s[0]][1])
+        monkeypatch.setattr(pb, "_sentences", lambda t: [t])
+        return sa.ablate(rows, "Overall", lambda v: v)
+
+    def test_opposed_components_are_detected_and_announced(self, monkeypatch):
+        """The real finding: vocabulary penalises 'low', burstiness penalises 'high'."""
+        from eval.subgroup_audit import render_ablation
+
+        spec = ([("low", 0.9, 0.9)] * 60) + ([("high", 0.1, 0.1)] * 60)
+        res = self._recs(monkeypatch, spec)
+        assert res["opposed"] is True, "opposite-direction bias in the two halves went unreported"
+        text = render_ablation(res)
+        assert "OPPOSITE DIRECTIONS" in text
+        assert "black-box audit cannot see this" in text
+
+    def test_components_biased_the_same_way_are_not_called_opposed(self, monkeypatch):
+        """`opposed` must mean opposed, or the warning becomes noise."""
+        spec = ([("low", 0.9, 0.1)] * 60) + ([("high", 0.1, 0.9)] * 60)
+        res = self._recs(monkeypatch, spec)
+        assert res["opposed"] is False
+
+    def test_each_component_is_thresholded_at_its_own_median(self, monkeypatch):
+        """Equal power. A component with a lopsided operating point would otherwise look fairer
+        purely because it had less room to differ -- the saturation trap, one level down."""
+        spec = ([("low", 0.99, 0.99)] * 50) + ([("high", 0.01, 0.01)] * 50)
+        res = self._recs(monkeypatch, spec)
+        for name, block in res["components"].items():
+            total = sum(g["n"] for g in block["groups"].values())
+            flagged = sum(round(g["fpr"] * g["n"]) for g in block["groups"].values())
+            assert 0.3 <= flagged / total <= 0.7, (
+                f"{name} flagged {flagged}/{total}; a median split should be near half"
+            )
+
+    def test_an_empty_band_selection_says_so_rather_than_dividing_by_zero(self, monkeypatch):
+        from eval import subgroup_audit as sa
+
+        res = sa.ablate([{"text": "x", "Overall": "3"}], "Overall", lambda v: None)
+        assert "error" in res

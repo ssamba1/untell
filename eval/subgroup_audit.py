@@ -250,6 +250,94 @@ def render(report: dict) -> str:
     return "\n".join(out)
 
 
+def ablate(rows: list[dict], axis: str, bands: dict) -> dict:
+    """Audit each COMPONENT of the lite detector separately, at equal statistical power.
+
+    A composite detector reports one number, and one number can hide two large biases pointing
+    opposite ways. MEASURED 2026-09-01 on ELLIPSE, replicated on the held-out split: the
+    vocabulary half of `perplexity_burstiness` flags LOW-proficiency writers 1.57x more, and the
+    burstiness half flags HIGH-proficiency writers 1.42x more. Both separate at 95%. In the
+    combined detector they partly cancel, so an aggregate fairness score understates both.
+
+    That is the argument for auditing components rather than black boxes, and it is the one thing
+    a benchmark that treats a detector as opaque structurally cannot report.
+
+    Each component is thresholded at its OWN median so both flag about half the corpus. Without
+    that, the component with the more extreme operating point looks less biased purely because it
+    has less room to differ, which is the same saturation trap `saturation()` guards elsewhere.
+    """
+    import statistics
+
+    from untell.detectors.perplexity_burstiness import (
+        _burstiness,
+        _common_ratio,
+        _sentences,
+    )
+
+    recs = []
+    for row in rows:
+        b = bands(row.get(axis)) if callable(bands) else bands.get(str(row.get(axis)))
+        if not b:
+            continue
+        text = row["text"]
+        recs.append((b, _common_ratio(text), _burstiness(_sentences(text))))
+    if not recs:
+        return {"error": "no rows fell into a band"}
+
+    med_c = statistics.median(r[1] for r in recs)
+    med_b = statistics.median(r[2] for r in recs)
+    out = {"n": len(recs), "components": {}}
+    for name, flag in (
+        ("vocabulary", lambda r: r[1] >= med_c),   # predictable words => AI-like
+        ("burstiness", lambda r: r[2] <= med_b),   # uniform sentences => AI-like
+    ):
+        agg: dict[str, list[int]] = {}
+        for r in recs:
+            d = agg.setdefault(r[0], [0, 0])
+            d[0] += 1
+            d[1] += bool(flag(r))
+        groups = {}
+        for band_name, (n, hits) in agg.items():
+            lo, hi = wilson(hits, n)
+            groups[band_name] = {"n": n, "fpr": round(hits / n, 4),
+                                 "ci": [round(lo, 4), round(hi, 4)]}
+        names = sorted(groups, key=lambda k: groups[k]["fpr"])
+        sep = None
+        if len(names) == 2:
+            a, b2 = groups[names[0]], groups[names[-1]]
+            sep = b2["ci"][0] > a["ci"][1]
+        out["components"][name] = {
+            "groups": groups,
+            "worst": names[-1] if names else None,
+            "ratio": (round(groups[names[-1]]["fpr"] / groups[names[0]]["fpr"], 2)
+                      if names and groups[names[0]]["fpr"] > 0 else None),
+            "separated": sep,
+        }
+    a, b = out["components"].get("vocabulary"), out["components"].get("burstiness")
+    out["opposed"] = bool(a and b and a["worst"] != b["worst"]
+                          and a["separated"] and b["separated"])
+    return out
+
+
+def render_ablation(result: dict) -> str:
+    if "error" in result:
+        return result["error"]
+    out = [f"COMPONENT ablation, n={result['n']} "
+           f"(each component thresholded at its own median: equal power)", ""]
+    for name, block in result["components"].items():
+        out.append(f"  {name}")
+        for g, v in sorted(block["groups"].items(), key=lambda kv: kv[1]["fpr"]):
+            out.append(f"     {g:14} n={v['n']:<5} {v['fpr']:6.1%} "
+                       f"[{v['ci'][0]:.1%}, {v['ci'][1]:.1%}]")
+        out.append(f"     -> worst {block['worst']}, {block['ratio']}x, "
+                   f"separated={block['separated']}")
+    if result["opposed"]:
+        out += ["", "  !! THE COMPONENTS ARE BIASED IN OPPOSITE DIRECTIONS, both separated at 95%.",
+                "     They partly cancel in the combined score, so ANY aggregate fairness number",
+                "     for this detector understates both. A black-box audit cannot see this."]
+    return "\n".join(out)
+
+
 def render_sweep(results: list[dict]) -> str:
     """One line per threshold, so the operating point where disparity is measurable is visible.
 
@@ -296,6 +384,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sweep", action="store_true",
                     help="audit across thresholds to find a non-saturated operating point")
     ap.add_argument("--thresholds", default="0.3,0.5,0.7,0.8,0.9,0.95,0.99")
+    ap.add_argument("--ablate", action="store_true",
+                    help="audit each detector component separately (lite tier only)")
+    ap.add_argument("--band-axis", default="Overall")
     a = ap.parse_args(argv)
 
     from eval.datasets import load_labelled
@@ -305,6 +396,17 @@ def main(argv: list[str] | None = None) -> int:
         random.Random(a.seed).shuffle(rows)
         rows = rows[: a.n]
     axes = tuple(x for x in a.by.split(",") if x)
+    if a.ablate:
+        def bands(v):
+            try:
+                p = float(v)
+            except (TypeError, ValueError):
+                return None
+            return "low (<=2.5)" if p <= 2.5 else ("high (>=3.5)" if p >= 3.5 else None)
+
+        res = ablate(rows, a.band_axis, bands)
+        print(json.dumps(res, indent=2) if a.json else render_ablation(res))
+        return 0
     if a.sweep:
         thrs = tuple(float(x) for x in a.thresholds.split(",") if x)
         results = sweep(rows, a.tier, thrs, axes)

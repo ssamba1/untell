@@ -108,11 +108,35 @@ So the question is being asked in the literature. What is still missing is diffe
    [`kinit-sk/mAO`](https://github.com/kinit-sk/mAO) and Toloka/beemo rank detector accuracy or
    obfuscation strength. Ranking AUROC is not "who does this detector fail, and by how much".
 
-The revised claim, and the one this document actually rests on: **the research exists and the
-instrument does not.** That is a weaker position than "nobody has thought of this" and a more
-defensible one, and it is also the position this repo is unusually well suited to hold — it has
-spent its whole existence building runnable, tested, reproducible measurement around exactly these
-detectors.
+The revised claim, and the one this document rests on: **the research exists and the instrument
+does not** — and the instrument sees something the research cannot.
+
+### The thing a black-box benchmark structurally cannot report
+
+BAID, RAID, IMGTB and every other benchmark audits a detector as an opaque scorer. Run
+`untell-subgroup-audit --ablate` and the picture changes. Each half of `perplexity_burstiness`,
+thresholded at its own median so both flag about half the corpus and neither is handicapped by a
+lopsided operating point:
+
+| component | low proficiency | high proficiency | worse for | ratio | separate |
+|---|---|---|---|---|---|
+| vocabulary (predictable words ⇒ AI) | **63.4%** | 40.3% | **low** | 1.57x | yes |
+| burstiness (uniform sentences ⇒ AI) | 40.2% | **57.1%** | **high** | 1.42x | yes |
+
+Held-out: 1.59x and 1.35x, same directions, both still separated.
+
+**The two halves of one detector are biased in opposite directions against opposite groups.** The
+vocabulary term reproduces Liang et al.'s perplexity account exactly — predictable word choice
+penalises weaker writers. The burstiness term does the reverse and the literature has not isolated
+it. In the combined score they partly cancel, which means **any aggregate fairness number for this
+detector understates both of its biases**, and a benchmark that treats the detector as a black box
+cannot recover them. Averaging two large opposing biases yields a small number and a false
+reassurance.
+
+That is the defensible position, and it is narrow enough to be true: *component-level* fairness
+auditing of text detectors, on real learner writing, at shipped thresholds, as a runnable tool.
+The tool detects the opposed-bias condition itself and says so in its own output rather than
+leaving it to be noticed.
 
 ---
 
@@ -231,18 +255,26 @@ been shipping it with a threshold tuned on a corpus that does not resemble the w
 to be accused. That is exactly the class of finding this repository exists to produce, and it was
 produced by the first run of the first tool built under this strategy.
 
-**Finding 2 — the axis that separates, and it inverts the literature.** Race, gender, economic
+**Finding 2 — the axis that separates, replicated on held-out data.** Race, gender, economic
 status and grade produced no separated disparity: point estimates 1.00x–1.66x, every Wilson
-interval overlapping. **English proficiency does separate**, and the direction is the surprise.
-At the 0.50 operating point the false-positive rate rises *monotonically across all six
-reportable proficiency levels*:
+interval overlapping. **English proficiency does separate.** Banding low (≤2.5) against high
+(≥3.5) proficiency at the 0.50 operating point, on the training split and then on the 2,571-essay
+held-out split that had never been scored:
 
-| rated proficiency | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 |
-|---|---|---|---|---|---|---|
-| false-positive rate | 33.7% | 34.0% | 37.0% | 42.7% | 45.4% | **53.1%** |
+| split | low proficiency | high proficiency | ratio | intervals separate |
+|---|---|---|---|---|
+| train (n=2,519 banded) | 33.2% | **44.2%** | 1.33x | yes |
+| **held-out (n=1,618 banded)** | 34.8% | **43.0%** | 1.24x | **yes** |
 
-1.57x worst-to-best, intervals separate. **The better a learner's English, the more likely our
-lite tier calls their writing machine-generated.**
+Overall false-positive rate was 38.7% on *both* splits. **The better a learner's English, the more
+likely our lite tier calls their writing machine-generated** — and that holds on data the finding
+was not derived from.
+
+**What did *not* replicate, stated because it was in an earlier draft of this document.** The
+first run reported a *monotonic* rise across all six proficiency levels (33.7% → 53.1%, 1.57x).
+On held-out data the ordering is not monotonic and the top level alone (4.5, n=55) does not
+separate. The six-level monotonic version was an artifact of the larger split's sample sizes. The
+banded contrast above is the claim the data actually supports, and it is the one that survived.
 
 **The mechanism, measured rather than guessed.** The lite tier is one detector,
 `perplexity_burstiness`, and it combines two stdlib proxies: a common-word ratio standing in for

@@ -106,9 +106,14 @@ known-human ESL essays, where every flag is an error by construction:
   writers most likely to be accused.
 - **False-positive rate rises monotonically with English proficiency** at the 0.50 operating
   point — 33.7% at level 2 to 53.1% at level 4.5, 1.57x, Wilson intervals separate.
-- **The mechanism is the burstiness half.** Decomposed, the vocabulary term protects stronger
-  writers exactly as the perplexity literature predicts, and the sentence-length-uniformity term
-  overwhelms it. **The burstiness term penalises writing maturity.**
+- **Replicated on held-out data.** Banding low (<=2.5) vs high (>=3.5) proficiency: 33.2% vs
+  44.2% on the training split, **34.8% vs 43.0% on the 2,571-essay held-out split**, separated at
+  95% on both. (Strict six-level monotonicity did *not* replicate and has been withdrawn.)
+- **The two halves of the detector are biased in OPPOSITE directions.** At equal power, the
+  vocabulary term flags low-proficiency writers 1.57x more — Liang et al.'s perplexity account
+  exactly — and the burstiness term flags high-proficiency writers 1.42x more. Both separate; both
+  replicate. They partly cancel, so **any aggregate fairness number for this detector understates
+  both**, and a benchmark treating it as a black box cannot recover them. `--ablate` reports it.
 - **The disparity reverses with the threshold** (worst group flips to the *lowest* proficiency at
   0.70, 3.25x). Which students a detector wrongly accuses is a function of an operating point
   somebody chose, usually without knowing that is what they were choosing.
