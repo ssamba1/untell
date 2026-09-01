@@ -3176,10 +3176,9 @@ matches `(\d{3,5})\s+tests`, and the round-thirty-nine footnote says **"9,958 te
 stops at the comma, so the check read it as 958 — MEASURED, it reported the document as claiming a
 count of 958 where the suite collects 10,061.
 
-*(That sentence is deliberately not written as "958" followed by the word tests. Phrased the obvious
-way it trips the very check it describes, which is what happened when this entry was first written
-and is the second time in this ledger that describing a defect has re-triggered it — the first was a
-sentence about "N commercial LLMs" in round twenty-nine.)*
+*(Written as `958 tests` in backticks. Phrased as plain prose it trips the very check it describes —
+which is what happened when this entry was first written, and four more times afterwards. Round
+fifty-five gave the audit the use/mention distinction so this sentence can simply say what it means.)*
 
 **A false alarm accusing a correct document of understating by an order of magnitude** — the kind
 that gets a check switched off. The pattern now accepts `[\d,]` and strips the separators.
@@ -3636,14 +3635,13 @@ MEASURED after round fifty-one: **9,803 passed, 75 failed** across 40 files, aga
 on `main`. **One file failed on the branch and not on base** — `test_every_audit_check_can_fail.py` —
 and it was not a code regression.
 
-`check_test_count_claims` reported a claim of nine-hundred-and-fifty-eight. That is the
-**round-forty-four comma bug**,
+`check_test_count_claims` reported `claims 958 tests`. That is the **round-forty-four comma bug**,
 whose fix is still in place and working. What it had found was the ledger entry **describing** that
 bug, which contained the literal string it warns about. The check was right; the prose was the claim.
 
 **Third time in this ledger** — and then a fourth, immediately, in the paragraph reporting the third.
 Round twenty-nine's sentence about commercial LLMs did it, round forty-four's about the comma did it,
-and round forty-six's phrase pairing a count with the word *modules* read as a test-module count.
+and round forty-six's `the 63 modules they most import` read as a test-module count.
 Writing this section reproduced two of those literals while explaining them, and the checks fired
 again.
 
@@ -3723,3 +3721,53 @@ checks every such line rather than the first.
 That is the fifth instance of this shape in three rounds, and the first where it appeared in a test
 rather than in a document. The failure mode is not about counts or about Markdown: it is that **a
 description of a thing looks exactly like the thing to anything matching on text.**
+
+---
+
+# Round fifty-five — giving the audit the use/mention distinction
+
+Five times in three rounds, a ledger entry **describing** a count-drift defect reproduced the literal
+it warned about and re-triggered the check. Rounds fifty-two to fifty-four handled each one by
+contorting the prose — spelling a number out in words, renaming a noun, quoting a phrase indirectly —
+and by concluding, correctly, that none of the checks should be loosened.
+
+That conclusion was right and it left the actual problem untouched. **There was no way to write about
+a count at all.** Every workaround produced a worse document and bought no safety, and the sixth
+instance was only ever a matter of time.
+
+Markdown already encodes the distinction that was missing. `the suite is 9,958 tests` is a claim
+about this repository; the same text inside backticks is a **quotation of a string** — a sentence
+about a claim rather than a claim. `without_code_spans` blanks inline code before either count check
+reads a document, and the contorted sentences in rounds fifty-two and fifty-four are now written
+plainly.
+
+## Deliberately narrow, and measured before shipping
+
+**Only inline code spans.** Not bold, not italics, not block quotes. Every real count in these
+documents is written as prose or bold — nobody states a test count inside backticks — and tests pin
+all three of those as still-claims.
+
+MEASURED across `research-verification.md`, `why-best-open-repo.md`, `ROADMAP.md`, `index.md` and
+`ai-writing-research.md` before the change shipped: blanking code spans loses **no** match either
+check currently makes. It exempted nothing that was being caught.
+
+⚠️ **The test written to pin that was wrong by the end of the same round.** It asserted that blanking
+loses no match in any audited document — true when written, and false as soon as this entry started
+quoting counts, which is the entire point of the change. **A guard that fails on every correct use of
+the feature it guards is not a guard.** Replaced with the narrower thing that actually matters: the
+repository's own live figures, in `why-best-open-repo.md`, must be stated **outside** backticks,
+because those are the one claim the drift check exists to watch. The ledger may quote history freely;
+the headline figure may not hide.
+
+Two details that matter more than they look. Spans are replaced with **spaces rather than removed**,
+so any line or column a check reports still points at the right place in the original file. And an
+**unclosed** backtick must not blank the rest of the document — that would exempt every claim after a
+stray character — so the pattern refuses to span newlines, with a test for it.
+
+## ⚠️ The cost, stated plainly
+
+**A genuinely stale count written inside backticks is now invisible to the audit.** That is the price
+of being able to quote one. It is worth paying because the alternative was demonstrated five times: a
+check the author routes around in prose is a check that shapes the writing without protecting the
+document, and the contortions were themselves accumulating as a kind of debt in the ledger's own
+sentences.

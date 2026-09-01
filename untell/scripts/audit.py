@@ -860,7 +860,8 @@ def check_test_inventory(report: Report) -> None:
         path = REPO / rel
         if not path.exists():
             continue
-        for found in re.findall(r"(\d+)\s+(?:test\s+)?modules\b", path.read_text(encoding="utf-8")):
+        body = without_code_spans(path.read_text(encoding="utf-8"))
+        for found in re.findall(r"(\d+)\s+(?:test\s+)?modules\b", body):
             checked += 1
             claimed = int(found)
             # Asymmetric, matching the contract test_why_best_test_count_is_not_stale uses
@@ -930,6 +931,36 @@ def _collected_test_count() -> int | None:
     return int(match.group(1)) if match else None
 
 
+_CODE_SPAN = re.compile(r"`[^`\n]*`")
+
+
+def without_code_spans(text: str) -> str:
+    """Markdown inline code, blanked, so a count check reads assertions rather than quotations.
+
+    The use/mention distinction, which Markdown already encodes. ``the suite is 9,958 tests`` is a
+    claim about this repository; ```` `9,958 tests` ```` is a quotation of a string — a sentence
+    ABOUT a claim, not a claim.
+
+    This exists because five times in three rounds a document describing a count-drift defect
+    reproduced the literal it warned about and re-triggered the check. Every one of those checks was
+    right on its own terms: a document did state a count next to a noun the audit tracks. What was
+    missing was any way to write about a count at all, and the workaround each time was to contort
+    the prose — spelling a number out in words, or renaming a noun — which is a worse document for
+    no gain in safety.
+
+    **This is deliberately narrow.** Only inline code spans are skipped, not bold, not italics, not
+    block quotes. A real claim is written as prose; nobody states this repository's test count inside
+    backticks. MEASURED before shipping: over `research-verification.md`, `why-best-open-repo.md`,
+    `ROADMAP.md`, `index.md` and `ai-writing-research.md`, blanking code spans loses **no** match
+    that either count check currently makes, so it exempted nothing that was being caught.
+
+    The cost is real and worth naming: a genuinely stale count written inside backticks is now
+    invisible. That is the price of being able to quote one, and it is a smaller price than a check
+    the author routes around in prose.
+    """
+    return _CODE_SPAN.sub(lambda m: " " * len(m.group(0)), text)
+
+
 def check_test_count_claims(report: Report) -> None:
     """A "N tests" claim about our own suite must be in the same neighbourhood as reality.
 
@@ -956,7 +987,7 @@ def check_test_count_claims(report: Report) -> None:
         path = REPO / rel
         if not path.exists():
             continue
-        text = path.read_text(encoding="utf-8")
+        text = without_code_spans(path.read_text(encoding="utf-8"))
         # Only claims about OUR suite. "1868 tests against 136 repos" is ours; a sentence about
         # another project's tests is not, and none of the live docs currently phrase one that way.
         # Commas included. Without `[\d,]`, "9,958 tests" matches as **958** — the digit run stops
