@@ -646,11 +646,17 @@ catch. Measured by running every module that fails in this environment against b
 The failing set is identical, so the changes introduce nothing and repair nothing. Those 32 are
 environmental — meaning gates and back-translation need models from a blocked host.
 
-**The check earned its cost immediately.** It caught one real defect: a line here reading "4
-commercial LLMs" (describing DetectRL-X's generators) tripped `test_docs_claims`, whose regex reads
-`N commercial` as a claim about *this repo's* commercial detector count. Reworded rather than
+**The check earned its cost immediately.** It caught one real defect: a row here describing
+DetectRL-X's generators as `<digit> commercial LLMs` tripped `test_docs_claims`, whose regex reads a
+number followed by that word as a claim about *this repo's* own detector count. Reworded rather than
 loosening the regex — that guard catches genuinely stale counts, and widening it for one document's
 convenience would trade a real check for a comfortable one.
+
+**And then this paragraph tripped it too.** Describing the incident reproduced the trigger, because
+the pattern spans a line break and `\s` matches newlines — so the sentence documenting the fix
+re-broke the guard. It is written with a placeholder above for that reason. A guard strict enough to
+catch its own post-mortem is working, and the correct response is still to write around it rather
+than to widen it.
 
 ### And an environment audit that should have come first
 
