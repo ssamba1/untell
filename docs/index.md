@@ -87,7 +87,7 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **[Verification ledger](research-verification.md)** — every claim, the tier it was checked to, and
   the eight that changed when they were checked. **The corrections are the point of this document.**
 - **Reproduce the survey yourself:** `python -m eval.litreview --download` re-derives the count the
-  strategy rests on (108 volumes, 38,231 abstracts; 153 papers on evasion robustness against 11 on
+  strategy rests on (115 volumes, 43,224 abstracts; 154 papers on evasion robustness against 12 on
   false positives and 12 on fairness — and 77 on multilingual detection, six times the fairness row
   for the same population). `--noise-floor` reports the error term on those counts: 13.8% of the
   corpus is a different detection problem, and removing all of it moves no share by more than 1.7

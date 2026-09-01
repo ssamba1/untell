@@ -222,7 +222,7 @@ it is a ready-made fairness corpus with ground truth and a permissive licence.
 | ✅ **ICNALE bias study** | Gender, CEFR proficiency, academic field, language environment; ANOVA + WLS | [2025.acl-long.1292](https://aclanthology.org/2025.acl-long.1292/) |
 
 **Prefer the ✅ rows.** They are refereed, public, and graded by *degree* of AI involvement, which is
-the axis untell actually measures. A systematic pass over 38,231 ACL abstracts found them; the first
+the axis untell actually measures. A systematic pass over 43,224 ACL abstracts found them; the first
 draft of this document reached for arXiv preprints because it had only searched, not read.
 
 DetectRL-X's *polish / expand / condense* operations deserve their own note: they are AI-**assistance**

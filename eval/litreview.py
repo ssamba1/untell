@@ -55,6 +55,14 @@ VOLUMES: tuple[str, ...] = (
     # scheme only goes back to 2020 — 2018.acl and 2019.acl return 200 with an empty stub.
     "2020.acl", "2020.emnlp", "2020.coling", "2020.lrec", "2020.findings",
     "2021.acl", "2021.emnlp", "2021.naacl", "2021.eacl", "2021.findings", "2021.tacl", "2021.cl",
+    # 2022 was missing entirely and nothing said so — the list jumped from 2021 to 2023, leaving a
+    # hole in the middle of the survey's denominator that no comment acknowledged. It is the year
+    # ChatGPT shipped (November), so most of it predates the thing the survey counts, but
+    # machine-generated-text detection did not begin with ChatGPT: GPT-2 output detection, GROVER
+    # and their successors are 2019-2022 work, and a survey that skips the year cannot say what it
+    # excluded. 4,997 papers across seven volumes.
+    "2022.acl", "2022.emnlp", "2022.findings", "2022.naacl", "2022.coling", "2022.lrec",
+    "2022.aacl",
     "2023.acl", "2023.emnlp", "2023.findings", "2023.tacl", "2023.ijcnlp",
     "2024.acl", "2024.emnlp", "2024.findings", "2024.naacl", "2024.lrec", "2024.tacl", "2024.inlg",
     "2025.acl", "2025.emnlp", "2025.findings", "2025.naacl", "2025.coling", "2025.tacl", "2025.cl",

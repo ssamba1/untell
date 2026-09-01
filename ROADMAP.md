@@ -66,6 +66,7 @@ no decision, no native speaker and no GPU, only the work.
 | 38 | Concurrent requests must not be slower than serial ones | ✅ done — the server offloads every endpoint to a thread, and **threaded scoring took 3.65× the time of doing the same calls in turn**. Isolated to spaCy's model pass (4.13×) while every component in this repo sat at 0.97–1.22×. A lock around it: **1.12×**, single-call cost unchanged | — |
 | 39 | A refactor must be proved not to move the numbers | ✅ done — rounds 63–66 rewrote seven regexes, changed the caveat logic and added a lock. Re-scoring all **6,810** pre-LLM abstracts against the scores saved in round 61: **0 changed**, identical to four decimal places | — |
 | 40 | Every audit check must have been watched failing | ✅ done — the file that exists because twelve checks were uncovered never added the guard keeping the next one covered, and **4 of 19** had drifted back out. All four now have a known-negative, and a new check without one fails | — |
+| 41 | The survey must not skip a year without saying so | ✅ done — `VOLUMES` ran 2020, 2021, **2023**, 2024–2026; `2022` appeared nowhere in the file. Seven volumes, **4,997 papers**, now added. **No topic share moves more than 0.3 points** — the imbalance survives its sixth and largest corpus change — and the year contributes detection papers at **0.20%** against **1.51%** for the rest, which dates the field | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -439,12 +440,12 @@ aggregation rule itself, one level down.
 
 ### The result that should organise everything else — all of it peer-reviewed and read at source
 
-A systematic pass over **108 ACL Anthology volumes, 38,231 abstracts, 578 detection papers** (method
+A systematic pass over **115 ACL Anthology volumes, 43,224 abstracts, 588 detection papers** (method
 and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
 below is refereed and was read from the Anthology's own metadata.
 
 ✅ **And a category the survey had no row for, which sharpens the point rather than softening it.**
-Adding `multilingual/cross-lingual` to the taxonomy finds **77 of 578 detection papers — 13.3%**,
+Adding `multilingual/cross-lingual` to the taxonomy finds **78 of 588 detection papers — 13.3%**,
 against **12** on fairness and **11** on false positives. Six times as much work on reading
 non-English text as on what reading it costs the people who wrote it.
 

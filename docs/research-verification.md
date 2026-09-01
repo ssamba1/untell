@@ -3888,6 +3888,10 @@ Five tests hold it, including one that pins the published figures — 80 of 578,
 than 1.7 points — so a change to the corpus or the patterns fails and names the drift instead of
 letting a stale number stand.
 
+> ✅ **It did exactly that in round sixty-eight**, when seven 2022 volumes were added. MEASURED on
+> the widened corpus, `80 of 578` became **81 of 588** and the largest share move **1.5 points**.
+> The pair above is the round fifty-seven measurement and is left as written.
+
 ⚠️ **And the first fixture tested nothing.** The synthetic hallucination paper written to prove the
 noise check fires did not pass `DETECTION` at all, so it never reached the check. Real hallucination
 papers in the corpus do pass it, because they name LLMs; the fixture did not. **The test asserted a
@@ -4587,3 +4591,71 @@ still true. A mutation a correct document survives proves nothing.
 passed again, reporting the same three exhibits it had always seen. **A mutation aimed at the wrong
 file is indistinguishable from a check that cannot fail** — which is precisely why `assert_passes`
 runs first and why the premise assertions in each case are not decoration.
+
+---
+
+# Round sixty-eight — the survey skipped a year and nothing said so
+
+`eval/litreview.py`'s `VOLUMES` ran 2020, 2021, **2023**, 2024, 2025, 2026. The string `2022` appears
+nowhere in the file. Not an exclusion with a reason — a hole in the middle of the survey's
+denominator that no comment acknowledged, in the list that produces this project's most-cited
+research claim.
+
+Seven 2022 volumes exist and resolve: `acl`, `emnlp`, `findings`, `naacl`, `coling`, `lrec`, `aacl`
+— **4,997 papers**.
+
+## What adding them did, which is almost nothing, which is the result
+
+MEASURED by `python -m eval.litreview --download`, run once before adding the volumes and once after:
+
+| | before | after |
+|---|---|---|
+| volumes | 108 | **115** |
+| abstracts indexed | 38,231 | **43,224** |
+| detection-related | 578 | **588** |
+
+| topic | before | after | move |
+|---|---|---|---|
+| robustness/paraphrase | 26.5% | 26.2% | −0.3 |
+| multilingual/cross-lingual | 13.3% | 13.3% | 0.0 |
+| human-AI mixed/edited | 11.2% | 11.1% | −0.1 |
+| watermark | 7.6% | 7.5% | −0.1 |
+| education/integrity | 7.6% | 7.5% | −0.1 |
+| calibration/thresholds | 3.8% | 3.7% | −0.1 |
+| fairness/non-native bias | 2.1% | 2.2% | +0.1 |
+| **false positives/accusation** | **1.9%** | **2.0%** | +0.1 |
+| disability/neurodivergence | 0.2% | 0.2% | 0.0 |
+
+**Thirteen percent more corpus, and no share moves by more than 0.3 points.** The imbalance this
+project's strategy rests on — an order of magnitude more work on evading detectors than on the
+people they accuse — survives its sixth independent change to the corpus beneath it, and this is the
+largest single one.
+
+## The genuinely new fact is in the ratio of the addition
+
+4,997 papers contributed **10** detection-related ones: **0.20%**. The other 38,231 contributed 578,
+or **1.51%** — DERIVED from the two MEASURED survey runs above. Seven and a half times the density.
+
+**The field is three years old.** ChatGPT shipped in November 2022, and a year of ACL, EMNLP,
+Findings, NAACL, COLING, LREC and AACL published either side of it contains almost nothing the
+survey's patterns match. Machine-generated-text detection did not begin with ChatGPT — GPT-2 output
+detection and GROVER predate it — but as a *research programme* with hundreds of papers a year, it
+did. That is worth knowing when reading any claim about what "the literature" has settled: on this
+subject the literature is barely older than the tools it studies.
+
+## The check that caught the drift, doing its job
+
+`test_the_shipped_measurement_reproduces_round_fifty_sevens_numbers` pins the noise floor at `80 of
+578`. Widening the corpus failed it, and it named the drift rather than letting five documents keep
+a stale pair. MEASURED on the widened corpus the figures are **81 of 588 (13.8%)**, largest share
+move **1.5 points**.
+
+✅ **And the pre-LLM corpus is untouched, which had to be checked rather than assumed.** The 2022
+files now sit in the same `.anthology-cache` that `eval/pre_llm_fpr.py` reads, and every calibration
+figure in this repository depends on that corpus being exactly what it was. It filters on the year in
+each paper id, so MEASURED after the addition it is still **6,811** abstracts at a 60-word floor —
+the same number rounds sixty-one through sixty-seven used.
+
+That is the second time in this session a pinning test has earned its cost by failing — and the
+first time one of them failed for a *good* change rather than a defect. A test that only ever fires
+on mistakes has not been shown to fire on anything else.
