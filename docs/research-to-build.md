@@ -1,7 +1,7 @@
 # What the literature gives us that we can actually use
 
-Companion to [`../ai-writing-research.md`](../ai-writing-research.md) (what has been published) and
-[`../humanizer-research-report.md`](../humanizer-research-report.md) (evasion and the humanizer
+Companion to [`ai-writing-research.md`](https://github.com/ssamba1/untell/blob/main/ai-writing-research.md) (what has been published) and
+[`humanizer-research-report.md`](https://github.com/ssamba1/untell/blob/main/humanizer-research-report.md) (evasion and the humanizer
 market). **This document is only the intersection: findings that translate into a dataset, a metric, a
 module, or a claim this repo can ship.** Everything else was left in the map.
 
