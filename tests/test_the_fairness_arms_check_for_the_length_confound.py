@@ -88,3 +88,22 @@ def test_the_balance_check_travels_with_the_rates():
     """A confound check in a separate command is a confound check nobody runs."""
     rows = af.load_rows(CACHE)[:4]
     assert "length_balance" in af.evaluate(rows, tier="lite")
+
+
+def test_the_balance_check_applies_its_own_word_floor():
+    """MUTATION-CHECKED. Removing the `min_words` filter survived, because every fixture above was
+    comfortably long. It matters: `evaluate` skips texts under 50 words when it scores them, so a
+    balance check that counted them would be describing a different set of documents from the one
+    the flag rates come from — and would report a corpus as unmatched on the strength of texts that
+    were never scored.
+    """
+    column = next(iter(af.ARMS))
+    rows = ([{"Status": "Native", "Abstract": "word " * 200, column: "word " * 200}] * 10
+            + [{"Status": "Non-Native", "Abstract": "word " * 200, column: "word " * 200}] * 10
+            # Ten very short non-native texts that `evaluate` would never score.
+            + [{"Status": "Non-Native", "Abstract": "word " * 10, column: "word " * 10}] * 10)
+    report = af.length_balance(rows, min_words=50)
+    non_native = report["by_arm"][af.ARMS[column]]["Non-Native"]
+    assert non_native["n"] == 10, "texts under the floor must not be counted"
+    assert non_native["median_words"] > 100, "the short texts dragged the median down"
+    assert report["length_matched"] is True

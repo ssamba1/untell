@@ -142,3 +142,20 @@ def test_a_real_volume_still_passes():
     with mock.patch.object(litreview.urllib.request, "urlopen",
                            lambda url, timeout=0: _Response(real)):
         assert litreview._fetch("http://x/v.xml", "v") == real
+
+
+def test_a_body_too_small_to_be_a_real_volume_is_rejected_even_when_it_parses():
+    """MUTATION-CHECKED. Dropping the byte floor survived every other test here, because every probe
+    used a body that was either unparseable or paperless — both caught by the checks after it. The
+    floor's own job is the case those miss: a body that parses AND contains a paper AND is far too
+    small to be an Anthology volume, which is what a transfer truncated a few hundred bytes in looks
+    like. This one is 94 bytes with a valid paper in it.
+    """
+    import unittest.mock as mock
+
+    truncated = (b"<collection id='2025.acl'><volume id='long'><paper id='1'>"
+                 b"<title>T</title></paper></volume></collection>")
+    assert len(truncated) < 200, "the fixture must be under the floor to exercise it"
+    with mock.patch.object(litreview.urllib.request, "urlopen",
+                           lambda url, timeout=0: _Response(truncated)):
+        assert litreview._fetch("http://x/v.xml", "v") is None

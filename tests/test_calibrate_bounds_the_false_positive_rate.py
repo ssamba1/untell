@@ -82,3 +82,20 @@ def test_bands_without_enough_samples_report_none_not_a_guess():
 def test_an_impossible_alpha_is_rejected(alpha):
     with pytest.raises(ValueError):
         calibrate([0.1] * 100, alpha=alpha)
+
+
+def test_a_loose_alpha_still_needs_a_real_calibration_set():
+    """MUTATION-CHECKED. Removing the `n < required_samples(alpha)` guard survived, because the
+    defensive `rank > n` check below it catches every case a *tight* alpha produces. It does not
+    catch a loose one: at alpha=0.5 with 5 scores the rank is 3, comfortably inside the sample, so
+    without the first guard `calibrate` would hand back a threshold derived from five documents.
+
+    `MIN_CALIBRATION` is the reason there are two guards. A bound estimated from a handful of
+    documents is exactly the false precision this repository objects to elsewhere.
+    """
+    from untell.calibrate import MIN_CALIBRATION, calibrate, required_samples
+
+    assert required_samples(0.5) == MIN_CALIBRATION
+    assert calibrate([0.1] * 5, alpha=0.5) is None
+    assert calibrate([0.1] * (MIN_CALIBRATION - 1), alpha=0.5) is None
+    assert calibrate([0.1] * MIN_CALIBRATION, alpha=0.5) is not None

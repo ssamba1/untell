@@ -3092,3 +3092,55 @@ is a reasonable argument for having a mutation sweep at all, rather than trustin
 carefully is a test that works.
 
 **17 of 17 now killed.**
+
+---
+
+# Round forty-three — three survivors I nearly wrote off as unkillable
+
+A third sweep, over the download guard, the evidence surface, the corpus filter and the alignment
+fix: eight more mutants, **five killed immediately**, three survived.
+
+The interesting part is what happened next. All three looked like **equivalent mutants** — changes
+that cannot alter behaviour because another check already covers the case — and an equivalent mutant
+is legitimately exempt rather than a test gap. Two of the three were not.
+
+## ✗ "The byte floor is redundant" — wrong
+
+`_fetch` rejects a body under 200 bytes, then rejects one that will not parse, then one with zero
+papers. Dropping the floor survived every test, and the reason looked conclusive: every probe used a
+body that was either unparseable (`b"not found"`) or paperless (`<collection/>`), and the later
+checks catch both.
+
+But those are not the only small bodies. **A 94-byte body that parses AND contains a paper** passes
+the later checks and is nowhere near an Anthology volume — which is what a transfer truncated a few
+hundred bytes in looks like. The floor's job is exactly the case the probes did not cover.
+
+## ✗ "Calibrate is double-guarded" — also wrong
+
+`calibrate` refuses when `n < required_samples(alpha)`, and further down there is a check the comment
+itself calls defensive: `if rank > n: return None`. Removing the first one survived, and the second
+does catch every case a *tight* alpha produces — at α = 0.05 the rank exceeds n whenever the sample
+is too small.
+
+It does not catch a **loose** one. MEASURED from the formula `ceil((n + 1)(1 - alpha))`: at α = 0.5
+with 5 scores the rank is 3, comfortably inside the sample, so without the first guard `calibrate`
+would return a threshold derived from five documents. `MIN_CALIBRATION = 20` — read from
+`untell/calibrate.py` — is why there are two guards, and the second cannot stand in for the first.
+
+## ✅ And one that really was a plain test gap
+
+The length-balance check applies its own `min_words` floor, and every fixture had been comfortably
+long. It matters because `evaluate` skips texts under 50 words when scoring them: a balance check
+counting them would describe a **different set of documents from the one the flag rates come from**,
+and could report a corpus as unmatched on the strength of texts that were never scored.
+
+## What this round is actually about
+
+**"Equivalent mutant" is the most comfortable conclusion available**, and I reached for it twice in a
+row on evidence that looked airtight both times — a redundant guard, a double-checked precondition.
+The reasoning was sound and the premise was wrong: in each case the "covering" check covers a
+*different region* of the input space, and the probes I had happened to sit in the overlap.
+
+Checking took one command each. **25 of 25 mutants now killed**, MEASURED by
+`python scripts/mutation_sweep.py`, and the three tests that kill these
+document the exact input each guard exists for, which is what the earlier tests were missing.
