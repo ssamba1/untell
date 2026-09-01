@@ -220,13 +220,32 @@ reportable proficiency levels*:
 1.57x worst-to-best, intervals separate. **The better a learner's English, the more likely our
 lite tier calls their writing machine-generated.**
 
-That is the opposite of the story the literature tells. The perplexity account — Liang et al.,
-and the reason TOEFL essays get flagged at 61% — says *low*-proficiency writing is predictable,
-therefore low-perplexity, therefore machine-like. Our lite tier is not perplexity-keyed; it is
-tells-keyed, and it scores polish. Standard, fluent, well-formed prose is what an AI-tells
-catalogue is built to recognise, so within a learner population the most accomplished writers
-look most artificial to it. Both mechanisms produce false accusations. **They accuse opposite
-students.**
+**The mechanism, measured rather than guessed.** The lite tier is one detector,
+`perplexity_burstiness`, and it combines two stdlib proxies: a common-word ratio standing in for
+perplexity (high ⇒ predictable ⇒ AI-like) and the coefficient of variation of sentence lengths
+standing in for burstiness (**low** ⇒ uniform ⇒ AI-like). Decomposed across the same 3,904 essays,
+the two halves pull in **opposite directions**:
+
+| rated proficiency | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 |
+|---|---|---|---|---|---|---|
+| common-word ratio (high ⇒ AI-like) | 0.606 | 0.605 | 0.601 | 0.585 | 0.579 | **0.563** |
+| burstiness CV (**low** ⇒ AI-like) | 0.519 | 0.519 | 0.498 | 0.465 | 0.451 | **0.416** |
+| mean length (words) | 354 | 394 | 421 | 457 | 488 | 533 |
+
+Both fall monotonically with proficiency. The vocabulary term therefore *protects* stronger
+writers — richer word choice reads as more human, exactly as the perplexity account in the
+literature predicts. **The burstiness term overwhelms it.** More proficient learners write in
+more evenly-measured sentences, and evenness is what the burstiness half is built to punish.
+
+So this is not a counterexample to the perplexity story; it is a decomposition of it. Liang et
+al.'s account is visible here in the vocabulary axis and points the way they say. The disparity
+comes from the *other* half of the same detector, and it points the opposite way and wins. **The
+burstiness term penalises writing maturity**, and any detector carrying one should be assumed to
+do the same until measured.
+
+An earlier draft of this section asserted the lite tier was "tells-keyed, not perplexity-keyed"
+and explained the result that way. That was wrong — the detector is named `perplexity_burstiness`
+and is exactly what it says. The table above is what replaced the guess.
 
 **Finding 3 — the disparity reverses with the threshold.** At 0.70 the ordering is no longer
 monotonic and the worst group flips to the *lowest* proficiency (6.2% vs 1.9%, ratio 3.25x, also
