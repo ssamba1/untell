@@ -76,6 +76,23 @@ Run `untell-audit` to re-check the claims in these documents against the code as
 - **[Why this is the most rigorous open detector audit](why-best-open-repo.md)** — the argument, with its corrections
 - **[Training runbook](free-training-runbook.md)** — the GPU path (RL against the ensemble)
 
+### The measurement that changed what this project thinks it has
+
+✗ **A false-positive rate is half a measurement, and the other half is worse.** Every number here
+asks how often the detector is wrong about human text, never how often it is right about machine
+text — because that needs an AI-labelled corpus and the usual ones require a download. A language
+model wrote one instead, in the same register, where the label is provenance rather than annotation.
+
+MEASURED at the shipped threshold, matched by length against pre-LLM ACL abstracts, the lite tier
+flags **10.7%** of machine abstracts and **30.4%** of human ones over the matched 40–100 range,
+intervals not overlapping — and flags human text more often in **every** band. Threshold-free,
+**AUROC 0.3538**, bootstrap interval [0.2824, 0.4272], entirely below the 0.5 of a coin flip.
+
+**On this register the ordering is reversed, not weak.** Both live features rank below 0.5 alone, so
+no single term is at fault: they measure how closely a document reads like a standard academic
+abstract, and in this corpus that is the human writing. Reproduce with `eval/detection_power.py`; the
+limits — one model, one register, 56 machine documents — are in round seventy-six of the ledger.
+
 ### The literature this project argues from
 
 - **[What untell should be](strategy-options.md)** — four candidate identities, three rejected on the
@@ -88,9 +105,9 @@ Run `untell-audit` to re-check the claims in these documents against the code as
   the eight that changed when they were checked. **The corrections are the point of this document.**
 - **Reproduce the survey yourself:** `python -m eval.litreview --download` re-derives the count the
   strategy rests on (186 volumes, 46,905 abstracts; 157 papers on evasion robustness against 13 on
-  false positives and 12 on fairness — and 77 on multilingual detection, six times the fairness row
-  for the same population). `--noise-floor` reports the error term on those counts: 13.8% of the
-  corpus is a different detection problem, and removing all of it moves no share by more than 1.7
+  false positives and 13 on fairness — and 82 on multilingual detection, six times the fairness row
+  for the same population). `--noise-floor` reports the error term on those counts: 13.2% of the
+  corpus is a different detection problem, and removing all of it moves no share by more than 1.4
   points. **The shares matter, not the counts** — 27% against 2% —
   because they hold across three different detection filters; see round thirty of the ledger
 

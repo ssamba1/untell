@@ -37,10 +37,39 @@ probe returns 22.0% at a 30-word floor and **14.3% at 150** — an 8.4-point swi
 nobody chose deliberately. There is no such thing as *the* false-positive rate; there is one per
 corpus definition, and every report now carries the definition that produced it.
 
-**And there is now an answer, not just a complaint.** `untell/calibrate.py` derives a threshold with
-a *bounded* false-positive rate from a human-only corpus. On all 6,810 documents the shipped 0.45
-flags **19.47%**, and the conformal threshold at α = 0.05 is **0.5401**. A tenth of a threshold is
-the difference between one human document in five being accused and one in twenty.
+✗ **And a false-positive rate is half a measurement. The other half is worse.** Every number above
+asks how often the detector is wrong about human text and never how often it is right about machine
+text — because that needs an AI-labelled corpus, and the ones everyone uses require a download. A
+language model wrote one instead: 70 abstracts in the same register, where the label is provenance
+rather than annotation.
+
+MEASURED at the shipped threshold, matched by length against those same pre-LLM abstracts:
+
+| band (words) | machine flagged | human flagged |
+|---|---|---|
+| 40–60 | **9.7%** | **64.5%** |
+| 60–100 | **12.0%** | **28.7%** |
+| 100+ | **7.1%** | **18.6%** |
+| **40–100 pooled** | **10.7%** [5.0%, 21.5%] | **30.4%** [27.0%, 34.1%] |
+
+**In every band it flags human text more often than machine text**, and over the matched range the
+intervals do not overlap. Threshold-free, **AUROC is 0.3538** with a bootstrap interval of
+[0.2824, 0.4272] — entirely below the 0.5 of a coin flip.
+
+**On this register the lite tier is not a weak detector. Its ordering is reversed.** Both of its live
+features are below 0.5 ranked alone, so there is no single bad term to remove: they measure how much
+a document reads like a standard academic abstract, and in this corpus that is what the human writing
+is. Reproduce with `eval/detection_power.py`.
+
+⚠️ One model, one register, 56 machine documents in the matched range. The human arm is 634 real
+abstracts, so the human rate is solid; the machine rate is not precise. What the interval does rule
+out is that the two are the right way round.
+
+**And there is an answer to the false-positive half, if not to that one.** `untell/calibrate.py`
+derives a threshold with a *bounded* false-positive rate from a human-only corpus. MEASURED on all
+6,810 documents, the shipped 0.45 flags **19.47%** and the conformal threshold at α = 0.05 is
+**0.5401**. A tenth of a threshold is the difference between one human document in five being
+accused and one in twenty.
 
 ⚠️ **The bound is marginal, not conditional, and that distinction is the whole story.** Conformal
 prediction promises the false-positive rate is at most α *averaged over calibration sets*.

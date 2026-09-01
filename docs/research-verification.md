@@ -5329,3 +5329,55 @@ collapses into repetition cannot win the loop.
 **A constant is not evidence of dead code, and a probe that returns nothing is not evidence the code
 does nothing.** The check that mattered was reading the function's own stated preconditions before
 concluding anything from a null result.
+
+---
+
+# Round seventy-nine — the finding reaches the pages people read
+
+Round seventy-two's lesson was that `calibrate_by_length` was correct, tested, and never pointed at
+the corpus, so the problem it would have shown stayed invisible: **a right answer that never reaches
+a document does nothing.**
+
+Rounds seventy-six to seventy-eight produced the most consequential measurement this project has
+made — the lite tier's ordering is reversed on academic abstracts, AUROC 0.3538 with the whole
+interval below a coin flip — and for three rounds it lived only in this ledger.
+
+`README.md` and `docs/index.md` now carry it, above the calibration answer rather than below it,
+because the calibration answer is a fix for the false-positive half of a detector whose other half
+had never been measured.
+
+## The README's framing needed the change more than its numbers did
+
+Its second paragraph opens: *"What this is for: finding out how much a detector's verdict is worth."*
+Every figure under it was a false-positive rate. **A false-positive rate cannot answer that
+question** — a detector that flags nothing scores perfectly on every one of them. The page argued
+that detectors are wrong about human text far more often than their vendors admit, which is true and
+which is not the same as saying the verdict is worthless.
+
+Now it says both, with the interval, and with the limits named in the same breath: one model, one
+register, 56 machine documents in the matched range. The human arm is 634 real abstracts, so the
+human rate is solid and the machine rate is not precise. **What the interval rules out is that the
+two are the right way round.**
+
+## Two stale figures found while doing it
+
+`docs/index.md` still published **12 fairness papers and 77 multilingual**, and a noise floor of
+**13.8% moving no share by more than 1.7 points**. Round sixty-nine widened the corpus from 108
+volumes to 186 and those became **13, 82, 13.2% and 1.4**. The retraction guard does not cover them
+because nothing was retracted — they were correct when written and the corpus grew underneath them.
+
+Round fifty-nine found the README twenty-seven rounds stale for the same reason. **A number that is
+merely superseded has no marker to search for**, which is why the survey figures are pinned by a test
+and these were not.
+
+## ⚠️ And the attribution window shifted again
+
+Inserting a section between a number and its `MEASURED` marker un-attributed the calibration
+paragraph — the third time this session. Round sixty-five hit it inserting a blockquote, round
+sixty-eight inserting an annotation.
+
+The check reads a window of lines around each number, so **editing anywhere above a claim can
+silently detach it from its source**, and what the audit reports is the number rather than the
+insertion that moved it. It has caught something real every time, and every time the fix has been to
+put a marker on the line rather than to widen the window — a wider window would attribute numbers to
+sources that merely happen to be nearby.
