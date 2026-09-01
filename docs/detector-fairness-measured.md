@@ -248,14 +248,24 @@ Arabic vs Turkish is **1.38x, intervals separate**, and both are well sampled. (
 worst-vs-best line reports German 59.6% against Hebrew 26.2%, 2.27x — but those rest on n=52 and
 n=61, and the large-n pair is the figure that should be quoted.)
 
+> **Re-derived under the [selection correction](#result-19--crossing-finds-less-not-more-the-headline-is-retracted), and the caution above was right.**
+> This axis has **20 language groups**, so a worst-vs-best pick comes from 190 pairs and needs
+> z = 3.65. The tool's 2.27x German-vs-Hebrew headline **does not survive** — it separated only at
+> a plain 95%, exactly as its sample sizes suggested. The hand-picked Arabic-vs-Turkish pair
+> **does survive at that same z = 3.65**, on n=5,818 and n=536. Declining the tool's own headline
+> in favour of the well-sampled pair was an editorial judgement made before the correction existed,
+> and the correction agrees with it. That is the most reassuring thing in this document: the
+> instrument's caution and its statistics reached the same answer independently.
+
 **And the proficiency effect runs the opposite way to Result 2.**
 
 | PELIC level | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|
 | FPR | **52.9%** | 40.9% | 39.9% | **36.5%** |
 
-Monotonically *decreasing* with proficiency, 1.45x, separated — where ELLIPSE showed it
-*increasing* (33.2% → 44.2%). Same detector, same kind of subgroup, **opposite direction**.
+Monotonically *decreasing* with proficiency, 1.45x, separated — and it **holds under the
+correction** (four levels, six pairs, z = 2.64) — where ELLIPSE showed it *increasing*
+(33.2% → 44.2%). Same detector, same kind of subgroup, **opposite direction**.
 
 ELLIPSE is US school students writing full independent essays; PELIC is adult university ESL
 classroom writing. So the direction of a proficiency disparity is **not a property of the detector
@@ -741,7 +751,12 @@ construction.
 | — | ASAP `ell_status` | 2 | 1.21x | yes | **holds** |
 | 19 | ASAP `race_ethnicity` | 6 | 1.55x | yes | **retracted** |
 | 19 | ASAP `race_ethnicity*ell_status` | 10 | 2.14x | yes | **retracted** |
+| 9 | PELIC `level_id` | 4 | 1.45x | yes | **holds** |
+| 9 | PELIC `L1`, Arabic vs Turkish *(hand-picked, tested at z=3.65)* | 20 | 1.38x | yes | **holds** |
 | — | ELLIPSE `race_ethnicity*grade` | 13 | 1.59x | yes | **retracted** |
+| 9 | PELIC `L1`, tool's worst-vs-best German vs Hebrew | 20 | 2.27x | yes | **retracted** (n=52, n=61) |
+
+This is now every multi-group claim in the document; none is taken on trust.
 
 **The pattern is the reassuring one.** Everything with a mechanism behind it survives — the
 144.93x vocabulary-channel spread, the threshold sweep's 6.93x, the disability gap and its
