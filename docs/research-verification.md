@@ -4353,7 +4353,13 @@ flips**. The margin is about six times the worst observed error.
 | `"a,"` repeated | 13.71s | **1.48s** |
 | bullet lines | 3.76s | **0.50s** |
 
-The note itself is unchanged on **425 real documents** — 400 short ones, which take the exact path
+> ⚠️ **Every figure in this round is a cold-process measurement, and round sixty-five says so.** Each
+> includes a one-time ~1.0s spaCy model load that a running server pays once, not per request. The
+> ratios above are therefore understated — steady-state it is 1.526s → 0.229s on prose, a 6.7×
+> improvement rather than 3.2×. The numbers are not wrong; they were published without the condition
+> that produced them, which is the thing this repository exists to complain about.
+
+The note itself is MEASURED unchanged on **425 real documents** — 400 short, which take the exact path
 untouched, and 25 long ones — and still fires on a document that is 96.6% preserved material.
 
 ## The test that would fail if the shortcut were the whole story
@@ -4388,3 +4394,59 @@ suite runs **9,953 passing tests in 6m33s**. Its 74 failures are identical, test
 at the pre-session commit — every one an absent optional dependency (`torch`, `peft`, `sacremoses`)
 or a blocked `huggingface.co`. Verified by running the same 35 files in a worktree at `8f8d09e`:
 **zero regressions in either direction.**
+
+---
+
+# Round sixty-five — the round about unstated conditions published figures with an unstated condition
+
+Round sixty-four measured a scoring request at the cap, found an advisory caveat taking 88% of it,
+fixed that, and published **3.88s → 1.20s** on prose. Profiling the *fixed* path to find the next
+hot spot showed `_mostly_locked_warning` still at 84% — on a 5,000-character prefix, which cannot
+possibly cost 1.8s of per-character work.
+
+It does not. It is the **spaCy model load**, paid once when a process first locks anything. Every
+number round sixty-four published was measured in a fresh process, so all of them carry a constant
+that a running server pays once and never again.
+
+## The same benchmark, warm
+
+MEASURED at `674d04f` (round sixty-three) against `7773aee` (round sixty-four), median of three runs
+after one warm-up call, each with different text so the caches miss:
+
+| input at the cap | before | after | improvement |
+|---|---|---|---|
+| ordinary prose | 1.526s | **0.229s** | **6.7×** |
+| `"a,"` repeated | 10.852s | **1.498s** | **7.2×** |
+| bullet lines | 3.017s | **0.514s** | **5.9×** |
+
+✗ **The published ratio was wrong in the flattering direction for the code and the unflattering one
+for the fix.** Prose reads as 3.2× cold and is 6.7× warm, because a ~1.0s constant sits in both
+halves of the cold ratio and shrinks it. `"a,"` reads as 9.3× cold and 7.2× warm, moving the other
+way — which is the point: **a constant added to both terms of a ratio does not bias it in a
+predictable direction**, so there is no correcting a cold number by inspection.
+
+⚠️ **Nothing published was false.** Those really are the times a cold process takes. What was missing
+is the condition, and this project's entire argument is that a number without its condition is not a
+measurement. Round twenty-four established there is no such thing as *the* false-positive rate, only
+one per corpus definition. There is no such thing as *the* request latency either — there is one per
+process state, and the two differ by 6.7× on the shape that matters most.
+
+## Where the time goes now
+
+Warm, at the cap, nothing dominates. On `"a,"` the largest single cost is spaCy's own pipeline at
+**0.534s**, then `_claimed_spans` at 0.304s, then a numpy `gemm` at 0.162s and Unicode folding at
+0.050s. That is a healthy profile: no one call is more than a third, and the remaining spaCy cost is
+on the 5,000-character prefix that round sixty-four introduced rather than on all 50,000.
+
+Prose at **0.229s** warm is the number a deployed `/score` actually pays. It was 1.526s.
+
+## What was added
+
+The regression test's ceiling was 6.0s, chosen against cold measurements, which makes it far looser
+than it looks: against the MEASURED 0.229s warm prose figure it takes a **26×** regression to fire.
+It is now 1.0s for prose and 6.0s for the comma blob, each about four times the warm cost and each
+below the pre-fix one, VERIFIED by running the file in a worktree at `674d04f` — prose 1.44s, commas
+11.46s, both failing. ✗ **A first draft used 3.0s for prose, which the old code passed at 1.526s.**
+A ceiling the defect clears is decoration, and it took running it against the defect to notice. It now pins the
+steady-state cost after a warm-up call, where the headroom is real and the numbers mean what a server
+would see.

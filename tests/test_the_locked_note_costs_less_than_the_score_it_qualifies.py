@@ -92,18 +92,34 @@ def test_the_note_is_never_allowed_to_break_the_score_it_qualifies():
     assert score._mostly_locked_warning("") is None
 
 
-@pytest.mark.parametrize("shape,text", [
-    ("prose", ("The system processes data efficiently. " * 1400)[:50_000]),
-    ("commas", ("a," * 25_000)[:50_000]),
-])
-def test_a_capped_request_does_not_spend_ten_seconds_on_a_caveat(shape, text):
-    """The finding, as a bound rather than a story.
+def _capped(shape: str, seed: int) -> str:
+    """50,000 characters, unique per call so the score and NER caches both miss."""
+    if shape == "prose":
+        return (f"Report {seed}. The system processes data efficiently. " * 1400)[:50_000]
+    return (f"z{seed}," + "a," * 25_000)[:50_000]
 
-    Before: 3.88s for prose and 13.71s for commas at the cap, 88% and 92% of it this one note. The
-    ceiling here is loose on purpose — it is a guard against the quadratic-shaped regression, not a
-    benchmark, and CI machines vary — but 6s would have failed on the old code for both shapes.
+
+@pytest.mark.parametrize("shape,ceiling", [("prose", 1.0), ("commas", 6.0)])
+def test_a_capped_request_does_not_spend_seconds_on_a_caveat(shape, ceiling):
+    """The finding, as a bound rather than a story — and measured warm, which is the correction
+    round sixty-five made to round sixty-four.
+
+    A cold process pays a one-time ~1.0s spaCy model load. Timing the first call folds that constant
+    into the result and makes a ceiling far looser than it looks: the original 6.0s bound needed a
+    26x regression on prose before it fired, against the MEASURED 0.229s a warm call takes. So the
+    first call is a warm-up and is not timed.
+
+    Warm at `674d04f` (before the fix) against `7773aee` (after): prose 1.526s -> 0.229s and commas
+    10.852s -> 1.498s. Each ceiling sits about four times the measured cost, because CI machines vary
+    and this guards against a return of the old shape rather than benchmarking — and each is below
+    the old cost, so both fail on the pre-fix code. VERIFIED by running this file in a worktree at
+    `674d04f`: commas 11.46s against its 6.0s ceiling, prose 1.44s against its 1.0s one. An earlier
+    draft used 3.0s for prose, which the old code passed; a ceiling the defect clears is decoration.
     """
+    score.score_text(_capped(shape, 999), tier="lite")  # pay the model load, untimed
+
     start = time.perf_counter()
-    score.score_text(text, tier="lite")
+    score.score_text(_capped(shape, 1), tier="lite")
     elapsed = time.perf_counter() - start
-    assert elapsed < 6.0, f"{shape}: {elapsed:.1f}s to score {len(text)} characters"
+    assert elapsed < ceiling, (
+        f"{shape}: {elapsed:.2f}s warm to score 50,000 characters, ceiling {ceiling}s")
