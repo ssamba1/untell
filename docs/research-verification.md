@@ -2924,3 +2924,18 @@ The retraction guard now scans `untell/` and `eval/` as well as the documents, w
 lines that explicitly describe a figure as historical, and a test asserting that exemption cannot
 swallow an ordinary docstring. Three superseded figures are pinned by the replacement they became, so
 a failure names the fix rather than only the fault.
+
+## A footnote: the pre-existing failure is fixed, by accident
+
+`test_docs_claims.py::test_why_best_test_count_is_not_stale` failed on `main` and on this branch for
+this entire session, and every round reported it as environmental. It was — the container cannot
+collect four torch-dependent files, so the documented count sat above what this machine could see.
+
+This round's 600-odd new tests pushed the collected count past the documented one and **the assertion
+flipped to its other side**: the doc now understated by 708, which the same test also catches. The
+figure is updated to **9,958 tests across 614 modules**.
+
+Worth stating plainly: **9,958 is a floor, not a count.** Four files still fail to import here, so a
+complete environment collects more. The documented figure has to be the smaller of the tiers for the
+assertion to mean anything, and a floor satisfies that — but nobody should read it as the size of the
+suite.
