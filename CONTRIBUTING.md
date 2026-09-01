@@ -59,6 +59,16 @@ signs and none about how many documents landed on each side.
 **A survivor needs a killing test, not an exemption.** It refuses to run on a dirty working tree,
 because it edits source files and restores them from memory.
 
+```bash
+python scripts/mutation_sweep.py --vacuity   # break each module entirely; its test file must fail
+```
+
+The coarse companion. A mutant asks whether a test notices *one* broken line; this asks whether a
+test file notices its module being broken *entirely*. It cannot catch a weak assertion — one alert
+test carries the file — but it catches the failure that recurred four rounds running: a test passing
+for a reason unrelated to what it tests, because it patched the wrong constant or scored a fixture
+the code under test never saw.
+
 ## Before you open a PR
 
 ```bash

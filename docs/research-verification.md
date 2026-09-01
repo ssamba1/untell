@@ -3194,3 +3194,41 @@ would have said so. Both changes were reapplied and re-verified.
 **The recurring shape across rounds forty to forty-four:** every one of these was a test or a check
 that passed for a reason unrelated to what it was testing. Four rounds running. The only thing that
 has reliably caught them is deliberately breaking the thing under test and requiring a failure.
+
+---
+
+# Round forty-five — a floor under the failure that kept recurring
+
+Four rounds in a row produced the same defect: a test passing for a reason unrelated to what it
+tested. A probe whose input the audit never rejected; a robustness test whose assertion checked only
+that a number came back; a boundary test aimed at the wrong mechanism; five cases that patched
+`LIVE_DOCS` where the check reads `COMPARATIVE_DOCS`. Every one was found by accident — a mutation
+that survived, or one sibling assertion that happened to fail.
+
+`--vacuity` makes it systematic. It replaces **every public function body in a module with a raise**
+and requires that module's test file to fail. MEASURED across the eleven test files written this
+session: **11 of 11 noticed.** No test file here is entirely decorative.
+
+## What it can and cannot do
+
+It is deliberately coarse, and the mutation sweep is the fine instrument. **One alert test carries a
+whole file**, so a file with nine vacuous tests and one real one passes. What it catches is the case
+where the test file and the code under test are *not connected at all* — which is exactly what
+happened with `LIVE_DOCS`, where the fixture was never scanned by the check it was meant to exercise.
+
+The two together give a floor and a ceiling: the sweep proves specific lines are guarded, the vacuity
+check proves the guarding is aimed at the right module.
+
+## Guarding the guard, since that is the whole subject
+
+`sabotage` has to leave the module **parseable**. A syntax error would make every test file "notice"
+for the wrong reason — the module would not import — and the check would report a clean bill of
+health it had not earned. A test compiles a sabotaged module, executes it, and asserts each public
+function raises.
+
+It also has to leave dunders alone: `__getattr__` and friends are how a module loads, so breaking
+them turns "the test noticed" into "the module would not import", a different and much weaker signal.
+
+And the pairs themselves are checked — both files must exist, and the six modules written this
+session must all be covered — because a vacuity list naming a deleted test file reports a pass for a
+check it never ran, which would be this failure one level up again.

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+import scripts.mutation_sweep as MUT
 from scripts.mutation_sweep import MUTANTS
 
 REPO = Path(__file__).resolve().parent.parent
@@ -65,3 +66,47 @@ def test_the_statistical_machinery_is_covered():
     for required in ("eval/pre_llm_fpr.py", "eval/outlier_fairness.py",
                      "eval/length_standardized.py", "untell/scripts/score.py"):
         assert required in covered, f"the mutation sweep does not touch {required}"
+
+
+# --- the vacuity pairs --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("testfile,module", MUT.VACUITY_PAIRS,
+                         ids=[Path(t).stem[:44] for t, _ in MUT.VACUITY_PAIRS])
+def test_every_vacuity_pair_points_at_files_that_exist(testfile, module):
+    assert (REPO / testfile).exists(), f"vacuity pair names a missing test file: {testfile}"
+    assert (REPO / module).exists(), f"vacuity pair names a missing module: {module}"
+
+
+def test_sabotage_actually_breaks_a_module():
+    """The check is worthless if `sabotage` produces something that still works. It must replace
+    every public function body with a raise, and the result must still be valid Python — a syntax
+    error would make every test file 'notice' for the wrong reason, reporting a clean bill of health
+    from a file that never imported."""
+    import ast
+
+    source = "def a():\n    return 1\n\n\ndef b(x):\n    if x:\n        return 2\n    return 3\n"
+    broken = MUT.sabotage(source)
+    ast.parse(broken)  # must stay parseable
+    namespace: dict = {}
+    exec(compile(broken, "<sabotaged>", "exec"), namespace)  # noqa: S102
+    for name in ("a", "b"):
+        with pytest.raises(AssertionError, match="sabotaged"):
+            namespace[name](1) if name == "b" else namespace[name]()
+
+
+def test_sabotage_leaves_dunder_functions_alone():
+    """`__init__` and friends are how a module loads. Breaking them turns 'the test noticed' into
+    'the module would not import', which is a different and much weaker signal."""
+    source = "def __getattr__(name):\n    return 1\n\n\ndef public():\n    return 2\n"
+    broken = MUT.sabotage(source)
+    assert "def __getattr__(name):\n    return 1" in broken
+    assert broken.count("sabotaged") == 1
+
+
+def test_the_vacuity_check_covers_the_modules_written_this_session():
+    covered = {m for _t, m in MUT.VACUITY_PAIRS}
+    for required in ("eval/outlier_fairness.py", "eval/length_standardized.py",
+                     "eval/pre_llm_fpr.py", "untell/scripts/score.py",
+                     "untell/scripts/sentences.py", "eval/assisted_fairness.py"):
+        assert required in covered, f"no vacuity pair exercises {required}"

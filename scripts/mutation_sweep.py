@@ -143,6 +143,70 @@ MUTANTS: tuple[tuple[str, str, str, str, str], ...] = (
 )
 
 
+# The coarse companion to MUTANTS. A mutant asks whether a test notices ONE broken line; this asks
+# whether a test file notices its module being broken ENTIRELY. It cannot catch a weak assertion —
+# one alert test carries the file — but it catches the failure this session hit four rounds running:
+# a test that passes for a reason unrelated to what it is testing, because it patched the wrong
+# constant, or scored a fixture the code under test never saw.
+VACUITY_PAIRS: tuple[tuple[str, str], ...] = (
+    ("tests/test_outlier_fairness_measures_margins_without_labels.py", "eval/outlier_fairness.py"),
+    ("tests/test_length_standardization_compares_like_with_like.py", "eval/length_standardized.py"),
+    ("tests/test_wilson_intervals_are_arithmetically_sound.py", "eval/pre_llm_fpr.py"),
+    ("tests/test_the_aggregation_rules_obey_their_own_arithmetic.py", "untell/scripts/score.py"),
+    ("tests/test_the_fairness_arms_check_for_the_length_confound.py", "eval/assisted_fairness.py"),
+    ("tests/test_per_sentence_evidence_is_corroboration_not_explanation.py",
+     "untell/scripts/sentences.py"),
+    ("tests/test_the_pre_llm_report_says_which_corpus_it_describes.py", "eval/pre_llm_fpr.py"),
+    ("tests/test_litreview_download_survives_a_truncated_transfer.py", "eval/litreview.py"),
+    ("tests/test_the_headline_number_says_what_kind_of_number_it_is.py", "untell/api_server.py"),
+    ("tests/test_the_dead_function_check_is_fast_and_still_works.py", "untell/scripts/audit.py"),
+    ("tests/test_every_corpus_the_evals_need_can_still_be_built.py", "eval/litreview.py"),
+)
+
+
+def sabotage(source: str) -> str:
+    """Replace every public top-level function body with a raise."""
+    import ast
+
+    tree = ast.parse(source)
+    lines = source.splitlines(keepends=True)
+    edits = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and not node.name.startswith("__"):
+            start = node.body[0].lineno - 1
+            indent = len(lines[start]) - len(lines[start].lstrip())
+            edits.append((start, node.body[-1].end_lineno,
+                          " " * indent + 'raise AssertionError("sabotaged")\n'))
+    for start, end, replacement in sorted(edits, reverse=True):
+        lines[start:end] = [replacement]
+    return "".join(lines)
+
+
+def vacuity(pairs=VACUITY_PAIRS) -> int:
+    vacuous = []
+    for testfile, module in pairs:
+        source = REPO / module
+        original = source.read_text(encoding="utf-8")
+        try:
+            source.write_text(sabotage(original), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", testfile, "-q", "-p", "no:randomly", "-x"],
+                cwd=REPO, capture_output=True, text=True, timeout=900)
+            noticed = result.returncode != 0
+        finally:
+            source.write_text(original, encoding="utf-8")
+        print(f"{'NOTICED ' if noticed else 'VACUOUS '} {pathlib.Path(testfile).name:<62} "
+              f"<- {module}")
+        if not noticed:
+            vacuous.append(testfile)
+    print(f"\n{len(pairs) - len(vacuous)}/{len(pairs)} noticed")
+    if vacuous:
+        print("\nThese test files pass with their module completely broken:")
+        for v in vacuous:
+            print(f"  - {v}")
+    return 1 if vacuous else 0
+
+
 def _dirty() -> bool:
     out = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
                          capture_output=True, text=True).stdout
@@ -180,6 +244,9 @@ def run(mutants=MUTANTS) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--list", action="store_true", help="show the mutants without running them")
+    parser.add_argument("--vacuity", action="store_true",
+                        help="coarse check: break each module entirely, require its test file to "
+                             "fail")
     args = parser.parse_args(argv)
     if args.list:
         for path, _old, _new, _t, label in MUTANTS:
@@ -189,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
         print("refusing to run on a dirty working tree: this edits source files and restores them "
               "from memory, so a crash between the two would lose uncommitted work.", file=sys.stderr)
         return 2
-    return run()
+    return vacuity() if args.vacuity else run()
 
 
 if __name__ == "__main__":  # pragma: no cover
