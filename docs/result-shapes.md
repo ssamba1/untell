@@ -35,7 +35,8 @@ score_text        agreement, ai_percent, detector_modes, detectors, flagged, max
                   + failed_detectors and detector_errors, only when a detector raised
 
 score_tells       burstiness_cv, by_category, by_evidence, language_supported,
-                  low_burstiness, tells, tells_per_100w, words, warning (only when a caveat applies)
+                  low_burstiness, tells, tells_per_100w, words, warning (only when a caveat applies),
+                  human_base_rate_note (only when a fired tell is common in human writing)
 
 score_sentences   flagged, note, sentences, threshold, tier,
                   unrankable (only when the per-sentence scores cannot be ranked),

@@ -790,6 +790,14 @@ _TELLS_RESPONSES = _obj(
         },
         "burstiness_cv": {"type": ["number", "null"]},
         "low_burstiness": _BOOL,
+        "human_base_rate_note": {
+            "type": "string",
+            "description": "present only when a fired category is common in KNOWN-HUMAN writing, "
+                           "with the measured share. MEASURED on 6,842 pre-2022 ACL abstracts, "
+                           "ai_vocab appears in 45.7% of them and formulaic_transition in 18.4%, "
+                           "so a count including those categories is weaker evidence than its "
+                           "size suggests",
+        },
         "language_supported": {
             **_BOOL,
             "description": "false when this English catalogue cannot read the text — a script it "

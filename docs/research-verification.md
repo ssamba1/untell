@@ -5427,3 +5427,80 @@ exist and both agree.
 **Reading the hits before believing them is what separated the one real defect from fourteen
 false alarms** — and the false alarms were the more interesting half, because they surfaced that the
 repository's two surveys are easy to confuse and nothing had said so in one place.
+
+---
+
+# Round eighty-one — the AI-tell catalogue fires on half of pre-ChatGPT academic writing
+
+Rounds seventy-six to seventy-eight measured the lite *score* against machine text. This project has
+a second detector — the hand-written tell catalogue, 29 patterns across thirteen categories — and it
+had never been measured against machine text at all.
+
+MEASURED at matched length against the generated abstracts:
+
+| | machine | human |
+|---|---|---|
+| documents with at least one tell | **8.6%** [4.0%, 17.5%] | **48.1%** [44.2%, 52.0%] |
+| mean tells per document (40–100 words) | 0.036 | 0.953 |
+| **AUROC** | **0.2697** | — |
+
+**Twenty-six times more tells on human academic abstracts than on machine-written ones**, and an
+AUROC further from a coin flip than the lite score's 0.3538. **Every one of the thirteen categories
+that fired at all fired more on human text.** There is no exception to find.
+
+## The catalogue is a list of academic register markers
+
+MEASURED across the full 6,842-document corpus, share of known-human documents carrying each:
+
+| category | human documents |
+|---|---|
+| `ai_vocab` | **45.67%** |
+| `formulaic_transition` | **18.43%** |
+| `negated_contrast` | 3.06% |
+| everything else | under 2% each |
+
+And by individual string, MEASURED the same way:
+
+| tell | human documents |
+|---|---|
+| **`state-of-the-art`** | **25.37%** |
+| `furthermore` | 5.26% |
+| `moreover` | 5.15% |
+| `leverage` | 4.25% |
+| `robust` | 3.84% |
+| `comprehensive`, `crucial` | 3.33% each |
+| `utilize` | 2.65% |
+
+**One string accounts for a quarter of the corpus.** `state-of-the-art` sits in the vocabulary list
+between `best-in-class`, `top-tier`, `turnkey` and `supercharge` — which are promotional register.
+In NLP it is the standard term for the best current method, and `robust` is a statistical term.
+
+**The catalogue is not wrong about marketing copy. It is being applied to academic prose, where these
+are the field's own words.** Nearly half of everything published at ACL before ChatGPT existed
+contains at least one word from a list of AI indicators.
+
+## What was done about it, and what was not
+
+✗ **The catalogue was not edited.** Deciding whether `state-of-the-art` belongs on a list of AI
+indicators is a judgement about the registers this corpus cannot speak for, and a corpus of NLP
+abstracts is the worst possible evidence for removing the NLP term of art.
+
+✅ **The base rates ship instead.** `eval/data/tell_base_rates.json` holds the measured share of
+known-human documents carrying each tell and each category, and `score_tells` now returns a
+`human_base_rate_note` when a fired category is one most human writing also has.
+
+*"8 AI tells"* invites being read as eight pieces of evidence. *"8 tells, of which two categories
+appear in 45.7% and 18.4% of known-human academic abstracts"* is the same count and a different
+verdict. **A count without a base rate is not evidence, and this tool had been reporting counts
+without base rates since it shipped.**
+
+## The schema guards did their job
+
+Adding one returned key failed **seven** tests across four files — the OpenAPI schema, the published
+response schemas, the result-shapes document and the returned-key audit. Every one of them existed
+because a key had once been added and documented nowhere.
+
+⚠️ And the result-shapes parser reads line by line, so writing the new key's `(only when …)` note
+across a line break made the entry unparseable and the key still counted as undocumented. **The note
+has to fit on one line** — a constraint nothing states, discovered by a test that was right twice for
+different reasons.

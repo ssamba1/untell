@@ -29,6 +29,8 @@ import json
 import logging
 import re
 from collections import Counter
+from functools import lru_cache
+from pathlib import Path
 
 # RUN DIRECTLY (`python .../untell/scripts/tells.py`), put the directory that *contains* the package
 # on sys.path so `import untell` resolves from any cwd. Must come BEFORE any `from untell...`
@@ -1186,6 +1188,67 @@ def _claimed_spans(text: str) -> list[tuple[int, int, str, str]]:
     return claimed
 
 
+
+# Measured share of KNOWN-HUMAN documents that carry each tell, from `eval/data/tell_base_rates.json`
+# — 6,842 pre-2022 ACL abstracts, human by publication date. Round eighty-one measured them because
+# a tell count says how often a pattern fired and never how often human writing fires it, and the
+# gap between those turned out to be the whole story:
+#
+#     ai_vocab              45.67% of human documents
+#     formulaic_transition  18.43%
+#     state-of-the-art      25.37%   (one string, a quarter of the corpus)
+#
+# On the same corpus the catalogue fires on **48.1%** of human abstracts against **8.6%** of
+# machine-written ones — AUROC 0.2697, further from a coin flip than the lite score's 0.3538.
+#
+# ⚠️ This is one register, and the register is the point. `state-of-the-art` sits in the vocabulary
+# list beside "best-in-class", "top-tier" and "turnkey", which are promotional. In NLP it is the
+# standard term for the best current method. The catalogue is not wrong about marketing copy; it is
+# being applied to academic prose, where these are the field's own words.
+#
+# So the rates are reported rather than the catalogue edited. Deciding what belongs in it is a
+# judgement about a register this corpus cannot speak for.
+_BASE_RATES_PATH = Path(__file__).resolve().parent.parent.parent / "eval" / "data" / \
+    "tell_base_rates.json"
+# Above this share of human documents, a tell is a fact about the register more than about the
+# author. 0.05 is a floor with room under it: the next tell below `ai_vocab` and
+# `formulaic_transition` by category is `negated_contrast` at 3.06%.
+_COMMON_IN_HUMAN_WRITING = 0.05
+
+
+@lru_cache(maxsize=1)
+def human_base_rates() -> dict:
+    """Measured share of known-human documents carrying each tell, or empty if unavailable."""
+    try:
+        return json.loads(_BASE_RATES_PATH.read_text(encoding="utf-8"))
+    except Exception:  # a caveat must never break the count it qualifies
+        return {}
+
+
+def base_rate_note(by_category: dict) -> str | None:
+    """Name the fired tells that most human writing also has, with the measured share.
+
+    "3 AI tells" invites being read as three pieces of evidence. If one of them is a category
+    appearing in 45.67% of known-human documents, it is close to no evidence at all, and the caller
+    cannot know that from a count.
+    """
+    rates = human_base_rates().get("by_category") or {}
+    common = sorted(
+        ((name, rates[name]) for name in by_category if rates.get(name, 0) >= _COMMON_IN_HUMAN_WRITING),
+        key=lambda pair: -pair[1],
+    )
+    if not common:
+        return None
+    corpus = human_base_rates().get("corpus", {})
+    named = ", ".join(f"{name} ({share:.1%})" for name, share in common[:3])
+    return (
+        f"{len(common)} of the fired categories are common in human writing: {named} — MEASURED as "
+        f"the share of {corpus.get('documents', 'known-human')} pre-2022 ACL abstracts carrying "
+        f"each, where every occurrence is human by publication date. A tell this frequent is a fact "
+        f"about the register more than about the author."
+    )
+
+
 def score_tells(text: str, *, include_matches: bool = False) -> dict:
     """Count AI tells in ``text`` per the catalogue. Lower is more human-reading."""
     if not isinstance(text, str):
@@ -1297,6 +1360,11 @@ def score_tells(text: str, *, include_matches: bool = False) -> dict:
         # the same total, very different verdicts.
         "by_evidence": _by_evidence(by_category),
     }
+    # How often known-human writing carries each fired category. A count without this reads as
+    # evidence; see `base_rate_note`.
+    note = base_rate_note(by_category)
+    if note:
+        result["human_base_rate_note"] = note
     if not result["language_supported"]:
         # Two different reasons, and saying the wrong one sends the reader at the wrong fix. "mostly
         # non-Latin script" is true of a Chinese paragraph and false of `;;; ...`, which has no
