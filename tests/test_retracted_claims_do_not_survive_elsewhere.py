@@ -102,12 +102,22 @@ _COUNT_ROW = re.compile(r"^\|[^|]+\|\s*\d+\s*\|$")
 
 
 def _offending_lines(pattern: str) -> list[str]:
-    """Lines carrying a retired form with no correction marker nearby.
+    """Retired forms appearing with no correction marker nearby.
 
     The marker is looked for in a small window, not on the line alone: these documents hard-wrap at
     100 columns, so a "✗ An earlier draft said ..." sentence routinely puts the marker two lines
     above the number it is correcting. Checking the line in isolation reported every correction in
     the ledger as a violation.
+
+    ⚠️ **The search itself must cross line breaks, for the same reason.** Round seventy found the
+    retired phrase `low burstiness, regular sentence length` restated as fact eight lines below its
+    own ✗ retraction, in the same paragraph, and this function could not see it: the document wraps
+    between `regular` and `sentence`, and a line-based search cannot match a phrase that spans the
+    break. Every multi-word retired form was one wrap away from invisible — in a file family whose
+    house style is to wrap at 100 columns.
+
+    So the match runs against the text with newlines folded to single spaces, and the hit is mapped
+    back to a line number by counting the newlines the fold consumed.
     """
     rx = re.compile(pattern, re.I)
     bad = []
@@ -115,9 +125,18 @@ def _offending_lines(pattern: str) -> list[str]:
         path = REPO / rel
         if not path.exists():
             continue
-        lines = path.read_text(encoding="utf-8").splitlines()
-        for i, line in enumerate(lines):
-            if not rx.search(line) or _COUNT_ROW.match(line.strip()):
+        raw = path.read_text(encoding="utf-8")
+        lines = raw.splitlines()
+        # Fold single newlines into spaces so a wrapped phrase reads as one string. Blank lines
+        # stay, because a paragraph break is not a wrap and a phrase never spans one.
+        folded = re.sub(r"(?<!\n)\n(?!\n)", " ", raw)
+        for match in rx.finditer(folded):
+            # Folding replaces each newline with a single space, so `folded` and `raw` are the same
+            # length and an offset means the same position in both. The line is the number of
+            # newlines before it in the ORIGINAL text.
+            i = raw.count("\n", 0, match.start())
+            line = lines[i] if i < len(lines) else ""
+            if _COUNT_ROW.match(line.strip()):
                 continue
             window = "\n".join(lines[max(0, i - 3): i + 4])
             if not _CORRECTING.search(window):
@@ -208,3 +227,51 @@ def test_the_historical_exemption_cannot_swallow_everything():
     genuinely stale docstring."""
     assert not _is_historical("This repo measured 26.7% false positives at 50 words or fewer.")
     assert _is_historical("the number published before round 31 was 15.8%")
+
+
+def test_a_retired_phrase_is_found_even_when_the_document_wraps_it(tmp_path, monkeypatch):
+    """The round-seventy defect, pinned.
+
+    These documents hard-wrap at 100 columns. Until round seventy this file searched one line at a
+    time, so **every multi-word retired form was one wrap away from invisible** — and one was:
+    `low burstiness, regular sentence length` sat in `ROADMAP.md` split between `regular` and
+    `sentence`, eight lines below its own ✗ retraction, for fifty-three rounds.
+    """
+    doc = tmp_path / "wrapped.md"
+    doc.write_text(
+        "Detectors key on formulaic phrasing, low burstiness, regular\n"
+        "sentence length, and template adherence in that writing.\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("tests.test_retracted_claims_do_not_survive_elsewhere.REPO", tmp_path)
+    monkeypatch.setattr("tests.test_retracted_claims_do_not_survive_elsewhere.DOCS",
+                        ("wrapped.md",))
+    hits = _offending_lines(r"low burstiness, regular sentence length")
+    assert hits, "a retired phrase split across a line break must still be found"
+    assert "wrapped.md:1" in hits[0], hits
+
+
+def test_the_fold_does_not_join_across_a_paragraph_break(tmp_path, monkeypatch):
+    """A wrap is a single newline; a paragraph break is two. Folding both would match a phrase whose
+    halves are in different paragraphs, which is a different sentence and not a claim."""
+    doc = tmp_path / "para.md"
+    doc.write_text(
+        "Something about low burstiness, regular\n\nsentence length appears here.\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("tests.test_retracted_claims_do_not_survive_elsewhere.REPO", tmp_path)
+    monkeypatch.setattr("tests.test_retracted_claims_do_not_survive_elsewhere.DOCS", ("para.md",))
+    assert not _offending_lines(r"low burstiness, regular sentence length")
+
+
+def test_the_reported_line_number_is_the_line_the_phrase_starts_on(tmp_path, monkeypatch):
+    """Folding must not shift the offsets. It replaces each newline with one space, so the folded
+    text is the same length as the original and a match offset means the same position in both."""
+    doc = tmp_path / "offsets.md"
+    doc.write_text("filler\n" * 40 + "a low burstiness, regular\nsentence length b\n",
+                   encoding="utf-8")
+    monkeypatch.setattr("tests.test_retracted_claims_do_not_survive_elsewhere.REPO", tmp_path)
+    monkeypatch.setattr("tests.test_retracted_claims_do_not_survive_elsewhere.DOCS",
+                        ("offsets.md",))
+    hits = _offending_lines(r"low burstiness, regular sentence length")
+    assert hits and hits[0].startswith("offsets.md:41:"), hits

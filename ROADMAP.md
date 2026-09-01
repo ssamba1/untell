@@ -68,6 +68,7 @@ no decision, no native speaker and no GPU, only the work.
 | 40 | Every audit check must have been watched failing | ✅ done — the file that exists because twelve checks were uncovered never added the guard keeping the next one covered, and **4 of 19** had drifted back out. All four now have a known-negative, and a new check without one fails | — |
 | 41 | The survey must not skip a year, or a venue, without saying so | ✅ done — `2022` appeared nowhere in the file, and a systematic sweep found **71 more volumes** unindexed, among them `2023.eacl`, `2024.eacl`, and **TrustNLP and BEA — the venues where the allegedly-scarce work would be published**. All indexed: 108 → **186 volumes**. **No share moves more than 0.8 points**, and the ratio holds at 12:1 | — |
 | 42 | A hole in the corpus must be a command, not a hunch | ✅ done — `python -m eval.litreview --gaps` probes every venue named in `VOLUMES` against every year in it. It reports rather than adds: widening a survey behind its author's back produces numbers nobody chose | — |
+| 43 | The retraction guard must see a claim that wraps | ✅ done — it searched one line at a time, and these documents hard-wrap, so **eight of eleven multi-word retired forms were one line break away from invisible**. One was: a claim retracted in round seventeen stood eight lines below its own ✗ for fifty-three rounds, in two documents | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -504,9 +505,17 @@ are exactly what detectors read as machine-like. **So the exposure is real and t
 distributional distance, not deficit** — the DivScore argument again: being further from the
 reference population is the risk, and writing cleanly moves you further. Row 28 stands as an open
 question on that basis; the studies are small (n = 19 vs 23), so this justifies measuring, not
-concluding. The traits detectors key on — formulaic phrasing, low burstiness, regular
-sentence length, template adherence — are documented features of some autistic writing and of writing
-produced with assistive tools, so this is not a gap for its own sake. It is status row 28, and the
+concluding.
+
+✗ **This paragraph used to end by restating the very claim it opens by retracting** — that the traits
+detectors key on are "documented features of some autistic writing". They are not; that is the
+sentence the ✗ above withdraws, and it stood eight lines below its own retraction for fifty-three
+rounds. The retraction guard has a pattern for it and could not see it, because the phrase wraps
+across a line break and the guard read one line at a time. Round seventy fixed both.
+
+What justifies row 28 is the measured finding, not the trait list: autistic university students wrote
+with **fewer grammatical errors** and at a **higher reading level**, and error-freeness and register
+are what detectors read as machine-like. The mechanism is distributional distance, not deficit. The
 blocker is a consented corpus carrying disability metadata, not method: `eval/assisted_fairness.py`
 already stratifies arms by subgroup.
 

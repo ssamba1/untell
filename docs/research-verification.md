@@ -1363,9 +1363,11 @@ autism detection in speech, ADHD proxy detection from social media, a Korean spe
 children with ASD, and sign-language accessibility work. **The people and the data are there; nobody
 has pointed detector-fairness work at them.**
 
-That is not a small gap. The traits detectors key on — formulaic phrasing, low burstiness, regular
-sentence length, restricted vocabulary, template adherence — are documented features of some autistic
-writing and of writing produced with assistive tools and accommodations. The ACL census found 13
+That is not a small gap. This entry originally continued: `formulaic phrasing, low burstiness,
+regular sentence length, restricted vocabulary, template adherence` are `documented features of some
+autistic writing`. ⚠️ **Round seventeen retracted that — no source supports it — and round seventy
+found it still standing here**, in backticks now, as a mention of what was withdrawn rather than a
+claim. The ACL census found 13
 fairness papers in the Anthology's entire history, and this ledger has established that essentially
 all of the fairness evidence concerns language background. **An entire protected class is
 unmeasured**, in a technology already deciding admissions (round fourteen).
@@ -4747,3 +4749,60 @@ consistency across years, not a judgement about relevance.
 ✅ **VERIFIED, not asserted this time**: after the eight went in, `--gaps` prints *"no gaps: every
 venue named in VOLUMES is indexed for every year it names"*. The corpus reached a fixed point in
 three iterations.
+
+---
+
+# Round seventy — the retraction guard could not see a retracted claim that wrapped
+
+Reading row 28 — the last open item — turned up a paragraph in `ROADMAP.md` that opens by retracting
+a claim and closes by making it:
+
+> ✗ **An earlier version of this paragraph justified that gap by asserting that "formulaic phrasing,
+> low burstiness, regular sentence length" are documented features of autistic writing. No source
+> says that, and checking it reversed the argument.**
+>
+> […eight lines…]
+>
+> The traits detectors key on — formulaic phrasing, low burstiness, regular sentence length,
+> template adherence — **are documented features of some autistic writing**.
+
+The retraction and the claim, in the same paragraph. Round seventeen withdrew that sentence; it has
+stood ever since.
+
+## Why the guard missed it, which is the more general problem
+
+`tests/test_retracted_claims_do_not_survive_elsewhere.py` exists for exactly this, and has carried
+the pattern `low burstiness, regular sentence length` since round seventeen. It reported nothing.
+
+**These documents hard-wrap, and the phrase wraps between `regular` and `sentence`.**
+The guard searched one line at a time, so it could not match a phrase that spans the break.
+
+✗ **Every multi-word retired form in the table was one wrap away from invisible.** Eight of the
+eleven patterns are multi-word. Whether a retraction was enforced depended on where the paragraph
+happened to break — a property of the text width, not of the claim.
+
+The fix folds single newlines to spaces before matching, and maps the hit back to a line by counting
+newlines in the original. Blank lines are left alone, because a paragraph break is not a wrap.
+Folding preserves length, so an offset means the same position in both strings — VERIFIED on
+`ROADMAP.md`, and pinned by a test that puts the phrase on line 41 of a fixture and requires the
+report to say 41.
+
+## What it found the moment it could see
+
+Two live instances, both restating the retired trait list as fact: `ROADMAP.md:507` and this ledger
+at line 1366.
+
+The roadmap's is now removed and replaced by what actually justifies row 28 — the MEASURED finding
+that autistic university students wrote with **fewer grammatical errors** and at a **higher reading
+level**, which is what detectors read as machine-like. Distributional distance, not deficit. The
+ledger's is annotated in backticks as a mention, per the convention that entries are annotated rather
+than rewritten.
+
+## The shape
+
+Round sixty-two: a checker and its auto-fixer disagreed about what a claim is. Round sixty-six: a
+comment and a later commit. This one: **a guard and the typography of the documents it guards.**
+
+Each time the check was correct on its own terms and blind to a case nobody had thought to construct.
+The pattern was right, the table was right, the retraction was recorded in the right place — and a
+line break decided whether any of it did anything.
