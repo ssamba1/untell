@@ -1032,3 +1032,51 @@ where several arXiv ids sat near one title; those were discarded by checking adj
 tighter implementation would bound the window. The remaining 69 arXiv citations have no Anthology
 version findable this way — which means either they are unpublished, published outside the Anthology,
 or published under a changed title. Only the first is verifiable from here.
+
+
+---
+
+# Round twelve — the citation-status audit, stated as numbers
+
+The honest completeness picture for this repo's external references, rather than a sentence about
+what could not be reached.
+
+| citation class | count | status |
+|---|---|---|
+| ACL Anthology ids | 39 | ✅ **39/39 resolve** to real papers, checked against a 127,839-paper index |
+| DOIs | 12 | ✅ resolved via PubMed where indexed; each read at source |
+| arXiv ids | 66 | ✅ **16 verified through a reachable channel**; 50 not |
+
+**The 16 are verified because the paper exists somewhere this environment can reach** — an Anthology
+venue version, PubMed, or the authors' own repository:
+
+Beemo, RAID, MCP/RealDet, the feature-inversion trap, DetectRL-X, M4GT-Bench, LitBench, Adversarial
+Paraphrasing (NeurIPS 2025 + repo), SynGuard (repo, with its degradation table), Base Models Look
+Human (repo; no figure quoted from it), DAMAGE, Liang et al. (PubMed), Who Writes What, paraphrase
+resilience, the US-newspapers audit, shrinking diversity and the homogenizing-effect review (both
+PubMed), plus *Your Brain on ChatGPT* whose preprint status was itself the thing verified.
+
+**The 50 remaining are arXiv-only from here.** Not "unchecked out of carelessness" — checked and
+found to have no reachable published version. Two of them were only recovered in round eleven by
+noticing they *had* been published since we cited them, which is a reason to re-run the check
+periodically rather than treat this table as final.
+
+## ✗ A defect in the audit tool itself
+
+The arXiv extractor scans Python files and treated **`arXiv:2301.00000`** as a citation. It is not —
+it is a **format example** in `untell/scripts/preserve.py`, illustrating the modern arXiv identifier
+shape so the citation-locking regex can be tested against it, and `tests/test_preserve.py` uses the
+same string as a fixture.
+
+An extractor that reports a documented regex example as an unresolvable citation would, if shipped,
+generate exactly the kind of false alarm that gets a checker ignored — a failure this repo has
+written about before in `untell/scripts/audit.py`. The shipped `cited_acl_ids` is unaffected because
+it matches Anthology URLs only; any future arXiv extension needs a placeholder guard, and this note
+is here so that lands as a requirement rather than as a surprise.
+
+## And one consistency defect the audit caught
+
+*Who Writes What* was cited as **arXiv:2502.12611** in `research-to-build.md` and as
+**2025.acl-long.1292** in this ledger — the same paper, two identifiers, in one repository. Now cited
+by venue in both places. That is the mundane defect a citation audit is actually for, and nothing
+would have found it by reading.

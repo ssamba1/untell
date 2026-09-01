@@ -261,7 +261,7 @@ already exists but has no multilingual evaluation data behind it.
   covers the neurodivergent case, where **no peer-reviewed quantification exists at all** — checked
   from three directions, and the sources actively warn that circulating figures trace to no study.
 - **Author-role fairness axis.** *Who Writes What: Unveiling the Impact of Author Roles on AI-generated
-  Text Detection* ([arXiv:2502.12611](https://arxiv.org/pdf/2502.12611)) and the accuracy-bias
+  Text Detection* ([2025.acl-long.1292](https://aclanthology.org/2025.acl-long.1292/)) and the accuracy-bias
   trade-off study ([PMC12453642](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12453642/)) give the
   framing; **no fairness-audit toolkit exists for text detectors** — AIF360, Aequitas and Fairlearn are
   generic classifier tools and nobody has bridged them to this. That bridge is a differentiator.
