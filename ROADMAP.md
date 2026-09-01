@@ -61,6 +61,7 @@ no decision, no native speaker and no GPU, only the work.
 | 33 | Score the whole pre-LLM corpus, not a sample of it | ✅ done — every figure here was computed on 100–600 of **6,810** available, because `--n` had a default and no way to say "all". `--n 0` now does, and each report states whether it is a census or a sample | — |
 | 34 | Report what a calibrated threshold does on *unseen* text | ✅ done — `coverage_spread()`; the conformal bound is marginal, so the realised rate exceeds α **about half the time at every n**. More data narrows the band (5.5 points → 0.9), it does not lower that probability. **Nobody states this beside a published threshold** — ours did not, until round sixty-one | — |
 | 35 | Make the count checks and their auto-fixer one predicate | ✅ done — they were two, and `--fix-counts` rewrote a count quoted inside a code span while repairing none of the three claims the checks reported | — |
+| 36 | No pattern in the codebase may go quadratic on whitespace | ✅ done — six patterns did. `_claimed_spans` ran **60.5s on 16,000 newlines**, extrapolating to ~39 minutes for the scale test and **~10 minutes of CPU inside the REST path's own 50,000-character cap**. Now 0.013s. A sweep times all 269 reachable patterns and found the seventh and eighth itself | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /

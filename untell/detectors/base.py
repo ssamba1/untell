@@ -102,8 +102,12 @@ def clamp01(x: float) -> float:
 # (0.00 vs 14.50). An AUROC computed over RAID with layout preserved is partly scoring formatting.
 # The figures above avoid it by whitespace-joining both halves, which is a thing to do deliberately.
 _HORIZONTAL_RUN = re.compile(r"[ \t]+")
-_TRAILING_HORIZONTAL = re.compile(r"[ \t]+(?=\n)")
-_SPACE_BEFORE_PUNCT = re.compile(r"[ \t]+([.,;:!?])")
+# The lookbehind is a performance guard, not a semantic one: without it the engine re-enters the
+# run at every one of its characters and rescans to the end, which is O(n^2) on a long run of
+# spaces. Anchoring to the run's first character makes every interior position fail in O(1).
+# MEASURED on 16,000 spaces: 1.156s against 0.00032s, with identical matches on 2,010 texts.
+_TRAILING_HORIZONTAL = re.compile(r"(?<![ \t])[ \t]+(?=\n)")
+_SPACE_BEFORE_PUNCT = re.compile(r"(?<![ \t])[ \t]+([.,;:!?])")  # anchored: see above
 # Unicode's own line terminators. They render as a line break and are not "\n", so a tokenizer sees
 # an unknown character where a newline belongs. Word, some PDF extractors and a few web editors emit
 # them routinely. MEASURED, replacing every space with U+2028 moved roberta_openai +0.9407 (0.0427

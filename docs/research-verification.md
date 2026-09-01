@@ -4201,3 +4201,106 @@ comprehension per check.
 this section corrects the first draft of round sixty-two. The pattern is not carelessness so much as
 the thing this ledger exists to make visible — **a fix is a change, and a change needs the same
 scrutiny as the code it repairs.**
+
+---
+
+# Round sixty-three — the suite was not hanging, one test was taking thirty-nine minutes
+
+Round sixty-two's verification run appeared to stall at 97%. It had not stalled. `py-spy` on the
+stuck worker named the frame:
+
+```
+_claimed_spans (untell/scripts/tells.py)
+score_tells (untell/scripts/tells.py)
+test_all_newlines_score_tells (tests/test_scale_ceilings.py)
+```
+
+That test's entire docstring is **"100k bare newlines must not crash."** It does not crash. MEASURED,
+`_claimed_spans` on runs of bare newlines:
+
+| newlines | before | after |
+|---|---|---|
+| 1,000 | 0.245s | 0.0008s |
+| 2,000 | 0.987s | — |
+| 4,000 | 3.918s | 0.0033s |
+| 8,000 | 15.579s | — |
+| 16,000 | **60.509s** | **0.0130s** |
+| 100,000 | ~39 minutes, extrapolated | **0.0821s** |
+
+**Four times the time for twice the input, at every step.** Clean quadratic, so the 100,000-newline
+test costs about thirty-nine minutes — and "does not crash" was the whole contract, so nothing said
+so.
+
+## The shape, and why five patterns had it
+
+Every offender was `^` under `re.MULTILINE` followed by `\s*`:
+
+    (?:^|(?<=[.!?]\s))\s*(Moreover|Furthermore|...)
+
+Under `re.MULTILINE`, **every newline in a run is a line start.** At each one `\s*` greedily eats the
+rest of the run, fails the literal, and backtracks over everything it ate. O(n) work at O(n)
+positions. `formulaic_transition`, `steering_opener`, `sycophancy`, `rhetorical_opener` and
+`markdown_artifact` all had it.
+
+The fix is `[^\S\n]*` — horizontal whitespace, which cannot cross a newline, so an attempt starting
+inside a run fails in O(1). It also matches intent: this is *leading indentation on a line*, never a
+blank line between paragraphs, and `^` already matches at the later line start regardless.
+
+⚠️ **`untell/scripts/score.py` caps REST input at 50,000 characters, and the cap did not bound the
+cost.** DERIVED from the MEASURED 60.509s at 16,000 newlines and the quadratic scaling the table
+above establishes: 60.509 × (50,000 / 16,000)² ≈ **591 seconds — about ten minutes of CPU for one
+request.** Extrapolated rather than run, because running it would have cost ten minutes. A byte limit
+is not a work limit when the work is quadratic in the bytes.
+
+## Equivalence, checked rather than argued
+
+1,210 texts — 1,200 real pre-LLM abstracts plus ten fixtures built to hit each pattern — through
+`_claimed_spans` before and after. **1,144 spans: every one the same category, the same end offset,
+and the same matched text apart from a dropped leading run of newlines.** Six texts differ at all,
+all fixtures, all in exactly that way.
+
+✅ **That difference is an improvement, not a tolerated regression.** `_claimed_spans` sorts
+**longest span first** so the richer tell claims contested text. A leading newline run inflated a
+span's length without adding any tell, so a pattern preceded by blank lines could out-rank a
+genuinely longer construction. One fixture shows a span of `[0, 48]` for the eight-character tell
+`Notably,`; it is now `[40, 48]`.
+
+## The durable half: the seventh pattern, found by the check rather than by hand
+
+Fixing six patterns is worth less than making the seventh impossible to add unnoticed. A sweep now
+walks **every compiled pattern reachable from `untell/` and `eval/`** — 269 of them — and times each
+on a run of newlines and a run of spaces, failing anything that grows more than 2.6× for 2× input.
+
+It earned its place immediately. Hand-inspection had found six; the sweep found two more on its first
+run — `untell._env._COMMENT` (`\s+#.*$`) and `untell.scripts.tells._DIFF_ANCHOR_RE` — both quadratic,
+both under the threshold a human eye had used.
+
+Four patterns needed the other fix, where a newline should not stop the match: a negative lookbehind
+anchoring the run to its first character, `(?<!\s)\s+` instead of `\s+`. MEASURED at 16,000
+characters, `_SPACE_BEFORE_PUNCT`, `_TRAILING_HORIZONTAL`, `_SENTENCE_END_AFTER` and
+`_LIST_CONTINUES_RE` ran **1.12–1.23s** against **0.00033s**, with identical matches on 2,010 texts.
+
+✗ **Possessive quantifiers are the obvious fix and they do not work.** `[ \t]++` removes backtracking
+*within* the run, and the growth ratio stays 4.0 — the engine still restarts at every position and
+rescans. MEASURED: 8× faster, still quadratic. Only anchoring the run's start changes the exponent.
+
+⚠️ **And the sweep's first version was flaky, which would have made it worse than nothing.** It timed
+each pattern once. Run alone it passed; run beside five other test files it failed on a linear
+pattern, because a scheduler steal in the large sample and none in the small one is enough to clear a
+2.6× ratio. This repository's own rule — *a check that fails on correct machines gets disabled, which
+is worse than not having it* — is written in `check_test_count_claims` two files away.
+
+Fixed by measuring the **minimum of three runs**. Timing noise is one-directional: contention adds
+time and never removes it, so the minimum is the robust estimator and a single sample is not. Three
+consecutive runs of the same six-file selection that produced the failure now pass.
+
+✅ **Verified to still fire.** Reverting one of the five tell patterns to `\s*` fails the sweep, which
+names it — and names it as `untell.rewriter.structural._TELLS_TRANSITION_OPENER_RE`, a re-export of
+the same compiled object, confirming the fix reaches every module that shares it.
+
+## What this says about the test that found it
+
+`test_all_newlines_score_tells` was doing its job and could not say so. It asserted the weakest
+property available — no exception — for an input chosen precisely because it is pathological, and
+then took thirty-nine minutes to report success. **A scale test with no time bound tests the wrong
+half of the scale.** MEASURED after the fix, `tests/test_scale_ceilings.py` runs its 28 cases in **12.0 seconds** total.

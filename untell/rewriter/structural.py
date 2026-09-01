@@ -2177,7 +2177,9 @@ _HUMAN_PARENTHESES_PER_100W = 0.80
 # after the aside's closing comma. A real aside end is followed by the sentence resuming — "and by
 # the way that the iris scatters light" — where the first word IS the coordinator and no item list
 # precedes it, so that shape does not match and stays convertible.
-_LIST_CONTINUES_RE = re.compile(r"\s+[a-z][\w-]*(?:,\s*[a-z][\w-]*)*,?\s+(?:and|or)\s")
+# Anchored to the whitespace run's first character; see `_SENTENCE_END_AFTER` in preserve.py.
+_LIST_CONTINUES_RE = re.compile(
+    r"(?<!\s)\s+[a-z][\w-]*(?:,\s*[a-z][\w-]*)*,?\s+(?:and|or)\s")
 
 # Words whose meaning is carried partly by the preposition that follows them. Substituting the
 # word alone leaves the preposition stranded on a synonym that does not take it: "an approach to
