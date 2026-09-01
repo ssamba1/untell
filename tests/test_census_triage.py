@@ -297,3 +297,210 @@ def test_the_prose_guard_costs_one_true_positive_and_that_is_recorded_not_tuned_
         "the prose guard has stopped costing this row, which means the phrase list grew to fit "
         "the measurement set; re-measure on repos that were not used to build the rule"
     )
+
+
+# --------------------------------------------------------------------------------------------
+# `inspect` -- the tree reader. `classify` stops at a tenth of the corpus because search-API
+# metadata cannot tell a product from a build script. A shallow clone can, and the git proxy
+# serves one for any public repo even though this session's GitHub API plane does not. These
+# guard the three defects the first working version had, all found by scoring it against sixteen
+# repos read by hand on 2026-09-01.
+# --------------------------------------------------------------------------------------------
+
+def _facts(**over):
+    base = {"files": 20, "code_files": 0, "product_code_files": 0, "product_loc": 0, "own_loc": 0,
+            "md_files": 6, "skill_manifest": False, "root_skill_manifest": False,
+            "ships_weights": False,
+            "signals": {k: [] for k in census._TREE_SIGNALS}, "product_paths": []}
+    sig = over.pop("signals", None)
+    base.update(over)
+    if sig:
+        base["signals"] = {**base["signals"], **sig}
+    return base
+
+
+def test_a_signal_word_must_be_a_word_and_not_a_substring():
+    """`trl` inside `strlen` called a C steganography toolkit a fine-tuned model.
+
+    The trainer list is full of three-letter tokens — `trl`, `nli`, `peft` — and plain substring
+    matching finds all of them inside ordinary identifiers. This is the worst class of miss the
+    tree reader can make, because `fine-tuned-model` is CONFIDENT and confident rows leave the
+    read queue.
+    """
+    assert not census._boundary("trl").search("size_t n = strlen(buf);")
+    assert not census._boundary("nli").search("the request failed while online")
+    assert census._boundary("trl").search("from trl import sfttrainer")
+    # Punctuation-bearing entries must keep matching; they carry their own boundaries.
+    assert census._boundary("undetectable.ai").search('base = "https://undetectable.ai/api"')
+    assert census._boundary("\\u200b").search('const ZWSP = "\\u200b";')
+
+
+def test_a_carrier_is_found_by_its_code_points_not_by_its_size():
+    """The first version required a carrier to be under 800 lines, a number with nothing behind it.
+
+    `chinmay29hub/stegmoji` is a 5,780-line Next.js app and is exactly what it says it is. What a
+    carrier actually does is enumerate the code points it hides in.
+    """
+    big = census.decide_from_tree(
+        _facts(product_code_files=34, product_loc=5780, own_loc=5780, code_files=57,
+               signals={"hidden_characters": ["0x200b", "0xfe0e", "variation selector"]}),
+        {"name": "chinmay29hub/stegmoji", "category": "unicode-trickery"})
+    assert big["category"] == "unicode-trickery" and big["confidence"] == "confident", big
+    # ...and one stray constant in a large program is not a carrier.
+    incidental = census.decide_from_tree(
+        _facts(product_code_files=40, product_loc=9000, own_loc=9000,
+               signals={"hidden_characters": ["\\u200b"]}),
+        {"name": "someone/big-app", "category": "rule-based-rewriter"})
+    assert incidental["confidence"] == "unsure", incidental
+
+
+def test_hex_code_points_are_seen_as_well_as_escapes(tmp_path):
+    """A carrier that writes `0xFE0E` matched nothing against an escape-only list.
+
+    Both notations are in live use and neither implies the other, so a list carrying one of them
+    silently drops half the category into the generic rewriter bucket.
+    """
+    (tmp_path / "steg.js").write_text(
+        "const SELECTORS = [0xFE0E, 0xFE0F, 0x200B];\n" * 3, encoding="utf-8")
+    facts = census.read_tree(tmp_path)
+    assert len(facts["signals"]["hidden_characters"]) >= 2, facts["signals"]
+
+
+def test_bundled_subskill_code_is_not_the_repos_own_product():
+    """`Xircth/thesis-workflow-skill` is a skill whose AIGC-lowering is prose.
+
+    The tree finds 4,090 lines of C# in it, all under `skills/minimax-docx/` — a bundled DOCX
+    helper. Counting a sub-skill's machinery as the repo's product turned a correct confident
+    verdict into a wrong one.
+    """
+    tree = census._SUBSKILL
+    assert tree.search("skills/minimax-docx/scripts/dotnet/core/tablesamples.cs")
+    assert tree.search(".claude/hooks/run.py")
+    assert not tree.search("src/skillsmith/main.py"), "the guard is matching on a substring"
+
+
+def test_a_skill_that_ships_a_linter_is_not_settled_by_its_manifest():
+    """The packaging rule must keep the guard the metadata rule already needed.
+
+    `marmbiz/humanizer-de` ships 72 patterns behind deterministic linters and wears a manifest.
+    A root manifest may only settle the question when the repo's OWN code stays small.
+    """
+    row = census.decide_from_tree(
+        _facts(root_skill_manifest=True, skill_manifest=True, md_files=9,
+               product_code_files=6, product_loc=900, own_loc=900),
+        {"name": "marmbiz/humanizer-de", "category": "prompt-guide"})
+    assert row["confidence"] == "unsure", (
+        f"a manifest alone decided a repo carrying 900 lines of its own code: {row}"
+    )
+
+
+def test_build_and_test_code_is_not_product_code(tmp_path):
+    """`Hakku/finnish-humanizer` ships 748 lines of Python that generate instruction files.
+
+    A tree reader that counts every `.py` it finds is worse than the metadata rule it replaces:
+    it would call every prompt guide with a test suite a rewriter.
+    """
+    (tmp_path / "build.py").write_text("x = 1\n" * 400, encoding="utf-8")
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_build.py").write_text("y = 1\n" * 300, encoding="utf-8")
+    (tmp_path / "SKILL.md").write_text("# skill\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("# readme\n", encoding="utf-8")
+    facts = census.read_tree(tmp_path)
+    assert facts["code_files"] == 2, facts
+    assert facts["product_code_files"] == 0, f"build and test code counted as product: {facts}"
+    row = census.decide_from_tree(facts, {"name": "Hakku/finnish-humanizer",
+                                          "category": "prompt-guide"})
+    assert row["category"] == "prompt-guide" and row["confidence"] == "confident", row
+
+
+def test_one_unreachable_repo_does_not_end_the_sweep(tmp_path, monkeypatch):
+    """A private, renamed or deleted repo must cost its own row and nothing else.
+
+    A sweep that dies on row 12 of 131 is worth less than no sweep, because it looks like it ran.
+    """
+    def boom(name, dest, timeout=census.CLONE_TIMEOUT):
+        if "gone" in name:
+            raise census.CloneFailed("repository not found")
+        (dest / name.replace("/", "__")).mkdir(parents=True, exist_ok=True)
+        (dest / name.replace("/", "__") / "a.md").write_text("hi", encoding="utf-8")
+        (dest / name.replace("/", "__") / "b.md").write_text("hi", encoding="utf-8")
+        return dest / name.replace("/", "__")
+
+    monkeypatch.setattr(census, "clone", boom)
+    rows = census.inspect_rows(
+        [{"name": "a/gone", "category": "prompt-guide", "confidence": "unsure"},
+         {"name": "b/here", "category": "prompt-guide", "confidence": "unsure"}],
+        tmp_path, progress=False)
+    assert len(rows) == 2
+    assert rows[0]["evidence"] == "metadata" and "not found" in rows[0]["inspect_error"]
+    assert rows[1]["evidence"] == "source", rows[1]
+
+
+def test_a_mention_can_unmake_a_verdict_but_never_make_one():
+    """The tree reader's central asymmetry, and the correction that cost it two thirds of its reach.
+
+    MEASURED on the 34 repos where this harvest overlaps the census's hand reads — ground truth
+    assigned by reading source, years before this tool existed, so it cannot have been fitted to
+    it. A CONFIDENT `detector-with-evasion` verdict, keyed on a detector's name appearing in the
+    source, was right 2 times in 11: worse than the metadata rule it replaced. The failure is not
+    the word list. A humanizer prompt guide lists the detectors it aims to beat, so `gptzero` and
+    `binoculars` appear in guides and in pipelines alike, and no list of names separates a
+    mention from a call.
+
+    So a detector name may never carry a verdict — it goes to the reader as a briefing note. It
+    may still WITHHOLD one, which is not the same claim: the unicode branch asserts exclusivity,
+    that hiding characters is the whole product, and any other mechanism named in the source
+    contradicts that whatever it turns out to mean.
+    """
+    named = {"detector_in_loop": ["gptzero", "binoculars", "perplexity"]}
+    # It cannot make a verdict.
+    row = census.decide_from_tree(
+        _facts(product_code_files=8, product_loc=900, own_loc=900, signals=named),
+        {"name": "someone/rewriter", "category": "rule-based-rewriter"})
+    assert row["confidence"] == "unsure", f"a detector mention produced a verdict: {row}"
+    assert "CALLED" in row["rule"], f"the reader was not told what to look for: {row['rule']}"
+    # It can unmake one: `xuange520/unmark` enumerates eight code points in a sanitiser that sits
+    # beside an LLM scrubber and a detector, and is not a carrier.
+    unmark = census.decide_from_tree(
+        _facts(product_code_files=10, product_loc=1138, own_loc=1138, md_files=5,
+               signals={"hidden_characters": ["\\u200b", "\\u200c", "\\u200d", "\\ufeff"],
+                        **named}),
+        {"name": "xuange520/unmark", "category": "unicode-trickery"})
+    assert unmark["confidence"] == "unsure", f"unmark was confidently filed again: {unmark}"
+
+
+def test_training_code_is_not_a_shipped_model():
+    """`fine-tuned-model` is confident only on weights, which are a file and not a word.
+
+    A benchmark repository that trains detectors in order to compare them matched `trainer(` and
+    was confidently called a fine-tuned model; the census read it as research-code. Research,
+    benchmark and product repositories all contain training code.
+    """
+    trains = census.decide_from_tree(
+        _facts(product_code_files=15, product_loc=4303, own_loc=4303, md_files=1,
+               signals={"trains_a_model": ["trainer(", "peft"]}),
+        {"name": "someone/benchmark", "category": "dataset"})
+    assert trains["confidence"] == "unsure", trains
+    ships = census.decide_from_tree(
+        _facts(product_code_files=15, product_loc=4303, own_loc=4303, ships_weights=True),
+        {"name": "someone/tuned", "category": "rule-based-rewriter"})
+    assert ships["category"] == "fine-tuned-model" and ships["confidence"] == "confident", ships
+
+
+def test_the_tree_reader_beats_metadata_on_reach_without_losing_precision():
+    """The trade the whole step exists to make, pinned as a property rather than a number.
+
+    On the census-overlap set the metadata rule decides 2 of 34 rows at 2/2, and the tree reader
+    decides 11 at 10/11. Confidence must stay expensive: every branch that emits `confident`
+    rests on a structural fact — no product code at all, a vendor domain in the source, code
+    points enumerated with nothing else named, weights on disk — and none rests on a word
+    appearing somewhere.
+    """
+    import inspect as _inspect
+
+    src = _inspect.getsource(census.decide_from_tree)
+    confident_branches = [line for line in src.splitlines() if '"confident"' in line]
+    assert confident_branches, "decide_from_tree emits no confident verdicts at all"
+    assert not any("detector_in_loop" in line for line in confident_branches), (
+        "a detector mention is carrying a confident verdict again; it was right 2 times in 11"
+    )

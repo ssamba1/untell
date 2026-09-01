@@ -489,6 +489,295 @@ def cmd_plan() -> int:
     return 0
 
 
+# --------------------------------------------------------------------------------------------
+# Source inspection. `classify` above is metadata-only and stops at a tenth of the corpus,
+# because "is the Python file beside the Markdown the product?" is not a question search-API
+# metadata can answer. It is not a question that needs an LLM either. MEASURED 2026-09-01: this
+# session's GitHub *API* plane is bound to its own repository -- api.github.com, codeload and the
+# archive endpoints all answer 403 "not enabled for this session" -- but the git proxy is not.
+# `git clone --depth 1` works for any public repo, sixteen of them for 18 MB. The file tree is
+# free, and it answers most of what the census paid an agent to read prose for.
+# --------------------------------------------------------------------------------------------
+
+_CODE_EXT = (".py", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java", ".rb", ".cs",
+             ".c", ".cc", ".cpp", ".swift", ".kt", ".php", ".sh")
+# Code that exists to build, test or package the thing is not the thing. Getting this wrong is
+# what makes a tree-reader worse than the metadata rule it replaces: `Hakku/finnish-humanizer`
+# ships 748 lines of Python that generate instruction files, and it is a prompt guide.
+_NOT_PRODUCT = re.compile(
+    r"(^|/)(tests?|spec|specs|__tests__|examples?|samples?|docs?|\.github|node_modules|vendor|"
+    r"third_party|dist|build)(/|$)|(^|/)(setup|conftest|build|validate_skill|download_models|"
+    r"benchmark)\.py$|(^|/)test_[^/]*\.py$|[^/]*\.test\.[jt]sx?$"
+)
+_SKILL_FILES = ("skill.md", "agents.md", ".claude-plugin/plugin.json")
+# Code inside a bundled sub-skill belongs to that sub-skill, not to the repo's own product.
+# `Xircth/thesis-workflow-skill` is a skill whose AIGC-lowering is prose; the 4,090 lines the
+# tree finds are a DOCX helper under `skills/minimax-docx/`, and counting them made a correct
+# confident verdict into a wrong unsure one.
+_SUBSKILL = re.compile(r"(^|/)(skills|plugins|\.claude)/")
+# Grepped in product source only. Each names a thing metadata cannot see and the census could
+# only find by reading: whether a detector is inside the rewrite loop, whether meaning is checked
+# afterwards, whether a vendor is being billed, whether weights are being trained.
+_TREE_SIGNALS = {
+    "detector_in_loop": ("fast-detectgpt", "fast_detectgpt", "detectgpt", "binoculars", "gptzero",
+                         "originality.ai", "sapling", "roberta-base-openai-detector", "zerogpt",
+                         "perplexity", "burstiness", "log_likelihood", "loglikelihood"),
+    "meaning_verification": ("bertscore", "bert_score", "sentence-transformers",
+                             "sentence_transformers", "semantic_similarity", "cosine_similarity",
+                             "entailment", "nli", "rouge", "meteor"),
+    "vendor_api": ("undetectable.ai", "stealthgpt", "quillbot", "humanizeai", "walterwrites",
+                   "bypassgpt", "phrasly", "surferseo", "netus.ai", "twixify"),
+    "trains_a_model": ("trainer(", "peft", "get_peft_model", "loraconfig", "sfttrainer",
+                       "dpotrainer", "trl", "deepspeed", "accelerate.prepare"),
+    # Both notations, because carriers use both and one of them is invisible to the other's
+    # pattern: chinmay29hub/stegmoji writes `0xFE0E` and `0x200B` and matched NOTHING against an
+    # escape-only list, so a real carrier fell through to the generic rewriter bucket.
+    "hidden_characters": ("\\u200b", "\\u200c", "\\u200d", "\\ufeff", "\\u202a", "\\u2060",
+                          "\\u00ad", "\\ufe0e", "\\ufe0f",
+                          "0x200b", "0x200c", "0x200d", "0xfeff", "0x2060", "0xfe0e", "0xfe0f",
+                          "zero_width", "zerowidth", "zero width", "zero-width",
+                          "variation selector", "homoglyph"),
+}
+_WEIGHT_EXT = (".safetensors", ".ckpt", ".pt", ".pth", ".gguf", ".onnx")
+
+
+def _boundary(word: str) -> re.Pattern:
+    """A signal word must be a word, not a substring.
+
+    MEASURED 2026-09-01: plain `in` matching found the trainer token `trl` inside `strlen` and
+    confidently called `dapperfu/whitespace-stego` -- a C and Rust steganography toolkit -- a
+    fine-tuned model. Three-letter tokens (`trl`, `nli`, `peft`) are the whole reason this list
+    needs boundaries; `undetectable.ai` and `\\u200b` need their punctuation left alone.
+    """
+    pre = r"(?<![a-z0-9_])" if word[0].isalnum() else ""
+    post = r"(?![a-z0-9_])" if word[-1].isalnum() else ""
+    return re.compile(pre + re.escape(word) + post)
+
+
+_SIGNAL_RE = {k: [(w, _boundary(w)) for w in words] for k, words in _TREE_SIGNALS.items()}
+CLONE_TIMEOUT = 120
+MAX_GREP_BYTES = 400_000
+
+
+class CloneFailed(RuntimeError):
+    """One repo could not be read. Not fatal: the row keeps its metadata verdict and says why."""
+
+
+def clone(name: str, dest: Path, timeout: int = CLONE_TIMEOUT) -> Path:
+    """Shallowest possible checkout of a public repo. No API token, no credentials."""
+    import subprocess
+
+    target = dest / name.replace("/", "__")
+    if target.exists():
+        return target
+    proc = subprocess.run(  # noqa: S603,S607 - fixed argv, name is interpolated into a URL path
+        ["git", "clone", "--depth", "1", "--quiet", f"https://github.com/{name}", str(target)],
+        capture_output=True, text=True, timeout=timeout,
+    )
+    if proc.returncode != 0:
+        raise CloneFailed((proc.stderr or "").strip().splitlines()[-1:] or ["clone failed"])
+    return target
+
+
+def read_tree(root: Path) -> dict:
+    """Structural facts about a checkout. No judgement here; `decide_from_tree` does that."""
+    facts = {"files": 0, "code_files": 0, "product_code_files": 0, "product_loc": 0,
+             "own_loc": 0, "md_files": 0, "skill_manifest": False, "root_skill_manifest": False,
+             "ships_weights": False,
+             "signals": {k: [] for k in _TREE_SIGNALS}, "product_paths": []}
+    for path in root.rglob("*"):
+        if not path.is_file() or ".git/" in f"{path.relative_to(root)}/":
+            continue
+        rel = str(path.relative_to(root))
+        low = rel.lower()
+        facts["files"] += 1
+        if low.endswith(".md"):
+            facts["md_files"] += 1
+        if low in _SKILL_FILES or low.endswith("/skill.md") or low.endswith(".claude-plugin/plugin.json"):
+            facts["skill_manifest"] = True
+            if "/" not in low or low.endswith(".claude-plugin/plugin.json"):
+                facts["root_skill_manifest"] = True
+        if low.endswith(_WEIGHT_EXT):
+            facts["ships_weights"] = True
+        if not low.endswith(_CODE_EXT):
+            continue
+        facts["code_files"] += 1
+        if _NOT_PRODUCT.search(low):
+            continue
+        facts["product_code_files"] += 1
+        try:
+            blob = path.read_text(encoding="utf-8", errors="replace")[:MAX_GREP_BYTES]
+        except OSError:
+            continue
+        nlines = blob.count("\n") + 1
+        facts["product_loc"] += nlines
+        if not _SUBSKILL.search(low):
+            facts["own_loc"] += nlines
+        if len(facts["product_paths"]) < 12:
+            facts["product_paths"].append(rel)
+        hay = blob.lower()
+        for key, words in _SIGNAL_RE.items():
+            for word, pattern in words:
+                if word not in facts["signals"][key] and pattern.search(hay):
+                    facts["signals"][key].append(word)
+    return facts
+
+
+# A repo with a handful of lines of glue beside a pile of Markdown is still a prompt guide. The
+# threshold is deliberately generous: below it the tree says "prose", above it the tree says
+# "software", and rows near the line keep going to a reader.
+PROSE_LOC = 120
+
+
+def decide_from_tree(facts: dict, meta: dict) -> dict:
+    """Revise a metadata verdict using the file tree, or decline to.
+
+    Returns the same shape `classify` does. The contract is unchanged: `confident` means the row
+    leaves the read queue, so every branch here must be answerable from files alone.
+    """
+    sig = facts["signals"]
+    loc, nprod = facts["own_loc"], facts["product_code_files"]
+
+    if sig["vendor_api"]:
+        return _tree_row(meta, "api-wrapper", "confident",
+                         f"source calls a commercial humanizer: {', '.join(sig['vendor_api'][:3])}")
+    if facts["ships_weights"]:
+        return _tree_row(meta, "fine-tuned-model", "confident", "the repository ships model weights")
+    # Training code is not a shipped model. MEASURED on the held-out census overlap: `trainer(`
+    # fired on a benchmark repository that trains detectors in order to compare them, which the
+    # census read as research-code. Research repos, benchmark repos and product repos all contain
+    # training code, and the tree cannot tell which one it is looking at.
+    if sig["trains_a_model"]:
+        return _tree_row(meta, "fine-tuned-model", "unsure",
+                         f"source trains a model ({', '.join(sig['trains_a_model'][:3])}); "
+                         f"whether it SHIPS one, or is research code, needs reading")
+    if nprod == 0 or loc < PROSE_LOC:
+        if facts["md_files"] >= 2:
+            return _tree_row(meta, "prompt-guide", "confident",
+                             f"{facts['md_files']} Markdown files and {loc} lines of its own "
+                             f"product code"
+                             f"{' (build and test code only)' if facts['code_files'] else ''}")
+        return _tree_row(meta, meta.get("category", "prompt-guide"), "unsure",
+                         "almost no code and almost no prose; nothing in the tree to decide on")
+    # Packaging is evidence about what the product IS, and a root manifest says the answer is the
+    # instructions. It only settles the question when the repo's own code stays small: a skill
+    # that ships deterministic linters is a rewriter wearing a manifest, which is the miss the
+    # metadata rule already had to be guarded against.
+    if facts["root_skill_manifest"] and loc < PROSE_LOC and facts["md_files"] >= 2:
+        return _tree_row(meta, "prompt-guide", "confident",
+                         f"a skill manifest at the root, {facts['md_files']} Markdown files, and "
+                         f"its own code is {loc} lines; the rest belongs to bundled sub-skills")
+    # Two distinct code points, not a line count. The old cap said a carrier had to be under 800
+    # lines, which is a number with nothing behind it: `chinmay29hub/stegmoji` is a 5,780-line web
+    # app and still a carrier. What a carrier actually does is ENUMERATE the code points it hides
+    # in, and one stray zero-width constant in a large program does not.
+    if len(sig["hidden_characters"]) >= 2:
+        # ...but only when hiding characters is the WHOLE product, and two facts say when it is
+        # not. Packaging: `epoko77-ai/im-not-ai` is a 5,198-line humanizer skill that enumerates
+        # five zero-width code points because it STRIPS them, and the census read it as a prompt
+        # guide -- a repo shipping a skill manifest is a skill, and a steganography tool does not
+        # ship one. (Packaging alone. A Markdown-file count chosen to sit between the two repos it
+        # was measured on would be a fitted constant wearing a principle's clothes.)
+        #
+        # And the asymmetry the read queue below rests on, used the other way round: a mention
+        # cannot MAKE a verdict, but it can unmake one. This branch's claim is exclusivity, so any
+        # other mechanism named in the source contradicts it whatever that mention turns out to
+        # mean. That separates the six by presence rather than by any threshold -- every carrier
+        # verified against source names no detector and no trainer anywhere, and `xuange520/unmark`,
+        # whose sanitiser enumerates eight code points beside a scrubber and a detector, names five.
+        others = sig["detector_in_loop"] + sig["trains_a_model"]
+        if facts["root_skill_manifest"] or others:
+            why = (f"its source also names {', '.join(others[:3])}" if others
+                   else "it is packaged as a skill")
+            return _tree_row(meta, meta.get("category", "rule-based-rewriter"), "unsure",
+                             f"handles hidden code points, but {why}; carrier, cleaner or one "
+                             f"feature among many needs reading")
+        return _tree_row(meta, "unicode-trickery", "confident",
+                         f"source enumerates hidden code points: "
+                         f"{', '.join(sig['hidden_characters'][:4])}")
+    # The read queue, and the tree makes it a briefed one. A detector NAME in the source is the
+    # single most useful thing to hand a reader and the single least safe thing to rule on: a
+    # humanizer prompt guide lists the detectors it aims to beat, so `gptzero` and `binoculars`
+    # appear in the source of guides and of pipelines alike. MEASURED on the held-out census
+    # overlap, a confident detector verdict was right 2 times in 11 -- worse than the metadata
+    # rule it replaced. Narrowing the word list does not fix it, because the failure is the
+    # evidence class: a mention is not a call, and no list of names separates the two.
+    hits = ", ".join(sig["detector_in_loop"][:4])
+    detail = f"; source names detectors ({hits}) -- check whether they are CALLED" if hits else ""
+    if sig["meaning_verification"]:
+        detail += f"; and meaning checks ({', '.join(sig['meaning_verification'][:3])})"
+    return _tree_row(meta, "rule-based-rewriter", "unsure",
+                     f"{nprod} product files, {loc} lines, no vendor call in them{detail}")
+
+
+def _tree_row(meta: dict, category: str, confidence: str, why: str) -> dict:
+    row = dict(meta)
+    row.update({"category": category, "confidence": confidence, "rule": why,
+                "needs_read": confidence != "confident", "evidence": "source"})
+    return row
+
+
+def inspect_rows(rows: list[dict], workdir: Path, keep: bool = False,
+                 limit: int | None = None, progress: bool = True) -> list[dict]:
+    """Clone, read the tree, revise. Rows that cannot be cloned keep their metadata verdict."""
+    import shutil
+
+    workdir.mkdir(parents=True, exist_ok=True)
+    out: list[dict] = []
+    for i, meta in enumerate(rows):
+        if limit is not None and i >= limit:
+            out.append(dict(meta))
+            continue
+        name = meta.get("name") or ""
+        if name.count("/") != 1:
+            out.append({**meta, "evidence": "metadata", "inspect_error": "not an owner/repo name"})
+            continue
+        target = None
+        try:
+            target = clone(name, workdir)
+            facts = read_tree(target)
+            row = decide_from_tree(facts, meta)
+            row["tree"] = {k: facts[k] for k in
+                           ("files", "code_files", "product_code_files", "product_loc", "own_loc",
+                            "md_files", "skill_manifest", "root_skill_manifest", "ships_weights",
+                            "signals")}
+            out.append(row)
+        except Exception as exc:  # noqa: BLE001 - one bad repo must not end the sweep
+            out.append({**meta, "evidence": "metadata", "inspect_error": str(exc)[:200]})
+        finally:
+            if target is not None and not keep and target.exists():
+                shutil.rmtree(target, ignore_errors=True)
+        if progress and (i + 1) % 10 == 0:
+            print(f"  inspected {i + 1}/{len(rows)}", file=sys.stderr)
+    return out
+
+
+def cmd_inspect(path: Path, workdir: Path, keep: bool, limit: int | None,
+                only_unsure: bool) -> int:
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    rows = rows if isinstance(rows, list) else rows.get("items", rows)
+    if "confidence" not in (rows[0] if rows else {}):
+        rows = [classify(r) for r in rows]
+    targets = [r for r in rows if not only_unsure or r.get("confidence") != "confident"]
+    skipped = [r for r in rows if r not in targets]
+    done = inspect_rows(targets, workdir, keep=keep, limit=limit)
+    allrows = done + [dict(r) for r in skipped]
+    conf = [r for r in allrows if r.get("confidence") == "confident"]
+    read = sum(1 for r in done if r.get("evidence") == "source")
+    print(f"{len(allrows)} repos: {read} read from source, {len(conf)} decided "
+          f"({len(conf) / len(allrows):.0%} of the budget saved)")
+    changed = [r for r in done if r.get("evidence") == "source"
+               and r["category"] != next((o["category"] for o in rows if o["name"] == r["name"]), None)]
+    print(f"  {len(changed)} categories revised by the tree")
+    errs = [r for r in allrows if r.get("inspect_error")]
+    if errs:
+        print(f"  {len(errs)} could not be cloned", file=sys.stderr)
+    out = path.with_suffix(".inspected.json")
+    out.write_text(json.dumps(allrows, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"\nwrote {out}")
+    return 0
+
+
 def cmd_classify(path: Path) -> int:
     rows = [classify(r) for r in _load(path)]
     confident = [r for r in rows if not r["needs_read"]]
@@ -517,7 +806,12 @@ def verify(fresh: list[dict], known: dict[str, dict]) -> dict:
     `confident` row is a defect -- it removed a repo from the read queue on a bad rule. A wrong
     `unsure` row is the system working: it was already routed to a reader.
     """
-    rows = [(row, _known(row["name"], known)) for row in (classify(r) for r in fresh)]
+    # Rows that already carry a verdict keep it, so this scores `inspect` output as readily as
+    # `classify` output. Scoring the tree reader against the census's hand reads is the only
+    # held-out number either of them has: the census assigned those categories by reading source
+    # long before this tool existed, so they cannot have been fitted to it.
+    graded = [r if "confidence" in r else classify(r) for r in fresh]
+    rows = [(row, _known(row["name"], known)) for row in graded]
     scored = [(row, old) for row, old in rows if old]
     out = {"overlap": len(scored), "confident": [0, 0], "unsure": [0, 0], "wrong": []}
     for row, old in scored:
@@ -589,6 +883,13 @@ def main() -> int:
     i.add_argument("--out", type=Path, required=True)
     c = sub.add_parser("classify", help="structural triage: no LLM, no network")
     c.add_argument("path", type=Path)
+    ins = sub.add_parser("inspect", help="shallow-clone and decide from the file tree")
+    ins.add_argument("path", type=Path)
+    ins.add_argument("--workdir", type=Path, default=Path("/tmp/untell-census-clones"))
+    ins.add_argument("--keep", action="store_true", help="do not delete each clone after reading")
+    ins.add_argument("--limit", type=int, default=None, help="inspect only the first N rows")
+    ins.add_argument("--only-unsure", action="store_true",
+                     help="skip rows metadata already decided")
     v = sub.add_parser("verify", help="score the classifier against the census's read verdicts")
     v.add_argument("path", type=Path)
     dd = sub.add_parser("delta", help="diff against docs/humanizer-census.json")
@@ -615,6 +916,8 @@ def main() -> int:
         return 0
     if a.cmd == "classify":
         return cmd_classify(a.path)
+    if a.cmd == "inspect":
+        return cmd_inspect(a.path, a.workdir, a.keep, a.limit, a.only_unsure)
     if a.cmd == "verify":
         return cmd_verify(a.path)
     if a.cmd == "delta":

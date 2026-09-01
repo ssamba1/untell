@@ -138,10 +138,14 @@ can triage**:
    which found one wrong, and the rule that produced it is fixed. The gap to 60% is not a tuning
    problem: those census categories were assigned by *reading source*, and metadata cannot see
    whether the Python file beside the Markdown is the product. A tenth of the reading is the
-   honest saving.
+   honest saving from metadata alone; a clone raises it to roughly a third (see *Reading the
+   source* below), and the rest is a reader's.
 3. **Spend the LLM on the tail.** The interesting classes (`detector_in_loop`,
    `meaning_verification`) are the ones that need reading. That is where the budget should have gone
-   the first time.
+   the first time — and, MEASURED, it is where it still has to go. `inspect` reads the file tree
+   of every repo for free and takes the decidable share from 6% to 32% of a held-out set, but it
+   cannot settle these two, because a humanizer prompt guide names the detectors it aims to beat
+   in the same words a pipeline uses to call them. It hands the reader a briefed queue instead.
 4. **Store deltas, not sweeps.** `docs/humanizer-census.json` already carries the per-repo profile.
    A scheduled job that re-queries and diffs against it turns a one-off document into a maintained
    one, and makes "the census is from 2026-08-05" stop being a caveat.
@@ -290,12 +294,15 @@ python .claude/census.py plan                      # 12 angles, 43 queries, ~2 m
 python .claude/census.py harvest --out out/x.json  # local checkout + PAT; refuses cleanly elsewhere
 python .claude/census.py ingest a.json --out x.json  # remote session: fold in MCP-captured results
 python .claude/census.py classify x.json           # structural triage, no LLM, no network
-python .claude/census.py verify x.json             # score the classifier against the census
+python .claude/census.py inspect x.json --only-unsure  # shallow-clone and read the file tree
+python .claude/census.py verify x.json             # score either classifier against the census
 python .claude/census.py delta x.json              # what the census would say differently today
 ```
 
 `verify` is the part that matters: the census hand-read 435 repos, so any overlap is free ground
-truth, and the classifier is scored against it rather than trusted. It reports the two buckets
+truth, and both classifiers are scored against it rather than trusted. It is what caught the tree
+reader being confidently wrong about twelve repos while it looked, on the set it was built
+against, like it had solved the problem. It reports the two buckets
 separately because they promise different things — a wrong *confident* row is a defect (it dropped
 a repo from the read queue on a bad rule), a wrong *unsure* row is the system working.
 
@@ -389,6 +396,75 @@ and have nothing to do with it. The classifier is most confident exactly where t
 least precise — an off-topic repo is easy to categorise because its purpose is unambiguous. Of the
 sixteen rows the classifier was surest about, ten are on-topic. That is a search-query problem,
 not a triage one, and it means the confident bucket's *value* is lower than its accuracy.
+
+### Reading the source, and what it cost to find out that mostly does not work
+
+§1 argues the census overspent by paying an agent to read 435 READMEs, and that a script could
+triage most of them. The metadata classifier gets a tenth. The git-proxy finding in §0 says the
+rest of the gap is not a reading problem either — the file tree is free — so `census.py inspect`
+shallow-clones each repo, reads its tree, and re-decides:
+
+```bash
+python .claude/census.py inspect harvest.json --only-unsure
+```
+
+**Scored against ground truth nobody fitted it to** — the 34 rows where this harvest overlaps
+repos the census hand-read from source, years before this tool existed:
+
+| | rows decided | confident rows right |
+|---|---|---|
+| `classify` (metadata) | 2 / 34 — **6%** | 2 / 2 |
+| `inspect` (file tree) | 11 / 34 — **32%** | 10 / 11 — **91%** |
+
+Five times the reach at comparable precision, and the read queue it hands over is briefed rather
+than blind: each unsure row now carries its product file count, its own line count net of bundled
+sub-skills, and which detector and meaning-check names appear in its source.
+
+**The first version scored 13/25.** It is worth saying what that means: it was confidently wrong
+about *twelve* repos, which is worse than the metadata rule it was built to replace, because a
+confident row is one that leaves the read queue. Nine of the twelve came from one branch, and the
+branch looked like the best idea in the file — grep the source for `gptzero`, `binoculars`,
+`fast-detectgpt`, and you have found the `detector_in_loop` class §1 says is worth paying to read.
+
+It has not. **A humanizer prompt guide lists the detectors it aims to beat.** `gptzero` and
+`binoculars` appear in the source of guides and of pipelines alike; `lakshitha-dev/ai-humanizer-skill`
+names five and is a prompt guide. Narrowing the word list does not help, because the failure is
+the evidence class and not its membership: a mention is not a call, and no list of names
+separates the two. The branch is gone. Detector names now reach the reader as a briefing note,
+which is what they were always worth.
+
+Two smaller versions of the same error went with it. `trainer(` fired on a benchmark repository
+that trains detectors in order to compare them — research, benchmark and product repositories all
+contain training code — so `fine-tuned-model` is now confident only on weights, which are a file
+rather than a word. And `trl`, a token from that same list, matched inside `strlen` and
+confidently called a C and Rust steganography toolkit a fine-tuned model; signal words are
+matched at word boundaries now.
+
+What survives is an asymmetry worth stating on its own, because it is the rule the whole step
+turns on: **a mention cannot make a verdict, but it can unmake one.** The unicode branch claims
+exclusivity — that hiding characters is the entire product — so any other mechanism named in the
+source contradicts it whatever that mention turns out to mean. That separates the six unicode
+rows by presence rather than by any threshold: all five verified carriers name no detector and no
+trainer anywhere in their source, and `xuange520/unmark`, whose sanitiser enumerates eight code
+points beside a scrubber and a detector, names five.
+
+**The remaining confident miss is a real limit, not a defect.** `diaiq/claude-skill-humanizer` is
+two Markdown files and no code; the census calls it an api-wrapper because its README says
+"Powered by DiaIQ". A vendor relationship stated in prose is invisible to a file tree, exactly as
+it is invisible to search metadata — §1 already named this repo as the case neither can check.
+
+Three honesty notes on the numbers above. The tree reader also scores 14/14 confident at 88%
+coverage on the sixteen repos of the *previous* section — ignore that number. Those sixteen are
+what the bugs were found on, and it was 15/15 at 94% before the census overlap showed the
+detector branch was wrong about nine repos it had no opinion on. It is what fitting to a
+measurement set looks like from the inside, which is why the table above uses the other set.
+Second, the 34-row score is itself no longer strictly held out: the diagnosis came from it. The
+corrections were deletions of whole evidence classes rather than tuned thresholds — the one fitted
+constant that crept in, a Markdown-file count sitting between the two repos it was measured on,
+was removed in favour of the packaging fact it was standing in for — but the number should be read
+as an upper bound, and re-scored against a fresh overlap when one exists. Third, `inspect` is
+*not* cheaper than `classify`: it is a clone and a full-tree read per repo, roughly 1 MB and a
+second each. It is cheaper than a reader, which is the comparison that matters.
 
 ### Two defects the run exposed in the tooling
 
