@@ -21,7 +21,7 @@ Every item below is enumerated from the sections that follow, and
 drifts from the plan it summarises is worse than none, because it is the part people read.
 
 **Rows 1–17 are unchanged: nothing there is actionable without a decision from you.** Rows
-18–22 were opened 2026-09-01 from the literature review (§7) and are the exception — they need
+18–23 were opened 2026-09-01 from the literature review (§7) and are the exception — they need
 no decision, no native speaker and no GPU, only the work.
 
 | # | item | status | waiting on |
@@ -48,6 +48,7 @@ no decision, no native speaker and no GPU, only the work.
 | 20 | The base-vs-instruct audit arm | 🔜 open | **nobody — buildable now.** CPU only, ~1 day, no new dependency. |
 | 21 | SynthID-Text detector adapter (Article 50 marking audit) | 🔜 open | **nobody — buildable now.** `synthid-text` is open source and in HF Transformers; the attack side already exists. |
 | 22 | Confidence intervals on every published rate | 🔜 open | **nobody — buildable now.** Arithmetic over data already collected. |
+| 23 | AI-assisted arm + FAR/MFAR + per-subgroup stratification | 🔜 open | **nobody — buildable now.** Metrics are arithmetic; the fairness corpus is MIT-licensed and public. |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -365,84 +366,136 @@ GPU or skip. The product works without a trained adapter.
 
 ---
 
-## 7. What the 2026 literature adds — five items, each with a paper behind it
+## 7. What the literature establishes — verified at source, and what follows from it
 
-Added 2026-09-01. The full survey is in [the literature map](ai-writing-research.md); the part that
-translates into code is in [what we can use](docs/research-to-build.md). Only the intersection is
-here, because a roadmap that lists reading is not a roadmap.
+Added 2026-09-01, then **checked rather than trusted**. The survey is
+[the literature map](ai-writing-research.md); the buildable part is
+[what we can use](docs/research-to-build.md); **the audit trail, verification tiers and the
+corrections that checking produced are in
+[the verification ledger](docs/research-verification.md)** — read that before quoting any number
+here. Publisher and preprint hosts are blocked by organization egress policy in the environment this
+was compiled in; PubMed/PMC and github.com are not, which put the prevalence, fairness and
+homogenization literature under direct reading. ✅ marks a claim read at source.
 
-**Read this first, because it changes what §0 says the competition is.** The census answered "who
-else humanizes text". It did not answer "who else *audits detectors*", and there is now an answer:
-**MGTEVAL** ([arXiv:2604.25152](https://arxiv.org/abs/2604.25152)) ships 26 detectors, 12 attacks,
-a CLI, a web UI and TPR-at-low-FPR reporting. It is good, it is broader than us on detector count,
-and we should stop implying otherwise anywhere. What it does not do — and what the five items below
-build — is measure false positives on *real human writing at vendors' own shipped thresholds*, then
-hand back a threshold that fixes them.
+### The result that should organise everything else
+
+*AI Detectors Fail Diverse Student Populations* ([arXiv:2603.20254](https://arxiv.org/abs/2603.20254))
+makes a point the rest of the field writes around. Detection theory models a binary test between
+*one* human distribution and *one* AI distribution. A real institution has no single human
+distribution — the null hypothesis is composite: "this was written by student *i*, whose writing
+distribution is unknown." Under a composite null, any text-only, one-shot detector with useful power
+**must** produce false accusations at a rate set by the overlap between *that population's* writing
+and AI output. The constraint comes from population **diversity**, is logically independent of model
+quality, and cannot be engineered away.
+
+**The corollary is this repo's entire thesis, upgraded from an opinion to a consequence: a false-positive
+rate is not a property of a detector. It is a property of a detector and the population it is pointed
+at.** A vendor-published FPR is therefore meaningless for any specific institution, and the only valid
+measurement is the one taken on that institution's own corpus, per subgroup.
+
+That is stronger than the AUROC→0.5 ceiling this repo currently cites (Ghosal et al.), which needs the
+human and machine distributions to converge. This one needs only that people write differently from
+each other, which is not a trend that can reverse.
+
+✅ **The mechanism is measured, and it runs in both directions.** Liang et al. (*Patterns*, read at
+source, [DOI](https://doi.org/10.1016/j.patter.2023.100779)) did not merely correlate: enriching the
+vocabulary of non-native TOEFL essays cut the average false-positive rate from **61.3% to 11.6%**, and
+simplifying native-speaker essays **raised** their misclassification. Karr et al.
+([arXiv:2608.11256](https://arxiv.org/abs/2608.11256)) tie detector scores to long-token and Academic
+Word List density rather than authorship. So a detector's verdict on a human tracks that human's
+distance from the model's stylistic centre — which makes §2's homogenization findings and §4's
+fairness findings the same finding, measured from two ends.
+
+**What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
+population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.
+
+- 🔜 **The AI-assisted arm, FAR and MFAR — the item that most changes what we output.** ✅ In Pratama
+  (*PeerJ CS*, [DOI](https://doi.org/10.7717/peerj-cs.2953)) GPTZero scored **97.22% accuracy at 0.00%
+  FPR** on clean human-vs-AI, then proved the *most biased* of three tools on **AI-assisted** text
+  against non-native authors (Welch's t = −2.115, p = 0.036), over-detecting **25%** of non-native
+  authors against **11%** of native ones. **A detector can be flawless on the benchmark everyone runs
+  and unfair on the only case that matters**, and an audit that stops at human-vs-AI — every audit,
+  ours included — cannot see it. The same paper supplies two metrics with published names:
+  **FAR** (flagged by ≥1 tool; measured **44.44%**), which is exactly what our `max` aggregation
+  computes, and **MFAR** (flagged by a majority; **4.17%**). Adopt both verbatim, add an AI-assisted
+  arm, and stratify by subgroup — the auditing protocol the literature specifies and nobody ships.
 
 - 🔜 **Calibrated thresholds, so the negative result stops being only a complaint.** Multiscaled
   conformal prediction ([arXiv:2505.05084](https://arxiv.org/abs/2505.05084), ACL 2025) derives
-  length-conditioned quantile thresholds from a human-only calibration set with a *bounded* FPR at a
-  chosen α, and ships RealDet as the calibration corpus. Today this repo can say a shipped threshold
-  flags 17% / 40% / 89% of human documents and has no answer to "then what threshold should I use".
-  This is that answer, and it is the principled form of something already arrived at by hand: the
-  `verdict_threshold` split that took stdlib-path false positives from 52% to 18%
-  ([`untell/references/thresholds.md`](untell/references/thresholds.md)) is length-and-path
-  conditioning, discovered empirically. Build `untell/calibrate.py`; report the vendor threshold and
-  the α-calibrated one side by side, and make the gap the headline.
+  length-conditioned quantile thresholds from a human-only calibration set with a bounded FPR at a
+  chosen α. Its corpus **RealDet** is far larger than first described — 15 domains, 22 LLMs, 847k+
+  texts, 113k+ human-written, EN+ZH, with adversarial variants. Today untell can say a shipped
+  threshold flags 17% / 40% / 89% of human documents and has no answer to "then what threshold should
+  I use". This is that answer, and it is the principled form of something already found by hand: the
+  `verdict_threshold` split that took stdlib-path false positives from 52% to 18% is length-and-path
+  conditioning, discovered empirically. Prior art to cite rather than reinvent:
+  [FPRCal](https://github.com/cisco-ai-defense/fpr-model-calibration) does fixed-FPR score calibration
+  as a scikit-learn pipeline — security domain, so the application is still open.
 
-- 🔜 **Beemo and ARB — the two corpora that test the claim we actually make.** HC3, RAID and MAGE
-  are all human-vs-fully-machine, so the question this repo exists to ask — does a verdict survive
-  meaning-preserving editing — is currently answered only by our own rewriter, which is in-sample by
-  construction, exactly the objection `eval/holdout.py` was written to answer for detectors.
-  **Beemo** ([arXiv:2411.04032](https://arxiv.org/abs/2411.04032), NAACL 2025) is 19.6k texts with
-  *human expert* edits of machine output, benchmarked over 33 detector configurations, reporting
-  that expert editing evades detection while LLM editing does not — an external control for our loop.
-  **ARB** ([arXiv:2607.29539](https://arxiv.org/abs/2607.29539)) supplies H2L: human text rewritten
-  by an LLM. **H2L is the false-accusation case** — the grammar pass, the polish, the configuration
-  every disciplinary hearing is actually about — and nobody publishes what detectors do to it.
+- 🔜 **Beemo and ARB — the corpora that test the claim we actually make.** HC3, RAID and MAGE are all
+  human-vs-fully-machine, so "does a verdict survive meaning-preserving editing" is answered only by
+  our own rewriter, in-sample by construction — the objection `eval/holdout.py` exists to answer for
+  detectors. ✅ **Beemo** ([arXiv:2411.04032](https://arxiv.org/abs/2411.04032), NAACL 2025) is 19.6k
+  texts with *human expert* edits of machine output, 11 detectors across 33 configurations, reporting
+  that expert editing evades detection while LLM editing does not. **ARB**
+  ([arXiv:2607.29539](https://arxiv.org/abs/2607.29539)) supplies H2L — human text an LLM rewrote —
+  matched four ways at TPR@1%FPR. ✗ An earlier draft of this section called H2L unpublished; that was
+  wrong (Pratama measured it; Karr et al. put light edits at **38–80% flagged** against **9–15%** for
+  unmodified originals). The gap is in *our* corpora, not in the literature.
 
-- 🔜 **The base-vs-instruct arm — one day of work, and it renames the category.** Base
-  (non-instruction-tuned) model output is judged overwhelmingly human by GPTZero and Pangram while
-  the instruction-tuned counterpart is not ([arXiv:2605.19516](https://arxiv.org/abs/2605.19516)).
-  The attack the authors build on it needs a GPU and is not the point. The *measurement* is: if raw
-  base output goes unflagged, the detector is keying on instruction-tuning register, not on machine
-  generation — which is the same finding the homogenization literature reaches from the other end,
-  and it reframes every false positive here as a writer being penalised for prose that sits where
-  RLHF converges. Ship it as `untell-detector-audit --arm base-vs-instruct`, matched prompts, matched
-  model family. It is the same shape as every other negative result this repo leads with.
+- 🔜 **The base-vs-instruct arm — a day of work for a finding that renames the category.** Base
+  (non-instruction-tuned) output is judged overwhelmingly human by GPTZero and Pangram while the
+  instruction-tuned counterpart is not ([arXiv:2605.19516](https://arxiv.org/abs/2605.19516); Xu,
+  Zhong, Raghunathan, Fang, Kolter — note the paper states this qualitatively, so **do not quote a
+  number we have not measured**). If raw base output goes unflagged, the detector is keying on
+  instruction-tuning register, not machine generation — the same conclusion the homogenization
+  literature reaches from the other end, and the reason an L2, autistic or technical writer gets
+  flagged for prose that merely sits where RLHF converges. Ship it as
+  `untell-detector-audit --arm base-vs-instruct`, matched prompts, matched model family.
 
-- 🔜 **A SynthID-Text adapter, because Article 50 has applied since 2 August 2026.** Providers of
-  systems generating synthetic text must ensure outputs are marked machine-readably and detectable as
-  AI-generated ([Article 50](https://artificialintelligenceact.eu/article/50/),
-  [Commission FAQ](https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act));
-  systems already on the market get until 2 December 2026. Nobody is auditing whether that marking
-  survives ordinary use, and the evidence says it does not: SynthID-Text degrades under paraphrase,
-  copy-paste editing and back-translation ([arXiv:2508.20228](https://arxiv.org/abs/2508.20228)), and
-  its mean score has a published layer-inflation attack
-  ([arXiv:2603.03410](https://arxiv.org/abs/2603.03410)). SynthID-Text is open source and shipped in
-  HF Transformers with a no-training detector, so this is one `untell/detectors/synthid.py` against
-  the existing `base.Detector` interface — and `untell/attacks/back_translation.py`, already written,
-  is literally one of the attacks that paper uses. The harness becomes a marking-survival audit
-  against a legally mandated target.
+- 🔜 **A SynthID-Text adapter, timed to the Article 50 phase-in.** Article 50(2) has applied since
+  **2 August 2026**, with systems already on the market covered from **2 December 2026**; providers
+  must ensure synthetic text is marked machine-readably and detectable as AI-generated. Nobody audits
+  whether that marking survives ordinary use, and the evidence says it does not: SynthID-Text degrades
+  under paraphrase, copy-paste editing and back-translation
+  ([arXiv:2508.20228](https://arxiv.org/abs/2508.20228)), its mean score has a published
+  layer-inflation attack ([arXiv:2603.03410](https://arxiv.org/abs/2603.03410)), and a legal-technical
+  analysis finds machine-verifiable marks "fragile under standard data processing"
+  ([arXiv:2603.26983](https://arxiv.org/html/2603.26983v1), LREC 2026), independently corroborating
+  the August 2026 date. ✅ Build against the **HF Transformers** implementation, not the DeepMind
+  reference repo, which states it is "not intended for production use". Our
+  `untell/attacks/back_translation.py` is already one of the attacks that robustness paper uses.
 
-- 🔜 **Confidence intervals on every published rate.** The methodology critiques are unanimous —
-  fix and report FPR, report TPR@1%FPR alongside AUROC, and give bootstrap intervals
-  ([RAID, ACL 2024](https://aclanthology.org/2024.acl-long.674/);
+- 🔜 **Confidence intervals on every published rate.** Fix and report FPR, report TPR@1%FPR alongside
+  AUROC, give bootstrap intervals ([RAID, ACL 2024](https://aclanthology.org/2024.acl-long.674/);
   [arXiv:2603.17522](https://arxiv.org/abs/2603.17522)). Our headline rates are point estimates at
-  n = 30 and n = 40; a 17% rate on n = 30 carries a 95% Wilson interval of roughly 7–35%. That does
-  not weaken the argument, and stating it is the only version of the argument this repo is entitled
-  to make. ARB and Beemo both report at TPR@1%FPR, so reporting there too is also what makes our
-  numbers comparable to anyone else's.
+  n = 30 and n = 40; a 17% rate on n = 30 carries a 95% Wilson interval of roughly 7–35%. Stating it
+  is the only version of the argument this repo is entitled to make, and ARB and Beemo both report at
+  TPR@1%FPR, so reporting there is also what makes our numbers comparable to anyone else's.
+
+### What checking changed, and what it cost
+
+✗ **MGTEVAL is a stronger neighbour than the first draft said.** Read at source, its repo advertises
+**25+ detectors** and **12+ attack families** — including a **humanization** family — and it already
+reports **bootstrap CIs, ECE, Brier, risk-coverage and TPR@FPR**, with CLI and web UI. So we do not
+win on detector count, attack count, *or* statistical reporting, and §0's competitive framing must
+stop implying otherwise. What remains ours is the composite-null consequence above: FPR measured on
+**real human writing**, **per subgroup**, at **vendors' own shipped thresholds**, with a calibrated
+threshold returned. MGTEVAL benchmarks detectors; untell audits a deployment. Those are different
+products and we should say which one we are.
+
+✗ Two claims in the first draft were wrong and are corrected in the ledger: that nobody publishes
+H2L results, and that nobody has connected stylistic distance to false-positive rate. Both were
+overstatements that reading the sources removed.
 
 **Two findings that change existing text rather than adding work.** Weber-Wulff et al.
 ([IJEI 2023](https://link.springer.com/article/10.1007/s40979-023-00146-z)) tested 14 detectors,
 found every one below 80% accuracy and only five above 70%, and is the peer-reviewed precedent for
-this entire project — currently cited nowhere. And the *feature-inversion trap*
-([arXiv:2510.12476](https://arxiv.org/pdf/2510.12476), ACL 2026, with the StyloBench corpus) shows
-that features separating human from machine text **flip sign** under personalization, because
-training-free detectors assume human text is the more diverse of the two. `eval/detector_audit.py`
-already has an `INVERTED` class for that failure; the paper says it is a systematic regime rather
-than a bug, and StyloBench is the corpus that would prove it here.
+this project — cited nowhere in it. And the *feature-inversion trap*
+([arXiv:2510.12476](https://arxiv.org/pdf/2510.12476), ACL 2026, with StyloBench) shows features
+separating human from machine **flip sign** under personalization, because training-free detectors
+assume human text is the more diverse of the two. `eval/detector_audit.py` already has an `INVERTED`
+class for that failure; the paper says it is a systematic regime, not a bug.
 
 ---
 
@@ -471,18 +524,22 @@ Items 1-3 are done; they are kept so the order that produced them is legible.
 1. ✅ **Default rewriter change** — measured, small, currently costs every full-tier user a result.
 2. ✅ **`untell-audit` + CI claim checking** — converts tonight's one-off discipline into a standing property.
 3. ✅ **Academic niche** (BibTeX verify, `.tex` round-trip) — where our strengths are the buying criteria.
-4. **Confidence intervals** (§7) — hours, no new data, and every number below it inherits the credibility.
-5. **Calibrated thresholds** (§7) — the largest single change to what the product *outputs*, and the
+4. **Confidence intervals** (§7) — hours, no new data, and every number below inherits the credibility.
+5. **FAR/MFAR + the AI-assisted arm** (§7) — the metrics are arithmetic and the corpus is MIT-licensed,
+   and it is where the published evidence says the failure actually lives. A detector at 0.00% FPR on
+   our current arm was the most biased tool on this one.
+6. **Calibrated thresholds** (§7) — the largest single change to what the product *outputs*, and the
    one that converts "your detector is miscalibrated" into "here is the threshold that fixes it".
-6. **Beemo + ARB** (§7) — before any further evasion work, because they are what tells us whether the
+7. **Beemo + ARB** (§7) — before any further evasion work, because they are what tells us whether the
    loop's numbers describe editing or describe our rewriter.
-7. **base-vs-instruct arm** (§7) — a day, and it is the strongest negative result still unclaimed.
-8. **SynthID adapter** (§7) — timed to the 2 December 2026 Article 50 phase-in, not before.
-9. **Language plugin architecture** — pending your decision; biggest ceiling, biggest refactor.
-10. **GPU moat** — only with real hardware.
+8. **base-vs-instruct arm** (§7) — a day, and it is the strongest negative result still unclaimed.
+9. **SynthID adapter** (§7) — timed to the 2 December 2026 Article 50 phase-in, not before.
+10. **Language plugin architecture** — pending your decision; biggest ceiling, biggest refactor.
+11. **GPU moat** — only with real hardware.
 
 The §7 items are ordered by evidence-per-day, not by ambition. Intervals cost hours and make every
-other number defensible; the SynthID adapter is last because its value is a date, not a measurement.
+other number defensible; FAR/MFAR is next because it is arithmetic over data we can already get; the
+SynthID adapter is last because its value is a date, not a measurement.
 
 ## 10. How we would know it worked
 
@@ -499,3 +556,6 @@ Not stars. These:
   as a property of our rewriter rather than of meaning-preserving editing
 - **a watermark survives, or does not, with a number attached** — the Article 50 marking obligation
   audited the same way every detector here is
+- **untell reports FAR and MFAR per subgroup**, on a corpus the user supplied, at both the vendor
+  threshold and a calibrated one — the composite-null result in §7 says that is the only false-positive
+  number that means anything, and no other tool produces it

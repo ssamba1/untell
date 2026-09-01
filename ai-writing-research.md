@@ -7,11 +7,14 @@ covers one slice (detector internals, evasion, the humanizer market). This map c
 how much AI-written text exists, what AI does to prose itself, detection, detector fairness, attacks
 and watermarking, what happens to the human writer, and how writing quality is now evaluated.
 
-> **Evidence caveat — read this first.** `arxiv.org` is blocked by this environment's egress proxy, so
-> the papers below were located and summarised from search indexes and publisher pages, **not** read in
-> full. Titles, IDs and venues are reliable; specific numbers are as-reported and should be checked
-> against the source before any of them is quoted in the repo's own claims. Where a number comes from a
-> blog or vendor page rather than a peer-reviewed or preprint source, it is marked *(secondary)*.
+> **Evidence status — read this first.** Every claim here has since been checked, and the audit
+> trail is in [`docs/research-verification.md`](docs/research-verification.md). Publisher and
+> preprint hosts (`arxiv.org`, `aclanthology.org`, `nature.com`, `science.org`, Springer,
+> HuggingFace) are blocked by an organization egress policy, but **PubMed/PMC and github.com are
+> reachable**, which put the prevalence, fairness and homogenization literature under direct
+> reading. Claims marked **✅ verified** were read at source; the rest are corroborated across
+> independent indexes, and items marked *(secondary)* are blog, vendor or press sources. Two claims
+> in an earlier draft were **wrong and have been corrected** — both are recorded in the ledger.
 
 ---
 
@@ -47,7 +50,7 @@ individual documents.
 
 | Study | Corpus | Headline estimate |
 |---|---|---|
-| Kobak et al., **"Delving into LLM-assisted writing in biomedical publications through excess vocabulary"**, *Science Advances* ([doi](https://www.science.org/doi/10.1126/sciadv.adt3813), [PMC12219543](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12219543/)) | >15M PubMed abstracts, 2010–2024 | **≥13.5%** of 2024 abstracts LLM-processed — a floor, by construction |
+| Kobak et al., **"Delving into LLM-assisted writing in biomedical publications through excess vocabulary"**, *Science Advances* ([doi](https://www.science.org/doi/10.1126/sciadv.adt3813), [PMC12219543](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12219543/)) | >15M PubMed abstracts, 2010–2024 | ✅ **≥13.5%** of 2024 abstracts LLM-processed — a floor, by construction, **reaching 40% in some subcorpora** |
 | **"Most biomedical publications show signs of LLM-assisted writing"** ([arXiv:2608.10715](https://arxiv.org/html/2608.10715v1)); see also *Nature* news, ["Staggering 90% of biomedical papers now show signs of AI help"](https://www.nature.com/articles/d41586-026-02551-z) | PubMed Central | **~89%** by end of 2025 |
 | Liang et al., **"Quantifying large language model usage in scientific papers"**, *Nature Human Behaviour* ([s41562-025-02273-8](https://www.nature.com/articles/s41562-025-02273-8)) | Multi-field abstracts | **22.5%** of CS abstracts vs **7.7%** of maths by Sept 2024 |
 | **"The diffusion of large language models in published academic articles"**, *PNAS* ([2605754123](https://www.pnas.org/doi/10.1073/pnas.2605754123)); *Science* [coverage](https://www.science.org/content/article/one-fifth-computer-science-papers-may-include-ai-content) | Published articles | ~one-fifth of CS papers contain AI content |
@@ -77,12 +80,16 @@ Models"** ([arXiv:2502.11266](https://arxiv.org/abs/2502.11266); *Nature Human B
 reports writing-complexity variance down **21–50%**, and finds LLMs amplify patterns associated with
 dominant varieties while suppressing others.
 
-**Semantic diversity.** **"The Homogenizing Effect of Large Language Models on Human Expression and
+**Cognitive diversity.** **"The Homogenizing Effect of Large Language Models on Human Expression and
 Thought"** ([arXiv:2508.01491](https://arxiv.org/pdf/2508.01491); *Trends in Cognitive Sciences*,
-[S1364-6613(26)00003-3](https://www.cell.com/trends/cognitive-sciences/abstract/S1364-6613(26)00003-3))
-finds AI assistance can raise the quality of an individual output while cutting variation *across*
-people — in college-admissions essays, human writing produced roughly **2–8×** the collective semantic
-diversity of base GPT-4 essays.
+[DOI](https://doi.org/10.1016/j.tics.2026.01.003)) synthesizes evidence across linguistics,
+psychology, cognitive science and CS to argue LLMs "reflect and reinforce dominant styles while
+marginalizing alternative voices and reasoning strategies," amplifying convergence as everyone relies
+on the same models.
+
+> ✗ **Correction.** An earlier draft attributed a "2–8× collective semantic diversity" figure to this
+> paper. Read at source (PubMed PMID 41820108), it is a **Review** whose abstract carries no numbers,
+> and the figure is not traceable to it. Removed rather than re-homed.
 
 **Lexical fingerprints.** The *delve*/*underscore*/*intricate* shift is now itself a literature:
 [arXiv:2603.18161](https://arxiv.org/pdf/2603.18161) ("How LLMs Distort Our Written Language"),
@@ -126,11 +133,25 @@ mis-citation.
 
 ## 4. Fairness and false positives
 
-The single most-replicated result in the field. Liang et al. (2023, *Patterns*;
-[arXiv:2304.02819](https://arxiv.org/abs/2304.02819)) found 7 detectors flagged **61.3%** of non-native
-TOEFL essays as AI while classifying native-speaker essays near-perfectly; **97.8%** of the human TOEFL
-essays were flagged by at least one detector. The mechanism is perplexity: L2 writers use more
-predictable vocabulary and simpler structure, which reads as machine-like.
+The single most-replicated result in the field, and now ✅ **read at source** (PubMed PMC10382961,
+[DOI](https://doi.org/10.1016/j.patter.2023.100779)). Liang et al. (2023, *Patterns*) evaluated
+**7 detectors** on **91 TOEFL essays** and **88 US eighth-grade ASAP essays**: the detectors classified
+the US essays accurately and mislabelled more than half the TOEFL essays, **average false-positive rate
+61.3%**, with **19.8%** unanimously flagged and **97.8%** flagged by at least one detector. The
+mechanism is perplexity: L2 writers use more predictable vocabulary and simpler structure.
+
+**The part of that paper everyone cites past — and the most important finding in this document.**
+Liang et al. did not stop at correlation; they intervened, in both directions. Using ChatGPT to enrich
+the vocabulary of the TOEFL essays cut the average false-positive rate from **61.3% to 11.6%** — a
+49.7-point drop — and left only one essay unanimously flagged. Simplifying the vocabulary of the US
+eighth-grade essays **raised** their misclassification. They also found ICLR 2023 papers with
+non-native first authors carried lower perplexity than native-authored ones, holding review rating
+constant.
+
+So the causal chain is established, not hypothesised: **a detector's verdict on a human is a function
+of how far that human's prose sits from the model's stylistic centre, and moving a writer along that
+axis moves the verdict in both directions.** That is the homogenization literature of §2 and the
+fairness literature of §4 turning out to be the same finding measured from two ends.
 
 What has changed since:
 
@@ -142,6 +163,27 @@ What has changed since:
   the TOEFL data, which is a first-party figure, not an independent replication *(secondary)*.
 - Independent 2026 tests continue to report L2 writers flagged at roughly **2–3×** the native rate
   *(secondary — blog-grade, small-n)*.
+
+- ✅ **A detector can post a 0% false-positive rate and still be the most biased one.** Pratama
+  (*PeerJ CS*, PMC12453642, [DOI](https://doi.org/10.7717/peerj-cs.2953)) scored GPTZero, ZeroGPT and
+  DetectGPT on 72 abstracts stratified 36 native / 36 non-native. On clean human-vs-AI, GPTZero hit
+  **97.22% accuracy at 0.00% FPR**. On **AI-assisted** text — a human abstract an LLM polished — it
+  showed the *strongest* bias of the three against non-native authors (Welch's t = −2.115, p = 0.036),
+  over-detecting **25%** of non-native authors against **11%** of native ones. Clean-split accuracy
+  does not predict fairness on the realistic case.
+- ✅ **Two ensemble metrics with published names.** Same paper: **FAR (False Accusation Rate)**, the
+  share of genuine human documents flagged by *at least one* tool, measured at **44.44%**; and
+  **MFAR (Majority False Accusation Rate)**, flagged by a majority, at **4.17%**.
+- ✅ **Which assistant did the polishing matters more than who wrote it.** Gemini-2.0-Pro-enhanced
+  abstracts scored far higher as AI than ChatGPT-o1-enhanced ones across all three tools (GPTZero mean
+  **55.50% vs 19.79%**, t = −5.97, p < 0.001).
+- **And the theory now says this is unfixable.** *AI Detectors Fail Diverse Student Populations*
+  ([arXiv:2603.20254](https://arxiv.org/abs/2603.20254)) points out that detection theory models a
+  binary test between *one* human distribution and *one* AI distribution, while a real institution has
+  no single human distribution — the null is composite. Under a composite null, any text-only,
+  one-shot detector with useful power **must** produce false accusations at a rate set by the overlap
+  between that population's writing and AI output: a constraint from population *diversity*, logically
+  independent of model quality, that better engineering cannot remove.
 
 untell's own measurements are the relevant local check on all of this, and they are harsher than most
 published FPR figures: the full local ensemble flags 17% of genuine human HC3 answers at shipped
