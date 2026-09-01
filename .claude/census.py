@@ -525,6 +525,19 @@ _TREE_SIGNALS = {
     "meaning_verification": ("bertscore", "bert_score", "sentence-transformers",
                              "sentence_transformers", "semantic_similarity", "cosine_similarity",
                              "entailment", "nli", "rouge", "meteor"),
+    # Not a category signal -- nothing in `decide_from_tree` branches on this. It exists to test
+    # ROADMAP's central strategic claim against source instead of against READMEs: that of 435
+    # census repos plus 131 in the re-run, ZERO ship a tool a university could point at the
+    # detector it is about to license. A repo doing subgroup fairness work on a detector has to
+    # name the statistic somewhere in its source, and every sweep now checks.
+    "subgroup_fairness": ("subgroup", "demographic parity", "equalized odds", "equalised odds",
+                          "disparate impact", "false positive rate", "false_positive_rate",
+                          "aequitas", "aif360", "fairlearn", "wilson", "ell_status",
+                          # A claim about ABSENCE deserves a generous probe, so the standard
+                          # abbreviations are in even though they are short; word boundaries keep
+                          # them out of ordinary identifiers.
+                          "fpr", "fnr", "tpr",
+                          "protected attribute", "protected_attribute", "bias audit"),
     "vendor_api": ("undetectable.ai", "stealthgpt", "quillbot", "humanizeai", "walterwrites",
                    "bypassgpt", "phrasly", "surferseo", "netus.ai", "twixify"),
     "trains_a_model": ("trainer(", "peft", "get_peft_model", "loraconfig", "sfttrainer",

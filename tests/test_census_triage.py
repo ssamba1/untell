@@ -24,6 +24,8 @@ free ground truth and is what `verify` scores against.
 
 from __future__ import annotations
 
+import pathlib
+
 import importlib.util
 import json
 from pathlib import Path
@@ -503,4 +505,33 @@ def test_the_tree_reader_beats_metadata_on_reach_without_losing_precision():
     assert confident_branches, "decide_from_tree emits no confident verdicts at all"
     assert not any("detector_in_loop" in line for line in confident_branches), (
         "a detector mention is carrying a confident verdict again; it was right 2 times in 11"
+    )
+
+
+def test_the_fairness_probe_can_find_fairness_work_when_it_is_there():
+    """A positive control for ROADMAP's central claim, which is a claim about ABSENCE.
+
+    ROADMAP says that of 435 census repos plus 131 in the re-run, zero ship a tool a university
+    could point at the detector it is about to license. Since `inspect` reads source, every sweep
+    now tests that against code rather than against READMEs — but a probe that finds nothing
+    proves nothing unless it can find the thing when the thing is present.
+
+    `eval/` is the positive control: it is exactly the instrument ROADMAP says the field lacks.
+    """
+    facts = census.read_tree(pathlib.Path(__file__).resolve().parent.parent / "eval")
+    found = set(facts["signals"]["subgroup_fairness"])
+    for expected in ("subgroup", "fpr", "wilson", "equalised odds", "aequitas"):
+        assert expected in found, (
+            f"the fairness probe missed {expected!r} in untell's own audit code, so a null "
+            f"result across the census would mean nothing: found {sorted(found)}"
+        )
+
+
+def test_the_fairness_probe_does_not_decide_anything():
+    """It is a measurement, not a rule. No branch may start ruling on it without being scored."""
+    import inspect as _inspect
+
+    assert "subgroup_fairness" not in _inspect.getsource(census.decide_from_tree), (
+        "the fairness probe has become a classifier branch; score it against the census overlap "
+        "first, the way the detector branch was not"
     )
