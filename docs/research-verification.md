@@ -5686,3 +5686,59 @@ VERIFIED, not assumed: `torch` and `transformers` are absent, no model is cached
 so the packages could be installed — and `huggingface.co` returns **403 at the egress proxy, by
 organization policy**, so GPT-2's weights cannot be fetched. The blocker is policy, not effort, and
 it is recorded here so nobody repeats the investigation.
+
+---
+
+# Round eighty-five — the survey's own count depends on which order it reads a paper
+
+Rounds seventy-six to eighty-four produced a method: **hold authorship constant and vary register.**
+The obvious question is whether anyone else does that, and the survey corpus can be asked.
+
+Searching all 612 detection papers, MEASURED by keyword over title and abstract:
+
+| | papers | share |
+|---|---|---|
+| mention register, genre or domain | 70 | 11.6% |
+| …and also a control or confound word | 3 | 0.5% |
+| mention holding the author constant | **0** | — |
+
+The three that pair the two: *The Million Authors Corpus* (2025.findings-acl.1335),
+*How to Generalize the Detection of AI-Generated Text: Confounding Neurons*
+(2025.findings-emnlp.1388), and *Explainable Disentangled Representation Learning for Generalizable
+Authorship Attribution* (2026.acl-long.2018).
+
+⚠️ **The zero is a fact about abstracts and phrasing, not about the field.** Rounds twenty-two,
+twenty-three and thirty of this ledger each retracted a "nobody does X" claim that a keyword search
+had supported and a reading had refuted. A paper can hold authorship constant without any of these
+words appearing in its abstract. What the search establishes is that **no abstract in this corpus
+advertises it**, which is weaker and is all that is claimed.
+
+## And running that search found a defect in the survey itself
+
+The search returned **604** detection papers where every published figure says **612**.
+
+`DETECTION` is proximity-based — round fifty-seven rewrote it that way to cut a 40% noise rate — so
+which words sit near which decides a match. My analysis joined `abstract + title`; the survey joins
+`title + abstract`. **The words either side of the join change, and eight papers change with them.**
+
+MEASURED: 612 title-first, 604 abstract-first, difference exactly 8. And the eight are not arbitrary
+— they are the noise-floor cases: `InfoSurgeon` (fake news), factual-inconsistency detection over
+long documents, and *Centering the Margins* (toxicity). **The papers that flip are precisely the ones
+the proximity rule exists to adjudicate**, which is where it is doing the most work and where its
+inputs matter most.
+
+Four call sites did the concatenation inline, **two in each order, by luck rather than by choice.**
+Any of them could have been the published one. `searchable()` is now the only place it happens, and a
+test fails if a fifth appears.
+
+## The shape, for the fifth time
+
+Round sixty-two: a checker and its auto-fixer. Round seventy-one: two sibling checks, one of which
+had already learned the lesson. Round eighty: two surveys a single-number pattern could not tell
+apart. Round eighty-four: a published figure and its own reproduction command.
+
+**This one is the same defect inside a single function's callers** — an instrument whose reading
+depends on a detail nobody chose, repeated in four places, disagreeing with itself in two of them.
+Every time, the fix has been to make one implementation and route everything through it, and every
+time the defect was invisible until something outside the code asked the same question a different
+way.

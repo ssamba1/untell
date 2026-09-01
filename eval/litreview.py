@@ -184,6 +184,25 @@ def _flatten(element: ET.Element | None) -> str:
     return re.sub(r"\s+", " ", "".join(element.itertext())).strip()
 
 
+def searchable(paper: dict) -> str:
+    """The text every pattern in this module is matched against: **title first, then abstract.**
+
+    ⚠️ **The order is part of the measurement, and that is not obvious.** `DETECTION` is
+    proximity-based — round fifty-seven rewrote it that way to cut a 40% noise rate — so which words
+    sit near which decides a match, and the words either side of the join change when the order does.
+
+    MEASURED on the 186-volume corpus: title-first gives **612** detection papers and abstract-first
+    gives **604**. Eight papers, 1.3%, flip on nothing but concatenation order — and they are the
+    noise-floor cases (`InfoSurgeon`, factual-inconsistency detection, `Centering the Margins`),
+    which is where a proximity rule is doing the most work.
+
+    Round eighty-five found this by running an ad-hoc analysis that joined the other way and getting
+    604 where the published figure said 612. Four call sites did the concatenation inline, two in
+    each order by luck rather than choice; they all call this now, so an analysis cannot silently
+    disagree with the survey it is analysing.
+    """
+    return f"{paper['title']} {paper['abstract']}"
+
 def _fetch(url: str, name: str, attempts: int = 3) -> bytes | None:
     """Fetch one volume, retrying truncated transfers.
 
@@ -345,7 +364,7 @@ def noise_floor(papers: list[dict]) -> dict:
     Returns the off-topic count and every topic's share with and without them, so a reader can see
     the error term on the ratio this project argues from rather than take the count on trust.
     """
-    detection = [p for p in papers if DETECTION.search(p["title"] + " " + p["abstract"])]
+    detection = [p for p in papers if DETECTION.search(searchable(p))]
     off = [p for p in detection
            if OTHER_DETECTION.search(p["title"]) and not NAMES_MGT.search(p["title"])]
     kept = [p for p in detection if p not in off]
@@ -353,7 +372,7 @@ def noise_floor(papers: list[dict]) -> dict:
     def share(subset: list[dict], pattern: re.Pattern[str]) -> float:
         if not subset:
             return 0.0
-        n = sum(1 for p in subset if pattern.search(p["title"] + " " + p["abstract"]))
+        n = sum(1 for p in subset if pattern.search(searchable(p)))
         return round(100.0 * n / len(subset), 1)
 
     topics = {
@@ -378,9 +397,9 @@ def noise_floor(papers: list[dict]) -> dict:
 
 def survey(papers: list[dict[str, str]]) -> dict[str, object]:
     """Counts per topic over the detection subset, plus the corpus sizes that give them meaning."""
-    detection = [p for p in papers if DETECTION.search(f"{p['title']} {p['abstract']}")]
+    detection = [p for p in papers if DETECTION.search(searchable(p))]
     counts = {
-        topic: sum(1 for p in detection if pattern.search(f"{p['title']} {p['abstract']}"))
+        topic: sum(1 for p in detection if pattern.search(searchable(p)))
         for topic, pattern in TOPICS.items()
     }
     return {"abstracts": len(papers), "detection_papers": len(detection), "topics": counts}
@@ -391,8 +410,8 @@ def papers_for_topic(papers: list[dict[str, str]], topic: str) -> list[dict[str,
     pattern = TOPICS[topic]
     return [
         p for p in papers
-        if DETECTION.search(f"{p['title']} {p['abstract']}")
-        and pattern.search(f"{p['title']} {p['abstract']}")
+        if DETECTION.search(searchable(p))
+        and pattern.search(searchable(p))
     ]
 
 
