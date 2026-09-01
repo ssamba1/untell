@@ -838,3 +838,63 @@ class TestRaidPerDomainThresholds:
         mean_rank = {d: statistics.mean(v) for d, v in ranks.items()}
         assert min(mean_rank, key=mean_rank.get) == "recipes", mean_rank
         assert max(mean_rank, key=mean_rank.get) == "books", mean_rank
+
+
+class TestDetectorCalibrationCommand:
+    """`untell-detector-calibration` audits 46 real detectors at zero cost.
+
+    It reads RAID's public leaderboard, where every submission publishes the threshold at which
+    its false-positive rate on human text is 5%, per text domain. No API key, no GPU, no gated
+    dataset. These guard the properties that make it worth shipping.
+    """
+
+    def test_it_works_offline_from_the_committed_snapshot(self):
+        from eval.detector_calibration import main
+
+        assert main(["report"]) == 0
+
+    def test_the_summary_matches_what_result_21_quotes(self):
+        import json
+
+        from eval.detector_calibration import SNAPSHOT, summarise
+
+        s = summarise(json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+        assert s["detectors"] == 46
+        assert s["median_span"] == pytest.approx(0.610, abs=0.005)
+        assert s["over_half"] == 25 and s["over_ninety"] == 13
+
+    def test_it_checks_the_scale_rather_than_assuming_it(self):
+        """The span is only the right statistic while every threshold sits on [0,1].
+
+        The first version of this analysis reported ratios and produced 63370x for a detector
+        whose thresholds run 1.6e-05 to 0.9997 — an artifact of how close the low end sits to
+        zero. The span is scale-appropriate, and the scale is verified rather than assumed.
+        """
+        import json
+
+        from eval.detector_calibration import SNAPSHOT, summarise
+
+        s = summarise(json.loads(SNAPSHOT.read_text(encoding="utf-8")))
+        assert s["off_unit_scale"] == [], s["off_unit_scale"]
+
+    def test_a_fetch_failure_falls_back_instead_of_dying(self, monkeypatch, capsys):
+        """A network-dependent tool that dies offline is a tool nobody can reproduce."""
+        import eval.detector_calibration as dc
+
+        def boom(dest, timeout=900):
+            raise dc.LeaderboardUnavailable("no network")
+
+        monkeypatch.setattr(dc, "fetch", boom)
+        assert dc.main(["report", "--fetch"]) == 0
+        assert "falling back to the snapshot" in capsys.readouterr().err
+
+    def test_the_sparse_pattern_takes_results_and_not_predictions(self):
+        """`predictions.json` carries a score per example and runs to gigabytes.
+
+        A full clone of RAID is 3.4 GB; results-only is 205 MB. Widening this pattern would make
+        the command unusable on a normal connection, which is the whole point of it.
+        """
+        from eval.detector_calibration import SPARSE_PATTERN
+
+        assert SPARSE_PATTERN.endswith("results.json"), SPARSE_PATTERN
+        assert "predictions" not in SPARSE_PATTERN

@@ -142,6 +142,9 @@ untell-audit = "untell.scripts.audit:main"
 untell-latex = "untell.scripts.latex:main"
 untell-ceiling = "eval.ceiling:main"
 untell-detector-audit = "eval.detector_audit:main"
+# Audits OTHER PEOPLE's detectors from their own published calibration: no key, no GPU,
+# no gated dataset. See eval/detector_calibration.py.
+untell-detector-calibration = "eval.detector_calibration:main"
 untell-distill = "training.distill:main"
 untell-surrogate = "training.surrogate:main"
 untell-eval-policy = "eval.eval_policy:main"

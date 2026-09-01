@@ -815,6 +815,18 @@ finding — that an operating point which looks fine in aggregate is not fine pe
 on commercial and research detectors that actually accuse people, from numbers their own authors
 published.
 
+**Reproduce it yourself, free.** This is a shipped command, not an ad-hoc script:
+
+```bash
+untell-detector-calibration report            # from the committed snapshot, offline
+untell-detector-calibration report --fetch    # re-read the live leaderboard first
+```
+
+`--fetch` is a blobless, non-cone sparse checkout of *only* the 46 `results.json` files — 205 MB
+against 3.4 GB for the full repository, because the sibling `predictions.json` files carry a score
+per example. No API key, no GPU, no gated dataset, no account. A fetch failure falls back to the
+snapshot rather than dying, so the numbers reproduce on a machine with no network at all.
+
 **Two things keep it honest.** The spread is *not* universal: **Binoculars needs a span of 0.030**,
 and is genuinely domain-stable. That one detector behaves well is what makes the other 45
 credible rather than an artifact of the method. And the domains are ordered consistently —
