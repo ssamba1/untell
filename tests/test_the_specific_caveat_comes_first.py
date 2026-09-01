@@ -36,7 +36,25 @@ import pytest
 
 from untell.scripts.score import score_text
 
+# Over 100 words on purpose. This fixture was 66, which round seventy-three's length caveat
+# correctly fires on — MEASURED, 28.69% of known-human documents that short are flagged — so
+# "ordinary prose earns exactly one note" stopped being true of it. The fixture is now long enough
+# to be ordinary in the sense the tests below mean, and `SHORT_PROSE` covers the other case
+# explicitly rather than by accident.
 PROSE = (
+    "Salt lowers the freezing point of water, which is why councils spread it on roads in winter. "
+    "It works down to about minus nine degrees, below which other chemicals are needed instead. "
+    "The grit itself does a second job once the ice has gone soft, which matters more on a hill "
+    "than it does on the flat, and councils plan their routes around exactly that difference. "
+    "Rock salt is cheaper than the alternatives and is what most authorities buy in bulk each "
+    "autumn, stockpiling it in barns near the depots so the lorries can be loaded quickly when a "
+    "forecast turns. The stockpile is sized on the previous decade of winters, which is why an "
+    "unusually long cold snap empties it and the routes get prioritised down to the main roads."
+)
+# 66 words: above the 40-word cliff where `_short_text_warning` stops, below the 100 where the
+# elevated rate does. That gap is what round seventy-three found empty. This is the fixture `PROSE`
+# used to be.
+SHORT_PROSE = (
     "Salt lowers the freezing point of water, which is why councils spread it on roads in winter. "
     "It works down to about minus nine degrees, below which other chemicals are needed instead. "
     "The grit itself does a second job once the ice has gone soft, which matters more on a hill "
@@ -81,10 +99,24 @@ def test_an_unknown_tier_still_says_so() -> None:
 
 def test_ordinary_prose_still_gets_exactly_one_note() -> None:
     """Guards the guard from the noise side: the reorder must not have started stacking caveats on
-    text that only ever earned one. 0 of 120 corpus texts trigger any situational caveat."""
+    text that only ever earned one."""
     warning = score_text(PROSE, tier="lite", threshold=0.3).get("warning") or ""
     assert warning.startswith(TIER_MARK), warning[:80]
     assert " Also: " not in warning
+
+
+def test_a_short_paragraph_earns_the_length_note_and_the_tier_note_keeps_the_last_word() -> None:
+    """The other side of the same rule, and the case that caught the fixture above.
+
+    A paragraph under 100 words IS the population with a MEASURED 28.69% false-positive rate, so the
+    note firing there is the feature. What must hold is the ordering this file exists for: the
+    situational note first, the standing tier note last.
+    """
+    warning = score_text(SHORT_PROSE, tier="lite", threshold=0.3).get("warning") or ""
+    assert "of documents this length" in warning, warning[:120]
+    assert warning.index("of documents this length") < warning.index(TIER_MARK), (
+        "the situational caveat must come before the standing one")
+    assert warning.rstrip().endswith(".")
 
 
 def test_no_caveat_repeats_another() -> None:

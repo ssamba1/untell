@@ -4952,3 +4952,59 @@ Committing this round tripped the count guard — six new test modules since the
 `why-best-open-repo.md` and `humanizer-census.md` and **left this ledger alone**, which is exactly
 what round sixty-two changed it to do after it rewrote two historical entries here, one of them a
 count quoted inside a code span. Both of those lines are still as written.
+
+---
+
+# Round seventy-three — the warning stops at 40 words; the risk does not
+
+Round seventy-two measured the *calibrated* threshold by length. This one measures the threshold
+users actually get. MEASURED at the shipped verdict bar of **0.45** on all 6,810 pre-LLM abstracts —
+human by construction, so every flag is a false positive:
+
+| band (words) | documents | flagged | 95% CI |
+|---|---|---|---|
+| **60–100** | 603 | **28.69%** | [25.22%, 32.43%] |
+| 100–150 | 3,032 | 20.65% | [19.24%, 22.12%] |
+| 150–200 | 2,705 | 17.26% | [15.89%, 18.73%] |
+| 200+ | 470 | 12.77% | [10.05%, 16.09%] |
+| all | 6,810 | 19.47% | — |
+
+**More than one human document in four, between 60 and 100 words, is flagged.**
+
+`_short_text_warning` stops at `_MIN_WORDS_FOR_A_VERDICT = 40`. So every one of those 603 documents
+got **no caveat about length at all** — the cliff is at 40 and the elevated rate runs past 100.
+
+The evidence is also stronger than what the existing bands rest on: **6,810 documents that are human
+because of when they were published**, against 40 HC3 texts truncated to length.
+
+## Two corrections while building it, both about which number is which
+
+✗ **The first version gated on `DEFAULT_THRESHOLD`, which is the wrong knob.** `threshold` defaults
+to **0.30** and is the *loop's stop target*; `verdict_threshold` is **0.45** and is what `flagged` is
+decided on. The rates above are measured at 0.45. Gating on the loop target would have printed a
+0.45 rate for every caller who left the loop alone — attributing one threshold's number to another,
+which is the exact defect `_threshold_range_warning` exists for. It now gates on the verdict bar, and
+a caller who sets their own gets nothing.
+
+✗ **The first version fired on 40–200 words, and an existing test was right to reject it.**
+`test_the_specific_caveat_comes_first` guards against stacking caveats, and it caught a 66-word
+sample of ordinary prose going from one note to two.
+
+The test was making a real point. **20.65% and 17.26% sit either side of the corpus-wide 19.47%**, so
+a note at 100–200 words says "this document is average" — on the majority of all input, while burying
+the situational caveats the ordering rule exists to surface. The band is now 40–100 only, where
+28.69% is **1.5× the corpus average and 2.2× the 200+ rate**, and that is what makes it worth saying.
+
+## What the fixture change was, since weakening a guard to pass is the temptation
+
+`PROSE` in that test was a 66-word paragraph — squarely inside the band, so the caveat firing on it
+is correct behaviour, not noise. The fixture is now 131 words, which is what "ordinary prose" was
+meant to mean, and **`SHORT_PROSE` is the old 66-word paragraph with its own test**: it must earn the
+length note, and the standing tier note must still keep the last word. The guard is stronger than
+before, not weaker — the case it used to cover by accident is now covered on purpose.
+
+## The unmeasured range is named rather than interpolated
+
+40–60 words is not measured: the pre-LLM corpus floors at 60. The rate there is **higher**, since it
+rises as text shortens — this repo separately measured 30.0% at 50 words or fewer — so the note says
+so instead of quoting a number nobody derived.

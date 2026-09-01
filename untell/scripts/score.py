@@ -555,6 +555,34 @@ def score_text(text: str, tier: str = "full", threshold: float = DEFAULT_THRESHO
 # the direction may be the other one for the shortest inputs — a five-word text scoring 0.0 makes a
 # CLEAR verdict the uninformative one, not the flag.
 _SHORT_TEXT_BANDS = ((5, "0-5%"), (10, "5-18%"), (20, "8-50%"), (40, "10-65%"))
+# Above `_MIN_WORDS_FOR_A_VERDICT` the short-text warning stops, and round seventy-three measured
+# that the risk does not. MEASURED at the SHIPPED threshold of 0.45 on all 6,810 pre-LLM abstracts —
+# known-human by construction, so every flag is a false positive:
+#
+#     60-100 words     603 docs   28.69%   [25.22%, 32.43%]
+#     100-150 words  3,032 docs   20.65%   [19.24%, 22.12%]
+#     150-200 words  2,705 docs   17.26%   [15.89%, 18.73%]
+#     200+ words       470 docs   12.77%   [10.05%, 16.09%]
+#
+# **More than one human document in four, between 60 and 100 words, is flagged** — and got no caveat
+# at all, because 60 is above the 40-word cliff. The rate at 200+ is 12.77%, so length is worth
+# 2.2x on the shipped default.
+#
+# This evidence is stronger than the bands below it: 6,810 documents that are human by construction
+# against 40 HC3 texts truncated, on a corpus nobody can dispute.
+#
+# ⚠️ 40-60 words is NOT measured here — the pre-LLM corpus floors at 60. The rate there is bounded
+# BELOW by 28.69%, since the rate rises as length falls, and this repo separately measured 30.0% at
+# 50 words or fewer. The note says so rather than interpolating.
+# Only the short band. 20.65% at 100-150 and 17.26% at 150-200 sit either side of the corpus-wide
+# 19.47%, so a note there would say "this document is average" on the majority of all input — and
+# `test_the_specific_caveat_comes_first` exists because stacking caveats buries the actionable one.
+# It caught exactly that when this fired on every length: a 66-word sample of ordinary prose went
+# from one note to two. **28.69% is 1.5x the corpus average and 2.2x the 200+ rate**, which is what
+# makes it worth saying.
+_ELEVATED_FPR_BANDS: tuple[tuple[int, str, str], ...] = (
+    (100, "28.69%", "[25.22%, 32.43%]"),
+)
 _MIN_WORDS_FOR_A_VERDICT = 40
 
 
@@ -651,6 +679,44 @@ def _homoglyph_warning(text: str) -> str | None:
         f"normalise it. Run `untell scrub` to restore plain ASCII."
     )
 
+
+
+def _length_false_positive_warning(text: str, verdict_threshold: float) -> str | None:
+    """State the measured false-positive rate at this document's length.
+
+    `_short_text_warning` stops at `_MIN_WORDS_FOR_A_VERDICT`, and the risk it warns about does not.
+    A 60-to-100-word document is flagged at **28.69%** on known-human text at the shipped threshold
+    and received no caveat, because 60 is above the cliff. See `_ELEVATED_FPR_BANDS`.
+
+    Gated on the VERDICT threshold, not `threshold`. Those are different knobs and the difference
+    matters here: `threshold` defaults to 0.30 and is the loop's stop target, while
+    `verdict_threshold` is what `flagged` is decided on and is 0.45 on the stdlib path. The rates
+    below are measured at 0.45, so they describe the flag a reader sees.
+
+    ✗ The first version of this function compared against `DEFAULT_THRESHOLD` and would have printed
+    a rate measured at 0.45 whenever the caller left the *loop* target alone — attributing one
+    threshold's number to another, which is the exact defect `_threshold_range_warning` exists for.
+
+    A caller who sets their own verdict bar gets nothing, because these rates are not theirs.
+    """
+    if abs(verdict_threshold - _STDLIB_PERPLEXITY_VERDICT_THRESHOLD) > 1e-9:
+        return None
+    words = len(text.split())
+    if words < _MIN_WORDS_FOR_A_VERDICT or words >= _ELEVATED_FPR_BANDS[-1][0]:
+        return None
+    rate, interval = next((r, ci) for bound, r, ci in _ELEVATED_FPR_BANDS if words < bound)
+    unmeasured = (
+        " The 40-60 word range is not directly measured — the corpus floors at 60 — and the rate "
+        "there is higher, not lower, since it rises as text gets shorter."
+        if words < 60 else ""
+    )
+    return (
+        f"{words} words. MEASURED on 6,810 pre-LLM ACL abstracts at this threshold — human by "
+        f"construction, so every flag is a false positive — **{rate}** of documents this length are "
+        f"flagged, 95% CI {interval} — against 19.47% corpus-wide and 12.77% above 200 words. "
+        f"A flag on a document this short is weaker evidence than the same flag on a long "
+        f"one.{unmeasured}"
+    )
 
 def _short_text_warning(text: str) -> str | None:
     """Warn when the text is too short for the flag to mean anything, with the measured rate.
@@ -1102,6 +1168,7 @@ def _score_with_detectors_uncached(
     # actionable note simply goes first and the standing one keeps the last word.
     for extra in (_non_english_warning(text), _threshold_range_warning(threshold),
                   _short_text_warning(text),
+                  _length_false_positive_warning(text, verdict_threshold),
                   _single_sentence_warning(text, detectors, modes), _invisible_char_warning(text),
                   _homoglyph_warning(text), _no_prose_warning(text),
                   _mostly_locked_warning(text), _line_per_sentence_warning(text),
