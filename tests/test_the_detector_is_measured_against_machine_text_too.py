@@ -24,7 +24,7 @@ from __future__ import annotations
 import pytest
 
 from eval.data.generated_abstracts import ABSTRACTS
-from eval.detection_power import BANDS, compare, render
+from eval.detection_power import BANDS, compare, ranking_auroc, render
 
 
 def _arm(rate: float, n: int, words: int, high: float = 0.9, low: float = 0.1):
@@ -99,3 +99,56 @@ def test_an_empty_arm_does_not_divide_by_zero(machine, human):
     report = compare(machine, human, threshold=0.45)
     assert report["inverted"] is False
     assert isinstance(render(report), str)
+
+
+# --- the threshold-free half, added in round seventy-seven ---------------------------------------
+
+
+def test_auroc_is_a_half_for_indistinguishable_arms():
+    assert ranking_auroc([0.4] * 20, [0.4] * 20) == 0.5
+
+
+def test_auroc_is_one_when_every_machine_score_is_higher():
+    assert ranking_auroc([0.9, 0.8], [0.2, 0.1]) == 1.0
+
+
+def test_auroc_is_zero_when_the_detector_is_exactly_reversed():
+    """Below 0.5 means the detector ranks human text as more machine-like. On the real matched arms
+    it is 0.3538 with a bootstrap interval entirely below 0.5."""
+    assert ranking_auroc([0.1, 0.2], [0.8, 0.9]) == 0.0
+
+
+def test_auroc_counts_ties_as_half():
+    """Coarse scores produce ties, and counting them as wins or losses would bias the summary in
+    whichever direction the tie-break favoured."""
+    assert ranking_auroc([0.5, 0.5], [0.5, 0.9]) == 0.25
+
+
+def test_auroc_is_not_moved_by_shifting_every_score():
+    """The property that makes it the right summary here, and the one a flag rate lacks.
+
+    Round seventy-six read an improved machine-to-human flag ratio as the burstiness correction
+    helping. It was not: lowering every score moves fewer documents of BOTH classes across a fixed
+    bar. AUROC is invariant to that, and by AUROC the correction was 0.3538 -> 0.3402 — no gain.
+    """
+    machine = [0.30, 0.35, 0.40]
+    human = [0.45, 0.50, 0.55]
+    before = ranking_auroc(machine, human)
+    after = ranking_auroc([m - 0.1 for m in machine], [h - 0.1 for h in human])
+    assert before == after
+
+    # A flag rate at a fixed threshold, by contrast, moves a lot.
+    rate = lambda xs, t: sum(x >= t for x in xs) / len(xs)  # noqa: E731
+    assert rate(human, 0.45) == 1.0
+    assert rate([h - 0.1 for h in human], 0.45) < 1.0
+
+
+def test_the_report_carries_the_auroc_alongside_the_rates():
+    report = compare([(70, 0.2)] * 30, [(70, 0.8)] * 30, threshold=0.45)
+    assert report["auroc"] == 0.0
+    assert "AUROC" in render(report)
+
+
+@pytest.mark.parametrize("machine,human", [([], [0.5]), ([0.5], []), ([], [])])
+def test_auroc_on_an_empty_arm_is_none_rather_than_a_number(machine, human):
+    assert ranking_auroc(machine, human) is None

@@ -5209,5 +5209,65 @@ from 28.7% to **16.4%**.
 improvement to a detector that, on this register, does not work — so the case for adopting it is
 stronger than round seventy-five could show, and still not the case for trusting the thing.
 
+> ✗ **"The ratio improves" is wrong, and round seventy-seven says why.** That reads a paired flag
+> rate at a FIXED threshold as evidence of better separation. It is not: the correction lowers every
+> score, so fewer documents of both classes cross a fixed bar. MEASURED threshold-free, AUROC over
+> the matched range goes **0.3538 → 0.3402** — marginally *worse*. The correction changes where the
+> scores sit, not how they are ordered.
+
 The default stays unchanged, for the reason it always was: this is one register, and a change to a
 shipped detector wants evidence from more than one.
+
+---
+
+# Round seventy-seven — threshold-free, and the correction to round seventy-six
+
+Round seventy-six measured flag rates at one threshold. A flag rate is a property of the detector
+**and the bar**; the ordering is a property of the detector alone. MEASURED on the matched arms:
+
+| band (words) | AUROC | n machine | n human |
+|---|---|---|---|
+| 40–60 | **0.1873** | 31 | 31 |
+| 60–100 | **0.3599** | 25 | 603 |
+| 100+ | **0.4589** | 14 | 6,207 |
+| **40–100 pooled** | **0.3538** | 56 | 634 |
+
+95% bootstrap interval on the pooled figure: **[0.2824, 0.4272]** — the whole interval below 0.5.
+
+**So the inversion is not an artefact of choosing 0.45.** A random machine abstract outscores a
+random human one 35% of the time. The detector's ordering is reversed, not just its operating point.
+
+✅ **And the gradient confirms the mechanism.** AUROC climbs toward a coin flip as documents
+lengthen — 0.1873, 0.3599, 0.4589 — which is what the small-sample burstiness bias predicts, because
+longer documents have more sentences and less estimator bias. Round seventy-five derived that
+mechanism from a simulation; this is the same curve in the outcome.
+
+## ✗ The correction to round seventy-six
+
+Round seventy-six reported that `burstiness_bias_corrected` moved the machine arm 12.0% → 8.0% and
+the human arm 28.7% → 16.4%, and read the improved ratio as the correction helping.
+
+**By AUROC it does not help.** MEASURED on the matched range: **0.3538 with the shipped estimator,
+0.3402 with the corrected one.** Marginally worse. Per band it is 0.1873 → 0.2170 at 40–60 and
+0.3599 → 0.3562 at 60–100.
+
+The reason is simple once stated. **The correction raises every CV, so it lowers every score, so
+fewer documents of *both* classes cross a fixed bar.** A paired flag-rate comparison at one threshold
+cannot tell that apart from better separation. AUROC can, because shifting every score leaves the
+ordering untouched — which is precisely the invariance a flag rate lacks.
+
+This is the trap this repository documents, walked into while documenting it. Round sixty-five
+published ratios without the process state that produced them; this published a ratio without the
+threshold that produced it. **Both times the number was real and the comparison was not.**
+
+## What it means for the estimator fix
+
+`_burstiness` is genuinely biased — round seventy-five's simulation on a fixed distribution settles
+that, and it is not in dispute. What round seventy-seven settles is that **fixing it does not fix the
+detector.** The bias explains the *length* gradient; it does not explain why machine abstracts score
+below human ones at every length. Something else does, and the mechanism named in round seventy-six
+is the candidate: the score's largest term rewards uniform sentence length, academic abstracts are
+uniform because the genre demands it, and that has nothing to do with who wrote them.
+
+**Correcting an estimator inside a detector whose ranking is inverted improves the estimator.** It
+was never going to improve the ranking, and the flag rates said otherwise for one commit.

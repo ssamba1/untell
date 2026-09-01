@@ -48,6 +48,32 @@ DEFAULT_THRESHOLD = 0.45
 BANDS: tuple[tuple[int, int], ...] = ((40, 60), (60, 100), (100, 10**9))
 
 
+def ranking_auroc(machine: list[float], human: list[float]) -> float | None:
+    """P(a random machine text scores above a random human one), ties counted as half.
+
+    **The threshold-free summary, and the one that decides whether a detector works at all.** A flag
+    rate is a property of the detector AND the bar; AUROC is a property of the ordering. 0.5 is a
+    coin flip and below 0.5 means the detector ranks human text as more machine-like.
+
+    MEASURED on the matched 40-100 range: **0.3538**, 95% bootstrap CI **[0.2824, 0.4272]** — the
+    whole interval below 0.5. And it rises toward 0.5 with length: 0.1873 at 40-60 words, 0.3599 at
+    60-100, 0.4589 at 100+, which is what the small-sample burstiness bias predicts, since longer
+    documents have more sentences and less estimator bias.
+
+    ✗ **This is what the flag rates could not tell us, and what they misled about.** Round
+    seventy-six reported that `burstiness_bias_corrected` improved the machine-to-human flag ratio
+    and read that as the correction helping. By AUROC it does not: **0.3538 -> 0.3402** on the
+    matched range, marginally worse. Correcting the estimator lowers every score, so fewer documents
+    of either class cross a fixed bar — an apparent gain at one threshold that is no gain in
+    ordering. A paired flag-rate comparison at a fixed threshold cannot distinguish the two, and
+    AUROC can.
+    """
+    if not machine or not human:
+        return None
+    wins = sum((m > h) + 0.5 * (m == h) for m in machine for h in human)
+    return wins / (len(machine) * len(human))
+
+
 def _rate(scores: list[float], threshold: float) -> dict:
     flagged = sum(s >= threshold for s in scores)
     low, high = wilson_interval(flagged, len(scores)) if scores else (0.0, 1.0)
@@ -85,6 +111,7 @@ def compare(
             pooled_machine += m
             pooled_human += h
     machine_pooled, human_pooled = _rate(pooled_machine, threshold), _rate(pooled_human, threshold)
+    auroc = ranking_auroc(pooled_machine, pooled_human)
     separated = (
         bool(pooled_machine) and bool(pooled_human)
         and machine_pooled["ci95"][1] < human_pooled["ci95"][0]
@@ -93,6 +120,8 @@ def compare(
         "threshold": threshold,
         "bands": bands,
         "matched": {"machine": machine_pooled, "human": human_pooled},
+        # Threshold-free. A flag rate can be moved by shifting every score; this cannot.
+        "auroc": round(auroc, 4) if auroc is not None else None,
         # True when the machine arm is flagged LESS than the human one with non-overlapping
         # intervals: the detector is pointed the wrong way, not merely weak.
         "inverted": separated,
@@ -121,6 +150,9 @@ def render(report: dict) -> str:
         if entry["rate"] is not None:
             lines.append(f"  {arm:<8} {entry['flagged']}/{entry['n']} = {entry['rate']:.1%}  "
                          f"[{entry['ci95'][0]:.1%}, {entry['ci95'][1]:.1%}]")
+    if report.get("auroc") is not None:
+        lines += ["", f"AUROC {report['auroc']:.4f}  (0.5 = coin flip; below = human ranked as "
+                      f"more machine-like)"]
     if report["inverted"]:
         lines += [
             "",
