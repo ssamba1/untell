@@ -481,6 +481,13 @@ disconfirm parts of it.
 **What untell is, restated in one sentence:** the tool that measures what a detector does to *your*
 population, per subgroup, at the vendor's threshold and at a calibrated one, and reports the gap.
 
+That identity was not assumed — it was chosen against three alternatives (evasion tool, detector
+benchmark, standards instrument) in [strategy options](docs/strategy-options.md), each rejected on
+the verified evidence rather than on preference. The consequence for this file: **the report is the
+product and the rewriting loop is one probe inside it**, which inverts the ordering the README still
+leads with. And the discipline cuts our way first — "the ensemble flags 17% of human HC3 answers" is
+a fact about HC3, and the 0-to-61% range is the reason to say so every time we quote it.
+
 - 🔜 **The AI-assisted arm, FAR and MFAR — the item that most changes what we output.** ✅ In Pratama
   (*PeerJ CS*, [DOI](https://doi.org/10.7717/peerj-cs.2953)) GPTZero scored **97.22% accuracy at 0.00%
   FPR** on clean human-vs-AI, then proved the *most biased* of three tools on **AI-assisted** text
