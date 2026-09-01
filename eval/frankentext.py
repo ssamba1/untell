@@ -28,6 +28,7 @@ import re
 import sys
 from pathlib import Path
 
+from eval.arms import length_match, render_length_match
 from eval.pre_llm_fpr import pre_llm_abstracts, wilson_interval
 
 _SENT = re.compile(r"(?<=[.!?])\s+")
@@ -87,21 +88,21 @@ def probe(texts: list[str], tier: str = "lite", n: int = 60, n_sentences: int = 
                 "rate": round(sum(hits) / len(hits), 4) if hits else None,
                 "ci95": [round(low, 4), round(high, 4)], "detectors": sorted(detectors)}
 
-    if len(whole) < max(5, n // 4):
-        # No comparison arm means no comparison. Reporting the stitched rate alone would invite
-        # exactly the reading the first run of this probe produced: stitched text flagged at 1.7%
-        # against 17.6% for "whole" documents, a gap of -16 points computed against n = 17, which
-        # vanished to -0.7% once both arms held 150 documents at a matched length.
-        return {"error": f"only {len(whole)} document(s) reach {target_words} words — too few to "
-                         f"compare against {len(stitched)} stitched texts. Use fewer sentences.",
-                "mean_words": target_words, "whole_available": len(whole)}
+    # The shared check, not a bespoke one. `eval/arms.py` exists because this exact confound
+    # produced a wrong headline in rounds thirty-six, thirty-seven and fifty, and remembering to
+    # look failed all three times.
+    match = length_match({"stitched": stitched, "whole": whole})
+    if not match["length_matched"]:
+        return {"error": f"arms are not comparable: {match['reason']}. Use fewer sentences so more "
+                         f"documents reach the target length.",
+                "mean_words": target_words, "length_match": match}
 
     a, b = _rate(stitched), _rate(whole)
     gap = (round(a["rate"] - b["rate"], 4)
            if a["rate"] is not None and b["rate"] is not None else None)
     return {
         "tier": tier, "seed": seed, "sentences_per_text": n_sentences,
-        "mean_words": target_words,
+        "mean_words": target_words, "length_match": match,
         "stitched": a, "whole": b, "gap": gap,
         "intervals_overlap": (
             None if gap is None
@@ -121,6 +122,8 @@ def _render(r: dict) -> str:
     lines = [
         f"Stitched human text against whole human text (tier={r['tier']}, "
         f"{r['sentences_per_text']} sentences each, ~{r['mean_words']} words).",
+        "",
+        render_length_match(r["length_match"]) if "length_match" in r else "",
         "",
         f"{'arm':<12} {'n':>4} {'flagged':>9}   95% CI",
     ]

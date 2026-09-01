@@ -3530,3 +3530,49 @@ The `whole` arm can come back **empty** when the stitched texts are longer than 
 and the first version returned the stitched rate with `whole` at n = 0 — which reads as a comparison
 and is not one. It now errors with the count and the fix. **Found by a test asserting both arms are
 populated, written after the first run had already been misread once.**
+
+---
+
+# Round fifty-one — the same confound three times, so it becomes a function
+
+Three rounds, three wrong headlines, one cause:
+
+| round | claim | after matching |
+|---|---|---|
+| 36 | outlier gap separates at 5 of 7 cut-offs on 6,810 documents | gap changes sign between length bands; none separates |
+| 37 | *(the author-status arm)* | **passed** at a worst median gap of 7.8% — but only because somebody checked |
+| 50 | stitched text flagged at 1.7% against 17.6%, a −16 point gap | −0.7% at matched length, intervals overlapping |
+
+The mechanism is measured here: **30.0% flagged at ≤50 words against 13.3% at 200+.** Any comparison
+of flag rates between two groups inherits that unless the groups are length-matched.
+
+**Remembering to check has failed three times out of three.** So `eval/arms.py` is the check as a
+function, and the comparisons call it.
+
+## What it refuses, and why the second condition matters
+
+`length_match` takes the arms as `{name: texts}` — so a caller cannot check one and report the other
+— and refuses on either of two grounds:
+
+- **Median word counts differing by more than 15%.** Far below the range over which the flag rate has
+  been measured to move, and stated as the judgement call it is.
+- **An arm below 30 documents.** Round fifty's defect was *not* a length imbalance: both arms were the
+  same length and one had **seventeen** documents, whose interval ran from 6.2% to 41.0%. A size
+  check would have caught it where a length check alone would not.
+
+It returns a verdict rather than raising. A comparison that declines to run is more useful inside
+somebody's audit than an exception, and the failure line starts with **WARNING** where the success
+line starts with **Length check** — different first words on purpose, so a skimmed report cannot be
+misread.
+
+## Wired in, not merely available
+
+`eval/frankentext.py` now calls it instead of the bespoke size check written for it in round fifty,
+and prints the verdict in its report header even when the comparison passes — **a passing check
+should still show what it checked**. A test asserts the probe uses the shared function rather than a
+private copy, because two comparisons with their own ideas of "comparable" is how they come to
+disagree.
+
+`eval/assisted_fairness.py` keeps its own `length_balance`, which does something this cannot: it
+reports medians **per arm per author status** across five arms. The shared function is for the
+two-arm case; the specialised one is not a duplicate of it.

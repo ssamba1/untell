@@ -92,7 +92,11 @@ def test_a_missing_comparison_arm_is_an_error_not_a_one_armed_result():
     """
     result = ft.probe(CORPUS * 20, tier="lite", n=8, n_sentences=12)
     assert "error" in result, "a comparison with no comparison arm must refuse"
-    assert "too few to compare" in result["error"]
+    assert "not comparable" in result["error"], (
+        "the refusal now comes from the shared check in eval/arms.py, which is the point: three "
+        "comparisons hit this confound and each had its own idea of what comparable meant"
+    )
+    assert result["length_match"]["arms_too_small"], "the verdict must say WHICH arm was too small"
 
 
 def test_matched_arms_produce_a_two_sided_comparison():
