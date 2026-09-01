@@ -192,8 +192,13 @@ def _render_by_length(report: dict) -> str:
 
 
 def _render(report: dict) -> str:
+    corpus = report.get("corpus")
     lines = [
         f"Pre-LLM human abstracts scored: {report['n_scored']} (tier={report['tier']})",
+        *([f"Corpus: {corpus['min_words']}+ words, published <= {corpus['max_year']}, "
+           f"{corpus['n_available']} available, seed {corpus['seed']}. The word floor moves this "
+           f"number: 22.0% at 30 words against 14.3% at 150 (MEASURED, n=300 each)."]
+          if corpus else []),
         "Every flag below is a FALSE positive: this text predates the models.",
         "",
         f"{'aggregation rule':<22} {'FPR':>8}   95% CI",
@@ -242,11 +247,25 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     random.Random(args.seed).shuffle(texts)
     sample = texts[: args.n]
+    # The corpus definition travels with the number. `min_words` is not a detail: MEASURED at n=300,
+    # the false-positive rate runs 22.0% at 30 words, 22.7% at 60, 18.3% at 100 and 14.3% at 150,
+    # because short text is flagged far more often. A saved report that does not say which floor it
+    # used cannot be compared with any other, and "the pre-LLM false-positive rate" is not a single
+    # quantity — it is one per corpus definition.
+    corpus = {
+        "min_words": args.min_words,
+        "max_year": args.max_year,
+        "seed": args.seed,
+        "n_available": len(texts),
+        "n_requested": args.n,
+    }
     if args.by_length:
         report = probe_by_length(sample, tier=args.tier)
+        report["corpus"] = corpus
         print(json.dumps(report, indent=2) if args.as_json else _render_by_length(report))
         return 0
     report = probe(sample, tier=args.tier)
+    report["corpus"] = corpus
     print(json.dumps(report, indent=2) if args.as_json else _render(report))
     return 0
 

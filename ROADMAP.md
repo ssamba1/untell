@@ -49,7 +49,7 @@ no decision, no native speaker and no GPU, only the work.
 | 21 | Third-party watermark audit (Article 50 marking) | 🔜 open | **WaterPark already audits watermark robustness**; what is open is a *key-free third-party* audit in the TTP-Detect sense, at segment level. Blueprint corrected in §7. |
 | 22 | Confidence intervals on every published rate | ✅ done — **169 proportions tabulated**, and a test fails if one appears without an interval | — |
 | 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
-| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **20.5% measured on n = 599**, CI [17.5%, 24.0%] | — |
+| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **20.5% on n = 599 of 60+ words**, CI [17.5%, 24.0%]. The word floor is load-bearing: **22.0% at 30 words against 14.3% at 150** | — |
 | 25 | Length-conditioned false-positive curve | ✅ done — **30.0% at ≤50 words against 21.7% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
@@ -770,7 +770,12 @@ a fact about HC3, and the 0-to-61% range is the reason to say so every time we q
   the technical register detectors are worst on, where **every flag is a false positive by
   construction** — no labels, nothing to dispute.
 
-  **Measured: 20.5% of 599 pre-LLM abstracts flagged, 95% CI [17.5%, 24.0%], lite tier.** At n = 120
+  **Measured: 20.5% of 599 pre-LLM abstracts flagged, 95% CI [17.5%, 24.0%], lite tier — on
+  documents of 60 or more words.** That last clause is not a detail. MEASURED at n = 300 each, the
+  same probe returns **22.0% at a 30-word floor, 22.7% at 60, 18.3% at 100 and 14.3% at 150**,
+  because the corpus floor filters out exactly the short documents that drive the rate up. **There
+  is no such thing as "the" pre-LLM false-positive rate** — there is one per corpus definition, and
+  every report now carries the definition that produced it. At n = 120
   it read 19.2% with an interval more than twice as wide, [13.1%, 27.1%]; the corpus added in round
   thirty-one is 6,811 abstracts, so there was no reason to keep publishing the small sample.
   That is now the most defensible false-positive number this repo has, because its ground truth

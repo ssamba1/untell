@@ -2621,3 +2621,57 @@ quietly stop being run — which is how a sensitivity analysis becomes optional 
 `probe_by_distance` now shares `_split` with it, and a test asserts the two agree at the same
 cut-off, because two implementations of one comparison is how a headline and its own sensitivity
 check drift apart.
+
+---
+
+# Round thirty-five — the same defect one level down, in the number quoted most
+
+Round thirty-four found that the outlier gap depended on where the margin line was drawn. That
+prompted an obvious question nobody had asked: **what other published number here rests on a
+parameter chosen once and never varied?**
+
+`pre_llm_abstracts` takes a `min_words` floor, default 60. The headline false-positive rate is
+measured on whatever it returns. MEASURED at n = 300 each:
+
+| word floor | FPR | 95% CI |
+|---|---|---|
+| 30 | 22.0% | [17.7%, 27.0%] |
+| **60 — the published setting** | **22.7%** | [18.3%, 27.8%] |
+| 100 | 18.3% | [14.4%, 23.1%] |
+| 150 | **14.3%** | [10.8%, 18.8%] |
+
+**An 8.4-point swing from a parameter no document mentioned**, and the intervals at 60 and 150 barely
+overlap. It is not noise: it is this repository's own length effect — **30.0% flagged at ≤50 words
+against 13.3% at 200+** — reaching the headline through the corpus floor. Raising the floor removes
+the short documents that drive the rate up.
+
+**So there is no such thing as "the" pre-LLM false-positive rate.** There is one per corpus
+definition. The published figure is now stated as *20.5% on documents of 60 or more words*, and that
+clause is load-bearing rather than decorative.
+
+## ✗ And the report did not say which corpus it described
+
+A saved JSON result carried `tier`, `n_scored`, `detectors_scoring` and the rates — **and nothing
+about the text it had scored.** No word floor, no year cut-off, no seed, no corpus size. Two runs
+could not be compared and neither could be reproduced from its own output.
+
+Every report now carries a `corpus` block: `min_words`, `max_year`, `seed`, `n_available`,
+`n_requested`. The terminal rendering prints it, **with the sensitivity in the same breath** — "the
+word floor moves this number: 22.0% at 30 words against 14.3% at 150" — because someone reading a
+number off a terminal is exactly the reader who will not go looking for the caveat.
+
+Five tests hold it, including one that checks the recorded floor is **the one actually used** (a field
+that always said 60 would be worse than no field) and one that checks a higher floor really does
+exclude texts, because recording a parameter that does nothing is ceremony.
+
+## The pattern across rounds thirty-four and thirty-five
+
+Both defects are the same shape and neither is a factual error. Every number involved was correctly
+measured and correctly reported. What was missing is that **each rested on a choice, and the choice
+was invisible in the output.**
+
+The guards built in rounds sixteen to thirty-two all ask *does this claim match its source?* That
+question cannot see this failure at all — the source is our own tool, and the tool was telling the
+truth about a corpus it declined to describe. **The reusable rule: a measured number must ship with
+every parameter that would move it, and the ones most worth naming are the ones that were never
+chosen deliberately in the first place.**
