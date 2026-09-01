@@ -167,6 +167,53 @@ def papers_for_topic(papers: list[dict[str, str]], topic: str) -> list[dict[str,
     ]
 
 
+def cited_acl_ids(root: Path) -> dict[str, list[str]]:
+    """Every ACL Anthology identifier this repository cites, and the files citing it.
+
+    A citation that does not resolve is the worst kind of documentation defect: it looks like
+    evidence, survives review, and cannot be checked without the corpus. This repo already refuses
+    to publish an unattributed number — a fabricated or mistyped attribution is the same failure one
+    level down, and until now nothing checked for it.
+    """
+    pattern = re.compile(r"aclanthology\.org/([0-9A-Za-z._-]+?)/")
+    found: dict[str, list[str]] = {}
+    for path in sorted([*root.glob("*.md"), *(root / "docs").glob("*.md"),
+                        *(root / "untell").rglob("*.py"), *(root / "eval").glob("*.py"),
+                        *(root / "untell" / "references").glob("*.md")]):
+        try:
+            body = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for match in pattern.finditer(body):
+            found.setdefault(match.group(1), []).append(path.name)
+    return found
+
+
+def paper_index(cache: Path) -> dict[str, str]:
+    """Anthology id -> title, for every paper in the cached volumes."""
+    index: dict[str, str] = {}
+    for path in sorted(cache.glob("*.xml")):
+        try:
+            root = ET.parse(path).getroot()
+        except ET.ParseError:
+            continue
+        collection = root.get("id")
+        for volume in root.findall("volume"):
+            for paper in volume.findall("paper"):
+                index[f"{collection}-{volume.get('id')}.{paper.get('id')}"] = _flatten(
+                    paper.find("title"))
+    return index
+
+
+def verify_citations(repo_root: Path, cache: Path) -> dict:
+    """Check that every Anthology id this repo cites resolves to a real paper."""
+    cited = cited_acl_ids(repo_root)
+    index = paper_index(cache)
+    unresolved = {cid: where for cid, where in cited.items() if cid not in index}
+    return {"cited": len(cited), "indexed": len(index),
+            "unresolved": unresolved, "resolved": len(cited) - len(unresolved)}
+
+
 def _render(result: dict[str, object]) -> str:
     topics: dict[str, int] = result["topics"]  # type: ignore[assignment]
     total = result["detection_papers"]
@@ -187,6 +234,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="where volume XML is stored (default: .anthology-cache)")
     parser.add_argument("--download", action="store_true", help="fetch missing volumes first")
     parser.add_argument("--topic", choices=sorted(TOPICS), help="list the papers behind one row")
+    parser.add_argument("--verify-citations", action="store_true",
+                        help="check every ACL id this repo cites against the cached corpus")
+    parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--json", action="store_true", dest="as_json", help="machine-readable output")
     args = parser.parse_args(argv)
 
@@ -198,6 +248,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no volume XML in {args.cache} — run with --download first "
               f"(~67 MB; needs access to raw.githubusercontent.com)", file=sys.stderr)
         return 1
+
+    if args.verify_citations:
+        report = verify_citations(args.repo_root, args.cache)
+        if args.as_json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"{report['resolved']}/{report['cited']} cited Anthology ids resolve "
+                  f"against {report['indexed']} indexed papers")
+            for cid, where in sorted(report["unresolved"].items()):
+                print(f"  UNRESOLVED {cid} — cited in {', '.join(sorted(set(where)))}")
+        return 1 if report["unresolved"] else 0
 
     papers = load_abstracts(args.cache)
 

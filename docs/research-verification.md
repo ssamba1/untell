@@ -949,3 +949,37 @@ usage.
 classification signal on M4 but "constrained by the differences among the LLMs used in the training
 and test sets" — the same generator-boundedness M4GT-Bench reports for detection generally, now
 established for the specific signal this repo's lite tier is built on.
+
+---
+
+# Round ten — auditing the citations themselves
+
+Every round so far checked what papers *say*. None checked that the papers this repo cites **exist**.
+A citation that does not resolve looks like evidence, survives review, and cannot be checked without
+the corpus — the same failure as an unattributed number, one level down, and nothing guarded against
+it while the research documents accumulated 122 external references.
+
+Enumerated across every Markdown file and Python docstring in the repo:
+
+| kind | distinct citations | verifiable here |
+|---|---|---|
+| ACL Anthology ids | **39** | ✅ all of them — the corpus is local |
+| arXiv ids | 71 | ✗ host blocked; verified only where a venue version exists |
+| DOIs | 12 | ✅ via PubMed for the indexed ones |
+
+**Result: 39 of 39 cited Anthology identifiers resolve to real papers**, checked against an index of
+**127,839 papers** built from the complete Anthology. No fabricated citation, no transposed digit.
+
+That is now a standing check rather than a one-off:
+
+    python -m eval.litreview --verify-citations --cache <anthology-xml-dir>
+
+`tests/test_cited_papers_resolve.py` pins the extraction (the part that would silently break and make
+the check vacuously green) and resolves for real when `UNTELL_ANTHOLOGY_CACHE` points at the volumes.
+The test that matters most is the one asserting a plausible-but-fake id — `2025.acl-long.99999` — is
+reported unresolved, because a checker that cannot fail is not a checker.
+
+**What this does not cover, stated plainly:** the 71 arXiv-only citations cannot be resolved from this
+environment, so "39/39" is a complete result for one citation class and silence about the larger one.
+Anyone with unrestricted access can extend `verify_citations` to arXiv in a few lines; the extraction
+already collects the ids.
