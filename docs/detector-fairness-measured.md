@@ -24,6 +24,7 @@ untell-subgroup-audit --corpus ellipse --ablate
 untell-subgroup-audit --corpus liang --tier lite --n 0                          # Results 12, 13
 untell-subgroup-audit --corpus liang --n 0 --ablate --band-axis population      # Result 14
 untell-subgroup-audit --corpus liang-paired --n 0 --odds --threshold 0.775      # Results 15, 16
+python -c "from eval.datasets import load_liang_paired as L; print(len(L(prompt_engineered=True)))"  # Result 17
 untell-ngram-lm train && untell-ngram-lm score --csv <corpus>.csv --by ell_status
 untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_status
 ```
@@ -35,7 +36,8 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 `genre-controlled-professional-vs-student`, `ellipse-threshold-for-target-fpr`,
 `unedited-adult-writing`, `liang-population-fpr`, `liang-paired-gpt4-polish`,
 `liang-threshold-sweep`, `liang-component-ablation`, `liang-paired-equalised-odds`,
-`liang-paired-separation`, `liang-paired-fnr-disparity`.
+`liang-paired-separation`, `liang-paired-fnr-disparity`,
+`liang-prompt-engineered-evasion`.
 
 ## The corpora
 
@@ -532,6 +534,34 @@ and concludes there is no demonstrated disparity. The detector is in fact missin
 of the machine-written CS224N essays against one sixth of the machine-written college essays, and
 that gap is real. The two populations are not being served equally; the half of the audit that
 could see it is the half that could not be run until the corpus above was found.
+
+## Result 17 — the cheapest possible evasion multiplies the miss rate, and costs nothing
+
+Liang generated each machine arm twice: GPT-3 asked to write on the prompt, and GPT-3 asked to
+write on the prompt *in a way that does not look machine-generated*. Same model, same prompts,
+same 176 essays — the only variable is the instruction. No fine-tuning, no rewriting tool, no
+paraphraser. The human essays are unchanged, so the false-positive rate is identical in both
+columns and only the miss rate moves.
+
+| threshold | FNR, plain GPT-3 | FNR, prompt-engineered | FPR (same in both) |
+|---|---|---|---|
+| **0.30** *(shipped)* | 1.7% (0.6–4.9) | **10.2%** (6.6–15.6) | 68.4% |
+| **0.43** *(minimum total error)* | 27.3% (21.2–34.3) | **49.4%** (42.1–56.8) | 24.2% |
+| 0.50 | 57.4% | 76.7% | 11.6% |
+
+Both gaps separate at 95%. Mean score falls from **0.4820** to **0.4302**, Cohen's **d = −0.522** —
+a medium effect, in the direction of looking more human.
+
+**At the shipped threshold this detector flags 68.4% of real students while missing one in ten
+machine essays that were merely asked to be discreet.** At the best-total-error threshold it
+misses **half** of them. The attack is one sentence added to a prompt: it needs no tool, no
+budget, no technical skill, and it is the first thing anyone actually trying would do.
+
+Two things follow that matter beyond this document. `ROADMAP.md` treats raw evasion strength as a
+race untell cannot win and should stop spending on, which stands — but the reason is stronger than
+"the state of the art is ahead of us". **The baseline attack already works**, so evasion strength
+was never the axis. And Result 15's finding sharpens: the lite tier is not merely miscalibrated
+for accusation, it is miscalibrated against an adversary who does nothing but ask nicely.
 
 ## What these results do not establish
 

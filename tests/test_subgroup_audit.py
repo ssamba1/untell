@@ -551,3 +551,26 @@ class TestBothErrorRatesOnRealData:
         rep = self._run(monkeypatch, rows, axes=("g", "Overall"))
         assert rep["axes"]["Overall"]["missing"] is True, rep["axes"]["Overall"]
         assert rep["axes"]["g"]["missing"] is False, rep["axes"]["g"]
+
+
+def test_the_prompt_engineered_arm_is_a_separate_corpus_not_a_pooled_one():
+    """"Can it find GPT-3" and "can it find GPT-3 that is trying" are different questions.
+
+    Liang generated each machine arm twice — plain, and instructed to write in a way that does
+    not look machine-generated. Pooling them answers neither: MEASURED 2026-09-01, the miss rate
+    at the shipped threshold is 1.7% against the plain arm and 10.2% against the engineered one,
+    and a pooled corpus would report something in between that describes no real adversary.
+    """
+    from eval.datasets import (
+        LIANG_MACHINE,
+        LIANG_MACHINE_PROMPT_ENGINEERED,
+    )
+
+    assert set(LIANG_MACHINE) == set(LIANG_MACHINE_PROMPT_ENGINEERED), (
+        "the two machine arms cover different populations, so they cannot be compared"
+    )
+    assert not set(LIANG_MACHINE.values()) & set(LIANG_MACHINE_PROMPT_ENGINEERED.values()), (
+        "the arms point at the same upstream folders; one of them is not what it claims"
+    )
+    for folder in (*LIANG_MACHINE.values(), *LIANG_MACHINE_PROMPT_ENGINEERED.values()):
+        assert folder.startswith("GPT_Data/"), f"{folder} is not machine-written data"
