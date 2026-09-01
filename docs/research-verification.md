@@ -2985,3 +2985,62 @@ from a passing gate), that every gate CI runs is still named in it, that the fai
 They do not shell out to `git commit`. That test would be slower and more fragile than the thing it
 guards. What can drift silently here is the *list of checks*: a hook that stops running the audit is
 faster and looks identical.
+
+---
+
+# Round forty-one — checking whether my own tests would notice
+
+Round forty ended on a probe that passed for a reason unrelated to what it was probing. The obvious
+next question is how much of this session's testing has that shape, and there is a way to find out
+that does not depend on my judgement: **break the code and see whether anything complains.**
+
+Nine mutations, aimed at the statistical machinery because that is where a wrong answer is invisible
+— a detector that scores slightly wrong shows up in the output, an interval slightly too narrow turns
+an honest negative into a finding, and rounds thirty-four to thirty-seven rest entirely on those
+intervals.
+
+## ✗ Three survived, all in code written the same day
+
+| mutation | outcome |
+|---|---|
+| `outlier_scores`: median → mean | **SURVIVED** |
+| `outlier_scores`: MAD → standard deviation | **SURVIVED** |
+| margin cut off by one | **SURVIVED** |
+| `standardize`: drop coverage renormalisation | killed |
+| `agreement`: majority → "at least half" | killed |
+| `agreement`: unanimous → "all but one" | killed |
+| Wilson: drop the continuity term | killed |
+| Wilson: drop the centre shift | killed |
+| `outlier_scores`: drop length from the features | killed |
+
+**The robustness test was the worst of them.** `test_the_centre_is_robust_to_the_outliers_it_is_measuring`
+asserted that an odd document scored above 1.0 — a bar a non-robust implementation clears easily. Its
+docstring explained, correctly and at length, why median and MAD matter; its assertion checked that
+the function returned a number. Round thirty-eight's module docstring makes the same argument, and
+**both substitutions it warns against passed the test written to prevent them.**
+
+The off-by-one survived for a related reason: every assertion in that file was about rates and signs,
+and none about **how many documents landed on each side.** A cut taking 21 documents instead of 20
+changes a small-n rate and no test looked.
+
+All three now have killing tests: the odd document must keep half its distance when a 4,000-word
+outlier is added, and the margin must contain exactly the requested share at every quantile the sweep
+uses.
+
+## The sweep ships, and is itself guarded
+
+`scripts/mutation_sweep.py` makes it repeatable, following the pattern
+`tests/test_audit_mutation_guards.py` already documents — sweep, then write a killing test for every
+survivor. It refuses to run on a dirty tree, because it edits source files and restores them from
+memory.
+
+And it has its own failure mode: **every mutant is a literal string that must appear in the source**,
+so a refactor rewriting one of those lines turns its mutant into a no-op and the sweep reports nine
+kills while testing eight things. Twenty-eight tests check that every pattern still matches, that
+applying it changes the file, and that the four modules carrying the statistics are all covered.
+
+⚠️ **And that guard's first assertion was wrong.** Checking `new not in source` looked obviously
+right and fired on a perfectly good mutation: one mutant drops a trailing `+ ["words"]`, so its
+replacement is a *substring* of the original. The property that matters is not whether the mutated
+text is absent but whether performing the replacement changes anything — `source.replace(old, new) !=
+source`. **A test written to catch no-op mutations was itself nearly a no-op.**

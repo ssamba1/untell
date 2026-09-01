@@ -39,6 +39,26 @@ gate on the audit's exit code. CI caught it — after the push.
 `git commit --no-verify` bypasses it, which is the right thing for a work-in-progress commit you do
 not intend to push.
 
+### The mutation sweep
+
+```bash
+python scripts/mutation_sweep.py          # break the code on purpose, check a test notices
+python scripts/mutation_sweep.py --list   # what it breaks, without running it
+```
+
+Aimed at the statistical machinery, where a wrong answer is invisible: a detector that scores
+slightly wrong shows up, an interval slightly too narrow turns an honest negative into a finding.
+
+Its first run found three survivors in code written the same day. The robustness test for
+`outlier_scores` asserted only that an odd document scored above 1.0 — a bar a non-robust
+implementation clears easily — so both *median → mean* and *MAD → standard deviation* survived it,
+and the test was really only checking that the function returned a number. A third mutant moved the
+margin cut by one document and survived, because every assertion in that file was about rates and
+signs and none about how many documents landed on each side.
+
+**A survivor needs a killing test, not an exemption.** It refuses to run on a dirty working tree,
+because it edits source files and restores them from memory.
+
 ## Before you open a PR
 
 ```bash

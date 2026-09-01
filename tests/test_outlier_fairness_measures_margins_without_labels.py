@@ -40,11 +40,27 @@ def test_a_text_unlike_the_corpus_scores_further_from_the_centre():
 def test_the_centre_is_robust_to_the_outliers_it_is_measuring():
     """The median and MAD are used rather than mean and standard deviation on purpose. With mean and
     SD, a large outlier inflates the scale it is measured against and reports itself as ordinary —
-    which is how an outlier analysis quietly concludes that nothing is unusual."""
-    extreme = ["word " * 500]
+    which is how an outlier analysis quietly concludes that nothing is unusual.
+
+    MUTATION-CHECKED. An earlier version of this test asserted only that the odd sentence scored
+    above 1.0, and **both** substitutions — median to mean, and MAD to standard deviation — survived
+    it. The bar was low enough that a non-robust implementation cleared it. The assertion below is
+    the actual claim: adding one extreme document must not stop a moderately unusual document from
+    reading as unusual.
+    """
+    extreme = ["word " * 4000]
+    baseline = of.outlier_scores(UNIFORM + ODD)
     with_extreme = of.outlier_scores(UNIFORM + ODD + extreme)
-    # The odd sentence must still read as distant even with a much larger outlier present.
-    assert with_extreme[len(UNIFORM)] > 1.0
+    odd = len(UNIFORM)
+    # With mean/SD the 4,000-word document dominates the scale and everything else collapses toward
+    # zero. With median/MAD the centre and spread barely move, so the odd sentence keeps most of its
+    # distance. Requiring it to keep half is far outside what a non-robust version can manage.
+    assert with_extreme[odd] > baseline[odd] * 0.5, (
+        f"the odd document's distance collapsed from {baseline[odd]:.2f} to {with_extreme[odd]:.2f} "
+        f"when one extreme document was added — the centre is not robust"
+    )
+    # And the extreme document must itself be the most distant thing in the corpus.
+    assert with_extreme[-1] == max(with_extreme)
 
 
 def test_a_corpus_too_small_to_split_refuses_rather_than_guessing():
@@ -226,3 +242,24 @@ def test_the_stratified_probe_pairs_flags_with_the_right_documents(monkeypatch):
     monkeypatch.setattr(of, "_score_all", dropping)
     report = of.probe_stratified(texts, tier="lite")
     assert report["n_scored"] == len(texts) - 1
+
+
+
+def test_the_margin_cut_takes_exactly_the_requested_share():
+    """MUTATION-CHECKED. An off-by-one in the cut index — `[int(n * q)]` instead of `[int(n * q) - 1]`
+    — survived every test in this file, because every assertion was about rates and signs rather than
+    about how many documents landed on each side. One document either way changes a small-n rate.
+    """
+    distances = [float(i) for i in range(100)]
+    flags = [0] * 100
+    margin, centre, _cut = of._split(distances, flags, 0.2)
+    assert margin["n"] == 20, f"the furthest 20% of 100 documents is 20, got {margin['n']}"
+    assert centre["n"] == 80
+    assert margin["n"] + centre["n"] == 100, "every document must land on exactly one side"
+
+
+@pytest.mark.parametrize("quantile,expected", [(0.05, 5), (0.1, 10), (0.25, 25), (0.4, 40)])
+def test_the_cut_is_right_at_every_quantile_the_sweep_uses(quantile, expected):
+    margin, centre, _ = of._split([float(i) for i in range(100)], [0] * 100, quantile)
+    assert margin["n"] == expected
+    assert margin["n"] + centre["n"] == 100
