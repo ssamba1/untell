@@ -355,3 +355,105 @@ def test_selection_does_not_read_a_bare_max(repo) -> None:
         assert_fails("check_selection_does_not_read_a_bare_max", "comparing bare max values")
     finally:
         _restore(victim, original)
+
+
+# --- the four checks that had no known-negative until round sixty-seven -------------------------
+#
+# This file's docstring records that twelve of eighteen checks were unmentioned anywhere in the
+# suite, and it fixed them by hand. It never added the guard that keeps the NEXT check covered, so
+# four had accumulated again by round sixty-seven. `test_every_check_has_a_known_negative` is that
+# guard, and it is the durable half of this section.
+#
+# ✗ A first pass at counting them said five, including `check_attribution`. That was wrong: the
+# collector looked for the check's name in quotes, and `test_attribution` above calls
+# `audit.check_attribution(report)` directly. Searching for the bare name gives four.
+
+
+def test_source_comment_counts(repo) -> None:
+    """`run.py` states three times how many places `structural.py` draws from the global `random`
+    module, and sizes the real fix by that number. Adding one draw site must be noticed."""
+    assert_passes("check_source_comment_counts")
+    victim = repo / "untell" / "rewriter" / "structural.py"
+    original = victim.read_bytes()
+    try:
+        body = victim.read_text(encoding="utf-8")
+        assert "random." in body, (
+            "premise: structural.py must draw from `random`, or the count describes nothing")
+        victim.write_text(body + "\n\n_PROBE = random.random\n", encoding="utf-8")
+        assert_fails("check_source_comment_counts", "one more draw site than the comment claims")
+    finally:
+        _restore(victim, original)
+
+
+CENSUS_DOC = "docs/humanizer-census.md"
+
+
+def test_named_repo_stars(repo) -> None:
+    """A star count quoted beside a repo name. These only move upward, so a stale one understates a
+    competitor — the direction that flatters this project."""
+    assert_passes("check_named_repo_stars")
+    victim = repo / CENSUS_DOC
+    original = victim.read_bytes()
+    try:
+        body = victim.read_text(encoding="utf-8")
+        edited, count = re.subn(r"\d+(?:\.\d+)?k★", "999.9k★", body)
+        assert count, "premise: the census page must quote a star count beside a repo"
+        victim.write_text(edited, encoding="utf-8")
+        assert_fails("check_named_repo_stars", "inflating every quoted star count")
+    finally:
+        _restore(victim, original)
+
+
+def test_largest_repo_claims(repo) -> None:
+    """"Three of the eight largest" is only worth printing if the repos named are in the top eight.
+    Shrinking the claimed N leaves the exhibits outside it."""
+    assert_passes("check_largest_repo_claims")
+    # The exhibits this check reads are in `why-best-open-repo.md`, in the clause opened by "of the
+    # eight largest" — not in the census page, which makes a similar-looking claim the check does
+    # not reach. Two earlier mutations edited the census page and the check passed both times,
+    # reporting the same three exhibits it had always seen: a mutation aimed at the wrong document
+    # is indistinguishable from a check that cannot fail.
+    victim = repo / "docs" / "why-best-open-repo.md"
+    original = victim.read_bytes()
+    try:
+        body = victim.read_text(encoding="utf-8")
+        # 191 stars, around rank 39, substituted for an exhibit named among the eight largest.
+        edited, count = re.subn(r"`op7418/Humanizer-zh` \(14\.7k★",
+                                "`ilyautov/humanizer-ru` (0.2k★", body)
+        assert count, "premise: that page must name an exhibit among the eight largest"
+        victim.write_text(edited, encoding="utf-8")
+        assert_fails("check_largest_repo_claims", "narrowing the claimed rank below the exhibits")
+    finally:
+        _restore(victim, original)
+
+
+def test_census_counts(repo) -> None:
+    assert_passes("check_census_counts")
+    victim = repo / CENSUS_DOC
+    original = victim.read_bytes()
+    try:
+        body = victim.read_text(encoding="utf-8")
+        edited, count = re.subn(r"\b435\b", "581", body)
+        assert count, "premise: the census page must publish the read count"
+        victim.write_text(edited, encoding="utf-8")
+        assert_fails("check_census_counts", "changing a published census count")
+    finally:
+        _restore(victim, original)
+
+
+def test_every_check_has_a_known_negative() -> None:
+    """The guard this file never had, and the reason four checks drifted back out of coverage.
+
+    A new `check_*` can otherwise ship with no demonstration that it can fail — the exact defect
+    this file exists to prevent, one level up.
+    """
+    body = Path(__file__).read_text(encoding="utf-8")
+    checks = sorted(name for name in dir(audit)
+                    if name.startswith("check_") and callable(getattr(audit, name)))
+    assert len(checks) > 15, f"only {len(checks)} checks collected; the collector is not collecting"
+    uncovered = [name for name in checks if name not in body]
+    assert not uncovered, (
+        f"{len(uncovered)} audit check(s) have no known-negative in this file: {uncovered}. "
+        f"A check nobody has watched fail is a check nobody has watched — add a case that breaks "
+        f"what it guards and asserts the check reports it."
+    )

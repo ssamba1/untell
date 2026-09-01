@@ -4524,3 +4524,66 @@ numbers.
 **Nothing tests a comment.** Round sixty-two found a checker and its fixer disagreeing; this is the
 same shape between a comment and a commit that came later, and the only reason it surfaced is that
 someone measured the thing the comment described.
+
+---
+
+# Round sixty-seven — three code-changing rounds, and not one score moved
+
+Rounds sixty-three through sixty-six rewrote seven regexes, changed when the locked-share note reads
+the whole document, and put a lock around spaCy's model pass. Each was verified locally — round
+sixty-three compared 1,144 spans, round sixty-four compared the note on 425 documents. **None of them
+verified the thing a user actually receives: the score.**
+
+Round sixty-one saved the detector score for every one of the 6,810 pre-LLM abstracts. Re-scoring all
+of them on the current code:
+
+    n before 6810   n now 6810
+    scores that changed: 0
+
+**Not "within tolerance" — identical, to four decimal places, on every document.** Three rounds of
+changes to the scoring path's regexes, its caveat logic and its threading, and the output is
+bit-for-bit what it was. That is the strongest statement this repository can make about a refactor,
+and it was available only because round sixty-one had written the baseline down.
+
+## Nothing tests a comment, so now something tests some of them
+
+Round sixty-six found `run.py` asserting that its lock "costs nothing today because the only
+concurrent caller already serialises" — true when written, falsified by a later commit that the same
+paragraph had predicted. `untell-audit` gained `check_source_comment_counts`: counts that a source
+comment states about the code, re-derived from the code.
+
+It guards one claim, made three times in `run.py` — that `structural.py` draws from the global
+`random` module in **27 places**, which is currently exact and is the stated reason the real fix
+"is not something to do blind". A number that sizes future work should not drift from the code it
+sizes. Adding one draw site fails all three, VERIFIED.
+
+Deliberately a short list rather than a parser for the general form. A checker that guesses which
+numbers in prose are assertions produces false alarms, and false alarms are how a checker gets
+ignored — the same reasoning that produced `without_code_spans`.
+
+## The guard that the file about guards did not have
+
+`test_every_audit_check_can_fail.py` exists because twelve of eighteen audit checks were once
+unmentioned anywhere in 4,949 tests. It fixed those twelve by hand **and never added the check that
+keeps the next one covered.** MEASURED at round sixty-seven: **4 of 19** had no known-negative —
+`check_census_counts`, `check_largest_repo_claims`, `check_named_repo_stars`, and the one this round
+had just added.
+
+All four now have one, and `test_every_check_has_a_known_negative` fails when a `check_*` appears
+with no case. VERIFIED by adding a probe check: it is named in the failure.
+
+## Three things that went wrong writing it, all the same shape
+
+✗ **The first count said five, including `check_attribution`.** The collector searched for the
+check's name *in quotes*, and `test_attribution` calls `audit.check_attribution(report)` bare. The
+measurement of the coverage gap had the same defect as the coverage gap.
+
+✗ **The first `largest_repo_claims` mutation narrowed "eight largest" to "three largest" and the
+check passed** — because the exhibits genuinely are the three largest, so the narrowed claim was
+still true. A mutation a correct document survives proves nothing.
+
+✗ **The second mutation edited the wrong document.** The check reads the exhibits in
+`why-best-open-repo.md`; the census page carries a similar-looking claim it never reaches. The check
+passed again, reporting the same three exhibits it had always seen. **A mutation aimed at the wrong
+file is indistinguishable from a check that cannot fail** — which is precisely why `assert_passes`
+runs first and why the premise assertions in each case are not decoration.

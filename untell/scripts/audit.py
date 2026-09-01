@@ -491,6 +491,7 @@ def check_derivable(report: Report) -> None:
             )
 
     check_demo_privacy_claims(report)
+    check_source_comment_counts(report)
     check_corpus_bound_claims(report)
     check_dynamic_env_vars(report)
     check_skill_commands(report)
@@ -1561,6 +1562,56 @@ def check_corpus_bound_claims(report: Report) -> None:
         "no headline states a corpus-bound result without naming the corpus",
         not offenders,
         "; ".join(offenders) if offenders else f"{len(_CORPUS_BOUND_CLAIMS)} phrases checked",
+    )
+
+
+def check_source_comment_counts(report: Report) -> None:
+    """Counts that source comments state about the code, re-derived from the code.
+
+    Round sixty-six found `run.py`'s `_RNG_LOCK` comment asserting that it "costs nothing today
+    because the only concurrent caller already serialises" — true when written, and made false by a
+    later commit that offloaded the endpoints to a threadpool, which the same paragraph had
+    predicted would happen. Nothing noticed, because **nothing tests a comment.**
+
+    Most of what a comment claims is prose and cannot be checked. Some of it is a count, and a count
+    can be. `run.py` says three separate times that `structural.py` draws from the global `random`
+    module in a given number of places, and that number is the stated reason the real fix — threading
+    a `random.Random` instance through — is "not something to do blind". A claim that sizes a piece
+    of future work should not be allowed to drift from the code it sizes.
+
+    Deliberately a short list of specific claims rather than a parser for the general form. A
+    checker that guesses which numbers in prose are assertions produces false alarms, and false
+    alarms are how a checker gets ignored — the same reasoning as `without_code_spans`.
+    """
+    wrong: list[str] = []
+    checked = 0
+
+    # (file stating the claim, regex capturing the count, file counted, what to count, label)
+    claims = (
+        ("untell/scripts/run.py",
+         # Three phrasings in that file, all of the same count: "in N places" twice and
+         # "an N-site change" once. Missing one would leave a stale number beside two live ones.
+         re.compile(r"draws from (?:the global `random` module |it )in (\d+) places"
+                    r"|a (\d+)-site change in structural\.py"),
+         "untell/rewriter/structural.py", re.compile(r"random\."),
+         "structural.py draws from the global random module"),
+    )
+    for stating, claim_re, counted_rel, count_re, label in claims:
+        stating_path, counted_path = REPO / stating, REPO / counted_rel
+        if not stating_path.exists() or not counted_path.exists():
+            continue
+        actual = len(count_re.findall(counted_path.read_text(encoding="utf-8")))
+        for match in claim_re.findall(stating_path.read_text(encoding="utf-8")):
+            # `findall` yields a tuple when the pattern has several groups; exactly one is filled.
+            found = next(g for g in (match if isinstance(match, tuple) else (match,)) if g)
+            checked += 1
+            if int(found) != actual:
+                wrong.append(f"{stating}: says {label} in {found} places, it is {actual}")
+
+    report.check(
+        "every count a source comment states about the code is still true",
+        not wrong,
+        "; ".join(wrong) if wrong else f"{checked} claim(s) agree",
     )
 
 
