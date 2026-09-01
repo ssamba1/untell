@@ -24,7 +24,7 @@ from __future__ import annotations
 import pytest
 
 from eval.data.generated_abstracts import ABSTRACTS
-from eval.detection_power import BANDS, compare, ranking_auroc, render
+from eval.detection_power import BANDS, compare, component_auroc, ranking_auroc, render
 
 
 def _arm(rate: float, n: int, words: int, high: float = 0.9, low: float = 0.1):
@@ -152,3 +152,56 @@ def test_the_report_carries_the_auroc_alongside_the_rates():
 @pytest.mark.parametrize("machine,human", [([], [0.5]), ([0.5], []), ([], [])])
 def test_auroc_on_an_empty_arm_is_none_rather_than_a_number(machine, human):
     assert ranking_auroc(machine, human) is None
+
+
+def test_component_auroc_finds_the_term_that_inverts():
+    """The question round seventy-eight asked: is one term dragging the score down?"""
+    machine = [{"good": 0.9, "bad": 0.1} for _ in range(20)]
+    human = [{"good": 0.1, "bad": 0.9} for _ in range(20)]
+    scores = component_auroc(machine, human, ("good", "bad"))
+    assert scores["good"] == 1.0
+    assert scores["bad"] == 0.0
+
+
+def test_component_auroc_reports_a_uniformly_bad_feature_set_as_such():
+    """The answer it actually gave. Both live components sit below 0.5, so there is no term to drop
+    — which is why 'remove burstiness' was refuted rather than confirmed."""
+    machine = [{"a": 0.2, "b": 0.3} for _ in range(20)]
+    human = [{"a": 0.7, "b": 0.8} for _ in range(20)]
+    scores = component_auroc(machine, human, ("a", "b"))
+    assert all(v < 0.5 for v in scores.values())
+
+
+def test_a_constant_component_scores_exactly_a_half():
+    """`rep` does, in every band, and that is correct: it is a degenerate-collapse guard documented
+    as returning 0.0 on real text. A constant carries no ranking information and 0.5 says so."""
+    machine = [{"c": 0.0} for _ in range(30)]
+    human = [{"c": 0.0} for _ in range(30)]
+    assert component_auroc(machine, human, ("c",))["c"] == 0.5
+
+
+def test_the_repetition_guard_fires_on_degenerate_text_and_not_on_prose():
+    """Pins what the constant means, after a first probe got it wrong.
+
+    That probe used inputs under the function's own 40-word minimum, so it measured the length
+    guard and concluded the term never fires. It does.
+    """
+    from untell.detectors.perplexity_burstiness import _repetition_signal
+
+    assert _repetition_signal("the " * 100) == 1.0
+    assert _repetition_signal("alpha beta " * 60) == 1.0
+    assert _repetition_signal("We show that the model works. " * 25) == 1.0
+    prose = ("The system processes each record and stores the result in a database that other "
+             "components query when they need it, which happens often enough to matter. ") * 3
+    assert _repetition_signal(prose) == 0.0
+    # Under the minimum, it declines rather than guessing — which is what the first probe hit.
+    assert _repetition_signal("the " * 12) == 0.0
+
+
+def test_a_missing_component_is_skipped_rather_than_defaulted():
+    """Defaulting an absent key to zero would silently compare documents that have the feature
+    against documents that do not."""
+    machine = [{"a": 0.9}, {}]
+    human = [{"a": 0.1}, {}]
+    assert component_auroc(machine, human, ("a",))["a"] == 1.0
+    assert component_auroc(machine, human, ("missing",))["missing"] is None

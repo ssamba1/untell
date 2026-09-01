@@ -5271,3 +5271,61 @@ uniform because the genre demands it, and that has nothing to do with who wrote 
 
 **Correcting an estimator inside a detector whose ranking is inverted improves the estimator.** It
 was never going to improve the ranking, and the flag rates said otherwise for one commit.
+
+---
+
+# Round seventy-eight — it is not one bad term, it is the whole feature set
+
+Round seventy-seven established that the detector's ordering is inverted on academic abstracts —
+AUROC 0.3538, interval entirely below 0.5. The obvious next question is whether one term does it, and
+the obvious candidate was burstiness, since rounds seventy-four and seventy-five had traced the
+length effect to it.
+
+MEASURED, each component ranked on its own over the matched 40–100 range:
+
+| component | AUROC 40–100 | 40–60 | 60–100 |
+|---|---|---|---|
+| full score | 0.3532 | 0.1873 | 0.3595 |
+| `burst_signal` | **0.4122** | 0.2565 | 0.3905 |
+| `common_signal` | **0.3459** | 0.3148 | 0.4120 |
+| `rep` | 0.5000 | 0.5000 | 0.5000 |
+
+✗ **The hypothesis is refuted, and in the informative direction.** Both live components are below
+0.5, and **burstiness is the better of the two.** Scoring on `common_signal` alone gives 0.3459 —
+*worse* than the full score. Dropping the burstiness term would make the detector worse, not better.
+
+## Why the common-word term is the more inverted one, which is legible once seen
+
+`common_signal` rises with the fraction of very common words, on the reasoning that predictable
+vocabulary reads as machine-generated. Academic abstracts are dense in function words and stock
+phrasing — *we show that*, *in this paper*, *these results suggest* — because the genre is built from
+them. Machine abstracts written across seventy different topics carry more varied vocabulary.
+
+**The feature is reading genre, and in this corpus the genre is the human one.** Same conclusion as
+round seventy-six's, arrived at from the opposite end: not "the detector is confused by short text"
+but "every feature it has encodes academic register, and academic register is what the human arm is
+made of".
+
+That is why correcting `_burstiness` did not move the AUROC. **There is no term to fix.** The bias
+round seventy-five found is real and worth correcting on its own terms, and correcting it leaves a
+detector whose every live feature points the wrong way on this register.
+
+## ⚠️ And a mistake caught before it was published
+
+`rep` sits at exactly 0.5000 in every band. My first reading was that it is dead code: I probed it
+with `"the the the …"`, `"We show that."` repeated, and an `a b c` cycle, got 0.0 from all three plus
+0.0 on 3,070 real documents, and concluded it never fires.
+
+**All three probes were under forty words**, which is `_repetition_signal`'s own documented minimum,
+so they hit the length guard and never reached the type-token test. Probed properly it returns
+**1.0** on 100 repeated words, on `"alpha beta"` × 60, and on a sentence repeated 25 times, and 0.0
+on prose.
+
+So the 0.5000 is correct and expected. The function is a **degenerate-collapse guard**, not a
+discriminative feature, and its docstring says exactly that: on 800 HC3 texts "this term is exactly
+0.0 and the detector's measured FPR/TPR are unchanged by construction". It exists so a rewriter that
+collapses into repetition cannot win the loop.
+
+**A constant is not evidence of dead code, and a probe that returns nothing is not evidence the code
+does nothing.** The check that mattered was reading the function's own stated preconditions before
+concluding anything from a null result.

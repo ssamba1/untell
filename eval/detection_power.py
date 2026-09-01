@@ -74,6 +74,43 @@ def ranking_auroc(machine: list[float], human: list[float]) -> float | None:
     return wins / (len(machine) * len(human))
 
 
+def component_auroc(
+    machine: list[dict], human: list[dict], keys: tuple[str, ...],
+) -> dict[str, float | None]:
+    """AUROC of each named component, to find which term inverts a detector — or that none does.
+
+    Each entry is a mapping of component name to value for one document. Ranking each component on
+    its own says whether the whole is dragged down by one term or is uniformly bad.
+
+    MEASURED on the matched 40-100 range, machine against human:
+
+        full score        0.3532
+        burst_signal      0.4122
+        common_signal     0.3459
+        rep               0.5000
+
+    ✗ **Both live components are below 0.5, and burstiness is the BETTER of them.** The hypothesis
+    that motivated this — that burstiness is the bad term and dropping it would help — is refuted:
+    scoring on `common_signal` alone gives 0.3459, worse than the full score.
+
+    The common-word term is the more inverted, and the reason is legible. Academic abstracts are
+    dense in function words and stock phrasing ("we show that", "in this paper"); machine abstracts
+    written across seventy different topics carry more varied vocabulary. The feature reads genre,
+    and in this corpus the genre is the human one.
+
+    `rep` sits at exactly 0.5000 in every band, which is **correct and not a defect**. It is a
+    degenerate-collapse guard with a type-token floor at 0.25, documented as being "exactly 0.0" on
+    real text by construction. VERIFIED: it returns 1.0 on 100 repeated words and 0.0 on prose. A
+    first probe of this reported it as never firing, because the probes were under the function's
+    own 40-word minimum and hit the length guard rather than the ratio test.
+    """
+    out: dict[str, float | None] = {}
+    for key in keys:
+        out[key] = ranking_auroc([d[key] for d in machine if key in d],
+                                 [d[key] for d in human if key in d])
+    return out
+
+
 def _rate(scores: list[float], threshold: float) -> dict:
     flagged = sum(s >= threshold for s in scores)
     low, high = wilson_interval(flagged, len(scores)) if scores else (0.0, 1.0)
