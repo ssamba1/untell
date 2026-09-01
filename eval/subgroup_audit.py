@@ -533,16 +533,20 @@ def ablate(rows: list[dict], axis: str, bands: dict) -> dict:
         # computed only for exactly two, so a categorical axis reported `separated: null` beside a
         # 145x ratio -- a number with no significance attached, which is the shape of claim this
         # instrument exists to refuse.
-        sep = None
+        # Same selection correction as `_disparity`: these two are the extremes of a set the data
+        # chose, and Result 14 compares five populations, not a pre-registered pair.
+        sep = sep_plain = None
         if len(names) >= 2:
             best, worst = groups[names[0]], groups[names[-1]]
-            sep = worst["ci"][0] > best["ci"][1]
+            sep_plain, sep = _separated(worst, best, "fpr", "ci", len(names))
         out["components"][name] = {
             "groups": groups,
             "worst": names[-1] if names else None,
             "ratio": (round(groups[names[-1]]["fpr"] / groups[names[0]]["fpr"], 2)
                       if names and groups[names[0]]["fpr"] > 0 else None),
             "separated": sep,
+            "separated_uncorrected": sep_plain,
+            "groups_compared": len(names),
         }
     a, b = out["components"].get("vocabulary"), out["components"].get("burstiness")
     out["opposed"] = bool(a and b and a["worst"] != b["worst"]

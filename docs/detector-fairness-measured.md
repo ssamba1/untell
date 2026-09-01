@@ -720,6 +720,39 @@ And 1.10x is **not** a large disparity. It separates because n is large; the int
 at 1.48x is the one that matters. A single-axis reading of this result would understate it, which
 is the point of the row below it.
 
+## Every multi-group claim, re-derived under the correction
+
+The [selection correction](#result-19--crossing-finds-less-not-more-the-headline-is-retracted)
+changes the verdict on every axis with more than two groups, so all of them were re-run rather
+than assumed. `separated` below is the corrected verdict; a two-group axis is unaffected by
+construction.
+
+| result | axis | cells | ratio | plain | **corrected** |
+|---|---|---|---|---|---|
+| 12 | Liang `population` @0.30 | 5 | 1.65x | yes | **holds** |
+| 13 | Liang `population` @0.50 | 5 | 6.93x | yes | **holds** |
+| 14 | ablation, vocabulary channel | 5 | 144.93x | yes | **holds** |
+| 14 | ablation, burstiness channel | 5 | 5.90x | yes | **holds** |
+| 20 | ASAP `student_disability_status` | 2 | 1.10x | yes | **holds** |
+| 20 | ASAP `disability*ell_status` | 4 | 1.48x | yes | **holds** |
+| 20 | ASAP `economically_disadvantaged` | 2 | 1.13x | yes | **holds** |
+| — | ASAP `ell_status` | 2 | 1.21x | yes | **holds** |
+| 19 | ASAP `race_ethnicity` | 6 | 1.55x | yes | **retracted** |
+| 19 | ASAP `race_ethnicity*ell_status` | 10 | 2.14x | yes | **retracted** |
+| — | ELLIPSE `race_ethnicity*grade` | 13 | 1.59x | yes | **retracted** |
+
+**The pattern is the reassuring one.** Everything with a mechanism behind it survives — the
+144.93x vocabulary-channel spread, the threshold sweep's 6.93x, the disability gap and its
+intersection. What the correction removes is precisely the class of claim it was built to remove:
+marginal ratios found by crossing many-level axes and reporting the extremes. Three retractions,
+all of them mine, all from this session, and none of them touching a result that had a mechanism
+attached.
+
+`Result 14` is worth noting specifically. It has five cells and a 45-pair correction, and it
+clears it by a distance — a channel that flags 100.0% of one population and 0.7% of another is not
+a marginal finding, and the correction says so. **A conservative test is only useful if it still
+passes real effects**, and this is the evidence that it does.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,

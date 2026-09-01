@@ -714,3 +714,24 @@ class TestSelectionCorrectedSeparation:
                   for i, h in enumerate((120, 90, 100, 110, 95))}
         d = sa._disparity(groups)
         assert set(d) >= {"separated", "separated_uncorrected", "groups_compared"}
+
+
+def test_the_ablation_separation_is_corrected_too():
+    """`ablate` had its own separation check and did not get the correction with `_disparity`.
+
+    Result 14 compares five populations per channel, so its worst-versus-best pick comes from ten
+    pairs, not one. A fix applied to one code path and not the other is worse than no fix: the
+    document would carry two `separated` fields meaning different things under the same name.
+    """
+    import eval.subgroup_audit as sa
+
+    rows = []
+    for band, n, longish in (("a", 60, True), ("b", 60, False), ("c", 60, False),
+                             ("d", 60, False), ("e", 60, False)):
+        for _ in range(n):
+            rows.append({"text": ("Long sentence with many words indeed. Short one." if longish
+                                  else "Tiny. Bit. Here."), "g": band})
+    res = sa.ablate(rows, "g", {b: b for b in "abcde"})
+    for name, comp in res["components"].items():
+        assert "separated_uncorrected" in comp, f"{name} lost the plain verdict"
+        assert comp["groups_compared"] == 5, f"{name}: {comp['groups_compared']}"
