@@ -686,6 +686,12 @@ untell-detector-audit                # fast smoke test — catches a dead or inv
 untell-detector-audit --pairs 100    # the real measurement: AUROC on labelled human/AI pairs
                                      # (needs .[eval]; only this mode supports a discrimination claim)
 
+# Who does a detector fail? False-positive rate by WRITER SUBGROUP on known-human student essays,
+# where every flag is an error by construction. Fetches ELLIPSE (CC BY-NC-SA, not vendored).
+untell-subgroup-audit --tier lite            # by proficiency, race, gender, economic status, grade
+untell-subgroup-audit --tier lite --sweep    # across thresholds: a saturated detector cannot be
+                                             # compared between groups, and this says so
+
 # Optimize against a REAL detector for free via its web UI (slow, needs a browser):
 pip install -e ".[browser]" && playwright install chromium
 untell-verify --browser zerogpt "text"     # drives the free ZeroGPT web UI — no API key, $0

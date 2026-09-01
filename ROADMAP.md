@@ -41,6 +41,7 @@ drifts from the plan it summarises is worse than none, because it is the part pe
 | 15 | Surrogate distillation | ⛔ blocked | a GPU |
 | 16 | RL-against-ensemble | ⛔ blocked | a GPU |
 | 17 | Alignment rewriter | ⛔ blocked | a GPU |
+| 18 | **The audit position** — false-positive rate by writer subgroup | ✅ done — instrument built, first measurement taken | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -67,6 +68,48 @@ Competing on "features" against that segment is meaningless; competing on *corre
 field is empty.
 
 ---
+
+## 0b. ✅ The audit position — the move that changes the category
+
+Full argument and evidence: [`docs/strategy-the-audit-position.md`](docs/strategy-the-audit-position.md).
+
+The census measured whether this is the best *humanizer*. That is a category
+[worth 0.3% of the field's attention](docs/what-would-make-this-the-top-repo.md) with a 413★
+ceiling, and every lever inside it is now measured-and-dead, defended-by-nothing, or blocked on a
+native speaker. The 2026-09-01 re-run found the field had split in two — humanizers chasing
+evasion, and prose "slop linters" chasing quality with the same machinery — and that the census
+had only ever counted the first branch.
+
+Meanwhile this repo's own README leads with *detector auditing*, its headline is a false-positive
+rate, and its rewriting loop is documented as the probe rather than the product. We were
+benchmarking against the wrong field.
+
+**The move: answer "who does this detector fail?"** — false-positive rate by writer subgroup, on
+public learner corpora, at a detector's own shipped threshold. Of 435 repos in the census and 131
+in the re-run, **zero** do this. Aequitas, AIF360 and Fairlearn compute exactly the right
+statistic and none is wired to a text detector. RAID, IMGTB and `kinit-sk/mAO` rank detector
+accuracy or obfuscation strength, which is a different question.
+
+Built and measured 2026-09-01 (`untell-subgroup-audit`, `eval/subgroup_audit.py`, 24 tests,
+ELLIPSE fetched not vendored because it is CC BY-NC-SA and this package is MIT). On 3,904
+known-human ESL essays, where every flag is an error by construction:
+
+- **Our own lite tier flags 97.4%** of them at its shipped 0.30 threshold, against a documented
+  30% on conversational prose. Its threshold was tuned on a corpus that does not resemble the
+  writers most likely to be accused.
+- **False-positive rate rises monotonically with English proficiency** at the 0.50 operating
+  point — 33.7% at level 2 to 53.1% at level 4.5, 1.57x, Wilson intervals separate.
+- **The mechanism is the burstiness half.** Decomposed, the vocabulary term protects stronger
+  writers exactly as the perplexity literature predicts, and the sentence-length-uniformity term
+  overwhelms it. **The burstiness term penalises writing maturity.**
+- **The disparity reverses with the threshold** (worst group flips to the *lowest* proficiency at
+  0.70, 3.25x). Which students a detector wrongly accuses is a function of an operating point
+  somebody chose, usually without knowing that is what they were choosing.
+- No demographic axis — race, gender, economic status, grade — separated at 95% confidence.
+
+Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency` and
+`ellipse-lite-signal-decomposition` in `.claude/measurements.jsonl`.
+
 
 ## 1. What we cannot win — say it once, then stop spending on it
 
@@ -382,6 +425,7 @@ who reads the language (§5), and three items need a GPU (§6).
 3. **Academic niche** (BibTeX verify, `.tex` round-trip) — where our strengths are the buying criteria.
 4. **Language plugin architecture** — pending your decision; biggest ceiling, biggest refactor.
 5. **GPU moat** — only with real hardware.
+6. **Second corpus for the audit** — one corpus is not a population, and the proficiency finding needs replication outside US school-age learners.
 
 ## 9. How we would know it worked
 
@@ -391,3 +435,4 @@ Not stars. These:
 - **`neural` default clears ≥ 50% of real HC3 text** at full tier, replicated at `--repeats ≥ 3`
 - **a `.tex` file round-trips** and still compiles, with every citation key intact
 - **one non-English catalogue contributed by a native speaker** — the platform test
+- **a detector audited by someone who does not maintain it** — the audit position's real test is an institution running `untell-subgroup-audit` against a detector it is deciding whether to trust
