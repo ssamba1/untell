@@ -3427,3 +3427,50 @@ Five more tests guard the mode itself: every named collection must still exist a
 rename turns its case into a no-op), the override must actually empty the container, and a missing
 name must be reported rather than skipped. `mutation_sweep.py` now has three modes — one broken line,
 one broken module, one emptied catalogue — and each has been wrong at least once, so each is tested.
+
+---
+
+# Round forty-nine — back to the corpus, and a result the arms cannot represent
+
+Rounds forty to forty-eight were all testing infrastructure. The largest topic in the survey —
+**robustness/paraphrase, 153 papers** — had 128 uncited, and reading the 44 in main-conference venues
+produced three findings, one of which is a problem for the strategy rather than a number for it.
+
+## ✅ The robustness figure, systematically measured
+
+*Stumbling Blocks* ([2024.acl-long.160](https://aclanthology.org/2024.acl-long.160/)) stress-tests
+popular detectors across **editing, paraphrasing, co-generating and prompting**, under limited access
+to the generator, at several budget levels. **Performance drops 35% averaged over all detectors and
+attacks.**
+
+The shape matters more than the number: *"almost none of the existing detectors remain robust under
+all the attacks, and all detectors exhibit **different loopholes**."* Different, not shared. **Which
+detector an institution licensed determines which attack works against it** — the union/consensus
+argument one level down, and a second reason a published robustness figure cannot be inherited any
+more than a false-positive rate can.
+
+## ⚠️ Frankentext: the categories stop being well-posed
+
+*Frankentext* ([2026.acl-long.1457](https://aclanthology.org/2026.acl-long.1457/)) has an LLM
+assemble a long narrative from thousands of randomly sampled human snippets, **about 90% of tokens
+copied verbatim**. It is coherent; human annotators praise the premises and the humour. **72% are
+misclassified as human-written by Pangram.**
+
+No threshold fixes this, and it is not evasion in the sense the rest of that literature means.
+**A Frankentext is mostly human tokens arranged by a machine.** Every arm this repository audits —
+human, AI-assisted, machine-humanized, fully generated — assumes authorship of the *words*. Here the
+words are human and the *composition* is not.
+
+**This is the first result in the ledger that our own taxonomy cannot represent**, and the honest
+consequence is not a new arm but a limit: a detector answering *"is this human writing?"* is
+answering a question that stops being well-posed at the edges, and an audit built on that question
+inherits the same problem. Worth stating in the strategy rather than quietly adding a fifth column.
+
+## Also read, not acted on
+
+*Counter Turing Test* ([2023.emnlp-main.136](https://aclanthology.org/2023.emnlp-main.136/))
+introduces an AI Detectability Index and situates detection against the 2023 regulatory moment — the
+open letter, the US Copyright Office statement on machine authorship, the first EU proposals. It is
+the earliest paper in this corpus to treat detectability as a **property to be indexed per model**
+rather than a binary, which is the same instinct as this repo's per-deployment framing, two years
+earlier and aimed at generators instead of populations.

@@ -734,6 +734,30 @@ against applicants is well represented — **the people running these tools are 
 showing the tools can be walked around.** That asymmetry is the argument for shipping the audit
 rather than the evasion: the population that needs this evidence is not the one reading NLP venues.
 
+✅ **The robustness number, from the systematic stress test.** *Stumbling Blocks*
+([2024.acl-long.160](https://aclanthology.org/2024.acl-long.160/)) attacks popular detectors across
+**editing, paraphrasing, co-generating and prompting**, under limited access to the generator and at
+several budget levels. **Averaged over all detectors, performance drops 35% across all attacks**, and
+the finding that matters more than the number is the shape of it: *"almost none of the existing
+detectors remain robust under all the attacks, and all detectors exhibit **different loopholes**."*
+
+Different loopholes, not a shared weakness. **Which detector an institution licensed determines which
+attack works against it** — the same argument as the union/consensus spread, one level down, and a
+second reason a published robustness figure cannot be inherited.
+
+⚠️ **And a result that breaks the category scheme, not just the accuracy.** *Frankentext*
+([2026.acl-long.1457](https://aclanthology.org/2026.acl-long.1457/)) has an LLM assemble a narrative
+from thousands of randomly sampled human-written snippets, **with roughly 90% of tokens copied
+verbatim** from human sources. The output is coherent, and human annotators praise it. **72% of them
+are misclassified as human-written by Pangram**, a state-of-the-art commercial detector.
+
+This is not paraphrase evasion and no threshold fixes it. **A Frankentext is mostly human tokens,
+arranged by a machine — and this roadmap's arms have no slot for it.** Human, AI-assisted, machine
+humanized and fully generated all assume authorship of the *words*; here the words are human and the
+*composition* is not. The honest position is that the taxonomy this repo audits against is
+incomplete, and that a detector answering "is this human writing?" is answering a question that has
+stopped being well-posed at the edges.
+
 ✗ **One more neighbour, found by reading the corpus rather than checking it.** `LLM-DetectAIve`
 ([2024.emnlp-demo.35](https://aclanthology.org/2024.emnlp-demo.35/)) is a shipped tool with **four
 categories: human-written; machine-generated; machine-written then machine-humanized; human-written
