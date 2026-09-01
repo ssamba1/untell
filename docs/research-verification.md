@@ -606,3 +606,25 @@ assertion this repository exists to argue against. It is a claim that the strate
 [`../ROADMAP.md`](https://github.com/ssamba1/untell/blob/main/ROADMAP.md) rests only on evidence that
 was read, that the evidence against it was sought and kept, and that the boundary of the search is
 written down.
+
+
+---
+
+## Limitation on everything measured in this session
+
+The measurements added alongside this research — the pre-LLM false-positive probe, the length curve,
+the assisted-fairness arm, the calibrated threshold — were all produced with **exactly one detector
+live**. `perplexity_burstiness` is the only member that runs without model weights, and the ML
+detectors fetch theirs from HuggingFace, which this environment's egress policy blocks. `--tier full`
+therefore resolved to the same single detector as `--tier lite` throughout.
+
+So: **every rate reported from this session is a single-detector rate**, and the aggregation spread
+that the strategy identifies as the highest-leverage output has not been measured here even once.
+The tools say so themselves — `probe` reports `detectors_scoring`, and the renderer prints an
+explicit note that three identical rows are one measurement printed three times rather than
+consensus — but a reader meeting the numbers second-hand would not know it, so it is stated here too.
+
+This does not weaken the argument; it is an instance of it. A false-positive rate is a property of a
+detector, a population, a domain and an aggregation rule, and "measured on our ensemble" is one of
+those coordinates. Re-run on a machine with the full tier installed before quoting any of these as
+ensemble figures.

@@ -383,6 +383,26 @@ in its own GitHub repository, which put **seven more papers** under direct readi
 arXiv-only results were confirmed from their authors' repositories. ✅ marks a claim read at source.
 Six claims changed on contact with their sources; the ledger lists all of them.
 
+> ⚠️ **Read every number this session measured as one detector, not the ensemble.** The environment
+> these were run in has only `perplexity_burstiness` live: the ML detectors load weights from
+> HuggingFace, which its egress policy blocks, so `--tier full` resolves to the same single detector
+> as `--tier lite`. Consequences, and they are not small:
+>
+> - **15.8% on pre-LLM abstracts, 26.7% at ≤50 words, 17.3% at the shipped threshold** are that one
+>   detector's false-positive rates. The ensemble's would differ, and this repo has separately
+>   measured `mage` alone driving the ensemble's rate through `max`.
+> - **The FAR/MFAR/consensus spread has never been measured here at all.** With one detector the
+>   three rules are arithmetically identical; the tools print a `degenerate` warning saying so. The
+>   spread is the headline product feature and it is so far only argued from the literature
+>   (44.44% / 4.17% / ~0%), never demonstrated on our own stack.
+> - **The calibrated threshold of 0.5215 is calibrated for that one detector**, and is not
+>   transferable to a different ensemble — which is, uncomfortably, the exact thing this section
+>   argues about everyone else's published thresholds.
+>
+> **First thing to re-run on a machine with `.[full]` installed and network access to model weights.**
+> Every command is in place and takes minutes; nothing about the analysis changes, but the numbers
+> will, and they should be re-measured before any of them is quoted as an ensemble figure.
+
 ### The result that should organise everything else — all of it peer-reviewed and read at source
 
 A systematic pass over **16 ACL Anthology volumes, 20,875 abstracts, 334 detection papers** (method
