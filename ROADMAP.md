@@ -85,10 +85,17 @@ rate, and its rewriting loop is documented as the probe rather than the product.
 benchmarking against the wrong field.
 
 **The move: answer "who does this detector fail?"** — false-positive rate by writer subgroup, on
-public learner corpora, at a detector's own shipped threshold. Of 435 repos in the census and 131
-in the re-run, **zero** do this. Aequitas, AIF360 and Fairlearn compute exactly the right
-statistic and none is wired to a text detector. RAID, IMGTB and `kinit-sk/mAO` rank detector
-accuracy or obfuscation strength, which is a different question.
+public learner corpora, at a detector's own shipped threshold.
+
+The idea is **not** novel and the strategy doc says so: [BAID](https://arxiv.org/abs/2512.11505)
+(AAAI 2026 workshop) benchmarks detector bias across seven sociolinguistic dimensions on 200k+
+samples. What is missing is the instrument. BAID's subgroup text is **synthetic** — LLM
+imitations of how a group writes — where ELLIPSE is real essays by real learners; no code
+repository for BAID was findable; and of 435 repos in the census plus 131 in the re-run, **zero**
+ship a tool a university could point at the detector it is about to license. Aequitas, AIF360 and
+Fairlearn compute the right statistic and none is wired to a text detector. RAID, IMGTB and
+`kinit-sk/mAO` rank accuracy or obfuscation strength, a different question. **The research exists;
+the instrument does not.**
 
 Built and measured 2026-09-01 (`untell-subgroup-audit`, `eval/subgroup_audit.py`, 24 tests,
 ELLIPSE fetched not vendored because it is CC BY-NC-SA and this package is MIT). On 3,904

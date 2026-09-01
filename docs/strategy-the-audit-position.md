@@ -74,21 +74,45 @@ So: a consequential decision is being made about individual people, on the outpu
 error rate is disputed by an order of magnitude, and which the literature says fails *unevenly by
 who the writer is*.
 
-**The tooling for that question does not exist.**
+**The idea is not novel. The instrument is.**
 
-- Of the 435 repos the census read, and the 131 in the re-run, **zero** measure a detector's
-  false-positive rate by writer subgroup.
-- Generic fairness toolkits do exist and are mature — [Aequitas](https://arxiv.org/pdf/1811.05577),
-  IBM AIF360 (70+ metrics), Microsoft Fairlearn. All three compute exactly the right statistics:
-  false-positive-rate parity across population subgroups. **None of them is wired to an AI-text
-  detector**, because they expect a tabular classifier with subgroup columns, and nobody has
-  connected the two.
-- The benchmarks that do exist measure the opposite thing. RAID, IMGTB, [`kinit-sk/mAO`](https://github.com/kinit-sk/mAO),
-  Toloka/beemo all rank *detector accuracy* or *obfuscation strength*. Ranking a detector's AUROC
-  is not the same question as "who does this detector fail, and by how much".
+An earlier draft of this document claimed the category was empty. That claim was checked and it is
+**wrong**, and the correction is worth more than the original claim:
 
-The gap is not that the idea is hard. It is that the two halves — the fairness statistics and the
-text detectors — live in different fields and nobody has joined them.
+- **[BAID: A Benchmark for Bias Assessment of AI Detectors](https://arxiv.org/abs/2512.11505)**
+  (Basu, Zhang, Raheja; arXiv 2512.11505, Dec 2025; AAAI 2026 workshop,
+  [ACL Anthology](https://aclanthology.org/2026.customnlp4u-1.1/)) does exactly bias assessment of
+  AI text detectors — 200k+ samples across seven sociolinguistic dimensions (demographics, age,
+  grade level, dialect, formality, political leaning, topic), four open-source detectors, and it
+  finds consistent disparities. Anyone claiming to have invented this question has not looked.
+
+So the question is being asked in the literature. What is still missing is different, and narrower:
+
+1. **BAID's subgroup text is synthetic.** Its method generates versions of each sample "with
+   carefully crafted prompts to preserve the original content while reflecting subgroup-specific
+   writing styles". That measures how a detector responds to *an LLM's imitation of how a group
+   writes*. ELLIPSE is 3,904 essays actually written by actual English language learners, carrying
+   their real demographic and proficiency metadata. Both are legitimate; they answer different
+   questions, and only one of them is evidence about real students.
+2. **No runnable artifact.** No code repository for BAID was findable, and of the 435 repos in the
+   census plus 131 in the re-run, **zero** ship a tool that measures a detector's false-positive
+   rate by writer subgroup. A benchmark in a paper is not a thing a university can point at the
+   detector it is about to license.
+3. **Nobody reports at the detector's own shipped threshold.** Papers report AUROC or curves. The
+   number that decides whether a student is accused is the rate at the operating point the vendor
+   ships, and that is what this instrument reports.
+4. **The generic fairness toolkits are still unconnected.** [Aequitas](https://arxiv.org/pdf/1811.05577),
+   IBM AIF360 (70+ metrics) and Microsoft Fairlearn compute exactly the right statistics and none
+   is wired to a text detector; they expect a tabular classifier with subgroup columns.
+5. **The benchmarks that ship code measure the other thing.** RAID, IMGTB,
+   [`kinit-sk/mAO`](https://github.com/kinit-sk/mAO) and Toloka/beemo rank detector accuracy or
+   obfuscation strength. Ranking AUROC is not "who does this detector fail, and by how much".
+
+The revised claim, and the one this document actually rests on: **the research exists and the
+instrument does not.** That is a weaker position than "nobody has thought of this" and a more
+defensible one, and it is also the position this repo is unusually well suited to hold — it has
+spent its whole existence building runnable, tested, reproducible measurement around exactly these
+detectors.
 
 ---
 
