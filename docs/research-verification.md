@@ -1111,7 +1111,9 @@ Wang et al.'s cohort study of human-authored letters:
 > "At baseline, **97% to 100% of originals were classified as human**; however, after polishing,
 > **75% to 85% were flagged as AI-generated, including 15% to 25% at high confidence.**"
 
-Karr et al. put light edits at 38–80% flagged. This is **75–85%, from near-perfect baseline
+Karr et al. put light edits at **64–80% for Pangram and 38–49% for GPTZero** (this ledger's own
+correction table says so, and an earlier version of this very sentence repeated the collapsed
+"38–80%" it corrects — fixed in round twenty-two). This is **75–85%, from near-perfect baseline
 accuracy**, on the same documents. Polishing your own writing is, on this measurement, close to a
 coin flip away from being called a machine — and the detector was *right about those same documents*
 before the polish.
@@ -1205,8 +1207,12 @@ wrong is somebody's career.
 
 **4. And humans, again, doing well** (Goodman et al., *J Phys Ther Educ*,
 [DOI](https://doi.org/10.1097/JTE.0000000000000396)). Two raters on 50 human and 50 Gemini-generated
-statements: **97% and 99% accuracy, κ = 0.92** — above the GPTZero-derived parameters measured on the
-same corpus. Consistent with round nine: the right humans are very good at this.
+statements: **97% and 99% accuracy, κ = 0.92**. ✗ **Round twenty-two removed a comparison here.** An
+earlier version called this "above the GPTZero-derived parameters measured on the same corpus" — but
+the study reports GPTZero's parameters as **areas under the ROC curve > 0.875** (and RQA at 0.768 and
+0.859), and an accuracy is not an AUC. The two cannot be ranked against each other. What the study
+supports is the standalone claim: **two human raters reached 97% and 99% accuracy with κ = 0.92.**
+Consistent with round nine: the right humans are very good at this.
 
 ## What this cluster changes
 
@@ -1684,3 +1690,61 @@ as what they are, and none sits in the rate table.
 proportion *of*. Provenance checks cannot answer that — `untell-audit` counted all three among its
 attributed claims, and every one was quoted correctly from a paper that reports it. Only reading the
 sentence around the number answers it.
+
+---
+
+# Round twenty-two — the DOI sweep, finished
+
+All 24 DOIs cited in these documents have now been checked against their source. This round covered
+the last of them, asking round twenty's question — *what is this a proportion of?* — of every figure.
+
+## ✅ Verified verbatim
+
+- **Sourati et al.** ([DOI](https://doi.org/10.1038/s41562-026-02550-0)): "Across **three studies**
+  spanning **seven datasets** … over **880,000 texts** … reducing writing-complexity variance by a
+  statistically significant **21-50%** across datasets and models (**P ≤ 0.05**)." Correctly typed as
+  a variance reduction.
+- **Ozkara et al.** ([DOI](https://doi.org/10.3174/ajnr.A8505)): "**Fifty-eight percent** of unpaired
+  articles were correctly classified … increased to **70%** in the paired setting", and editors
+  "strongly preferred publishing the article they perceived as human-written (**82%**)". Our
+  "58–70% of the time" is right, and these are classification accuracies, correctly described.
+- **Du & Koga** ([DOI](https://doi.org/10.1016/j.jdin.2025.10.017)) — a **Letter with no abstract in
+  PubMed**, so this was read from the PMC full text. Both quotations confirmed word for word,
+  including the Wang et al. figures ("**97% to 100%** of originals … classified as human … after
+  polishing, **75% to 85%** … including **15% to 25%** at high confidence").
+- **Goodman et al.** ([DOI](https://doi.org/10.1097/JTE.0000000000000396)): "Human raters
+  demonstrated high agreement (**κ = 0.92**) and accuracy (**97% and 99%**)."
+
+**A corroboration worth noting.** Du & Koga independently make the criticism this repo had already
+written into `eval/assisted_fairness.py`: "Using U.S. institutional affiliation as a proxy for native
+English status risks misclassification. Since many U.S.-affiliated authors trained or grew up in
+non-English environments, affiliation alone may not capture language background." The tool's warning
+was added on our own reading of the data; it now has a published source.
+
+## ✗ Two corrections
+
+**1. A fourth quantity conflation, this one inside a comparison.** Goodman's human raters were
+described here as scoring "above the GPTZero-derived parameters measured on the same corpus". The
+study reports GPTZero's parameters as **AUC > 0.875** and RQA at **0.768** and **0.859**. **An
+accuracy is not an AUC**, and the two cannot be ranked against one another. The comparison is
+removed; the standalone finding — 97% and 99% accuracy, κ = 0.92 — stands.
+
+**2. A correction this ledger recorded but never applied.** Its own table of retractions says the
+Karr et al. range "38–80%" is imprecise and "collapses two detectors: 64–80% Pangram, 38–49%
+GPTZero". A paragraph 700 lines later still said **38–80%**. **A correction that is written down but
+not propagated is not a correction** — it just moves the wrong number somewhere harder to find. Fixed,
+and worth treating as a class of defect rather than a one-off: the retraction table should be checked
+against the body, not only appended to.
+
+## The sweep, closed
+
+| | Checked | Result |
+|---|---|---|
+| Anthology citations | 30+ | Resolve; figures cross-checked (round eighteen) |
+| DOIs | **24 of 24** | All verified against abstract or full text |
+| Quantity-type audit | every cited figure | **4 conflations found** — Bohler, Popkov, Stern, Goodman |
+| arXiv-only | 5 | ⛔ unreachable; no ✅ claim rests on one, enforced by test |
+
+Four of the quantity errors were found by asking one question that no automated check performs. That
+is the durable lesson of rounds twenty to twenty-two: **provenance checking is mechanisable and was
+already green on every one of these; knowing what a number counts is not.**
