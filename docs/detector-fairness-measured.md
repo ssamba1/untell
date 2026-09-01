@@ -616,39 +616,45 @@ honest form of Result 12 is: **an LLM edit moves a text along two channels that 
 whether the detector then flags it more or less is a property of the population and the edit, not
 of language models in general.**
 
-## Result 19 — crossing two axes finds a gap neither shows alone, on 17,307 essays
+## Result 19 — crossing finds *less*, not more: the headline is retracted
 
-Added after reading [Identifying Bias in Machine-generated Text Detection](https://aclanthology.org/2026.acl-long.109.pdf)
-(Pindrop, ACL 2026 Main), which evaluated 16 detectors against a demographically labelled corpus
-and found bias "most dangerous where attributes intersect" — non-White English-language learners
-flagged far more than their White peers, a gap neither axis shows on its own. Every axis in this
-document was reported one at a time until 2026-09-01, so this instrument could not have found it.
+**This result originally claimed the opposite and was wrong.** It is kept in full because the way
+it failed is worth more than the finding would have been.
 
-All 17,307 ASAP essays, lite tier at threshold 0.50:
+Added after [Identifying Bias in Machine-generated Text Detection](https://aclanthology.org/2026.acl-long.109.pdf)
+(Pindrop, ACL 2026 Main) found bias "most dangerous where attributes intersect". All 17,307 ASAP
+essays, lite tier at threshold 0.50:
 
-| axis | worst | best | ratio | intervals |
+| axis | cells | ratio | separated at plain 95% | **separated, corrected** |
 |---|---|---|---|---|
-| `ell_status` | non-ELL 32.2% | ELL 26.7% | 1.21x | separate |
-| `race_ethnicity` | Am. Indian/Alaskan Native 36.3% | Asian/Pacific Islander 23.4% | 1.55x | separate |
-| **`race_ethnicity*ell_status`** | Am. Indian/Alaskan Native × non-ELL **35.2%** | Asian/Pacific Islander × ELL **16.5%** | **2.14x** | **separate** |
+| `ell_status` | 2 | 1.21x | yes | **yes** |
+| `race_ethnicity` | 6 | 1.55x | yes | **no** |
+| `race_ethnicity*ell_status` | 10 | 2.14x | yes | **no** |
 
-**The structural claim replicates.** Crossing genuinely finds more than either axis alone —
-1.21x and 1.55x separately, 2.14x crossed, and the crossed gap separates at 95% on cells of 108
-and 364. That is the ACL 2026 finding reproduced on a different corpus and a different detector,
-which is the strongest form of support this instrument can give another group's result.
+The original write-up reported the bottom row as a demonstrated 2.14x and concluded "cross the
+axes, because single-axis reporting understates". Both halves are withdrawn.
 
-**The directional claim does not, and that is also their finding.** Pindrop reports non-White ELL
-students flagged *most*. Here the ELL arm is flagged *less* at every level — non-ELL 32.2% against
-ELL 26.7% — and Asian/Pacific Islander ELL writers are the best-served cell in the corpus at
-16.5%. This reverses the field's default assumption, consistently with
-[Result 9](#result-9--a-third-corpus-a-new-axis-and-a-direction-reversal), and it is exactly what
-Pindrop concludes when they say bias is **model-specific** and "no single detector was uniformly
-fair or unfair". A different detector, a different direction. **The generalisation that survives
-is about the method, not the harm: cross the axes, because single-axis reporting understates.**
+**What went wrong.** `separated` compared the worst and best cells — two groups the data itself
+selected — against a plain 95% interval. With 10 reportable cells that pick comes from 45 pairs,
+and the yardstick has to widen accordingly ([the correction](#) uses Bonferroni: z = 3.28 at 45
+pairs, 3.41 at 78). Under it, the crossed axis loses its verdict, and so does `race_ethnicity`
+alone at six levels. The only ASAP claim left standing on this corpus is the two-level
+`ell_status` axis at 1.21x.
 
-Two cells fall below the 30-row floor and are reported as insufficient rather than compared —
-`American Indian/Alaskan Native × ELL` has one row. Crossing splits a corpus fast, which is why
-the floor matters more here rather than less, and why the worst cell above is not the smallest.
+**The corrected lesson is the opposite of the one I drew, and more useful.** Crossing buys
+resolution and *pays for it in statistical power*, because the correction scales with the number
+of cells the cross produces. A 6-level axis crossed with a 2-level one yields ten cells and a
+z of 3.28; the extra resolution does not come close to covering that. **Cross axes with few
+levels.** [Result 20](#result-20--students-with-disabilities-are-flagged-more-and-it-cancels-the-ell-effect)
+is the same technique on a 2×2 and survives comfortably — not because the effect is larger, but
+because four cells cost almost nothing to correct for.
+
+**And the ELLIPSE run is the clean warning.** Five crossed axes were tried there. Four found
+nothing. The fifth, `race_ethnicity*grade`, separated at 1.59x across **13 cells** while *no
+single ELLIPSE axis separates at all* — and it does not survive correction either. Trying five
+crosses and reporting the one that fires, over thirteen post-hoc cells, is how a measurement tool
+manufactures a finding. This document caught it in its own instrument, which is the only reason
+it is not in it.
 
 ## Result 20 — students with disabilities are flagged more, and it cancels the ELL effect
 
@@ -676,16 +682,24 @@ Everything above reverses it — non-ELL flagged more than ELL, non-disadvantage
 disadvantaged, professionals more than students. Here the disadvantaged group really is the one
 paying: students identified as having a disability are flagged more, and the gap separates.
 
-**The crossed row is the finding.** This detector treats ELL status as *protective* — Result 19
-measured 26.7% for ELL against 32.2% for non-ELL. That protection is essentially absent for
-students with disabilities: not-identified ELL writers are flagged **26.0%**, identified ELL
-writers **36.9%**. Being identified as having a disability cancels the only thing that was
-helping. Neither single axis shows this: disability alone is 1.10x, and the ELL axis alone points
-the other way entirely.
+**The crossed row is the finding, and it survives the correction.** This detector treats ELL
+status as *protective* — 26.7% for ELL against 32.2% for non-ELL, a two-level axis that separates
+uncorrected and corrected alike. That protection is essentially absent for students with
+disabilities: not-identified ELL writers are flagged **26.0%**, identified ELL writers **36.9%**.
+Being identified as having a disability cancels the only thing that was helping. Neither single
+axis shows this: disability alone is 1.10x, and the ELL axis alone points the other way entirely.
 
-That is the second independent case in this document — after [Result 19](#result-19--crossing-two-axes-finds-a-gap-neither-shows-alone-on-17307-essays) —
-where crossing changed the answer rather than refining it, and it is why the defaults now follow
-the corpus: `--corpus asap` reports `ell_status`, `student_disability_status` and their cross
+All three rows above hold under the selection correction that
+[retracted Result 19](#result-19--crossing-finds-less-not-more-the-headline-is-retracted) — and
+for a reason worth stating, because it is not that this effect is bigger. **The cross is 2×2.**
+Four cells means six pairs and z = 2.64, against ten cells, forty-five pairs and z = 3.28 for
+Result 19's `race_ethnicity*ell_status`. Crossing two binary axes is nearly free; crossing a
+six-level axis with a binary one is not. That is the whole difference between a result that
+stands and one that does not, and it is a property of the design rather than of the world.
+
+It is the one case in this document where crossing changed the answer rather than refining it —
+Result 19 tried the same technique on a wider axis and lost the claim to the correction — and it
+is why the defaults now follow the corpus: `--corpus asap` reports `ell_status`, `student_disability_status` and their cross
 without being asked, because a heading a caller never thinks to request is a group nobody measures.
 
 **What this is, and three things it is not.** It is a rate with an interval, on a labelled corpus
@@ -758,6 +772,7 @@ argue against. All are fixed and pinned by tests.
 
 | defect | how it showed | what it would have caused |
 |---|---|---|
+| **`separated` ignored that the extremes were selected** | ELLIPSE's 13-cell crossed axis separated at 1.59x while no single axis on that corpus separates at all | **Result 19's headline.** Reported, then retracted by the fix — a worst-vs-best pick from 78 pairs judged against a 95% interval |
 | Result 12 generalised from one population | a second machine-edited arm reversed it, d = +0.646 | "LLM editing makes text look human" as a general claim, from n=1 population |
 | equalised odds reported no pooled pair | a 100% false-negative rate sat unremarked beside ordinary per-group rows | a threshold that catches nothing reading as a threshold that is safe |
 | an axis no row carries rendered empty | `Overall` beside two real axes, groups `{}` | an empty heading reads as "looked here, found nothing" |
@@ -778,7 +793,14 @@ tested by the data it has not seen, and this one had been reporting confidently 
 while carrying a branch that could not band a categorical axis and a report with no pooled rates
 in it.
 
-The first row is the one worth keeping in view: it is not a coding defect but an inference defect,
-and it is the same one this document catches detectors making. A result measured on one population
-was written up as a fact about language models. It took a second population to see it, exactly as
-Result 2's monotonicity claim needed a held-out split.
+The top two rows are the ones worth keeping in view, because neither is a coding defect. Both are
+inference defects, and both are the kind this document catches detectors making. A result measured
+on one population was written up as a fact about language models, and it took a second population
+to see — exactly as Result 2's monotonicity claim needed a held-out split. And a comparison
+between the two extremes of thirteen post-hoc cells was judged against the yardstick for a
+pre-registered pair, which is the classic way to find something that is not there.
+
+The second one was caught *after* Result 19 had been written, committed and pushed. It survived a
+full write-up, a measurement record and a strategy citation before the arithmetic of the
+correction was worked out, which is worth being uncomfortable about: nothing in the process
+flagged it, and only re-deriving the statistic did.
