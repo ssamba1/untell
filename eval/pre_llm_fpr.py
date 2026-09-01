@@ -196,7 +196,9 @@ def _render(report: dict) -> str:
     lines = [
         f"Pre-LLM human abstracts scored: {report['n_scored']} (tier={report['tier']})",
         *([f"Corpus: {corpus['min_words']}+ words, published <= {corpus['max_year']}, "
-           f"{corpus['n_available']} available, seed {corpus['seed']}. The word floor moves this "
+           f"{corpus['n_available']} available, seed {corpus['seed']} — "
+           f"{'CENSUS: every document scored' if corpus.get('is_census') else 'A SAMPLE, not the corpus; --n 0 scores all of it'}"
+           f". The word floor moves this "
            f"number: 22.0% at 30 words against 14.3% at 150 (MEASURED, n=300 each)."]
           if corpus else []),
         "Every flag below is a FALSE positive: this text predates the models.",
@@ -227,7 +229,12 @@ def main(argv: list[str] | None = None) -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cache", type=Path, default=Path(".anthology-cache"))
     parser.add_argument("--download", action="store_true", help="fetch pre-LLM volumes first")
-    parser.add_argument("--n", type=int, default=100, help="how many abstracts to score")
+    # 0 means "all of them". Round sixty-one found every false-positive figure this project had
+    # published was computed on 100-600 documents of a corpus holding 6,811, because `--n` had a
+    # default and no way to say "the whole thing" — so nobody ever did. Naming a literal count in a
+    # reproduction command goes stale the moment a volume is added; `--n 0` does not.
+    parser.add_argument("--n", type=int, default=100,
+                        help="how many abstracts to score; 0 scores the whole corpus")
     parser.add_argument("--tier", default="lite")
     parser.add_argument("--min-words", type=int, default=60)
     parser.add_argument("--max-year", type=int, default=2021)
@@ -236,6 +243,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="report the false-positive rate per word-count band")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
+    if args.n < 0:
+        print(f"--n must be 0 (all) or positive, got {args.n}", file=sys.stderr)
+        return 1
 
     if args.download:
         print(f"{download(args.cache, PRE_LLM_VOLUMES)} volume(s) cached", file=sys.stderr)
@@ -246,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 1
     random.Random(args.seed).shuffle(texts)
-    sample = texts[: args.n]
+    sample = texts if args.n == 0 else texts[: args.n]
     # The corpus definition travels with the number. `min_words` is not a detail: MEASURED at n=300,
     # the false-positive rate runs 22.0% at 30 words, 22.7% at 60, 18.3% at 100 and 14.3% at 150,
     # because short text is flagged far more often. A saved report that does not say which floor it
@@ -257,7 +267,10 @@ def main(argv: list[str] | None = None) -> int:
         "max_year": args.max_year,
         "seed": args.seed,
         "n_available": len(texts),
-        "n_requested": args.n,
+        "n_requested": args.n or len(texts),
+        # Whether this report describes the corpus or a sample of it. A reader comparing two reports
+        # needs to know which, and "n_requested == n_available" is not something to make them derive.
+        "is_census": args.n == 0 or args.n >= len(texts),
     }
     if args.by_length:
         report = probe_by_length(sample, tier=args.tier)

@@ -49,15 +49,18 @@ no decision, no native speaker and no GPU, only the work.
 | 21 | Third-party watermark audit (Article 50 marking) | 🔜 open | **WaterPark already audits watermark robustness**; what is open is a *key-free third-party* audit in the TTP-Detect sense, at segment level. Blueprint corrected in §7. |
 | 22 | Confidence intervals on every published rate | ✅ done — **169 proportions tabulated**, and a test fails if one appears without an interval | — |
 | 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
-| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **20.5% on n = 599 of 60+ words**, CI [17.5%, 24.0%]. The word floor is load-bearing: **22.0% at 30 words against 14.3% at 150** | — |
+| 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **19.47% on all n = 6,810 of 60+ words**, CI [18.55%, 20.43%]. The word floor is load-bearing: **22.0% at 30 words against 14.3% at 150** | — |
 | 25 | Length-conditioned false-positive curve | ✅ done — **30.0% at ≤50 words against 21.7% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
-| 27 | Conformal calibration | ✅ done — on n = 599, **0.45 flags 20.5%; 0.5461 bounds it at 5%**. The earlier 0.5215 flags 7.5% here and no longer holds its bound | — |
+| 27 | Conformal calibration | ✅ done — on all n = 6,810, **0.45 flags 19.47%; 0.5401 bounds it at 5%**. And `coverage_spread` now reports what a threshold does on *unseen* text: the bound is marginal, so the realised rate exceeds α about **half the time** at every n | — |
 | 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody**, and **the corpus blocker has a way around it**: *Centering the Margins* measures harm to marginalised groups by outlier detection, needing no subgroup labels at all. Method in §7. |
 | 29 | Length-standardized false-positive rates | ✅ done — `eval/length_standardized.py`; direct standardization, so two corpora with different length profiles can be compared at all | — |
 | 30 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; the unstratified gap separates at 5 of 7 cut-offs on 6,810 documents, **but the arms' median word counts differ by 27% and `--by-length` breaks it**: the gap changes sign between bands and no band separates. The tool now prints that warning itself | — |
 | 31 | Frankentext probe — human words, machine arrangement | ✅ done — `eval/frankentext.py`; **stitched 10.7% vs whole 11.3% at matched length**, intervals overlap, so arrangement is invisible to this detector | — |
 | 32 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
+| 33 | Score the whole pre-LLM corpus, not a sample of it | ✅ done — every figure here was computed on 100–600 of **6,810** available, because `--n` had a default and no way to say "all". `--n 0` now does, and each report states whether it is a census or a sample | — |
+| 34 | Report what a calibrated threshold does on *unseen* text | ✅ done — `coverage_spread()`; the conformal bound is marginal, so the realised rate exceeds α **about half the time at every n**. More data narrows the band (5.5 points → 0.9), it does not lower that probability. **Nobody states this beside a published threshold** — ours did not, until round sixty-one | — |
+| 35 | Make the count checks and their auto-fixer one predicate | ✅ done — they were two, and `--fix-counts` rewrote a count quoted inside a code span while repairing none of the three claims the checks reported | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -393,14 +396,14 @@ Six claims changed on contact with their sources; the ledger lists all of them.
 > HuggingFace, which its egress policy blocks, so `--tier full` resolves to the same single detector
 > as `--tier lite`. Consequences, and they are not small:
 >
-> - **20.5% on pre-LLM abstracts at the shipped threshold, 30.0% at ≤50 words** are that one
+> - **19.47% on pre-LLM abstracts at the shipped threshold, 30.0% at ≤50 words** are that one
 >   detector's false-positive rates. The ensemble's would differ, and this repo has separately
 >   measured `mage` alone driving the ensemble's rate through `max`.
 > - **The FAR/MFAR/consensus spread cannot be measured on our own stack here.** With one detector the
 >   three rules are arithmetically identical, and the tools print a `degenerate` warning saying so.
 >   ✅ **It has now been demonstrated on three real detectors instead**, from the study's own
 >   per-tool scores — see below — which also checks our arithmetic against a published result.
-> - **The calibrated threshold of 0.5461 is calibrated for that one detector**, and is not
+> - **The calibrated threshold of 0.5401 is calibrated for that one detector**, and is not
 >   transferable to a different ensemble — which is, uncomfortably, the exact thing this section
 >   argues about everyone else's published thresholds.
 >
@@ -823,14 +826,21 @@ a fact about HC3, and the 0-to-61% range is the reason to say so every time we q
   the technical register detectors are worst on, where **every flag is a false positive by
   construction** — no labels, nothing to dispute.
 
-  **Measured: 20.5% of 599 pre-LLM abstracts flagged, 95% CI [17.5%, 24.0%], lite tier — on
+  **Measured: 19.47% of all 6,810 pre-LLM abstracts flagged, 95% CI [18.55%, 20.43%], lite tier — on
   documents of 60 or more words.** That last clause is not a detail. MEASURED at n = 300 each, the
   same probe returns **22.0% at a 30-word floor, 22.7% at 60, 18.3% at 100 and 14.3% at 150**,
   because the corpus floor filters out exactly the short documents that drive the rate up. **There
   is no such thing as "the" pre-LLM false-positive rate** — there is one per corpus definition, and
-  every report now carries the definition that produced it. At n = 120
-  it read 19.2% with an interval more than twice as wide, [13.1%, 27.1%]; the corpus added in round
-  thirty-one is 6,811 abstracts, so there was no reason to keep publishing the small sample.
+  every report now carries the definition that produced it.
+
+  ✅ **The sampling ladder is itself a result, and for once a reassuring one.** At n = 120 the probe
+  read 19.2% with an interval of [13.1%, 27.1%]; at n = 599, 20.5% with [17.5%, 24.0%]; scoring the
+  whole corpus gives 19.47% with [18.55%, 20.43%]. **The census lands inside both samples'
+  intervals**, so neither was biased — they were imprecise, by 14.0 points and then 6.5, against 1.9
+  now. Every number in this repository was a sample until round sixty-one because
+  `eval/pre_llm_fpr.py` caps at `--n`, whose default is 100 and which nobody revisited after round
+  thirty-one restored the corpus. **There was no reason not to score all of them, and the only cost
+  of doing so was twenty-five minutes.**
   That is now the most defensible false-positive number this repo has, because its ground truth
   cannot be argued with. ✗ **It is not comparable to Bohler's 8.6%**, which an earlier draft of this
   paragraph called "roughly double" — ours is the share of documents flagged, theirs is the mean
@@ -867,30 +877,64 @@ these arms report intervals by default.
 `ceil((n+1)(1-α))`-th smallest, and a genuinely human document exceeds it with probability at most α.
 The `n+1` is the finite-sample correction and is the difference between a guarantee and a guess.
 
-Calibrated on **599 pre-LLM ACL abstracts**, lite tier:
+Calibrated on **all 6,810 pre-LLM ACL abstracts**, lite tier — not a sample of them:
 
 MEASURED — reproduce with `python -m eval.pre_llm_fpr --download`, then calibrate the scores:
 
-| threshold | false positives on human text, n = 599 |
-|---|---|
-| 0.30 — the loop's stop target | 62.4% measured, 374 of n = 599 |
-| **0.45 — what we ship** | **20.5%** measured, 123 of n = 599 |
-| 0.504 — α = 0.10 | 10.0% by construction, 60 of n = 599 |
-| 0.5215 — α = 0.05 on the *old* corpus | 7.5% measured, 45 of n = 599 |
-| **0.5461 — α = 0.05 here** | **5.0%** by construction, 30 of n = 599 |
+| threshold | false positives on human text, n = 6,810 | 95% CI |
+|---|---|---|
+| 0.30 — the loop's stop target | 62.98%, 4,289 flagged | [61.83%, 64.12%] |
+| **0.45 — what we ship** | **19.47%**, 1,326 flagged | [18.55%, 20.43%] |
+| 0.4975 — α = 0.10 | 10.03%, 683 flagged | [9.34%, 10.77%] |
+| 0.5215 — α = 0.05 on a 150-document sample | 6.93%, 472 flagged | [6.35%, 7.56%] |
+| **0.5401 — α = 0.05 here** | **5.01%**, 341 flagged | [4.51%, 5.55%] |
+| 0.5461 — α = 0.05 on a 599-document sample | 4.55%, 310 flagged | [4.08%, 5.07%] |
+| 0.6163 — α = 0.01 | 1.00%, 68 flagged | [0.79%, 1.26%] |
 
-✗ **The row that matters is the `0.5215` one.** That was this roadmap's answer, derived at α = 0.05
-on a 150-document sample and published as bounding false positives at 4.7%. On the 599-document
-sample **it flags 7.5% — it does not meet the bound it was derived for.** Nothing shipped depends on
-it; the figure was documentation rather than a default. But it is the sharpest demonstration this
-project has produced of its own thesis: **a calibrated threshold is a property of the corpus it was
-calibrated on**, and ours did not transfer between two samples of the *same* publication venue,
-drawn from the *same* 6,811 abstracts, differing only in how many were drawn.
+**Moving the verdict threshold from 0.45 to 0.5401 takes the false-positive rate from 19.5% to 5%,
+with a bound rather than a hope.** That is the answer this repo could not previously give to the
+question its own headline provokes, and it is now three lines of arithmetic and a corpus that cannot
+be disputed.
 
-**Moving the verdict threshold from 0.45 to 0.5461 takes the false-positive rate from 20.5% to 5%,
-with a bound rather than a hope.** That is the answer this repo could not previously give to the question
-its own headline provokes, and it is now three lines of arithmetic and a corpus that cannot be
-disputed.
+### What the bound actually promises, which is not what it sounds like
+
+⚠️ **The conformal guarantee is marginal, not conditional.** It says the false-positive rate is at
+most α *averaged over calibration sets*. Conditional on the one set you actually calibrated on — the
+only one anybody has — the realised rate on new documents is `Beta(n + 1 − rank, rank)` distributed:
+mean exactly α, and therefore **above α about half the time**.
+
+`untell.calibrate.coverage_spread` computes that distribution, and every `calibrate()` result now
+carries it as `expected_fpr`. MEASURED against 400 random splits of the 6,810-document corpus, the
+closed form reproduces the simulation on real detector scores — medians within **0.1 points**,
+exceedance probabilities within **1.8**. ⚠️ That agreement checks the arithmetic and nothing more:
+the simulation *shuffles* the corpus before splitting it, so it imposes the exchangeability the Beta
+result assumes rather than testing it. It is a check on this repo's code, not on its corpus:
+
+| calibration set | median realised FPR | p5–p95 | chance of exceeding α = 5% |
+|---|---|---|---|
+| n = 150 | 4.44% | 2.21% – 7.74% | 37.3% |
+| n = 599 | 4.95% | 3.63% – 6.54% | 47.8% |
+| **n = 6,810** | **4.99%** | **4.57% – 5.43%** | **48.1%** |
+
+✗ **This retracts what this roadmap said one round ago.** The `0.5215` row above was described as a
+threshold that "does not meet the bound it was derived for". It meets it exactly as well as conformal
+prediction ever promised: 6.93% on the full corpus sits inside the p5–p95 band for a 150-document
+calibration, at its **90th percentile**. **An ordinary draw, not a failure.** What was wrong was
+publishing "4.7%" as *the* rate that threshold delivers, when 4.7% was one draw from a band running
+2.2% to 7.7%.
+
+✅ **The tie caveat, finally measured.** `untell/calibrate.py` has warned since it shipped that
+repeated scores break the bound, because `>=` catches a whole tie. On this corpus **73.0% of
+documents share a score with at least one other** — the detector rounds to four places — so the
+warning is not hypothetical. But the tie *at* the α = 0.05 threshold has multiplicity 2, and the
+realised rate is **5.007%**. Ties are pervasive here and cost seven thousandths of a point, which is
+the kind of thing you can only say after looking.
+
+**And the last column is the finding.** More calibration data does *not* make you less likely to
+exceed α — that probability converges to ~50%, and 6,810 documents are no safer than 150 on that
+score. What forty-five times the data buys is the *width*: the band narrows from 5.5 points to 0.9.
+**Buy data for precision, not for safety**, and read any single published calibration — this one
+included — as a draw rather than a guarantee.
 
 The module refuses rather than flatters: it returns `None` when the sample cannot support the α (1%
 control needs 99 documents — asking for it with 40 gets nothing, not a confident number), reports

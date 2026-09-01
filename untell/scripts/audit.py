@@ -175,6 +175,27 @@ _ATTRIBUTION = re.compile(
 # because every check scanned LIVE_DOCS and the census page was in neither list.
 COMPARATIVE_DOCS = LIVE_DOCS + ("docs/humanizer-census.md",)
 
+# The verification ledger is append-only by this project's own convention: round fifty-nine
+# established that a superseded entry is *annotated* rather than rewritten, because the ledger is an
+# audit trail and editing it destroys the record it exists to keep. Its figures describe the round
+# that wrote them, not the suite today.
+#
+# `--fix-counts` did not know that, and rewrote two historical lines — one of them a count quoted
+# inside a code span, turning a sentence about a past false positive into a false statement. So the
+# counting checks and the repair that services them both stop at this file.
+LEDGER = "docs/research-verification.md"
+
+
+def counted_docs() -> tuple[str, ...]:
+    """`COMPARATIVE_DOCS` minus the ledger — a function, deliberately, not a derived constant.
+
+    A constant computed at import time silently ignores a test that patches `COMPARATIVE_DOCS`, and
+    three tests in this suite do exactly that. One of them carries a comment recording the round
+    where patching the wrong name made five cases pass vacuously; deriving this once at import would
+    have recreated that defect in the same file that documents it.
+    """
+    return tuple(d for d in COMPARATIVE_DOCS if d != LEDGER)
+
 
 @dataclass
 class Finding:
@@ -856,12 +877,12 @@ def check_test_inventory(report: Report) -> None:
     modules = sorted((REPO / "tests").glob("test_*.py"))
     wrong: list[str] = []
     checked = 0
-    for rel in COMPARATIVE_DOCS:
+    for rel in counted_docs():
         path = REPO / rel
         if not path.exists():
             continue
         body = without_code_spans(path.read_text(encoding="utf-8"))
-        for found in re.findall(r"(\d+)\s+(?:test\s+)?modules\b", body):
+        for found, _ in re.findall(_MODULE_CLAIM, body):
             checked += 1
             claimed = int(found)
             # Asymmetric, matching the contract test_why_best_test_count_is_not_stale uses
@@ -934,6 +955,19 @@ def _collected_test_count() -> int | None:
 _CODE_SPAN = re.compile(r"`[^`\n]*`")
 
 
+# The two count claims, defined once because the checks and `--fix-counts` must agree on what a
+# claim is. When they disagreed, the fixer corrupted a quotation and repaired nothing.
+_MODULE_CLAIM = r"(\d+)(\s+(?:test\s+)?modules\b)"
+# Commas included. Without `[\d,]`, "9,958 tests" matches as **958** — the digit run stops at the
+# comma — and the check then accuses a correct document of understating by an order of magnitude.
+_TEST_CLAIM = r"(\*{0,2})(\d[\d,]{2,6})(\*{0,2})(\s+tests\b)"
+
+
+def _regroup(value: int, like: str) -> str:
+    """Render ``value`` with the thousands separators the number it replaces was written with."""
+    return f"{value:,}" if "," in like else str(value)
+
+
 def without_code_spans(text: str) -> str:
     """Markdown inline code, blanked, so a count check reads assertions rather than quotations.
 
@@ -961,6 +995,32 @@ def without_code_spans(text: str) -> str:
     return _CODE_SPAN.sub(lambda m: " " * len(m.group(0)), text)
 
 
+def substitute_outside_code_spans(pattern: str, repl, text: str) -> str:
+    """Apply a substitution everywhere :func:`without_code_spans` would let a check see it.
+
+    The read side and the write side must agree on what a claim is, or the repair a check recommends
+    introduces the defect the check exists to prevent. That is not hypothetical: `--fix-counts`
+    matched on raw text while both count checks matched on the blanked copy, so the fixer rewrote
+    ``the 63 modules they most import`` — a code span, a mention, a quotation of a past defect — into
+    a false statement, while repairing none of the three claims the checks actually saw.
+
+    Implemented by matching against the blanked copy, which preserves offsets, and splicing the
+    replacements into the original at those offsets. Blanking rather than deleting is what makes this
+    possible.
+    """
+    blanked = without_code_spans(text)
+    out, last = [], 0
+    for match in re.finditer(pattern, blanked):
+        out.append(text[last:match.start()])
+        # Re-match against the real text so the replacement sees the true groups; the blanked copy
+        # only decided *where* a substitution is allowed.
+        real = re.match(pattern, text[match.start():match.end()])
+        out.append(repl(real) if real else text[match.start():match.end()])
+        last = match.end()
+    out.append(text[last:])
+    return "".join(out)
+
+
 def check_test_count_claims(report: Report) -> None:
     """A "N tests" claim about our own suite must be in the same neighbourhood as reality.
 
@@ -983,7 +1043,7 @@ def check_test_count_claims(report: Report) -> None:
 
     wrong: list[str] = []
     checked = 0
-    for rel in COMPARATIVE_DOCS:
+    for rel in counted_docs():
         path = REPO / rel
         if not path.exists():
             continue
@@ -994,7 +1054,7 @@ def check_test_count_claims(report: Report) -> None:
         # at the comma — and the check then reports a document claiming 958 tests when it claims
         # 9,958. That is a false alarm in the direction that wastes the most time: it accuses a
         # correct document of understating by an order of magnitude.
-        for raw in re.findall(r"\*{0,2}(\d[\d,]{2,6})\*{0,2}\s+tests\b", text):
+        for _, raw, _, _ in re.findall(_TEST_CLAIM, text):
             found = raw.replace(",", "")
             claimed = int(found)
             checked += 1
@@ -1658,7 +1718,9 @@ def fix_counts() -> list[str]:
     in a comparison table can track. The check catches it every time and the repair was four
     identical manual edits.
 
-    Only the counts are touched, and only in `COMPARATIVE_DOCS`. The module count is exact. The test
+    Only the counts are touched, and only in `counted_docs()` — never the ledger, whose figures are
+    historical, and never inside a code span, which is a quotation rather than a claim. The module
+    count is exact. The test
     count is taken from a LITE collection — `UNTELL_LITE_NO_TORCH=1` — because that is the smaller
     of the two and the number `test_why_best_test_count_is_not_stale` compares against; a figure
     from a full-tier run is correct there and fails here, which is how this last broke.
@@ -1668,14 +1730,23 @@ def fix_counts() -> list[str]:
     modules = len(sorted((REPO / "tests").glob("test_*.py")))
     collected = _collected_test_count()
     edits: list[str] = []
-    for rel in COMPARATIVE_DOCS:
+    for rel in counted_docs():
         path = REPO / rel
         if not path.exists():
             continue
         before = path.read_text(encoding="utf-8")
-        after = re.sub(r"(\d+)(\s+(?:test\s+)?modules\b)", rf"{modules}\2", before)
+        after = substitute_outside_code_spans(
+            _MODULE_CLAIM, lambda m: f"{modules}{m.group(2)}", before)
         if collected is not None:
-            after = re.sub(r"\*\*(\d+)\*\*(\s+tests\b)", rf"**{collected}**\2", after)
+            # The checker's pattern, not a narrower one. The old fixer required `**N**` with no
+            # comma, so it could not repair `9202 tests` (unbolded) or `9,958 tests` (grouped) —
+            # which is every test-count claim the checks were actually reporting. Formatting is
+            # preserved: bold stays bold, and a grouped number stays grouped.
+            after = substitute_outside_code_spans(
+                _TEST_CLAIM,
+                lambda m: (f"{m.group(1)}{_regroup(collected, m.group(2))}{m.group(3)}"
+                           f"{m.group(4)}"),
+                after)
         if after != before:
             path.write_text(after, encoding="utf-8")
             edits.append(f"{rel}: counts set to {collected} tests, {modules} modules")

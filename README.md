@@ -28,9 +28,9 @@ calibration fix, the ensemble flagged **95% of human documents**.
 
 **The strongest of these numbers is the newest, because its ground truth cannot be argued with.**
 Scored against ACL abstracts published through 2021 — before ChatGPT, so every flag is a false
-positive by construction — the lite tier flags **20.5%** of them (n = 599, CI **17.5%–24.0%**), and
-**30.0%** of the same text truncated to 50 words or fewer (CI **22.5%–38.7%**). Reproduce with
-`python -m eval.pre_llm_fpr --download --n 599`.
+positive by construction — the lite tier flags **19.47%** of them (**all n = 6,810**, CI
+**18.55%–20.43%**), and **30.0%** of the same text truncated to 50 words or fewer (CI
+**22.5%–38.7%**). Reproduce with `python -m eval.pre_llm_fpr --download --n 0` (`--n 0` scores the whole corpus; the default is 100).
 
 ⚠️ **That rate is quoted for documents of 60 words or more, and the floor is load-bearing.** The same
 probe returns 22.0% at a 30-word floor and **14.3% at 150** — an 8.4-point swing from a parameter
@@ -38,16 +38,20 @@ nobody chose deliberately. There is no such thing as *the* false-positive rate; 
 corpus definition, and every report now carries the definition that produced it.
 
 **And there is now an answer, not just a complaint.** `untell/calibrate.py` derives a threshold with
-a *bounded* false-positive rate from a human-only corpus. On the current corpus (n = 599) the shipped
-0.45 flags **20.5%**, and the conformal threshold at α = 0.05 is **0.5461**. A tenth of a threshold is
+a *bounded* false-positive rate from a human-only corpus. On all 6,810 documents the shipped 0.45
+flags **19.47%**, and the conformal threshold at α = 0.05 is **0.5401**. A tenth of a threshold is
 the difference between one human document in five being accused and one in twenty.
 
-⚠️ **And that threshold moved when the corpus did — which is this repository's own argument, made
-against its own number.** An earlier calibration on a smaller corpus gave **0.5215**, published here
-as bounding false positives at 4.7%. On the restored corpus **0.5215 flags 7.5%**: it no longer meets
-the bound it was derived for. Nothing shipped depends on it — the figure was documentation, not a
-default — but it is the clearest demonstration available that **a calibrated threshold is a property
-of the corpus it was calibrated on**, which is what this project says about everyone else's.
+⚠️ **The bound is marginal, not conditional, and that distinction is the whole story.** Conformal
+prediction promises the false-positive rate is at most α *averaged over calibration sets*.
+Conditional on the one set you actually have, the realised rate is Beta-distributed with mean α — so
+it lands **above α about half the time**, at every sample size. `coverage_spread()` reports that band
+and `calibrate()` now returns it, because a caller reading a single calibration as a guarantee is
+reading it wrong.
+
+**More data does not fix this; it was never the problem.** Going from 150 to 6,810 calibration
+documents leaves the chance of exceeding α at ~50%. What it buys is width: the realised rate's
+p5–p95 band narrows from **2.2%–7.7%** to **4.6%–5.4%**. **Buy data for precision, not for safety.**
 
 ⚠️ **Every rate above is a proportion with a sample size, and the intervals are wide.** That is the
 point rather than a caveat: this repo's own measurements move by more than 15 points between n = 20

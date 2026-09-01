@@ -92,7 +92,7 @@ RETIRED: dict[str, tuple[str, str]] = {
         "7.5% on the 599-document sample; 4.7% was the rate on the 150-document one"),
     r"flags\s+17\.3\s*%|17\.3% of pre-LLM": (
         "the shipped threshold's false-positive rate",
-        "20.5% on n = 599; 17.3% was measured on the 150-document sample"),
+        "19.47% on the full n = 6,810 corpus; 17.3% was measured on a 150-document sample"),
 }
 
 # A table row that merely *counts* how many papers make a claim is not making that claim. The
@@ -169,9 +169,13 @@ def test_the_suppression_does_not_swallow_prose_or_data_rows():
 # the fix rather than only the fault. Historical references are allowed only where the surrounding
 # text says the number is historical — see `_is_historical` below.
 SUPERSEDED: tuple[tuple[str, str], ...] = (
-    ("15.8%", "20.5% — re-measured in round 31 on the restored pre-LLM corpus"),
+    ("15.8%", "19.47% — re-measured in round 31 and scored over the whole corpus in round 61"),
     ("26.7%", "30.0% at <=50 words — re-measured in round 31"),
     ("15.6%", "21.7% at 50-100 words — re-measured in round 31"),
+    # Round 61. Not wrong — 19.47% sits inside its interval — but it was a 599-document sample of a
+    # 6,810-document corpus, and the sample's interval is 3.4x wider. A docstring quoting it as the
+    # measurement understates by that much what the repo actually knows.
+    ("20.5%", "19.47% — the 599-document sample became the whole corpus in round 61"),
 )
 
 

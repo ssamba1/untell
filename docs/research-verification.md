@@ -3957,6 +3957,12 @@ uses, with `>=` as the flagging comparison the probe itself uses:
 positives under 5% and it flags 7.5%. The α = 0.05 threshold on this sample is **0.5461** — seven
 thousandths higher, and the difference between a bound that holds and one that does not.
 
+> ⚠️ **Superseded by round sixty-one, which was written the same day.** This paragraph is wrong about
+> *why*. The conformal bound is marginal, not conditional: a threshold calibrated on 150 documents
+> lands above α roughly 37% of the time by design, and `0.5215`'s 6.93% on the full corpus is the
+> 90th percentile of that distribution — an ordinary draw. What was genuinely wrong was publishing
+> "4.7%" as *the* rate it delivers. The correction to the correction is round sixty-one.
+
 **Nothing shipped depends on it.** `grep` across `untell/` and `eval/` finds `0.5215` in no source
 file and no test; it existed only in `README.md` and `ROADMAP.md`. So this is a claims correction,
 not a broken default — which is the only reason it is a round in a ledger rather than a bug.
@@ -3974,6 +3980,11 @@ was calibrated on, and this repository has now demonstrated that on the friendli
 same venue, same years, same register, same detector, same code — where it still failed. Every
 argument this project makes about vendors publishing thresholds without their conditions applies to
 its own published threshold, and now says so on the page.
+
+> ⚠️ **"Failed" is the wrong word, per round sixty-one.** The threshold moved because thresholds
+> calibrated on finite samples are random variables, which is what conformal prediction says they
+> are. The paragraph's conclusion survives — a published threshold is a draw, not a constant — but
+> `it still failed` is a mention of the claim, not a claim, from here on.
 
 ## What was corrected
 
@@ -3997,3 +4008,196 @@ abstracts, so there was no reason to keep publishing the small sample", immediat
 computed on a small sample.
 
 There is no reason not to score all of them. That is round sixty-one.
+
+---
+
+# Round sixty-one — the correction to round sixty, and the number the bound never promised
+
+Round sixty found that `0.5215`, calibrated at α = 0.05 on 150 pre-LLM abstracts, flags 7.5% of a
+599-document sample and called that a threshold failing its bound. Round sixty-one scored the whole
+corpus and then asked whether "failing" was the right word. **It was not**, and finding out required
+answering a question this repository had never asked about its own method.
+
+## First, the corpus was never a sample of anything
+
+`pre_llm_abstracts` returns **6,811** documents. Every false-positive figure this project has
+published — 19.2% at n = 120, 20.5% at n = 599 — came from `eval/pre_llm_fpr.py`'s `--n`, whose
+default is 100 and which nobody revisited after round thirty-one restored the corpus. Twenty-five
+minutes of CPU scores all of them.
+
+| threshold | flagged, n = 6,810 | 95% CI |
+|---|---|---|
+| 0.30 | 4,289 — 62.98% | [61.83%, 64.12%] |
+| **0.45 — shipped** | **1,326 — 19.47%** | [18.55%, 20.43%] |
+| 0.4975 — α = 0.10 | 683 — 10.03% | [9.34%, 10.77%] |
+| `0.5215` — α = 0.05 on 150 documents | 472 — 6.93% | [6.35%, 7.56%] |
+| **0.5401 — α = 0.05 here** | **341 — 5.01%** | [4.51%, 5.55%] |
+| 0.5461 — α = 0.05 on 599 documents | 310 — 4.55% | [4.08%, 5.07%] |
+| 0.6163 — α = 0.01 | 68 — 1.00% | [0.79%, 1.26%] |
+
+✅ **The sampling ladder is a reassuring result, which is rare here.** 19.2% [13.1%, 27.1%] at n = 120,
+20.5% [17.5%, 24.0%] at n = 599, **19.47% [18.55%, 20.43%]** over the census. The census lands inside
+both samples' intervals: neither was biased, both were imprecise — 14.0 points wide, then 6.5, now
+1.9. Nine rounds of this ledger have found a headline that moved when its corpus grew. This one did
+not move; it sharpened.
+
+## Then the question round sixty should have asked
+
+If `0.5215` was derived correctly at α = 0.05, **how often is a correctly-derived threshold supposed
+to exceed α?** Round sixty assumed the answer was "never" and read 7.5% as a defect.
+
+The answer is **about half the time.** The split-conformal guarantee is *marginal*: it bounds the
+false-positive rate averaged over calibration sets. Conditional on the single calibration set anyone
+actually has, the realised rate on new documents is `Beta(n + 1 − rank, rank)` distributed, with mean
+exactly α. A distribution with mean α sits above α roughly half the time.
+
+MEASURED two ways that agree — 400 random calibration/test splits of the 6,810 real scores, against
+the closed form, medians within **0.1 points** and exceedance probabilities within **1.8**:
+
+| calibration set | median realised FPR | p5–p95 | P(exceeds α = 5%) |
+|---|---|---|---|
+| n = 50 | 3.33% | 0.72% – 9.14% | 27.9% |
+| n = 150 | 4.44% | 2.21% – 7.74% | 37.3% |
+| n = 599 | 4.95% | 3.63% – 6.54% | 47.8% |
+| n = 2,000 | 4.98% | 4.22% – 5.82% | 48.6% |
+| **n = 6,810** | **4.99%** | **4.57% – 5.43%** | **48.1%** |
+
+⚠️ **The agreement checks the arithmetic, not the corpus.** The simulation shuffles before splitting,
+so it *imposes* the exchangeability the Beta result assumes. It proves the closed form is right; it
+proves nothing about whether ACL abstracts are exchangeable.
+
+## The correction
+
+✗ **`0.5215` did not fail.** Its 6.93% on the full corpus is the **90th percentile** of the band a
+150-document calibration draws from. That is an ordinary draw, and round sixty's "it does not meet
+the bound it was derived for" is now annotated in place as superseded rather than rewritten.
+
+**What was actually wrong is narrower and worse.** Publishing "**0.5215** bounds it at **4.7%**"
+stated one draw from a band running 2.2% to 7.7% as though it were the rate that threshold delivers.
+The retraction stands; the diagnosis was wrong. Correcting a correction one round later is the
+uncomfortable part, and leaving it uncorrected because it is embarrassing is the alternative.
+
+## The finding worth taking away
+
+**More calibration data does not make you less likely to exceed α.** That probability converges to
+~50%; 6,810 documents are no safer than 150. Forty-five times the data narrows the p5–p95 band from
+5.5 points to 0.9 and nothing else. **Buy data for precision, not for safety** — and read any single
+published calibration, this repository's included, as a draw rather than a promise.
+
+`untell.calibrate.coverage_spread(n, alpha)` computes the band, and `calibrate()` returns it as
+`expected_fpr`, so the honest number cannot be separated from the threshold it qualifies. It is
+cached on `(n, alpha)` because the closed form costs 0.34s at corpus size, enough to dominate a loop
+over calibration sets — which is exactly the loop this round ran.
+
+## ✅ The tie caveat, warned about since it shipped and never measured
+
+`untell/calibrate.py` has always said ties break the bound, because `>=` catches a whole tie. On this
+corpus **73.0% of documents share a score with another** — the detector rounds to four places — so
+the warning is real. But the tie at the α = 0.05 threshold has multiplicity 2 and the realised rate
+is **5.007%**. Pervasive ties, seven thousandths of a point. A caveat you can only retire by looking.
+
+## ⚠️ The repository's only worked example did not run
+
+`untell/calibrate.py` opened with a doctest showing `calibrate()` turning five scores into a
+threshold of 0.3. It cannot: twenty documents is the floor for any α, the call returns `None`, and
+the example raised `TypeError` on the subscript.
+
+**It had never raised it anywhere.** There is no doctest configuration in `pyproject.toml`, no pytest
+ini, nothing in CI — so across `untell/` and `eval/` the sole doctest in the repository had never been
+executed, in the module whose subject is not trusting a number you have not run. Worse, it documented
+the opposite of the module's design: a reader checking what a small sample returns was told it
+returns a threshold, when refusing small samples is the entire point.
+
+`tests/test_every_worked_example_in_the_source_actually_runs.py` now runs every module's doctests —
+80 cases — and asserts that at least five runnable examples exist, so deleting the broken example
+rather than fixing it would fail too. Verified to fire: a deliberately false example in
+`untell/text_split.py` fails the sweep and the module was restored clean.
+
+---
+
+# Round sixty-two — the repair the audit recommends corrupted the document it was run on
+
+Round sixty-one added two test files, which pushed the suite past a documented count, which made
+`untell-audit` print what it has printed many times:
+
+> DRIFT every 'N tests' claim is close to what pytest collects (`docs/humanizer-census.md`: claims
+> 9202 tests, pytest collects 10278 — run `untell-audit --fix-counts` to repair)
+
+Running the recommended repair **corrupted the verification ledger and did not fix
+`humanizer-census.md`.** Measured, per file — what the checks match against what the fixer rewrote:
+
+| document | module claims the checks see | module claims the fixer rewrote | test claims seen | rewritten |
+|---|---|---|---|---|
+| `research-verification.md` | `620` | `620`, **`63`** | `9,958` ×2 | **none** |
+| `humanizer-census.md` | — | — | `9202` | **none** |
+
+**Of the three claims the checks were reporting, the fixer repaired zero. Of the one thing it did
+rewrite, one was not a claim at all.**
+
+## Three defects, one cause
+
+The check and the repair had **two different definitions of "a count claim"**, and the gap ran in
+both directions at once.
+
+✗ **The fixer did not know about code spans.** Round fifty-five taught the *checks* the use/mention
+distinction — `without_code_spans()`, because five times in three rounds a document describing a
+count-drift defect reproduced the literal it warned about and re-triggered the check. The fixer was
+never taught the same rule, so it matched raw text. It rewrote
+
+> round forty-six's `the 63 modules they most import` read as a test-module count.
+
+into `the 624 modules they most import` — turning a sentence *about* a past false positive into a
+false statement, inside the paragraph explaining why that class of false positive happens.
+
+✗ **The fixer's pattern was narrower than the checks'.** The checks match `\*{0,2}(\d[\d,]{2,6})...`;
+the fixer required `\*\*(\d+)\*\*`. So it could not repair `9202 tests` (not bolded) or `9,958 tests`
+(grouped) — which between them are every test-count claim the checks have ever reported.
+
+✗ **The fixer rewrote the ledger.** Round fifty-nine established that a superseded entry here is
+*annotated*, never rewritten, because this file is an audit trail. `--fix-counts` silently edited two
+historical lines, one of them a record of what was true in an earlier round.
+
+## The fix is structural, not three patches
+
+`_MODULE_CLAIM` and `_TEST_CLAIM` are now defined once and used by both checks and the fixer, so the
+two sides cannot drift apart again. `substitute_outside_code_spans()` is the write-side counterpart
+of `without_code_spans()` — it matches against the blanked copy, which preserves offsets, and splices
+replacements into the original at those positions, so **the repair can only touch what a check could
+have seen.** Formatting survives: bold stays bold, `9,958` becomes `10,278` and not `10278`.
+
+And `COUNTED_DOCS` excludes the ledger from counting and repair alike, while leaving it inside
+`COMPARATIVE_DOCS` for every other check. Eight tests hold all of it, including the exact corrupted
+sentence as a regression case.
+
+## Why this one is worse than a stale number
+
+Every count-drift round in this ledger has been a document falling behind the code. This is the
+inverse: **the tool that exists to stop that introduced a defect of exactly the kind it detects**, in
+the file that records the detection, and reported success while doing it — `counts set to 10278
+tests, 624 modules` was printed for a run that repaired nothing and broke a sentence.
+
+The generalisable form: **a checker and its auto-fixer are two implementations of one predicate, and
+nothing here was testing that they agreed.** Every test aimed at the checker passed throughout. The
+fixer had none of its own, because it was "just" the repair path.
+
+## ⚠️ And the first fix recreated a defect this repository had already documented
+
+`COUNTED_DOCS` was introduced as a constant derived from `COMPARATIVE_DOCS` at import time. **Three
+existing tests monkeypatch `COMPARATIVE_DOCS`**, so under that design they would have patched a name
+nothing read, and the checks would have scanned the real repository instead of their fixtures — the
+exact vacuity `test_the_dead_function_check_is_fast_and_still_works.py` already carries a comment
+about, in the file the change would have broken.
+
+MEASURED rather than assumed. Freezing the list at import and re-running the three files gives **43
+passed, 1 failed** — and the one failure is the *negative* case, `1,200 tests against 9,958 is real
+drift`. Every positive case passed vacuously. That is the same signature the earlier round recorded:
+"only the negative case noticed".
+
+So it is a function, `counted_docs()`, evaluated per call. A derived constant is a footgun wherever
+the name it derives from is something tests patch, and the cost of the function is one tuple
+comprehension per check.
+
+**Two rounds in a row have now found the same shape**: round sixty-one corrected round sixty, and
+this section corrects the first draft of round sixty-two. The pattern is not carelessness so much as
+the thing this ledger exists to make visible — **a fix is a change, and a change needs the same
+scrutiny as the code it repairs.**
