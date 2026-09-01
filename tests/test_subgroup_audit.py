@@ -385,3 +385,70 @@ class TestEqualisedOdds:
                            ("real", False, 60, 6), ("real", True, 60, 6)])
         g = self._run(monkeypatch, rows)["axes"]["g"]["groups"]
         assert "NA" not in g
+
+
+class TestTheLiangCorpus:
+    """Liang et al. 2023 is the corpus this field's bias literature descends from.
+
+    It was added on 2026-09-01 after reading `satyamshivam13/AI_Text_Detector`, which had been
+    measuring per-population false-positive rates on it since July 2026 while this repository's
+    strategy document claimed no such tool existed. These guard the two things about the loader
+    that a future edit could quietly break, both of which would invalidate published numbers.
+    """
+
+    def test_no_word_floor_is_applied_by_default(self, monkeypatch):
+        """Dropping short essays would silence any comparison with the published figures.
+
+        The other loaders take a 60-word floor because a 14-word answer measures window logic
+        rather than a writer. Here the essays ARE the published sample, so the floor is 0 and a
+        caller who wants one has to ask and say so.
+        """
+        from eval import datasets
+
+        payload = [{"text": "tiny", "population": "toefl_nonnative"},
+                   {"text": " ".join(["word"] * 200), "population": "cs224n_student"}]
+        monkeypatch.setattr(datasets, "_liang_cache", lambda: _FakeCache(payload))
+        rows = datasets.load_liang()
+        assert len(rows) == 2, f"the loader is filtering by length by default: {rows}"
+        assert len(datasets.load_liang(min_words=60)) == 1
+
+    def test_the_machine_edited_population_is_labelled_and_not_silently_pooled(self, monkeypatch):
+        """`toefl_gpt4_polished` is human-authored and machine-EDITED.
+
+        Counting it as a plain false positive would inflate every aggregate on this corpus with
+        texts a language model touched, which is a different question. It must arrive carrying a
+        flag that lets a caller hold it out.
+        """
+        from eval import datasets
+
+        payload = [{"text": "a b c", "population": "toefl_gpt4_polished"},
+                   {"text": "a b c", "population": "toefl_nonnative"}]
+        monkeypatch.setattr(datasets, "_liang_cache", lambda: _FakeCache(payload))
+        by_pop = {r["population"]: r for r in datasets.load_liang()}
+        assert by_pop["toefl_gpt4_polished"]["machine_edited"] == "True"
+        assert by_pop["toefl_nonnative"]["machine_edited"] == "False"
+
+    def test_the_five_populations_are_the_ones_liang_published(self):
+        """A renamed or dropped population would break the comparison silently."""
+        from eval.datasets import LIANG_MACHINE_EDITED, LIANG_POPULATIONS
+
+        assert set(LIANG_POPULATIONS) == {
+            "toefl_nonnative", "student_us_8th", "college_admission", "cs224n_student",
+            "toefl_gpt4_polished",
+        }
+        assert LIANG_MACHINE_EDITED == {"toefl_gpt4_polished"}
+
+
+class _FakeCache:
+    """A cache path whose `exists()` is true and whose text is a fixed payload."""
+
+    def __init__(self, payload):
+        import json
+
+        self._text = json.dumps(payload)
+
+    def exists(self):
+        return True
+
+    def read_text(self, encoding="utf-8"):
+        return self._text

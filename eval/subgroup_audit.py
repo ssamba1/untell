@@ -494,7 +494,8 @@ def render_sweep(results: list[dict]) -> str:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--corpus", default="ellipse")
+    ap.add_argument("--corpus", default="ellipse",
+                    help="ellipse | asap | liang, or use --csv")
     ap.add_argument("--csv", type=Path, default=None,
                     help="a local labelled CSV instead of the fetched corpus")
     ap.add_argument("--tier", default="lite")
@@ -511,9 +512,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--band-axis", default="Overall")
     a = ap.parse_args(argv)
 
-    from eval.datasets import load_labelled
+    from eval.datasets import load_labelled, load_liang
 
-    rows = load_labelled(a.corpus, csv_path=a.csv)
+    # Liang's populations are corpora, not columns in one CSV, so it loads separately -- and it
+    # carries its own axes. `--by` is only overridden when the caller left it at the default,
+    # because ELLIPSE's demographic axes do not exist here and would render as empty headings.
+    if a.corpus == "liang" and a.csv is None:
+        rows = load_liang()
+        if a.by == ",".join(DEFAULT_AXES):
+            a.by = "population,machine_edited"
+    else:
+        rows = load_labelled(a.corpus, csv_path=a.csv)
     if a.n and a.n < len(rows):
         random.Random(a.seed).shuffle(rows)
         rows = rows[: a.n]

@@ -29,17 +29,22 @@ Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`
 
 ## The corpora
 
-| | ELLIPSE | ASAP 2.0 |
-|---|---|---|
-| essays (≥60 words) | 3,904 train + 2,571 held-out | 17,307 |
-| writers | **all** English language learners | mixed; 2,269 ELL, 14,798 non-ELL |
-| task | independent writing | source-based writing |
-| labels | proficiency, race, gender, SES, grade | ELL status, race, gender, SES, disability, grade |
-| licence | CC BY-NC-SA 4.0 | CC BY 4.0 |
-| vendored? | **no** — fetched on demand | **no** — fetched on demand |
+| | ELLIPSE | ASAP 2.0 | Liang et al. 2023 |
+|---|---|---|---|
+| essays | 3,904 train + 2,571 held-out (≥60 words) | 17,307 (≥60 words) | 485 (no floor — see below) |
+| writers | **all** English language learners | mixed; 2,269 ELL, 14,798 non-ELL | five populations, incl. 91 non-native TOEFL |
+| task | independent writing | source-based writing | TOEFL, 8th-grade, college admission, CS224N |
+| labels | proficiency, race, gender, SES, grade | ELL status, race, gender, SES, disability, grade | population; and 91 essays paired unedited/GPT-4-polished |
+| licence | CC BY-NC-SA 4.0 | CC BY 4.0 | see upstream repository |
+| vendored? | **no** — fetched on demand | **no** — fetched on demand | **no** — fetched on demand |
 
-Neither is committed. ELLIPSE's licence forbids it in an MIT package; ASAP's does not, but a 46 MB
+None is committed. ELLIPSE's licence forbids it in an MIT package; ASAP's does not, but a 46 MB
 CSV does not belong in a repository either.
+
+Liang's loader applies **no minimum-word floor**, unlike the other two. These are the essays the
+published bias figures were computed on, and quietly dropping some of them would make any
+comparison against those figures meaningless. It also carries the only *paired* contrast in this
+document: `toefl_gpt4_polished` is the same 91 essays as `toefl_nonnative`, run through GPT-4.
 
 ---
 
@@ -349,6 +354,69 @@ Empirical quantiles of the shipped lite scorer over 3,904 known-human ESL essays
 positives for false negatives, and the rewriting loop's behaviour is calibrated around 0.30
 throughout the package. It is the number a maintainer needs in order to make that choice
 deliberately rather than inherit it.
+
+## Result 12 — Liang et al.'s own corpus, and the first paired contrast in this document
+
+The corpus every "detectors are biased against non-native writers" claim descends from is
+[Liang et al. 2023](https://github.com/Weixin-Liang/ChatGPT-Detector-Bias): 485 human-authored
+essays in five populations. It was added on 2026-09-01 after reading
+`satyamshivam13/AI_Text_Detector`, which had been measuring per-population false-positive rates on
+it since July 2026 — see [the strategy doc](strategy-the-audit-position.md) for the claim of ours
+that falsified. Every essay is human-written, so every flag is an error.
+
+Lite tier, at the **shipped 0.30 threshold**, all 485 essays:
+
+| population | n | false-positive rate | 95% CI |
+|---|---|---|---|
+| TOEFL, non-native writers | 91 | **96.7%** | 90.8–98.9% |
+| US 8th-grade students | 88 | 88.6% | 80.3–93.7% |
+| *the same 91 TOEFL essays, GPT-4 polished* | 91 | *78.0%* | *68.5–85.3%* |
+| Stanford CS224N students | 145 | 73.1% | 65.4–79.7% |
+| US college admission essays | 70 | **58.6%** | 46.9–69.4% |
+| **overall** | 485 | **79.2%** | 75.3–82.5% |
+
+Liang's ordering reproduces against untell's own detector: non-native writers are flagged most,
+and the gap to the best-served population is 1.65x with separated intervals.
+
+**The new part is the third row, and it is the first properly paired comparison in this
+document.** `toefl_gpt4_polished` is not another population — it is *the same 91 essays* by the
+same 91 writers, run through GPT-4. Same writers, same prompts, same everything except the
+editing, which is the contrast every result above had to approximate with a control. Unedited
+they are flagged **96.7%**; after a large language model rewrites them, **78.0%**, and the
+intervals do not overlap.
+
+**Passing a non-native writer's essay through GPT-4 makes untell's detector less likely to call
+it AI.** Not more. The detector is not detecting machine involvement in these essays; whatever it
+is keyed to, GPT-4's editing removes some of it. That is a stronger form of Result 10's finding —
+the penalty is on a way of writing, not on machine provenance — and here it is established by a
+within-writer paired design rather than by a between-corpus contrast.
+
+## Result 13 — raising the threshold cuts the error rate and widens the gap
+
+Untell's threshold sweep and saturation check, run on Liang's corpus. Neither
+`fpr_by_population.py` nor BAID reports this, because both fix an operating point:
+
+| threshold | overall FPR | worst-vs-best population | state |
+|---|---|---|---|
+| **0.30** *(shipped)* | 79.2% | 1.65x * | measurable |
+| 0.50 | 25.6% | **6.93x** * | measurable |
+| 0.70 | 2.3% | not distinguishable | measurable |
+| 0.80 | 0.6% | — | saturated |
+| 0.90+ | 0.2% | — | saturated |
+
+`*` = the two groups' Wilson intervals do not overlap.
+
+The overall rate falls monotonically. **The disparity does not.** It more than quadruples between
+0.30 and 0.50 — at 0.50 the TOEFL non-native essays are flagged 49.5% (39.4–59.5) against 7.1%
+(3.1–15.7) for college admission essays — before the detector stops flagging enough of anything
+for a difference to be measurable at this sample size.
+
+This is what an aggregate false-positive rate hides. Moving 0.30 → 0.50 looks like an unambiguous
+improvement: three quarters of the errors disappear. The errors that remain are concentrated on
+the population that was already worst served, and a maintainer reading only the overall number
+would take that trade without seeing it. The honest reading of the last two rows is *not* "0.80
+is fair" — it is that the detector has stopped discriminating between anything, which the
+saturation flag says rather than letting a clean-looking ratio imply fairness.
 
 ## What these results do not establish
 

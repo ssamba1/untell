@@ -113,7 +113,13 @@ So the question is being asked in the literature. What is still missing is diffe
    machine-edited and *not* a plain false positive; applies an **n ≥ 30 floor** before comparing;
    and prints worst-served population, best-served population and a disparity ratio, with the
    divide-by-zero case handled. That is this instrument's design, arrived at independently, and
-   in one respect a better one: it uses Liang's canonical corpus, which this repository does not.
+   in one respect a better one: it used Liang's canonical corpus, which this repository did not.
+   **That gap is now closed** — `--corpus liang` loads the same five populations, and running the
+   analyses that repository does not have on them produced
+   [Results 12 and 13](detector-fairness-measured.md): a paired within-writer contrast showing
+   GPT-4 polishing makes untell's detector *less* likely to flag an essay (96.7% → 78.0%,
+   intervals separate), and a threshold sweep showing the population disparity widening from
+   1.65x to 6.93x as the overall error rate falls.
 
    **`suraj-ranganath/StealthRL`** — the repository this repo's ROADMAP quotes for its evasion
    numbers, cited from the paper and never located until 2026-09-01 — ships

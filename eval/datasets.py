@@ -530,3 +530,78 @@ def load_labelled(corpus: str = "ellipse", csv_path=None, min_words: int = 60) -
     if not rows:
         raise DatasetUnavailable(f"{corpus}: no rows survived the {min_words}-word floor")
     return rows
+
+# --------------------------------------------------------------------------------------------
+# Liang et al. (2023), the corpus this field's bias literature is founded on. ADDED 2026-09-01
+# after reading `satyamshivam13/AI_Text_Detector`, which had been measuring per-population
+# false-positive rates on it since July 2026 -- see docs/strategy-the-audit-position.md for the
+# claim of ours that falsified. Its populations are corpora rather than demographic attributes,
+# so it complements ELLIPSE and ASAP rather than replacing them: those answer "which writers does
+# this detector fail, holding genre constant", this one answers "which kinds of writing", on the
+# essays the published bias results were measured on.
+# --------------------------------------------------------------------------------------------
+LIANG_BASE = ("https://raw.githubusercontent.com/Weixin-Liang/ChatGPT-Detector-Bias/main/"
+              "Data_and_Results/Human_Data")
+LIANG_CITATION = (
+    "Liang, W., Yuksekgonul, M., Mao, Y., Wu, E., Zou, J., 'GPT detectors are biased against "
+    "non-native English writers', Patterns 4(7), 2023. "
+    "Source: https://github.com/Weixin-Liang/ChatGPT-Detector-Bias"
+)
+# population -> upstream folder. Every one is human-authored, so every flag is a false positive
+# -- except the last, which is human-authored and machine-EDITED. That is a different question
+# and is labelled so it can be held out rather than counted as a plain error.
+LIANG_POPULATIONS = {
+    "toefl_nonnative": "TOEFL_real_91",
+    "student_us_8th": "HewlettStudentEssay_real_88",
+    "college_admission": "CollegeEssay_real_70",
+    "cs224n_student": "CS224N_real_145",
+    "toefl_gpt4_polished": "TOEFL_gpt4polished_91",
+}
+LIANG_MACHINE_EDITED = frozenset({"toefl_gpt4_polished"})
+
+
+def _liang_cache():
+    import os
+    from pathlib import Path as _P
+
+    base = os.environ.get("UNTELL_CORPUS_DIR") or os.path.join(
+        os.path.expanduser("~"), ".cache", "untell-corpora"
+    )
+    return _P(base) / "liang_human.json"
+
+
+def load_liang(min_words: int = 0) -> list[dict]:
+    """The five Liang populations as audit rows, cached after the first fetch.
+
+    ``min_words`` defaults to 0 rather than the 60 the other loaders use: these are the essays
+    the published figures were computed on, and silently dropping some of them would make any
+    comparison against those figures meaningless. Filter afterwards if you want to, and say so.
+    """
+    import json as _json
+    import urllib.request
+
+    cache = _liang_cache()
+    if cache.exists():
+        logger.info("%s", LIANG_CITATION)
+        payload = _json.loads(cache.read_text(encoding="utf-8"))
+    else:
+        logger.warning("fetching Liang et al. 2023 human essays to %s\n%s", cache, LIANG_CITATION)
+        payload = []
+        for population, folder in LIANG_POPULATIONS.items():
+            url = f"{LIANG_BASE}/{folder}/data.json"
+            with urllib.request.urlopen(url, timeout=180) as fh:  # noqa: S310 - fixed https base
+                raw = _json.loads(fh.read())
+            for record in raw:
+                text = " ".join((record.get("document") or "").split()).strip()
+                if text:
+                    payload.append({"text": text, "population": population})
+        if not payload:
+            raise DatasetUnavailable("liang: every population fetched empty")
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(_json.dumps(payload), encoding="utf-8")
+
+    rows = [dict(r, machine_edited=str(r["population"] in LIANG_MACHINE_EDITED))
+            for r in payload if len(r["text"].split()) >= min_words]
+    if not rows:
+        raise DatasetUnavailable(f"liang: no rows survived the {min_words}-word floor")
+    return rows
