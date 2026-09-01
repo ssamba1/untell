@@ -552,11 +552,27 @@ could see it is the half that could not be run until the corpus above was found.
   are what it showed, including that this document's own threshold recommendation was for a
   setting that catches nothing.
 
-  What is still missing is narrower. The paired corpus covers **two populations**, CS224N and
-  college admission; **TOEFL has no machine counterpart**, so the population this document is most
-  concerned with — non-native English writers — is exactly the one whose false-negative rate
-  cannot be measured. Inventing a pairing by scoring TOEFL humans against another domain's machine
-  text would measure the distance between two datasets and report it as a property of a detector.
+  What is still missing is narrower, and this time it was **checked rather than assumed** — twice
+  in one day a claim of unreachability here turned out to be a claim nobody had tested. The paired
+  corpus covers **two populations**, CS224N and college admission. TOEFL has no machine
+  counterpart, so the population this document is most concerned with — non-native English
+  writers — is exactly the one whose false-negative rate cannot be measured. Searched on
+  2026-09-01, all reachable by `git clone` through this environment's proxy:
+
+  | source | machine-written half? |
+  |---|---|
+  | `Weixin-Liang/ChatGPT-Detector-Bias` | yes, but CS224N and college essays only — no TOEFL |
+  | `scrosseye/ELLIPSE-Corpus` | no — human essays only |
+  | `scrosseye/ASAP_2.0` | no — human essays only |
+  | `scrosseye/persuade_corpus_2.0` (25k essays, ELL-labelled) | no — human only, and the CSVs are on Google Drive |
+  | RAID / MAGE / HC3 | HuggingFace unreachable here — **verified**, `curl` fails to connect, not a policy 403 |
+
+  So the gap is real rather than unexamined. Inventing a pairing by scoring TOEFL humans against
+  another domain's machine text would measure the distance between two datasets and report it as
+  a property of a detector, which is the error this whole document is built to avoid. **The
+  measurement that would most change these conclusions is a machine-written counterpart to TOEFL
+  essays, and it is a data problem, not a tooling one** — `--corpus liang-paired --odds` would
+  report it the day such a corpus exists.
 
 - **Nothing about any individual document.** Every rate here describes a *detector*. A per-group
   false-positive rate says nothing about whether a particular text was machine-written, and must
