@@ -50,7 +50,7 @@ The repo has HC3, RAID and MAGE (`eval/datasets.py`). All three are **human vs. 
 question untell exists to ask — does a verdict survive meaning-preserving editing — has no ground-truth
 dataset wired in, only the repo's own rewriter, which is in-sample by construction.
 
-- **Beemo** ([arXiv:2411.04032](https://arxiv.org/abs/2411.04032), NAACL 2025,
+- **Beemo** ([2025.naacl-long.357](https://aclanthology.org/2025.naacl-long.357/), formerly arXiv:2411.04032,
   [HF](https://huggingface.co/datasets/toloka/beemo), [code](https://github.com/Toloka/beemo)) — 6.5k
   human / machine texts from ten instruction-tuned LLMs **edited by expert annotators**, plus 13.1k
   LLM-edited, 19.6k total — ✅ composition confirmed on the authors' repo, including the GPT-4o /
@@ -203,7 +203,7 @@ it is a ready-made fairness corpus with ground truth and a permissive licence.
 
 | Dataset | What it adds that we lack | Where |
 |---|---|---|
-| **Beemo** | Human **expert** edits of machine text — external control for the rewrite loop | [HF](https://huggingface.co/datasets/toloka/beemo) / [arXiv:2411.04032](https://arxiv.org/abs/2411.04032) |
+| **Beemo** | Human **expert** edits of machine text — external control for the rewrite loop | [HF](https://huggingface.co/datasets/toloka/beemo) / [2025.naacl-long.357](https://aclanthology.org/2025.naacl-long.357/) |
 | **ARB** | H2L: human text rewritten by an LLM — the false-accusation case | [arXiv:2607.29539](https://arxiv.org/abs/2607.29539) |
 | **RealDet** | Calibration corpus: **15 domains, 22 LLMs, 847k+ texts, 113k+ human-written**, EN+ZH, plus adversarial paraphrase/edit variants | [arXiv:2505.05084](https://arxiv.org/abs/2505.05084) |
 | **StyloBench** | Personalized/style-imitating machine text — triggers feature inversion | [arXiv:2510.12476](https://arxiv.org/pdf/2510.12476) |

@@ -90,6 +90,12 @@ TOPICS: dict[str, re.Pattern[str]] = {
         r"false positive|false accusation|falsely (flag|accus)|FPR", re.I),
     "fairness/non-native bias": re.compile(
         r"non-native|second language|L2 writer|bias(ed)? against|fairness|demographic", re.I),
+    # Deliberately narrow: `accessible` and `assistive` are excluded because they occur throughout
+    # detection abstracts in the ordinary sense ("publicly accessible"), and counting them would
+    # turn an honest zero into a soft dozen. The zero this reports is the point — see round sixteen
+    # of the verification ledger.
+    "disability/neurodivergence": re.compile(
+        r"autis|neurodiver|ADHD|dyslex|disabilit|disabled", re.I),
 }
 
 

@@ -1271,3 +1271,96 @@ The current reproducible figure, from `python -m eval.litreview --download --jso
 
 The full-Anthology census (1,718 volumes: 164 robustness, 20 false positives, 13 fairness) is a
 separate partial clone and is unaffected.
+
+---
+
+# Round sixteen — a systematic review, and a fairness axis that is empty
+
+Two PubMed queries, both exhausted (7 records and 2 records respectively). One produced the
+strongest single piece of evidence in this ledger; the other produced a hole.
+
+## ✅ The non-native finding is no longer one study
+
+According to PubMed, Ndacyayisenga, Kidega & Aciro Can (*BMC Med Educ*, 2026,
+[DOI](https://doi.org/10.1186/s12909-026-09303-7)) is a **PRISMA 2020 systematic review** of
+generative-AI assessment equity for non-native English speakers in English-medium medical, nursing,
+pharmacy and dental programmes: 1,213 records screened, **27 studies included**, quality assessed
+with MMAT and AXIS, synthesised under Kane's validity framework. It reports:
+
+> "Six experimental research studies concluded that AI detectors falsely labeled NNES writing as
+> AI-created in **50.2%–61.3%** of all cases (compared to **less than 5% among native writers**)."
+
+Plus a second bias channel this ledger had not recorded at all: **four automated-scoring studies
+found a systematic downward bias of 0.5–1.2 SD** against NNES students — detectors are not the only
+AI in the assessment pipeline, and the grader is biased in the same direction as the detector.
+
+**Why this outranks everything else here.** Every other fairness result in this ledger is a single
+study on a single corpus. This is a registered-protocol systematic review that finds **six
+independent experiments** converging on the same range, *and* supplies the comparator the single
+studies mostly omit: **under 5% for native writers.** Liang's 61.3% is the top of a reviewed range,
+not an outlier.
+
+**And it sharpens the Czech disconfirmation rather than being contradicted by it.** Round six's
+*Different Time, Different Language* ([2026.eacl-srw.20](https://aclanthology.org/2026.eacl-srw.20/))
+found no systematic bias in Czech, and this ledger has since refused to state non-native bias as a
+universal. That refusal stands and is now more precise: the effect is **robust and heavily replicated
+in English-medium assessment of non-native English writers**, which is the setting detectors are
+actually deployed in, and is not a claim about every language. The review's own conclusion is the
+protocol this repo builds: "equity requires multilingual validation, **bias audits**, transparent
+governance, and human supervision."
+
+⚠️ **One caveat, stated because the review does not.** Its 50.2–61.3% is a range across six studies
+with different corpora, detectors and thresholds — the same aggregation the 0-to-61% table warns
+about, one level up. It is strong evidence that the effect is real and large in this setting. It is
+not a number any institution should adopt as its own expected rate.
+
+## ✗ The fairness axis nobody has looked at
+
+Checked in **both** reachable corpora, because PubMed alone would not settle it — it indexes
+biomedical literature and under-covers the CS and education venues where detection work appears.
+
+**PubMed.** A query for AI-text detection against autistic, neurodivergent, ADHD, dyslexic or
+disabled writers returns **two records, and both are false positives** — studies of AI *diagnosing*
+autism and ADHD ([DOI](https://doi.org/10.1002/aur.70279),
+[DOI](https://doi.org/10.1186/s11689-024-09578-1)), not of detectors judging disabled people's
+writing.
+
+**The ACL Anthology.** MEASURED over the 526 detection papers in the cached 96-volume corpus, the
+terms `autis*`, `neurodiver*`, `ADHD`, `dyslex*`, `disabilit*`, `disabled` occur in **zero** titles
+or abstracts. This is not a one-off grep: it ships as a topic row, so
+`python -m eval.litreview --download --json` prints `"disability/neurodivergence": 0` alongside every
+other count, and a reachability test proves the pattern can match text that does discuss it — the
+same rule this repo applies to any registered tell or detector, so an honest zero cannot be confused
+with a dead regex. The only matches the pattern finds at all are `accessible` (12), `accessibility` (3)
+and `assistive` (1), every one of them incidental — "publicly accessible", not accessibility as a
+subject.
+
+**So across both corpora, the count of studies on whether AI detectors flag neurodivergent or
+disabled writers is zero.**
+
+And it is not that the community lacks the expertise or the populations. The same Anthology publishes
+autism detection in speech, ADHD proxy detection from social media, a Korean speech corpus for
+children with ASD, and sign-language accessibility work. **The people and the data are there; nobody
+has pointed detector-fairness work at them.**
+
+That is not a small gap. The traits detectors key on — formulaic phrasing, low burstiness, regular
+sentence length, restricted vocabulary, template adherence — are documented features of some autistic
+writing and of writing produced with assistive tools and accommodations. The ACL census found 13
+fairness papers in the Anthology's entire history, and this ledger has established that essentially
+all of the fairness evidence concerns language background. **An entire protected class is
+unmeasured**, in a technology already deciding admissions (round fourteen).
+
+This is the clearest open question this research has produced, and unlike most of the others it is
+one the repo's own tooling could answer: `eval/assisted_fairness.py` already stratifies arms by
+subgroup; the obstacle is corpora with disability metadata and consent, not method.
+
+## ✗ And nothing on what happens to the accused
+
+The due-process query — accusation, appeal, sanction, misconduct — returns **7 records**, of which
+one is the review above, one is a perspective on integrity tooling
+([DOI](https://doi.org/10.3389/frai.2025.1644098)), and the rest concern plagiarism practice rather
+than AI detection (e.g. [DOI](https://doi.org/10.1186/s41073-024-00149-5)). The qualitative half of
+the review names the tension — "the danger of false misconduct accusations" — but **no study in this
+corpus follows an accused student through an appeal.** The literature measures the flag and stops
+before the consequence, which is the same shape as round fourteen's finding that the humanizer
+literature is absent where deployment is dense.

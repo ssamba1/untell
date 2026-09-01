@@ -53,6 +53,7 @@ no decision, no native speaker and no GPU, only the work.
 | 25 | Length-conditioned false-positive curve | ✅ done — **26.7% at ≤50 words against 15.6% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
+| 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody.** PubMed returns zero studies on whether detectors flag neurodivergent or disabled writers; the blocker is a consented corpus with disability metadata, not method. |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /
@@ -439,6 +440,19 @@ false positives and thirteen concern fairness.** The ratio survived three expans
 fact about the field. Reproduce the sample with `python -m eval.litreview --download`; the census is
 a partial clone of the Anthology, documented in the ledger.
 
+✗ **And those thirteen fairness papers are almost all about one attribute.** Checked in both
+reachable corpora: a PubMed query for AI detection against autistic, neurodivergent, ADHD, dyslexic
+or disabled writers returns **two records, both false positives** (studies of AI *diagnosing* autism
+and ADHD), and across the **526 detection papers** in the cached Anthology corpus those terms occur
+in **zero** titles or abstracts — the only matches are `accessible`, `accessibility` and `assistive`
+used incidentally. **The number of studies on whether detectors flag neurodivergent or disabled
+writers is zero, in both.** Not for want of expertise: the same Anthology publishes autism detection
+in speech, ADHD proxy detection and sign-language accessibility work. The traits detectors key on — formulaic phrasing, low burstiness, regular
+sentence length, template adherence — are documented features of some autistic writing and of writing
+produced with assistive tools, so this is not a gap for its own sake. It is status row 28, and the
+blocker is a consented corpus carrying disability metadata, not method: `eval/assisted_fairness.py`
+already stratifies arms by subgroup.
+
 ✅ **Two results from `2025.genaidetect` — a COLING workshop devoted to this exact problem, which the
 first survey missed entirely — set the bounds on everything else here.**
 
@@ -487,6 +501,15 @@ detector families**, and modern detectors not relying on perplexity at all. One 
 workshop — it does not overturn Liang. But it does kill "non-native writers are biased against" as a
 universal, and our documents had been treating it as one.
 
+✅ **But the English-medium effect is now reviewed, not anecdotal.** A PRISMA systematic review of
+27 studies on assessment equity for non-native English speakers
+([DOI](https://doi.org/10.1186/s12909-026-09303-7)) finds **six independent experiments** putting
+false labelling of non-native writing at **50.2–61.3%** against **under 5% for native writers**, and
+a second bias channel we had not recorded — automated *scoring* running **0.5–1.2 SD** low for the
+same students. Liang's 61.3% is the top of a replicated range, not an outlier. So the scope is now
+precise rather than hedged: **heavily replicated for non-native English writers in English-medium
+assessment, and not a claim about every language.**
+
 **That disconfirmation is the strongest evidence for the thesis, not against it.** Bias appears in
 English TOEFL and ICNALE data and not in Czech; detector biases are "inconsistent across systems";
 detection is bound to domain and generator; no detector wins across scenarios
@@ -525,6 +548,8 @@ to be human**:
 | Behavioral-health articles, free detector | 27.2% | [DOI](https://doi.org/10.1080/08989621.2024.2331757) |
 | Abstracts, flagged by ≥1 of 3 tools | 44.44% | [DOI](https://doi.org/10.7717/peerj-cs.2953) |
 | TOEFL essays, non-native writers, 7 detectors | 61.3% | [DOI](https://doi.org/10.1016/j.patter.2023.100779) |
+| **Non-native English writers, six experiments pooled in a systematic review** | **50.2–61.3%** | [DOI](https://doi.org/10.1186/s12909-026-09303-7) |
+| Same review, **native writers** — the comparator most single studies omit | **<5%** | same |
 | **Residency personal statements, 2022–23 cycle — submitted before ChatGPT**, GPTZero | **10.2%** | [DOI](https://doi.org/10.1016/j.jsurg.2025.103566) |
 | Same statements, Copyleaks | 2.6% | same |
 | Same statements, **both tools required to agree** | **1.7%** | same |
@@ -721,9 +746,11 @@ trusting the derivation.
 - 🔜 **Beemo and ARB — the corpora that test the claim we actually make.** HC3, RAID and MAGE are all
   human-vs-fully-machine, so "does a verdict survive meaning-preserving editing" is answered only by
   our own rewriter, in-sample by construction — the objection `eval/holdout.py` exists to answer for
-  detectors. ✅ **Beemo** ([arXiv:2411.04032](https://arxiv.org/abs/2411.04032), NAACL 2025) is 19.6k
-  texts with *human expert* edits of machine output, 11 detectors across 33 configurations, reporting
-  that expert editing evades detection while LLM editing does not. **ARB**
+  detectors. ✅ **Beemo** ([2025.naacl-long.357](https://aclanthology.org/2025.naacl-long.357/),
+  formerly arXiv:2411.04032) is 19.6k texts with *human expert* edits of machine output and
+  **33 detector configurations** — the abstract's own figure, read at source; the count of 11
+  distinct detectors underneath them comes from [the authors' repository](https://github.com/Toloka/beemo).
+  It reports that expert editing evades detection while LLM editing does not. **ARB**
   ([arXiv:2607.29539](https://arxiv.org/abs/2607.29539)) supplies H2L — human text an LLM rewrote —
   matched four ways at TPR@1%FPR. ✗ An earlier draft of this section called H2L unpublished; that was
   wrong (Pratama measured it; Karr et al. put light edits at **64–80%** for Pangram and **38–49%** for
