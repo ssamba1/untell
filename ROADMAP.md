@@ -54,8 +54,9 @@ no decision, no native speaker and no GPU, only the work.
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
 | 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody**, and **the corpus blocker has a way around it**: *Centering the Margins* measures harm to marginalised groups by outlier detection, needing no subgroup labels at all. Method in §7. |
-| 29 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; on the full 6,810 corpus the unstratified gap separates at 5 of 7 cut-offs, **but `--by-length` breaks it: the gap changes sign between bands and no band separates**. Reported as a length artefact, not a disparity | — |
-| 30 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
+| 29 | Length-standardized false-positive rates | ✅ done — `eval/length_standardized.py`; direct standardization, so two corpora with different length profiles can be compared at all | — |
+| 30 | Outlier-based fairness arm — margins without protected attributes | ✅ done — `eval/outlier_fairness.py`; on the full 6,810 corpus the unstratified gap separates at 5 of 7 cut-offs, **but `--by-length` breaks it: the gap changes sign between bands and no band separates**. Reported as a length artefact, not a disparity | — |
+| 31 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
 evasion strength against GPU-trained policies, adoption, and beating GPTZero / Originality /

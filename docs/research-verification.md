@@ -2800,3 +2800,68 @@ exactly that error once, on its own data, with better statistics than the paper 
 disparity is real, its cause is not established, and the only way to find out is to stratify on the
 deployment's own corpus. That is what `--by-length` now does for the outlier arm and what
 `length_balance` now does for the author-status arm.
+
+---
+
+# Round thirty-eight — the method for the problem rounds thirty-six and thirty-seven found
+
+Two rounds established that **length is the dominant nuisance variable** in every false-positive
+comparison this project makes, and that our own strongest result and the deployment literature's
+central finding both carry it. Naming a confound is not the same as handling one.
+
+Epidemiology handled it a century ago. Crude mortality is higher in Florida than Alaska because
+Florida is older, and **direct standardization** — apply one population's rates to the other's
+composition — separates the part worth comparing from the part that is just who lives there.
+`eval/length_standardized.py` does that with word counts.
+
+**What it is for.** A program director comparing their flag rate against a published one is comparing
+two corpora with different length profiles. The difference between *"our applicants are flagged more
+than the study's"* and *"our applicants write shorter statements than the study's"* is the entire
+question, and nothing in this repository could answer it before now.
+
+**What it cannot do**, stated in the module and printed in every report: standardization removes the
+length composition difference **and nothing else**. Two corpora matched on length still differ by
+domain, generator, editing history, prompt and aggregation rule — the other five terms this
+repository insists a false-positive rate depends on.
+
+## ✗ The self-check caught the module's own first version
+
+`main` standardizes one half of the pre-LLM corpus against the other. **Two halves of one corpus
+should agree**, so the design is a self-check as well as a demonstration. The first version reported
+**crude 20.4% against standardized 11.2%** — a nine-point gap that could not possibly be real.
+
+The cause: band rates were drawn from `pre_llm_fpr.probe_by_length`, which **truncates every abstract
+to the top of every band it reaches**, so one 150-word abstract contributes a scored sample to 0–50,
+50–100 *and* 100–200. The weights, meanwhile, counted each document once, in the band its natural
+length falls in. **Rates from one population, weights from another.**
+
+That truncation is right for its own question — *how does this detector behave as length varies,
+holding the text fixed* — and wrong for this one. `rates_by_natural_length` now scores each document
+**once, whole**, in the band its own length falls in, and a test asserts three 150-word documents
+produce exactly three scorings rather than nine.
+
+After the fix, MEASURED by `python -m eval.length_standardized`, standardizing one half of the
+pre-LLM corpus against the other:
+
+| documents per half | crude | standardized | gap |
+|---|---|---|---|
+| 250 | 18.4% | 13.6% | 4.8 points |
+| **900** | **20.3%** | **19.0%** | **1.4 points** |
+
+**The gap shrinks toward zero as the sample grows**, which is what a self-check should do and is the
+evidence that the residual is per-band sampling noise rather than a second bug: at 250 per half the
+50–100 band holds roughly twenty documents, and a rate estimated from twenty documents is not stable
+enough to standardize with. At 900 the two halves agree to within 1.4 points.
+
+## What is worth noticing about this round
+
+The bug was found **by a design choice made before the code was written**: standardizing a corpus
+against itself has a known answer, so the demonstration doubles as a test with a ground truth. Every
+guard built in rounds sixteen to thirty-two compares a claim against a source. This one compares a
+computation against **arithmetic that cannot be wrong**, which is the only kind of check that catches
+an error in the method rather than in the reporting.
+
+Seven tests hold it, including the identity case — a corpus standardized against its own rates must
+return its own crude rate — and the coverage rule: a band with no measured rate is dropped and
+**reported as dropped**, because silently treating it as 0% would bias every figure downward while
+looking exactly the same.
