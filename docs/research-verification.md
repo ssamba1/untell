@@ -427,3 +427,71 @@ A document that only collected anti-detector findings would have missed all of t
 position — and the stronger one — is that **detectors are neither reliable nor useless in general,
 because "in general" is not a property they have.** Everything depends on the deployment, which is
 exactly what this repo exists to measure.
+
+---
+
+# Round five — the AI-writing side, which the first four rounds never mined
+
+Rounds three and four searched the corpus for *detection*. The original question was about **AI
+writing**, and that half had only been covered by targeted search. Re-mining the same 28,120 abstracts
+found **174** papers on writing assistance and **509** touching diversity or creativity; the 25 that
+report diversity, ownership or cognitive *effects* were read.
+
+## ✅ The finding that should frame the entire product
+
+*Human Bias in the Face of AI: Examining Human Judgment Against Text Labeled as AI Generated*
+([2025.findings-acl.1329](https://aclanthology.org/2025.findings-acl.1329/)). Three experiments —
+rephrasing, news summarization, persuasive writing:
+
+- In the **blind** test, raters **could not tell the two apart**.
+- Shown labels, they favoured text marked "Human Generated" over "AI Generated" by a preference score
+  of **over 30%**.
+- **The same pattern held when the labels were deliberately swapped.**
+
+**The label drives the judgment, not the text.** A detector's output *is* a label. So a false positive
+does not merely risk being wrong — it changes how every subsequent human reads that work, in a
+direction the text itself cannot correct.
+
+This retires the standard mitigation. "A human will review the flag" is not a safeguard, because the
+reviewer has already been anchored by the flag. And it sharpens round three's result that humans are
+poor detectors but show *no significant bias*
+([2026.acl-long.109](https://aclanthology.org/2026.acl-long.109/)): **humans are unbiased until you
+show them a label — which is exactly what deploying a detector does.**
+
+For this repo that is the ethical case for the whole enterprise, stated by someone else's experiment:
+the cost of a false positive is not a corrected mistake, it is a permanently altered reading.
+
+## ✅ Homogenization, measured inside our own field — and a genuine disagreement
+
+*What Are LLMs Doing to Scientific Communication?* ([2026.lrec-1.142](https://aclanthology.org/2026.lrec-1.142/))
+builds a naturalistic corpus of **over 37,000 ACL Anthology papers (2020–2024)** plus 3,000
+human-written passages with LLM improvements. LLM-modified texts contain "more complex and longer
+words and **a lower lexical diversity**." A pilot study with **20 domain experts** rates LLM-improved
+text as **more understandable and exciting** while the same experts express negative qualitative
+attitudes toward LLMs.
+
+*Quantifying the Risks of LLM- and Tool-assisted Rephrasing to Linguistic Diversity*
+([2025.findings-emnlp.1228](https://aclanthology.org/2025.findings-emnlp.1228/)) takes the same
+question to a multi-domain corpus, measuring semantic and vocabulary change from rephrasing tools
+across a large user base rather than for individuals.
+
+⚠️ **These do not agree with the dialect corpus.** [2026.lrec-1.882](https://aclanthology.org/2026.lrec-1.882/)
+(693 participants, five English dialects, paired within-individual over four weeks) found LLM
+assistance **raises** lexical diversity without raising syntactic complexity. Two refereed studies,
+opposite signs on lexical diversity.
+
+The likely reconciliation is level-of-analysis — an individual's vocabulary can widen while the
+*population's* collective vocabulary narrows, which is precisely the individual-vs-collective
+distinction the *Nature Human Behaviour* study draws. But that is our inference, not a published
+finding, and §2 of the literature map should stop presenting homogenization as a single settled
+direction. It is settled at the population level and contested at the individual level.
+
+## Also worth having
+
+- **ScholaWrite** ([2026.acl-long.1606](https://aclanthology.org/2026.acl-long.1606/)) — ~62K LaTeX
+  edits from five CS preprints over four months, annotated with cognitive writing intentions. Real
+  end-to-end human writing process data, and current LLMs "struggle to provide meaningful support
+  throughout" it.
+- **Keystroke logging of English learners** ([2024.lrec-main.938](https://aclanthology.org/2024.lrec-main.938/))
+  — process-level data, which is the one evidence type that could establish authorship without a
+  detector at all.

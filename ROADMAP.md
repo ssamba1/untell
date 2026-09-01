@@ -428,6 +428,24 @@ detection is bound to domain and generator; no detector wins across scenarios
 ([2026.acl-industry.9](https://aclanthology.org/2026.acl-industry.9/)). Every one of those is a
 refereed statement that the answer depends on which detector meets which population in which domain.
 
+### Why a false positive is not a recoverable mistake
+
+✅ *Human Bias in the Face of AI* ([2025.findings-acl.1329](https://aclanthology.org/2025.findings-acl.1329/))
+ran three experiments on rephrasing, summarization and persuasive writing. Blind, raters **could not
+tell human from AI text**. Labelled, they preferred text marked "Human Generated" by **over 30%** —
+**and the same pattern held when the labels were deliberately swapped.**
+
+**The label drives the judgment, not the text.** A detector's output is a label. So a false positive
+does not merely risk being wrong; it changes how everyone downstream reads that work, in a direction
+the work itself cannot correct. It also retires the standard mitigation — "a human will review the
+flag" is not a safeguard when the reviewer has already been anchored by it, and round three's finding
+that humans detect poorly but **without** significant bias
+([2026.acl-long.109](https://aclanthology.org/2026.acl-long.109/)) holds only until a label is put in
+front of them.
+
+That is the ethical case for this repo, established by someone else's experiment: the cost of a false
+positive is not a corrected mistake, it is a permanently altered reading.
+
 ### The number that settles it
 
 A PubMed pass then assembled every refereed study that reports a false-positive rate **on text known

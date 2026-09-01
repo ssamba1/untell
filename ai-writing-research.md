@@ -107,6 +107,18 @@ academic text down **>10%** post-LLM — the writer's background being smoothed 
 compressing thematic/affective/stylistic variation in LLM fiction, and **"Argument Collapse: LLMs Flatten
 Long-Form Public Debate"** ([arXiv:2606.01736](https://arxiv.org/pdf/2606.01736)).
 
+⚠️ **Not a settled direction, and this document previously implied it was.** Two refereed studies
+disagree in sign. [2026.lrec-1.142](https://aclanthology.org/2026.lrec-1.142/) — 37,000 ACL papers
+2020–2024 plus 3,000 human passages with LLM improvements — finds LLM-modified text has **lower
+lexical diversity** (and 20 domain experts rate it *more* understandable and exciting while
+disliking LLMs). But [2026.lrec-1.882](https://aclanthology.org/2026.lrec-1.882/) — 693 participants
+across five English dialects, paired within-individual over four weeks — finds LLM assistance
+**raises** lexical diversity without raising syntactic complexity. The likely reconciliation is
+level of analysis: an individual's vocabulary can widen while the population's collective vocabulary
+narrows, which is the individual-vs-collective distinction the *Nature Human Behaviour* study draws.
+That reconciliation is an inference, not a published finding. **Homogenization is well evidenced at
+the population level and contested at the individual level.**
+
 **Why this matters for detection work specifically:** homogenization and detection are the same
 phenomenon viewed from two ends. The signal detectors exploit *is* the flattening — which is exactly why
 a detector penalises any writer whose natural prose already sits near the model's centre of mass.
