@@ -18,7 +18,8 @@ Probed 2026-09-01 with `curl` through the session's egress proxy:
 
 | endpoint | result |
 |---|---|
-| `api.github.com` | **200** — core 15,000/hr, GraphQL 10,000/hr, search 30/min, code search 10/min |
+| `api.github.com` **repo-scoped** | **200** — `repos/{owner}/{repo}/...` only |
+| `api.github.com/search/*`, `/graphql` | **403** — "sessions are bound to their configured repositories" |
 | `export.arxiv.org` | 403 at CONNECT |
 | `api.openalex.org` | 403 |
 | `api.semanticscholar.org` | 403 |
@@ -28,12 +29,19 @@ Probed 2026-09-01 with `curl` through the session's egress proxy:
 | `grep.app` | 403 |
 | `api.tavily.com`, `api.exa.ai` | 403 |
 
-**Everything below except GitHub is blocked by the environment's network policy in a remote
-session.** The built-in `WebSearch`/`WebFetch` tools still work — they do not go through that
-proxy — so *reading* the web is available; *scripted* access to any of these APIs is not. Any
-harvester built on the non-GitHub services in this document must run on a local checkout, or the
-environment's allowlist must be widened. That is a real constraint on the "run the census on a
-schedule" idea and it is the first thing to settle.
+**Almost nothing here is scriptable from a remote session.** Two separate limits stack. The
+egress proxy 403s every non-GitHub host above. And GitHub itself is *repo-scoped*: `curl` to
+`api.github.com` serves `repos/ssamba1/untell/...` and refuses `/search/*` and `/graphql`
+outright, so a script cannot run a global repo search from here at all. `/rate_limit` still
+reports a healthy 15,000/hr core and 10,000/hr GraphQL budget — those numbers are real and they
+describe a scope that cannot answer a census query, which is exactly the trap.
+
+What *does* work in a remote session: the **MCP GitHub tools** (`search_repositories`,
+`search_code`) reach all of GitHub, and `WebSearch`/`WebFetch` do not go through the egress proxy.
+So discovery is available interactively; automation is not. `.claude/census.py` is built around
+that split — it `harvest`s on a local checkout with a PAT, and `ingest`s MCP-captured results
+everywhere else. Widening the environment's allowlist is what would collapse the two paths into
+one, and that decision comes before any scheduled refresh.
 
 ---
 
@@ -48,20 +56,24 @@ it would place in the census's own star table. There will be others.
 
 **Its stated failure mode was LLM spend, not GitHub.** The census records that the completeness
 critics and 49 non-English reads "died on an API spend limit". The GitHub side was never the
-bottleneck — the numbers above show 15,000 REST and 10,000 GraphQL calls per hour available with no
-key of ours and no spend at all. The 624 queries that produced 1287 candidates cost roughly 21
-minutes of the 30/min search budget.
+bottleneck: with an ordinary PAT the search API serves 30 queries a minute, so the 624 queries that
+produced 1287 candidates fit inside half an hour and cost nothing. What cost money was paying an
+agent to read 435 READMEs.
 
 So the fix is not a bigger sweep budget. It is to **stop paying an LLM to read READMEs that a script
 can triage**:
 
-1. **Harvest deterministically.** GraphQL `search(type: REPOSITORY)` returns name, stars, topics,
-   pushed date, primary language, license and the README blob in one query per page. 1287 repos is
-   a few dozen calls, not 1287 agent turns.
+1. **Harvest deterministically.** `search/repositories` returns name, stars, topics, pushed
+   date, primary language and license, 100 per call. 1287 repos is a few dozen calls, not 1287
+   agent turns. Implemented: `python .claude/census.py harvest`.
 2. **Classify cheaply first.** The census's own categories (`prompt-guide`, `api-wrapper`,
-   `rule-based-rewriter`, …) are mostly decidable from file structure: a repo with no `.py`/`.ts`
-   source and one Markdown file is a prompt guide; a repo whose only network call is to a vendor
-   endpoint is an API wrapper. That is 60% of the field — 259 of 435 — resolved without a token.
+   `rule-based-rewriter`, …) are partly decidable from metadata: a repo packaged as an agent skill
+   is a prompt guide; a repo whose description names a vendor is an API wrapper. Those two
+   categories are 60% of the census (259 of 435), which is the *ceiling* on this idea, not the
+   yield. **Measured**, on a 23-repo `topic:ai-humanizer` harvest: `.claude/census.py classify`
+   decides **35%** without a reader, and on the 11 of those the census had already read by hand
+   its confident rows agree **3 of 3**. A third of the budget, not two thirds — and the honest
+   number is the one worth planning against.
 3. **Spend the LLM on the tail.** The interesting classes (`detector_in_loop`,
    `meaning_verification`) are the ones that need reading. That is where the budget should have gone
    the first time.
@@ -204,17 +216,37 @@ Checked against the repo so the recommendations above stay honest:
 
 ---
 
-## 7. If only two things get done
+## 7. What shipped, and what is left
 
-1. **A deterministic census refresher** (§1). GraphQL harvest → structural classification →
-   LLM on the ambiguous tail → diff against `humanizer-census.json`. It costs no API spend against
-   the limit that actually killed the last sweep, and it retires the "as of 2026-08-05" caveat that
-   currently sits on the field's headline numbers. `text-humanizer` at 733 stars is the evidence
-   that it is already needed.
-2. **`raid-bench` as an external check** (§6). It is MIT, pip-installable, aimed at a benchmark this
-   repo already streams data from, and it attacks the weakest published claim — sample size — with
-   somebody else's leaderboard rather than our own harness.
+**Shipped: `.claude/census.py`** — the refresher from §1, built and measured rather than proposed.
 
-Both are local-checkout work. Neither needs a key. Everything else in this document is blocked from
-a remote session until the environment's egress allowlist is widened (§0), and that decision comes
-first.
+```bash
+python .claude/census.py plan                      # 12 angles, 43 queries, ~2 min of search budget
+python .claude/census.py harvest --out out/x.json  # local checkout + PAT; refuses cleanly elsewhere
+python .claude/census.py ingest a.json --out x.json  # remote session: fold in MCP-captured results
+python .claude/census.py classify x.json           # structural triage, no LLM, no network
+python .claude/census.py verify x.json             # score the classifier against the census
+python .claude/census.py delta x.json              # what the census would say differently today
+```
+
+`verify` is the part that matters: the census hand-read 435 repos, so any overlap is free ground
+truth, and the classifier is scored against it rather than trusted. It reports the two buckets
+separately because they promise different things — a wrong *confident* row is a defect (it dropped
+a repo from the read queue on a bad rule), a wrong *unsure* row is the system working.
+
+Its first real run says the census has decayed further than §1 showed. One angle
+(`topic:ai-humanizer`, 23 repos) turns up **12 not in the census, 5 of them at ≥100 stars** —
+including `seyedehsanhadi/sloptrim` (205★, created 2026-08-13), a zero-dependency stdlib-only prose
+detector that is unusually close to this repo's own lite tier. Two known repos also moved by more
+than 50 stars. That is one angle of twelve.
+
+**Left, in order:**
+
+1. **Run the other eleven angles** and fold the result into `docs/humanizer-census.json`. The tool
+   is built; the read queue it produces is the only part that needs an LLM.
+2. **`raid-bench` as an external check** (§6) — MIT, pip-installable, aimed at a benchmark this repo
+   already streams data from, and it attacks the weakest published claim (sample size) with somebody
+   else's leaderboard rather than our own harness.
+3. **Decide the egress question** (§0). Everything in §2–§5 is blocked from a remote session. Until
+   the allowlist widens, they are local-checkout tools and the census refresh is a two-step
+   (MCP capture → `ingest`) rather than one command.
