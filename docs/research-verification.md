@@ -1922,3 +1922,43 @@ been run in twenty rounds.
 **The rule: after any round that touches code, run the suite against base before believing the round
 is finished.** Targeted tests confirm the thing you were thinking about. Only the full run catches
 what you were not.
+
+---
+
+# Round twenty-six — applying rounds twenty to twenty-two to our own headline number
+
+Four published studies were caught reporting a **mean per-document detector score** inside a table of
+**false-positive rates**. The repository criticises that conflation in `ROADMAP.md` §7. It was also
+committing a milder version of it.
+
+`ai_percent` is the headline number this tool shows, and until this round its entire published
+description was **"max * 100"**. That is accurate and says nothing about *what kind of number it is*.
+A reader who sees `ai_percent: 84` has two wrong readings immediately available — *84% of this text
+is AI-written*, and *84% of documents like this are AI*. Neither is what the field means (it is one
+detector's probability for one document), and the schema ruled out neither. Stern's
+"83.8% human" became "16% of applicants used AI" by exactly that route, and the consumer of this API
+is the same program director the strategy document says we are built for.
+
+**Fixed at all three surfaces**, in the same words:
+
+- `max` — "highest P(AI) across detectors for THIS ONE DOCUMENT … A per-document score, not a rate:
+  it is not the fraction of the text that is AI-written, not the share of a corpus that would be
+  flagged, and not a false-positive rate."
+- `mean` — named as an average *over detectors for one document*, since a mean is otherwise assumed
+  to be over a corpus.
+- `ai_percent` — the same, plus the two misreadings named explicitly.
+- The MCP `score` tool carries the identical warning, because two surfaces disagreeing about the same
+  operation is a defect this repo has already shipped once.
+
+`tests/test_the_headline_number_says_what_kind_of_number_it_is.py` pins it, including the other half
+of the invariant: **if the score is a score, the false-positive measurement must be a genuine rate**,
+so it also checks that `eval/pre_llm_fpr.probe` still divides flagged documents by documents scored.
+A description is exactly the kind of thing a later edit trims for brevity.
+
+## ⚠️ And a process failure in this round, recorded
+
+The full-suite parity run from round twenty-five was **still in flight** when these edits landed, so
+its result would have mixed old and new code. It was killed rather than reported. **This is the
+second time in this session that editing during a long run contaminated it** — the first was
+installing spaCy mid-suite. The rule that follows: a long verification run makes the tree read-only
+until it finishes, and the discipline costs nothing compared with trusting a mixed result.

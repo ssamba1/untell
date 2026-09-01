@@ -156,6 +156,12 @@ def _server():
     def score(text: str, tier: str = "full", threshold: float = 0.30) -> dict:
         """Score text for AI-likelihood: max + ai_percent 0-100 + per-detector breakdown.
 
+        `max` and `ai_percent` are PER-DOCUMENT SCORES for the text passed in — not the fraction of
+        that text which is AI-written, and not the share of a corpus that would be flagged. The
+        distinction is not pedantry: four published studies this repo audits reported a mean
+        per-document score inside a table of false-positive rates, which is how "83.8% human" comes
+        to be read as "16% of applicants used AI".
+
         `tier` defaults to "full" to match POST /score on the REST API — the same named operation
         returned a different answer depending on which surface a caller reached it through, because
         this one ran a single stdlib heuristic and that one ran the four-detector ensemble.

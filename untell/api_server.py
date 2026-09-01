@@ -703,9 +703,28 @@ _SCORE_RESPONSES = _obj(
             "type": "object", "additionalProperties": _STR,
             "description": "which scoring path ran, where a detector has more than one",
         },
-        "max": {**_NUM, "description": "highest P(AI) across detectors — the headline number"},
-        "mean": _NUM,
-        "ai_percent": {**_NUM, "description": "max * 100"},
+        # WHAT KIND OF NUMBER THIS IS, stated because four published studies this repo audits
+        # conflated exactly these two quantities — reporting a mean per-document detector score in a
+        # table of false-positive rates, where "83.8% human" reads as "16% of applicants used AI".
+        # A consumer of this API is one step from the same mistake, so the schema says it outright.
+        "max": {
+            **_NUM,
+            "description": "highest P(AI) across detectors for THIS ONE DOCUMENT, in [0,1] — the "
+                           "headline number. A per-document score, not a rate: it is not the "
+                           "fraction of the text that is AI-written, not the share of a corpus that "
+                           "would be flagged, and not a false-positive rate.",
+        },
+        "mean": {
+            **_NUM,
+            "description": "arithmetic mean of the per-detector scores for this document; a score, "
+                           "not a rate, on the same terms as `max`",
+        },
+        "ai_percent": {
+            **_NUM,
+            "description": "`max` * 100, for display. Still a per-document score on a 0-100 scale — "
+                           "reading it as a percentage OF THE TEXT, or as a percentage OF DOCUMENTS, "
+                           "is the misreading this field is most often subjected to.",
+        },
         "threshold": {**_NUM, "description": "the value supplied by the caller"},
         "verdict_threshold": {
             **_NUM,
