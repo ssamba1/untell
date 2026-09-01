@@ -618,9 +618,18 @@ The last three rows are one study, one corpus, one day, and they are the union/c
 — **10.2% against 1.7%, a factor of six** — this time on 1,490 real applications rather than a
 benchmark.
 
+✅ **And one more variable, which the list above was missing.** *How You Prompt Matters!*
+([2024.findings-emnlp.841](https://aclanthology.org/2024.findings-emnlp.841/)) shows that
+**task-oriented constraints in an instruction — ordinary phrasing, explicitly "not related to
+detection-evasion" — move detector performance by a standard deviation of up to 14.4 F1**, which the
+authors measure as *larger* than the variance from regenerating the text or paraphrasing the
+instruction. They use student essay writing as the domain. **Two students prompting the same model
+with equally innocent but differently-worded instructions face materially different odds of being
+flagged**, and nothing in the prompt is about hiding anything.
+
 **So: a false-positive rate is not a property of a detector. It is a property of a detector, a
-population, a domain, an editing history and an aggregation rule — and it cannot be inherited from
-anyone else's paper, ours included.** An institution that reads 1.3% in a physiology journal and
+population, a domain, an editing history, an aggregation rule and the instruction that produced the
+text — and it cannot be inherited from anyone else's paper, ours included.** An institution that reads 1.3% in a physiology journal and
 deploys against ESL applicants has imported a number from the wrong end of a 47× range. The only
 measurement worth anything is the one taken on the deployment's own corpus, per subgroup. That is the
 thesis, and it now rests on refereed results this environment read at source — including two that
@@ -831,6 +840,18 @@ trusting the derivation.
   literature. ✅ Beemo's abstract was read at source and says exactly what we claimed: 33 detector
   configurations, "expert-based editing evades MGT detection, while LLM-edited texts are unlikely to
   be recognized as human-written".
+
+⚠️ **And a refereed critique of how this repo localises, with the fix.** *Machine-Generated Text
+Localization* ([2024.findings-acl.495](https://aclanthology.org/2024.findings-acl.495/)) is "the first
+in-depth study" of finding *which parts* of a document are machine-generated, and its central
+obstacle is ours: "short spans of text, e.g., a single sentence, provides little information
+indicating if it is machine generated due to its short length." **That is the same wall our own
+measurement hit** — per-sentence AUROC 0.513 on the stdlib path, and 26.7% of pre-LLM human text
+flagged at ≤50 words against 15.6% at 50–100. Their answer is to **predict over several sentences at
+once** so style and content *changes* carry the signal, worth **4–13% mAP** over prior work. Our
+`score_sentences` scores each sentence independently, so this is a named, measured improvement path
+rather than a research question. ⛔ It needs model weights to implement and evaluate, which this
+environment cannot load, so it is recorded rather than built.
 
 - 🔜 **The base-vs-instruct arm — a day of work for a finding that renames the category.** Base
   (non-instruction-tuned) output is judged overwhelmingly human by GPTZero and Pangram while the

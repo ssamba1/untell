@@ -2200,3 +2200,68 @@ defect, where `/score` returned `agreement` for several releases with nothing in
 so, and a client generated from `/openapi.json` had no entry for the one field this tool exists to
 surface. **The cheap way to make those two tests pass was to reintroduce the bug they did not
 cover.**
+
+---
+
+# Round twenty-nine — the largest unread topic, and a variable the thesis was missing
+
+The `education/integrity` row of the survey holds 40 papers and **30 of them had never been cited
+here** — the biggest unread block in the corpus. Reading them produced one addition to the central
+claim of this strategy and one refereed critique of a feature shipped two rounds ago.
+
+## ✅ The thesis sentence was incomplete
+
+This roadmap's load-bearing sentence said a false-positive rate is a property of "a detector, a
+population, a domain, an editing history and an aggregation rule." *How You Prompt Matters!*
+([2024.findings-emnlp.841](https://aclanthology.org/2024.findings-emnlp.841/)) supplies a sixth, and
+it is not a small one:
+
+> "even task-oriented constraints — constraints that would naturally be included in an instruction
+> and **are not related to detection-evasion** — cause existing powerful detectors to have a large
+> variance in detection performance … **up to an SD of 14.4 F1-score**"
+
+and that variance is **larger than the variance from generating the text multiple times or
+paraphrasing the instruction.** The domain they chose is student essay writing.
+
+**Two students prompting the same model with equally innocent, differently-worded instructions face
+materially different odds of being flagged.** Nothing in the prompt is about hiding anything — the
+paper is explicit that these are ordinary quality-oriented constraints. That is a fairness axis
+nobody in this ledger had named, it is invisible to every audit design here, and it is invisible to
+the institution too, because the instruction is the one artefact a submitted document does not carry.
+
+The sentence now reads "…an editing history, an aggregation rule **and the instruction that produced
+the text**".
+
+## ⚠️ A refereed critique of what round twenty-eight shipped
+
+*Machine-Generated Text Localization*
+([2024.findings-acl.495](https://aclanthology.org/2024.findings-acl.495/)) calls itself "the first
+in-depth study" of localizing machine-generated portions of a document, and its central obstacle is
+the one this repo hit independently:
+
+> "short spans of text, e.g., a single sentence, provides little information indicating if it is
+> machine generated due to its short length"
+
+**We measured the same wall from the other side** — per-sentence AUROC **0.513** on the stdlib path,
+and **26.7%** of pre-LLM human text flagged at **≤50 words** against **15.6%** at 50–100. Their fix
+is to predict over **several sentences at once**, so that *changes* in style and content carry the
+signal that a lone sentence cannot, worth **4–13% mAP** over prior work.
+
+`score_sentences` scores each sentence independently. So this is a **named, measured improvement path
+rather than an open question** — and it makes round twenty-eight's evidence feature more useful, not
+less: if the per-sentence *score* is weak, the per-sentence *markers* are the part a human can
+actually check, which is the argument that feature was built on.
+
+⛔ Implementing and evaluating it needs model weights this environment cannot load, so it is recorded
+with its citation rather than built and left unmeasured.
+
+## Also read, and not acted on
+
+- **AIG-ASAP** ([2023.emnlp-main.644](https://aclanthology.org/2023.emnlp-main.644/)) builds an
+  adversarial student-essay corpus and finds detectors "can be easily circumvented using
+  straightforward automatic adversarial attacks" — word and sentence substitution. Consistent with
+  the evasion literature already covered; adds a student-essay corpus to the list.
+- **Ghostbuster** ([2024.naacl-long.95](https://aclanthology.org/2024.naacl-long.95/)) was discussed
+  in these documents by name but never by citation, which is why an id-based check reported it
+  missing. Nothing was wrong; the check was looking for the wrong thing, and that is worth knowing
+  before trusting the next id-based sweep.
