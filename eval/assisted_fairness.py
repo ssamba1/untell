@@ -47,6 +47,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import statistics
 import sys
 import urllib.request
 from pathlib import Path
@@ -95,6 +96,56 @@ def load_rows(path: Path) -> list[dict[str, str]]:
     return [r for r in rows if (r.get("Status") or "").strip() and (r.get("Abstract") or "").strip()]
 
 
+def length_balance(rows: list[dict[str, str]], min_words: int = 50) -> dict:
+    """Median word count per arm per author status — the confound check, not a statistic.
+
+    Round thirty-six found this repository's outlier fairness arm reporting a length effect as a
+    disparity: the group it compared was selected on stylometry, stylometry is not length-neutral,
+    and short text is flagged far more often (30.0% at <=50 words against 13.3% at 200+, MEASURED
+    here). Any comparison of flag rates between two groups of writers inherits that problem unless
+    the groups are length-matched.
+
+    This corpus is: MEASURED, medians of 180 against 176 words for native and non-native human
+    abstracts, 136 against 135 assisted with ChatGPT, 189 against 201 with Gemini. So the arm's
+    disparity is not the length effect in disguise. That is worth *checking* rather than assuming,
+    and worth re-checking whenever the corpus changes, which is why it ships in the report instead of
+    living in a ledger entry.
+    """
+    out: dict[str, dict[str, dict]] = {}
+    for column, arm in ARMS.items():
+        by_status: dict[str, list[int]] = {}
+        for row in rows:
+            text = (row.get(column) or "").strip()
+            if len(text.split()) < min_words:
+                continue
+            by_status.setdefault(row["Status"].strip(), []).append(len(text.split()))
+        if not by_status:
+            continue
+        out[arm] = {
+            status: {"n": len(lengths), "median_words": statistics.median(lengths)}
+            for status, lengths in sorted(by_status.items())
+        }
+    # The number that decides whether the arm's comparison is safe to read.
+    worst = 0.0
+    for arm_rows in out.values():
+        medians = [v["median_words"] for v in arm_rows.values()]
+        if len(medians) > 1 and min(medians):
+            worst = max(worst, (max(medians) - min(medians)) / min(medians))
+    return {
+        "by_arm": out,
+        "worst_relative_gap": round(worst, 4),
+        # 15% is a judgement call and is stated as one. It is well below the length range over which
+        # this repo has measured the flag rate moving (a 4x span from <=50 to 200+ words) and well
+        # above the few-word differences this corpus actually shows.
+        "length_matched": worst < 0.15,
+        "note": (
+            "Groups that are not length-matched cannot be compared on flag rate: short text is "
+            "flagged far more often, so a length imbalance reads as a disparity. See round "
+            "thirty-six of docs/research-verification.md."
+        ),
+    }
+
+
 def evaluate(rows: list[dict[str, str]], tier: str = "lite") -> dict:
     """Flag rates per arm, split by author status, with intervals."""
     from untell.scripts.score import score_text
@@ -124,7 +175,11 @@ def evaluate(rows: list[dict[str, str]], tier: str = "lite") -> dict:
         pooled = [h for (a, _), hs in tally.items() if a == arm for h in hs]
         by_status["all"] = _rate(pooled)
     return {"tier": tier, "arms": arms,
-            "false_accusation_arms": list(HUMAN_AUTHORED)}
+            "false_accusation_arms": list(HUMAN_AUTHORED),
+            # Shipped with the rates, not beside them: a disparity between two groups that are not
+            # length-matched is unreadable, and round thirty-six is what happens when that check is
+            # left to the reader.
+            "length_balance": length_balance(rows)}
 
 
 def published_spread(results_csv: Path, text_type: str = "original") -> dict:
@@ -173,6 +228,16 @@ def _render(report: dict) -> str:
         "",
         f"{'arm':<20} {'group':<12} {'n':>4} {'flagged':>8}   95% CI",
     ]
+    balance = report.get("length_balance")
+    if balance:
+        lines[5:5] = [
+            ("Length check: groups ARE length-matched (worst median gap "
+             f"{balance['worst_relative_gap']:.1%}), so these rates are comparable."
+             if balance["length_matched"] else
+             "WARNING: groups are NOT length-matched (worst median gap "
+             f"{balance['worst_relative_gap']:.1%}). Short text is flagged far more often, so a "
+             "difference below may be document length rather than author status."),
+        ]
     for arm in ARMS.values():
         rows = report["arms"].get(arm)
         if not rows:

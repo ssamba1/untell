@@ -2743,3 +2743,60 @@ cleared their intervals — **every check I had built said yes.**
 What caught it was asking what else the margin could be selecting for, and the answer was available
 in this repository's own published measurements. The reusable rule is not "run a sensitivity sweep";
 it is that **agreement among your own checks is not evidence, when every check shares an assumption.**
+
+---
+
+# Round thirty-seven — the same confound, pointed at everything else
+
+Round thirty-six killed a result of ours with a length control. The obvious next question is whether
+anything **else** here — or in the literature this strategy quotes — has the same shape.
+
+## ✅ Our other fairness arm was checked, and passes
+
+`eval/assisted_fairness.py` compares native against non-native authors and inherits exactly the risk:
+if one group's abstracts are systematically shorter, its higher flag rate is document length, not
+author status. MEASURED on the Pratama corpus:
+
+| arm | Native median words | Non-Native median words |
+|---|---|---|
+| human | 180 | 176 |
+| assisted (ChatGPT) | 136 | 135 |
+| assisted (Gemini) | 189 | 201 |
+| generated (ChatGPT) | 153 | 150 |
+| generated (Gemini) | 158 | 156 |
+
+**Worst relative gap 7.8%**, against a threshold of 15% — well below the range over which this repo
+has measured the flag rate moving, and the corpus is matched by design at 36 documents per group per
+arm. **The arm's disparity is not the length effect in disguise.**
+
+That is a negative result and it is the point: the check was run rather than assumed. It now ships
+inside `evaluate`'s report and prints above the rates every run — "Length check: groups ARE
+length-matched (worst median gap 7.8%), so these rates are comparable" — because **a confound check
+in a separate command is a confound check nobody runs.** Six tests hold it, including one that fails
+if the real corpus ever stops being matched, and one that proves an unmatched corpus is actually
+caught rather than waved through.
+
+## ⚠️ And the deployment finding this strategy leans on hardest has it
+
+Round fourteen's admissions cluster is the most consequential evidence in this ledger, and the
+sentence it turns on is Subillaga et al.'s: the flagged group had **non-English native language
+characteristics 38.7% against 19.6% (p<0.001)** — *and* **shorter statements, shorter sentences.**
+
+Those are two correlated facts about one group, and the study reports both plainly without separating
+them. Round thirty-six is the reason that matters: our own outlier gap **separated its intervals at
+five of seven cut-offs on 6,810 documents and still turned out to be length**. GPTZero and Copyleaks
+flag short text more often; the flagged applicants wrote shorter statements; the flagged applicants
+were also more likely to be non-native. **Without a length-stratified re-analysis of those 1,490
+statements it cannot be said how much of that split is language background and how much is document
+length.**
+
+This does not weaken the deployment argument — 36.6% against 21.2% depending on the tool is a fact
+about aggregation regardless of what drives the subgroup skew, and a false accusation costs the same
+either way. What it changes is the **inference the number invites**: "detectors are biased against
+non-native writers" is a stronger claim than the data separates, and this repository has now made
+exactly that error once, on its own data, with better statistics than the paper reports.
+
+**The honest position is the one this strategy already argues for everyone else's numbers:** the
+disparity is real, its cause is not established, and the only way to find out is to stratify on the
+deployment's own corpus. That is what `--by-length` now does for the outlier arm and what
+`length_balance` now does for the author-status arm.

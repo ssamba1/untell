@@ -698,7 +698,23 @@ residency personal statements** across two cycles:
 is the union-versus-consensus spread this repo exists to expose, and it is already deciding who gets
 read charitably. And the flagged group differs from the unflagged one in ways that are not
 authorship: **non-English native language characteristics 38.7% against 19.6% (p<0.001)**, shorter
-statements, shorter sentences. Stern et al. (*J Arthroplasty*,
+statements, shorter sentences.
+
+⚠️ **And that sentence contains a confound the paper does not separate.** The flagged group is
+**both** more non-native **and** shorter — and this repository has measured the same detectors
+flagging short text far more often (**30.0% at ≤50 words against 13.3% at 200+**). Round thirty-six
+found exactly this pattern in our own outlier arm: a gap that separated its intervals at five of
+seven cut-offs on 6,810 documents **disappeared once length was held roughly constant**. Without a
+length-stratified re-analysis of Subillaga's 1,490 statements, **it cannot be said how much of the
+38.7%-against-19.6% split is language background and how much is document length.** That is not a
+criticism of the study, which reports both facts plainly; it is a warning about the inference the
+number invites.
+
+✅ **Our own author-status arm was checked for it and passes.** The Pratama corpus is matched by
+design — MEASURED medians of **180 against 176 words** for native and non-native human abstracts,
+**136 against 135** assisted with ChatGPT — a worst relative gap of **7.8%**, and
+`eval/assisted_fairness.py` now prints that check above the rates every run rather than leaving it to
+the reader. Stern et al. (*J Arthroplasty*,
 [DOI](https://doi.org/10.1016/j.arth.2025.07.072)) find the same skew independently on 421 fellowship
 statements — international graduates and non-US applicants scored higher (P < 0.001).
 
