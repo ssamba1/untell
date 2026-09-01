@@ -157,3 +157,72 @@ def test_the_sweep_rendering_names_the_failure_mode():
 
 def test_the_sweep_refuses_a_corpus_too_small_to_split():
     assert "error" in of.probe_sweep(["x"] * 4)
+
+
+# --- the length control ---------------------------------------------------------------------------
+#
+# The margin is selected on stylometry, and stylometry is not length-neutral: MEASURED on 2,000
+# pre-LLM abstracts the furthest 20% has a median of 124 words against 149 for the centre, and
+# dropping `words` from the feature set barely moves that (132 against 148) because type-token ratio
+# and sentence-length variation are themselves length-dependent. Since this repo has already measured
+# detectors flagging short text far more often, an unstratified margin gap can be the length effect
+# wearing a fairness costume — and at the full corpus it was: five of seven cut-offs separated
+# unstratified, and zero bands separate once length is held roughly constant.
+
+
+def test_the_stratified_probe_reports_every_band():
+    report = of.probe_stratified(UNIFORM * 20 + ODD * 5, tier="lite")
+    assert [b["band"] for b in report["bands"]] == [
+        f"{lo}-{'+' if hi > 10 ** 8 else hi}" for lo, hi in of.STRATA
+    ]
+
+
+def test_a_band_with_too_little_data_says_so_rather_than_reporting_a_number():
+    report = of.probe_stratified(UNIFORM * 20 + ODD * 5, tier="lite")
+    assert any("skipped" in b for b in report["bands"]), (
+        "short synthetic sentences should leave most bands empty, and empty bands must be labelled"
+    )
+
+
+def test_the_stratified_rendering_names_the_confound():
+    text = of._render_stratified({
+        "tier": "lite", "quantile": 0.2, "n_scored": 2000, "detectors_scoring": 1,
+        "bands": [
+            {"band": "60-100", "margin": {"n": 43, "flagged": 19, "fpr": 0.442, "ci95": [0.3, 0.6]},
+             "centre": {"n": 172, "flagged": 47, "fpr": 0.273, "ci95": [0.21, 0.35]},
+             "gap": 0.169, "intervals_overlap": True},
+            {"band": "100-150", "margin": {"n": 187, "flagged": 33, "fpr": 0.176, "ci95": [0.13, 0.24]},
+             "centre": {"n": 748, "flagged": 161, "fpr": 0.215, "ci95": [0.19, 0.25]},
+             "gap": -0.039, "intervals_overlap": True},
+        ],
+        "gap_sign_is_consistent": False, "bands_separating": 0, "note": "n/a",
+    })
+    assert "CHANGES SIGN" in text
+    assert "measuring length" in text
+    assert "0 band(s) separate" in text
+
+
+def test_score_all_returns_the_texts_it_kept():
+    """The alignment bug this returns exist to prevent. `_score_all` drops any document no detector
+    scored; a caller that re-pairs texts with flags positionally is then attaching every flag after
+    the gap to the wrong document — a wrong answer with no error, which is the worst shape a bug can
+    take in an audit tool."""
+    texts = UNIFORM + ODD
+    distances, flags, _detectors, kept = of._score_all(texts, "lite")
+    assert len(kept) == len(flags) == len(distances)
+    assert all(k in texts for k in kept)
+
+
+def test_the_stratified_probe_pairs_flags_with_the_right_documents(monkeypatch):
+    """Forces the drop the alignment bug needed. With the second document unscored, a positional
+    re-pairing would shift every later flag by one; the word counts must still match their texts."""
+    texts = [f"{'word ' * 80}unique{i}." for i in range(12)]
+    real = of._score_all
+
+    def dropping(ts, tier):
+        d, f, det, kept = real(ts, tier)
+        return d[1:], f[1:], det, kept[1:]
+
+    monkeypatch.setattr(of, "_score_all", dropping)
+    report = of.probe_stratified(texts, tier="lite")
+    assert report["n_scored"] == len(texts) - 1

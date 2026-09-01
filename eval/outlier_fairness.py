@@ -88,7 +88,7 @@ def outlier_scores(texts: list[str]) -> list[float]:
     ]
 
 
-def _score_all(texts: list[str], tier: str) -> tuple[list[float], list[int], set[str]]:
+def _score_all(texts: list[str], tier: str) -> tuple[list[float], list[int], set[str], list[str]]:
     """Score every text once. Split it many ways afterwards.
 
     Separated from `probe_by_distance` so `probe_sweep` can vary the margin cut-off without paying
@@ -100,6 +100,11 @@ def _score_all(texts: list[str], tier: str) -> tuple[list[float], list[int], set
     kept_distance: list[float] = []
     flags: list[int] = []
     detectors_seen: set[str] = set()
+    # The kept TEXTS are returned alongside, not just the counts. A caller that re-pairs texts with
+    # flags positionally is correct only while nothing is dropped, and a detector returning no
+    # agreement for one document silently shifts every flag after it onto the wrong text. That is a
+    # wrong answer with no error, which is the worst shape a bug can take here.
+    kept_texts: list[str] = []
     for text, distance in zip(texts, distances):
         result = score_text(text, tier=tier)
         spread = result.get("agreement")
@@ -110,7 +115,8 @@ def _score_all(texts: list[str], tier: str) -> tuple[list[float], list[int], set
         )
         kept_distance.append(distance)
         flags.append(int(bool(spread["any"])))
-    return kept_distance, flags, detectors_seen
+        kept_texts.append(text)
+    return kept_distance, flags, detectors_seen, kept_texts
 
 
 def _split(distances: list[float], flags: list[int], quantile: float) -> tuple[dict, dict, float]:
@@ -146,7 +152,7 @@ def probe_sweep(texts: list[str], tier: str = "lite") -> dict:
     """
     if len(texts) < 10:
         return {"n": len(texts), "error": "need at least 10 texts to split a corpus into margins"}
-    distances, flags, detectors = _score_all(texts, tier)
+    distances, flags, detectors, _ = _score_all(texts, tier)
     rows = []
     for q in SWEEP_QUANTILES:
         margin, centre, _ = _split(distances, flags, q)
@@ -186,7 +192,7 @@ def probe_by_distance(texts: list[str], tier: str = "lite", quantile: float = 0.
     if len(texts) < 10:
         return {"n": len(texts), "error": "need at least 10 texts to split a corpus into margins"}
 
-    distances, flags, detectors_seen = _score_all(texts, tier)
+    distances, flags, detectors_seen, _ = _score_all(texts, tier)
     margin, centre, cut = _split(distances, flags, quantile)
     comparable = margin["n"] >= 5 and centre["n"] >= 5
     gap = None
@@ -249,6 +255,91 @@ def _render_sweep(report: dict) -> str:
     return "\n".join(lines)
 
 
+# Word-count bands for the length control. A margin selected on stylometry is NOT length-balanced:
+# MEASURED on 2,000 pre-LLM abstracts, the furthest 20% has a median of 124 words against 149 for the
+# centre, and removing `words` from the feature set barely changes that (132 against 148) because
+# type-token ratio and sentence-length variation are themselves length-dependent. Since this repo has
+# already measured detectors flagging short text far more often, an unstratified margin gap is
+# partly — possibly entirely — the length effect wearing a fairness costume.
+STRATA: tuple[tuple[int, int], ...] = ((60, 100), (100, 150), (150, 220), (220, 10**9))
+
+
+def probe_stratified(texts: list[str], tier: str = "lite", quantile: float = 0.2) -> dict:
+    """The margin-versus-centre comparison run separately inside each word-count band.
+
+    This is the control that decides whether an unstratified gap means anything. If the gap survives
+    within bands, length is not driving it; if it changes sign or vanishes, the headline was
+    measuring document length and calling it a disparity.
+    """
+    _distances, flags, detectors, kept = _score_all(texts, tier)
+    scored = [(text, len(text.split()), flag) for text, flag in zip(kept, flags)]
+
+    bands = []
+    for low, high in STRATA:
+        group = [(t, f) for t, w, f in scored if low <= w < high]
+        if len(group) < 40:
+            bands.append({"band": f"{low}-{'+' if high > 10 ** 8 else high}",
+                          "n": len(group), "skipped": "fewer than 40 documents"})
+            continue
+        dist = outlier_scores([t for t, _ in group])
+        margin, centre, _ = _split(dist, [f for _, f in group], quantile)
+        # `_split` needs the flags ordered with the distances, which they are.
+        comparable = margin["n"] >= 5 and centre["n"] >= 5
+        bands.append({
+            "band": f"{low}-{'+' if high > 10 ** 8 else high}",
+            "margin": margin, "centre": centre,
+            "gap": (round(margin["fpr"] - centre["fpr"], 4)
+                    if comparable and None not in (margin["fpr"], centre["fpr"]) else None),
+            "intervals_overlap": (
+                None if not comparable
+                else not (margin["ci95"][0] > centre["ci95"][1]
+                          or centre["ci95"][0] > margin["ci95"][1])),
+        })
+    gaps = [b["gap"] for b in bands if b.get("gap") is not None]
+    return {
+        "tier": tier,
+        "quantile": quantile,
+        "n_scored": len(scored),
+        "detectors_scoring": len(detectors),
+        "bands": bands,
+        "gap_sign_is_consistent": bool(gaps) and (all(g > 0 for g in gaps) or all(g < 0 for g in gaps)),
+        "bands_separating": sum(1 for b in bands if b.get("intervals_overlap") is False),
+        "note": (
+            "Within-band comparison. An unstratified margin gap is confounded with document length, "
+            "because the stylometric margin skews short and short text is flagged more often. If the "
+            "gap does not survive here, the unstratified figure was measuring length."
+        ),
+    }
+
+
+def _render_stratified(report: dict) -> str:
+    lines = [
+        f"Margin gap within word-count bands (tier={report['tier']}, "
+        f"margin = furthest {report['quantile']:.0%}, n={report['n_scored']}).",
+        "",
+        f"{'band':<10} {'margin n':>9} {'margin':>8} {'centre':>8} {'gap':>8}  separates?",
+    ]
+    for b in report["bands"]:
+        if "skipped" in b:
+            lines.append(f"{b['band']:<10} {b['n']:>9}   {b['skipped']}")
+            continue
+        if b["gap"] is None:
+            lines.append(f"{b['band']:<10} {b['margin']['n']:>9}   too few to compare")
+            continue
+        lines.append(
+            f"{b['band']:<10} {b['margin']['n']:>9} {b['margin']['fpr']:>7.1%} "
+            f"{b['centre']['fpr']:>7.1%} {b['gap']:>+7.1%}  "
+            f"{'no' if b['intervals_overlap'] else 'YES'}")
+    lines += ["", (
+        "The gap keeps its sign in every band."
+        if report["gap_sign_is_consistent"]
+        else "The gap CHANGES SIGN between bands — once length is held roughly constant the effect "
+             "does not hold, so an unstratified figure is measuring length.")]
+    lines.append(f"{report['bands_separating']} band(s) separate their intervals.")
+    lines += ["", report["note"]]
+    return "\n".join(lines)
+
+
 def _render(report: dict) -> str:
     if "error" in report:
         return f"cannot run: {report['error']}"
@@ -287,6 +378,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tier", default="lite")
     parser.add_argument("--limit", type=int, default=120)
     parser.add_argument("--quantile", type=float, default=0.2)
+    parser.add_argument("--by-length", action="store_true",
+                        help="run the comparison inside word-count bands — the control for the "
+                             "length confound, and the one that decides whether a gap is real")
     parser.add_argument("--sweep", action="store_true",
                         help="report the gap at every margin cut-off instead of one")
     parser.add_argument("--json", action="store_true", dest="as_json")
@@ -297,6 +391,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no pre-LLM abstracts in {args.cache} — run "
               f"`python -m eval.litreview --download` first", file=sys.stderr)
         return 1
+    if args.by_length:
+        report = probe_stratified(texts, tier=args.tier, quantile=args.quantile)
+        print(json.dumps(report, indent=2) if args.as_json else _render_stratified(report))
+        return 0
     if args.sweep:
         report = probe_sweep(texts, tier=args.tier)
         print(json.dumps(report, indent=2) if args.as_json else _render_sweep(report))

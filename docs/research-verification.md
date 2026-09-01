@@ -2675,3 +2675,71 @@ question cannot see this failure at all — the source is our own tool, and the 
 truth about a corpus it declined to describe. **The reusable rule: a measured number must ship with
 every parameter that would move it, and the ones most worth naming are the ones that were never
 chosen deliberately in the first place.**
+
+---
+
+# Round thirty-six — the finding I nearly published, and the control that killed it
+
+The full-corpus sweep finished. At **n = 6,810** the outlier gap looked like a result:
+
+| furthest | margin n | margin FPR | centre FPR | gap | separates? |
+|---|---|---|---|---|---|
+| 5% | 340 | 22.1% [18.0, 26.8] | 19.3% [18.4, 20.3] | +2.7% | no |
+| 10% | 681 | 22.0% [19.1, 25.3] | 19.2% [18.2, 20.2] | +2.8% | no |
+| 15% | 1021 | 22.9% [20.4, 25.6] | 18.9% [17.9, 19.9] | +4.1% | **YES** |
+| **20%** | 1362 | 23.1% [21.0, 25.4] | 18.6% [17.5, 19.6] | **+4.6%** | **YES** |
+| 25% | 1702 | 22.9% [20.9, 24.9] | 18.3% [17.3, 19.4] | +4.5% | **YES** |
+| 30% | 2043 | 22.7% [20.9, 24.5] | 18.1% [17.0, 19.2] | +4.6% | **YES** |
+| 40% | 2724 | 22.5% [21.0, 24.1] | 17.4% [16.3, 18.6] | +5.1% | **YES** |
+
+Sign consistent at all seven cut-offs, **five of seven separating their intervals**, effect size
+around +4.6 points on a base of 18.6% — a quarter more false accusations for writers furthest from
+the corpus norm. It would have been the strongest empirical result in this repository and, as far as
+round thirty could tell, the first outlier-based false-positive measurement for AI-text detection
+anywhere.
+
+## ✗ It is largely a length artefact
+
+The margin is chosen on stylometry, and **stylometry is not length-neutral**. MEASURED on 2,000
+pre-LLM abstracts, the furthest 20% has a **median of 124 words against 149** for the centre. Dropping
+`words` from the feature set entirely barely changes it — **132 against 148** — because type-token
+ratio and sentence-length variation are themselves length-dependent. And this repository has already
+measured the length effect: **30.0% flagged at ≤50 words against 13.3% at 200+**.
+
+So the control is to compare margin against centre *inside* word-count bands. MEASURED, n = 2,000:
+
+| band | margin n | margin | centre | gap | separates? |
+|---|---|---|---|---|---|
+| 60–100 | 43 | 44.2% | 27.3% | **+16.9%** | no |
+| 100–150 | 187 | 17.6% | 21.5% | **−3.9%** | no |
+| 150–220 | 162 | 19.1% | 15.3% | **+3.9%** | no |
+| 220+ | 36 | — | — | too few | — |
+
+**The gap changes sign between bands and no band separates its intervals.** Once length is held
+roughly constant the effect does not hold. The unstratified figure was measuring document length and
+would have been reported as a disparity.
+
+`--by-length` ships as part of the tool rather than as a footnote, and its rendering says the
+conclusion in words: *"The gap CHANGES SIGN between bands — once length is held roughly constant the
+effect does not hold, so an unstratified figure is measuring length."*
+
+## ⚠️ A latent alignment bug, found while building the control
+
+The first version of `probe_stratified` re-paired texts with flags **positionally**, which is correct
+only while `_score_all` drops nothing. A single document no detector scores shifts every later flag
+onto the wrong text — **a wrong answer with no error**, which is the worst shape a bug can take in an
+audit tool. `_score_all` now returns the texts it kept, and a test forces the drop and checks the
+pairing survives it. Nothing was dropped in the runs above, so the numbers stand; the bug was latent
+and is now impossible.
+
+## What this round is
+
+Rounds thirty-four and thirty-five found numbers that rested on invisible choices. **This one found a
+result that rested on a confound**, and the difference matters: a sensitivity sweep would never have
+caught it, because the gap was robust to the parameter I thought to vary. Seven cut-offs all agreed.
+Two sample sizes agreed. The sign was consistent, the magnitude was stable, five of seven comparisons
+cleared their intervals — **every check I had built said yes.**
+
+What caught it was asking what else the margin could be selecting for, and the answer was available
+in this repository's own published measurements. The reusable rule is not "run a sensitivity sweep";
+it is that **agreement among your own checks is not evidence, when every check shares an assumption.**
