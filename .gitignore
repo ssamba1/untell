@@ -78,3 +78,4 @@ site/
 /audit_tmp_*.json
 /audit_tmp_*.err
 /.claude/probes/*.out
+.anthology-cache/

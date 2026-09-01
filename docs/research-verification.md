@@ -523,6 +523,27 @@ future contributor should hold them to the same one rather than guessing:
    volumes (28,120 abstracts, 2023–2026) and PubMed. What was not: arXiv-only preprints, and any
    venue indexed by neither.
 
+## The survey is a tool, not a claim
+
+The count this document argues from — under 2% of ACL detection papers on false positives or
+fairness, against ~30% on evasion robustness — ships as
+[`eval/litreview.py`](https://github.com/ssamba1/untell/blob/main/eval/litreview.py) rather than as a
+number a reader has to trust:
+
+    python -m eval.litreview --download          # fetch Anthology volume metadata (~67 MB)
+    python -m eval.litreview                     # reproduce the table
+    python -m eval.litreview --topic fairness    # list the papers behind one row
+
+It reproduces `28120 abstracts indexed; 397 detection-related` with robustness at 29.2% and false
+positives and fairness at 1.8% each. `tests/test_litreview_reproduces_the_published_counts.py` pins
+the classifier so an edited pattern cannot silently turn a real count into an honest-looking zero.
+
+**This is the answer to the coverage limit, and the reason the bounded standard is defensible.**
+Coverage here stops at the Anthology and PubMed because of an egress policy. Shipping the method
+means the next person to run it — on a machine without those restrictions, over more venues, or with
+a different topic taxonomy — *extends* the survey instead of repeating it. A bounded survey that can
+be re-run and widened is worth more than an unbounded claim that cannot be checked at all.
+
 The three papers worth an outside read if anyone ever has unrestricted access remain, in order:
 **arXiv:2603.20254**, **arXiv:2608.11256**, **arXiv:2607.29539**.
 
