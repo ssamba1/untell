@@ -852,11 +852,13 @@ trusting the derivation.
   ✗ **This item used to say "nobody audits whether that marking survives ordinary use". That is
   false.** **WaterPark** ([2025.findings-emnlp.1148](https://aclanthology.org/2025.findings-emnlp.1148/))
   integrates **10 watermarkers and 12 removal attacks** to answer exactly that question — the fourth
-  primacy claim in this roadmap to fail on contact with the corpus. What the evidence does say is that
-  marking degrades — ✅ with exact
-  numbers, read from the authors' repo ([githshine/SynGuard](https://github.com/githshine/SynGuard)):
-  SynthID-Text detection F1 falls from **1.000 to 0.842** under paraphrase, **0.788** under
-  copy-and-paste and **0.714** under re-translation.
+  primacy claim in this roadmap to fail on contact with the corpus.
+
+  What the evidence does say is that marking degrades. ✅ **The exact numbers are SynGuard's, not
+  WaterPark's** — read from that project's own repository
+  ([githshine/SynGuard](https://github.com/githshine/SynGuard)): SynthID-Text detection F1 falls from
+  **1.000 to 0.842** under paraphrase, **0.788** under copy-and-paste and **0.714** under
+  re-translation.
 
   ✗ **But do not overstate fragility — a refereed result cuts the other way.** *Sandcastles in the
   Storm* ([2025.acl-long.1436](https://aclanthology.org/2025.acl-long.1436/)) tests random-walk

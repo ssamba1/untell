@@ -2080,3 +2080,26 @@ downloaded?* — and found a shipped tool covering two of our arms, a public cor
 published statement of our own governance thesis, and a fourth false "nobody" claim. **The corpus had
 been treated as a fact-checking instrument and never as a source.** Reading the uncited papers under
 each topic took one pass and changed two roadmap items.
+
+## The cross-check caught this round's own defect
+
+Running `--cross-check` after writing round twenty-seven took it from 25 flagged figures to 40, and
+one of the new ones was mine. Inserting the WaterPark citation into row 21 made it **the only
+Anthology citation in that paragraph**, so SynGuard's SynthID numbers — **1.000 → 0.842** under
+paraphrase, **0.788**, **0.714** — sat next to it and could be read as WaterPark's. The SynGuard
+repository link was still on the line beneath, so nothing was *unattributed*; it was newly
+*confusable*, which is a weaker fault and still worth fixing. The two are now separate paragraphs and
+the numbers say whose they are in the sentence that states them.
+
+The other new flags are the checker behaving correctly on two things it cannot see:
+
+- **The derived 49.3%** is not in the resume paper's abstract, because the paper does not state it —
+  that is precisely why the roadmap labels it derived and shows the arithmetic.
+- **26.7% and 15.6%** are our own length-band measurements, MEASURED by
+  `python -m eval.pre_llm_fpr --by-length`, in a sentence noting SenDetEX reached the same conclusion
+  independently. Attribution is by the words "our own", which reads only to a human.
+
+**Worth stating plainly: the tool built in round eighteen caught a fault introduced in round
+twenty-seven, minutes after it was written.** That is the first time a guard in this ledger has
+caught something in the round that created it rather than an inherited defect, and it is the only
+evidence that any of these checks pay for themselves going forward rather than only backwards.
