@@ -63,6 +63,19 @@ whole answer to "how do we get access to everything".
   Biomedical-only, so it will not carry the arXiv literature, but false-positive rates on human
   academic writing is exactly untell's headline claim and this is a live corpus for it.
 - **`WebFetch`** — egress-bound, so `github.com` works and `arxiv.org` does not.
+- **`git clone` of any public repository** — MEASURED 2026-09-01, and the most useful thing on
+  this list. The GitHub *API* plane is bound to this session's own repository: `api.github.com`
+  returns 403 outside it, and so do `codeload.github.com` and `github.com/…/archive/…`, both of
+  which answer with the same "not enabled for this session" JSON. The **git proxy does not**.
+  `git clone --depth 1 https://github.com/<owner>/<repo>` succeeds for arbitrary public repos, as
+  does `raw.githubusercontent.com`. Sixteen third-party repos cloned in one batch for 18 MB.
+
+  That asymmetry matters more than it looks, because §1's cost argument assumes reading a repo
+  means paying an agent to read prose. It does not: the file tree is free. "Metadata cannot see
+  whether the Python file beside the Markdown is the product" is true of *search-API metadata* and
+  false of a shallow clone, which sees the Python file, its length, and whether it sits under
+  `tests/`. Four of the nine confident `prompt-guide` rows below carry source code, and a clone
+  separates a build script and a test harness from a product in one `find`.
 
 ### What to enable, and why each one
 
@@ -118,11 +131,14 @@ can triage**:
    is a prompt guide; a repo whose description names a vendor is an API wrapper. Those two
    categories are 60% of the census (259 of 435), which is the *ceiling* on this idea, and the
    ceiling is not reachable. **Measured on the real eleven-angle harvest** (111 repos, 26 of them
-   already read by the census): `classify` decides **12%** without a reader — 35% on a single
-   topic-filtered slice, but 12% across the full 131-repo sweep. Confident rows agree **2 of 2**, unsure
-   rows **11 of 24**. The gap to 60% is not a tuning problem: those census categories were
-   assigned by *reading source*, and metadata cannot see whether the Python file beside the
-   Markdown is the product. A tenth of the reading is the honest saving.
+   already read by the census): `classify` decides **10.7%** without a reader — 35% on a single
+   topic-filtered slice, but a tenth across the full 131-repo sweep. Unsure rows agree **11 of
+   24**. Confident rows are now measured properly rather than spot-checked: all sixteen were
+   shallow-cloned and read against source on 2026-09-01 (see *Confident rows, verified* below),
+   which found one wrong, and the rule that produced it is fixed. The gap to 60% is not a tuning
+   problem: those census categories were assigned by *reading source*, and metadata cannot see
+   whether the Python file beside the Markdown is the product. A tenth of the reading is the
+   honest saving.
 3. **Spend the LLM on the tail.** The interesting classes (`detector_in_loop`,
    `meaning_verification`) are the ones that need reading. That is where the budget should have gone
    the first time.
@@ -317,6 +333,63 @@ sweep), `LearnPrompt/humanize-ppt` (916★), `fromleda/text-humanizer` (734★, 
    AI-text-detection benchmarks get *evaluated* and where the evaluation goes wrong. That is
    untell's own honesty thesis, being worked on elsewhere.
 
+### Confident rows, verified against source
+
+The accuracy claim above used to be a two-row spot check, because reading the other rows looked
+like it needed the budget the whole exercise exists to avoid. It does not — see the git-proxy note
+in §0. **All sixteen confident rows of the 131-repo harvest were shallow-cloned and read on
+2026-09-01.** Fifteen were right.
+
+| row | category | verdict |
+|---|---|---|
+| `bushrabeg/turkce-humanizer` | prompt-guide | ✅ markdown only, `SKILL.md` + docs + examples |
+| `asavvin-pixel/unslop` | prompt-guide | ✅ markdown only |
+| `gabelul/slopbuster` | prompt-guide | ✅ 26 `.md`, no source |
+| `profdorly/humanizador` | prompt-guide | ✅ four files, all prose |
+| `Hakku/finnish-humanizer` | prompt-guide | ✅ the 748 lines of Python are `build.py` and its test; the product is the generated instruction files in `dist/` |
+| `LifelongLazyLearner/qu-ai-wei` | prompt-guide | ✅ all four code files are under `tests/` |
+| `AndreAlmeidaDC/humanizador` | prompt-guide | ✅ the one Python file is `scripts/validate_skill.py` |
+| `DaleSeo/korean-skills` | prompt-guide | ✅ on category; it is a *collection* of three Korean agent skills, so whether it belongs in a humanizer census is a harvest question, not a classifier one |
+| `Xircth/thesis-workflow-skill` | prompt-guide | ✅ boundary case — 1,150 lines of C#, but it is a DOCX sub-skill; the AIGC-lowering is `skills/thesis-optimizer`, which is prose |
+| `msannikov03/undetectable-mcp` | api-wrapper | ✅ an MCP server over the Undetectable.ai API |
+| `lorossi/zero-width-steganography` | unicode-trickery | ✅ |
+| `darkshadow2bd/Project-Invisible` | unicode-trickery | ✅ |
+| `chinmay29hub/stegmoji` | unicode-trickery | ✅ |
+| `v1sc0/zwcs` | unicode-trickery | ✅ |
+| `dapperfu/whitespace-stego` | unicode-trickery | ✅ |
+| `xuange520/unmark` | unicode-trickery | ❌ **wrong** |
+
+**The one miss is the informative one.** `unmark` describes itself as "Dual-Layer LLM text
+watermark removal and AI generation verifier"; `zero-width` appears nowhere in that prose and
+reached the classifier as one self-assigned topic in eight. The source is `core/sanitizer.py`
+(strip invisible characters — the facet the topic named), `core/scrubber.py` (an open-weights LLM
+resampling text to break SynthID's n-gram hash chains — the actual product), and
+`audit/verifier.py`, a detector running SynthID z-scores, **perplexity and burstiness**, TTR and
+entropy. So the classifier confidently filed a model-based scrubber-with-a-detector-in-the-loop —
+precisely the class §1 says is worth paying to read — as character trickery, and a confident
+verdict is what drops a row out of the read queue.
+
+Two things follow. First, `unmark` *removes* hidden characters; the rule fired on a sanitiser
+using the word its carriers use. A carrier puts characters in and a sanitiser takes them out, they
+share the whole vocabulary, and only the verb separates them. The rule now requires the mechanism
+in the repo's own prose rather than in a topic label — the same narrowing the vendor rule already
+needed — and requires a carrier verb with no removal verb. Detection alone does not disqualify: a
+stego toolkit ships a detector for its own format.
+
+The measured trade: **coverage 12.2% → 10.7%, confident-row accuracy 15/16 → 14/14.** It costs one
+true positive, `dapperfu/whitespace-stego`, whose description says "invisible Unicode whitespace
+characters" and so names no phrase the rule matches. Adding that phrase would recover it and would
+be fitting the rule to the sixteen rows used to measure it, so the cost is pinned by a test
+instead.
+
+Second, and worth more than the fix: **five of the six `unicode-trickery` rows are not humanizers
+at all.** `stegmoji`, `whitespace-stego`, `zwcs`, `zero-width-steganography` and
+`Project-Invisible` are general covert-communication tools that predate the AI-detector question
+and have nothing to do with it. The classifier is most confident exactly where the harvest was
+least precise — an off-topic repo is easy to categorise because its purpose is unambiguous. Of the
+sixteen rows the classifier was surest about, ten are on-topic. That is a search-query problem,
+not a triage one, and it means the confident bucket's *value* is lower than its accuracy.
+
 ### Two defects the run exposed in the tooling
 
 Both are fixed and pinned by tests, and both were only visible because the run was big enough.
@@ -324,7 +397,8 @@ Both are fixed and pinned by tests, and both were only visible because the run w
 - **Confident rows broke at scale.** 3/3 on 23 repos became 6/9 on 111. `Undetectable-AI` matched
   the vendor rule on *its own name*; two agent-skill repos were confidently called prompt guides.
   The vendor rule now reads the description only, and skills that advertise machinery or claim to
-  beat named detectors go to a reader. Confident is 2/2 again, and coverage fell to the honest 9%.
+  beat named detectors go to a reader. Coverage fell to the honest tenth, and the accuracy claim
+  went from a two-row spot check to the sixteen-row source audit below.
 - **The delta was inflating itself.** 73 of the census's 435 names are not a bare `owner/repo` —
   annotations, missing owners, owner/repo inside parentheses. Exact matching reported
   `epoko77-ai/im-not-ai` as a *new* 5,143-star repo while the census's own star table lists it at

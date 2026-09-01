@@ -184,6 +184,12 @@ _DETECTOR_WORDS = ("detector", "detection", "classifier", "identify ai", "ai che
 _TRAIN_WORDS = ("fine-tune", "finetune", "lora", "dpo", "grpo", "sft", "rlhf", "trained on")
 _UNICODE_WORDS = ("zero-width", "zero width", "homoglyph", "invisible character", "trojan source")
 _DATASET_WORDS = ("dataset", "corpus", "benchmark")
+# Direction of travel through the same vocabulary. A carrier puts characters in; a sanitiser
+# takes them out. Both talk about zero-width characters all day.
+_CARRIER_WORDS = ("steganograph", "hide", "hides", "hiding", "encode", "encodes", "embed",
+                  "conceal", "covert")
+_REMOVER_WORDS = ("removal", "remove", "strip", "sanitis", "sanitiz", "scrub", "cleaner",
+                  "cleans")
 
 # Markdown-only repos are the field's largest segment and the cheapest to identify: GitHub
 # reports no primary language for a repo that contains no code it recognises.
@@ -206,6 +212,17 @@ def _described(repo: dict) -> str:
     than a dependency. A vendor name only implies wrapping when it appears in the prose.
     """
     return (repo.get("description") or "").lower()
+
+
+def _named(repo: dict) -> str:
+    """Name and description, without topics.
+
+    The mechanism a repo NAMES itself after is evidence -- `zero-width-steganography` is what it
+    says it is -- and so is its prose. A topic is neither: it is a discovery label its author
+    picked, and one facet among eight says nothing about which facet is the product.
+    """
+    return " ".join([repo.get("full_name") or "", repo.get("name") or "",
+                     repo.get("description") or ""]).lower()
 
 
 def classify(repo: dict) -> dict:
@@ -244,6 +261,26 @@ def classify(repo: dict) -> dict:
                     "no source language GitHub recognises, and describes itself as a prompt/guide")
 
     if has(_UNICODE_WORDS):
+        # A carrier INSERTS hidden characters; a sanitiser STRIPS them. Same vocabulary, opposite
+        # products. VERIFIED AGAINST SOURCE 2026-09-01: `zero-width` reached xuange520/unmark as
+        # one self-assigned topic in eight, while its description said "watermark removal and AI
+        # generation verifier" -- and the source is a model-based scrubber with a
+        # perplexity/burstiness detector inside it. That is the most interesting class the census
+        # has, and the classifier put it confidently in the least interesting bucket, which is the
+        # miss that costs something: a confident verdict drops the repo from the read queue.
+        # Two guards, the same shape as the vendor rule's. The words must appear in the PROSE --
+        # a topic is a self-label, not a mechanism -- and the direction has to be stated. The
+        # discriminator is the VERB, not the noun: all five true carriers in the harvest say
+        # hide/encode/steganography and none says removal, while unmark says removal and no
+        # carrier verb at all. Detection alone does NOT disqualify -- a stego toolkit ships a
+        # detector for its own format, and dapperfu/whitespace-stego is a carrier that does.
+        prose = _named(repo)
+        carries = any(w in prose for w in _CARRIER_WORDS)
+        cleans = any(w in prose for w in _REMOVER_WORDS)
+        if not any(w in prose for w in _UNICODE_WORDS) or cleans or not carries:
+            return _row(repo, "unicode-trickery", "unsure",
+                        "names hidden characters, but only as a topic label or beside detection "
+                        "and removal machinery; carrier or sanitiser needs reading")
         return _row(repo, "unicode-trickery", "confident", "names a hidden-character carrier")
 
     if has(_TRAIN_WORDS):

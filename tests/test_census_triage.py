@@ -203,3 +203,97 @@ def test_bare_names_do_not_collide_across_owners():
         f"an unknown owner's humanizer-ru matched {invented['name'] if invented else None}; "
         f"bare-name keys are leaking across owners and will hide new repos"
     )
+
+
+def test_a_watermark_remover_is_not_a_hidden_character_carrier():
+    """The unicode rule must read the direction of travel, not just the vocabulary.
+
+    MEASURED AGAINST SOURCE 2026-09-01, by shallow-cloning all sixteen confident rows of the
+    131-repo harvest. Fifteen were right. The one that was wrong is this one: `zero-width`
+    reached `xuange520/unmark` as one self-assigned topic in eight, and the classifier
+    CONFIDENTLY filed a repo whose source is an LLM-driven SynthID scrubber wrapped around a
+    perplexity/burstiness detector as character trickery — dropping the most interesting class
+    the census has out of the read queue on the strength of a topic label.
+
+    A carrier puts hidden characters in; a sanitiser takes them out. Both talk about zero-width
+    characters all day, so the noun cannot separate them and the verb can.
+    """
+    unmark = {
+        "full_name": "xuange520/unmark",
+        "description": ("Dual-Layer LLM text watermark removal and AI generation verifier. "
+                        "Targets SynthID/Claude/Gemini/GPT."),
+        "topics": ["zero-width", "watermark-removal", "synthid", "ai-detection"],
+        "language": "Python",
+    }
+    row = census.classify(unmark)
+    assert row["confidence"] == "unsure", (
+        f"a watermark remover was confidently called {row['category']}; the rule is reading the "
+        f"noun and not the verb, and this repo leaves the read queue on a topic label"
+    )
+
+
+def test_a_real_carrier_still_decides_without_a_reader():
+    """The guard above must not empty the category it guards.
+
+    A rule that sends every unicode row to a reader is not triage. These four are carriers
+    verified against source on 2026-09-01 and must stay decidable.
+    """
+    carriers = [
+        {"full_name": "lorossi/zero-width-steganography",
+         "description": "Hide text informations using invisible text characters",
+         "topics": ["steganography", "zero-width"], "language": "Python"},
+        {"full_name": "darkshadow2bd/Project-Invisible",
+         "description": ("A steganography tool that encodes files and text using zero-width "
+                         "Unicode characters. Supports AES-256-GCM encryption."),
+         "topics": ["steganography", "zero-width"], "language": "Python"},
+    ]
+    for repo in carriers:
+        row = census.classify(repo)
+        assert row["category"] == "unicode-trickery" and row["confidence"] == "confident", (
+            f"{repo['full_name']} is a carrier and says so in its own prose, but the rule "
+            f"answered {row['category']}/{row['confidence']}"
+        )
+
+
+def test_detection_alone_does_not_disqualify_a_carrier():
+    """A stego toolkit that ships a detector for its own format is still a carrier.
+
+    The first version of this guard rejected any unicode row whose text named detection OR
+    removal machinery. That was too blunt: a carrier commonly ships a detector for its own
+    format. Only a removal verb, or the absence of any carrier verb, may cost confidence.
+    """
+    row = census.classify({
+        "full_name": "someone/zwsp-stego",
+        "description": ("A steganography toolkit that hides messages using zero-width Unicode "
+                        "characters within text. Encoding, decoding, and detection."),
+        "topics": ["steganography", "zero-width", "detection"], "language": "Python",
+    })
+    assert row["confidence"] == "confident", (
+        f"a self-described steganography toolkit lost confidence to the word 'detection': {row}"
+    )
+
+
+def test_the_prose_guard_costs_one_true_positive_and_that_is_recorded_not_tuned_away():
+    """`dapperfu/whitespace-stego` is a real carrier that the guard sends to a reader anyway.
+
+    Its description says "invisible Unicode whitespace characters" — which contains none of the
+    mechanism phrases the rule looks for — so `zero-width` reaches it only as a topic, and the
+    prose guard drops it. Verified against source 2026-09-01: it is a genuine carrier, so this
+    is a false negative and it is the price of the true positive above.
+
+    It could be recovered by adding "invisible unicode" to the phrase list. That would be fitting
+    the rule to the sixteen rows used to measure it, which is the failure this repository's own
+    documents exist to catch, so the cost is pinned here instead. Coverage 12.2% -> 10.7%,
+    confident-row accuracy 15/16 -> 14/14, both measured on the same harvest.
+    """
+    row = census.classify({
+        "full_name": "dapperfu/whitespace-stego",
+        "description": ("A steganography toolkit that hides messages using invisible Unicode "
+                        "whitespace characters within text. Python and Rust implementations, "
+                        "pluggable CLI, encoding, decoding, and detection."),
+        "topics": ["steganography", "unicode", "zero-width", "detection"], "language": "Python",
+    })
+    assert row["confidence"] == "unsure", (
+        "the prose guard has stopped costing this row, which means the phrase list grew to fit "
+        "the measurement set; re-measure on repos that were not used to build the rule"
+    )
