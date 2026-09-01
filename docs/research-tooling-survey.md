@@ -11,37 +11,84 @@ benchmarked; this is a survey of *options*, and it says so.
 
 ---
 
-## 0. The measured constraint nobody wrote down
+## 0. Two planes, not one wall
 
-Before recommending anything, this is what a Claude Code **web/remote** session can actually reach.
-Probed 2026-09-01 with `curl` through the session's egress proxy:
+Before recommending anything: what a Claude Code **web/remote** session can actually reach. The
+first version of this section had it wrong in a way that matters — it read one wall where there
+are two independent planes, and concluded more was blocked than really is.
 
-| endpoint | result |
+**Plane 1 — the container's egress proxy.** Everything `curl`, `pip`, a script, or `WebFetch`
+sends leaves through a policy-enforcing proxy. Probed 2026-09-01:
+
+| host | result |
 |---|---|
-| `api.github.com` **repo-scoped** | **200** — `repos/{owner}/{repo}/...` only |
+| `api.github.com`, repo-scoped | **200** — `repos/{owner}/{repo}/...` only |
 | `api.github.com/search/*`, `/graphql` | **403** — "sessions are bound to their configured repositories" |
-| `export.arxiv.org` | 403 at CONNECT |
-| `api.openalex.org` | 403 |
-| `api.semanticscholar.org` | 403 |
-| `api.crossref.org` | 403 |
+| `pypi.org`, `registry.npmjs.org`, `files.pythonhosted.org` | **bypass the proxy entirely** — package installs work |
+| `arxiv.org`, `export.arxiv.org` | 403 |
 | `huggingface.co` | 403 |
-| `repos.ecosyste.ms` | 403 |
-| `grep.app` | 403 |
+| `api.openalex.org`, `api.semanticscholar.org`, `api.crossref.org` | 403 |
+| `repos.ecosyste.ms`, `grep.app` | 403 |
 | `api.tavily.com`, `api.exa.ai` | 403 |
+| `eutils.ncbi.nlm.nih.gov`, `pubmed.ncbi.nlm.nih.gov` | 403 |
 
-**Almost nothing here is scriptable from a remote session.** Two separate limits stack. The
-egress proxy 403s every non-GitHub host above. And GitHub itself is *repo-scoped*: `curl` to
-`api.github.com` serves `repos/ssamba1/untell/...` and refuses `/search/*` and `/graphql`
-outright, so a script cannot run a global repo search from here at all. `/rate_limit` still
-reports a healthy 15,000/hr core and 10,000/hr GraphQL budget — those numbers are real and they
-describe a scope that cannot answer a census query, which is exactly the trap.
+Two things worth pulling out. `/rate_limit` cheerfully reports 15,000/hr core and 10,000/hr
+GraphQL — real numbers describing a scope that cannot answer a census query, which is the trap
+this section exists to mark. And `huggingface.co` being blocked means **`eval/datasets.py` cannot
+stream RAID or MAGE from a remote session at all**; the eval harness is local-only here.
 
-What *does* work in a remote session: the **MCP GitHub tools** (`search_repositories`,
-`search_code`) reach all of GitHub, and `WebSearch`/`WebFetch` do not go through the egress proxy.
-So discovery is available interactively; automation is not. `.claude/census.py` is built around
-that split — it `harvest`s on a local checkout with a PAT, and `ingest`s MCP-captured results
-everywhere else. Widening the environment's allowlist is what would collapse the two paths into
-one, and that decision comes before any scheduled refresh.
+The proxy's own README is explicit that a 403 is an organization egress-policy denial, to be
+reported rather than routed around. So this plane is not something to be clever about — it is a
+list to hand to whoever owns the policy.
+
+**Plane 2 — the MCP connector plane.** Connectors do not use that proxy. They travel via
+`mcp-proxy.anthropic.com`, which sits in the proxy's own bypass list. This is not an inference;
+it is measured:
+
+```
+curl https://eutils.ncbi.nlm.nih.gov/...   →  403, CONNECT rejected by egress policy
+PubMed connector, same NCBI backend        →  909 results, live query translation from NCBI
+```
+
+Same destination, opposite outcome. **A connector reaches what a script cannot**, and that is the
+whole answer to "how do we get access to everything".
+
+### What is reachable right now, with nothing enabled
+
+- **`WebSearch`** — server-side, does not touch the egress proxy. Broad web search works.
+- **GitHub MCP tools** — `search_repositories` and `search_code` reach all of GitHub. This is the
+  only global GitHub search available here, and it is what `census.py ingest` is built around.
+- **PubMed connector** (authless, already connected) — 909 papers for
+  `(ChatGPT OR "AI-generated text") AND (detector OR detection) AND (accuracy OR "false positive")`.
+  Biomedical-only, so it will not carry the arXiv literature, but false-positive rates on human
+  academic writing is exactly untell's headline claim and this is a live corpus for it.
+- **`WebFetch`** — egress-bound, so `github.com` works and `arxiv.org` does not.
+
+### What to enable, and why each one
+
+All of these route through the connector plane, so **none of them needs an egress change**. Enable
+at claude.ai → Settings → Connectors:
+
+| connector | closes | note |
+|---|---|---|
+| **alphaXiv** | the arXiv gap — §4's whole problem | `full_text_papers_search`, `get_paper_content`, `embedding_similarity_search`. This is what re-checks [arXiv 2506.07001](https://arxiv.org/abs/2506.07001), the paper the README's strongest external claim rests on. |
+| **Exa** *or* **Tavily** *or* **Firecrawl** | §3, general web search | Firecrawl's connector is the widest single pick: `firecrawl_search` plus `firecrawl_research_search_papers` and `firecrawl_research_search_github` in one. Exa is the best semantic search; Tavily the best plain retrieval. |
+| **Consensus** | claim-checking against the literature | One `search` tool over scientific papers, aimed at "what does the evidence say" rather than keyword recall. |
+| **bioRxiv** | preprints, **authless** | Free to enable, no key. Marginal for this repo; listed because it costs nothing. |
+
+Exa, Tavily, Firecrawl, alphaXiv and Consensus each need an account on the vendor's side.
+
+### What only an egress change can fix
+
+These must be reached *by a script*, so no connector substitutes for them:
+
+- **`huggingface.co`** — without it `eval/datasets.py` cannot load RAID, MAGE or HC3 in a remote
+  session. This is the one that blocks actual measurement work, and it is the first to ask for.
+- **`api.github.com/search/*`** — would let `census.py harvest` run unaided here instead of the
+  two-step MCP-capture-then-`ingest` dance.
+- **`repos.ecosyste.ms`** — §2, the non-GitHub forge coverage.
+- **`api.openalex.org` / `api.semanticscholar.org` / `api.crossref.org`** — only needed if the
+  literature watch is scripted rather than run through alphaXiv/Consensus.
 
 ---
 
