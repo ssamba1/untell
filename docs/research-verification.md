@@ -5504,3 +5504,62 @@ because a key had once been added and documented nowhere.
 across a line break made the entry unparseable and the key still counted as undocumented. **The note
 has to fit on one line** — a constraint nothing states, discovered by a test that was right twice for
 different reasons.
+
+---
+
+# Round eighty-two — the catalogue is an excellent detector of something else
+
+Round eighty-one left two explanations standing for the tell catalogue firing on 48.1% of human
+academic abstracts and 8.6% of machine ones: it is broken, or it reads **register** and academic prose
+is not the register it flags.
+
+Those separate by holding authorship constant. `eval/data/generated_registers.py` is assistant-reply
+and marketing copy written by the same model, in the same session, as the abstracts.
+
+MEASURED, arms matched by length:
+
+| comparison (same author) | academic | other register | AUROC |
+|---|---|---|---|
+| 60–100 words, assistant | **0.092** tells/100w (n=25) | **7.357** (n=12) | **1.0000** |
+| 30–60 words, promotional | **0.000** tells/100w (n=31) | **8.523** (n=12) | **1.0000** |
+
+**Eighty times the tell density between two registers by one author**, and at 30–60 words the
+academic arm carries *no tells at all* while every promotional passage carries several. Both
+separations are perfect.
+
+And the control: **promotional against assistant is 0.5625** — the catalogue cannot tell its own two
+target registers apart, which is exactly what it should do if it is reading the thing it flags.
+
+## So the catalogue works. It is not measuring what it says it measures
+
+✅ **It is an excellent register classifier.** Built from assistant-style and marketing LLM output —
+`ai-tells.md` and the 435-repo census — and on that material it separates perfectly from academic
+prose, at n as small as twelve, with the arms length-matched.
+
+✗ **It is not an authorship classifier**, and round eighty-one measured the cost of using it as one:
+AUROC 0.2697 on machine-versus-human at matched length. **A perfect classifier of register, used as
+a classifier of authorship, is worse than a coin flip** whenever the two arms differ in register more
+than they differ in author — which is exactly the situation whenever a human writes in the register
+an assistant favours, or an assistant writes in a register it does not.
+
+The categories that fire on the assistant and promotional arms are the ones you would predict:
+`ai_vocab` on 22 of 24 passages, `formulaic_transition` on 11, `cliche` on 9, `sycophancy` on 4.
+Those are real properties of that prose.
+
+## ✗ And the lite score does not even do that
+
+Run on the same register comparison, `score_text` gives **AUROC 0.5095** — a coin flip. Its means are
+0.2998 for academic, 0.3164 for assistant, 0.3651 for promotional: barely ordered at all.
+
+MEASURED, both detectors on both questions:
+
+| what is being separated | tell catalogue | lite score |
+|---|---|---|
+| register (same author) | **1.0000** | 0.5095 |
+| authorship (matched length) | 0.2697 | 0.3538 |
+
+**The catalogue detects one thing perfectly and the wrong thing badly. The score does neither.**
+
+That is the fairest account this project can give of its own two detectors, and it took holding
+authorship constant to get it — which is available to anyone with a language model and was not
+available with a downloaded corpus, because a downloaded corpus cannot hold the author fixed.
