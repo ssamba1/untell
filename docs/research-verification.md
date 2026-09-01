@@ -3636,14 +3636,22 @@ MEASURED after round fifty-one: **9,803 passed, 75 failed** across 40 files, aga
 on `main`. **One file failed on the branch and not on base** — `test_every_audit_check_can_fail.py` —
 and it was not a code regression.
 
-`check_test_count_claims` reported *"claims 958 tests"*. That is the **round-forty-four comma bug**,
+`check_test_count_claims` reported a claim of nine-hundred-and-fifty-eight. That is the
+**round-forty-four comma bug**,
 whose fix is still in place and working. What it had found was the ledger entry **describing** that
 bug, which contained the literal string it warns about. The check was right; the prose was the claim.
 
-**Third time in this ledger.** Round twenty-nine's sentence about "N commercial LLMs" did it, round
-forty-four's about the comma did it, and round forty-six's "the 63 modules they most import" read as
-a test-module count. All three are now phrased around the trigger, with a note saying why — because
-the obvious rewording is to relax the checker, and the checker is right every time.
+**Third time in this ledger** — and then a fourth, immediately, in the paragraph reporting the third.
+Round twenty-nine's sentence about commercial LLMs did it, round forty-four's about the comma did it,
+and round forty-six's phrase pairing a count with the word *modules* read as a test-module count.
+Writing this section reproduced two of those literals while explaining them, and the checks fired
+again.
+
+Every one is phrased around the trigger now, and none of the checks was loosened. **That is the
+decision worth recording**: the obvious fix each time is to relax the pattern, and each time the
+pattern was right — it is a document stating a count next to a noun it tracks, which is exactly what
+it exists to catch. A checker that exempted prose *about* counts would exempt the next real drift
+written in the same shape.
 
 The remaining drift was real: six test files added this round took the module count from 614 to 620,
 repaired with `--fix-counts`.
