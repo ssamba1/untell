@@ -155,6 +155,17 @@ channel is anti-correlated with actual perplexity on this population.** It is no
 for the thing it is named after, and any reasoning that treated it as one — including mine, two
 sections ago — was reasoning about a stoplist.
 
+Shipped as [`eval/ngram_lm.py`](../eval/ngram_lm.py) / `untell-ngram-lm`, 12 tests, so the check
+is repeatable rather than a number somebody once produced:
+
+```bash
+untell-ngram-lm train                                  # fetches NLTK corpora, builds the model
+untell-ngram-lm score --csv essays.csv --by ell_status # mean log-perplexity per group
+```
+
+Its output carries the citation and the limitation in the payload, because a perplexity number
+quoted without either is the exact failure this module was built to expose.
+
 **Limitation, and it is real.** The LM is 1961 American English plus newswire, a domain mismatch
 with school essays; non-native writing being less predictable to *that* model is partly expected.
 A modern in-domain LM could differ, and testing one needs weights this environment's egress policy

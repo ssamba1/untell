@@ -131,6 +131,8 @@ untell-voice = "untell.scripts.voice:main"
 untell-compare = "eval.compare_humanizers:main"
 # Who does a detector fail? FPR by writer subgroup on known-human text (docs/strategy-the-audit-position.md).
 untell-subgroup-audit = "eval.subgroup_audit:main"
+# A real perplexity signal with no model download, for checking the lite tier's stoplist proxy.
+untell-ngram-lm = "eval.ngram_lm:main"
 untell-mcp = "untell.mcp_server:main"
 # The moat: re-check every documented claim that CAN be re-checked, and report how many cannot.
 untell-audit = "untell.scripts.audit:main"
