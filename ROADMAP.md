@@ -114,6 +114,11 @@ known-human ESL essays, where every flag is an error by construction:
   writers more predictable — lower perplexity, the machine-like end — on both corpora
   (*d* −0.320 ELLIPSE, −0.491 ASAP). The lite tier's stoplist ratio points the other way,
   so it is not a stand-in for the thing it is named after.
+- **A real transformer confirms it, more strongly.** GPT-2 124M via ONNX (weights from GitHub
+  LFS, BPE from OpenAI's published vocab, onnxruntime from pypi — no HuggingFace): non-ELL
+  *d* −0.671 and high-proficiency *d* −1.320, both larger than the bigram model's −0.491 and
+  −0.320. Scaling the LM AMPLIFIES the effect. I twice reported this as environmentally
+  blocked; the 403 was repo scoping on a github.com URL, not egress.
 - **The two halves of the detector are biased in OPPOSITE directions.** At equal power, the
   vocabulary term flags low-proficiency writers 1.57x more — Liang et al.'s perplexity account
   exactly — and the burstiness term flags high-proficiency writers 1.42x more. Both separate; both
@@ -145,7 +150,7 @@ Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
 `ellipse-lite-signal-decomposition`, `ellipse-proficiency-replication`,
 `ellipse-component-ablation`, `ellipse-raw-signal-effect-sizes` and
 `asap-subgroup-fpr`, `burstiness-formulation-robustness` and
-`true-ngram-perplexity-contrast` in
+`true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` in
 `.claude/measurements.jsonl`.
 
 

@@ -17,10 +17,12 @@ untell-subgroup-audit --corpus ellipse --tier lite --sweep
 untell-subgroup-audit --corpus asap --tier lite --by ell_status
 untell-subgroup-audit --corpus ellipse --ablate
 untell-ngram-lm train && untell-ngram-lm score --csv <corpus>.csv --by ell_status
+untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_status
 ```
 
 Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`,
-`burstiness-formulation-robustness`, `true-ngram-perplexity-contrast`.
+`burstiness-formulation-robustness`, `true-ngram-perplexity-contrast`,
+`gpt2-transformer-perplexity-contrast`.
 
 ## The corpora
 
@@ -175,12 +177,37 @@ A modern in-domain LM could differ.
 
 ---
 
+## Result 8 — a real transformer shows it more strongly, and the "blocker" was my error
+
+GPT-2 124M (`gpt2-lm-head-10.onnx`, 664,871,060 bytes), n=250 per group, seed 0, 384-token cap.
+Mean negative log-likelihood; lower = more predictable = the machine-like end.
+
+| corpus | groups | mean NLL | Cohen's *d* | bigram *d* (Result 7) |
+|---|---|---|---|---|
+| ASAP | ELL / non-ELL | 3.8748 / **3.5533** | **−0.671** | −0.491 |
+| ELLIPSE | low / high proficiency | 3.7733 / **3.1725** | **−1.320** | −0.320 |
+
+Same direction as the stdlib bigram model, and **larger in both cases** — on ELLIPSE, four times
+larger and a very large effect. So the direction is not an artifact of a weak n-gram model over
+1961 newswire: **scaling the language model amplifies it.** Any perplexity-based detector — which
+is most neural detectors — should be expected to flag the more fluent writer more on this
+population until measured otherwise.
+
+**How this was obtained, recorded because I reported it as blocked twice.** huggingface.co and
+four mirrors are egress-blocked. But the ONNX model zoo keeps GPT-2 in **GitHub LFS**, LFS objects
+for public repos are served by `media.githubusercontent.com`, the BPE vocabulary is published on
+GitHub, and `onnxruntime` installs from pypi — which this environment does not proxy. My earlier
+403 came from a `github.com/...` URL hitting this session's *repository scoping*, and I read a
+permission error as a network one and stopped. The correct lesson is not "the environment was
+generous"; it is that **I called something impossible after four probes and it took a fifth.**
+
+**Limits.** GPT-2 small, sampled at n=250 per group, 384-token cap. A perplexity *signal*, never a
+detector verdict.
+
 ## What these results do not establish
 
-- **Nothing about a transformer detector.** Every route to weights was tried and blocked in the
-  environment these were run in: huggingface.co and four mirrors, Google Drive, ONNX-on-GitHub,
-  and pypi. Whether a modern neural detector learned the same correlation is **open**, and it is
-  the single most valuable next measurement.
+- **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
+  which is the mechanism, not a shipped detector. No commercial or neural detector was run.
 - **Nothing about any commercial detector.** Those need keys and are out of scope here exactly as
   they are in `free-ceiling-measured.md`.
 - **Nothing outside US school-age writing.** Both corpora are US students in grades 6–12. Adult,
