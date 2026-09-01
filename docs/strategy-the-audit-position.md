@@ -125,13 +125,41 @@ lopsided operating point:
 
 Held-out: 1.59x and 1.35x, same directions, both still separated.
 
-**The two halves of one detector are biased in opposite directions against opposite groups.** The
-vocabulary term reproduces Liang et al.'s perplexity account exactly — predictable word choice
-penalises weaker writers. The burstiness term does the reverse and the literature has not isolated
-it. In the combined score they partly cancel, which means **any aggregate fairness number for this
+**The two halves of one detector are biased in opposite directions against opposite groups.** In
+the combined score they partly cancel, which means **any aggregate fairness number for this
 detector understates both of its biases**, and a benchmark that treats the detector as a black box
 cannot recover them. Averaging two large opposing biases yields a small number and a false
 reassurance.
+
+### A third signal family, and it corrects what I said about the second
+
+An earlier version of this section read the vocabulary term as "reproducing Liang et al.'s
+perplexity account exactly". It reproduces the *shape* of that account, but it is not perplexity —
+it is the fraction of tokens appearing in a 120-word stoplist. So the account was tested properly,
+against a **real** language model: an interpolated bigram LM trained on NLTK's Brown and Reuters
+corpora (2,001,501 tokens, 56,424 types), fetched from GitHub, stdlib only, independent of both
+essay corpora.
+
+| signal | penalises | ELLIPSE *d* | ASAP *d* |
+|---|---|---|---|
+| common-word ratio (our "perplexity" proxy) | **low** proficiency / ELL | −0.476 | — |
+| burstiness | **high** proficiency / non-ELL | −0.394 | — |
+| **true n-gram perplexity** | **high** proficiency / non-ELL | **−0.320** | **−0.491** |
+
+More fluent writers produce more *conventional* English, so a genuine LM finds them more
+predictable and assigns them **lower** perplexity — the machine-like end. **Two of the three signal
+families penalise the more fluent writer, and the odd one out is our stoplist proxy.**
+
+The consequence for this repository is direct and unflattering: **the lite tier's "perplexity"
+channel is anti-correlated with actual perplexity on this population.** It is not a valid stand-in
+for the thing it is named after, and any reasoning that treated it as one — including mine, two
+sections ago — was reasoning about a stoplist.
+
+**Limitation, and it is real.** The LM is 1961 American English plus newswire, a domain mismatch
+with school essays; non-native writing being less predictable to *that* model is partly expected.
+A modern in-domain LM could differ, and testing one needs weights this environment's egress policy
+blocks. What the result does establish is that the *direction* attributed to "perplexity" in the
+earlier decomposition came from the proxy, not from perplexity.
 
 ### The bias is in the features, not in our calibration
 

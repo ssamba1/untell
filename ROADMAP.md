@@ -108,6 +108,11 @@ known-human ESL essays, where every flag is an error by construction:
 - **Replicated on held-out data.** Banding low (<=2.5) vs high (>=3.5) proficiency: 33.2% vs
   44.2% on the training split, **34.8% vs 43.0% on the 2,571-essay held-out split**, separated at
   95% on both. (Strict six-level monotonicity did *not* replicate and has been withdrawn.)
+- **Our "perplexity" channel is anti-correlated with real perplexity.** A genuine bigram LM
+  trained on Brown+Reuters (2M tokens, fetched from GitHub, stdlib only) finds MORE fluent
+  writers more predictable — lower perplexity, the machine-like end — on both corpora
+  (*d* −0.320 ELLIPSE, −0.491 ASAP). The lite tier's stoplist ratio points the other way,
+  so it is not a stand-in for the thing it is named after.
 - **The two halves of the detector are biased in OPPOSITE directions.** At equal power, the
   vocabulary term flags low-proficiency writers 1.57x more — Liang et al.'s perplexity account
   exactly — and the burstiness term flags high-proficiency writers 1.42x more. Both separate; both
@@ -138,7 +143,8 @@ known-human ESL essays, where every flag is an error by construction:
 Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
 `ellipse-lite-signal-decomposition`, `ellipse-proficiency-replication`,
 `ellipse-component-ablation`, `ellipse-raw-signal-effect-sizes` and
-`asap-subgroup-fpr` in
+`asap-subgroup-fpr`, `burstiness-formulation-robustness` and
+`true-ngram-perplexity-contrast` in
 `.claude/measurements.jsonl`.
 
 
