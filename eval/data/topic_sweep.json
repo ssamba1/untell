@@ -1,0 +1,75 @@
+{
+  "detection_papers": 612,
+  "rungs": {
+    "false positives/accusation": [
+      {
+        "rung": "shipped",
+        "papers": 13,
+        "share": 2.1,
+        "lift": 7.1,
+        "honest": true
+      },
+      {
+        "rung": "+ type I error, specificity",
+        "papers": 16,
+        "share": 2.6,
+        "lift": 3.6,
+        "honest": true
+      },
+      {
+        "rung": "+ wrongly, mistakenly",
+        "papers": 16,
+        "share": 2.6,
+        "lift": 3.4,
+        "honest": true
+      },
+      {
+        "rung": "+ human text misclassified",
+        "papers": 17,
+        "share": 2.8,
+        "lift": 3.6,
+        "honest": true
+      },
+      {
+        "rung": "+ over-flagging, accusation, unfairness",
+        "papers": 21,
+        "share": 3.4,
+        "lift": 3.3,
+        "honest": true
+      },
+      {
+        "rung": "+ reliability, trust, consequence (NOT a topic pattern)",
+        "papers": 123,
+        "share": 20.1,
+        "lift": 2.2,
+        "honest": false
+      }
+    ],
+    "robustness/paraphrase": [
+      {
+        "rung": "shipped",
+        "papers": 157,
+        "share": 25.7,
+        "lift": 3.0,
+        "honest": true
+      },
+      {
+        "rung": "+ attack, perturbation, obfuscation",
+        "papers": 176,
+        "share": 28.8,
+        "lift": 2.7,
+        "honest": true
+      },
+      {
+        "rung": "+ rewriting, humanizing, spoofing",
+        "papers": 184,
+        "share": 30.1,
+        "lift": 2.5,
+        "honest": true
+      }
+    ]
+  },
+  "ratio_min": 7.5,
+  "ratio_max": 14.2,
+  "note": "Ratios are over the rungs that still mean the topic. The excluded rung is reported above with its lift, because it is what a reader broadening the pattern will hit."
+}

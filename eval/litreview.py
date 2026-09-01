@@ -498,6 +498,139 @@ def window_sensitivity(
     }
 
 
+# Round eighty-six swept the detection filter. This is the second filter in the same series, and it
+# was just as unchosen: a topic's count is whatever its regex happens to match. Broadening a topic
+# is not a neutral act — widen it far enough and it matches English rather than a subject — so the
+# ladders below go from the shipped pattern outward in steps that each still *mean* the topic, plus
+# one final rung that deliberately does not, to show what the failure looks like from inside.
+TOPIC_LADDERS: dict[str, tuple[tuple[str, str], ...]] = {
+    "false positives/accusation": (
+        ("shipped", r"false positive|false accusation|falsely (flag|accus)|FPR"),
+        ("+ type I error, specificity",
+         r"false positive|false accusation|falsely (flag|accus)|FPR|type[- ]I error|specificity"),
+        ("+ wrongly, mistakenly",
+         r"false positive|false accusation|falsely (flag|accus)|FPR|type[- ]I error|specificity"
+         r"|wrongl(y|ful)|mistakenly (flag|accus|classif)"),
+        ("+ human text misclassified",
+         r"false positive|false accusation|falsely (flag|accus)|FPR|type[- ]I error|specificity"
+         r"|wrongl(y|ful)|mistakenly (flag|accus|classif)"
+         r"|human[- ]written text as (machine|AI|LLM)"
+         r"|misclassif\w* (as )?(machine|AI|LLM)[- ]generated|human text (is |being )?(mis)?classif"),
+        ("+ over-flagging, accusation, unfairness",
+         r"false positive|false accusation|falsely (flag|accus)|FPR|type[- ]I error|specificity"
+         r"|wrongl(y|ful)|mistakenly (flag|accus|classif)"
+         r"|human[- ]written text as (machine|AI|LLM)"
+         r"|misclassif\w* (as )?(machine|AI|LLM)[- ]generated|human text (is |being )?(mis)?classif"
+         r"|over[- ]?flag|innocent|accus\w+|unfair\w*"),
+        # The rung that fails, kept on purpose. See `topic_sensitivity`.
+        ("+ reliability, trust, consequence (NOT a topic pattern)",
+         r"false positive|false accusation|falsely (flag|accus)|FPR|type[- ]I error|specificity"
+         r"|wrongl(y|ful)|mistakenly (flag|accus|classif)"
+         r"|human[- ]written text as (machine|AI|LLM)"
+         r"|misclassif\w* (as )?(machine|AI|LLM)[- ]generated|human text (is |being )?(mis)?classif"
+         r"|over[- ]?flag|innocent|accus\w+|unfair\w*"
+         r"|reliab\w+|trustworth\w+|consequence"),
+    ),
+    "robustness/paraphrase": (
+        ("shipped", r"paraphras|adversarial|robustness|evad"),
+        ("+ attack, perturbation, obfuscation",
+         r"paraphras|adversarial|robustness|evad|attack|perturb|obfuscat"),
+        ("+ rewriting, humanizing, spoofing",
+         r"paraphras|adversarial|robustness|evad|attack|perturb|obfuscat"
+         r"|rewrit|humaniz|spoof|circumvent|bypass"),
+    ),
+}
+
+
+def term_lift(papers: list[dict[str, str]], pattern: str) -> dict[str, float]:
+    """How much more often a term appears in detection papers than in the corpus at large.
+
+    This is the instrument that tells a topic term from a word. A pattern matching 7% of the *whole*
+    Anthology is not measuring a topic within the detection subset — it is measuring English, and a
+    count built on it will look like a large finding while carrying almost no information.
+
+    Lift near 1 means the term is background. MEASURED on the 186-volume corpus: `false positive`
+    has lift 6.1 and `falsely flag/accus` 51.1, while a `reliab` stem appears in **7.1% of every
+    abstract in the Anthology** at lift 2.1 and `specificity` at lift 1.1. That is the whole
+    difference between the ladder rungs that mean something and the one that does not.
+    """
+    rx = re.compile(pattern, re.I)
+    corpus = sum(1 for p in papers if rx.search(searchable(p)))
+    detection = [p for p in papers if DETECTION.search(searchable(p))]
+    hits = sum(1 for p in detection if rx.search(searchable(p)))
+    corpus_rate = 100.0 * corpus / len(papers) if papers else 0.0
+    detection_rate = 100.0 * hits / len(detection) if detection else 0.0
+    return {
+        "corpus_rate": round(corpus_rate, 2),
+        "detection_rate": round(detection_rate, 2),
+        "lift": round(detection_rate / corpus_rate, 1) if corpus_rate else float("inf"),
+    }
+
+
+def topic_sensitivity(papers: list[dict[str, str]]) -> dict[str, object]:
+    """The survey's second filter, varied the way round eighty-six varied the first.
+
+    A topic count is whatever its regex matches, and the false-positives regex is four alternatives
+    long. If widening it to every reasonable synonym found sixty papers instead of thirteen, this
+    project's central claim would be an artefact of a narrow pattern rather than a fact about the
+    literature. So it is widened, in rungs that each still mean the topic.
+
+    MEASURED on the 612 detection papers: false positives goes **13 → 16 → 16 → 17 → 21** across
+    four meaning-preserving broadenings, and robustness **157 → 176 → 184**. Over all twelve
+    combinations the ratio runs **7.5x to 14.2x** and never approaches parity. The shipped 13 is on
+    the conservative side — the broadest honest rung adds eight papers, some of which plainly belong
+    (*Almost AI, Almost Human: The Challenge of Detecting AI-Polished Writing*) — so the row is
+    reported with its range rather than quietly rewritten, on the round-thirty principle that a
+    survey states its error term instead of picking the filter it prefers.
+
+    A second fact falls out of the same table: **the shipped pattern has the highest lift of any
+    rung** (7.1, against 3.6, 3.4, 3.6 and 3.3 for the broadenings). Every widening buys papers by
+    spending discrimination. So the shipped row is not merely conservative on count — it is the most
+    informative pattern in the ladder, which is the opposite of what a filter tuned to flatter a
+    conclusion would look like.
+
+    ⚠️ **One rung takes the ratio to 1.3x, and it is in the table on purpose.** Adding
+    `reliab|trustworth|consequence` lifts false positives from 21 papers to 123. It looks like a
+    refutation and is not one: `term_lift` shows those terms in 7.1%, 1.0% and 0.5% of *every*
+    abstract in the Anthology, at lifts of 2.1, 2.3 and 2.8 — near-background words that match any
+    abstract claiming its method is reliable. The rung is kept because a reader who broadens the
+    pattern themselves will land on exactly it, and should find it already measured and already
+    explained rather than think they have overturned something.
+    """
+    detection = [p for p in papers if DETECTION.search(searchable(p))]
+    texts = [searchable(p) for p in detection]
+
+    rungs: dict[str, list[dict[str, object]]] = {}
+    for topic, ladder in TOPIC_LADDERS.items():
+        rungs[topic] = []
+        for name, pattern in ladder:
+            rx = re.compile(pattern, re.I)
+            n = sum(1 for t in texts if rx.search(t))
+            rungs[topic].append({
+                "rung": name,
+                "papers": n,
+                "share": round(100.0 * n / len(detection), 1) if detection else 0.0,
+                "lift": term_lift(papers, pattern)["lift"],
+                "honest": "NOT a topic pattern" not in name,
+            })
+
+    honest_fp = [r for r in rungs["false positives/accusation"] if r["honest"]]
+    honest_rob = [r for r in rungs["robustness/paraphrase"] if r["honest"]]
+    ratios = [
+        rob["papers"] / fp["papers"] for fp in honest_fp for rob in honest_rob if fp["papers"]
+    ]
+    return {
+        "detection_papers": len(detection),
+        "rungs": rungs,
+        "ratio_min": round(min(ratios), 1) if ratios else 0.0,
+        "ratio_max": round(max(ratios), 1) if ratios else 0.0,
+        "note": (
+            "Ratios are over the rungs that still mean the topic. The excluded rung is reported "
+            "above with its lift, because it is what a reader broadening the pattern will hit."
+        ),
+    }
+
+
 def survey(papers: list[dict[str, str]]) -> dict[str, object]:
     """Counts per topic over the detection subset, plus the corpus sizes that give them meaning."""
     detection = [p for p in papers if DETECTION.search(searchable(p))]
@@ -702,6 +835,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--noise-floor", action="store_true", dest="noise",
                         help="how much of the corpus is a different detection problem, and what "
                              "excluding it would do to every topic share")
+    parser.add_argument("--topic-sweep", action="store_true", dest="topics",
+                        help="broaden each load-bearing topic regex and report what the ratio does; "
+                             "the survey's second filter, varied like the first")
     parser.add_argument("--window-sweep", action="store_true", dest="sweep",
                         help="recompute every figure at each proximity window, since the survey's "
                              "recall rests on one number nobody chose deliberately")
@@ -769,6 +905,25 @@ def main(argv: list[str] | None = None) -> int:
             for name, row in report["topics"].items():
                 print(f"{name:<32} {row['with']:>6.1f}% {row['without']:>8.1f}%")
             print(f"\nLargest share move: {report['largest_share_move']} points.")
+            print(f"\n{report['note']}")
+        return 0
+
+    if args.topics:
+        report = topic_sensitivity(papers)
+        if args.as_json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"{report['detection_papers']} detection papers\n")
+            for topic, rows in report["rungs"].items():
+                print(f"{topic}")
+                print(f"  {'rung':<46} {'papers':>7} {'share':>7} {'lift':>6}")
+                for row in rows:
+                    mark = " " if row["honest"] else "!"
+                    print(f" {mark}{row['rung']:<46} {row['papers']:>7} "
+                          f"{row['share']:>6.1f}% {row['lift']:>6.1f}")
+                print()
+            print(f"ratio across every honest combination: "
+                  f"{report['ratio_min']}x to {report['ratio_max']}x")
             print(f"\n{report['note']}")
         return 0
 

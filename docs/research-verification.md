@@ -5689,6 +5689,93 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round eighty-seven — the second filter, and the one that could actually break the claim
+
+Round eighty-six swept `DETECTION` and found the imbalance robust to every recall setting. That was
+the safer of the two sweeps available, and worth noticing: **the survey runs two regexes in series,
+and the sweep that could overturn the conclusion is the other one.**
+
+`DETECTION` selects 612 papers. A topic pattern then selects a row inside them, and the row this
+project's strategy rests on is four alternatives long and returns **13 papers**. Thirteen. A pattern
+that narrow missing eight relevant papers moves the ratio by a third; missing forty ends the
+argument. Round eighty-six could only ever have confirmed a corpus-level property. This round is the
+one with a real chance of a negative answer.
+
+`TOPIC_LADDERS`, `topic_sensitivity()` and `python -m eval.litreview --topic-sweep` broaden each
+load-bearing row in rungs that still mean the topic.
+
+## The answer, MEASURED on the 612 detection papers
+
+| false-positives pattern | papers | share | lift |
+|---|---|---|---|
+| shipped | 13 | 2.1% | **7.1** |
+| + type I error, specificity | 16 | 2.6% | 3.6 |
+| + wrongly, mistakenly | 16 | 2.6% | 3.4 |
+| + human text misclassified | 17 | 2.8% | 3.6 |
+| + over-flagging, accusation, unfairness | 21 | 3.4% | 3.3 |
+
+Robustness over its own ladder: **157 → 176 → 184**. Across all twelve combinations the ratio runs
+**7.5x to 14.2x** and never approaches parity.
+
+✅ **The claim survives, and two details make the survival worth more than the headline.**
+
+**The shipped count is the conservative end.** Every broadening adds papers — 13 to 21, a 62%
+increase — and some of them plainly belong (*Almost AI, Almost Human: The Challenge of Detecting
+AI-Polished Writing*, `2025.findings-acl.1303`). The row is therefore reported with its range rather
+than quietly rewritten, on the round-thirty principle that a survey states its error term instead of
+picking the filter it prefers. The honest summary of this row is **13–21 papers**, not 13.
+
+**The shipped pattern has the highest lift of any rung.** 7.1 against 3.6, 3.4, 3.6 and 3.3: every
+widening buys papers by spending discrimination. A filter tuned to produce a conclusion would look
+exactly the other way round — narrow where it helps, and no more informative than its neighbours.
+
+## ⚠️ One rung takes the ratio to 1.3x, and it is in the shipped table on purpose
+
+Adding `reliab|trustworth|consequence` lifts the row from 21 papers to **123**, and the ratio from
+7.5x to 1.3x. Printed on its own that is a refutation of this project's central claim.
+
+It is not one, and `term_lift()` is the instrument that says why. MEASURED against the whole
+46,905-abstract corpus rather than the detection subset:
+
+| term | share of the WHOLE corpus | share of detection papers | lift |
+|---|---|---|---|
+| `false positive` | 0.3% | 1.6% | **6.1** |
+| `falsely flag/accus` | 0.0% | 0.3% | **51.1** |
+| `FPR` | 0.0% | 0.5% | **12.1** |
+| `reliab` stem | **7.1%** | 14.7% | 2.1 |
+| `trustworth` stem | 1.0% | 2.3% | 2.3 |
+| `specificity` | 0.4% | 0.5% | **1.1** |
+
+A `reliab` stem is in one abstract in fourteen across the entire Anthology, including papers about
+parsing and speech. A pattern built on it is not measuring a topic within the detection subset; it
+is measuring English. `specificity` at lift 1.1 is the purest case — it looks like a
+false-positives term and carries essentially no information at all.
+
+**That rung stays in the shipped output, marked and measured.** A reader who doubts the count will
+broaden the pattern, and the first words they reach for are exactly these. They should find the
+result already computed and already explained rather than conclude they have overturned something.
+This is the same reasoning as keeping the off-topic noise floor in `--noise-floor` instead of
+excluding it: the failure mode is more useful documented than hidden.
+
+## What the two sweeps establish together
+
+The survey's conclusion now has both of its filters varied:
+
+| filter | swept over | ratio range | conclusion |
+|---|---|---|---|
+| `DETECTION` recall (round 86) | 0–400 char window, 343–768 papers | 9.3x – 14.0x | holds |
+| topic pattern breadth (round 87) | 5 rungs x 3 rungs | 7.5x – 14.2x | holds |
+
+**The published ratio is interior to both ranges.** Neither parameter was chosen, and neither, when
+varied deliberately and adversarially, produces a number that favours the claim more than the one
+already shipped.
+
+The residual honest caveat is unchanged and is not a parameter: this is the ACL Anthology, so it is
+what the NLP community publishes, not what the field of AI-writing research contains. Rounds 22, 23
+and 30 each retracted a "nobody does X" claim that a keyword search had supported.
+
+---
+
 # Round eighty-six — the number nobody chose, swept from 0 to 400
 
 Round eighty-five found that the survey's count moves with concatenation order. That is a defect in

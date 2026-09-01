@@ -115,6 +115,11 @@ limits — one model, one register, 56 machine documents — are in round sevent
   topic share moves more than 4.3 points — but the finding is that **false positives saturates at 13
   papers early and 192 further detection papers enter behind it without one of them being about
   false positives**, while robustness nearly doubles. The gap is in the literature, not the filter
+- **And the topic patterns are swept too**, which is the sweep that could have broken this:
+  `--topic-sweep` broadens the 13-paper false-positives row through four meaning-preserving rungs.
+  MEASURED: it reaches **21 papers, so the honest row is 13–21**, and the ratio stays between
+  **7.5x and 14.2x**, never near parity. The shipped pattern turns out to be the ladder's *most* discriminating
+  rung and its *lowest* count, which is the opposite of a filter chosen to flatter a conclusion
 
 ## License
 
