@@ -391,10 +391,10 @@ Six claims changed on contact with their sources; the ledger lists all of them.
 > - **15.8% on pre-LLM abstracts, 26.7% at ≤50 words, 17.3% at the shipped threshold** are that one
 >   detector's false-positive rates. The ensemble's would differ, and this repo has separately
 >   measured `mage` alone driving the ensemble's rate through `max`.
-> - **The FAR/MFAR/consensus spread has never been measured here at all.** With one detector the
->   three rules are arithmetically identical; the tools print a `degenerate` warning saying so. The
->   spread is the headline product feature and it is so far only argued from the literature
->   (44.44% / 4.17% / ~0%), never demonstrated on our own stack.
+> - **The FAR/MFAR/consensus spread cannot be measured on our own stack here.** With one detector the
+>   three rules are arithmetically identical, and the tools print a `degenerate` warning saying so.
+>   ✅ **It has now been demonstrated on three real detectors instead**, from the study's own
+>   per-tool scores — see below — which also checks our arithmetic against a published result.
 > - **The calibrated threshold of 0.5215 is calibrated for that one detector**, and is not
 >   transferable to a different ensemble — which is, uncomfortably, the exact thing this section
 >   argues about everyone else's published thresholds.
@@ -402,6 +402,27 @@ Six claims changed on contact with their sources; the ledger lists all of them.
 > **First thing to re-run on a machine with `.[full]` installed and network access to model weights.**
 > Every command is in place and takes minutes; nothing about the analysis changes, but the numbers
 > will, and they should be re-measured before any of them is quoted as an ensemble figure.
+
+### The spread, demonstrated on three real detectors
+
+`eval/assisted_fairness.py::published_spread` computes the three aggregation rules from Pratama's own
+per-tool verdicts on 72 human abstracts published in 2021. MEASURED, n = 72 articles, three detectors:
+
+| rule | authors flagged | rate | 95% CI |
+|---|---|---|---|
+| **union — what `flagged` reports** | **32 of 72** | **44.4%** | 33.4% – 56.0% |
+| majority | 3 of 72 | 4.2% | 1.4% – 11.6% |
+| **unanimous** | **0 of 72** | **0.0%** | 0.0% – 5.1% |
+
+**The union rule accuses 32 of 72 authors. Requiring all three tools to agree accuses none.** Same
+detectors, same texts, same day — the rule alone moves it from 44% to zero. Nothing else in this
+roadmap has that leverage, and no shipping product exposes it.
+
+Two details worth keeping. It **reproduces Pratama's published 44.44% and 4.17% exactly**, which
+makes it a check on our aggregation arithmetic rather than a restatement of it — a test pins both
+figures. And the reproduction only works when a "mixed" verdict counts as a flag: counting only "ai"
+gives 40.28%. **A four-point swing from a labelling convention**, which is the same lesson as the
+aggregation rule itself, one level down.
 
 ### The result that should organise everything else — all of it peer-reviewed and read at source
 

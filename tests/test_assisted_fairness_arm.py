@@ -70,3 +70,51 @@ def test_human_authored_arms_are_marked_in_the_output(arm):
         "arms": {arm: {"all": {"flagged": 1, "n": 10, "rate": 0.1, "ci95": [0.0, 0.4]}}},
     }
     assert "<- false accusations" in _render(report)
+
+
+def test_published_spread_reproduces_the_papers_reported_figures(tmp_path):
+    """A check on our aggregation arithmetic against a peer-reviewed result rather than against
+    itself. Pratama reports FAR 44.44% and MFAR 4.17% on 72 human abstracts scored by three tools;
+    if `published_spread` cannot reproduce both, one of us is wrong and it is probably us.
+
+    The fixture reconstructs the published distribution exactly: GPTZero flagged 0 of 72, ZeroGPT 12
+    (9 'ai' + 3 'mixed'), DetectGPT 23 (22 + 1), overlapping so that 32 articles are flagged by at
+    least one tool and 3 by a majority.
+    """
+    import csv as _csv
+
+    from eval.assisted_fairness import published_spread
+
+    # 32 articles flagged by >=1 tool; of those, 3 flagged by 2 tools (a majority of 3); 0 by all.
+    rows = []
+    for article in range(1, 73):
+        if article <= 3:
+            labels = ["human", "ai", "mixed"]        # two flags -> majority
+        elif article <= 32:
+            labels = ["human", "human", "ai"]        # one flag  -> union only
+        else:
+            labels = ["human", "human", "human"]
+        for tool, label in zip(("GPTZero", "ZeroGPT", "DetectGPT"), labels):
+            rows.append({"article": str(article), "text": "original", "tool": tool, "label": label})
+
+    path = tmp_path / "results.csv"
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = _csv.DictWriter(handle, fieldnames=["article", "text", "tool", "label"])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    spread = published_spread(path)
+    assert spread["n_articles"] == 72
+    assert spread["rules"]["any"]["flagged"] == 32
+    assert abs(spread["rules"]["any"]["rate"] - 0.4444) < 0.001, "published FAR not reproduced"
+    assert abs(spread["rules"]["majority"]["rate"] - 0.0417) < 0.001, "published MFAR not reproduced"
+    assert spread["rules"]["unanimous"]["flagged"] == 0
+
+
+def test_mixed_counts_as_a_flag():
+    """The 4-point difference between 40.28% and the published 44.44% is exactly this choice. An
+    author told their abstract is partly AI has still been accused."""
+    from eval.assisted_fairness import FLAG_LABELS
+
+    assert "mixed" in FLAG_LABELS and "ai" in FLAG_LABELS
+    assert "human" not in FLAG_LABELS

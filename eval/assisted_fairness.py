@@ -45,6 +45,13 @@ from eval.pre_llm_fpr import wilson_interval
 
 DATA_URL = ("https://raw.githubusercontent.com/ahmadrpratama/"
             "ai-text-detection-bias/main/abstracts.csv")
+RESULTS_URL = ("https://raw.githubusercontent.com/ahmadrpratama/"
+               "ai-text-detection-bias/main/results.csv")
+
+# A tool's own verdict, as it labelled it. "mixed" counts as a flag: an author told their abstract is
+# partly AI has still been accused, and the published FAR of 44.44% only reproduces when it is
+# counted — see `published_spread`.
+FLAG_LABELS = ("ai", "mixed")
 
 # Column -> arm name. The originals predate ChatGPT; the assisted columns are the same human text
 # after an LLM improved its readability, which is the condition this module exists to score.
@@ -108,6 +115,42 @@ def evaluate(rows: list[dict[str, str]], tier: str = "lite") -> dict:
         by_status["all"] = _rate(pooled)
     return {"tier": tier, "arms": arms,
             "false_accusation_arms": list(HUMAN_AUTHORED)}
+
+
+def published_spread(results_csv: Path, text_type: str = "original") -> dict:
+    """The aggregation spread on three real detectors, from the study's own per-tool scores.
+
+    This repo's ensemble cannot demonstrate the spread wherever its ML detectors are unavailable:
+    with one detector live, union, majority and unanimity are the same number. The published data
+    can, because it carries GPTZero, ZeroGPT and DetectGPT verdicts on all 72 abstracts.
+
+    On ``text_type="original"`` — human abstracts published in 2021 — this reproduces Pratama's
+    reported **FAR 44.44%** and **MFAR 4.17%** exactly, which is what makes it a check on
+    :func:`untell.scripts.score.agreement` rather than a restatement of it.
+
+    The result it produces is the argument for reporting a spread at all: the union rule accuses
+    **32 of 72** authors, and requiring all three tools to agree accuses **none**.
+    """
+    with results_csv.open(encoding="utf-8", newline="") as handle:
+        rows = [r for r in csv.DictReader(handle) if r.get("text") == text_type]
+    by_article: dict[str, list[bool]] = {}
+    for row in rows:
+        label = (row.get("label") or "").strip().lower()
+        by_article.setdefault(row["article"], []).append(label in FLAG_LABELS)
+    articles = [v for v in by_article.values() if v]
+    n = len(articles)
+    counts = {
+        "any": sum(1 for v in articles if any(v)),
+        "majority": sum(1 for v in articles if sum(v) * 2 > len(v)),
+        "unanimous": sum(1 for v in articles if all(v)),
+    }
+    out = {"text_type": text_type, "n_articles": n, "rules": {}}
+    for rule, flagged in counts.items():
+        low, high = wilson_interval(flagged, n)
+        out["rules"][rule] = {"flagged": flagged, "n": n,
+                              "rate": round(flagged / n, 4) if n else None,
+                              "ci95": [round(low, 4), round(high, 4)]}
+    return out
 
 
 def _render(report: dict) -> str:
