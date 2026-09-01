@@ -63,12 +63,17 @@ ROOT = Path(__file__).resolve().parent.parent
 CENSUS = ROOT / "docs" / "humanizer-census.json"
 API = "https://api.github.com"
 
-# The 12 discovery angles the 2026-08-05 sweep used, written down as queries this time. The
-# sweep's angles lived in a prompt and died with it, which is why "624 distinct queries" is a
-# number nobody can reproduce. These are reproducible; that is the entire point of the file.
+# The discovery angles the 2026-08-05 sweep used, written down as queries this time. The sweep's
+# angles lived in a prompt and died with it, which is why "624 distinct queries" is a number
+# nobody can reproduce. These are reproducible; that is the entire point of the file.
 #
-# `stars:>=0` is not redundant -- it forces the search index to rank by the sort argument
-# rather than by relevance, which is what makes paging deterministic.
+# KEEP QUERIES SHORT. GitHub ANDs every term, so recall collapses as terms are added. Measured
+# 2026-09-01: "adversarial paraphrasing detector evasion" returned 0 repos and
+# "adversarial paraphrasing ai detector" returned StealthRL; "humanizer pypi package pip install"
+# returned 0 while "ai slop linter" returned 96. The first version of this plan was full of
+# five-word queries and several angles silently harvested nothing -- an empty result reads exactly
+# like a well-covered field, which is the worst failure mode a census can have. Two or three
+# terms, and prefer `topic:` where a topic exists.
 QUERY_PLAN: dict[str, tuple[str, ...]] = {
     "topics": (
         "topic:ai-humanizer", "topic:humanizer", "topic:bypass-ai-detection",
@@ -79,18 +84,29 @@ QUERY_PLAN: dict[str, tuple[str, ...]] = {
         "undetectable ai text", "ai text rewriter detector",
     ),
     "techniques": (
-        "adversarial paraphrasing detector", "detector guided decoding",
-        "paraphrase attack ai detection", "token substitution detector evasion",
+        "adversarial paraphrasing", "detector guided decoding", "paraphrase attack detector",
+        "detector feedback rewrite", "token substitution evasion",
     ),
     "research": (
-        "machine generated text detection benchmark", "AI generated text detector evaluation",
-        "watermark removal text llm",
+        "machine generated text detection benchmark", "detector evaluation harness",
+        "llm watermark removal", "authorship obfuscation", "detector robustness",
     ),
     "detectors": (
         "gptzero detector", "ai content detector open source", "zerogpt", "originality ai detector",
     ),
     "unicode": (
-        "zero width character text", "homoglyph text attack", "trojan source unicode",
+        "zero-width steganography", "homoglyph attack", "trojan source unicode",
+    ),
+    # An angle the 2026-08-05 census did not have, and the reason its map of the field is
+    # incomplete rather than merely stale. The field bifurcated: "humanizers" chase evasion, and
+    # "slop linters" chase prose quality with deterministic rules and no LLM at runtime. They are
+    # the same machinery pointed at opposite goals, and this repo sits in both. The census
+    # surveyed only the first half, so segment sizes like "184 prompt guides" describe one branch.
+    # First run found scanaislop/aislop (589 stars), berelevant-ai/slopless (323, deterministic
+    # textlint rules for English prose) and ItsssssJack/SlopMonster (44, lint -> rewrite with a
+    # rival model -> lint again, which is a detector loop by another name).
+    "slop_linters": (
+        "ai slop linter", "prose linter ai", "anti-slop", "ai tells linter",
     ),
     "prompts": (
         "humanize prompt chatgpt", "anti ai writing patterns prompt", "ai slop prompt guide",

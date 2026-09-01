@@ -393,3 +393,73 @@ def load_samples(dataset: str = "builtin", n: int = 5, strict: bool = False) -> 
         return _fallback(f"{type(exc).__name__}: {exc}")
 
     return _fallback("no such dataset — known: hc3, raid, mage, builtin")
+
+
+# ---------------------------------------------------------------------------------------------
+# Labelled human corpora, for the subgroup false-positive audit (eval/subgroup_audit.py).
+#
+# These carry writer metadata, which the pair loaders above do not, and they are HUMAN-ONLY on
+# purpose: a false-positive audit needs text that is known-human by construction, so that every
+# flag is unambiguously an error.
+#
+# NOTHING HERE IS VENDORED. ELLIPSE is CC BY-NC-SA 4.0 and this package is MIT; committing the
+# corpus would relicense the repository. It is fetched on demand, cached outside the tree, and its
+# licence and citation are printed the first time it loads.
+# ---------------------------------------------------------------------------------------------
+
+ELLIPSE_URL = (
+    "https://raw.githubusercontent.com/scrosseye/ELLIPSE-Corpus/main/"
+    "ELLIPSE_Final_github_train.csv"
+)
+ELLIPSE_CITATION = (
+    "ELLIPSE corpus -- Crossley, S., Tian, Y., et al. (2023), 'The English Language Learner "
+    "Insight, Proficiency and Skills Evaluation (ELLIPSE) Corpus', International Journal of "
+    "Learner Corpus Research 9(2), 248-269. Licence: CC BY-NC-SA 4.0 (NON-COMMERCIAL, "
+    "share-alike). Source: https://github.com/scrosseye/ELLIPSE-Corpus"
+)
+# Columns kept from the corpus: the essay, plus the writer metadata the audit groups by.
+_ELLIPSE_LABELS = ("gender", "grade", "race_ethnicity", "SES", "Overall")
+
+
+def _ellipse_cache():
+    import os
+    from pathlib import Path as _P
+
+    base = os.environ.get("UNTELL_CORPUS_DIR") or os.path.join(
+        os.path.expanduser("~"), ".cache", "untell-corpora"
+    )
+    return _P(base) / "ellipse_train.csv"
+
+
+def load_labelled(corpus: str = "ellipse", csv_path=None, min_words: int = 60) -> list[dict]:
+    """Known-human texts with writer labels, as ``{"text": ..., <label>: ...}`` dicts.
+
+    ``min_words`` drops essays too short to score meaningfully -- the detectors are calibrated on
+    paragraphs, and a 14-word answer measures the window logic rather than the writer.
+    """
+    import csv as _csv
+
+    if corpus != "ellipse" and csv_path is None:
+        raise ValueError(f"unknown labelled corpus {corpus!r}; known: 'ellipse'")
+
+    path = csv_path or _ellipse_cache()
+    if csv_path is None and not path.exists():
+        import urllib.request
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        logger.warning("fetching ELLIPSE (~10MB) to %s\n%s", path, ELLIPSE_CITATION)
+        urllib.request.urlretrieve(ELLIPSE_URL, path)  # noqa: S310 - fixed https URL above
+    else:
+        logger.info("%s", ELLIPSE_CITATION)
+
+    rows: list[dict] = []
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for raw in _csv.DictReader(fh):
+            text = (raw.get("full_text") or "").strip()
+            if len(text.split()) < min_words:
+                continue
+            rows.append({"text": text,
+                         **{k: raw.get(k) for k in _ELLIPSE_LABELS if k in raw}})
+    if not rows:
+        raise DatasetUnavailable(f"{corpus}: no rows survived the {min_words}-word floor")
+    return rows
