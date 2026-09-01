@@ -424,10 +424,14 @@ def ablate(rows: list[dict], axis: str, bands: dict) -> dict:
             groups[band_name] = {"n": n, "fpr": round(hits / n, 4),
                                  "ci": [round(lo, 4), round(hi, 4)]}
         names = sorted(groups, key=lambda k: groups[k]["fpr"])
+        # Separation is worst-versus-best and does not depend on how many bands there are. It was
+        # computed only for exactly two, so a categorical axis reported `separated: null` beside a
+        # 145x ratio -- a number with no significance attached, which is the shape of claim this
+        # instrument exists to refuse.
         sep = None
-        if len(names) == 2:
-            a, b2 = groups[names[0]], groups[names[-1]]
-            sep = b2["ci"][0] > a["ci"][1]
+        if len(names) >= 2:
+            best, worst = groups[names[0]], groups[names[-1]]
+            sep = worst["ci"][0] > best["ci"][1]
         out["components"][name] = {
             "groups": groups,
             "worst": names[-1] if names else None,
@@ -528,12 +532,36 @@ def main(argv: list[str] | None = None) -> int:
         rows = rows[: a.n]
     axes = tuple(x for x in a.by.split(",") if x)
     if a.ablate:
-        def bands(v):
+        # `ablate` takes either a callable or a value->band dict. The callable below bands a
+        # NUMERIC axis into low/high, which is right for ELLIPSE's proficiency score and silently
+        # wrong for a categorical one: `--ablate --band-axis population` on Liang's corpus
+        # returned "no rows fell into a band", which reads like an empty result rather than a
+        # mismatched flag. A categorical axis is already banded -- each value is its own band.
+        numeric = 0
+        for row in rows:
             try:
-                p = float(v)
+                float(row.get(a.band_axis))
             except (TypeError, ValueError):
-                return None
-            return "low (<=2.5)" if p <= 2.5 else ("high (>=3.5)" if p >= 3.5 else None)
+                continue
+            numeric += 1
+        if numeric >= MIN_GROUP:
+            def bands(v):
+                try:
+                    p = float(v)
+                except (TypeError, ValueError):
+                    return None
+                return "low (<=2.5)" if p <= 2.5 else ("high (>=3.5)" if p >= 3.5 else None)
+        else:
+            counts: dict[str, int] = {}
+            for row in rows:
+                v = row.get(a.band_axis)
+                if v is not None and str(v).strip().lower() not in _MISSING:
+                    counts[str(v)] = counts.get(str(v), 0) + 1
+            bands = {k: k for k, n in counts.items() if n >= MIN_GROUP}
+            if not bands:
+                print(f"--band-axis {a.band_axis!r}: no group reaches the {MIN_GROUP}-row floor "
+                      f"(found {counts or 'no values at all'})", file=sys.stderr)
+                return 2
 
         res = ablate(rows, a.band_axis, bands)
         print(json.dumps(res, indent=2) if a.json else render_ablation(res))

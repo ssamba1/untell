@@ -418,6 +418,36 @@ would take that trade without seeing it. The honest reading of the last two rows
 is fair" — it is that the detector has stopped discriminating between anything, which the
 saturation flag says rather than letting a clean-looking ratio imply fairness.
 
+## Result 14 — the two channels rank the populations in nearly opposite orders, and that explains Result 12
+
+Component ablation on Liang's 485 essays. Each half of `perplexity_burstiness` is thresholded at
+its **own median**, so both flag about half the corpus and neither can look fairer merely by
+having less room to differ.
+
+| population | vocabulary channel | burstiness channel |
+|---|---|---|
+| TOEFL, non-native | **100.0%** (96.0–100) | 46.2% (36.3–56.3) |
+| US 8th-grade | 95.5% (88.9–98.2) | 15.9% (9.7–24.9) |
+| college admission | 64.3% (52.6–74.5) | **12.9%** (6.9–22.7) |
+| *TOEFL, GPT-4 polished* | *24.2%* (16.5–33.9) | *74.7%* (64.9–82.5) |
+| Stanford CS224N | **0.7%** (0.1–3.8) | **75.9%** (68.3–82.1) |
+| worst-vs-best | **144.93x**, separated | **5.9x**, separated |
+
+The orderings are close to inverted. The channel untell calls "perplexity" — in fact the fraction
+of tokens drawn from a 120-word stoplist — flags **every single** non-native TOEFL essay and
+**0.7%** of Stanford CS224N essays, a 145-fold spread at equal power. The burstiness channel puts
+CS224N at the top and college admission essays at the bottom. Each channel's worst-served
+population is near the other's best-served, and both gaps separate at 95%. This is Result 3 on a
+third corpus with five bands instead of two, and it is much larger here.
+
+**It also explains Result 12's paradox.** GPT-4 polishing the same 91 TOEFL essays moves them
+*down* the vocabulary channel, 100.0% → 24.2%, and *up* the burstiness channel, 46.2% → 74.7%.
+The model replaces the common-word-heavy vocabulary of a learner writing in a second language,
+which is most of what this detector is keyed to, while regularising sentence lengths, which is
+what the smaller channel penalises. The vocabulary effect is far larger, so the composite flag
+rate falls: 96.7% → 78.0%. A language model editing an essay does not make it look
+machine-written to this detector — it makes it look like a more fluent human wrote it.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,

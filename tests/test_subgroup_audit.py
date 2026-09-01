@@ -452,3 +452,39 @@ class _FakeCache:
 
     def read_text(self, encoding="utf-8"):
         return self._text
+
+
+class TestAblationOnCategoricalAxes:
+    """`--ablate` assumed a numeric band axis, and failed silently on a categorical one.
+
+    `--ablate --band-axis population` on Liang's corpus printed "no rows fell into a band", which
+    reads as an empty result rather than a mismatched flag. `ablate()` already accepted a
+    value->band dict; only the CLI assumed numbers. Both defects here would hide a real finding
+    behind something that looks like an absence of one.
+    """
+
+    def test_separation_is_computed_for_any_number_of_bands(self):
+        """A 145x ratio reported beside `separated: null` is a number with no claim attached.
+
+        Separation is worst-versus-best and does not depend on band count, but it was computed
+        only when there were exactly two. On the five Liang populations the vocabulary channel
+        spans 0.7% to 100.0% and that is emphatically separated; reporting `null` would have left
+        the largest disparity in this project unqualified.
+        """
+        import eval.subgroup_audit as sa
+
+        # Three bands. Whatever the rates come out as, `separated` must be a decided boolean.
+        rows = [{"text": f"A sentence about {g}. And a second, longer one about {g} as well.",
+                 "g": g} for g in ("a",) * 40 + ("b",) * 40 + ("c",) * 40]
+        res = sa.ablate(rows, "g", {"a": "a", "b": "b", "c": "c"})
+        for comp in res["components"].values():
+            assert comp["separated"] is not None, (
+                f"separation was not computed for {len(comp['groups'])} bands: {comp}"
+            )
+
+    def test_a_band_axis_with_no_usable_group_says_so(self, capsys):
+        """The empty case must name the axis and the floor, not print an empty result."""
+        import eval.subgroup_audit as sa
+
+        res = sa.ablate([{"text": "hello there friend", "g": "solo"}], "g", {})
+        assert res.get("error"), res

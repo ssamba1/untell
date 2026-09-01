@@ -528,8 +528,10 @@ words, which is why a vocabulary probe built from that literature nearly missed 
 actually found them was `wilson` and `fpr`. The field and the fairness field share no vocabulary,
 and a survey searching either one's terms will keep concluding the other does not exist.
 
-Most of the other 18 hits are ordinary ROC bookkeeping — `fpr`/`tpr` in a benchmark loop. Two
-are worth a reader: `stef41/lmscan` and `Jroo1053/MGTMark`.
+The other 18 hits are ordinary ROC bookkeeping — `fpr`/`tpr` in a benchmark loop, aggregate and
+ungrouped. This paragraph first said `stef41/lmscan` and `Jroo1053/MGTMark` were "worth a
+reader"; both were then read, and neither is. `lmscan` computes `fp / total_neg` in its
+evaluation module, `MGTMark` the same per run-config. No subgroups in either.
 
 ### Two defects the run exposed in the tooling
 
