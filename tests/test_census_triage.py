@@ -24,10 +24,9 @@ free ground truth and is what `verify` scores against.
 
 from __future__ import annotations
 
-import pathlib
-
 import importlib.util
 import json
+import pathlib
 from pathlib import Path
 
 import pytest
