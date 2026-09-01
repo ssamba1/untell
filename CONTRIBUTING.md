@@ -21,7 +21,23 @@ cd untell
 pip install -e ".[dev]"        # ruff + pytest + requests
 # optional, for real detector signal:
 pip install -e ".[full,eval]"
+
+# Install the pre-commit gate. Cloning does not set this, so the hook does nothing until you do:
+git config core.hooksPath .githooks
 ```
+
+### The pre-commit gate
+
+`.githooks/pre-commit` refuses a commit that CI would reject. It runs `ruff` on any Python change,
+the documentation guards on any Markdown change, and `untell-audit` only when a live document
+changed — the audit takes about a minute, and a gate slow enough to skip is a gate nobody runs.
+
+It exists because of a specific mistake rather than a general principle: a commit was pushed while
+`untell-audit` was failing, because the audit and the commit ran in one shell sequence that did not
+gate on the audit's exit code. CI caught it — after the push.
+
+`git commit --no-verify` bypasses it, which is the right thing for a work-in-progress commit you do
+not intend to push.
 
 ## Before you open a PR
 

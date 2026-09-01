@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Refuse a commit that CI would reject, before it becomes a push.
+#
+# This exists because of a specific mistake rather than a general principle. A round was committed
+# and pushed while `untell-audit` was failing: the audit and the commit ran in one shell sequence
+# that did not gate on the audit's exit code, so an unattributed figure went out and was fixed in a
+# follow-up commit. CI would have caught it — after the push, in a public failure, on a branch
+# somebody else might have pulled.
+#
+# Scoped by what changed, because a gate slow enough to skip is a gate nobody runs:
+#   * ruff, always — it is fast and its findings are always real.
+#   * the documentation guards, only when documentation or the roadmap changed.
+#   * `untell-audit`, only when a live document changed, because it takes about a minute.
+#
+# Install with:  git config core.hooksPath .githooks
+# Bypass with:   git commit --no-verify   (for a work-in-progress commit you do not intend to push)
+set -uo pipefail
+
+changed=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$changed" ] && exit 0
+
+fail() { printf '\n\033[31mpre-commit: %s\033[0m\n' "$1" >&2; exit 1; }
+
+if printf '%s\n' "$changed" | grep -qE '\.py$'; then
+    command -v ruff >/dev/null 2>&1 || { echo "pre-commit: ruff not installed, skipping lint" >&2; }
+    if command -v ruff >/dev/null 2>&1; then
+        ruff check . || fail "ruff found issues. Fix them, or commit with --no-verify if this is a WIP."
+    fi
+fi
+
+docs_changed=$(printf '%s\n' "$changed" | grep -E '\.md$' || true)
+if [ -n "$docs_changed" ]; then
+    python -m pytest -q -p no:randomly \
+        tests/test_docs_claims.py \
+        tests/test_roadmap_status.py \
+        tests/test_retracted_claims_do_not_survive_elsewhere.py \
+        >/dev/null 2>&1 || fail "documentation guards failed. Run them to see which."
+fi
+
+# The live documents are the ones `untell-audit` reads; nothing else triggers the slow check.
+if printf '%s\n' "$docs_changed" | grep -qE '^(README|ROADMAP|ai-writing-research)\.md$|^docs/'; then
+    python -m untell.scripts.audit >/dev/null 2>&1 \
+        || fail "untell-audit failed — most likely a bolded figure with no stated source. Run \`untell-audit\`."
+fi
+
+exit 0

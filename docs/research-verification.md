@@ -2940,3 +2940,48 @@ Worth stating plainly: **9,958 is a floor, not a count** — MEASURED by
 Four files still fail to import here, so a complete environment collects more. The documented figure has to be the smaller of the tiers for the
 assertion to mean anything, and a floor satisfies that — but nobody should read it as the size of the
 suite.
+
+---
+
+# Round forty — closing the gap that let round thirty-nine ship broken
+
+Round thirty-nine was committed and pushed while `untell-audit` was failing. The audit and the commit
+ran in one shell sequence that did not gate on the audit's exit code, so an unattributed figure went
+out and was corrected in the next commit.
+
+CI would have caught it. **After the push** — in a public failure, on a branch somebody else might
+have pulled. Being more careful is not a fix; the sequence was wrong, not the attention paid to it.
+
+`.githooks/pre-commit` refuses a commit CI would reject, scoped by what changed:
+
+| change | gate |
+|---|---|
+| any `.py` | `ruff check .` |
+| any `.md` | the documentation guards |
+| a live document | `untell-audit` |
+
+The scoping is the design decision. `untell-audit` takes about a minute, and **a gate slow enough to
+skip is a gate nobody runs** — so it fires only on the documents it actually reads. `--no-verify`
+bypasses everything, documented in the hook itself, because a gate with no escape hatch gets
+uninstalled the first time somebody needs a work-in-progress commit and then protects nothing.
+
+**Verified by using it, not by reading it.** A Python file with two lint errors was refused and `HEAD`
+stayed put; a ROADMAP row renumbered to break the status guard was refused; `--no-verify` committed.
+
+⚠️ **And the first attempt to test it was a bad test.** Appending *"a completely made-up 73.4%
+figure"* to the ledger did not trip the audit — the attribution window is ±12 lines and it picked up
+a `MEASURED` from the paragraph above. The hook was fine; **the probe was passing for a reason that
+had nothing to do with what it was probing**, which is the same defect as a test that would pass with
+the feature deleted. The real probes replaced it.
+
+## What the tests check, and what they deliberately do not
+
+They check the hook's **content**: that it is versioned rather than sitting untracked in `.git/hooks`,
+that it is executable (git skips a non-executable hook **in silence**, which is indistinguishable
+from a passing gate), that every gate CI runs is still named in it, that the failure path ends in
+`exit 1` rather than a warning, and that installation is documented in `CONTRIBUTING.md` — because
+`core.hooksPath` is not set by cloning, so **uninstalled is the default state.**
+
+They do not shell out to `git commit`. That test would be slower and more fragile than the thing it
+guards. What can drift silently here is the *list of checks*: a hook that stops running the audit is
+faster and looks identical.
