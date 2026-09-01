@@ -544,6 +544,31 @@ means the next person to run it — on a machine without those restrictions, ove
 a different topic taxonomy — *extends* the survey instead of repeating it. A bounded survey that can
 be re-run and widened is worth more than an unbounded claim that cannot be checked at all.
 
+### The PubMed half, reproducible as data rather than as code
+
+`eval/litreview.py` makes the Anthology survey re-runnable. The PubMed half cannot ship the same way:
+`eutils.ncbi.nlm.nih.gov` is blocked here too, so a PubMed code path could be written but **not
+tested**, and this repo does not ship unverified code. The reproducible form is therefore the queries
+themselves, with the counts they returned on 2026-09-01, so anyone can re-run them and see whether
+the corpus has moved:
+
+| Query | Returned | Screened to |
+|---|---|---|
+| `excess vocabulary LLM-assisted writing biomedical abstracts Kobak` | 1 | PMID 40601754 |
+| `GPT detectors biased against non-native English writers` | 1 | 37521038 |
+| `shrinking landscape linguistic diversity large language models` | 1 | 42637911 |
+| `homogenizing effect large language models human expression thought` | 1 | 41820108 |
+| `accuracy bias trade-offs AI text detection tools fairness scholarly publication` | 1 | 40989485 |
+| `AI detection risks undermining academic integrity` | 4 | 42443434, 40420142, 39939423 |
+| `(AI-generated text detection OR AI detector OR ChatGPT detection) AND (accuracy OR false positive OR reliability)`, 2024– | **1408** | too broad to screen exhaustively — narrowed below |
+| `"AI detector"[Title/Abstract] AND (bias OR fairness OR "false positive")[Title/Abstract]` | 3 | 40105702, 39288967, 38516933 |
+| `detection of AI-generated text[Title] AND (tools OR detectors OR classifiers)`, 2024– | 2 | 41474280, 39628838 |
+
+**The 1,408 is the honest edge of this half.** A broad query returns more than can be read, so the
+PubMed pass is high-precision rather than exhaustive: tight queries, every hit read at source. That
+is a screening strategy, not a systematic review of PubMed, and it is labelled as one here so nobody
+mistakes the difference.
+
 The three papers worth an outside read if anyone ever has unrestricted access remain, in order:
 **arXiv:2603.20254**, **arXiv:2608.11256**, **arXiv:2607.29539**.
 
