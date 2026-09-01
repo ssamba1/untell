@@ -1,4 +1,4 @@
-# Measured: who a detector fails, on 38,355 texts nobody wrote with a machine
+# Measured: who a detector fails, on 38,805 texts nobody wrote with a machine
 
 Every number here is a **false-positive rate on known-human writing**. The corpora are essays by
 real students, so a flag is an error by construction — there is no labelling to dispute and no
@@ -22,7 +22,7 @@ untell-gpt2-ppl fetch && untell-gpt2-ppl score --csv <corpus>.csv --by ell_statu
 
 Raw rows: `.claude/measurements.jsonl`, recipes `ellipse-*`, `asap-subgroup-fpr`,
 `burstiness-formulation-robustness`, `true-ngram-perplexity-contrast`,
-`gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`.
+`gpt2-transformer-perplexity-contrast`, `pelic-l1-and-level`, `published-vs-student-fpr`.
 
 ## The corpora
 
@@ -248,14 +248,45 @@ Gender does not separate here (1.03x, overlapping) — consistent with ELLIPSE a
 **Caveat.** PELIC's median text is 23 words, so the ≥60-word floor keeps 37% of it and may select
 for longer, more elaborated answers.
 
+## Result 10 — the largest disparity here is not demographic, it is professional-vs-student
+
+Same detector, same 0.50 threshold, every flag an error.
+
+| population | n | FPR | 95% CI |
+|---|---|---|---|
+| Gutenberg literary classics | 144 | **1.4%** | 0.4–4.9% |
+| Brown 1961 published American prose | 280 | **3.2%** | 1.7–6.0% |
+| Reuters newswire | 26 | 3.8% | 0.7–18.9% |
+| ASAP — US school students | 17,307 | **31.6%** | — |
+| ELLIPSE — US school ESL | 3,904 | **38.7%** | — |
+| PELIC — adult university ESL | 17,144 | **39.1%** | — |
+
+**Roughly a tenfold gap** — an order of magnitude larger than any subgroup disparity in this
+document, which topped out at 2.27x and at 1.55x among well-sampled groups.
+
+The practical reading: **a detector validated on "human writing" — which in practice usually means
+published, edited, professional text — will look excellent and then fail catastrophically on
+students, who are the population it is actually deployed against.** That is a plausible mechanism
+for vendors publishing sub-1% false-positive rates that nobody can reproduce in a classroom.
+
+**Confounds, and they are substantial.** Brown, Gutenberg and Reuters are professionally edited,
+drawn from different genres and registers, and chunked into 350-word slices of longer works; the
+student corpora are first-draft responses to assigned prompts. Genre, editing and task all vary
+alongside "professional vs student", so this is not a clean single-variable contrast. Reuters
+n=26 has a very wide interval and must not be quoted alone.
+
+What it does establish: **the population a detector is validated on can differ from its deployment
+population by an order of magnitude in false-positive rate.** Any published FPR that does not name
+its population is uninformative about the students it will be used on.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
   which is the mechanism, not a shipped detector. No commercial or neural detector was run.
 - **Nothing about any commercial detector.** Those need keys and are out of scope here exactly as
   they are in `free-ceiling-measured.md`.
-- **Nothing about professional or published writing.** Result 9 adds adult university ESL across
-  20+ first languages, but professional and published prose are still unmeasured, and the effect sizes on ASAP are already
+- **No clean professional-vs-student contrast.** Result 10 measures published prose, but genre,
+  editing and task vary alongside the population, and the effect sizes on ASAP are already
   materially smaller than on ELLIPSE, so domain sensitivity is demonstrated rather than assumed.
 - **Nothing about any individual document.** Every rate here describes a *detector*. A per-group
   false-positive rate says nothing about whether a particular text was machine-written, and must

@@ -431,6 +431,14 @@ same way once you read them together — the more fluent or more advantaged writ
 — which is exactly what the burstiness mechanism predicts, now shown on two independent corpora.
 Disability is the exception and points the other way.
 
+**And the largest gap found is not between demographic groups at all.** At one threshold the
+same detector scores 1.4–3.8% on published professional prose (Gutenberg, Brown, Reuters) and
+31.6–39.1% on student writing — roughly **tenfold**, an order of magnitude beyond any subgroup
+disparity in this work. A detector validated on edited professional text will look excellent and
+then fail on students, who are the population it is deployed against. Confounded by genre,
+editing and task, and reported that way — but it means **any published false-positive rate that
+does not name its population is uninformative about the students it will judge.**
+
 **A third corpus made this sharper still.** PELIC — adult university ESL, 20+ first languages
 — shows the false-positive rate varying by the writer's **first language** (Arabic 40.9% vs
 Turkish 29.7%, 1.38x, separated), and shows the proficiency effect running the *opposite* way to

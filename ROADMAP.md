@@ -114,6 +114,12 @@ known-human ESL essays, where every flag is an error by construction:
   writers more predictable — lower perplexity, the machine-like end — on both corpora
   (*d* −0.320 ELLIPSE, −0.491 ASAP). The lite tier's stoplist ratio points the other way,
   so it is not a stand-in for the thing it is named after.
+- **The biggest disparity is not demographic — it is professional-vs-student, ~10x.** Same
+  detector, same threshold: Gutenberg 1.4%, Brown 3.2%, Reuters 3.8% against ASAP 31.6%,
+  ELLIPSE 38.7%, PELIC 39.1%. An order of magnitude larger than any subgroup gap here. A
+  detector validated on published, edited prose will look excellent and then fail on the
+  students it is deployed against — a plausible mechanism for vendor sub-1% figures nobody
+  reproduces in a classroom. Confounded by genre, editing and task, and stated as such.
 - **A third corpus reverses the direction, and that is the point.** PELIC (17,144 adult
   university ESL texts, 20+ first languages, from GitHub LFS) adds a new axis: **first
   language changes the false-positive rate** — Arabic 40.9% (n=5,818) vs Turkish 29.7%
@@ -158,7 +164,7 @@ Recorded as `ellipse-subgroup-fpr`, `ellipse-fpr-by-proficiency`,
 `ellipse-lite-signal-decomposition`, `ellipse-proficiency-replication`,
 `ellipse-component-ablation`, `ellipse-raw-signal-effect-sizes` and
 `asap-subgroup-fpr`, `burstiness-formulation-robustness` and
-`true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` and `pelic-l1-and-level` in
+`true-ngram-perplexity-contrast` and `gpt2-transformer-perplexity-contrast` `pelic-l1-and-level` and `published-vs-student-fpr` in
 `.claude/measurements.jsonl`.
 
 
