@@ -73,9 +73,26 @@ VOLUMES: tuple[str, ...] = (
 # A paper counts as detection-related if it talks about detecting generated text at all. Kept broad
 # on purpose: the point of the exercise is the *ratio between topics inside* this set, and a narrow
 # filter would let the selection do the arguing.
+# A bare `detector` used to be an alternative here, and it matched ANY detector: Chinese spelling
+# correction, hallucination detection in machine translation, sarcasm, out-of-distribution detection.
+# MEASURED: 213 of 526 matches — 40% — came in that way, and they fed every topic count and the
+# ratio this project's strategy rests on. `detector` is kept, because papers say "we evaluate five
+# detectors on student essays" without ever writing "AI-generated text", but only when an AI/LLM term
+# sits within 40 characters of it.
+#
+# The tighter phrase-only filter was tested and rejected: it scores better on precision and drops
+# 2026.eacl-srw.20 — the Czech result that disconfirms part of our own thesis, and one of the most
+# load-bearing citations we have. For a RATIO, losing on-topic papers is worse than keeping some
+# off-topic ones, because recall loss biases the topics unevenly while noise is roughly flat.
 DETECTION = re.compile(
     r"machine[- ]generated text|AI-generated text|LLM-generated text|MGT detection"
-    r"|AI text detect|detector",
+    r"|AI text detect"
+    # \b around AI/LLM/GPT is not cosmetic: with re.I a bare `AI` matches inside "training",
+    # "domain" and "certain", which let a Chinese-spelling-correction paper in through the phrase
+    # "detector or corrector and training".
+    r"|(?:\bAI\b|\bLLM\b|\bGPT|machine-generated|machine generated|synthetic text|watermark)"
+    r"[\w\s\-,]{0,40}?detect(?:or|ion)"
+    r"|detect(?:or|ion)[\w\s\-,]{0,40}?(?:\bAI\b|\bLLM\b|\bGPT|machine-generated|synthetic text)",
     re.I,
 )
 

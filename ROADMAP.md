@@ -53,7 +53,7 @@ no decision, no native speaker and no GPU, only the work.
 | 25 | Length-conditioned false-positive curve | ✅ done — **26.7% at ≤50 words against 15.6% at 50–100** | — |
 | 26 | AI-assisted arm + per-subgroup stratification | ✅ done — **and it moved the estimates by 10 points between n=20 and n=60** | — |
 | 27 | Conformal calibration | ✅ done — **0.45 flags 17.3% of pre-LLM human text; 0.52 bounds it under 5%** | — |
-| 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody.** PubMed returns zero studies on whether detectors flag neurodivergent or disabled writers; the blocker is a consented corpus with disability metadata, not method. |
+| 28 | Disability and neurodivergence as a fairness arm | 🔜 open | **nobody — literally nobody**, and **the corpus blocker has a way around it**: *Centering the Margins* measures harm to marginalised groups by outlier detection, needing no subgroup labels at all. Method in §7. |
 | 29 | Per-sentence evidence beside the score | ✅ done — `untell-sentences --evidence` names the catalogue tells inside each sentence, labelled corroboration rather than explanation | — |
 
 Three things are ruled out rather than pending, each with the measurement that ruled it out: raw
@@ -428,7 +428,7 @@ aggregation rule itself, one level down.
 
 ### The result that should organise everything else — all of it peer-reviewed and read at source
 
-A systematic pass over **96 ACL Anthology volumes, 31,387 abstracts, 526 detection papers** (method
+A systematic pass over **96 ACL Anthology volumes, 31,387 abstracts, 565 detection papers** (method
 and counts in [the ledger](docs/research-verification.md)) replaced the earlier framing. Everything
 below is refereed and was read from the Anthology's own metadata.
 
@@ -444,11 +444,28 @@ a partial clone of the Anthology, documented in the ledger.
 ✗ **And those thirteen fairness papers are almost all about one attribute.** Checked in both
 reachable corpora: a PubMed query for AI detection against autistic, neurodivergent, ADHD, dyslexic
 or disabled writers returns **two records, both false positives** (studies of AI *diagnosing* autism
-and ADHD), and across the **526 detection papers** in the cached Anthology corpus those terms occur
-in **zero** titles or abstracts — the only matches are `accessible`, `accessibility` and `assistive`
-used incidentally. **The number of studies on whether detectors flag neurodivergent or disabled
-writers is zero, in both.** Not for want of expertise: the same Anthology publishes autism detection
+and ADHD), and across the detection papers in the cached Anthology corpus the survey returns **one**
+— *Centering the Margins*
+([2023.emnlp-main.579](https://aclanthology.org/2023.emnlp-main.579/)), which is about **toxicity**
+detection, not AI-text detection. **The number of studies on whether AI-text detectors flag
+neurodivergent or disabled writers is still zero, in both corpora.** Not for want of expertise: the same Anthology publishes autism detection
 in speech, ADHD proxy detection and sign-language accessibility work.
+
+✅ **And the reason row 28 was blocked has a published way around it.** The single Anthology match is
+*Centering the Margins*
+([2023.emnlp-main.579](https://aclanthology.org/2023.emnlp-main.579/)) — a **toxicity**-detection
+paper, so not a counterexample, but its method is the one row 28 needs. It draws on disability
+studies, "which state that people farther from the norm face greater adversity", and operationalises
+the margins **by outlier detection** — identifying text about people whose attributes are distant
+from the norm, rather than by asking anyone to declare a protected attribute. It finds model error
+**up to 70.4% worse** for demographic outliers.
+
+**That removes the blocker.** Row 28 was recorded as needing a consented corpus carrying disability
+metadata, which is why it has stayed open; this measures the same harm **without subgroup labels**,
+on the deployment's own corpus. And it is the DivScore argument
+([2025.emnlp-main.971](https://aclanthology.org/2025.emnlp-main.971/)) reached from the other
+direction — distance from the reference distribution is the risk — which is the second time in this
+roadmap that a fairness result and a detection-theory result have converged on the same quantity.
 
 ✗ **An earlier version of this paragraph justified that gap by asserting that "formulaic phrasing,
 low burstiness, regular sentence length" are documented features of autistic writing. No source says

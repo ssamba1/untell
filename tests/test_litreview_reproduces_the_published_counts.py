@@ -12,9 +12,23 @@ matching nothing, silently turning a real count into zero.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from eval import litreview
+
+CACHE = Path(__file__).resolve().parent.parent / ".anthology-cache"
+
+needs_corpus = pytest.mark.skipif(
+    not (CACHE.exists() and any(CACHE.glob("*.xml"))),
+    reason="Anthology corpus not cached (run `python -m eval.litreview --download`)",
+)
+
+
+def _abstract_entries() -> dict:
+    """id -> {title, abstract} for the cached corpus."""
+    return {p["id"]: p for p in litreview.load_abstracts(CACHE)}
 
 
 def _paper(pid: str, title: str, abstract: str) -> dict[str, str]:
@@ -83,3 +97,57 @@ def test_flatten_reads_through_inline_markup():
 def test_missing_cache_reports_how_to_fix_it_rather_than_crashing(tmp_path, capsys):
     assert litreview.main(["--cache", str(tmp_path / "absent")]) == 1
     assert "--download" in capsys.readouterr().err
+
+
+# --- the detection filter must not drift on either side ------------------------------------------
+#
+# `DETECTION` gates every topic count and therefore the ratio the strategy rests on. It once carried
+# a bare `detector` alternative, which matched Chinese spelling correction, hallucination detection
+# in machine translation, sarcasm and out-of-distribution detection: MEASURED, 213 of 526 matches —
+# 40% — arrived that way. Tightening it is only safe if RECALL is pinned too, because losing
+# on-topic papers biases the topics unevenly while leftover noise is roughly flat.
+
+ON_TOPIC = [
+    "2025.acl-long.1292",      # author roles and detection
+    "2026.customnlp4u-1.1",    # BAID, bias assessment of AI detectors
+    "2026.eacl-srw.20",        # the Czech disconfirmation — dropped by a phrase-only filter
+    "2026.findings-acl.990",   # TTP-Detect, third-party watermark verification
+    "2026.acl-long.663",       # the American newspapers audit
+    "2024.acl-long.674",       # RAID
+    "2025.emnlp-main.971",     # DivScore
+    "2026.findings-acl.380",   # ExaGPT
+    "2024.emnlp-demo.35",      # LLM-DetectAIve
+]
+
+OFF_TOPIC = [
+    "2023.acl-long.570",       # Chinese spelling check
+    "2023.acl-long.650",       # factual errors in summarization
+    "2023.acl-long.717",       # out-of-domain detection with pre-trained LMs
+    "2023.acl-long.478",       # multi-modal knowledge retrieval
+]
+
+
+def _matches(entry: dict) -> bool:
+    return bool(litreview.DETECTION.search(entry["title"] + " " + entry["abstract"]))
+
+
+@needs_corpus
+@pytest.mark.parametrize("pid", ON_TOPIC)
+def test_a_paper_the_strategy_cites_is_still_counted(pid):
+    """Recall. Dropping any of these silently changes a published ratio, and the Czech result is the
+    one that disconfirms part of our own thesis — losing it would bias the corpus toward agreeing
+    with us."""
+    index = _abstract_entries()
+    if pid not in index:
+        pytest.skip(f"{pid} not in the cached volumes")
+    assert _matches(index[pid]), f"{pid} is cited by the strategy but no longer counts as detection"
+
+
+@needs_corpus
+@pytest.mark.parametrize("pid", OFF_TOPIC)
+def test_a_paper_about_some_other_kind_of_detection_is_not_counted(pid):
+    """Precision. These are what a bare `detector` alternative let in."""
+    index = _abstract_entries()
+    if pid not in index:
+        pytest.skip(f"{pid} not in the cached volumes")
+    assert not _matches(index[pid]), f"{pid} is not machine-generated-text detection but counts as it"

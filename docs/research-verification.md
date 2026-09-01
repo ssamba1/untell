@@ -2265,3 +2265,76 @@ with its citation rather than built and left unmeasured.
   in these documents by name but never by citation, which is why an id-based check reported it
   missing. Nothing was wrong; the check was looking for the wrong thing, and that is worth knowing
   before trusting the next id-based sweep.
+
+---
+
+# Round thirty — the instrument that produced the headline ratio was 40% noise
+
+Checking the three uncited papers in the `fairness` row found all three off-topic: political bias in
+pretraining data, cross-lingual misinformation, and persona-prompt stereotypes. **None is about
+AI-text-detector fairness.** That is a fault in the instrument, not the corpus, and the instrument is
+the one that produces the ratio this whole strategy argues from.
+
+## ✗ The root cause
+
+`DETECTION` carried a bare `|detector` alternative, so it matched **any** detector — Chinese spelling
+correction, hallucination detection in machine translation, sarcasm, out-of-distribution detection,
+multi-modal retrieval. MEASURED: **213 of 526 matches — 40% — contained no machine-generated-text
+phrase at all** and arrived purely through that word.
+
+## ✅ The result that matters: the ratio does not depend on the filter
+
+Three filters were run over the same 31,387 abstracts — the old bare-`detector` one, a phrase-only
+strict one, and the proximity filter now shipped:
+
+| filter | detection papers | robustness | false positives | fairness |
+|---|---|---|---|---|
+| old (bare `detector`) | 526 | 26.4% | 2.5% | 1.5% |
+| **new (proximity)** | **565** | **27.1%** | **1.9%** | **2.1%** |
+| strict (phrases only) | 313 | 28.8% | 2.6% | 1.6% |
+
+**Robustness stays between 26% and 29%; false positives between 1.9% and 2.6%; fairness between 1.5%
+and 2.1%.** The counts move by up to 80% between filters (313 to 565 papers, MEASURED in the table
+above); the shares barely move at all. **This is the fourth time
+the ratio has survived a change to the corpus beneath it**, and the first time it has survived a
+change to the *definition* rather than the sample. The strategy quotes shares from here on, with the
+counts as supporting detail.
+
+## Two bugs found while fixing it, both by the tests
+
+**1. A word-boundary bug I introduced.** The first tightened pattern let a Chinese-spelling-correction
+paper through on the phrase "detector or corrector and training" — because with `re.I` a bare `AI`
+alternative matches **inside "tr*ai*ning"**, and equally inside "domain" and "certain". `\bAI\b` now.
+
+**2. A tightening that made precision worse.** Adding `detect(?:or|ion)` with loose company terms
+(`machine|neural|generated`) took the count to **607, above the 526 it was meant to improve on**, by
+sweeping in hallucination and fake-news detection. The proximity terms are now restricted to the
+AI-authorship senses.
+
+**The phrase-only filter was tested and rejected**, despite the best precision: it drops
+[2026.eacl-srw.20](https://aclanthology.org/2026.eacl-srw.20/), the Czech result that **disconfirms
+part of our own thesis**. For a ratio, recall loss is worse than residual noise — noise is roughly
+flat across topics, while losing on-topic papers biases them unevenly, and losing the one paper that
+argues against us biases the corpus toward agreeing with us. Both directions are now pinned by tests:
+nine papers the strategy cites must keep counting, four off-topic ones must not.
+
+## ✅ And the finding that unblocks row 28
+
+The new filter returns **one** paper under `disability/neurodivergence` where the old returned zero.
+It is *Centering the Margins* ([2023.emnlp-main.579](https://aclanthology.org/2023.emnlp-main.579/)),
+about **toxicity** detection — so the published claim survives, now stated precisely: zero studies on
+whether **AI-text** detectors flag neurodivergent or disabled writers.
+
+**But its method is the one row 28 needed.** It draws on disability studies — "people farther from
+the norm face greater adversity" — and operationalises the margins **by outlier detection**, finding
+text about people whose attributes are distant from the norm rather than asking anyone to declare a
+protected attribute. Error is **up to 70.4% worse** for those outliers.
+
+Row 28 has been open since round sixteen on the grounds that the blocker was "a consented corpus with
+disability metadata, not method." **That was true and is now false**: this measures the same harm
+without subgroup labels, on the deployment's own corpus. It is also DivScore's argument reached from
+the opposite direction — distance from the reference distribution is the risk — the second time in
+this roadmap that a fairness result and a detection-theory result have landed on the same quantity.
+
+**Worth noting how it was found.** Not by searching for it. By checking three papers that a topic row
+had miscounted, and following the miscount to its cause.
