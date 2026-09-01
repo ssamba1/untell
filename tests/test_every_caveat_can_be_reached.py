@@ -144,5 +144,46 @@ def test_the_loop_says_when_a_voice_sample_is_too_short(warnings_from) -> None:
 def test_preserve_says_when_it_has_no_ner(warnings_from) -> None:
     import untell.scripts.preserve as mod
 
-    out = warnings_from([], mod._warn_no_ner)
+    # The gate is a module-level one-shot, so anything earlier in the session that reached this
+    # warning leaves it spent and this test asserts on an empty string forever after. MEASURED
+    # 2026-09-01: it passed alone and failed in the file, which is the worst shape for a caveat
+    # test -- it looks like coverage and checks nothing. Reset before asserting.
+    mod._WARNED_NO_NER = False
+    try:
+        out = warnings_from([], mod._warn_no_ner)
+    finally:
+        mod._WARNED_NO_NER = False
     assert out.strip()
+
+
+def test_the_ner_caveat_names_the_piece_that_is_actually_missing(warnings_from, monkeypatch):
+    """The remedy has to match the gap, or it sends the user to a command that cannot run.
+
+    `_spacy_entity_spans` checks for the MODEL without importing spaCy — a deliberate 5s saving,
+    documented at the call site. The warning it reached then asserted "spaCy is installed",
+    which that path had never checked. MEASURED 2026-09-01 in a container with neither: the
+    message named a missing model and prescribed `python -m spacy download en_core_web_sm`,
+    which fails with "No module named spacy". Right symptom, wrong diagnosis, unusable fix.
+    """
+    import importlib.util
+
+    import untell.scripts.preserve as mod
+
+    real = importlib.util.find_spec
+
+    def no_spacy(name, *a, **kw):
+        return None if name == "spacy" else real(name, *a, **kw)
+
+    monkeypatch.setattr(importlib.util, "find_spec", no_spacy)
+    monkeypatch.setattr(mod, "_WARNED_NO_NER", False)
+    out = warnings_from([], mod._warn_no_ner)
+    assert "pip install spacy" in out, (
+        f"with spaCy absent the message prescribes a spacy subcommand the user cannot run: {out}"
+    )
+
+    # ...and where spaCy really is present, the remedy stays the short one. Reset by assignment,
+    # not a second `monkeypatch.setattr`: that would capture the True this test just set and
+    # restore THAT at teardown, leaving the one-time gate closed for every test after this one.
+    mod._WARNED_NO_NER = False
+    out = warnings_from([], lambda: mod._warn_no_ner(spacy_present=True))
+    assert "pip install spacy" not in out and "spacy download" in out, out

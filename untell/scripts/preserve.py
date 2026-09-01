@@ -825,16 +825,32 @@ _WARNED_SPACY_CAP = False
 _WARNED_NO_NER_ENV = False
 
 
-def _warn_no_ner() -> None:
-    """Say once that named-entity locking is off, and how to turn it on."""
+def _warn_no_ner(spacy_present: bool | None = None) -> None:
+    """Say once that named-entity locking is off, and how to turn it on.
+
+    The remedy depends on WHICH piece is missing, and the caller below deliberately checks for
+    the model without importing spaCy (a 5s saving, see the comment at the call site). That left
+    this message asserting "spaCy is installed" on a path that had never checked — so in an
+    environment with neither, it named the wrong problem and prescribed
+    `python -m spacy download`, which cannot run without spaCy. `find_spec` costs nothing and is
+    the same kind of lookup the model check already does, so ask before saying.
+    """
     global _WARNED_NO_NER
-    if not _WARNED_NO_NER:
-        logger.warning(
-            "spaCy is installed but the 'en_core_web_sm' model is not, so NAMED ENTITIES "
-            "(people, organisations, places) are NOT being locked — only citations, numbers, "
-            "quotes and URLs are. Enable it with: python -m spacy download en_core_web_sm"
-        )
-        _WARNED_NO_NER = True
+    if _WARNED_NO_NER:
+        return
+    if spacy_present is None:
+        import importlib.util
+
+        spacy_present = importlib.util.find_spec("spacy") is not None
+    remedy = ("python -m spacy download en_core_web_sm" if spacy_present
+              else "pip install spacy && python -m spacy download en_core_web_sm")
+    missing = ("spaCy is installed but the 'en_core_web_sm' model is not" if spacy_present
+               else "neither spaCy nor the 'en_core_web_sm' model is installed")
+    logger.warning(
+        "%s, so NAMED ENTITIES (people, organisations, places) are NOT being locked — only "
+        "citations, numbers, quotes and URLs are. Enable it with: %s", missing, remedy
+    )
+    _WARNED_NO_NER = True
 
 
 def _warn_no_ner_env() -> None:
@@ -961,7 +977,7 @@ def _spacy_entity_spans_impl(text: str) -> list[tuple[int, int]]:
             # latency buying nothing, and named-entity locking silently inert even though the README
             # promises entities are locked byte-for-byte. Skip spaCy entirely and say so once, so the
             # gap is visible and fixable instead of invisible and slow.
-            _warn_no_ner()
+            _warn_no_ner(spacy_present=True)  # the import above succeeded
             _spacy_entity_spans._nlp = None  # type: ignore[attr-defined]
             return []
         _spacy_entity_spans._nlp = nlp  # type: ignore[attr-defined]
