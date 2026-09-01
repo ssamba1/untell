@@ -653,3 +653,64 @@ def test_default_axes_match_the_corpus_that_was_loaded():
     # must hold is that the ASAP list adds what the ELLIPSE defaults cannot supply.
     assert set(asap) - set(DEFAULT_AXES) >= {"ell_status", "student_disability_status"}, asap
     assert "SES" not in asap, "ASAP names that column `economically_disadvantaged`"
+
+
+class TestSelectionCorrectedSeparation:
+    """`separated` compares two groups the data itself picked, and 95% is the wrong yardstick.
+
+    MEASURED 2026-09-01, on this instrument's own output. ELLIPSE's `race_ethnicity*grade` axis
+    has 13 reportable cells, so a worst-versus-best pick is chosen from 78 pairs — and it was
+    reported as separated against a plain z=1.96 while *no single axis on that corpus separates at
+    all*. Four of the five crossed axes tried on ELLIPSE found nothing; reporting the fifth
+    without accounting for having tried five, over thirteen cells, is how a measurement tool
+    manufactures a finding.
+
+    The verdict is now Bonferroni over the k(k-1)/2 pairs. Conservative, which is the right
+    direction for a claim about a group of people.
+    """
+
+    def test_the_critical_value_grows_with_the_number_of_groups(self):
+        from eval.subgroup_audit import _selected_z
+
+        assert _selected_z(2) == pytest.approx(1.96, abs=0.01), "two groups must cost nothing"
+        assert _selected_z(6) > _selected_z(3) > _selected_z(2)
+        assert _selected_z(13) == pytest.approx(3.41, abs=0.02), "13 cells => 78 pairs"
+
+    def test_a_two_group_axis_is_unaffected(self):
+        """The correction must not quietly retract every finding this document already has."""
+        import eval.subgroup_audit as sa
+
+        groups = {
+            "a": {"n": 2000, "flagged": 700, "fpr": 0.35, "ci": list(sa.wilson(700, 2000)),
+                  "status": "reported"},
+            "b": {"n": 2000, "flagged": 560, "fpr": 0.28, "ci": list(sa.wilson(560, 2000)),
+                  "status": "reported"},
+        }
+        d = sa._disparity(groups)
+        assert d["groups_compared"] == 2
+        assert d["separated"] is True and d["separated_uncorrected"] is True
+
+    def test_a_marginal_gap_across_many_cells_loses_its_verdict(self):
+        """The case the correction exists for: barely-separated extremes among many groups."""
+        import eval.subgroup_audit as sa
+
+        groups = {}
+        for i, (n, hits) in enumerate([(200, 88), (200, 58)] + [(200, 72)] * 10):
+            groups[f"g{i}"] = {"n": n, "flagged": hits, "fpr": hits / n,
+                               "ci": list(sa.wilson(hits, n)), "status": "reported"}
+        d = sa._disparity(groups)
+        assert d["groups_compared"] == 12
+        assert d["separated_uncorrected"] is True, "fixture no longer marginal; retune it"
+        assert d["separated"] is False, (
+            f"a 12-cell axis kept its verdict under a 66-pair correction: {d}"
+        )
+
+    def test_both_verdicts_are_reported_so_the_table_stays_checkable(self):
+        """A reader comparing the printed 95% intervals by eye must not be contradicted silently."""
+        import eval.subgroup_audit as sa
+
+        groups = {f"g{i}": {"n": 300, "flagged": h, "fpr": h / 300,
+                            "ci": list(sa.wilson(h, 300)), "status": "reported"}
+                  for i, h in enumerate((120, 90, 100, 110, 95))}
+        d = sa._disparity(groups)
+        assert set(d) >= {"separated", "separated_uncorrected", "groups_compared"}

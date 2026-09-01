@@ -357,6 +357,40 @@ def equalised_odds(rows: list[dict], tier: str = "lite", threshold: float | None
     return out
 
 
+def _selected_z(k: int) -> float:
+    """Critical value for a worst-vs-best comparison SELECTED from k groups.
+
+    The separation check compares the two extremes of a set the data itself chose, and a 95%
+    interval is the wrong yardstick for that: with k reportable groups there are k(k-1)/2 pairs a
+    maximum-minimum pick could have landed on, and the chance one of them separates by luck grows
+    with k. MEASURED 2026-09-01 and this is not hypothetical -- ELLIPSE's `race_ethnicity*grade`
+    axis has 13 reportable cells and 78 such pairs, and it was reported as separated against a
+    plain 1.96 while no single axis on that corpus separates at all.
+
+    Bonferroni over those pairs. It is conservative, which is the right direction for a claim
+    about a group of people, and it costs nothing when k is 2 (z stays 1.96).
+    """
+    import statistics
+
+    pairs = max(1, k * (k - 1) // 2)
+    alpha = 0.05 / pairs
+    return statistics.NormalDist().inv_cdf(1 - alpha / 2)
+
+
+def _separated(hi: dict, lo: dict, rate_key: str, ci_key: str, k: int,
+               n_key: str = "n") -> tuple[bool, bool]:
+    """(separated at a plain 95%, separated after correcting for the selection).
+
+    Both are reported. The uncorrected one keeps the intervals in the table honest to what a
+    reader can check by eye; the corrected one is what the `separated` verdict uses.
+    """
+    plain = bool(hi[ci_key][0] > lo[ci_key][1])
+    z = _selected_z(k)
+    lo_hi = wilson(round(hi[rate_key] * hi[n_key]), hi[n_key], z=z)
+    hi_lo = wilson(round(lo[rate_key] * lo[n_key]), lo[n_key], z=z)
+    return plain, bool(lo_hi[0] > hi_lo[1])
+
+
 def _rate_disparity(groups: dict, rate_key: str, ci_key: str) -> dict | None:
     if len(groups) < 2:
         return None
@@ -364,10 +398,13 @@ def _rate_disparity(groups: dict, rate_key: str, ci_key: str) -> dict | None:
     lo_name = min(groups, key=lambda k: groups[k][rate_key])
     hi, lo = groups[hi_name], groups[lo_name]
     ratio = (hi[rate_key] / lo[rate_key]) if lo[rate_key] > 0 else None
+    n_key = "human_n" if "human_n" in hi else "n"
+    plain, corrected = _separated(hi, lo, rate_key, ci_key, len(groups), n_key)
     return {"worst": hi_name, "worst_rate": hi[rate_key],
             "best": lo_name, "best_rate": lo[rate_key],
             "ratio": round(ratio, 2) if ratio is not None else None,
-            "separated": bool(hi[ci_key][0] > lo[ci_key][1])}
+            "separated": corrected, "separated_uncorrected": plain,
+            "groups_compared": len(groups)}
 
 
 def _disparity(groups: dict) -> dict | None:
@@ -385,12 +422,16 @@ def _disparity(groups: dict) -> dict | None:
     lo_name = min(usable, key=lambda k: usable[k]["fpr"])
     hi, lo = usable[hi_name], usable[lo_name]
     ratio = (hi["fpr"] / lo["fpr"]) if lo["fpr"] > 0 else None
+    plain, corrected = _separated(hi, lo, "fpr", "ci", len(usable))
     return {
         "worst": hi_name, "worst_fpr": hi["fpr"],
         "best": lo_name, "best_fpr": lo["fpr"],
         "ratio": round(ratio, 2) if ratio is not None else None,
-        # Non-overlapping Wilson intervals: a conservative separation check, not a hypothesis test.
-        "separated": bool(hi["ci"][0] > lo["ci"][1]),
+        # Non-overlapping Wilson intervals, widened for the fact that these two groups were
+        # SELECTED as the extremes of `groups_compared`. See `_selected_z`.
+        "separated": corrected,
+        "separated_uncorrected": plain,
+        "groups_compared": len(usable),
     }
 
 
