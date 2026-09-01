@@ -307,3 +307,81 @@ class TestAnAxisWithNoDataSaysSo:
             "axes": {"ell_status": {"groups": {}, "disparity": None, "missing": True}},
         }
         assert "nothing measured here" in render(report)
+
+
+class TestEqualisedOdds:
+    """The other half of the audit: a detector can pass one parity and fail the other badly.
+
+    A detector that simply never flags one group has PERFECT false-positive parity for them and
+    lets all their machine-written work through. That harms the same students by a different
+    route, and a false-positive-only report calls it clean. These tests pin that the second rate
+    is actually computed and actually separated.
+
+    The module ships no AI corpus and must not pretend to: `.claude/corpora/` is HC3 HUMAN text,
+    and detector_audit carries five hand-written AI probes, which is a smoke test not a sample.
+    So `equalised_odds` REQUIRES the caller to supply labels, and refuses loudly without them.
+    """
+
+    def _rows(self, spec):
+        """(group, is_ai, n, flagged) -> rows already carrying scores via a stub scorer."""
+        out = []
+        for g, is_ai, n, flagged in spec:
+            for i in range(n):
+                out.append({"text": "x", "g": g, "is_ai": is_ai, "_flag": i < flagged})
+        return out
+
+    def _run(self, monkeypatch, rows):
+        from eval import subgroup_audit as sa
+
+        seq = iter([1.0 if r["_flag"] else 0.0 for r in rows])
+        import untell.scripts.score as sc
+
+        monkeypatch.setattr(sc, "score_text", lambda t, **k: {"max": next(seq)})
+        return sa.equalised_odds(rows, axes=("g",), threshold=0.5)
+
+    def test_missing_labels_are_refused_loudly(self):
+        from eval.subgroup_audit import equalised_odds
+
+        with pytest.raises(ValueError) as exc:
+            equalised_odds([{"text": "x", "g": "a"}], axes=("g",))
+        assert "no false negatives to measure" in str(exc.value)
+
+    def test_one_class_only_is_an_error_not_a_report(self, monkeypatch):
+        rows = self._rows([("a", False, 60, 30)])
+        out = self._run(monkeypatch, rows)
+        assert "error" in out and "both classes" in out["error"]
+
+    def test_both_rates_are_reported_per_group(self, monkeypatch):
+        rows = self._rows([("a", False, 60, 6), ("a", True, 60, 54),
+                           ("b", False, 60, 6), ("b", True, 60, 54)])
+        g = self._run(monkeypatch, rows)["axes"]["g"]["groups"]
+        assert g["a"]["fpr"] == 0.1 and g["a"]["fnr"] == 0.1
+        assert "fpr_ci" in g["a"] and "fnr_ci" in g["a"]
+
+    def test_perfect_fpr_parity_can_hide_a_large_fnr_gap(self, monkeypatch):
+        """The failure this whole class exists for.
+
+        Both groups have an identical 10% false-positive rate. Group b's machine-written work
+        sails through at 90% while group a's is caught. An FPR-only report calls this clean.
+        """
+        rows = self._rows([("a", False, 100, 10), ("a", True, 100, 90),   # a: fpr .10 fnr .10
+                           ("b", False, 100, 10), ("b", True, 100, 10)])  # b: fpr .10 fnr .90
+        block = self._run(monkeypatch, rows)["axes"]["g"]
+        fpr, fnr = block["fpr_disparity"], block["fnr_disparity"]
+        assert fpr["ratio"] == 1.0, "the false-positive rates were meant to be identical"
+        assert fpr["separated"] is False, "identical FPRs must not read as a disparity"
+        assert fnr["ratio"] >= 8, f"the false-negative gap was missed: {fnr}"
+        assert fnr["separated"] is True, "a 9x false-negative gap at n=100 must separate"
+
+    def test_a_group_short_on_either_class_is_not_reported(self, monkeypatch):
+        rows = self._rows([("big", False, 60, 6), ("big", True, 60, 6),
+                           ("thin", False, 60, 6), ("thin", True, 5, 1)])
+        g = self._run(monkeypatch, rows)["axes"]["g"]["groups"]
+        assert g["thin"]["status"] == "insufficient", "a group with 5 AI rows got a rate"
+        assert g["big"]["status"] == "reported"
+
+    def test_missing_values_are_not_a_group_here_either(self, monkeypatch):
+        rows = self._rows([("NA", False, 60, 6), ("NA", True, 60, 6),
+                           ("real", False, 60, 6), ("real", True, 60, 6)])
+        g = self._run(monkeypatch, rows)["axes"]["g"]["groups"]
+        assert "NA" not in g

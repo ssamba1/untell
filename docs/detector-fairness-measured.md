@@ -359,15 +359,21 @@ deliberately rather than inherit it.
 - **No clean professional-vs-student contrast.** Result 10 measures published prose, but genre,
   editing and task vary alongside the population, and the effect sizes on ASAP are already
   materially smaller than on ELLIPSE, so domain sensitivity is demonstrated rather than assumed.
-- **Only half of a fairness audit.** Every result here is a *false-positive* rate. Equalised odds
-  needs false negatives too — Aequitas, AIF360 and Fairlearn all compute both — and that requires
-  known-AI text from the same writers on the same task, which does not exist. Pairing an arbitrary
-  AI corpus against these essays would measure the gap between two datasets and report it as a
-  property of a detector. **A detector could show perfect false-positive parity here and still miss
-  machine-written work at very different rates across groups**, harming precisely the students it
-  fails to flag. Closing this needs a corpus that pairs human and machine text per writer per
-  prompt; RAID, MAGE and HC3 are the nearest candidates and all are HuggingFace-hosted, which this
-  environment blocks.
+- **Only half of a fairness audit *was measured*.** Every result above is a *false-positive* rate.
+  Equalised odds needs false negatives too — Aequitas, AIF360 and Fairlearn all compute both.
+  **A detector could show perfect false-positive parity here and still miss machine-written work at
+  very different rates across groups**, harming precisely the students it declines to flag.
+
+  The *tool* now computes both: `equalised_odds()` reports false-positive and false-negative rates
+  and both parities per subgroup, with a test pinning the exact failure — two groups with identical
+  10% false-positive rates and a 9x false-negative gap, which an FPR-only report calls clean. What
+  is missing is **data, not capability**: it needs a corpus pairing human and machine text from the
+  same writers on the same prompts. Pairing an arbitrary AI corpus against these essays would
+  measure the gap between two datasets and report it as a property of a detector. RAID, MAGE and
+  HC3 are the nearest candidates and all are HuggingFace-hosted, which this environment blocks —
+  one of the few blocks verified rather than assumed. Nothing in this repository substitutes:
+  `.claude/corpora/` is HC3 *human* text, and `eval/detector_audit.py` carries five hand-written AI
+  probes, which is a smoke test and not a sample.
 - **Nothing about any individual document.** Every rate here describes a *detector*. A per-group
   false-positive rate says nothing about whether a particular text was machine-written, and must
   never be quoted at a person. The tool prints that line in its own output.

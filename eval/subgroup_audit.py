@@ -16,7 +16,7 @@ that flags it is wrong -- there is no ambiguity to argue about, and no ground-tr
 anyone to dispute. That is what makes a false-positive audit the cleanest measurement available
 against a detector, and it is why this module refuses to score anything but known-human text.
 
-**This measures HALF of a fairness audit, and says so.** The standard toolkits -- Aequitas,
+**This measures HALF of a fairness audit by default, and says so.** The standard toolkits -- Aequitas,
 AIF360, Fairlearn -- compute false-positive-rate parity *and* false-negative-rate parity, because
 equalised odds needs both. This module computes only the first. That is a deliberate limit, not an
 oversight: false negatives require known-AI text from the same writers and the same task, and no
@@ -27,6 +27,10 @@ So a clean bill of health from this tool is **not** a clean bill of health. A de
 perfect false-positive parity here and still miss machine-written work at wildly different rates
 across groups, which would harm exactly the students who are not being flagged. Read every result
 below as "who does this detector wrongly accuse", never as "is this detector fair".
+
+`equalised_odds()` computes both rates and both parities, and is the honest entry point -- but it
+REQUIRES a corpus carrying machine-written text from the same writers on the same prompts, which
+nothing here ships. It is a documented input requirement rather than a hole in the tool.
 
 Three rules this module will not bend, because a careless subgroup number does more harm than the
 detectors it audits:
@@ -210,6 +214,96 @@ def _group(scored: list[dict], axes: tuple[str, ...]) -> dict:
         axes_out[axis] = {"groups": rendered, "disparity": _disparity(rendered),
                           "missing": not rendered}
     return axes_out
+
+
+def equalised_odds(rows: list[dict], tier: str = "lite", threshold: float | None = None,
+                   axes: tuple[str, ...] = DEFAULT_AXES, label_key: str = "is_ai") -> dict:
+    """BOTH error rates per subgroup: the other half of a fairness audit.
+
+    `rows` must carry a truth label under `label_key` -- truthy for machine-written, falsy for
+    human. Every other entry point in this module refuses AI text on purpose; this one requires it,
+    because false negatives cannot be measured without it.
+
+    Reports false-positive rate (human called machine) and false-negative rate (machine called
+    human) per group, plus both parities. Equalised odds asks for BOTH to be similar across groups,
+    and a detector can pass one while failing the other badly -- a detector that never flags one
+    group has perfect FPR parity for them and lets their machine-written work through, which harms
+    the same students by a different route.
+
+    **This needs a corpus that pairs human and machine text from the same writers on the same
+    prompts.** Pairing an arbitrary AI corpus against a human one measures the distance between two
+    datasets and reports it as a property of a detector. RAID, MAGE and HC3 are the nearest
+    candidates. Nothing in this repository ships such a corpus: `.claude/corpora/` is HC3 HUMAN
+    text, and `eval/detector_audit.py` carries five hand-written AI probes, which is a smoke test
+    and not a sample. Supply your own, and say in any write-up which corpus it was.
+    """
+    from untell.scripts.score import DEFAULT_THRESHOLD, score_text
+
+    thr = DEFAULT_THRESHOLD if threshold is None else threshold
+    scored = []
+    for row in rows:
+        if label_key not in row:
+            raise ValueError(
+                f"equalised odds needs a {label_key!r} label on every row; without machine-written "
+                f"text there are no false negatives to measure. Use audit() for the "
+                f"false-positive-only report."
+            )
+        result = score_text(row["text"], tier=tier, threshold=thr)
+        top = result.get("max")
+        if top is None:
+            continue
+        scored.append({**row, "score": top, "flagged": bool(top >= thr),
+                       "is_ai": bool(row[label_key])})
+
+    humans = [r for r in scored if not r["is_ai"]]
+    ais = [r for r in scored if r["is_ai"]]
+    out: dict = {"scored_n": len(scored), "human_n": len(humans), "ai_n": len(ais),
+                 "tier": tier, "threshold": thr, "min_group": MIN_GROUP, "axes": {}}
+    if not humans or not ais:
+        out["error"] = ("both classes are required: got "
+                        f"{len(humans)} human and {len(ais)} machine-written rows")
+        return out
+
+    for axis in axes:
+        groups: dict[str, dict] = {}
+        names = {str(r[axis]) for r in scored
+                 if r.get(axis) is not None and str(r[axis]).strip().lower() not in _MISSING}
+        for name in sorted(names):
+            h = [r for r in humans if str(r.get(axis)) == name]
+            a = [r for r in ais if str(r.get(axis)) == name]
+            if len(h) < MIN_GROUP or len(a) < MIN_GROUP:
+                groups[name] = {"human_n": len(h), "ai_n": len(a), "status": "insufficient"}
+                continue
+            fp = sum(1 for r in h if r["flagged"])
+            fn = sum(1 for r in a if not r["flagged"])
+            flo, fhi = wilson(fp, len(h))
+            nlo, nhi = wilson(fn, len(a))
+            groups[name] = {
+                "human_n": len(h), "ai_n": len(a),
+                "fpr": round(fp / len(h), 4), "fpr_ci": [round(flo, 4), round(fhi, 4)],
+                "fnr": round(fn / len(a), 4), "fnr_ci": [round(nlo, 4), round(nhi, 4)],
+                "status": "reported",
+            }
+        usable = {k: v for k, v in groups.items() if v["status"] == "reported"}
+        out["axes"][axis] = {
+            "groups": groups,
+            "fpr_disparity": _rate_disparity(usable, "fpr", "fpr_ci"),
+            "fnr_disparity": _rate_disparity(usable, "fnr", "fnr_ci"),
+        }
+    return out
+
+
+def _rate_disparity(groups: dict, rate_key: str, ci_key: str) -> dict | None:
+    if len(groups) < 2:
+        return None
+    hi_name = max(groups, key=lambda k: groups[k][rate_key])
+    lo_name = min(groups, key=lambda k: groups[k][rate_key])
+    hi, lo = groups[hi_name], groups[lo_name]
+    ratio = (hi[rate_key] / lo[rate_key]) if lo[rate_key] > 0 else None
+    return {"worst": hi_name, "worst_rate": hi[rate_key],
+            "best": lo_name, "best_rate": lo[rate_key],
+            "ratio": round(ratio, 2) if ratio is not None else None,
+            "separated": bool(hi[ci_key][0] > lo[ci_key][1])}
 
 
 def _disparity(groups: dict) -> dict | None:
