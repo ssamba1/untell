@@ -47,7 +47,7 @@ no decision, no native speaker and no GPU, only the work.
 | 19 | Beemo + ARB loaders — human-edited and LLM-rewritten-human text | 🔜 open | **nobody — buildable now.** Both corpora are public; Beemo needs a four-way label, not the current pair shape. |
 | 20 | The base-vs-instruct audit arm | 🔜 open | **nobody — buildable now.** CPU only, ~1 day, no new dependency. |
 | 21 | SynthID-Text detector adapter (Article 50 marking audit) | 🔜 open | **nobody — buildable now.** `synthid-text` is open source and in HF Transformers; the attack side already exists. |
-| 22 | Confidence intervals on every published rate | 🔜 partly — README headline and all new arms carry them; `free-ceiling-measured.md`'s 229 results do not | **nobody — buildable now.** Arithmetic over data already collected. |
+| 22 | Confidence intervals on every published rate | ✅ done — **169 proportions tabulated**, and a test fails if one appears without an interval | — |
 | 23 | FAR/MFAR/consensus spread on every score | ✅ done | — |
 | 24 | Pre-LLM corpus false-positive probe, with Wilson intervals | ✅ done — **15.8% measured**, CI [10.4%, 23.4%] | — |
 | 25 | Length-conditioned false-positive curve | ✅ done — **26.7% at ≤50 words against 15.6% at 50–100** | — |
@@ -645,11 +645,14 @@ trusting the derivation.
   reference repo, which states it is "not intended for production use". Our
   `untell/attacks/back_translation.py` is already one of the attacks that robustness paper uses.
 
-- 🔜 **Confidence intervals on every published rate — started, not finished.** `wilson_interval` is
+- ✅ **Confidence intervals on every published rate — finished.** `wilson_interval` is
   shipped and used by every new arm, and the README headline now carries intervals on the rates it
   quotes: the 17% ensemble figure is **5 of 30, CI 7.3%–33.6%**, and "6 of 8 human documents" is
   **CI 40.9%–92.9%**. What remains is `docs/free-ceiling-measured.md`, whose 229 results are still
-  point estimates. Left open rather than claimed, because "on every published rate" is not true yet.
+  point estimates — **and now they are not.** Every distinct proportion in that document, 169 of them,
+  is tabulated with its Wilson interval, and `tests/test_measured_proportions_have_intervals.py`
+  fails if a proportion appears in the prose without a row. Adding a result cannot silently
+  reintroduce a bare estimate, which is the difference between fixing this once and fixing it.
 - **The argument for doing it.** Fix and report FPR, report TPR@1%FPR alongside
   AUROC, give bootstrap intervals ([RAID, ACL 2024](https://aclanthology.org/2024.acl-long.674/);
   [arXiv:2603.17522](https://arxiv.org/abs/2603.17522)). Our headline rates are point estimates at
