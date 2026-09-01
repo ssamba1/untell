@@ -2070,8 +2070,10 @@ refereed requirement rather than a nicety.
 dedicated sentence-level benchmark for "complex human-AI hybrid content, where human-written text and
 AI-generated text alternate irregularly", noting mainstream detectors "target document-level long
 texts and struggle to generalize to sentence-level short texts". That is the same finding as our own
-length-conditioned curve — **26.7% flagged at ≤50 words against 15.6% at 50–100** — arrived at
-independently, and it supplies a corpus for the case.
+length-conditioned curve — 26.7% flagged at ≤50 words against 15.6% at 50–100 — arrived at
+independently, and it supplies a corpus for the case. *(Those were the figures at the time. Round
+thirty-one re-measured them on the restored corpus as **30.0%** and **21.7%**; the shape of the curve
+is unchanged and steeper.)*
 
 ## What this round is evidence of
 
@@ -2095,9 +2097,10 @@ The other new flags are the checker behaving correctly on two things it cannot s
 
 - **The derived 49.3%** is not in the resume paper's abstract, because the paper does not state it —
   that is precisely why the roadmap labels it derived and shows the arithmetic.
-- **26.7% and 15.6%** are our own length-band measurements, MEASURED by
+- `26.7%` and `15.6%` were our own length-band measurements, MEASURED by
   `python -m eval.pre_llm_fpr --by-length`, in a sentence noting SenDetEX reached the same conclusion
-  independently. Attribution is by the words "our own", which reads only to a human.
+  independently. Attribution is by the words "our own", which reads only to a human. Both were
+  superseded in round thirty-one.
 
 **Worth stating plainly: the tool built in round eighteen caught a fault introduced in round
 twenty-seven, minutes after it was written.** That is the first time a guard in this ledger has
@@ -3890,3 +3893,41 @@ noise check fires did not pass `DETECTION` at all, so it never reached the check
 papers in the corpus do pass it, because they name LLMs; the fixture did not. **The test asserted a
 count of one and got zero for a reason unrelated to what it was testing** — the same shape as rounds
 forty to forty-two, in a fixture this time.
+
+---
+
+# Round fifty-nine — the most-read document was outside the guard
+
+Twenty-seven rounds after round thirty-one re-measured the pre-LLM false-positive rate, **the README
+still said 15.8%.** It also said 26.7% where the measurement is 30.0%, and quoted an n of 120 where
+the corpus now supports 599.
+
+`untell-audit` reads the README — it is in `LIVE_DOCS`, and every one of those figures carried a
+stated source. **The attribution check asks whether a number names a source, never whether it is
+still true.** The check that asks that is the retraction guard, and its document list was
+`ROADMAP.md`, the two research documents, the strategy options and the ledger. **Not the README.**
+
+So the repository's most-read page carried its headline measurement, superseded, sourced, and wrong,
+through twenty-seven rounds of a project whose entire subject is numbers that go stale.
+
+This is the round-thirty-nine defect one document over. That round found `untell/calibrate.py`
+justifying a shipped default with figures round thirty-one had replaced, because the guard scanned
+documents and not source. The fix then was to add source. **The fix now is to add the documents the
+guard's own list had omitted** — `README.md`, `docs/index.md`, `docs/why-best-open-repo.md` — which
+raises the obvious question of what else is outside it, and the answer is that the list is now every
+document `LIVE_DOCS` names.
+
+## The README also gained a caveat it never had
+
+The rate is quoted for documents of **60 words or more**, and round thirty-five established that the
+floor is load-bearing: MEASURED by `python -m eval.pre_llm_fpr --n 300 --min-words 30` and the
+same at a 150-word floor, the probe returns **22.0%** and **14.3%**. An 8.4-point swing from a
+parameter nobody chose deliberately. That sentence was in the ledger and the roadmap and
+not in the document most people read.
+
+## Two ledger lines annotated rather than rewritten
+
+Round twenty-seven's entry stated the old length figures as current. The ledger is an audit trail and
+rewriting it would destroy the record, so both lines now carry a pointer to the round that superseded
+them, and the quoted pair is written in backticks — a mention, under round fifty-five's rule, rather
+than a claim.

@@ -22,8 +22,14 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 
-DOCS = ("ROADMAP.md", "ai-writing-research.md", "docs/research-to-build.md",
-        "docs/research-verification.md", "docs/strategy-options.md")
+# README.md is in this list because it was NOT, and carried figures superseded twenty-seven rounds
+# earlier: 15.8% where the measurement is 20.5%, 26.7% where it is 30.0%, and an n of 120 where the
+# corpus now supports 599. `untell-audit` reads the README — it is in LIVE_DOCS — but the attribution
+# check only asks whether a number states a source, never whether it is still true. The retraction
+# guard is the check that asks that, and the repository's most-read document was outside it.
+DOCS = ("README.md", "ROADMAP.md", "ai-writing-research.md", "docs/research-to-build.md",
+        "docs/research-verification.md", "docs/strategy-options.md", "docs/index.md",
+        "docs/why-best-open-repo.md")
 
 # Code carries measured figures too, in docstrings that explain WHY a threshold or a band boundary
 # is what it is. Round thirty-one re-measured the pre-LLM false-positive rate and updated every

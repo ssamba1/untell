@@ -28,9 +28,14 @@ calibration fix, the ensemble flagged **95% of human documents**.
 
 **The strongest of these numbers is the newest, because its ground truth cannot be argued with.**
 Scored against ACL abstracts published through 2021 — before ChatGPT, so every flag is a false
-positive by construction — the lite tier flags **15.8%** of them (19 of 120, CI **10.4%–23.4%**), and
-**26.7%** of the same text truncated to 50 words or fewer. Reproduce with
-`python -m eval.pre_llm_fpr --download`.
+positive by construction — the lite tier flags **20.5%** of them (n = 599, CI **17.5%–24.0%**), and
+**30.0%** of the same text truncated to 50 words or fewer (CI **22.5%–38.7%**). Reproduce with
+`python -m eval.pre_llm_fpr --download --n 599`.
+
+⚠️ **That rate is quoted for documents of 60 words or more, and the floor is load-bearing.** The same
+probe returns 22.0% at a 30-word floor and **14.3% at 150** — an 8.4-point swing from a parameter
+nobody chose deliberately. There is no such thing as *the* false-positive rate; there is one per
+corpus definition, and every report now carries the definition that produced it.
 
 **And there is now an answer, not just a complaint.** `untell/calibrate.py` derives a threshold with
 a *bounded* false-positive rate from a human-only corpus. On that same corpus the shipped 0.45 flags
