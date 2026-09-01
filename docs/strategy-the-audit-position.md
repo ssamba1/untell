@@ -262,7 +262,7 @@ step has not been tried is a guess.
   prints the CC BY-NC-SA licence and the Crossley et al. citation at load. Nothing vendored.
 - **`eval/subgroup_audit.py`** — false-positive rate by subgroup, Wilson intervals, a `MIN_GROUP`
   floor of 30 below which a group gets a count and no rate, and a threshold `--sweep`.
-- **`tests/test_subgroup_audit.py`** — 24 tests, all on the ways the module could overstate.
+- **`tests/test_subgroup_audit.py`** — 28 tests, all on the ways the module could overstate.
 - One row in `.claude/measurements.jsonl`, recipe `ellipse-subgroup-fpr`.
 
 ### The result
@@ -357,7 +357,7 @@ and it is the reason this belongs in a repo that already knows how to measure it
 
 ### What it cost
 
-Two files, one loader, 24 tests, and 45 seconds of CPU for the full corpus. No GPU, no key, no new
+Two files, one loader, 28 tests, and 45 seconds of CPU for the full corpus. No GPU, no key, no new
 dependency. The instrument the previous strategy doc could not find inside the humanizer category
 was one group-by away in the auditing one.
 

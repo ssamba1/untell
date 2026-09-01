@@ -1627,5 +1627,281 @@
       "spanish",
       "humanizer"
     ]
+  },
+  {
+    "full_name": "scanaislop/aislop",
+    "description": "Catch and fix the code-quality issues AI coding agents leave behind. 50+ deterministic rules across 10 language targets, with CLI, CI, and GitHub Actions. No LLM at runtime. MIT.",
+    "language": "TypeScript",
+    "stargazers_count": 589,
+    "created_at": "2026-03-06T13:05:19Z",
+    "topics": [
+      "ai-slop",
+      "ai-slop-detection",
+      "cli",
+      "code-quality",
+      "github-actions",
+      "linter",
+      "quality-gate",
+      "static-analysis"
+    ]
+  },
+  {
+    "full_name": "berelevant-ai/slopless",
+    "description": "Deterministic textlint rules and CLI for catching prose slop in English Markdown.",
+    "language": "TypeScript",
+    "stargazers_count": 323,
+    "created_at": "2026-05-16T20:44:14Z",
+    "topics": [
+      "cli",
+      "lint",
+      "linter",
+      "llm",
+      "markdown",
+      "prose",
+      "quality",
+      "slop",
+      "static-analysis",
+      "style-guide",
+      "textlint",
+      "writing"
+    ]
+  },
+  {
+    "full_name": "elixir-vibe/ex_slop",
+    "description": "Credo checks that catch AI-generated Elixir code slop",
+    "language": "Elixir",
+    "stargazers_count": 151,
+    "created_at": "2026-03-07T15:02:41Z",
+    "topics": [
+      "ai-code",
+      "anti-patterns",
+      "code-quality",
+      "credo",
+      "elixir",
+      "linter"
+    ]
+  },
+  {
+    "full_name": "Laith0003/ux-skill",
+    "description": "Design intelligence engine for AI coding tools. Deterministic anti-AI-slop linter with 152 rules, 160 brand specs, a 7-axis synthesizer, an MCP server (18 tools). Offline, never calls an LLM. MIT.",
+    "language": "Python",
+    "stargazers_count": 65,
+    "created_at": "2026-05-24T11:48:19Z",
+    "topics": [
+      "ai-coding",
+      "anti-ai-slop",
+      "claude-skill",
+      "design-system",
+      "linter",
+      "mcp",
+      "offline"
+    ]
+  },
+  {
+    "full_name": "TRocket-Labs/vectorlint",
+    "description": "A programmable content review harness for AI agents. The slop filter your agents are missing.",
+    "language": "TypeScript",
+    "stargazers_count": 48,
+    "created_at": "2025-09-22T06:38:08Z",
+    "topics": [
+      "agent-harness",
+      "content-quality",
+      "content-review",
+      "harness",
+      "linter",
+      "linting",
+      "technical-writing"
+    ]
+  },
+  {
+    "full_name": "ItsssssJack/SlopMonster",
+    "description": "Turn AI-written copy into copy a human would ship. Lint for AI tells, cleanse with a rival model, lint again.",
+    "language": "Python",
+    "stargazers_count": 44,
+    "created_at": "2026-08-29T18:05:19Z",
+    "topics": [
+      "ai-tells",
+      "linter",
+      "detector-loop",
+      "rewriting"
+    ]
+  },
+  {
+    "full_name": "CodeDeficient/KarpeSlop",
+    "description": "The AI Slop Index linter. Detects hallucinated imports, any-type abuse, vibe coding, and soul-less patterns in TypeScript/JavaScript/React. CI-ready.",
+    "language": "TypeScript",
+    "stargazers_count": 38,
+    "created_at": "2025-11-29T19:13:32Z",
+    "topics": [
+      "ai-detection",
+      "ai-generated-code",
+      "code-quality",
+      "linter",
+      "static-analysis"
+    ]
+  },
+  {
+    "full_name": "mmartoccia/grain",
+    "description": "Anti-slop linter for AI-assisted codebases",
+    "language": "Python",
+    "stargazers_count": 33,
+    "created_at": "2026-03-04T15:33:46Z",
+    "topics": [
+      "ai-generated-code",
+      "code-quality",
+      "linter",
+      "pre-commit"
+    ]
+  },
+  {
+    "full_name": "yuvrajangadsingh/vibecheck",
+    "description": "ESLint for AI slop. Detect AI-generated code smells in your JS/TS and Python codebase.",
+    "language": "TypeScript",
+    "stargazers_count": 25,
+    "created_at": "2026-02-26T21:01:46Z",
+    "topics": [
+      "ai-slop",
+      "code-quality",
+      "eslint",
+      "linter",
+      "static-analysis"
+    ]
+  },
+  {
+    "full_name": "skew202/antislop",
+    "description": "A blazing-fast, multi-language linter for detecting AI-generated code slop",
+    "language": "HTML",
+    "stargazers_count": 11,
+    "created_at": "2025-12-31T09:24:18Z",
+    "topics": [
+      "ast",
+      "cli",
+      "linter",
+      "linting",
+      "tree-sitter"
+    ]
+  },
+  {
+    "full_name": "abhi25072002/NLP-Project",
+    "description": "Stress-testing AI-text detectors: Binoculars (zero-shot) vs TF-IDF/CNN/RoBERTa on 9,458 TuringBench human texts paired with Llama-2 generations, under decoding shifts and paraphrase attacks",
+    "language": "Python",
+    "stargazers_count": 0,
+    "created_at": "2026-07-17T17:13:09Z",
+    "topics": [
+      "ai-text-detection",
+      "binoculars",
+      "llm",
+      "robustness",
+      "turingbench"
+    ]
+  },
+  {
+    "full_name": "Djhayes72195/llm-paraphrasing-attacks",
+    "description": "Write-up exploring the robustness of AI-generated text detectors to paraphrasing attacks. Includes results from experiments using GPT-2 and GPT-3 text with RoBERTa and T5 models.",
+    "language": null,
+    "stargazers_count": 0,
+    "created_at": "2025-04-08T03:33:11Z",
+    "topics": [
+      "paraphrase-attack",
+      "detector-robustness"
+    ]
+  },
+  {
+    "full_name": "msannikov03/undetectable-mcp",
+    "description": "MCP server wrapping the Undetectable.ai API (detector, humanizer, style replicator) for Claude Code.",
+    "language": "Python",
+    "stargazers_count": 0,
+    "created_at": "2026-05-11T04:14:07Z",
+    "topics": [
+      "mcp",
+      "undetectable-ai",
+      "api-wrapper"
+    ]
+  },
+  {
+    "full_name": "Maclean-D/UndetectableAIDiscord",
+    "description": "A Discord bot that through context menus can use the Undectable AI API to rewrite messages.",
+    "language": "JavaScript",
+    "stargazers_count": 2,
+    "created_at": "2023-05-03T23:46:27Z",
+    "topics": [
+      "undetectable-ai",
+      "api-wrapper",
+      "discord"
+    ]
+  },
+  {
+    "full_name": "TaskiranEmlak/undetectable-ai-bypass-api",
+    "description": "Bypass GPTZero, Turnitin, and CopyLeaks with ZeroBay AI Humanizer API. Python and Streamlit client script included.",
+    "language": "Python",
+    "stargazers_count": 0,
+    "created_at": "2026-07-01T11:14:23Z",
+    "topics": [
+      "api-wrapper",
+      "bypass"
+    ]
+  },
+  {
+    "full_name": "darkshadow2bd/Project-Invisible",
+    "description": "A steganography tool that encodes files and text using zero-width Unicode characters. Supports AES-256-GCM encryption, gzip compression, and binary file embedding.",
+    "language": "Python",
+    "stargazers_count": 19,
+    "created_at": "2026-05-12T14:18:22Z",
+    "topics": [
+      "steganography",
+      "zero-width",
+      "unicode"
+    ]
+  },
+  {
+    "full_name": "chinmay29hub/stegmoji",
+    "description": "Client-side steganography tool. Encode secret messages into emoji or text using invisible Unicode characters (variation selectors, zero-width joiners). Three embedding modes, AES-GCM encryption, full Unicode analysis.",
+    "language": "JavaScript",
+    "stargazers_count": 5,
+    "created_at": "2025-09-27T06:55:20Z",
+    "topics": [
+      "steganography",
+      "unicode",
+      "zero-width",
+      "cryptography"
+    ]
+  },
+  {
+    "full_name": "dapperfu/whitespace-stego",
+    "description": "A steganography toolkit that hides messages using invisible Unicode whitespace characters within text. Python and Rust implementations, pluggable CLI, encoding, decoding, and detection.",
+    "language": "Python",
+    "stargazers_count": 2,
+    "created_at": "2025-06-12T15:17:31Z",
+    "topics": [
+      "steganography",
+      "unicode",
+      "zero-width",
+      "detection"
+    ]
+  },
+  {
+    "full_name": "v1sc0/zwcs",
+    "description": "A browser extension for utilizing and detecting text steganography with zero-width characters for covert communication.",
+    "language": "JavaScript",
+    "stargazers_count": 1,
+    "created_at": "2024-11-10T15:13:17Z",
+    "topics": [
+      "covert-communication",
+      "steganography",
+      "text-steganography",
+      "zero-width"
+    ]
+  },
+  {
+    "full_name": "lorossi/zero-width-steganography",
+    "description": "Hide text informations using invisible text characters",
+    "language": "Python",
+    "stargazers_count": 12,
+    "created_at": "2020-06-17T09:29:12Z",
+    "topics": [
+      "encoding",
+      "steganography",
+      "zero-width"
+    ]
   }
 ]
