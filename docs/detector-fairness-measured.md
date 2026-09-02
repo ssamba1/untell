@@ -973,39 +973,56 @@ dataset host is behind this environment's egress policy. The claim here is narro
 firm: *the published numbers assume per-domain calibration, deployment does not provide it, and
 the gap between those thresholds is large.*
 
-## Result 24 — the missing half, measured: and on Urdu the detector is inert, not fair
+## Result 24 — the missing half, measured: the abstention works where the text is obviously foreign, and fails where it is not
 
-Every result above this one measures false positives, because this repository had no corpus
-pairing human and machine text. [M4](https://github.com/mbzuai-nlp/M4) (SemEval-2024 Task 8) ships
-one in its GitHub repository — a prompt, the human answer to it and a machine answer to it, per
-record, labelled by generator and domain, in eight languages. **4,993 rows, balanced by
-construction**, lite tier at the shipped 0.30 threshold:
+Every result above this one measures false positives, because this repository had no corpus pairing
+human and machine text. [M4](https://github.com/mbzuai-nlp/M4) (SemEval-2024 Task 8) ships one in
+its GitHub repository — a prompt, the human answer and a machine answer per record, labelled by
+generator and domain, in eight languages. 4,993 rows, balanced by construction, lite tier at the
+shipped 0.30 threshold.
 
-**Overall: false-positive rate 25.8%** (24.1–27.6), **false-negative rate 40.7%** (38.8–42.6). The
-detector misses two of every five machine-written texts while flagging a quarter of the humans.
+> **This result was published wrong and is restated from a re-measurement.** The first version
+> reported a 99.6% false-negative rate on Urdu and concluded the detector "is not operating at all,
+> and it does not say so". The second half was false, and the error was in this repository's
+> *instrument*, not its product — see
+> [the defects table](#defects-these-measurements-exposed-in-the-instrument). The numbers below are
+> the corrected ones.
 
-### By language — and this is not a fairness result, it is a functioning result
+**The detector refuses to answer on Urdu, and is right to.** Counted separately from the rates,
+because a refusal is neither a hit nor a miss:
+
+| language | detector produced no score |
+|---|---|
+| **Urdu** | **495 / 496 — 99.8%** |
+| German | 0 / 500 |
+| Indonesian | 0 / 498 |
+| English | 0 / 3499 |
+
+`score_text` marks those results `scored: False` and warns that `max` is a placeholder;
+`untell/scripts/verify.py` reads that flag and reports `ai: None` instead of a pass. The safety
+behaviour is real and it works.
+
+**On the 4,498 rows it did score: false-positive rate 28.6%, false-negative rate 34.1%.**
 
 | language | FPR | FNR | n |
 |---|---|---|---|
 | English | **36.0%** | 21.4% | 1750 / 1749 |
-| Indonesian | 4.0% | 74.8% | 248 / 250 |
-| German | 1.6% | 82.8% | 250 / 250 |
-| **Urdu** | **0.0%** | **99.6%** | 246 / 250 |
+| Indonesian | 4.0% | **74.8%** | 248 / 250 |
+| German | 1.6% | **82.8%** | 250 / 250 |
+| Urdu | *insufficient — 1 row survived* | | |
 
-FNR disparity **4.66x**, separated after the selection correction.
+FPR disparity 22.5x, FNR disparity **3.87x**, both separated after the selection correction.
 
-On Urdu this detector flagged **0 of 246** human texts and missed **249 of 250** machine texts. It
-is not biased against Urdu. **It is not operating at all** — and it does not say so. A user scores
-an Urdu document, gets a low number, and reads it as *this is human*, when the correct reading is
-*this instrument produced no evidence*. A false clear with no warning attached is worse than a
-false positive, because nothing about the output invites doubt.
+**And here is the finding, which is the opposite of the one I first published.** The abstention is
+**script-gated, not language-gated**. The lite tier's word regex is `[A-Za-z']+`: Arabic script
+yields no tokens, the detector opts out, and the user is told. German and Indonesian tokenise
+perfectly well — so the detector scores them with full confidence and **misses 83% and 75% of the
+machine-written text respectively**, against 21% for English.
 
-The mechanism is not subtle: the lite tier's first channel is the fraction of tokens drawn from a
-**120-word English stoplist**. Non-English text contains almost none of them, so the ratio
-collapses toward zero, the score sits near the floor, and nothing is ever flagged. German and
-Indonesian sit between English and Urdu roughly as their Latin-script and loanword overlap with
-English would predict.
+So the guard fires exactly where the text is *obviously* foreign and stays silent exactly where it
+is not. Latin-script non-English is the dangerous case: it looks English enough to tokenise and is
+not English enough to score. Nothing in the output distinguishes a confident German verdict from a
+confident English one.
 
 ### By domain
 
@@ -1016,12 +1033,11 @@ English would predict.
 | peerread reviews | 14.0% | 45.4% |
 | wikipedia | 6.2% | 43.6% |
 | Indonesian newspaper | 4.0% | 74.8% |
-| Urdu news | 0.0% | 99.6% |
 
-FNR disparity **83.0x**, separated. Reddit machine text is caught almost perfectly (1.2% missed);
-Urdu news almost never. And **61.6% of human-written scientific abstracts are flagged** — the
-formal-register finding of [Result 10](#result-10--the-largest-disparity-here-is-not-demographic-it-is-professional-vs-student)
-reproduced on a fourth corpus.
+FNR disparity **62.33x**, separated. Reddit machine text is caught almost perfectly; Indonesian
+newspaper text almost never. And **61.6% of human-written scientific abstracts are flagged** —
+[Result 10](#result-10--the-largest-disparity-here-is-not-demographic-it-is-professional-vs-student)'s
+formal-register finding, on a fourth corpus.
 
 ### By generator — reported with its confound
 
@@ -1029,16 +1045,14 @@ reproduced on a fourth corpus.
 |---|---|---|
 | BLOOMZ | 61.6% | 39.6% |
 | text-davinci-003 | 61.6% | **13.7%** |
-| GPT-3.5-turbo | 17.8% | 43.8% |
+| GPT-3.5-turbo | 21.3% | 32.6% |
 | Cohere | 14.0% | 16.0% |
 | FLAN-T5 | 14.0% | **74.8%** |
 
 **The FPR column here is not about generators.** Each M4 file pairs one generator with one domain,
-so the human halves differ between rows: BLOOMZ and davinci both sit on arxiv, and their 61.6%
-is arxiv's 61.6% exactly. Only the FNR column is a statement about generators, and it is a large
-one — FLAN-T5's output is missed 74.8% of the time against davinci's 13.7%, a **5.48x** gap that
-survives correction. A weaker, older model is *harder* for this detector to catch than a stronger
-one, which is the same direction as
+so the human halves differ: BLOOMZ and davinci both sit on arxiv, and their 61.6% is arxiv's 61.6%
+exactly. Only FNR is a statement about generators, and FLAN-T5's output is missed 74.8% of the time
+against davinci's 13.7% — a **5.48x** gap surviving correction, and the same direction as
 [Result 22](#result-22--the-same-leaderboard-on-attacks-a-third-of-the-field-is-one-line-of-code-from-collapse)'s
 finding across 46 detectors that instruction tuning makes text more detectable.
 
@@ -1094,6 +1108,7 @@ argue against. All are fixed and pinned by tests.
 
 | defect | how it showed | what it would have caused |
 |---|---|---|
+| **an abstention was read as a wrong answer** | `score_text` returns `max: 0.0` with `scored: False` when every detector opts out; this instrument read the placeholder as a score | **Result 24's headline, published wrong.** A 99.6% false-negative rate on Urdu that was 99.8% abstentions. The product says so twice and `verify.py` already honoured it; the audit did not |
 | **`separated` ignored that the extremes were selected** | ELLIPSE's 13-cell crossed axis separated at 1.59x while no single axis on that corpus separates at all | **Result 19's headline.** Reported, then retracted by the fix — a worst-vs-best pick from 78 pairs judged against a 95% interval |
 | Result 12 generalised from one population | a second machine-edited arm reversed it, d = +0.646 | "LLM editing makes text look human" as a general claim, from n=1 population |
 | equalised odds reported no pooled pair | a 100% false-negative rate sat unremarked beside ordinary per-group rows | a threshold that catches nothing reading as a threshold that is safe |
@@ -1121,6 +1136,13 @@ on one population was written up as a fact about language models, and it took a 
 to see — exactly as Result 2's monotonicity claim needed a held-out split. And a comparison
 between the two extremes of thirteen post-hoc cells was judged against the yardstick for a
 pre-registered pair, which is the classic way to find something that is not there.
+
+The first of them is the sharpest example this document has of a defect the *instrument* had and
+the *product* did not. `untell/scripts/verify.py` already read the `scored` flag and reported
+`ai: None` rather than a clean pass, with a comment explaining that fabricating one on a verdict
+surface is the worst possible place to do it. The same check, in the same repository, written by
+someone thinking about the same failure — and the audit module went straight past it to
+`result["max"]`.
 
 The second one was caught *after* Result 19 had been written, committed and pushed. It survived a
 full write-up, a measurement record and a strategy citation before the arithmetic of the
