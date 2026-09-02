@@ -715,7 +715,7 @@ M4_FILES = {
     "arabic_chatGPT": ("news", "ar"),
     "russian_chatGPT": ("news", "ru"),
     "bulgarian_true_and_fake_news_chatGPT": ("news", "bg"),
-    "chinese_qa_chatGPT": ("qa", "zh"),
+    "qazh_chatgpt": ("qa", "zh"), "qazh_davinci": ("qa", "zh"),
 }
 # Human text first, machine text second. `arxiv_bloomz` uses a different pair of names AND ships a
 # `machine_text` field containing the PROMPT rather than the generation -- scoring that as machine
@@ -745,6 +745,14 @@ def fetch_m4(stems: tuple[str, ...], dest=None, timeout: int = 1800):
         return data
     dest.mkdir(parents=True, exist_ok=True)
     logger.warning("fetching M4 subset (%s) to %s\n%s", ", ".join(stems), dest, M4_CITATION)
+    if not (dest / ".git").exists() and any(dest.iterdir()):
+        # Data restored from a cache or copied in by hand. `git clone` into a non-empty directory
+        # fails with a message about the path, which reads as a network problem and is not one.
+        missing = [s for s in stems if not (data / f"{s}.jsonl").exists()]
+        raise DatasetUnavailable(
+            f"{dest} holds files but no git checkout, so {len(missing)} missing file(s) "
+            f"({', '.join(missing[:3])}) cannot be fetched. Delete it to re-fetch cleanly."
+        )
     steps = []
     if not (dest / ".git").exists():
         steps.append(["git", "clone", "--depth", "1", "--filter=blob:none", "--no-checkout",

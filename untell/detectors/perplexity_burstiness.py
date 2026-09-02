@@ -200,6 +200,33 @@ _SENTENCE_TELL_SATURATION = 22.0
 _RATIO_CEILING = 0.25
 
 
+def _english_enough(text: str, common: float) -> bool:
+    """Whether the English stoplist channel has anything to say about this text.
+
+    TWO conditions, because either alone leaks. MEASURED 2026-09-02 on all eight M4 languages:
+
+    * **Script.** Cyrillic, Arabic and Han text carries few `[A-Za-z']+` tokens, so the ratio test
+      below never reaches its word floor. A first version used the ratio alone and still scored
+      18% of Bulgarian and 26% of Russian — the rows with enough transliterated names, numerals or
+      English loanwords to clear the floor while being no more readable than the rest.
+    * **Ratio.** German and Indonesian are Latin script and tokenise perfectly, so the script test
+      alone passes them straight through, and those were the languages this detector missed 82.8%
+      and 74.8% of the machine text in.
+
+    `untell/languages.py` already reached this conclusion for the tells catalogue, and prints
+    "the text is mostly non-Latin script — a score of N tells means the patterns did not apply,
+    NOT that the text reads as human". The same sentence was true of this detector and it was not
+    saying it.
+    """
+    from untell.languages import dominant_script
+
+    if dominant_script(text) != "Latin":
+        return False
+    if len(_WORD.findall(text)) < _MIN_WORDS_FOR_LANGUAGE_GATE:
+        return True  # too short for the ratio to mean anything; the word floor already applies
+    return common >= _MIN_COMMON_RATIO_FOR_ENGLISH
+
+
 def _single_sentence_signal(text: str, fallback: float, cap: float = _RATIO_CEILING) -> float:
     """P(AI) for a lone sentence, where burstiness carries no information.
 
@@ -298,8 +325,7 @@ def lite_score(text: str) -> float | None:
     sents = _sentences(text)
     nonempty = [s for s in sents if _WORD.findall(s)]
     common = _common_ratio(text)          # ~0.3 (varied) .. ~0.6 (formulaic)
-    if (len(_WORD.findall(text)) >= _MIN_WORDS_FOR_LANGUAGE_GATE
-            and common < _MIN_COMMON_RATIO_FOR_ENGLISH):
+    if not _english_enough(text, common):
         # Not English: the stoplist channel is blind and a floor score would read as a confident
         # "human". Repetition does not depend on the language, so keep it if it found anything.
         return clamp01(rep) if rep > _REPETITION_KEEPS_SIGNAL else None

@@ -987,6 +987,12 @@ shipped 0.30 threshold.
 > *instrument*, not its product — see
 > [the defects table](#defects-these-measurements-exposed-in-the-instrument). The numbers below are
 > the corrected ones.
+>
+> **And the German and Indonesian rates below no longer describe the shipped detector.** They are
+> what it did *before* this result; the fix they prompted landed the same day and is described at
+> the end. They are kept as measured because a defect and its repair are only legible together —
+> the fix's threshold is derived from these numbers, and re-measuring them away would leave the
+> constant unexplained.
 
 **The detector refuses to answer on Urdu, and is right to.** Counted separately from the rates,
 because a refusal is neither a hit nor a miss:
@@ -1023,6 +1029,47 @@ So the guard fires exactly where the text is *obviously* foreign and stays silen
 is not. Latin-script non-English is the dangerous case: it looks English enough to tokenise and is
 not English enough to score. Nothing in the output distinguishes a confident German verdict from a
 confident English one.
+
+### What was done about it
+
+The lite tier now **abstains on text it cannot read**, rather than returning a floor score. The
+gate is the measurement above, turned into a constant: text of 40+ words whose common-word ratio
+falls below **0.15** gets no score and a warning, because English's 1st percentile is 0.1765 and
+German's *median* is 0.0323.
+
+The ratio alone was not enough, which the other four M4 languages showed. Cyrillic, Arabic and Han
+text carries too few `[A-Za-z']+` tokens to reach the ratio test's 40-word floor, so a ratio-only
+gate still scored **18% of Bulgarian and 26% of Russian** — the rows with enough transliterated
+names, numerals or English loanwords to clear the floor while being no more readable than the rest.
+Script and ratio are each necessary: script alone passes German, ratio alone passes Russian.
+
+Measured across all eight M4 languages, before and after:
+
+| language | script | abstains before | after |
+|---|---|---|---|
+| English | Latin | 0.0% | **0.0%** |
+| German | Latin | 0.0% | **99.7%** |
+| Indonesian | Latin | 0.0% | **99.7%** |
+| Bulgarian | Cyrillic | 18.0% | **99.0%** |
+| Russian | Cyrillic | 26.3% | **99.3%** |
+| Arabic | Arabic | 12.3% | **100.0%** |
+| Urdu | Arabic | 99.7% | **99.7%** |
+
+`untell/languages.py` had already reached this conclusion for the tells catalogue — it prints
+*"the text is mostly non-Latin script — a score of N tells means the patterns did not apply, NOT
+that the text reads as human"*. The same sentence was true of this detector, and it was not saying
+it.
+
+The 0.5% of English that now abstains gets *"no evidence"* instead of a number, which is the
+recoverable direction of the error. **No result in this document moves**: the minimum common-word
+ratio is 0.2899 on ELLIPSE, 0.4207 on ASAP and 0.2743 on Liang, all far above the cut, and a test
+holds the constant below 0.2743 so a future tightening cannot silently revise the record.
+
+One thing the first version of the gate got wrong, caught by two tests that already existed:
+returning "no signal" whenever the *English* channel was blind also threw away degenerate
+repetition, which is machine-like in any language — `"test test test …"` scores 1.0000 on that
+term where real German and Indonesian prose score 0.0000. The gate now reports that term alone
+rather than abstaining.
 
 ### By domain
 

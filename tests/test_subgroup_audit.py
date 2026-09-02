@@ -1134,6 +1134,25 @@ class TestTheLanguageGate:
             "German scored at full confidence; on M4 that path missed 82.8% of machine text"
         )
 
+    def test_non_latin_script_abstains_however_many_stray_latin_tokens_it_has(self):
+        """The ratio test alone leaked, because Cyrillic text never reaches its word floor.
+
+        MEASURED 2026-09-02 on all eight M4 languages: a ratio-only gate still scored 18% of
+        Bulgarian and 26% of Russian — the rows carrying enough transliterated names, numerals or
+        English loanwords to clear the 40-token floor while being no more readable than the rest.
+        Script and ratio are both necessary: script alone passes German, ratio alone passes
+        Russian.
+        """
+        from untell.detectors.perplexity_burstiness import lite_score
+
+        russian = (
+            "Комитет собрался во вторник, чтобы рассмотреть вопрос о том, следует ли продолжать "
+            "работу над предложением. После долгого обсуждения стоимости работ и того, кто будет "
+            "за них платить, было решено отложить вопрос до следующего заседания весной. "
+            "Несколько членов комитета сочли это решение неправильным (Ivanov, Petrov, 2019)."
+        )
+        assert lite_score(russian) is None, "Cyrillic text was scored on an English stoplist"
+
     def test_the_gate_keeps_a_signal_that_never_depended_on_english(self):
         """Degenerate repetition is machine-like in any language, and the first gate discarded it.
 
