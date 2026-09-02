@@ -5741,10 +5741,50 @@ branches do the right thing and not that they switch in the right place.**
 
 ⚠️ **The cross-operator table is sampled, and that weakens the comparison.** `--limit` spaces mutants
 evenly through each module, so a site's two mutants are not guaranteed to both have been run — which
-means a survivor whose partner is absent cannot be told from one whose partner was killed. A
-`--kinds comparison,boundary` sweep with no sampling gives every site both, and `outcomes` now
-records every mutant rather than only survivors, because a report listing survivors alone cannot
-support a paired comparison at all. That run is what turns the ranking into a controlled result.
+means a survivor whose partner is absent cannot be told from one whose partner was killed. So the
+ranking was re-run as a `--kinds comparison,boundary` sweep with **no sampling**, giving every site
+both mutants.
+
+## ✅ The paired result, and it is stronger than the ranking
+
+MEASURED over **339 comparison sites, both mutants run at every one**:
+
+| | sites |
+|---|---|
+| both killed | 78 |
+| both survived | 206 |
+| **inversion killed, off-by-one survived** | **55** |
+| off-by-one killed, inversion survived | **0** |
+
+**Of the 55 sites where this suite distinguishes between the two mutations, it catches the inversion
+and misses the off-by-one at every single one.** Not a tendency — a total ordering, with zero
+exceptions in 339 sites. Exact binomial two-sided p = 5.6 × 10⁻¹⁷.
+
+Mechanically that is what should happen: any test exercising a comparison catches an inversion,
+because the branch goes the wrong way for most inputs, while catching an off-by-one needs a test
+sitting exactly on the boundary. Killing the off-by-one therefore *implies* killing the inversion.
+What the data adds is that the implication holds here without a single exception, which makes
+`boundary` a strictly sharper instrument than `comparison` and the older operator strictly
+redundant beside it.
+
+## ✗ And the unsampled run corrects the sampled table
+
+The same two operators, measured without `--limit`:
+
+| operator | sampled (355 mutants) | **unsampled (678 mutants)** |
+|---|---|---|
+| comparison | 60.0% | **35.4%** |
+| boundary | 25.0% | **18.9%** |
+
+Both are honest measurements of different populations, and the difference is a property of
+`--limit` that I had not stated: **capping mutants per module weights every module equally, while an
+uncapped run weights them by size.** The sampled run gave a small, well-tested module the same eight
+mutants as `scripts/run.py`, so the well-tested modules were over-represented and the score came out
+high. For "how many of this repository's comparison sites are actually protected", the uncapped
+figure is the right one: **35.4% and 18.9%.**
+
+The ordering the round rests on is unaffected — every added operator still scores below every
+original one, and the paired result is unsampled by construction. What moves is the level.
 
 ## What this says about the previous four rounds
 

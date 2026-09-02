@@ -277,3 +277,80 @@ def test_every_outcome_is_recorded_not_only_the_survivors():
         "pairing two mutants at one site needs to know the other one ran, which a survivor list "
         "cannot say"
     )
+
+
+# ---------------------------------------------------------------------------
+# Round 97 (cont.): the paired result, unsampled.
+#
+# `--kinds comparison,boundary` with no `--limit` gives every comparison site BOTH mutants, so a
+# survivor whose partner is absent cannot be confused with one whose partner was killed.
+#
+# MEASURED over 339 sites: of the 55 pairs where the suite distinguishes the two mutations, it
+# catches the inversion and misses the off-by-one at every single one — 55 to 0. Exact binomial
+# two-sided p = 5.6e-17. Killing an off-by-one implies killing the inversion, so `boundary` is
+# strictly sharper and `comparison` strictly redundant beside it.
+# ---------------------------------------------------------------------------
+
+PAIRED = json.loads((REPO / "eval" / "data" / "mutation_paired.json").read_text())
+
+
+def _paired_sites() -> dict:
+    """(file, line) -> the kinds that SURVIVED there. Absent kinds were killed.
+
+    Sound only because the run was unsampled: with `--limit` an absent kind could mean "never ran".
+    """
+    sites: dict[tuple[str, int], set[str]] = {}
+    for entry in PAIRED["survivors"]:
+        sites.setdefault((entry["file"], entry["line"]), set()).add(entry["kind"])
+    return sites
+
+
+def test_the_paired_run_covered_only_the_two_operators_and_did_not_sample():
+    """Both premises of the analysis, asserted rather than assumed."""
+    assert set(PAIRED["by_kind"]) == {"comparison", "boundary"}
+    counts = PAIRED["by_kind"]
+    ran = {k: c["killed"] + c["survived"] for k, c in counts.items()}
+    assert ran["comparison"] == ran["boundary"], (
+        "every comparison site yields exactly one of each; unequal totals mean the run sampled, "
+        "and the pairing below would be measuring the sampling"
+    )
+
+
+def test_killing_the_off_by_one_always_implies_killing_the_inversion():
+    """The round-97 finding, and the strongest statement the mutation work produced.
+
+    A site where the off-by-one died and the inversion lived would be a test that distinguishes a
+    boundary shift but not a branch reversal — mechanically close to impossible, and MEASURED it
+    never happens in 339 sites.
+    """
+    sites = _paired_sites()
+    backwards = [
+        site for site, survived in sites.items()
+        if "comparison" in survived and "boundary" not in survived
+    ]
+    assert not backwards, (
+        f"{len(backwards)} site(s) caught the off-by-one and missed the inversion, which inverts "
+        f"the difficulty ordering the operator set rests on: {backwards[:5]}"
+    )
+
+
+def test_the_off_by_one_is_the_survivor_at_every_discordant_site():
+    """The same fact stated the other way, with the counts the ledger publishes."""
+    sites = _paired_sites()
+    only_boundary = sum(1 for s in sites.values() if s == {"boundary"})
+    only_comparison = sum(1 for s in sites.values() if s == {"comparison"})
+    assert only_comparison == 0
+    assert only_boundary >= 20, (
+        "too few discordant pairs to say anything; the two operators would be interchangeable"
+    )
+
+
+def test_the_unsampled_scores_are_the_ones_the_documents_quote():
+    """Round 97 first published a sampled table and corrected it. The corrected figures must stand."""
+    assert PAIRED["by_kind"]["comparison"]["score"] < 50.0
+    assert PAIRED["by_kind"]["boundary"]["score"] < PAIRED["by_kind"]["comparison"]["score"]
+    ledger = (REPO / "docs" / "research-verification.md").read_text()
+    assert "35.4%" in ledger and "18.9%" in ledger, (
+        "the unsampled figures are the answer to 'how many comparison sites are protected'; the "
+        "sampled ones weight every module equally regardless of size"
+    )
