@@ -1,7 +1,7 @@
 {
   "named_constants": 111,
-  "named_undefended": 49,
-  "undefended_share": 44.1,
+  "named_undefended": 41,
+  "undefended_share": 36.9,
   "inline_literals_in_scoring_functions": 0,
   "undefended": [
     {
@@ -51,34 +51,6 @@
       "line": 169,
       "name": "WINDOW_WORDS",
       "value": 320,
-      "justified": false
-    },
-    {
-      "file": "untell/detectors/binoculars.py",
-      "line": 25,
-      "name": "_CAL_SCALE",
-      "value": 0.08,
-      "justified": false
-    },
-    {
-      "file": "untell/detectors/fast_detectgpt.py",
-      "line": 54,
-      "name": "_CAL_SCALE",
-      "value": 0.08,
-      "justified": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 81,
-      "name": "_NLL_MID",
-      "value": 2.68,
-      "justified": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 109,
-      "name": "_COMMON_SCALE",
-      "value": 0.3,
       "justified": false
     },
     {
@@ -208,13 +180,6 @@
       "justified": false
     },
     {
-      "file": "untell/scripts/entailment.py",
-      "line": 380,
-      "name": "_LENGTH_SLACK_SHARE",
-      "value": 0.1,
-      "justified": false
-    },
-    {
       "file": "untell/scripts/preserve.py",
       "line": 888,
       "name": "_MIN_WORD_CHAR_SHARE",
@@ -299,20 +264,6 @@
       "justified": false
     },
     {
-      "file": "untell/scripts/score.py",
-      "line": 1376,
-      "name": "_MIN_BLOCKS_FOR_LONE_NOTE",
-      "value": 3,
-      "justified": false
-    },
-    {
-      "file": "untell/scripts/sentences.py",
-      "line": 148,
-      "name": "_MIN_SENTENCES_FOR_SPREAD",
-      "value": 3,
-      "justified": false
-    },
-    {
       "file": "untell/scripts/tells.py",
       "line": 665,
       "name": "_MIN_WORDS_FOR_REPETITION",
@@ -324,13 +275,6 @@
       "line": 986,
       "name": "_MIN_WORDS_FOR_A_RATE",
       "value": 14,
-      "justified": false
-    },
-    {
-      "file": "untell/scripts/tells.py",
-      "line": 1030,
-      "name": "_OTHER_FUNCTION_WORD_FLOOR",
-      "value": 0.12,
       "justified": false
     },
     {

@@ -60,15 +60,35 @@ SCORING_FUNCTIONS: tuple[tuple[str, str], ...] = (
 )
 
 
+# A run of simple `NAME = <literal>` assignments, which a comment above the run governs.
+_SIBLING_ASSIGNMENT = re.compile(r"^[A-Z_][A-Z0-9_]*(\s*:\s*[\w\[\], .|]+)?\s*=\s*-?[\d.]+\s*(#.*)?$")
+
+
 def _comment_context(lines: list[str], lineno: int) -> str:
-    """The comment block immediately above a line, plus the line and what follows it."""
+    """The comment block governing a line, plus the line and what follows it.
+
+    ⚠️ **Walks up past sibling constant assignments, and that is not a nicety.** Round eighty-nine
+    published "49 undefended constants" from a version that stopped at the first non-comment line,
+    so a block comment heading five related constants justified only the one directly beneath it and
+    the other four were reported as bare. Worse, it was inconsistent: `_NLL_SCALE` and `_SPREAD_MID`
+    happened to pass because the *next* comment block fell inside the four-line lookahead, while
+    `_COMMON_SCALE` two lines away from its own justification did not. Constants are written in
+    groups under one comment throughout this repository, so the walk has to cross them.
+    """
     index = lineno - 1
     above: list[str] = []
     cursor = index - 1
-    while cursor >= 0 and (lines[cursor].strip().startswith("#") or not lines[cursor].strip()):
-        if lines[cursor].strip().startswith("#"):
+    while cursor >= 0:
+        stripped = lines[cursor].strip()
+        if stripped.startswith("#"):
             above.append(lines[cursor])
-        elif above:
+        elif not stripped or _SIBLING_ASSIGNMENT.match(stripped):
+            # A blank line or another constant in the same group: keep looking upward, but stop if
+            # a comment block has already been collected — that block is this group's, and the one
+            # above the constant before it belongs to a different group.
+            if above:
+                break
+        else:
             break
         cursor -= 1
     return "\n".join(above) + "\n" + "\n".join(lines[index:index + 4])

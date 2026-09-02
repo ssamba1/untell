@@ -1,0 +1,387 @@
+{
+  "self_check": {
+    "passed": true,
+    "control": "_BURST_WEIGHT",
+    "file": "untell/detectors/perplexity_burstiness.py",
+    "name": "_BURST_WEIGHT",
+    "value": 0.6,
+    "moved_share": 99.6,
+    "max_score_delta": 0.1416,
+    "auroc_delta": 0.0273,
+    "base_auroc": 0.3538
+  },
+  "refused": false,
+  "corpus": "pre-2022 ACL abstracts (human) against eval/data/generated_abstracts (machine)",
+  "target": "untell.detectors.perplexity_burstiness.lite_score",
+  "undefended_total": 41,
+  "tested": 35,
+  "unreachable_by_perturbation": [
+    {
+      "file": "untell/detectors/base.py",
+      "line": 169,
+      "name": "WINDOW_WORDS",
+      "value": 320,
+      "justified": false,
+      "why": "bound as a function default argument"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 610,
+      "name": "_RESTATEMENT_COVERAGE",
+      "value": 0.7,
+      "justified": false,
+      "why": "bound as a function default argument"
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 349,
+      "name": "RELAXED_SIM_BAR",
+      "value": 0.3,
+      "justified": false,
+      "why": "bound as a function default argument"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 67,
+      "name": "DEFAULT_THRESHOLD",
+      "value": 0.3,
+      "justified": false,
+      "why": "bound as a function default argument"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 74,
+      "name": "_MAX_INPUT_CHARS",
+      "value": 50000,
+      "justified": false,
+      "why": "read at import time into another object"
+    },
+    {
+      "file": "eval/detection_power.py",
+      "line": 45,
+      "name": "DEFAULT_THRESHOLD",
+      "value": 0.45,
+      "justified": false,
+      "why": "bound as a function default argument"
+    }
+  ],
+  "live": 0,
+  "no_observed_effect": 35,
+  "rows": [
+    {
+      "file": "untell/api_server.py",
+      "name": "_RATE_WINDOW_SECONDS",
+      "value": 60,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/api_server.py",
+      "name": "_DEFAULT_RATE_LIMIT",
+      "value": 60,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/api_server.py",
+      "name": "_HEALTH_TTL_S",
+      "value": 2.0,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/api_server.py",
+      "name": "_DEFAULT_PORT",
+      "value": 8000,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/attacks/unicode_tricks.py",
+      "name": "_RESYNC_WINDOW",
+      "value": 64,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "name": "_TELLS_EPS",
+      "value": 0.02,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "name": "_TTR_WINDOW",
+      "value": 100,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "name": "_TTR_FLOOR",
+      "value": 0.25,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "name": "_TTR_SATURATION",
+      "value": 0.1,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/humanness.py",
+      "name": "_W_TELLS",
+      "value": 0.3,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/humanness.py",
+      "name": "_MAX_BURSTY_PENALTY",
+      "value": 0.3,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/humanness.py",
+      "name": "_BURSTY_FLOOR",
+      "value": 0.35,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/humanness.py",
+      "name": "_BURSTY_RAMP",
+      "value": 0.15,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/humanness.py",
+      "name": "_MIN_WORDS_FOR_SIGNAL",
+      "value": 5,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "name": "_INTENSITY_SPAN",
+      "value": 0.3,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/rewriter/ensemble.py",
+      "name": "_RANK_EPS",
+      "value": 0.02,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "name": "_SENTENCE_ENTAILMENT_FLOOR",
+      "value": 0.6,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/rewriter/prompts.py",
+      "name": "_MAX_NAMED_SIGNALS",
+      "value": 5,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "name": "_OPENING_WORDS",
+      "value": 3,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "name": "_MIN_SPLIT_SIDE",
+      "value": 4,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "name": "_HUMAN_PARENTHESES_PER_100W",
+      "value": 0.8,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "name": "_MODULE_DRIFT",
+      "value": 5,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "name": "_MIN_WORD_CHAR_SHARE",
+      "value": 0.1,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "name": "DEFAULT_BAR",
+      "value": 0.76,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "name": "TOKEN_BAR",
+      "value": 0.5,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "name": "BERTSCORE_BAR",
+      "value": 0.88,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "name": "_SATURATED_MAX",
+      "value": 0.99,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "name": "_MANIFEST_VERSION",
+      "value": 1,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "name": "_MIN_WORDS_FOR_A_VERDICT",
+      "value": 40,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "name": "_SCORE_CACHE_MAX_CHARS",
+      "value": 10000,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "name": "_SCORE_CACHE_SIZE",
+      "value": 1024,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "name": "_LOCK_NOTE_MARGIN",
+      "value": 0.15,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "name": "_MIN_WORDS_FOR_REPETITION",
+      "value": 60,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "name": "_MIN_WORDS_FOR_A_RATE",
+      "value": 14,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "name": "_COMMON_IN_HUMAN_WRITING",
+      "value": 0.05,
+      "moved_share": 0.0,
+      "max_score_delta": 0.0,
+      "auroc_delta": 0.0,
+      "base_auroc": 0.3538
+    }
+  ]
+}

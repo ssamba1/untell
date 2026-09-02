@@ -5689,6 +5689,103 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety — "undefended" is about the comments; "load-bearing" is about the code
+
+Round eighty-nine counted the constants nobody defended and swept **five** of them — the five in
+`lite_score`, picked by hand because they were obviously load-bearing. That is the same move rounds
+eighty-six and eighty-seven made, one level up: pick the parameter that looks important and test it.
+It leaves the question it was supposed to answer still open, for every constant nobody picked.
+
+**Undefended is a property of the comments. Load-bearing is a property of the code, and only one of
+the two has been measured.** `eval/constant_influence.py` measures the other: perturb each
+undefended constant, re-score both arms, and record what moved.
+
+## ✗ First it corrected round eighty-nine's headline
+
+The census walked upward from a constant collecting comment lines and stopped at the first line that
+was not one. Constants in this repository are written in **groups under a single comment**, so the
+walk stopped at the sibling assignment above and the group's justification was never seen. Eight
+constants across six files — `_NLL_MID`, `_COMMON_SCALE`, two `_CAL_SCALE`s, `_LENGTH_SLACK_SHARE`,
+`_MIN_BLOCKS_FOR_LONE_NOTE`, `_MIN_SENTENCES_FOR_SPREAD`, `_OTHER_FUNCTION_WORD_FLOOR` — were
+reported bare while sitting under a comment explaining them.
+
+It was inconsistent rather than uniformly wrong, which is why it survived review: `_NLL_SCALE` and
+`_SPREAD_MID` passed because the *next* comment block happened to fall inside the four-line
+lookahead, while `_COMMON_SCALE`, two lines from the justification I had written for it the same
+round, did not.
+
+**MEASURED after the fix: 41 undefended, not 49. 36.9%, not 44%.** The entry in round eighty-nine is
+annotated rather than edited, per this document's convention. The correction makes the repository
+look better by its own metric, and that is precisely why it is stated at the top of this entry
+rather than folded in quietly — a ledger that only publishes corrections which cost it something is
+not keeping a ledger.
+
+## The register
+
+MEASURED, target `lite_score`, corpus the two arms behind the published AUROC:
+
+| | |
+|---|---|
+| undefended constants | 41 |
+| unreachable by perturbation | 6 |
+| tested | 35 |
+| **that move the published score** | **0** |
+
+## ✅ And the control that makes a zero mean something
+
+**"0 of 35 constants move the score" and "the harness is broken" are the same output.** Round
+eighty-eight spent twenty minutes producing `0 scored` from a wrong dictionary key and caught it only
+because zero was implausible. Here zero is entirely plausible, so implausibility cannot do the work.
+
+So the register runs a positive control first — `_BURST_WEIGHT`, a constant already known by round
+eighty-nine's sweep to reach the target — and **refuses to report at all** unless perturbing it
+moves the score. MEASURED: it moves **99.6% of documents**, max Δ 0.1416. The zero is a finding.
+
+## ⚠️ Six constants that cannot be tested this way, and are not therefore harmless
+
+| constant | why perturbation cannot reach it |
+|---|---|
+| `WINDOW_WORDS` | bound as a function default argument |
+| `_RESTATEMENT_COVERAGE` | bound as a function default argument |
+| `RELAXED_SIM_BAR` | bound as a function default argument |
+| `score.DEFAULT_THRESHOLD` | bound as a function default argument |
+| `_MAX_INPUT_CHARS` | read at import time into another object |
+| `detection_power.DEFAULT_THRESHOLD` | bound as a function default argument |
+
+A default argument is evaluated when the `def` runs; rebinding the module global afterwards does not
+reach it, and the perturbation reports **zero change** — the identical output to "this constant does
+not matter". Both are detected statically and listed separately, because **a zero meaning "could not
+test" and a zero meaning "does not matter" are the same number and opposite facts.**
+
+`score.DEFAULT_THRESHOLD` is the clearest case: it is the loop threshold every flag rate in this
+repository is computed against, and a naive register would have printed 0.0000 beside it.
+
+## What the arc from eighty-six to ninety actually establishes
+
+| round | question | answer |
+|---|---|---|
+| 86 | does the survey's recall window decide its ratio? | no — 9.3x to 14.0x, published interior |
+| 87 | does the topic pattern's breadth decide it? | no — 7.5x to 14.2x, shipped rung most discriminating |
+| 88 | is the inversion's *explanation* real? | yes in direction, and 0.34% of the variance |
+| 89 | is the inversion a calibration artefact? | no — 30 settings, none above 0.5 |
+| 90 | is any *other* unchosen number reaching it? | no — 0 of 35, with a control at 99.6% |
+
+**Every parameter anyone can reach has been varied, and the published conclusions do not move.** The
+honest residue is small and named: six constants that perturbation cannot reach, one target
+(`lite_score`) rather than every published number, and one corpus. A constant that does not reach
+`lite_score` is off-target, not harmless — several of the 35 govern the rewriter and the entailment
+gate, which this register says nothing about.
+
+## What this round is an instance of
+
+Round eighty-nine built a census and then hand-picked what to sweep from it. That is the reflex the
+census existed to replace, and it survived the building of the tool meant to remove it. Automating
+the choice is what found both the grouping defect and the six unreachable constants, neither of
+which a person scanning a list would have noticed — one because it was inconsistent rather than
+absent, the other because it looks exactly like good news.
+
+---
+
 # Round eighty-nine — how many numbers here did anybody actually choose?
 
 Rounds eighty-six and eighty-seven each found one unchosen parameter under a published claim, swept
@@ -5698,7 +5795,14 @@ the ones that carry the most weight.
 ## The census
 
 `eval/constant_census.py`, MEASURED across `untell/` and `eval/`: **111 module-level numeric
-constants, 49 of them — 44% — with nothing anywhere saying why they hold that value.** The bar is
+constants, 49 of them — 44% — with nothing anywhere saying why they hold that value.**
+
+> ⚠️ **49 is wrong; the figure is 41 (36.9%).** Round ninety found the census stopped its upward
+> walk at the first non-comment line, so a block comment heading a *group* of constants justified
+> only the one directly beneath it. Eight constants across six files were reported bare while
+> sitting under a comment that explained them. Corrected in round ninety, which also records why
+> this entry is annotated rather than edited. The correction runs in this repository's favour, which
+> is the reason to be loud about it rather than quiet. The bar is
 deliberately low: a comment near the number naming a measurement, a round, a paper, a standard, or a
 reason. Not that the reason is good — that somebody wrote one down.
 
@@ -5788,8 +5892,8 @@ correct direction: a hidden number is worse than a visible one that admits it ha
 it. A census that could only ever improve would be measuring effort rather than state.
 
 The transferable claim is narrow. Rounds eighty-six and eighty-seven showed two parameters were
-unchosen; this one shows that is the normal condition here — **44% of the constants, and until now
-100% of the ones that decide the published score.** The instrument that finds them is committed, so
+unchosen; this one shows that is the normal condition here — **37% of the constants (see the
+correction above), and until now 100% of the ones that decide the published score.** The instrument that finds them is committed, so
 the number is checkable rather than a confession.
 
 ---

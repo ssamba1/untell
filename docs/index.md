@@ -126,10 +126,14 @@ never looks at the text, orders the same way at the extremes but has no power ac
   papers early and 192 further detection papers enter behind it without one of them being about
   false positives**, while robustness nearly doubles. The gap is in the literature, not the filter
 - **And the detector's own calibration is swept, not assumed.** `eval/constant_census.py` counts
-  what nobody chose: **111 numeric constants, 49 with no stated reason** — and the five that decide
+  what nobody chose: **111 numeric constants, 41 with no stated reason** — and the five that decide
   the stdlib score were not constants at all, just literals inside an expression. Named, then swept
   by `eval/constant_sensitivity.py`: MEASURED over **30 settings, not one brings the AUROC above
   0.5**. **The inversion is not something a different calibration could have avoided.**
+  Then `eval/constant_influence.py` perturbs **every** undefended constant rather than the ones that
+  looked important: MEASURED, **0 of 35 move the published score**, against a positive control that
+  moves 99.6% — so the zero is a result and not a broken harness. Six constants a perturbation
+  cannot reach are listed rather than scored as zero.
 - **And the topic patterns are swept too**, which is the sweep that could have broken this:
   `--topic-sweep` broadens the 13-paper false-positives row through four meaning-preserving rungs.
   MEASURED: it reaches **21 papers, so the honest row is 13–21**, and the ratio stays between
