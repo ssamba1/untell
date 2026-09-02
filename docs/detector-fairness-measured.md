@@ -973,6 +973,75 @@ dataset host is behind this environment's egress policy. The claim here is narro
 firm: *the published numbers assume per-domain calibration, deployment does not provide it, and
 the gap between those thresholds is large.*
 
+## Result 24 — the missing half, measured: and on Urdu the detector is inert, not fair
+
+Every result above this one measures false positives, because this repository had no corpus
+pairing human and machine text. [M4](https://github.com/mbzuai-nlp/M4) (SemEval-2024 Task 8) ships
+one in its GitHub repository — a prompt, the human answer to it and a machine answer to it, per
+record, labelled by generator and domain, in eight languages. **4,993 rows, balanced by
+construction**, lite tier at the shipped 0.30 threshold:
+
+**Overall: false-positive rate 25.8%** (24.1–27.6), **false-negative rate 40.7%** (38.8–42.6). The
+detector misses two of every five machine-written texts while flagging a quarter of the humans.
+
+### By language — and this is not a fairness result, it is a functioning result
+
+| language | FPR | FNR | n |
+|---|---|---|---|
+| English | **36.0%** | 21.4% | 1750 / 1749 |
+| Indonesian | 4.0% | 74.8% | 248 / 250 |
+| German | 1.6% | 82.8% | 250 / 250 |
+| **Urdu** | **0.0%** | **99.6%** | 246 / 250 |
+
+FNR disparity **4.66x**, separated after the selection correction.
+
+On Urdu this detector flagged **0 of 246** human texts and missed **249 of 250** machine texts. It
+is not biased against Urdu. **It is not operating at all** — and it does not say so. A user scores
+an Urdu document, gets a low number, and reads it as *this is human*, when the correct reading is
+*this instrument produced no evidence*. A false clear with no warning attached is worse than a
+false positive, because nothing about the output invites doubt.
+
+The mechanism is not subtle: the lite tier's first channel is the fraction of tokens drawn from a
+**120-word English stoplist**. Non-English text contains almost none of them, so the ratio
+collapses toward zero, the score sits near the floor, and nothing is ever flagged. German and
+Indonesian sit between English and Urdu roughly as their Latin-script and loanword overlap with
+English would predict.
+
+### By domain
+
+| domain | FPR | FNR |
+|---|---|---|
+| arxiv abstracts | **61.6%** | 17.8% |
+| reddit | 28.4% | **1.2%** |
+| peerread reviews | 14.0% | 45.4% |
+| wikipedia | 6.2% | 43.6% |
+| Indonesian newspaper | 4.0% | 74.8% |
+| Urdu news | 0.0% | 99.6% |
+
+FNR disparity **83.0x**, separated. Reddit machine text is caught almost perfectly (1.2% missed);
+Urdu news almost never. And **61.6% of human-written scientific abstracts are flagged** — the
+formal-register finding of [Result 10](#result-10--the-largest-disparity-here-is-not-demographic-it-is-professional-vs-student)
+reproduced on a fourth corpus.
+
+### By generator — reported with its confound
+
+| generator | FPR | FNR |
+|---|---|---|
+| BLOOMZ | 61.6% | 39.6% |
+| text-davinci-003 | 61.6% | **13.7%** |
+| GPT-3.5-turbo | 17.8% | 43.8% |
+| Cohere | 14.0% | 16.0% |
+| FLAN-T5 | 14.0% | **74.8%** |
+
+**The FPR column here is not about generators.** Each M4 file pairs one generator with one domain,
+so the human halves differ between rows: BLOOMZ and davinci both sit on arxiv, and their 61.6%
+is arxiv's 61.6% exactly. Only the FNR column is a statement about generators, and it is a large
+one — FLAN-T5's output is missed 74.8% of the time against davinci's 13.7%, a **5.48x** gap that
+survives correction. A weaker, older model is *harder* for this detector to catch than a stronger
+one, which is the same direction as
+[Result 22](#result-22--the-same-leaderboard-on-attacks-a-third-of-the-field-is-one-line-of-code-from-collapse)'s
+finding across 46 detectors that instruction tuning makes text more detectable.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
