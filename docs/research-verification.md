@@ -5689,6 +5689,94 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-one — attribution is not agreement
+
+`untell-audit` enforces that every bolded figure in these documents carries a stated provenance.
+MEASURED at this round: **1,045 claims pass it, 0 do not.** It is a real guard and it has caught real
+defects, and it is strictly weaker than it sounds.
+
+**Naming a source and agreeing with it are different properties.** Round eighty-four is the proof: a
+published AUROC of **0.3538** carried a reproduction command that printed **0.3529**. The claim was
+attributed. The attribution named the right tool. The number was still not the one the tool produced.
+That was found by reading, one figure at a time, and nothing would have found the next one.
+
+## ✗ The obvious way to mechanise it does not work, and the failure is structural
+
+The first design linked a figure to an artefact by proximity: if the prose near a number names a
+tool, the number should appear in that tool's committed output. Nine artefacts are committed, so the
+mapping seemed free.
+
+MEASURED, it reported **15 contradictions of which every single one was false**, and narrowing the
+scope three times did not help:
+
+| scope | contradictions | true |
+|---|---|---|
+| 900-character window | 15 | 0 |
+| blank-line paragraph | 15 | 0 |
+| markdown table row / list item | 15 | 0 |
+
+Each narrowing fixed a real defect in the scoping — a `ROADMAP.md` status table has no blank lines,
+so one "paragraph" was seventy rows and every row borrowed every tool named in the table — and the
+count did not move, because **the premise is untrue.** A sentence may legitimately name a tool and
+quote a figure from somewhere else. `ROADMAP.md` row 33 names the corpus tool and quotes 6,810, the
+pre-LLM corpus size, which that tool does not report. There is no window small enough to fix a rule
+that is false.
+
+It is recorded rather than deleted so the next person to have this idea finds it already tried. The
+version that ships took the opposite direction.
+
+## ✅ An explicit registry instead
+
+`eval/claim_verification.py` names the artefact key behind each headline figure and checks that the
+documents still agree with it. **19 registered figures, 19 verified, 0 drifted.** No false positives
+are possible, because nothing is inferred; the cost is that coverage is what somebody registered
+rather than every figure in the repository.
+
+For a check that gates a commit that is the right trade, and this repository already wrote down why:
+*"a checker that cannot recognise the most common form of the thing it looks for produces false
+alarms, and false alarms are how a checker gets ignored."*
+
+## ✗ And the gap it found on the way
+
+The repository's most-quoted numbers, all MEASURED by `eval/detection_power.py` — **10.7%** of
+machine abstracts flagged, **30.4%** of human ones, **AUROC 0.3529** — had **no committed artefact
+at all.** Eight artefacts covered the survey,
+both filter sweeps, the register work and the constant audit; the headline itself was the one set of
+figures with nothing machine-readable behind it, and so the one set this check could not have
+verified. `eval/data/detection_power.json` is committed now.
+
+## ⚠️ This check found nothing today, and that is what it is for
+
+19 of 19 passed on the first run. The registry was written from the current values, so of course it
+did. **Its value is entirely prospective**, which makes proving it can fail the only part that
+matters. All three failure modes are exercised as tests and all three exit non-zero:
+
+| mode | what it catches |
+|---|---|
+| artefact moves, prose does not | round eighty-four's defect, mechanised |
+| prose loses the figure | a rewrite that drops a number the tool still reports |
+| key vanishes from the artefact | a check silently ceasing to check |
+
+A fourth was worth ruling out rather than assuming: superseded figures still standing as current in
+live documents. MEASURED — `0.3538`, `604`, `27%`, `44%` and the old undefended count all appear in
+`ROADMAP.md`, and every occurrence is inside a row *about* the correction. No stale claim is
+presented as current, so there was nothing to fix and the check for it would have found nothing.
+
+## Why the ledger is excluded, and why that is not a dodge
+
+`docs/research-verification.md` is deliberately outside this check. It is an append-only record:
+round thirty-one reports 108 volumes and 38,231 abstracts, round eighty-five reports 186 and 46,905,
+and **both are correct as statements about when they were made.** This document's own convention is
+that superseded entries are annotated in place, never rewritten. Checking a historical record against
+today's artefacts asks every past round to have known a later round's numbers — a category error,
+and MEASURED it produces 22 "contradictions" of which every one is a correctly-preserved historical
+figure.
+
+The ledger keeps the attribution check, which asks a figure to name its source rather than to agree
+with today's.
+
+---
+
 # Round ninety — "undefended" is about the comments; "load-bearing" is about the code
 
 Round eighty-nine counted the constants nobody defended and swept **five** of them — the five in

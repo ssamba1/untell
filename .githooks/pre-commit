@@ -72,6 +72,15 @@ if [ -n "$docs_changed" ] && command -v mkdocs >/dev/null 2>&1; then
         || fail "mkdocs --strict failed: a documentation link does not resolve. Run \`mkdocs build --strict\`."
 fi
 
+# Attribution says a figure named a source; this says the source still contains it. Round
+# eighty-four found a published AUROC whose own reproduction command printed a different number, by
+# reading. `eval/claim_verification.py` holds a registry of the headline figures and fails when an
+# artefact moves and the prose does not — or the other way round. It is fast and needs no corpus.
+if [ -n "$docs_changed" ] || printf '%s\n' "$changed" | grep -q '^eval/data/'; then
+    python -m eval.claim_verification >/dev/null 2>&1 \
+        || fail "a published headline figure no longer matches its artefact. Run \`python -m eval.claim_verification\`."
+fi
+
 # The live documents are the ones `untell-audit` reads; nothing else triggers the slow check.
 if printf '%s\n' "$docs_changed" | grep -qE '^(README|ROADMAP|ai-writing-research)\.md$|^docs/'; then
     python -m untell.scripts.audit >/dev/null 2>&1 \

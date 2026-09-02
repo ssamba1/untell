@@ -62,7 +62,11 @@ A sample of what is in there, because the refutations are the point:
 | **Result 22** | The rewriter was emitting **sentence fragments**, invisible to every metric here, and fixing it **cost** 0.026 of evasion score. Both stated. |
 | **Result 24** | The free tier called **60% of human writing AI**. Fixed by separating the reported verdict from the loop's target. |
 
-Run `untell-audit` to re-check the claims in these documents against the code as it stands.
+Run `untell-audit` to re-check the claims in these documents against the code as it stands — it
+enforces that every bolded figure names a source. `python -m eval.claim_verification` asks the
+harder question: whether that source still *contains* the figure. **19 headline figures are pinned
+to the artefact key that produces them**, and the check fails if either side moves without the
+other.
 
 ## Documentation
 
