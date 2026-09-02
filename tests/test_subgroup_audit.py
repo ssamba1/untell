@@ -979,3 +979,50 @@ def test_the_leaderboards_calibration_assumption_is_recorded():
     assert d["mean_accuracy_by_decoding"]["greedy"] > d["mean_accuracy_by_decoding"]["sampling"]
     assert (d["mean_accuracy_by_repetition_penalty"]["no"]
             > d["mean_accuracy_by_repetition_penalty"]["yes"])
+
+
+class TestM4Loader:
+    """M4 is the paired corpus this repository's own document said it did not have.
+
+    `detector-fairness-measured.md` listed "a corpus that pairs human and machine text on the same
+    prompts" under what its results could not establish, naming RAID, MAGE and HC3 as the nearest
+    candidates and noting all three are HuggingFace-hosted and blocked here. M4 ships its data in
+    its GitHub repository. Found 2026-09-01 by re-testing three repos an earlier timing-out loop
+    had recorded as "clone failed".
+    """
+
+    def test_a_bloomz_row_does_not_put_its_prompt_in_the_machine_column(self):
+        """The data defect that would have silently corrupted every false-negative rate.
+
+        `arxiv_bloomz` ships a `machine_text` field containing the PROMPT rather than the
+        generation, and a `machine_abstract` field containing the real one. Taking `machine_text`
+        would score instructions as machine writing and count the detector's failure to flag them
+        as a miss.
+        """
+        from eval.datasets import _M4_MACHINE_KEYS, _m4_pick
+
+        row = {"prompt": "Write a long abstract of a scientific paper from arXiv.org.",
+               "machine_text": "Write a long abstract of a scientific paper from arXiv.org.",
+               "machine_abstract": "The present work is devoted to the study of polymer chains."}
+        assert _M4_MACHINE_KEYS[0] == "machine_abstract", _M4_MACHINE_KEYS
+        assert _m4_pick(row, _M4_MACHINE_KEYS).startswith("The present work")
+
+    def test_every_declared_file_carries_a_language(self):
+        """The language axis is the point: this is the first non-English text ever scored here."""
+        from eval.datasets import M4_FILES
+
+        langs = {lang for _, lang in M4_FILES.values()}
+        assert {"en", "de", "ur", "ar", "ru", "bg", "zh", "id"} <= langs, langs
+        for stem, (domain, lang) in M4_FILES.items():
+            assert domain and lang, stem
+            assert len(lang) == 2, f"{stem} language {lang!r} is not an ISO code"
+
+    def test_the_fetch_takes_only_the_requested_files(self):
+        """959 MB of data; a sparse pattern per requested stem is what keeps this usable."""
+        import inspect
+
+        from eval import datasets
+
+        src = inspect.getsource(datasets.fetch_m4)
+        assert "--filter=blob:none" in src and "sparse-checkout" in src
+        assert 'f"/data/{s}.jsonl"' in src, "the fetch is not scoped to the requested stems"

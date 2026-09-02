@@ -682,3 +682,136 @@ def load_liang(min_words: int = 0) -> list[dict]:
     if not rows:
         raise DatasetUnavailable(f"liang: no rows survived the {min_words}-word floor")
     return rows
+
+
+# --------------------------------------------------------------------------------------------
+# M4 (SemEval-2024 Task 8) -- the paired corpus this repository said it did not have.
+#
+# `docs/detector-fairness-measured.md` listed "a corpus that pairs human and machine text on the
+# same prompts" under what its results could not establish, and named RAID, MAGE and HC3 as the
+# nearest candidates, all HuggingFace-hosted and blocked here. M4 ships its data IN ITS GITHUB
+# REPOSITORY -- 959 MB across 39 files, every record carrying a prompt, the human answer to it and
+# a machine answer to it, labelled by generator and domain. FOUND 2026-09-01 by re-testing three
+# repos an earlier timing-out loop had recorded as "clone failed".
+#
+# It is also the first non-English text this instrument has ever scored: German, Indonesian, Urdu,
+# Arabic, Russian, Bulgarian and Chinese subsets exist alongside the English ones.
+# --------------------------------------------------------------------------------------------
+M4_REPO = "https://github.com/mbzuai-nlp/M4"
+M4_CITATION = (
+    "Wang, Y., et al., 'M4: Multi-generator, Multi-domain, and Multi-lingual Black-Box "
+    "Machine-Generated Text Detection', EACL 2024. Data: https://github.com/mbzuai-nlp/M4"
+)
+# filename stem -> (domain, language). The language is the corpus's own split, not a guess.
+M4_FILES = {
+    "arxiv_chatGPT": ("arxiv", "en"), "arxiv_davinci": ("arxiv", "en"),
+    "arxiv_bloomz": ("arxiv", "en"), "arxiv_cohere": ("arxiv", "en"),
+    "wikipedia_chatgpt": ("wikipedia", "en"), "wikihow_chatGPT": ("wikihow", "en"),
+    "reddit_chatGPT": ("reddit", "en"), "peerread_cohere": ("peerread", "en"),
+    "peerread_llama": ("peerread", "en"), "peerread_chatgpt": ("peerread", "en"),
+    "germanwikipedia_chatgpt": ("wikipedia", "de"),
+    "id-newspaper_chatGPT": ("newspaper", "id"),
+    "urdu_chatGPT": ("news", "ur"),
+    "arabic_chatGPT": ("news", "ar"),
+    "russian_chatGPT": ("news", "ru"),
+    "bulgarian_true_and_fake_news_chatGPT": ("news", "bg"),
+    "chinese_qa_chatGPT": ("qa", "zh"),
+}
+# Human text first, machine text second. `arxiv_bloomz` uses a different pair of names AND ships a
+# `machine_text` field containing the PROMPT rather than the generation -- scoring that as machine
+# text would put instructions into the false-negative denominator, so `machine_abstract` wins and
+# `_m4_rows` drops any row whose machine text is its own prompt.
+_M4_HUMAN_KEYS = ("human_text", "abstract")
+_M4_MACHINE_KEYS = ("machine_abstract", "machine_text")
+
+
+def _m4_cache():
+    import os
+    from pathlib import Path
+
+    base = os.environ.get("UNTELL_CORPUS_DIR") or os.path.join(
+        os.path.expanduser("~"), ".cache", "untell-corpora"
+    )
+    return Path(base) / "m4"
+
+
+def fetch_m4(stems: tuple[str, ...], dest=None, timeout: int = 1800):
+    """Blobless sparse checkout of only the requested data files."""
+    import subprocess
+
+    dest = dest or _m4_cache()
+    data = dest / "data"
+    if all((data / f"{s}.jsonl").exists() for s in stems):
+        return data
+    dest.mkdir(parents=True, exist_ok=True)
+    logger.warning("fetching M4 subset (%s) to %s\n%s", ", ".join(stems), dest, M4_CITATION)
+    steps = []
+    if not (dest / ".git").exists():
+        steps.append(["git", "clone", "--depth", "1", "--filter=blob:none", "--no-checkout",
+                      "-q", M4_REPO, "."])
+        steps.append(["git", "sparse-checkout", "init", "--no-cone"])
+    steps.append(["git", "sparse-checkout", "set", *[f"/data/{s}.jsonl" for s in stems]])
+    steps.append(["git", "checkout", "-q"])
+    for step in steps:
+        proc = subprocess.run(step, cwd=dest, capture_output=True, text=True,  # noqa: S603
+                              timeout=timeout)
+        if proc.returncode != 0:
+            raise DatasetUnavailable(
+                f"M4 fetch failed at `{' '.join(step[:3])}`: {(proc.stderr or '').strip()[:300]}"
+            )
+    return data
+
+
+def _m4_pick(row: dict, keys: tuple[str, ...]) -> str:
+    for k in keys:
+        v = row.get(k)
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return ""
+
+
+def load_m4(stems: tuple[str, ...] = ("arxiv_chatGPT",), min_words: int = 60,
+            per_file: int | None = None) -> list[dict]:
+    """Paired human/machine rows: ``{"text", "is_ai", "generator", "domain", "language"}``.
+
+    Each source record gives TWO rows — the human answer and the machine answer to one prompt — so
+    a subgroup is balanced by construction and false positives and false negatives are measured on
+    the same material.
+    """
+    import json as _json
+
+    data = fetch_m4(stems)
+    rows: list[dict] = []
+    for stem in stems:
+        path = data / f"{stem}.jsonl"
+        if not path.exists():
+            raise DatasetUnavailable(f"M4: {path} was not fetched")
+        domain, language = M4_FILES.get(stem, (stem, "en"))
+        kept = 0
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    r = _json.loads(line)
+                except _json.JSONDecodeError:
+                    continue
+                if per_file is not None and kept >= per_file:
+                    break
+                human = _m4_pick(r, _M4_HUMAN_KEYS)
+                machine = _m4_pick(r, _M4_MACHINE_KEYS)
+                prompt = (r.get("prompt") or "").strip()
+                # The arxiv_bloomz release puts the prompt in `machine_text`. Scoring instructions
+                # as a generation would corrupt the false-negative rate silently.
+                if machine and prompt and machine[:200] == prompt[:200]:
+                    continue
+                gen = str(r.get("model") or stem.split("_")[-1])
+                base = {"generator": gen, "domain": domain, "language": language, "source": stem}
+                for text, is_ai in ((human, False), (machine, True)):
+                    if text and len(text.split()) >= min_words:
+                        rows.append({"text": text, "is_ai": is_ai, **base})
+                kept += 1
+    if not rows:
+        raise DatasetUnavailable(f"M4: no rows survived the {min_words}-word floor")
+    return rows
