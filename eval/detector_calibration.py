@@ -45,7 +45,10 @@ REPO = "https://github.com/liamdugan/raid"
 # run to gigabytes; a blobless, non-cone sparse checkout of just the results keeps this cheap.
 SPARSE_PATTERN = "/leaderboard/submissions/*/results.json"
 SNAPSHOT = Path(__file__).resolve().parent.parent / ".claude" / "probes" / "raid-per-domain-thresholds.json"
+# RAID publishes calibrations at both targets. The finding is not an artifact of picking one:
+# MEASURED 2026-09-01, the median span is 0.610 at the 5% target and 0.551 at 1%.
 TARGET_FPR = "0.05"
+TARGETS = ("0.05", "0.01")
 MIN_DOMAINS = 8
 CITATION = (
     "Dugan, L., et al., 'RAID: A Shared Benchmark for Robust Evaluation of Machine-Generated Text "
@@ -76,7 +79,7 @@ def fetch(dest: Path, timeout: int = 900) -> Path:
     return dest / "leaderboard" / "submissions"
 
 
-def read_submissions(root: Path) -> list[dict]:
+def read_submissions(root: Path, target: str = TARGET_FPR) -> list[dict]:
     """One row per detector that published thresholds for all `MIN_DOMAINS` domains."""
     rows = []
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
@@ -87,7 +90,7 @@ def read_submissions(root: Path) -> list[dict]:
             raw = json.loads(path.read_text(encoding="utf-8", errors="replace"))
         except (OSError, json.JSONDecodeError):
             continue
-        th = (raw.get("thresholds") or {}).get(TARGET_FPR)
+        th = (raw.get("thresholds") or {}).get(target)
         if not isinstance(th, dict):
             continue
         vals = {k: v for k, v in th.items() if isinstance(v, (int, float))}
@@ -97,6 +100,7 @@ def read_submissions(root: Path) -> list[dict]:
             "detector": raw.get("detector_name") or d.name,
             "submission_dir": d.name,
             "date_released": raw.get("date_released"),
+            "target_fpr": target,
             "thresholds_at_5pct_fpr": vals,
             "span": round(max(vals.values()) - min(vals.values()), 6),
         })
@@ -175,6 +179,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--fetch", action="store_true", help="re-fetch the live leaderboard first")
     r.add_argument("--workdir", type=Path, default=Path("/tmp/untell-raid-leaderboard"))
     r.add_argument("--json", action="store_true")
+    r.add_argument("--target", choices=TARGETS, default=TARGET_FPR,
+                   help="target false-positive rate the thresholds were calibrated to")
     r.add_argument("--save-snapshot", action="store_true",
                    help="overwrite the committed snapshot with what was fetched")
     a = ap.parse_args(argv)
@@ -184,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if a.fetch:
         try:
-            rows = read_submissions(fetch(a.workdir))
+            rows = read_submissions(fetch(a.workdir), target=a.target)
         except (LeaderboardUnavailable, subprocess.TimeoutExpired, OSError) as exc:
             print(f"live leaderboard unavailable ({exc}); falling back to the snapshot",
                   file=sys.stderr)

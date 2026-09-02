@@ -827,6 +827,11 @@ against 3.4 GB for the full repository, because the sibling `predictions.json` f
 per example. No API key, no GPU, no gated dataset, no account. A fetch failure falls back to the
 snapshot rather than dying, so the numbers reproduce on a machine with no network at all.
 
+**It is not an artifact of the 5% target.** RAID publishes the same calibration at a 1%
+false-positive target, and the finding survives: median span **0.551** against 0.610, with 24
+detectors over half the scale instead of 25. `untell-detector-calibration report --target 0.01`
+reproduces it.
+
 **Two things keep it honest.** The spread is *not* universal: **Binoculars needs a span of 0.030**,
 and is genuinely domain-stable. That one detector behaves well is what makes the other 45
 credible rather than an artifact of the method. And the domains are ordered consistently —
