@@ -5689,6 +5689,77 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-eight — the prediction, and the seven thresholds it was right about
+
+Round ninety-seven ended with a measured property of this test suite rather than a score: over 339
+comparison sites, of the 55 pairs where the tests distinguish a branch **inversion** from an
+**off-by-one**, the inversion is caught and the off-by-one missed at every one — 55 to 0. The suite
+tests that branches do the right thing and not that they switch in the right place.
+
+That is a prediction, and the place it should bite first is the thresholds a person actually meets.
+
+## ✅ Confirmed, 7 of 8
+
+MEASURED against the paired sweep, the comparisons guarding this repository's documented thresholds:
+
+| site | off-by-one | inversion |
+|---|---|---|
+| `score.py:732` `words >= _MIN_WORDS_FOR_A_VERDICT` | survives | killed |
+| `score.py:705` `words < _MIN_WORDS_FOR_A_VERDICT or …` | survives | survives |
+| `tells.py:723` `< _MIN_WORDS_FOR_REPETITION` (trigrams) | survives | survives |
+| `tells.py:853` `< _MIN_WORDS_FOR_REPETITION` (openers) | survives | survives |
+| `perplexity_burstiness.py:330` `< _MIN_WORDS_FOR_SIGNAL` | survives | killed |
+| `perplexity_burstiness.py:632` the same floor in `.score()` | survives | killed |
+| `humanness.py:426` `< _MIN_WORDS_FOR_A_BAND` | survives | survives |
+| `sentences.py:163` `< _MIN_SENTENCES_FOR_SPREAD` | **killed** | killed |
+
+Seven of eight, and four with **nothing testing either branch**. These are not internal details.
+`_MIN_WORDS_FOR_A_VERDICT` decides whether a person is told their text is too short to judge, and
+the warning quotes the 40-word figure — so an off-by-one there is the tool disagreeing with its own
+documentation about the document in front of the reader.
+
+Each threshold is now asserted at **n−1, n and n+1**. Two points would leave the switch free to sit
+on either side of the gap; three pin it. **MEASURED: 7 of 7 previously-surviving off-by-ones now
+killed**, verified by re-applying each mutant against only the new test file.
+
+## ✗ The first attempt killed 4 of 7, and the reason is the round's own subject
+
+Three survived the first pass:
+
+* `tells.py:853` — the sample was built at `floor - 1` and `floor + 6`. **`< floor` and `<= floor`
+  differ on exactly one input, the floor itself, and neither sample was it.** I wrote a boundary
+  test that did not touch the boundary, in the round about a suite that does not touch boundaries.
+* `tells.py:723` — a second function behind the same constant, which the opener test never calls.
+  One threshold, two call sites, and testing one says nothing about the other.
+* `perplexity_burstiness.py:632` — `_MIN_WORDS_FOR_SIGNAL` guarded a **second time** inside
+  `PerplexityBurstinessDetector.score`. The function-level mutant died to the new test while the
+  method-level one lived, which is the clearest possible demonstration that two copies of a
+  threshold are two chances to get it wrong.
+
+The samples are exact now (`_repeated_openers(n)` returns exactly `n` words, asserted before use),
+both call sites are covered, and the detector object is tested alongside the bare function with an
+assertion that the two agree.
+
+## ✗ And a fourth wrong return-shape guess
+
+The first draft asserted `score_sentences(...)["spread"]`. There is no `spread` key — the threshold
+guards `_targeting_is_unrankable`, and the observable key is `unrankable`. The humanness test looked
+for the word "band" in a caveat that says "does not separate the classes" instead.
+
+Neither was a defect in the code; both were assertions written from the constant's *name* rather
+than from the function. That is the fourth time this session a guessed return shape has cost a run,
+which is what `docs/result-shapes.md` exists for and did not prevent, because the trap is not
+knowing the document — it is reaching for the plausible key without opening the file.
+
+## What the round is worth
+
+The seven kills close the specific gap. The transferable part is that **round ninety-seven's
+statistical finding made a concrete prediction about eight named lines, and seven of them held** —
+which is what turns "the mutation score is 46%" from a number into a diagnosis. A property of the
+suite, measured once, told me where to look.
+
+---
+
 # Round ninety-seven — the mutation operators were an unchosen parameter too
 
 Rounds eighty-six and eighty-seven established the shape: a tool's own unchosen parameter decides
