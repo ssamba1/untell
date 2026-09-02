@@ -91,6 +91,31 @@ at claude.ai → Settings → Connectors:
 
 Exa, Tavily, Firecrawl, alphaXiv and Consensus each need an account on the vendor's side.
 
+### Why the full tier is unavailable here — weights, not packages
+
+Every measurement in this repository from 2026-08 onward runs on the **lite** tier, and the reason
+was recorded as "the ML stack is not installed". Tested properly on 2026-09-02, that is true but
+misleading, and the distinction is actionable:
+
+| | reachable? | |
+|---|---|---|
+| **PyPI** | **yes** — `pypi.org` and `files.pythonhosted.org` both 200 | `pip index versions torch` returns 2.13.0 down to 1.13.0; a wheel downloads |
+| **HuggingFace** | no — `huggingface.co` returns 000 | denied by organization policy, confirmed through the proxy |
+| ONNX model zoo | yes, via git and `media.githubusercontent.com` LFS | but it ships **base** RoBERTa, not the detector fine-tunes |
+
+So `torch` and `transformers` are installable. **What cannot be fetched is the weights**, and every
+full-tier detector needs a HuggingFace-hosted fine-tune:
+`openai-community/roberta-base-openai-detector`, `Hello-SimpleAI/chatgpt-detector-roberta`,
+`yaful/MAGE`, `TrustSafeAI/RADAR-Vicuna-7B`. A base RoBERTa encoder from the ONNX zoo has no
+detection head, so it substitutes for none of them.
+
+This is worth stating precisely because it turns a vague blocker into one request. **Allowing
+`huggingface.co` in this environment's network policy would unlock the entire full tier** — five
+neural detectors, the ensemble, and full-tier versions of every result in
+`detector-fairness-measured.md`, which are currently lite-tier only and say so. Nothing else is
+needed: the packages are already reachable, and `eval/gpt2_onnx.py` proves the ONNX runtime path
+works here.
+
 ### What only an egress change can fix
 
 These must be reached *by a script*, so no connector substitutes for them:
