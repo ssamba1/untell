@@ -1,61 +1,61 @@
 {
   "baselines": {
     "untell/_env.py": 0,
-    "untell/_retry.py": 0,
-    "untell/api_server.py": 0,
-    "untell/attacks/back_translation.py": 6,
     "untell/attacks/unicode_tricks.py": 0,
-    "untell/attacks/word_importance.py": 0,
-    "untell/browser_check.py": 0,
-    "untell/calibrate.py": 0,
     "untell/config.py": 0,
-    "untell/detectors/base.py": 1,
-    "untell/detectors/binoculars.py": 0,
-    "untell/detectors/commercial.py": 0,
-    "untell/detectors/llm_judge.py": 0,
-    "untell/detectors/local_judge.py": 1,
     "untell/detectors/mage.py": 6,
-    "untell/detectors/perplexity_burstiness.py": 0,
-    "untell/detectors/radar.py": 0,
-    "untell/detectors/roberta_openai.py": 2,
     "untell/html_report.py": 0,
-    "untell/humanness.py": 0,
-    "untell/inspect_report.py": 0,
-    "untell/languages.py": 0,
     "untell/layout.py": 0,
-    "untell/mcp_server.py": 0,
-    "untell/rewriter/base.py": 0,
-    "untell/rewriter/composite.py": 0,
     "untell/rewriter/ensemble.py": 0,
-    "untell/rewriter/local_policy.py": 2,
-    "untell/rewriter/mt_pivot.py": 0,
-    "untell/rewriter/prompts.py": 0,
     "untell/rewriter/structural.py": 0,
-    "untell/rewriter/surgical.py": 0,
-    "untell/rewriter/t5_paraphrase.py": 0,
-    "untell/rewriter/targeted.py": 0,
     "untell/rich_output.py": 0,
-    "untell/scripts/audit.py": 0,
-    "untell/scripts/batch.py": 0,
-    "untell/scripts/cli.py": 0,
     "untell/scripts/entailment.py": 1,
-    "untell/scripts/explain.py": 0,
-    "untell/scripts/hedges.py": 0,
-    "untell/scripts/io_utils.py": 1,
     "untell/scripts/latex.py": 0,
-    "untell/scripts/numerals.py": 0,
-    "untell/scripts/preserve.py": 0,
-    "untell/scripts/quality.py": 0,
     "untell/scripts/roles.py": 2,
-    "untell/scripts/run.py": 0,
-    "untell/scripts/score.py": 0,
-    "untell/scripts/scrub.py": 0,
     "untell/scripts/sentences.py": 0,
-    "untell/scripts/tells.py": 0,
-    "untell/scripts/verify.py": 0,
-    "untell/scripts/voice.py": 0,
     "untell/scripts/watch.py": 0,
-    "untell/text_split.py": 0
+    "untell/_retry.py": 0,
+    "untell/attacks/word_importance.py": 0,
+    "untell/detectors/base.py": 1,
+    "untell/detectors/perplexity_burstiness.py": 0,
+    "untell/humanness.py": 0,
+    "untell/mcp_server.py": 0,
+    "untell/rewriter/local_policy.py": 2,
+    "untell/rewriter/surgical.py": 0,
+    "untell/scripts/audit.py": 0,
+    "untell/scripts/explain.py": 0,
+    "untell/scripts/numerals.py": 0,
+    "untell/scripts/run.py": 0,
+    "untell/scripts/tells.py": 0,
+    "untell/text_split.py": 0,
+    "untell/api_server.py": 0,
+    "untell/browser_check.py": 0,
+    "untell/detectors/binoculars.py": 0,
+    "untell/detectors/llm_judge.py": 0,
+    "untell/detectors/radar.py": 0,
+    "untell/inspect_report.py": 0,
+    "untell/rewriter/base.py": 0,
+    "untell/rewriter/mt_pivot.py": 0,
+    "untell/rewriter/t5_paraphrase.py": 0,
+    "untell/scripts/batch.py": 0,
+    "untell/scripts/hedges.py": 0,
+    "untell/scripts/preserve.py": 0,
+    "untell/scripts/score.py": 0,
+    "untell/scripts/verify.py": 0,
+    "untell/attacks/back_translation.py": 6,
+    "untell/calibrate.py": 0,
+    "untell/detectors/commercial.py": 0,
+    "untell/detectors/local_judge.py": 1,
+    "untell/detectors/roberta_openai.py": 2,
+    "untell/languages.py": 0,
+    "untell/rewriter/composite.py": 0,
+    "untell/rewriter/prompts.py": 0,
+    "untell/rewriter/targeted.py": 0,
+    "untell/scripts/cli.py": 0,
+    "untell/scripts/io_utils.py": 1,
+    "untell/scripts/quality.py": 0,
+    "untell/scripts/scrub.py": 0,
+    "untell/scripts/voice.py": 0
   },
   "unmeasurable": [
     {
@@ -75,20 +75,21 @@
     }
   ],
   "red_baselines": {
-    "untell/attacks/back_translation.py": 6,
-    "untell/detectors/base.py": 1,
-    "untell/detectors/local_judge.py": 1,
     "untell/detectors/mage.py": 6,
-    "untell/detectors/roberta_openai.py": 2,
-    "untell/rewriter/local_policy.py": 2,
     "untell/scripts/entailment.py": 1,
-    "untell/scripts/io_utils.py": 1,
-    "untell/scripts/roles.py": 2
+    "untell/scripts/roles.py": 2,
+    "untell/detectors/base.py": 1,
+    "untell/rewriter/local_policy.py": 2,
+    "untell/attacks/back_translation.py": 6,
+    "untell/detectors/local_judge.py": 1,
+    "untell/detectors/roberta_openai.py": 2,
+    "untell/scripts/io_utils.py": 1
   },
+  "workers": 4,
   "mutants": 108,
-  "killed": 59,
-  "survived": 49,
-  "score": 54.6,
+  "killed": 63,
+  "survived": 45,
+  "score": 58.3,
   "survivors": [
     {
       "file": "untell/api_server.py",
@@ -113,16 +114,16 @@
     },
     {
       "file": "untell/attacks/word_importance.py",
-      "line": 870,
+      "line": 793,
       "kind": "comparison",
-      "mutation": ">= -> <",
+      "mutation": "< -> >=",
       "killed": false
     },
     {
       "file": "untell/attacks/word_importance.py",
-      "line": 793,
+      "line": 870,
       "kind": "comparison",
-      "mutation": "< -> >=",
+      "mutation": ">= -> <",
       "killed": false
     },
     {
@@ -169,16 +170,16 @@
     },
     {
       "file": "untell/detectors/mage.py",
-      "line": 199,
+      "line": 132,
       "kind": "arithmetic",
-      "mutation": "- -> +",
+      "mutation": "+ -> -",
       "killed": false
     },
     {
       "file": "untell/detectors/mage.py",
-      "line": 132,
+      "line": 199,
       "kind": "arithmetic",
-      "mutation": "+ -> -",
+      "mutation": "- -> +",
       "killed": false
     },
     {
@@ -196,27 +197,6 @@
       "killed": false
     },
     {
-      "file": "untell/html_report.py",
-      "line": 99,
-      "kind": "comparison",
-      "mutation": "< -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/html_report.py",
-      "line": 88,
-      "kind": "comparison",
-      "mutation": "< -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/html_report.py",
-      "line": 144,
-      "kind": "arithmetic",
-      "mutation": "- -> +",
-      "killed": false
-    },
-    {
       "file": "untell/humanness.py",
       "line": 708,
       "kind": "arithmetic",
@@ -224,22 +204,8 @@
       "killed": false
     },
     {
-      "file": "untell/languages.py",
-      "line": 126,
-      "kind": "extremum",
-      "mutation": "max -> min",
-      "killed": false
-    },
-    {
-      "file": "untell/languages.py",
-      "line": 112,
-      "kind": "arithmetic",
-      "mutation": "+ -> -",
-      "killed": false
-    },
-    {
-      "file": "untell/languages.py",
-      "line": 116,
+      "file": "untell/inspect_report.py",
+      "line": 155,
       "kind": "arithmetic",
       "mutation": "+ -> -",
       "killed": false
@@ -309,16 +275,23 @@
     },
     {
       "file": "untell/rich_output.py",
-      "line": 425,
+      "line": 159,
       "kind": "arithmetic",
       "mutation": "- -> +",
       "killed": false
     },
     {
       "file": "untell/rich_output.py",
-      "line": 159,
+      "line": 425,
       "kind": "arithmetic",
       "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 1063,
+      "kind": "arithmetic",
+      "mutation": "* -> /",
       "killed": false
     },
     {
@@ -379,16 +352,16 @@
     },
     {
       "file": "untell/scripts/run.py",
-      "line": 1923,
-      "kind": "arithmetic",
-      "mutation": "+ -> -",
+      "line": 1439,
+      "kind": "comparison",
+      "mutation": ">= -> <",
       "killed": false
     },
     {
       "file": "untell/scripts/run.py",
-      "line": 1439,
-      "kind": "comparison",
-      "mutation": ">= -> <",
+      "line": 1923,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
       "killed": false
     },
     {

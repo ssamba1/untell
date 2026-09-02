@@ -3,11 +3,28 @@
     "untell/detectors/perplexity_burstiness.py": 0,
     "untell/humanness.py": 0
   },
+  "unmeasurable": [],
+  "red_baselines": {},
+  "workers": 2,
   "mutants": 97,
   "killed": 45,
   "survived": 52,
   "score": 46.4,
   "survivors": [
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 281,
+      "kind": "extremum",
+      "mutation": "min -> max",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 283,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
       "line": 314,
@@ -31,13 +48,6 @@
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 283,
-      "kind": "arithmetic",
-      "mutation": "/ -> *",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
       "line": 319,
       "kind": "arithmetic",
       "mutation": "/ -> *",
@@ -45,9 +55,23 @@
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 390,
+      "kind": "comparison",
+      "mutation": "> -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
       "line": 391,
       "kind": "comparison",
       "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 392,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
       "killed": false
     },
     {
@@ -73,34 +97,6 @@
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 523,
-      "kind": "extremum",
-      "mutation": "min -> max",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 558,
-      "kind": "comparison",
-      "mutation": ">= -> <",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 632,
-      "kind": "comparison",
-      "mutation": "< -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 281,
-      "kind": "extremum",
-      "mutation": "min -> max",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
       "line": 504,
       "kind": "arithmetic",
       "mutation": "- -> +",
@@ -111,76 +107,6 @@
       "line": 505,
       "kind": "extremum",
       "mutation": "min -> max",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 516,
-      "kind": "comparison",
-      "mutation": ">= -> <",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 520,
-      "kind": "comparison",
-      "mutation": "> -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 553,
-      "kind": "comparison",
-      "mutation": "< -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 556,
-      "kind": "arithmetic",
-      "mutation": "+ -> -",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 559,
-      "kind": "arithmetic",
-      "mutation": "/ -> *",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 571,
-      "kind": "arithmetic",
-      "mutation": "+ -> -",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 584,
-      "kind": "arithmetic",
-      "mutation": "+ -> -",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 585,
-      "kind": "arithmetic",
-      "mutation": "+ -> -",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 390,
-      "kind": "comparison",
-      "mutation": "> -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 392,
-      "kind": "arithmetic",
-      "mutation": "/ -> *",
       "killed": false
     },
     {
@@ -199,9 +125,30 @@
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 560,
-      "kind": "arithmetic",
-      "mutation": "/ -> *",
+      "line": 516,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 520,
+      "kind": "comparison",
+      "mutation": "> -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 523,
+      "kind": "extremum",
+      "mutation": "min -> max",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 553,
+      "kind": "comparison",
+      "mutation": "< -> >=",
       "killed": false
     },
     {
@@ -213,9 +160,44 @@
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 585,
+      "line": 556,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 558,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 559,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 560,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 560,
       "kind": "arithmetic",
       "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 571,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
       "killed": false
     },
     {
@@ -229,14 +211,35 @@
       "file": "untell/detectors/perplexity_burstiness.py",
       "line": 584,
       "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 584,
+      "kind": "arithmetic",
       "mutation": "- -> +",
       "killed": false
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 560,
+      "line": 585,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 585,
       "kind": "arithmetic",
       "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 632,
+      "kind": "comparison",
+      "mutation": "< -> >=",
       "killed": false
     },
     {
@@ -262,21 +265,7 @@
     },
     {
       "file": "untell/humanness.py",
-      "line": 724,
-      "kind": "extremum",
-      "mutation": "max -> min",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
       "line": 476,
-      "kind": "comparison",
-      "mutation": "< -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 707,
       "kind": "comparison",
       "mutation": "< -> >=",
       "killed": false
@@ -286,6 +275,20 @@
       "line": 477,
       "kind": "arithmetic",
       "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 477,
+      "kind": "arithmetic",
+      "mutation": "* -> /",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 477,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
       "killed": false
     },
     {
@@ -297,34 +300,6 @@
     },
     {
       "file": "untell/humanness.py",
-      "line": 708,
-      "kind": "arithmetic",
-      "mutation": "/ -> *",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 714,
-      "kind": "comparison",
-      "mutation": "< -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 727,
-      "kind": "arithmetic",
-      "mutation": "* -> /",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 477,
-      "kind": "arithmetic",
-      "mutation": "* -> /",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
       "line": 479,
       "kind": "arithmetic",
       "mutation": "* -> /",
@@ -332,9 +307,30 @@
     },
     {
       "file": "untell/humanness.py",
+      "line": 707,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 708,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
       "line": 708,
       "kind": "arithmetic",
       "mutation": "* -> /",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 708,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
       "killed": false
     },
     {
@@ -346,23 +342,30 @@
     },
     {
       "file": "untell/humanness.py",
+      "line": 714,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 724,
+      "kind": "extremum",
+      "mutation": "max -> min",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 727,
+      "kind": "arithmetic",
+      "mutation": "* -> /",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
       "line": 727,
       "kind": "extremum",
       "mutation": "min -> max",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 477,
-      "kind": "arithmetic",
-      "mutation": "- -> +",
-      "killed": false
-    },
-    {
-      "file": "untell/humanness.py",
-      "line": 708,
-      "kind": "arithmetic",
-      "mutation": "- -> +",
       "killed": false
     },
     {

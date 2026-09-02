@@ -5751,6 +5751,46 @@ Writing to the mutant alone produces tests shaped like the mutation operator, wh
 mutation score is gamed. Writing to the property the mutant violated is what makes the exercise
 worth doing.
 
+## ✗✗ And then the verification caught the harness itself
+
+The third module, `untell/rich_output.py`, is where it went wrong. Its survivor at line 104 is
+`length = stop - start` inside `_unified_range` — a function whose docstring promises output
+*"identical to what `difflib.unified_diff` would print"*. So the test compares it directly against
+`difflib._format_range_unified` over nine ranges, and MEASURED, the mutant differs on **five of the
+nine**. It cannot survive that test.
+
+The harness reported it as **surviving**.
+
+**CPython invalidates a `.pyc` on `(mtime, size)`.** Every mutation this tool makes is a
+single-character swap — `-` for `+`, `<` for `>=` — so the source file's size is unchanged, and a
+write landing inside the same mtime second leaves the cached bytecode valid. The mutated source is
+never loaded. The tests pass. The mutant is recorded as a survivor.
+
+Re-run in a fresh worktree, the same mutant failed **7 tests**.
+
+**The bias is one-directional, which is the only reassuring part.** Stale bytecode runs the
+*unmutated* code, so a mutant can only ever be wrongly recorded as surviving, never as killed. Every
+reported kill in rounds ninety-three to ninety-five is trustworthy. Every mutation score was an
+under-estimate and every survivor list an over-count.
+
+MEASURED after disabling bytecode (`-B`, `PYTHONDONTWRITEBYTECODE`, and a purge of any
+`__pycache__` the checkout inherits):
+
+| measurement | as published | corrected |
+|---|---|---|
+| round ninety-three, 2 modules, 97 mutants | 46.4% | **46.4%** — unchanged |
+| round ninety-four, 56 modules, 108 mutants | 54.6% | **58.3%** |
+
+**Round ninety-three was unaffected and round ninety-four was not, which explains the mechanism.**
+The hazard needs two writes inside one mtime second. Round ninety-three's two modules have slow test
+selections, so its mutants were seconds apart; round ninety-four swept many small modules with fast
+tests, and rapid successive writes collided. **The bug bites hardest exactly where mutation testing
+is cheap enough to do at scale** — which is where anybody would want to run it.
+
+It also explains something round ninety-five nearly published: `rich_output.py:425` still survives
+after the fix, correctly, because the new test covers `humanize_diff` and not the `tells_delta` line
+in `print_humanize_result`. Two of three closed, one honestly open.
+
 ## Running all of them, not a third of them
 
 Round ninety-four sampled 3 mutants per module — 108 of 1,397 candidates — because the serial run
@@ -5788,10 +5828,18 @@ MEASURED across **56 measurable modules** — 58 paired automatically, 2 skipped
 | **survived** | **49** |
 | **mutation score** | **54.6%** |
 
+> ⚠️ **54.6% is an under-estimate; the figure is 58.3%.** Round ninety-five found that CPython's
+> bytecode cache was masking some mutations entirely — every mutation here is a single-character
+> swap, so the file size is unchanged, and a write landing in the same mtime second leaves the stale
+> `.pyc` valid. Re-run with bytecode disabled, the same 108 mutants give **63 killed, 45 survived,
+> 58.3%**. The bias is one-directional: stale bytecode runs the unmutated code, so it can only ever
+> manufacture survivors. Corrected in round ninety-five; this entry is annotated rather than edited.
+
 Round ninety-three's two hand-picked modules scored 46.4% against hand-written selections. The
-package as a whole, against selections nobody chose, scores **54.6%** — close enough that the
-hand-picked pair was not unrepresentative, which is worth knowing since it was the evidence for the
-claim at the time.
+package as a whole, against selections nobody chose, scores **54.6%** as first MEASURED and
+**58.3%** once round ninety-five's bytecode-cache defect is fixed — either way close enough to the
+hand-picked pair that it was not unrepresentative, which is worth knowing since it was the evidence
+for the claim at the time.
 
 The survivors are spread rather than concentrated: `api_server.py`, `html_report.py`,
 `languages.py`, `rewriter/local_policy.py`, `rich_output.py` and `scripts/run.py` each carry three,

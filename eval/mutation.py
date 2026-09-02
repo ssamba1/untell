@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -210,6 +211,10 @@ def _worktree(root: Path) -> tuple[Path, Path]:
     cache = root / ".anthology-cache"
     if cache.exists():
         (tree / ".anthology-cache").symlink_to(cache)
+    # Belt and braces with PYTHONDONTWRITEBYTECODE: a checkout can inherit `__pycache__` from an
+    # untracked directory, and stale bytecode is what makes a killed mutant look like a survivor.
+    for cached in tree.rglob("__pycache__"):
+        shutil.rmtree(cached, ignore_errors=True)
     return scratch, tree
 
 
@@ -242,10 +247,22 @@ def _failures(tree: Path, tests: tuple[str, ...], timeout: int) -> int:
     present = [t for t in tests if (tree / t).exists()]
     if not present:
         return 0  # nothing to run: no failure observed, the conservative answer
+    # ⚠️ **Bytecode caching silently masks a mutation, and the default settings make it likely.**
+    # CPython invalidates a `.pyc` on (mtime, size). Every mutation this tool makes is a
+    # single-character swap — `-` for `+`, `<` for `>=` — so the file size is unchanged or nearly so,
+    # and a write landing in the same mtime second leaves the stale bytecode valid. The mutated
+    # source is then never loaded and the mutant is scored a SURVIVOR.
+    #
+    # MEASURED: `rich_output.py:104` was reported as surviving a test that compares the function
+    # directly against `difflib._format_range_unified`, which it cannot survive — the same mutant in
+    # a fresh worktree failed 7 tests. Every mutation figure taken before this fix is suspect in one
+    # direction: too many survivors, never too few.
+    environment = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "-p", "no:randomly", *present],
-            cwd=tree, capture_output=True, text=True, timeout=timeout,
+            [sys.executable, "-B", "-m", "pytest", "-q", "-p", "no:randomly",
+             "-p", "no:cacheprovider", *present],
+            cwd=tree, capture_output=True, text=True, timeout=timeout, env=environment,
         )
     except subprocess.TimeoutExpired:
         return UNUSABLE
