@@ -100,10 +100,11 @@ def test_a_mutant_out_of_range_is_declined_rather_than_guessed():
     assert mutation.apply_mutant("a = 1\n", mutation.Mutant("x.py", 99, "arithmetic", "+", "-")) is None
 
 
-def test_the_generator_finds_the_three_kinds_it_claims_to():
+def test_the_generator_finds_the_kinds_it_claims_to():
+    """Round 97 added five operators; a comparison site now yields an inversion AND an off-by-one."""
     source = "def f(a, b):\n    if a < b:\n        return max(a - b, 0)\n    return a / b\n"
     kinds = {m.kind for m in mutation.mutants_for(source, "x.py")}
-    assert kinds == {"comparison", "arithmetic", "extremum"}
+    assert kinds == {"comparison", "boundary", "arithmetic", "extremum"}
 
 
 def test_the_targets_name_tests_that_exist():
@@ -201,3 +202,78 @@ def test_discovery_never_pairs_a_module_with_an_empty_selection():
     for relative, tests in mutation.discovered_targets():
         assert tests, relative
         assert (REPO / relative).exists()
+
+
+# ---------------------------------------------------------------------------
+# Round 97: the operator set was an unchosen parameter of the harness.
+#
+# Three operators produced the scores in rounds 93-96. Five more were added, and MEASURED over 355
+# mutants EVERY operator already implemented scores above EVERY operator that was not: the original
+# three kill 62.6%, the added five 39.8%, and the package score falls 58.3% -> 46.2%.
+#
+# The sharpest row is `boundary`. It mutates the SAME comparison sites as `comparison` — `<` to
+# `<=` rather than `<` to `>=` — so the pair is a controlled comparison. An inverted branch is
+# caught by a test on either side; an off-by-one changes behaviour on exactly one input.
+# ---------------------------------------------------------------------------
+
+OPERATORS = json.loads((REPO / "eval" / "data" / "mutation_operators.json").read_text())
+ORIGINAL_THREE = {"comparison", "arithmetic", "extremum"}
+
+
+def test_the_harness_makes_every_operator_it_claims_to():
+    """An operator that stops being generated silently removes the mutants it was added for."""
+    kinds = set(OPERATORS["by_kind"])
+    assert kinds >= {"comparison", "boundary", "arithmetic", "extremum",
+                     "boolean", "membership", "identity", "constant"}
+
+
+def test_boundary_and_comparison_mutate_the_same_sites():
+    """The pairing that makes the 60%/25% gap a controlled result rather than a ranking."""
+    source = "def f(a, b):\n    if a < b:\n        return 1\n    return 0\n"
+    kinds = [m.kind for m in mutation.mutants_for(source, "x.py")]
+    assert kinds.count("comparison") == 1
+    assert kinds.count("boundary") == 1
+    pair = {m.kind: (m.before, m.after) for m in mutation.mutants_for(source, "x.py")}
+    assert pair["comparison"] == ("<", ">="), "inversion"
+    assert pair["boundary"] == ("<", "<="), "off-by-one"
+
+
+def test_the_off_by_one_is_harder_for_this_suite_than_the_inversion():
+    """The round-97 finding. If this ever reverses, the suite's character changed."""
+    inversion = OPERATORS["by_kind"]["comparison"]["score"]
+    off_by_one = OPERATORS["by_kind"]["boundary"]["score"]
+    assert off_by_one < inversion, (
+        "an off-by-one should be harder to catch than a branch inversion; if it is not, either the "
+        "suite gained boundary tests or the operators stopped meaning what they mean"
+    )
+
+
+def test_the_operators_that_were_already_implemented_are_the_easy_ones():
+    """Stated as a test because it is the uncomfortable half of the finding."""
+    def rate(names: set[str]) -> float:
+        killed = sum(c["killed"] for n, c in OPERATORS["by_kind"].items() if n in names)
+        total = killed + sum(c["survived"] for n, c in OPERATORS["by_kind"].items() if n in names)
+        return 100.0 * killed / total if total else 0.0
+
+    added = set(OPERATORS["by_kind"]) - ORIGINAL_THREE
+    assert rate(ORIGINAL_THREE) > rate(added), (
+        "the three operators chosen first score higher than the five added later — the published "
+        "score was a property of the operator set as much as of the tests"
+    )
+
+
+def test_a_score_is_reported_with_the_operators_that_produced_it():
+    """A mutation score without its operator set is not a reproducible number."""
+    assert OPERATORS["by_kind"], "the artefact must record the per-operator breakdown"
+    assert OPERATORS["mutants"] == sum(
+        c["killed"] + c["survived"] for c in OPERATORS["by_kind"].values()
+    )
+
+
+def test_every_outcome_is_recorded_not_only_the_survivors():
+    """A report listing survivors alone cannot support a paired comparison at all."""
+    source = (REPO / "eval" / "mutation.py").read_text()
+    assert '"outcomes"' in source, (
+        "pairing two mutants at one site needs to know the other one ran, which a survivor list "
+        "cannot say"
+    )

@@ -5689,6 +5689,75 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-seven — the mutation operators were an unchosen parameter too
+
+Rounds eighty-six and eighty-seven established the shape: a tool's own unchosen parameter decides
+its answer, and the value nobody picked deliberately is usually the flattering one. Rounds
+ninety-three to ninety-six built a mutation harness and published three scores from it.
+
+**That harness has exactly three mutation operators — comparison, arithmetic, extremum — and nobody
+chose that set.** It was enough to produce a number. Whether it reaches the failure modes that
+matter is a different question, and only a wider set can answer it.
+
+Five were added: **boundary** (`<` → `<=`, the off-by-one, as opposed to `<` → `>=`, which inverts
+the branch), **boolean** (`and` ↔ `or`), **membership** (`in` ↔ `not in`), **identity**
+(`is` ↔ `is not`) and **constant** (`True` ↔ `False`). Candidate mutants across the package go from
+**1,397 to 3,313**.
+
+## ✗ The three I picked are the three easiest
+
+MEASURED, 355 mutants across 56 modules, evenly sampled per module:
+
+| operator | killed | survived | score | in the original three? |
+|---|---|---|---|---|
+| boundary | 9 | 27 | **25.0%** | no |
+| constant | 24 | 56 | **30.0%** | no |
+| boolean | 26 | 28 | 48.1% | no |
+| identity | 20 | 21 | 48.8% | no |
+| membership | 23 | 22 | 51.1% | no |
+| comparison | 21 | 14 | **60.0%** | yes |
+| arithmetic | 32 | 18 | **64.0%** | yes |
+| extremum | 9 | 5 | **64.3%** | yes |
+
+**Every operator I had implemented scores above every operator I had not.** Split that way, MEASURED
+over the same 355 mutants: the original three kill **62.6%**, the five added kill **39.8%**, and the
+package score falls from **58.3%** to **46.2%**.
+
+So round ninety-four's headline was flattered by roughly twelve points, not by any error in the
+measurement but by which mutations the tool happened to know how to make. That is round
+eighty-six's finding about the survey's proximity window, one level up and pointing at my own
+instrument rather than at the repository's.
+
+## The finding underneath the ranking
+
+`boundary` at 25% is the sharpest row, and it is not just "another operator". It mutates **the same
+comparison sites** as `comparison` does — the only difference is whether the branch is inverted or
+shifted by one.
+
+An inverted branch is caught by any test that exercises either side. An off-by-one changes behaviour
+on **exactly one input**, so it is caught only by a test sitting on the boundary. The gap between
+60.0% and 25.0% is therefore a statement about the character of this test suite: **it tests that
+branches do the right thing and not that they switch in the right place.**
+
+⚠️ **The cross-operator table is sampled, and that weakens the comparison.** `--limit` spaces mutants
+evenly through each module, so a site's two mutants are not guaranteed to both have been run — which
+means a survivor whose partner is absent cannot be told from one whose partner was killed. A
+`--kinds comparison,boundary` sweep with no sampling gives every site both, and `outcomes` now
+records every mutant rather than only survivors, because a report listing survivors alone cannot
+support a paired comparison at all. That run is what turns the ranking into a controlled result.
+
+## What this says about the previous four rounds
+
+Nothing in rounds ninety-three to ninety-six was wrong. Every kill was real, the bytecode defect was
+real and one-directional, the cache audit stands. **What was wrong was treating a mutation score as
+a property of the test suite when it is a property of the suite and the operator set together** —
+and reporting it without saying which operators produced it.
+
+The scores now carry their operator set. The number to act on remains the enumerated survivor list,
+which just grew by every off-by-one and boolean flip the first three operators could not express.
+
+---
+
 # Round ninety-six — every other cache, checked for the same defect
 
 Round ninety-five lost a measurement to an incomplete cache key. The lesson generalises past the one

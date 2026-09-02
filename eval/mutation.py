@@ -154,10 +154,27 @@ def discovered_targets(root: Path = REPO) -> tuple[tuple[str, tuple[str, ...]], 
     return tuple(out)
 
 
+# ⚠️ **The operator set is an unchosen parameter of this tool, and rounds eighty-six and
+# eighty-seven are about exactly that.** Three operators were enough to produce a number; whether
+# they reach the failure modes that matter is a separate question, and one only a wider set can
+# answer. Round ninety-seven widened it and measured what the first three could not see.
+#
+# Negation, not boundary: `<` becomes `>=`, which inverts the branch. That is the easy mutant — any
+# test exercising either side catches it. `_BOUNDARIES` below makes the off-by-one instead, `<` to
+# `<=`, which changes behaviour on exactly one input and is what a real off-by-one looks like.
 _COMPARISONS = {
     ast.Lt: ("<", ">="), ast.LtE: ("<=", ">"), ast.Gt: (">", "<="), ast.GtE: (">=", "<"),
 }
+_BOUNDARIES = {
+    ast.Lt: ("<", "<="), ast.LtE: ("<=", "<"), ast.Gt: (">", ">="), ast.GtE: (">=", ">"),
+}
 _BINOPS = {ast.Add: ("+", "-"), ast.Sub: ("-", "+"), ast.Mult: ("*", "/"), ast.Div: ("/", "*")}
+# `in`/`not in` and `is`/`is not` are separated from the ordering comparisons because they fail
+# differently: an inverted membership test usually raises or empties a collection rather than
+# shifting a number, and a suite can be blind to one while catching the other.
+_MEMBERSHIP = {ast.In: ("in", "not in"), ast.NotIn: ("not in", "in")}
+_IDENTITY = {ast.Is: ("is", "is not"), ast.IsNot: ("is not", "is")}
+_BOOLEANS = {ast.And: ("and", "or"), ast.Or: ("or", "and")}
 
 
 def mutants_for(source: str, path: str) -> list[Mutant]:
@@ -174,6 +191,17 @@ def mutants_for(source: str, path: str) -> list[Mutant]:
             if operator in _COMPARISONS:
                 before, after = _COMPARISONS[operator]
                 found.append(Mutant(path, node.lineno, "comparison", before, after))
+                before, after = _BOUNDARIES[operator]
+                found.append(Mutant(path, node.lineno, "boundary", before, after))
+            elif operator in _MEMBERSHIP:
+                before, after = _MEMBERSHIP[operator]
+                found.append(Mutant(path, node.lineno, "membership", before, after))
+            elif operator in _IDENTITY:
+                before, after = _IDENTITY[operator]
+                found.append(Mutant(path, node.lineno, "identity", before, after))
+        elif isinstance(node, ast.BoolOp) and type(node.op) in _BOOLEANS:
+            before, after = _BOOLEANS[type(node.op)]
+            found.append(Mutant(path, node.lineno, "boolean", before, after))
         elif isinstance(node, ast.BinOp) and type(node.op) in _BINOPS:
             before, after = _BINOPS[type(node.op)]
             found.append(Mutant(path, node.lineno, "arithmetic", before, after))
@@ -181,6 +209,9 @@ def mutants_for(source: str, path: str) -> list[Mutant]:
                 and node.func.id in {"max", "min"}:
             found.append(Mutant(path, node.lineno, "extremum", node.func.id,
                                 "min" if node.func.id == "max" else "max"))
+        elif isinstance(node, ast.Constant) and isinstance(node.value, bool):
+            found.append(Mutant(path, node.lineno, "constant", str(node.value),
+                                str(not node.value)))
     return found
 
 
@@ -274,7 +305,8 @@ def _failures(tree: Path, tests: tuple[str, ...], timeout: int) -> int:
 
 
 def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | None,
-            timeout: int) -> tuple[list[dict], list[dict], dict]:
+            timeout: int, kinds: frozenset[str] | None = None,
+            ) -> tuple[list[dict], list[dict], dict]:
     """One worktree, working through its share of the modules."""
     scratch, tree = _worktree(root)
     results: list[dict] = []
@@ -285,9 +317,13 @@ def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | N
             path = tree / relative
             original = path.read_text()
             candidates = mutants_for(original, relative)
+            if kinds:
+                candidates = [c for c in candidates if c.kind in kinds]
             if limit:
                 step = max(1, len(candidates) // limit)
                 candidates = candidates[::step][:limit]
+            if not candidates:
+                continue
 
             baseline = _failures(tree, tests, timeout)
             if baseline == UNUSABLE:
@@ -317,7 +353,7 @@ def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | N
 
 def run_parallel(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300,
                  targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
-                 workers: int = 4) -> dict:
+                 workers: int = 4, kinds: frozenset[str] | None = None) -> dict:
     """The same sweep, spread across several worktrees.
 
     Round ninety-four sampled 3 mutants per module because the serial run of all 1,397 candidates
@@ -340,7 +376,7 @@ def run_parallel(root: Path = REPO, limit_per_file: int | None = None, timeout: 
     baselines: dict[str, int] = {}
     with ThreadPoolExecutor(max_workers=len(queues)) as pool:
         for got, skipped, base in pool.map(
-            lambda q: _worker(root, q, limit_per_file, timeout), queues,
+            lambda q: _worker(root, q, limit_per_file, timeout, kinds), queues,
         ):
             results.extend(got)
             unmeasurable.extend(skipped)
@@ -348,16 +384,30 @@ def run_parallel(root: Path = REPO, limit_per_file: int | None = None, timeout: 
 
     killed = [r for r in results if r["killed"]]
     survivors = [r for r in results if not r["killed"]]
+    by_kind: dict[str, dict[str, int]] = {}
+    for row in results:
+        cell = by_kind.setdefault(row["kind"], {"killed": 0, "survived": 0})
+        cell["killed" if row["killed"] else "survived"] += 1
+    for cell in by_kind.values():
+        total = cell["killed"] + cell["survived"]
+        cell["score"] = round(100.0 * cell["killed"] / total, 1) if total else 0.0
     return {
         "baselines": baselines,
         "unmeasurable": unmeasurable,
         "red_baselines": {k: v for k, v in baselines.items() if v},
+        "by_kind": by_kind,
         "workers": len(queues),
         "mutants": len(results),
         "killed": len(killed),
         "survived": len(survivors),
         "score": round(100.0 * len(killed) / len(results), 1) if results else 0.0,
         "survivors": sorted(survivors, key=lambda r: (r["file"], r["line"])),
+        # Every outcome, not only the survivors. Pairing the two mutants at one comparison site —
+        # inversion against off-by-one — needs to know the partner RAN, and a survivor list cannot
+        # distinguish "the partner was killed" from "the partner was never sampled". Without
+        # `--limit` every site gets both, so survivors alone suffice; with it they do not, and the
+        # ratio computed over that ambiguity measures the sampling rather than the tests.
+        "outcomes": sorted(results, key=lambda r: (r["file"], r["line"], r["kind"])),
     }
 
 
@@ -411,10 +461,18 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
     killed = [r for r in mutants if r["killed"]]
     survivors = [r for r in mutants if not r["killed"]]
     baselines = {r["file"]: r["baseline_failures"] for r in results if r.get("baseline")}
+    by_kind: dict[str, dict[str, int]] = {}
+    for row in mutants:
+        cell = by_kind.setdefault(row["kind"], {"killed": 0, "survived": 0})
+        cell["killed" if row["killed"] else "survived"] += 1
+    for cell in by_kind.values():
+        total = cell["killed"] + cell["survived"]
+        cell["score"] = round(100.0 * cell["killed"] / total, 1) if total else 0.0
     return {
         "baselines": baselines,
         "unmeasurable": unmeasurable,
         "red_baselines": {k: v for k, v in baselines.items() if v},
+        "by_kind": by_kind,
         "mutants": len(mutants),
         "killed": len(killed),
         "survived": len(survivors),
@@ -436,6 +494,12 @@ def render(report: dict) -> str:
         f"{report['survived']} survived — mutation score {report['score']}%.",
         "",
     ]
+    if report.get("by_kind"):
+        lines.append(f"  {'operator':<14} {'killed':>7} {'survived':>9} {'score':>7}")
+        for kind, cell in sorted(report["by_kind"].items(), key=lambda kv: kv[1]["score"]):
+            lines.append(f"  {kind:<14} {cell['killed']:>7} {cell['survived']:>9} "
+                         f"{cell['score']:>6.1f}%")
+        lines.append("")
     if report["survivors"]:
         lines.append("Survivors — each is a way this code could be wrong with every test green:")
         for entry in report["survivors"]:
@@ -451,6 +515,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--all", action="store_true",
                         help="mutate every module in untell/, pairing each with the tests most "
                              "about it, instead of the two hand-written targets")
+    parser.add_argument("--kinds", type=str, default=None,
+                        help="comma-separated operator kinds to run, e.g. comparison,boundary — "
+                             "with no --limit this gives every site both of a pair, which is what "
+                             "a paired comparison needs")
     parser.add_argument("--workers", type=int, default=1,
                         help="run the sweep across this many worktrees at once")
     parser.add_argument("--limit", type=int, default=None,
@@ -460,7 +528,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     targets = discovered_targets() if args.all else None
     runner = run_parallel if args.workers > 1 else run
-    kwargs = {"workers": args.workers} if args.workers > 1 else {}
+    kinds = frozenset(args.kinds.split(",")) if args.kinds else None
+    kwargs = {"workers": args.workers, "kinds": kinds} if args.workers > 1 else {}
     report = runner(limit_per_file=args.limit, timeout=args.timeout, targets=targets, **kwargs)
     print(json.dumps(report, indent=2) if args.as_json else render(report))
     return 0

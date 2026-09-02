@@ -1,0 +1,1474 @@
+{
+  "baselines": {
+    "untell/_env.py": 0,
+    "untell/attacks/unicode_tricks.py": 0,
+    "untell/config.py": 0,
+    "untell/detectors/mage.py": 6,
+    "untell/html_report.py": 0,
+    "untell/layout.py": 0,
+    "untell/rewriter/ensemble.py": 0,
+    "untell/rewriter/structural.py": 0,
+    "untell/rich_output.py": 0,
+    "untell/scripts/entailment.py": 1,
+    "untell/scripts/latex.py": 0,
+    "untell/scripts/roles.py": 2,
+    "untell/scripts/sentences.py": 0,
+    "untell/scripts/watch.py": 0,
+    "untell/_retry.py": 0,
+    "untell/attacks/word_importance.py": 0,
+    "untell/detectors/base.py": 1,
+    "untell/detectors/perplexity_burstiness.py": 0,
+    "untell/humanness.py": 0,
+    "untell/mcp_server.py": 0,
+    "untell/rewriter/local_policy.py": 2,
+    "untell/rewriter/surgical.py": 0,
+    "untell/scripts/audit.py": 0,
+    "untell/scripts/explain.py": 0,
+    "untell/scripts/numerals.py": 0,
+    "untell/scripts/run.py": 0,
+    "untell/scripts/tells.py": 0,
+    "untell/text_split.py": 0,
+    "untell/api_server.py": 0,
+    "untell/browser_check.py": 0,
+    "untell/detectors/binoculars.py": 0,
+    "untell/detectors/llm_judge.py": 0,
+    "untell/detectors/radar.py": 0,
+    "untell/inspect_report.py": 0,
+    "untell/rewriter/base.py": 0,
+    "untell/rewriter/mt_pivot.py": 0,
+    "untell/rewriter/t5_paraphrase.py": 0,
+    "untell/scripts/batch.py": 0,
+    "untell/scripts/hedges.py": 0,
+    "untell/scripts/preserve.py": 0,
+    "untell/scripts/score.py": 0,
+    "untell/scripts/verify.py": 0,
+    "untell/attacks/back_translation.py": 6,
+    "untell/calibrate.py": 0,
+    "untell/detectors/commercial.py": 0,
+    "untell/detectors/local_judge.py": 1,
+    "untell/detectors/roberta_openai.py": 2,
+    "untell/languages.py": 0,
+    "untell/rewriter/composite.py": 0,
+    "untell/rewriter/prompts.py": 0,
+    "untell/rewriter/targeted.py": 0,
+    "untell/scripts/cli.py": 0,
+    "untell/scripts/io_utils.py": 1,
+    "untell/scripts/quality.py": 0,
+    "untell/scripts/scrub.py": 0,
+    "untell/scripts/voice.py": 0
+  },
+  "unmeasurable": [
+    {
+      "file": "untell/detectors/fast_detectgpt.py",
+      "tests": [
+        "tests/test_batched_detector_identity.py",
+        "tests/test_detectors_full.py"
+      ],
+      "why": "its test selection times out or fails to collect, so no mutant against it could be scored"
+    },
+    {
+      "file": "untell/detectors/hc3_roberta.py",
+      "tests": [
+        "tests/test_batched_detector_identity.py"
+      ],
+      "why": "its test selection times out or fails to collect, so no mutant against it could be scored"
+    }
+  ],
+  "red_baselines": {
+    "untell/detectors/mage.py": 6,
+    "untell/scripts/entailment.py": 1,
+    "untell/scripts/roles.py": 2,
+    "untell/detectors/base.py": 1,
+    "untell/rewriter/local_policy.py": 2,
+    "untell/attacks/back_translation.py": 6,
+    "untell/detectors/local_judge.py": 1,
+    "untell/detectors/roberta_openai.py": 2,
+    "untell/scripts/io_utils.py": 1
+  },
+  "by_kind": {
+    "boolean": {
+      "killed": 26,
+      "survived": 28,
+      "score": 48.1
+    },
+    "constant": {
+      "killed": 24,
+      "survived": 56,
+      "score": 30.0
+    },
+    "membership": {
+      "killed": 23,
+      "survived": 22,
+      "score": 51.1
+    },
+    "arithmetic": {
+      "killed": 32,
+      "survived": 18,
+      "score": 64.0
+    },
+    "identity": {
+      "killed": 20,
+      "survived": 21,
+      "score": 48.8
+    },
+    "extremum": {
+      "killed": 9,
+      "survived": 5,
+      "score": 64.3
+    },
+    "comparison": {
+      "killed": 21,
+      "survived": 14,
+      "score": 60.0
+    },
+    "boundary": {
+      "killed": 9,
+      "survived": 27,
+      "score": 25.0
+    }
+  },
+  "workers": 4,
+  "mutants": 355,
+  "killed": 164,
+  "survived": 191,
+  "score": 46.2,
+  "survivors": [
+    {
+      "file": "untell/_env.py",
+      "line": 80,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/_retry.py",
+      "line": 128,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 284,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 483,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 579,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 1061,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 1061,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/back_translation.py",
+      "line": 35,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/back_translation.py",
+      "line": 36,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 19,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 498,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 801,
+      "kind": "comparison",
+      "mutation": "> -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 802,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 826,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 859,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 870,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/browser_check.py",
+      "line": 35,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/browser_check.py",
+      "line": 118,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/calibrate.py",
+      "line": 183,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/config.py",
+      "line": 114,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/config.py",
+      "line": 114,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false
+    },
+    {
+      "file": "untell/config.py",
+      "line": 175,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/config.py",
+      "line": 191,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/config.py",
+      "line": 209,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false
+    },
+    {
+      "file": "untell/config.py",
+      "line": 210,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/base.py",
+      "line": 41,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/base.py",
+      "line": 41,
+      "kind": "comparison",
+      "mutation": "> -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 35,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 43,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 54,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 102,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 104,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 120,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 122,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/commercial.py",
+      "line": 144,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/commercial.py",
+      "line": 249,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/llm_judge.py",
+      "line": 51,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/llm_judge.py",
+      "line": 70,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/llm_judge.py",
+      "line": 92,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/local_judge.py",
+      "line": 92,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/local_judge.py",
+      "line": 123,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/local_judge.py",
+      "line": 130,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/local_judge.py",
+      "line": 175,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/local_judge.py",
+      "line": 195,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/mage.py",
+      "line": 86,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/mage.py",
+      "line": 102,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/mage.py",
+      "line": 157,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/mage.py",
+      "line": 161,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/mage.py",
+      "line": 174,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 283,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 497,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 632,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/radar.py",
+      "line": 35,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/radar.py",
+      "line": 36,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/radar.py",
+      "line": 39,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/radar.py",
+      "line": 46,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/radar.py",
+      "line": 51,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/radar.py",
+      "line": 69,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 24,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 25,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 33,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 36,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 68,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 73,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 100,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/html_report.py",
+      "line": 119,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/html_report.py",
+      "line": 343,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/html_report.py",
+      "line": 360,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 70,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 307,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 714,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 733,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 737,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 737,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false
+    },
+    {
+      "file": "untell/inspect_report.py",
+      "line": 86,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/inspect_report.py",
+      "line": 95,
+      "kind": "extremum",
+      "mutation": "min -> max",
+      "killed": false
+    },
+    {
+      "file": "untell/inspect_report.py",
+      "line": 155,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/languages.py",
+      "line": 43,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/languages.py",
+      "line": 46,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/languages.py",
+      "line": 86,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/languages.py",
+      "line": 123,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/layout.py",
+      "line": 194,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/layout.py",
+      "line": 388,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/mcp_server.py",
+      "line": 247,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/mcp_server.py",
+      "line": 319,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/mcp_server.py",
+      "line": 424,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/base.py",
+      "line": 67,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/base.py",
+      "line": 99,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/base.py",
+      "line": 199,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/base.py",
+      "line": 199,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/base.py",
+      "line": 236,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 71,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 73,
+      "kind": "arithmetic",
+      "mutation": "+ -> -",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 97,
+      "kind": "arithmetic",
+      "mutation": "* -> /",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/ensemble.py",
+      "line": 177,
+      "kind": "extremum",
+      "mutation": "min -> max",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 215,
+      "kind": "comparison",
+      "mutation": "> -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 243,
+      "kind": "extremum",
+      "mutation": "max -> min",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 318,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 403,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 422,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 214,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 682,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2399,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 3404,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/surgical.py",
+      "line": 46,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/surgical.py",
+      "line": 53,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/surgical.py",
+      "line": 63,
+      "kind": "membership",
+      "mutation": "not in -> in",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/surgical.py",
+      "line": 64,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/surgical.py",
+      "line": 96,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/t5_paraphrase.py",
+      "line": 89,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/t5_paraphrase.py",
+      "line": 90,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/t5_paraphrase.py",
+      "line": 93,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/t5_paraphrase.py",
+      "line": 107,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/t5_paraphrase.py",
+      "line": 139,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 12,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 214,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 362,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 424,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 527,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 46,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 234,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 261,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 1063,
+      "kind": "arithmetic",
+      "mutation": "* -> /",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/batch.py",
+      "line": 53,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/batch.py",
+      "line": 119,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/batch.py",
+      "line": 235,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/batch.py",
+      "line": 343,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/cli.py",
+      "line": 32,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/cli.py",
+      "line": 171,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 34,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 204,
+      "kind": "extremum",
+      "mutation": "max -> min",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 567,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 583,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 632,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/explain.py",
+      "line": 39,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/explain.py",
+      "line": 227,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/explain.py",
+      "line": 305,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/hedges.py",
+      "line": 40,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/hedges.py",
+      "line": 331,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/io_utils.py",
+      "line": 50,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/io_utils.py",
+      "line": 52,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/numerals.py",
+      "line": 33,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 36,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 1009,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 25,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 121,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 244,
+      "kind": "extremum",
+      "mutation": "min -> max",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 294,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/roles.py",
+      "line": 329,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/roles.py",
+      "line": 415,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 30,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 106,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 680,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1405,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 52,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 732,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 973,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1005,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1341,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1344,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/scrub.py",
+      "line": 29,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 20,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 94,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 120,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 195,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 263,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 40,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 784,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 856,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 925,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1085,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1130,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1409,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 26,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 91,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 124,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 160,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 173,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 69,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 167,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 167,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 185,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 256,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/watch.py",
+      "line": 49,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/watch.py",
+      "line": 238,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 242,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 282,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 334,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 424,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 425,
+      "kind": "arithmetic",
+      "mutation": "* -> /",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 450,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false
+    }
+  ]
+}
