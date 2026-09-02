@@ -898,3 +898,51 @@ class TestDetectorCalibrationCommand:
 
         assert SPARSE_PATTERN.endswith("results.json"), SPARSE_PATTERN
         assert "predictions" not in SPARSE_PATTERN
+
+
+class TestRaidAttackEvidence:
+    """Result 22's evidence: attack and generator breakdowns from the same 46 submissions.
+
+    The extract is committed rather than the leaderboard clone. These pin the numbers the document
+    quotes, and in particular the bimodality — because the mean alone would licence the wrong
+    claim, which is the mistake this document keeps catching in others.
+    """
+
+    @staticmethod
+    def _load():
+        import json
+        import pathlib
+
+        p = (pathlib.Path(__file__).resolve().parent.parent
+             / ".claude" / "probes" / "raid-attacks-and-generators.json")
+        return json.loads(p.read_text(encoding="utf-8"))
+
+    def test_homoglyph_is_the_most_effective_attack_on_average(self):
+        d = self._load()["mean_accuracy_by_attack"]
+        assert min(d, key=d.get) == "homoglyph", d
+        assert d["homoglyph"] == pytest.approx(0.725, abs=0.005)
+        assert d["none"] > d["paraphrase"] > d["homoglyph"]
+
+    def test_the_mean_hides_a_bimodal_distribution(self):
+        """The finding is the shape, not the average.
+
+        Reporting only the 72.5% mean would say "homoglyph attacks cost detectors 17 points",
+        which is true of no detector: the median loses 0.7% and fourteen lose more than twenty.
+        """
+        d = self._load()
+        assert d["homoglyph_median_loss"] < 0.02, d["homoglyph_median_loss"]
+        assert d["homoglyph_immune_under_2pt"] == 23
+        assert d["homoglyph_losing_over_20pt"] == 14
+
+    def test_robustness_does_not_transfer_between_axes(self):
+        """Binoculars is the most domain-stable detector and among the most attack-fragile."""
+        rows = {r["detector"]: r for r in self._load()["homoglyph_per_detector"]}
+        assert rows["Binoculars"]["loss"] > 0.40, rows["Binoculars"]
+
+    def test_instruction_tuning_makes_text_more_detectable(self):
+        """Every base/chat pair moves the same way, which is why the claim is worth making."""
+        g = self._load()["mean_accuracy_by_generator_no_attack"]
+        for base, chat in (("mistral", "mistral-chat"), ("mpt", "mpt-chat"),
+                           ("cohere", "cohere-chat")):
+            assert g[chat] > g[base], f"{chat} {g[chat]} is not above {base} {g[base]}"
+        assert g["gpt4"] > g["cohere"], "the strongest model is not the hardest to detect"

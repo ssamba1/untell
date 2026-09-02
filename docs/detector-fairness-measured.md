@@ -840,6 +840,82 @@ actually is. Establishing that needs the score distributions, which the leaderbo
 publish. The dataset itself is hosted at `raid-bench.xyz`, which this environment's egress policy
 denies; only the leaderboard submissions travel with the repository.
 
+## Result 22 — the same leaderboard on attacks: a third of the field is one line of code from collapse
+
+RAID's submissions also publish detection accuracy at a fixed 5% false-positive rate for every
+combination of eight domains, eleven generator models and twelve adversarial attacks — 10,749 rows
+per detector. Two things fall out, and the first is a lesson about aggregates that this document
+has taught before and still nearly got wrong.
+
+**Attack effectiveness, mean across ~43 detectors, at a fixed 5% FPR:**
+
+| attack | mean accuracy | | attack | mean accuracy |
+|---|---|---|---|---|
+| **homoglyph** | **72.5%** | | article deletion | 86.3% |
+| paraphrase | 82.1% | | perplexity misspelling | 87.6% |
+| zero-width space | 84.2% | | insert paragraphs | 87.8% |
+| synonym | 84.8% | | number swap | 88.6% |
+| upper/lower | 85.0% | | alternative spelling | 88.6% |
+| whitespace | 85.4% | | *(no attack)* | *89.2%* |
+
+**But the mean is the wrong statistic and it hides the shape.** Per detector, the median loss to
+homoglyph substitution is **0.7%**. The distribution is bimodal:
+
+| | detectors |
+|---|---|
+| effectively immune (loses < 2 points) | **23 / 43** |
+| loses > 20 points | **14 / 43** |
+
+| detector | clean | homoglyph | loses |
+|---|---|---|---|
+| AIDetector.review | 90.6% | **4.3%** | 86.3 |
+| e5-small-lora | 93.9% | 11.1% | 82.7 |
+| BERT-tiny-4M | 91.1% | 27.5% | 63.6 |
+| **Binoculars** | 79.0% | 36.1% | **42.9** |
+| RoBERTa (ChatGPT) | 42.5% | **0.0%** | 42.5 |
+| Desklib v1.01 | 94.9% | 99.7% | *−4.9* |
+
+Homoglyph substitution — swapping Latin characters for identical-looking Cyrillic or Greek ones —
+is defeated by Unicode normalisation before tokenisation, which is one line of code. **A third of
+the field has not written it**, and for those detectors the attack is not a degradation but an
+erasure: two drop below 5% and one to zero. For the other 23 it costs nothing at all.
+
+**And robustness does not transfer.** Binoculars is the most domain-stable detector in
+[Result 21](#result-21--46-real-detectors-and-their-own-calibration-data-says-one-threshold-cannot-work)
+— a threshold span of 0.030 where the median is 0.610 — and is among the *most* homoglyph-
+vulnerable here, losing 42.9 points. Being well calibrated across text types says nothing about
+surviving a character swap.
+
+**This corrects something in this repository's own census.** `docs/humanizer-census.md` treats
+`unicode-trickery` as a marginal category, and
+[the survey](research-tooling-survey.md) noted that five of six such repos in the re-run were
+general steganography tools "with nothing to do with the AI-detector question". On the evidence
+here that dismissal was too quick: hidden-character manipulation is the *most* effective attack in
+RAID's suite against the detectors it beats. The census was right that those particular repos were
+built for covert communication rather than evasion, and wrong to treat the mechanism as
+uninteresting.
+
+**Generator detectability, no attack, mean across 44 detectors:**
+
+| generator | detected | | generator | detected |
+|---|---|---|---|---|
+| cohere | **80.4%** | | gpt4 | 89.9% |
+| mpt | 83.3% | | gpt3 | 91.9% |
+| mistral | 83.6% | | mistral-chat | 93.6% |
+| cohere-chat | 87.5% | | chatgpt | 93.8% |
+| gpt2 | 89.3% | | **llama-chat** | **94.7%** |
+
+**Instruction tuning makes text more detectable, consistently.** Every base/chat pair moves the
+same way: mistral 83.6% → mistral-chat 93.6%, mpt 83.3% → mpt-chat 90.0%, cohere 80.4% →
+cohere-chat 87.5%. And the strongest models are not the hardest to catch — GPT-4 is detected at
+89.9% while base Cohere sits at 80.4%. Whatever these detectors key on, RLHF adds it rather than
+removing it, which is consistent with
+[Result 14](#result-14--the-two-channels-rank-the-populations-in-nearly-opposite-orders-and-that-explains-result-12)
+finding this repository's own detector keyed to a register rather than to machine provenance.
+
+*Reproduce: `untell-detector-calibration report --fetch` pulls the same leaderboard; the attack
+and generator tables come from the `scores` field of each submission.*
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,

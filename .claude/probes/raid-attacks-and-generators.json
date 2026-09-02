@@ -1,0 +1,296 @@
+{
+ "source": "RAID leaderboard submissions, `scores` field: accuracy at a fixed 5% FPR for every domain x generator x attack combination. https://github.com/liamdugan/raid",
+ "captured": "2026-09-01",
+ "detectors": 46,
+ "mean_accuracy_by_attack": {
+  "none": 0.8918,
+  "whitespace": 0.8538,
+  "upper_lower": 0.8496,
+  "synonym": 0.8477,
+  "perplexity_misspelling": 0.8755,
+  "paraphrase": 0.8206,
+  "number": 0.8858,
+  "insert_paragraphs": 0.8777,
+  "homoglyph": 0.725,
+  "article_deletion": 0.8628,
+  "alternative_spelling": 0.8861,
+  "zero_width_space": 0.8416
+ },
+ "mean_accuracy_by_generator_no_attack": {
+  "llama-chat": 0.9472,
+  "mpt": 0.8326,
+  "mpt-chat": 0.9,
+  "gpt2": 0.893,
+  "mistral": 0.8355,
+  "mistral-chat": 0.9359,
+  "gpt3": 0.9185,
+  "cohere": 0.8043,
+  "chatgpt": 0.9383,
+  "gpt4": 0.8991,
+  "cohere-chat": 0.875
+ },
+ "homoglyph_per_detector": [
+  {
+   "detector": "AIDetector.review",
+   "clean": 0.906,
+   "homoglyph": 0.0426,
+   "loss": 0.8634
+  },
+  {
+   "detector": "e5-small-lora",
+   "clean": 0.9387,
+   "homoglyph": 0.1114,
+   "loss": 0.8272
+  },
+  {
+   "detector": "warm_silence_129",
+   "clean": 0.765,
+   "homoglyph": 0.0309,
+   "loss": 0.7341
+  },
+  {
+   "detector": "BERT-tiny-4M",
+   "clean": 0.9114,
+   "homoglyph": 0.2753,
+   "loss": 0.6361
+  },
+  {
+   "detector": "MultiScale-Hybrid-mpnet",
+   "clean": 0.8846,
+   "homoglyph": 0.3676,
+   "loss": 0.5171
+  },
+  {
+   "detector": "RoBERTa-base (GPT2)",
+   "clean": 0.5919,
+   "homoglyph": 0.1006,
+   "loss": 0.4913
+  },
+  {
+   "detector": "Binoculars",
+   "clean": 0.7898,
+   "homoglyph": 0.361,
+   "loss": 0.4288
+  },
+  {
+   "detector": "RoBERTa (ChatGPT)",
+   "clean": 0.4252,
+   "homoglyph": 0.0001,
+   "loss": 0.425
+  },
+  {
+   "detector": "GLTR",
+   "clean": 0.5969,
+   "homoglyph": 0.2032,
+   "loss": 0.3937
+  },
+  {
+   "detector": "RoBERTa-large (GPT2)",
+   "clean": 0.5573,
+   "homoglyph": 0.2012,
+   "loss": 0.3561
+  },
+  {
+   "detector": "DivEye",
+   "clean": 0.9363,
+   "homoglyph": 0.616,
+   "loss": 0.3203
+  },
+  {
+   "detector": "Snidewider (panel-HGB)",
+   "clean": 0.9595,
+   "homoglyph": 0.6796,
+   "loss": 0.2799
+  },
+  {
+   "detector": "Desklib",
+   "clean": 0.9238,
+   "homoglyph": 0.6915,
+   "loss": 0.2323
+  },
+  {
+   "detector": "RADAR",
+   "clean": 0.6561,
+   "homoglyph": 0.4483,
+   "loss": 0.2078
+  },
+  {
+   "detector": "GPTypo",
+   "clean": 0.9816,
+   "homoglyph": 0.8055,
+   "loss": 0.1761
+  },
+  {
+   "detector": "ModernBERT AI Detection",
+   "clean": 0.9911,
+   "homoglyph": 0.8344,
+   "loss": 0.1567
+  },
+  {
+   "detector": "TMR (Target Mining RoBERTa) - AI Text Detector",
+   "clean": 0.9965,
+   "homoglyph": 0.8856,
+   "loss": 0.1109
+  },
+  {
+   "detector": "DeBERTa-ConPara",
+   "clean": 0.9649,
+   "homoglyph": 0.8892,
+   "loss": 0.0757
+  },
+  {
+   "detector": "It's AI",
+   "clean": 0.9827,
+   "homoglyph": 0.9251,
+   "loss": 0.0576
+  },
+  {
+   "detector": "Fast AI Detector",
+   "clean": 0.9721,
+   "homoglyph": 0.9429,
+   "loss": 0.0292
+  },
+  {
+   "detector": "Kareem Elsamadicy (Independent Researcher)",
+   "clean": 0.8601,
+   "homoglyph": 0.8429,
+   "loss": 0.0172
+  },
+  {
+   "detector": "Grammarly",
+   "clean": 0.9991,
+   "homoglyph": 0.9921,
+   "loss": 0.0071
+  },
+  {
+   "detector": "Veredict Labs",
+   "clean": 0.9987,
+   "homoglyph": 0.9963,
+   "loss": 0.0024
+  },
+  {
+   "detector": "SpeedAI",
+   "clean": 0.9986,
+   "homoglyph": 0.9964,
+   "loss": 0.0022
+  },
+  {
+   "detector": "GiantMelon",
+   "clean": 0.9988,
+   "homoglyph": 0.997,
+   "loss": 0.0017
+  },
+  {
+   "detector": "Trinka AI",
+   "clean": 0.9988,
+   "homoglyph": 0.9974,
+   "loss": 0.0014
+  },
+  {
+   "detector": "Slop Or Not",
+   "clean": 0.9964,
+   "homoglyph": 0.995,
+   "loss": 0.0014
+  },
+  {
+   "detector": "QuillBot",
+   "clean": 0.9972,
+   "homoglyph": 0.9961,
+   "loss": 0.0011
+  },
+  {
+   "detector": "Zhuque AI Detection Assistant",
+   "clean": 0.9995,
+   "homoglyph": 0.9985,
+   "loss": 0.001
+  },
+  {
+   "detector": "GPTZero",
+   "clean": 0.9837,
+   "homoglyph": 0.9836,
+   "loss": 0.0
+  },
+  {
+   "detector": "DeBERTa-ConPara-v2.17",
+   "clean": 0.9822,
+   "homoglyph": 0.9822,
+   "loss": 0.0
+  },
+  {
+   "detector": "Argus v5",
+   "clean": 0.9702,
+   "homoglyph": 0.9702,
+   "loss": 0.0
+  },
+  {
+   "detector": "slopx-gray-v1",
+   "clean": 0.9924,
+   "homoglyph": 0.9924,
+   "loss": 0.0
+  },
+  {
+   "detector": "SuperAnnotate AI Detector",
+   "clean": 0.7034,
+   "homoglyph": 0.7034,
+   "loss": 0.0
+  },
+  {
+   "detector": "MELD",
+   "clean": 0.9976,
+   "homoglyph": 0.9985,
+   "loss": -0.001
+  },
+  {
+   "detector": "Tabularis AI Detector",
+   "clean": 0.9907,
+   "homoglyph": 0.9921,
+   "loss": -0.0014
+  },
+  {
+   "detector": "WPF V141 Photon Fractal",
+   "clean": 0.949,
+   "homoglyph": 0.9551,
+   "loss": -0.0061
+  },
+  {
+   "detector": "DeBERTa-ConPara-v2.16",
+   "clean": 0.9867,
+   "homoglyph": 0.9962,
+   "loss": -0.0094
+  },
+  {
+   "detector": "DeBERTa-ConPara-v2.6",
+   "clean": 0.9752,
+   "homoglyph": 0.9938,
+   "loss": -0.0185
+  },
+  {
+   "detector": "ADAL",
+   "clean": 0.9802,
+   "homoglyph": 1.0,
+   "loss": -0.0198
+  },
+  {
+   "detector": "DeBERTa-ConPara-v2.2",
+   "clean": 0.9743,
+   "homoglyph": 0.9948,
+   "loss": -0.0205
+  },
+  {
+   "detector": "Desklib AI Text Detector v1.01",
+   "clean": 0.9487,
+   "homoglyph": 0.9973,
+   "loss": -0.0485
+  },
+  {
+   "detector": "LLMDet",
+   "clean": 0.334,
+   "homoglyph": 0.3909,
+   "loss": -0.0569
+  }
+ ],
+ "homoglyph_median_loss": 0.0071,
+ "homoglyph_immune_under_2pt": 23,
+ "homoglyph_losing_over_20pt": 14,
+ "note": "The MEAN accuracy under homoglyph attack (72.5%) hides a bimodal distribution: median per-detector loss is 0.7%, but 14 of 43 lose more than 20 points and two fall below 5%. Unicode normalisation before tokenisation defeats the attack and a third of the field has not done it."
+}
