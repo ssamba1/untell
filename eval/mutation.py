@@ -256,6 +256,94 @@ def _failures(tree: Path, tests: tuple[str, ...], timeout: int) -> int:
     return 0 if result.returncode == 0 else UNUSABLE
 
 
+def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | None,
+            timeout: int) -> tuple[list[dict], list[dict], dict]:
+    """One worktree, working through its share of the modules."""
+    scratch, tree = _worktree(root)
+    results: list[dict] = []
+    unmeasurable: list[dict] = []
+    baselines: dict[str, int] = {}
+    try:
+        for relative, tests in queue:
+            path = tree / relative
+            original = path.read_text()
+            candidates = mutants_for(original, relative)
+            if limit:
+                step = max(1, len(candidates) // limit)
+                candidates = candidates[::step][:limit]
+
+            baseline = _failures(tree, tests, timeout)
+            if baseline == UNUSABLE:
+                unmeasurable.append({"file": relative, "tests": list(tests),
+                                     "why": "its test selection times out or fails to collect, so "
+                                            "no mutant against it could be scored"})
+                continue
+            baselines[relative] = baseline
+            for mutant in candidates:
+                mutated = apply_mutant(original, mutant)
+                if mutated is None:
+                    continue
+                try:
+                    path.write_text(mutated)
+                    after = _failures(tree, tests, timeout)
+                    killed = after == UNUSABLE or after > baseline
+                finally:
+                    path.write_text(original)
+                results.append({"file": mutant.path, "line": mutant.line, "kind": mutant.kind,
+                                "mutation": f"{mutant.before} -> {mutant.after}", "killed": killed})
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(tree)],
+                       cwd=root, capture_output=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+    return results, unmeasurable, baselines
+
+
+def run_parallel(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300,
+                 targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
+                 workers: int = 4) -> dict:
+    """The same sweep, spread across several worktrees.
+
+    Round ninety-four sampled 3 mutants per module because the serial run of all 1,397 candidates
+    would have taken about four hours. Sampling was the right call for an estimate of the SCORE and
+    the wrong one for the survivor LIST, which is the part anybody can act on: a sampled list names
+    a third of the uncovered lines and gives no way to tell which two thirds it missed.
+
+    Modules are dealt round-robin rather than in blocks, so one slow module does not leave a worker
+    holding the whole tail.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    chosen = list(targets or TARGETS)
+    queues: list[list[tuple[str, tuple[str, ...]]]] = [[] for _ in range(max(1, workers))]
+    for index, target in enumerate(chosen):
+        queues[index % len(queues)].append(target)
+
+    results: list[dict] = []
+    unmeasurable: list[dict] = []
+    baselines: dict[str, int] = {}
+    with ThreadPoolExecutor(max_workers=len(queues)) as pool:
+        for got, skipped, base in pool.map(
+            lambda q: _worker(root, q, limit_per_file, timeout), queues,
+        ):
+            results.extend(got)
+            unmeasurable.extend(skipped)
+            baselines.update(base)
+
+    killed = [r for r in results if r["killed"]]
+    survivors = [r for r in results if not r["killed"]]
+    return {
+        "baselines": baselines,
+        "unmeasurable": unmeasurable,
+        "red_baselines": {k: v for k, v in baselines.items() if v},
+        "workers": len(queues),
+        "mutants": len(results),
+        "killed": len(killed),
+        "survived": len(survivors),
+        "score": round(100.0 * len(killed) / len(results), 1) if results else 0.0,
+        "survivors": sorted(survivors, key=lambda r: (r["file"], r["line"])),
+    }
+
+
 def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300,
         targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None) -> dict:
     """Introduce each mutant, run its module's tests, and record whether anything failed."""
@@ -346,13 +434,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--all", action="store_true",
                         help="mutate every module in untell/, pairing each with the tests most "
                              "about it, instead of the two hand-written targets")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="run the sweep across this many worktrees at once")
     parser.add_argument("--limit", type=int, default=None,
                         help="cap mutants per file, spaced evenly through it")
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
-    report = run(limit_per_file=args.limit, timeout=args.timeout,
-                 targets=discovered_targets() if args.all else None)
+    targets = discovered_targets() if args.all else None
+    runner = run_parallel if args.workers > 1 else run
+    kwargs = {"workers": args.workers} if args.workers > 1 else {}
+    report = runner(limit_per_file=args.limit, timeout=args.timeout, targets=targets, **kwargs)
     print(json.dumps(report, indent=2) if args.as_json else render(report))
     return 0
 

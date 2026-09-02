@@ -5689,6 +5689,82 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-five — acting on the survivor list, and proving each kill
+
+Round ninety-four ended by saying the number to act on is not the mutation score but the enumerated
+survivor list. **A list nobody acts on is the defect rounds ninety-one and ninety-two kept finding**:
+work performed once, recorded, and then not done. So this round acts on it — and, because a test
+that looks like it closes a gap is worth nothing unless it does, each new test is verified against
+the specific mutant it is meant to kill.
+
+## Two modules closed, six survivors, every kill demonstrated
+
+`untell/languages.py` — `dominant_script`, which decides `catalogue_for`, which decides **which tell
+catalogue a document is scored against**:
+
+| survivor | what it meant |
+|---|---|
+| `max(counts…)` → `min` | the function returns the RAREST script, not the dominant one |
+| `counts.get(name, 0) + 1` → `- 1` | the script tally counts downward |
+| `counts.get("Latin", 0) + 1` → `- 1` | the same for the Latin branch |
+
+The first is the one worth pausing on. The function is *called* `dominant_script`, its docstring
+promises that "an English paragraph quoting one Chinese phrase stays Latin", and **nothing tested
+that it picks the majority script over a minority one.** Inverting the entire purpose of the
+function left the suite green.
+
+`untell/html_report.py` — the artefact a person actually reads when deciding whether an accusation
+is fair:
+
+| survivor | what it meant |
+|---|---|
+| `if prev < len(text)` → `>=` | **every character after the last locked span is dropped from the report** |
+| `if start < prev` → `>=` | the overlap guard fires on adjacent spans too, losing the second |
+| `round(100.0 - pct, 1)` → `+` | the score bar's overlay is wider than the bar |
+
+MEASURED, each mutant re-applied in a worktree with only the new test file present: **6 of 6
+killed**, from a clean baseline of 0 failures. The verification matters more than the tests. A test
+written while looking at a mutant tends to assert the thing the mutant does not change, and the only
+way to know is to introduce it again.
+
+## ✗ And two of my own assertions were wrong before the code was
+
+The first run of the new tests failed twice, both times because **I had guessed instead of
+measuring**: I asserted the Han document would report script `Cjk` (it reports `Han`), and I guessed
+a crossover point for a two-script document without counting the letters. MEASURED, `LATIN` carries
+67 letters and `CYRILLIC` 69, so a single copy of each already tips Cyrillic — the crossover I had
+assumed sat elsewhere.
+
+Neither was a defect in the code. Both were a test asserting a number nobody had checked, in a round
+whose subject is tests that do not check anything, written immediately after two rounds about
+guessing instead of measuring. The comment beside the loop now states the letter counts rather than
+implying a threshold.
+
+## The conservation property, which is stronger than any mutant
+
+The `html_report` tests do not only pin the three survivors. They assert that **the rendered report
+contains every character of the input**, across six span layouts — empty, leading, trailing,
+whole-document, disjoint, and boundary. That property is stronger than the mutants that motivated
+it, and it is what a reader is entitled to assume of a document shown to them as evidence.
+
+Writing to the mutant alone produces tests shaped like the mutation operator, which is how a
+mutation score is gamed. Writing to the property the mutant violated is what makes the exercise
+worth doing.
+
+## Running all of them, not a third of them
+
+Round ninety-four sampled 3 mutants per module — 108 of 1,397 candidates — because the serial run
+would have taken about four hours. That was the right call for an estimate of the score and the
+wrong one for the list: **a sampled survivor list names some of the uncovered lines and gives no way
+to tell which it missed.**
+
+`run_parallel` spreads the sweep across several worktrees, dealing modules round-robin so one slow
+module does not leave a worker holding the tail. On this four-core machine that is the difference
+between an afternoon and an hour, which is the difference between a measurement somebody reruns and
+one they quote.
+
+---
+
 # Round ninety-four — the same question, across the whole package
 
 Round ninety-three mutation-tested two modules against test selections written by hand. That is the
