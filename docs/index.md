@@ -89,9 +89,19 @@ intervals not overlapping — and flags human text more often in **every** band.
 **AUROC 0.3529**, bootstrap interval [0.2822, 0.4270], entirely below the 0.5 of a coin flip.
 
 **On this register the ordering is reversed, not weak.** Both live features rank below 0.5 alone, so
-no single term is at fault: they measure how closely a document reads like a standard academic
-abstract, and in this corpus that is the human writing. Reproduce with `eval/detection_power.py`; the
-limits — one model, one register, 56 machine documents — are in round seventy-six of the ledger.
+no single term is at fault. Reproduce with `eval/detection_power.py`; the limits — one model, one
+register, 56 machine documents — are in round seventy-six of the ledger.
+
+**Why it happens, tested without any machine text at all.** The explanation offered was that these
+features read how closely a document sounds like a standard academic abstract. That was inferred
+from 56 documents; `eval/register_conformity.py` tests it on **6,841 pre-2022 ACL abstracts, every
+one of them human**, where the more standard-sounding a document is the more AI it should score.
+MEASURED: rho **+0.0586**, bootstrap CI [+0.0357, +0.0842], **all six length bands positive**.
+
+⚠️ **And the same measurement bounds the explanation.** That rho is **0.34%** of the score's
+variance — so register conformity is a real component of what the detector measures and nowhere near
+all of it. It accounts for the *direction* of the inversion, not its *size*. The venue split, which
+never looks at the text, orders the same way at the extremes but has no power across five classes.
 
 ### The literature this project argues from
 

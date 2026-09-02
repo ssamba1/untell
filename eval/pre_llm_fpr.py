@@ -51,6 +51,24 @@ PRE_LLM_VOLUMES: tuple[str, ...] = (
 _YEAR = re.compile(r"^(\d{4})\.")
 
 
+def pre_llm_papers(cache: Path, min_words: int = 60, max_year: int = 2021) -> list[dict[str, str]]:
+    """The same selection as `pre_llm_abstracts`, keeping each paper's Anthology id.
+
+    The id is not decoration: it carries the venue, and the venue is a proxy for register that owes
+    nothing to the text. Round eighty-eight needed to ask whether main-conference papers score
+    differently from student-workshop ones, and `pre_llm_abstracts` had thrown away the only field
+    that could answer it.
+    """
+    out: list[dict[str, str]] = []
+    for paper in load_abstracts(cache):
+        match = _YEAR.match(paper["id"])
+        if not match or int(match.group(1)) > max_year:
+            continue
+        if len(paper["abstract"].split()) >= min_words:
+            out.append(paper)
+    return out
+
+
 def pre_llm_abstracts(cache: Path, min_words: int = 60, max_year: int = 2021) -> list[str]:
     """Human-written abstracts from Anthology volumes published no later than ``max_year``.
 
@@ -58,14 +76,7 @@ def pre_llm_abstracts(cache: Path, min_words: int = 60, max_year: int = 2021) ->
     at roughly 50-100 words, and this repo's own measurements show one ensemble member flagging 100%
     of human text at 40 words. Scoring short abstracts would measure that instead of the corpus.
     """
-    out: list[str] = []
-    for paper in load_abstracts(cache):
-        match = _YEAR.match(paper["id"])
-        if not match or int(match.group(1)) > max_year:
-            continue
-        if len(paper["abstract"].split()) >= min_words:
-            out.append(paper["abstract"])
-    return out
+    return [p["abstract"] for p in pre_llm_papers(cache, min_words, max_year)]
 
 
 def wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float, float]:

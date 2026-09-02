@@ -5689,6 +5689,117 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round eighty-eight — testing the explanation, on 6,841 documents and no machine text
+
+Rounds seventy-six to eighty-three are this repository's most consequential measurements, and they
+end in an *explanation*: the lite detector's features "measure how closely a document reads like a
+standard academic abstract, and in this corpus that is the human writing."
+
+That sentence is published in `docs/index.md` and the README. It was inferred from **56 machine
+documents written by one model** — the weakest link in the arc by a wide margin, and the one every
+stated limitation points at.
+
+It did not have to be. **If the explanation is true, it is testable with no machine text at all.**
+Among documents that are all unambiguously human, the more prototypically academic ones should score
+as more AI. That converts a 56-document inference into a 6,841-document measurement on a corpus
+whose label nobody can dispute, and removes the generating model from the question entirely.
+
+`eval/register_conformity.py` does it two independent ways:
+
+* **vocabulary commonness** — the mean log document-frequency of a document's words over the corpus
+  itself. High when a document is built from words nearly every abstract uses, which is what "reads
+  like a standard academic abstract" means once you have to write it down. No model, no download.
+* **venue class** — main/long, findings, short, workshop/student, demo/industry. A proxy for
+  register that **never looks at a single word**, so it cannot inherit the detector's own features.
+
+## ✅ Supported, in direction
+
+MEASURED on 6,841 pre-2022 ACL abstracts:
+
+| length band | n | rho(prototypicality, AI score) |
+|---|---|---|
+| 40–60 | 31 | +0.0633 |
+| 60–80 | 158 | +0.1381 |
+| 80–100 | 445 | +0.0826 |
+| 100–150 | 3,032 | +0.0285 |
+| 150–250 | 3,141 | +0.0407 |
+| 250+ | 34 | +0.0827 |
+
+Pooled **rho +0.0586**, bootstrap 95% CI **[+0.0357, +0.0842]** — excludes zero. **All six bands
+point the same way**, which is a sign test at p = 0.031 on its own, and the bands matter because
+length is the known confound: prototypicality correlates −0.28 with length and the score correlates
+−0.10 with it, so a pooled figure alone would be worth nothing.
+
+## ⚠️ And bounded, by the same measurement
+
+MEASURED over the same 6,841 documents: **rho +0.0586 is 0.34% of the score's variance** (n = 6,841).
+Register conformity is a real component of what
+this detector measures and nowhere near all of it. It accounts for the **direction** of the
+inversion and not for its **size** — the AUROC inversion is 0.3529 against 0.5, a far larger effect
+than this within-human gradient.
+
+The published wording did not say that, and it now does. This is a case of a claim being confirmed
+and weakened by the same experiment, which is the more common outcome than either alone and the one
+this ledger keeps finding.
+
+## ✗ The venue check, and a wrong prediction that was mine
+
+MEASURED, length-standardized (direct standardization onto the corpus length distribution, because
+workshop papers are shorter and this detector scores shorter text higher):
+
+| venue class | n | raw mean | length-standardized | mean prototypicality |
+|---|---|---|---|---|
+| workshop/student | 125 | 0.3668 | **0.3594** | −2.7567 |
+| short | 139 | 0.3463 | 0.3342 | −2.7270 |
+| main/long | 5,347 | 0.3381 | 0.3385 | −2.8261 |
+| findings | 870 | 0.3306 | 0.3302 | −2.7593 |
+| demo/industry | 274 | 0.3184 | **0.3088** | −2.9873 |
+
+**I predicted main/long would score highest and was wrong.** Workshop and student-research papers
+score highest, and the difference from main is real: MEASURED **+0.0287, bootstrap CI
+[+0.0053, +0.0520]** (n = 125 against n = 5,347).
+
+The prediction was wrong, not the hypothesis, and the difference matters. I had assumed "main
+conference" meant "most prototypical academic prose". It does not, MEASURED: workshop papers use
+**more common** vocabulary (−2.7567 against −2.8261), and demo/industry papers use the **rarest**
+(−2.9873) and score **lowest**. The extremes line up with prototypicality exactly. So the venue result is
+consistent with the vocabulary result, by a route that never reads a word.
+
+**But it is corroboration and not a second test, and the honest figure says so.** Rank the five
+classes by prototypicality against the score. MEASURED: on raw means the agreement is rho 0.80;
+with length held fixed it drops to **rho 0.50 across five classes**, which has no power either way. The
+middle three shuffle. The tool prints that caveat rather than the 0.80, because the 0.80 is the
+number that has the length confound still in it.
+
+## ✗ And the first attempt scored zero of 6,842 documents
+
+The probe read `result["score"]` from `score_text`. That key does not exist — the documented one is
+`max`, and per-detector values live under `detectors`. `dict.get` returned `None` for **every one of
+6,842 abstracts**, the loop skipped them all, and the run reported `0 scored` after twenty minutes.
+
+`docs/result-shapes.md` exists in this repository precisely because "guessing wrong returns a
+plausible value rather than raising", and I guessed wrong anyway while holding the document that
+says so. The fix is not care: `score_one` now routes through `eval.detection_power.score_arm`, the
+same helper that produced the published AUROC. Round eighty-four's defect — a reimplementation
+disagreeing with the shipped path in the third decimal — and this one are the same defect, and
+calling the shipped helper is the only fix that stays fixed.
+
+## What made the third cut affordable
+
+Scoring 6,841 abstracts takes about twenty minutes, and this round needed three cuts of the same
+numbers: pooled, within length band, and by venue within length band. The third is the one that
+matters — without it the venue table is a length table — and at twenty minutes a question it is
+exactly the check that gets skipped.
+
+So scoring is now separated from analysis. `score_rows()` produces the rows, `analyse()` reads them,
+`--dump` and `--rows` move them across runs, and `eval/data/register_conformity_rows.json` commits
+all 6,841 (90 KB compressed) so anyone can ask a new question of this measurement in seconds rather
+than re-deriving it. **The reason the length confound got checked here is that checking it was
+cheap.** That is a fact about the tooling, not about diligence, and it is the transferable part of
+this round.
+
+---
+
 # Round eighty-seven — the second filter, and the one that could actually break the claim
 
 Round eighty-six swept `DETECTION` and found the imbalance robust to every recall setting. That was
