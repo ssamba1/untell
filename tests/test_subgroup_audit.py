@@ -958,3 +958,24 @@ def test_the_threshold_span_survives_a_different_fpr_target():
     from eval.detector_calibration import TARGETS
 
     assert TARGETS == ("0.05", "0.01"), TARGETS
+
+
+def test_the_leaderboards_calibration_assumption_is_recorded():
+    """Result 23 rests on one line of RAID's evaluator; the extract must carry it.
+
+    `run_evaluation(..., per_domain_tuning=True)` means every published accuracy figure was earned
+    with a threshold fitted separately per domain — a step no deployed detector performs. Without
+    this flag recorded, Result 23 is an assertion about someone else's code with nothing behind it.
+    """
+    import json
+    import pathlib
+
+    p = (pathlib.Path(__file__).resolve().parent.parent
+         / ".claude" / "probes" / "raid-attacks-and-generators.json")
+    d = json.loads(p.read_text(encoding="utf-8"))
+    assert d["per_domain_tuning_default"] is True
+    assert "evaluate.py" in d["per_domain_tuning_note"]
+    # More predictable text is more detectable, on both axes.
+    assert d["mean_accuracy_by_decoding"]["greedy"] > d["mean_accuracy_by_decoding"]["sampling"]
+    assert (d["mean_accuracy_by_repetition_penalty"]["no"]
+            > d["mean_accuracy_by_repetition_penalty"]["yes"])

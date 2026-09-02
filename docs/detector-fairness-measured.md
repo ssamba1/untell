@@ -921,6 +921,58 @@ finding this repository's own detector keyed to a register rather than to machin
 *Reproduce: `untell-detector-calibration report --fetch` pulls the same leaderboard; the attack
 and generator tables come from the `scores` field of each submission.*
 
+## Result 23 — every number on that leaderboard assumes a calibration step nobody deploys
+
+The last three axes of RAID's `scores` field, and then the thing that reframes all of it.
+
+**Decoding and sampling make text harder to catch.** Clean text, 5% FPR, mean across ~43 detectors:
+
+| | detected | | | detected |
+|---|---|---|---|---|
+| greedy decoding | 92.5% | | no repetition penalty | 90.5% |
+| **sampling** | **85.8%** | | **repetition penalty on** | **86.8%** |
+
+Both point the same way as [Result 22](#result-22--the-same-leaderboard-on-attacks-a-third-of-the-field-is-one-line-of-code-from-collapse)'s
+generator finding: whatever makes text *more predictable* makes it more detectable. Greedy
+decoding and no repetition penalty both raise predictability, and both cost the writer about 4–7
+points of cover.
+
+**A negative result worth keeping.** A standard criticism of detection papers is that AUROC
+flatters a detector relative to its behaviour at a usable operating point. On this benchmark it
+does not: median AUROC 0.984 against median accuracy 0.972 at a 5% false-positive rate, and
+exactly **one** detector of 43 has AUROC above 0.90 while scoring under 75%. The critique is
+sound in general and does not apply here, and saying so costs nothing.
+
+**Now the reframing.** Those accuracy figures are excellent — a median detector catches 97.2% of
+machine text while accusing 5% of humans. That looks like a solved problem. It is not, and the
+reason is in RAID's own evaluator:
+
+```python
+def run_evaluation(..., per_domain_tuning=True, ...)   # raid/evaluate.py:226
+```
+
+**Every published figure is computed with a threshold fitted separately on each domain.** RAID
+takes the human, unattacked texts of one domain, finds the threshold that puts *that domain's*
+false-positive rate at 5%, and scores that domain with it. Then the next domain, with its own
+threshold.
+
+No deployed detector does this. Turnitin does not ask what kind of document it is given and swap
+thresholds; a student submits an essay and gets a score. And
+[Result 21](#result-21--46-real-detectors-and-their-own-calibration-data-says-one-threshold-cannot-work)
+measured what those per-domain thresholds actually look like: a median span of **0.610 of the
+score range** across eight domains.
+
+So the leaderboard numbers are an **upper bound achievable only with per-domain calibration**, and
+the calibration they assume is exactly the thing whose absence Result 21 measures. A detector
+advertising 97% accuracy at a 5% false-positive rate earned that figure under conditions its users
+do not have.
+
+**What this does not say.** It does not quantify the shortfall. Converting a threshold span into a
+deployed error rate needs the score distributions, which the leaderboard does not publish and the
+dataset host is behind this environment's egress policy. The claim here is narrow and, within it,
+firm: *the published numbers assume per-domain calibration, deployment does not provide it, and
+the gap between those thresholds is large.*
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,

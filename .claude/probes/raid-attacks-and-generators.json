@@ -292,5 +292,21 @@
  "homoglyph_median_loss": 0.0071,
  "homoglyph_immune_under_2pt": 23,
  "homoglyph_losing_over_20pt": 14,
- "note": "The MEAN accuracy under homoglyph attack (72.5%) hides a bimodal distribution: median per-detector loss is 0.7%, but 14 of 43 lose more than 20 points and two fall below 5%. Unicode normalisation before tokenisation defeats the attack and a third of the field has not done it."
+ "note": "The MEAN accuracy under homoglyph attack (72.5%) hides a bimodal distribution: median per-detector loss is 0.7%, but 14 of 43 lose more than 20 points and two fall below 5%. Unicode normalisation before tokenisation defeats the attack and a third of the field has not done it.",
+ "mean_accuracy_by_decoding": {
+  "greedy": 0.925,
+  "sampling": 0.858
+ },
+ "mean_accuracy_by_repetition_penalty": {
+  "no": 0.905,
+  "yes": 0.868
+ },
+ "auroc_vs_operating_point": {
+  "median_auroc": 0.984,
+  "median_accuracy_at_5pct_fpr": 0.972,
+  "high_auroc_low_accuracy": 1,
+  "n": 43
+ },
+ "per_domain_tuning_default": true,
+ "per_domain_tuning_note": "raid/evaluate.py:226 -- run_evaluation(..., per_domain_tuning=True). Every published accuracy figure is computed with a threshold fitted separately on each domain's human unattacked texts. No deployed detector does this, and Result 21 measures the span of those thresholds at a median 0.610 of the score range. The leaderboard numbers are an upper bound achievable only under calibration the users of these tools do not have."
 }
