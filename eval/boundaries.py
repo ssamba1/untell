@@ -152,6 +152,104 @@ def register(root: Path = REPO) -> dict:
     }
 
 
+def all_importers(root: Path = REPO) -> dict[str, list[str]]:
+    """Every test importing each module, UNCAPPED — the opposite of `mutation.test_index`.
+
+    The sweep caps its selection because running 97 test files per mutant is unaffordable across
+    thousands of mutants. For thirty boundaries it is affordable exactly once, and it is the only
+    way to tell "no test covers this" from "the capped selection missed the test that does".
+    """
+    from eval.mutation import UNCOLLECTABLE
+
+    found: dict[str, set[str]] = {}
+    for path in sorted((root / "tests").glob("test_*.py")):
+        relative = f"tests/{path.name}"
+        if relative in UNCOLLECTABLE:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module]
+            else:
+                continue
+            for name in names:
+                if name.startswith("untell"):
+                    found.setdefault(name, set()).add(relative)
+    return {module: sorted(files) for module, files in found.items()}
+
+
+_FLIP = {"<": "<=", "<=": "<", ">": ">=", ">=": ">"}
+
+
+def verify_unprotected(root: Path = REPO, timeout: int = 600) -> dict:
+    """Re-run each 'unprotected' boundary against every test that imports its module.
+
+    ⚠️ **The register inherits the harness's blind spots, and the harness has had two.** Round
+    ninety-five found stale bytecode masking mutations; round one hundred found the test selection
+    dropping the very boundary tests it should have run. Both produced FALSE SURVIVORS. Acting on a
+    register of thirty unprotected boundaries without checking it would repeat that at the cost of
+    thirty tests written for code that is already covered.
+    """
+    import shutil
+    import subprocess
+
+    from eval.mutation import Mutant, _failures, _worktree, apply_mutant
+
+    report = register(root)
+    importers = all_importers(root)
+    results: list[dict] = []
+    scratch, tree = _worktree(root)
+    try:
+        for entry in report["unprotected"]:
+            module = entry["file"][:-3].replace("/", ".")
+            tests = tuple(importers.get(module, ()))
+            if not tests:
+                results.append({**entry, "verdict": "no test imports this module"})
+                continue
+            path = tree / entry["file"]
+            original = path.read_text()
+            line = original.splitlines()[entry["line"] - 1]
+            operator = next((o for o in ("<=", ">=", "<", ">") if o in line), None)
+            if operator is None:
+                results.append({**entry, "verdict": "no operator found on the line"})
+                continue
+            mutated = apply_mutant(
+                original, Mutant(entry["file"], entry["line"], "boundary",
+                                 operator, _FLIP[operator]))
+            if mutated is None:
+                results.append({**entry, "verdict": "token ambiguous on the line"})
+                continue
+            baseline = _failures(tree, tests, timeout)
+            try:
+                path.write_text(mutated)
+                after = _failures(tree, tests, timeout)
+            finally:
+                path.write_text(original)
+            killed = after != baseline if baseline < 0 else after > baseline
+            results.append({
+                **entry, "tests_run": len(tests),
+                "verdict": "killed by the wider suite" if killed else "genuinely unprotected",
+            })
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(tree)],
+                       cwd=root, capture_output=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+
+    genuine = [r for r in results if r["verdict"] == "genuinely unprotected"]
+    recovered = [r for r in results if r["verdict"] == "killed by the wider suite"]
+    return {
+        "checked": len(results),
+        "genuinely_unprotected": len(genuine),
+        "false_alarms": len(recovered),
+        "results": results,
+    }
+
+
 def render(report: dict) -> str:
     lines = []
     if report.get("stale_since_sweep"):
@@ -189,8 +287,20 @@ def render(report: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--verify", action="store_true",
+                        help="re-run each unprotected boundary against EVERY test importing its "
+                             "module, to tell a real gap from a selection artefact")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
+    if args.verify:
+        checked = verify_unprotected()
+        print(json.dumps(checked, indent=2) if args.as_json else "\n".join(
+            [f"{checked['checked']} unprotected boundaries re-checked against every importing test.",
+             f"  genuinely unprotected  {checked['genuinely_unprotected']}",
+             f"  selection artefacts    {checked['false_alarms']}", ""]
+            + [f"  {r['file']}:{r['line']} {r['constant']} — {r['verdict']}"
+               for r in checked["results"]]))
+        return 0
     report = register()
     print(json.dumps(report, indent=2) if args.as_json else render(report))
     return 0

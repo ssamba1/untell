@@ -5689,6 +5689,72 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and one — check the register before acting on it
+
+Round one hundred produced a register of **30 unprotected boundaries** and the obvious next move is
+to write thirty tests. **The harness has twice reported false survivors**: stale bytecode masking
+mutations in round ninety-five, and a test-selection heuristic dropping the very boundary tests it
+should have run in round one hundred. Both errors ran the same way — a harness that fails to load a
+mutation and one that fails to reach a test both report a survivor.
+
+A register inherits that. So each of the 30 was re-run against **every test importing its module**,
+uncapped — 97 test files for `scripts/score.py`, 83 for `scripts/run.py` — which is unaffordable
+across thousands of mutants and affordable exactly once for thirty.
+
+MEASURED: **27 of 30 are genuine gaps; 3 were selection artefacts.**
+
+| | |
+|---|---|
+| genuinely unprotected | 27 |
+| already covered by a test the capped selection missed | 3 |
+| register accuracy | **90%** |
+
+`preserve.py:947`, `score.py:1516` and `score.py:1344` are protected by tests the sweep never ran.
+Ninety per cent is good and the check was still worth its hour: it is three tests not written for
+code that is already covered, and — more to the point — the register's accuracy is now **measured
+rather than assumed**, which is the difference between a list you act on and a list you argue about.
+
+## Four of the twenty-seven, closed
+
+The user-visible ones — thresholds a person meets rather than internals:
+
+| threshold | decides |
+|---|---|
+| `voice.MIN_SAMPLE_WORDS` | whether the user is warned their voice sample is too thin to profile |
+| `run._MIN_VOICE_SAMPLE_WORDS` | whether a voice distance is computed at all |
+| `tells._LANG_MIN_WORDS` | whether a document is considered for non-English detection |
+| `tells._MIN_WORDS_FOR_A_RATE` | whether `tells_per_100w` carries its quantisation caveat |
+
+MEASURED, each mutant re-applied against only the new test file: **4 of 4 boundary mutants killed**.
+
+## ✗ And an assertion of mine that looked like a defect and was not
+
+MEASURED from the source: `voice.MIN_SAMPLE_WORDS` is **150** and `run._MIN_VOICE_SAMPLE_WORDS` is
+**20**. I asserted the runner's floor must be at least the voice module's — two constants guarding
+one idea — and it failed by a factor of seven.
+
+The assertion was wrong. They answer different questions: 20 is *"below this the distance is
+meaningless, do not compute"*, 150 is *"below this the profile is noisy, say so"*. Both are
+defensible and the gap between them is deliberate.
+
+What matters is what happens **inside** the gap, and that is now tested: a 20-to-149-word sample is
+scored, so the user must be told it is thin. `voice_distance` calls `_warn_if_sample_is_thin`, which
+is the only thing making the pair safe, and nothing checked that it does.
+
+Two further slips, both mine and both caught by the tests failing: the runner's own guard survived
+its first test because I exercised `voice_distance` directly and never took the runner's path; and
+the tells caveat lives under `warning`, not `caveats` — the sixth wrong return-shape guess this
+session, and the second in three rounds.
+
+## What "verify before acting" costs and saves
+
+An hour of machine time against thirty tests, three of which would have been written for code that
+is already covered. That is a poor trade on the arithmetic alone — three tests is not an hour — and
+a good one on everything else: the 90% figure is what makes the remaining 27 worth acting on without
+re-checking each one, and a register nobody trusts gets read once and ignored.
+
+---
+
 # Round one hundred — boundary testing does not scale by hand, which is a different claim
 
 Round ninety-nine concluded that the n−1/n/n+1 discipline "cannot be applied 206 times". That is
