@@ -7,6 +7,15 @@ of a 1401-word text: under 700 the pieces are 700/700/1, under 701 they are
 (no such piece exists) under the original and 0.998 under the mutant. Pinned
 via the score() seam with a size-sensitive stub model.
 """
+
+import pytest
+
+# `import torch` at module scope made this file a COLLECTION ERROR on the lite
+# install, which ships zero ML — ten files did, so `pytest -q` was never green on
+# the path CONTRIBUTING calls zero-dependency. A skip is the honest outcome: the
+# test is not applicable, not broken. Install with `pip install 'untell[heavy]'`
+# to run it.
+pytest.importorskip("torch")
 from unittest.mock import patch
 
 import torch

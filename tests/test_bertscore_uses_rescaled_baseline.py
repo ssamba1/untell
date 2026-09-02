@@ -6,6 +6,15 @@ bar (raw F1 would sit ~0.93+ and need a different bar, per the comment). The
 mutation True -> False silently switches the scorer to its raw scale. Pinned by
 capturing the constructor kwargs via monkeypatched bert_score.BERTScorer.
 """
+
+import pytest
+
+# `import bert_score` at module scope made this file a COLLECTION ERROR on the lite
+# install, which ships zero ML — ten files did, so `pytest -q` was never green on
+# the path CONTRIBUTING calls zero-dependency. A skip is the honest outcome: the
+# test is not applicable, not broken. Install with `pip install 'untell[quality]'`
+# to run it.
+pytest.importorskip("bert_score")
 import bert_score
 
 import untell.scripts.quality as quality

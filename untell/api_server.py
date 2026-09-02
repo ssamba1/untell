@@ -65,6 +65,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from untell import _api_bounds
 from untell._env import load_env
+from untell._rewriters import FREE_REWRITERS
 from untell.rewriter.prompts import STYLE_NAMES
 from untell.scripts.run import untell_text
 from untell.scripts.score import (
@@ -89,10 +90,9 @@ APP_DESC = __doc__
 
 # Free, no-key rewriter backends selectable via the ``rewriter`` field. Anything else (e.g. "auto")
 # means "let get_rewriter pick a hosted/local-policy backend" and is passed as prefer=None below.
-_FREE_REWRITERS = frozenset(
-    {"surgical", "structural", "composite", "targeted", "neural", "ensemble", "max",
-     "t5_paraphrase", "mt_pivot"}
-)
+# Single definition, shared with the MCP server. See untell/_rewriters.py for why it is not
+# written out here.
+_FREE_REWRITERS = FREE_REWRITERS
 
 
 async def _warm_detectors() -> None:

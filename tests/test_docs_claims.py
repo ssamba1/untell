@@ -194,13 +194,44 @@ class TestTheDemoUiOffersWhatTheToolShips:
         assert not bogus, f"demo.html offers styles the API rejects: {bogus}"
 
     def test_every_offered_rewriter_is_free_and_real(self):
-        """The demo has no API key, so every rewriter it offers must be a free backend."""
-        import untell.api_server as api
+        """The demo has no API key, so every rewriter it offers must be a free backend.
+
+        Reads the set from `untell._rewriters`, not from `untell.api_server`. Importing the API
+        server pulls in FastAPI, so this check — which touches nothing but a set of strings and a
+        static HTML file — was a COLLECTION ERROR on the zero-dependency install.
+        """
+        from untell._rewriters import FREE_REWRITERS
 
         offered = self._options("rewriter")
         assert offered, "no rewriter options found"
-        unusable = [r for r in offered if r not in api._FREE_REWRITERS]
+        unusable = [r for r in offered if r not in FREE_REWRITERS]
         assert not unusable, f"demo.html offers rewriters that need a key: {unusable}"
+
+
+def test_both_servers_agree_on_which_rewriters_are_free():
+    """This set decides what an unauthenticated caller may ask for, and it was written out twice.
+
+    `api_server.py` and `mcp_server.py` each carried their own copy. They agreed, and nothing made
+    them: a rewriter added to one and forgotten on the other is one server accepting a name the
+    other rejects with a 422. Both now alias a single definition, and this fails if either ever
+    stops.
+    """
+    import importlib.util
+
+    from untell._rewriters import FREE_REWRITERS
+
+    assert FREE_REWRITERS, "the free-rewriter set is empty"
+    for module, extra in (("untell.mcp_server", "mcp"), ("untell.api_server", "server")):
+        if importlib.util.find_spec(module.split(".")[0]) is None:  # pragma: no cover
+            continue
+        try:
+            mod = importlib.import_module(module)
+        except ImportError:
+            continue  # optional extra not installed; the alias is checked wherever it is
+        assert mod._FREE_REWRITERS is FREE_REWRITERS, (
+            f"{module} has its own copy of the free-rewriter set again; install "
+            f"'untell[{extra}]' and re-run to see the drift"
+        )
 
 
 def test_console_script_count_in_why_best_matches_pyproject():

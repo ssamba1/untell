@@ -7,6 +7,15 @@ which always evaluates to "" (or a falsy operand): every credentialed caller
 lands in the anonymous bucket, so one client's flood throttles all others.
 Pinned by capturing the credential passed to _rate_limited.
 """
+
+import pytest
+
+# `import fastapi` at module scope made this file a COLLECTION ERROR on the lite
+# install, which ships zero ML — ten files did, so `pytest -q` was never green on
+# the path CONTRIBUTING calls zero-dependency. A skip is the honest outcome: the
+# test is not applicable, not broken. Install with `pip install 'untell[server]'`
+# to run it.
+pytest.importorskip("fastapi")
 import os
 
 import pytest

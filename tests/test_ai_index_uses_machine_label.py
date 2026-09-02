@@ -7,6 +7,15 @@ mutation or -> and makes the condition impossible (a label can't both contain
 fallback. For a 2-class model 1-P(human) == P(machine) hides it; a 3-class
 model exposes the wrong index: P(machine)=0.0009 vs 1-P(human)=0.5002.
 """
+
+import pytest
+
+# `import torch` at module scope made this file a COLLECTION ERROR on the lite
+# install, which ships zero ML — ten files did, so `pytest -q` was never green on
+# the path CONTRIBUTING calls zero-dependency. A skip is the honest outcome: the
+# test is not applicable, not broken. Install with `pip install 'untell[heavy]'`
+# to run it.
+pytest.importorskip("torch")
 from unittest.mock import patch
 
 import torch

@@ -26,10 +26,19 @@ pip install -e ".[full,eval]"
 ## Before you open a PR
 
 ```bash
-ruff check .       # lint (must be clean)
-ruff format .      # auto-format
-pytest -q          # tests (must be green; lite tier needs zero ML)
+ruff check .            # lint (must be clean) — the WHOLE tree, not the files you touched
+ruff format .           # auto-format
+scripts/check-claims.sh # ~6s: did this change break how the repo describes itself?
+pytest -q               # tests (must be green; lite tier needs zero ML)
 ```
+
+`check-claims.sh` is worth running even for a one-line change. A group of tests here assert that
+the documents' counts and quoted figures still match the code — the detector registry, the
+console-script list, the ROADMAP status table, the census figures — so they break for edits
+nowhere near them. Adding one console script makes `why-best-open-repo.md`'s script count wrong;
+adding an import to a test file fails the tree-wide ruff check while `ruff check <that file>`
+stays clean; and writing a number about *someone else's* tool can trip the detector-count guard.
+Running the tests for the thing you changed does not catch any of these.
 
 CI runs the same checks on Python 3.9 / 3.11 / 3.12 plus a full-tier job that loads the real torch
 detectors. A PR that's green locally should be green in CI.

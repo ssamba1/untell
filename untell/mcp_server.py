@@ -14,12 +14,13 @@ from __future__ import annotations
 import argparse
 import logging
 
+from untell._rewriters import FREE_REWRITERS
+
 # Free, no-key rewriter backends selectable via the ``rewriter`` arg; anything else (e.g. "auto")
 # routes to a hosted/local-policy backend via prefer=None.
-_FREE_REWRITERS = frozenset(
-    {"surgical", "structural", "composite", "targeted", "neural", "ensemble", "max",
-     "t5_paraphrase", "mt_pivot"}
-)
+# Single definition, shared with the MCP server. See untell/_rewriters.py for why it is not
+# written out here.
+_FREE_REWRITERS = FREE_REWRITERS
 
 
 _TIERS = ("lite", "full", "heavy", "commercial")

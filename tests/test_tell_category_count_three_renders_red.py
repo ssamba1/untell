@@ -5,6 +5,15 @@ The mutation >= -> > demotes count==3 from red to yellow, silently lowering the
 severity of the worst tells. The markup passed to Table.add_row is the
 observable — count 3 must carry "[red]", count 2 must carry "[yellow]".
 """
+
+import pytest
+
+# `import rich` at module scope made this file a COLLECTION ERROR on the lite
+# install, which ships zero ML — ten files did, so `pytest -q` was never green on
+# the path CONTRIBUTING calls zero-dependency. A skip is the honest outcome: the
+# test is not applicable, not broken. Install with `pip install 'untell[rich]'`
+# to run it.
+pytest.importorskip("rich")
 from rich.table import Table
 
 import untell.rich_output as rich_output

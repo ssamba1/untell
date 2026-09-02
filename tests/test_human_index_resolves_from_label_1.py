@@ -7,6 +7,15 @@ unsatisfiable ("label_1" can't contain "human"), so the detector returns None
 — no score at all — instead of 1-P(human). Prior 'needs live model.config'
 note wrong; the seam is a stub model.
 """
+
+import pytest
+
+# `import torch` at module scope made this file a COLLECTION ERROR on the lite
+# install, which ships zero ML — ten files did, so `pytest -q` was never green on
+# the path CONTRIBUTING calls zero-dependency. A skip is the honest outcome: the
+# test is not applicable, not broken. Install with `pip install 'untell[heavy]'`
+# to run it.
+pytest.importorskip("torch")
 from unittest.mock import patch
 
 import torch

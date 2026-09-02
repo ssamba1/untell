@@ -6,6 +6,15 @@ bucket at the cap boundary is preserved. The mutation <= -> < runs eviction at
 exactly 4096, dropping every stale bucket (here, all of them). Pinned at the
 module-global level.
 """
+
+import pytest
+
+# `import fastapi` at module scope made this file a COLLECTION ERROR on the lite
+# install, which ships zero ML — ten files did, so `pytest -q` was never green on
+# the path CONTRIBUTING calls zero-dependency. A skip is the honest outcome: the
+# test is not applicable, not broken. Install with `pip install 'untell[server]'`
+# to run it.
+pytest.importorskip("fastapi")
 import untell.api_server as api_server
 
 
