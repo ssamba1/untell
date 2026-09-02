@@ -1170,6 +1170,43 @@ The generators also rank the way [Result 22](#result-22--the-same-leaderboard-on
 predicted across 46 other detectors: the instruction-tuned GPT-3.5-turbo is caught almost
 perfectly, and the older, weaker FLAN-T5 and BLOOMZ are the ones that get through.
 
+## Result 26 — no usable operating point, replicated on nine times the data
+
+[Result 15](#result-15--the-shipped-lite-tier-is-a-ranking-signal-not-an-accusation-instrument)
+concluded from 391 paired Liang essays that the lite tier is a ranking signal and not an accusation
+instrument: AUROC 0.8012, and no threshold with tolerable error on both sides. M4 tests that on
+**3,493 paired English texts** — nine times the data, seven generators, four domains, and no
+overlap with the corpus the original claim came from.
+
+**AUROC 0.7745.** The full sweep, human against machine on the same prompts:
+
+| threshold | FPR (human) | FNR (machine) | usable? |
+|---|---|---|---|
+| 0.20 | 70.8% | 10.6% | no |
+| **0.30** *(shipped)* | **36.1%** | **21.4%** | no |
+| 0.40 | 15.4% | 40.2% | no |
+| 0.45 | 9.7% | 53.9% | no |
+| 0.50 | **5.2%** | **69.6%** | no |
+| 0.60 | 0.5% | 92.3% | no |
+| 0.70 | 0.0% | 99.5% | no |
+| 0.775 | 0.0% | **99.9%** | no |
+
+Nothing on that curve is a defensible operating point. The best available trade sits near 0.50 —
+accuse one human in twenty, and miss seven machine texts in ten. Push false accusations to zero and
+the detector stops catching anything at all: at 0.70 it has flagged **0 of 1,744** humans and
+**8 of 1,749** machine texts.
+
+**The replication is the point.** 0.8012 on Liang, 0.7745 on M4 — two independent corpora, one of
+essays and one of abstracts, reviews, wiki articles and forum posts, from seven generators rather
+than one, agreeing to within 0.03. The conclusion was not an artifact of the first corpus, and it
+was not an artifact of GPT-4-polished text.
+
+It also sets a ceiling on what any threshold change could achieve. [Result 11](#result-11--the-threshold-that-would-make-the-lite-tier-safe-on-student-writing)
+gives the threshold that would make the lite tier safe on student writing — 0.775 for a 1%
+false-positive rate. On this corpus 0.775 misses **99.9%** of machine-written text. There is no
+setting of one number that makes this detector both safe and useful, which is
+[Garland's structural argument](https://arxiv.org/abs/2603.20254) arriving as an empirical curve.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
