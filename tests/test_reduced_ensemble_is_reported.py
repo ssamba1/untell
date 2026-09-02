@@ -91,12 +91,27 @@ def _top_member(result: dict) -> tuple[type, str]:
     return classes
 
 
+def _require_ensemble() -> None:
+    """Skip when the full tier cannot load more than one detector.
+
+    These tests are about how a PARTIALLY reduced ensemble reports itself, so an ensemble of one
+    does not violate their premise — it removes it. Without this the zero-dependency install turned
+    "the heavy extras are not installed" into collection errors.
+    """
+    result = score_text(AI_TEXT, tier="full")
+    if len(result["detectors"]) < 2:
+        pytest.skip(
+            f"needs a multi-detector ensemble; the full tier loaded "
+            f"{len(result['detectors'])} here. Install with `pip install 'untell[heavy]'`."
+        )
+
+
 @pytest.fixture
 def healthy() -> dict:
     from untell.scripts import score as sc
 
+    _require_ensemble()
     result = score_text(AI_TEXT, tier="full")
-    assert len(result["detectors"]) >= 2, "a one-detector ensemble cannot be partially reduced"
     # The per-text score cache would otherwise serve THIS result to the silenced re-score
     # below (identical text/tier/threshold/mode key) — the silencing must actually re-run.
     sc._score_cache.clear()
@@ -167,6 +182,7 @@ def test_a_healthy_ensemble_says_nothing(healthy) -> None:
 
 def test_the_count_is_the_real_one(monkeypatch: pytest.MonkeyPatch) -> None:
     """"3 of 4" has to be arithmetic, not a fixed string."""
+    _require_ensemble()
     monkeypatch.setattr(_detector_class(), "score", lambda self, text: None)
     result = score_text(AI_TEXT, tier="full")
     live = sum(1 for v in result["detectors"].values() if isinstance(v, (int, float)))
@@ -180,6 +196,7 @@ def test_it_composes_with_the_other_caveats(monkeypatch: pytest.MonkeyPatch) -> 
     The short-text caveat is the one already known to fire here, so if the two ever collapse into a
     single slot this is where it shows.
     """
+    _require_ensemble()
     monkeypatch.setattr(_detector_class(), "score", lambda self, text: None)
     result = score_text("Moreover, the framework leverages robust methodologies at scale.",
                         tier="full")

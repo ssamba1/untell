@@ -1,4 +1,4 @@
-"""`_FREE_REWRITERS` is written out twice, in the two surfaces that must not disagree.
+"""`_FREE_REWRITERS` was written out twice, in the two surfaces that must not disagree.
 
 FOUND by finishing the sweep Result 190 opened. Both comments it examined were about a duplicated
 definition, so the mechanical version of that question is: which constants are declared with an
@@ -15,13 +15,21 @@ duplicated across the REST server and the MCP server — the two surfaces a call
 touching the CLI — and this repository has already shipped that exact failure once: the MCP docstring
 carried six of the fourteen style names, so eight styles were invisible to every MCP caller.
 
-MEASURED: the two sets are byte-identical today, nine names each. No drift. The guard is for the next
+MEASURED: the two sets were byte-identical, nine names each. No drift. The guard was for the next
 rewriter added to one file and not the other, which would leave REST and MCP disagreeing about what
 is free — silently, because each is internally consistent.
 
-Not consolidated into a shared import: CI installs the MCP path as `.[dev,mcp]` with no FastAPI, so
-importing the REST module to reach its constant would put a web framework on the MCP server's import
-path to save nine strings.
+CONSOLIDATED 2026-09-01, and the objection this file used to record is worth keeping because it was
+correct. It read: "Not consolidated into a shared import: CI installs the MCP path as `.[dev,mcp]`
+with no FastAPI, so importing the REST module to reach its constant would put a web framework on the
+MCP server's import path to save nine strings." That is true of `mcp_server` importing `api_server`,
+and it is why the shared definition lives in neither of them. `untell/_rewriters.py` imports nothing
+at all, so each surface reaches the constant without acquiring the other's dependencies — which is
+also what let a test that checks nothing but a set of strings stop being a collection error on the
+zero-dependency install.
+
+So the drift these tests guard is now structurally impossible, and they check that instead: that
+the literal is declared exactly once, and that both surfaces alias it rather than growing a copy.
 """
 
 from __future__ import annotations
@@ -33,41 +41,68 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SURFACES = ("untell/api_server.py", "untell/mcp_server.py")
+SHARED = "untell/_rewriters.py"
 
 
-def _literal_set(rel: str, name: str) -> set[str]:
-    """Read the constant out of the SOURCE rather than importing it.
+def _assignment(rel: str, name: str) -> ast.expr:
+    """The right-hand side of a module-level assignment, read from SOURCE rather than imported.
 
-    Importing `api_server` needs FastAPI, which the MCP-only install does not have, and this test is
-    about two files agreeing — a question the text answers without either module being importable.
+    Importing `api_server` needs FastAPI, which the MCP-only install does not have, and these tests
+    are about what the files say — a question the text answers without either being importable.
     """
     tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(
             isinstance(t, ast.Name) and t.id == name for t in node.targets
         ):
-            return set(ast.literal_eval(ast.unparse(node.value).replace("frozenset(", "", 1)[:-1]))
+            return node.value
     raise AssertionError(f"{rel} has no module-level {name}")
 
 
+def _literal_set(rel: str, name: str) -> set[str]:
+    value = ast.unparse(_assignment(rel, name))
+    return set(ast.literal_eval(value.replace("frozenset(", "", 1)[:-1]))
+
+
 @pytest.fixture(scope="module")
-def sets() -> dict[str, set[str]]:
-    return {rel: _literal_set(rel, "_FREE_REWRITERS") for rel in SURFACES}
+def shared() -> set[str]:
+    return _literal_set(SHARED, "FREE_REWRITERS")
 
 
-def test_both_surfaces_declare_the_constant(sets) -> None:
-    """The premise. A renamed constant would make the comparison below vacuous rather than failing,
-    and `_literal_set` raises instead — this states it as its own assertion."""
-    for rel, names in sets.items():
-        assert names, rel
+def test_the_shared_module_declares_the_constant(shared) -> None:
+    """The premise. A renamed constant would make everything below vacuous rather than failing."""
+    assert shared, SHARED
+    assert len(shared) >= 9, shared
 
 
-def test_the_two_surfaces_offer_the_same_rewriters(sets) -> None:
-    rest, mcp = sets["untell/api_server.py"], sets["untell/mcp_server.py"]
-    assert rest == mcp, {"only in REST": sorted(rest - mcp), "only in MCP": sorted(mcp - rest)}
+def test_neither_surface_carries_its_own_copy(shared) -> None:
+    """The drift guard, now structural: each surface must ALIAS the shared name, not restate it.
+
+    A future edit pasting the literal back into either file would restore exactly the failure this
+    file was written for — REST and MCP disagreeing about what is free, each internally consistent.
+    """
+    for rel in SURFACES:
+        value = _assignment(rel, "_FREE_REWRITERS")
+        assert isinstance(value, ast.Name), (
+            f"{rel} declares its own _FREE_REWRITERS again instead of aliasing "
+            f"{SHARED}: {ast.unparse(value)[:80]}"
+        )
+        assert value.id == "FREE_REWRITERS", ast.unparse(value)
 
 
-def test_every_offered_rewriter_is_one_the_cli_accepts(sets) -> None:
+def test_the_shared_module_needs_no_dependencies() -> None:
+    """Why the constant lives in a third module rather than in either server.
+
+    The objection this file recorded against consolidating — that reaching the REST module's
+    constant would put FastAPI on the MCP server's import path — is answered only while the shared
+    module imports nothing beyond `__future__`.
+    """
+    tree = ast.parse((ROOT / SHARED).read_text(encoding="utf-8"))
+    imports = [ast.unparse(n) for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
+    assert imports == ["from __future__ import annotations"], imports
+
+
+def test_every_offered_rewriter_is_one_the_cli_accepts(shared) -> None:
     """The deeper property. Two files can agree on a name that no rewriter answers to — the same
     shape as a style name with no profile, which every surface accepts and silently ignores."""
     import untell.scripts.run as run
@@ -83,5 +118,5 @@ def test_every_offered_rewriter_is_one_the_cli_accepts(sets) -> None:
                 if "structural" in values and "composite" in values:
                     accepted |= values
     assert accepted, "could not find the --rewriter choices in run.py"
-    unknown = sets["untell/mcp_server.py"] - accepted
+    unknown = shared - accepted
     assert not unknown, f"offered by the network surfaces but not a rewriter the CLI knows: {unknown}"
