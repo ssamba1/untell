@@ -1,0 +1,298 @@
+{
+  "stale_since_sweep": [],
+  "boundaries": 48,
+  "protected": [
+    {
+      "file": "untell/api_server.py",
+      "line": 549,
+      "constant": "_RATE_BUCKET_SOFT_CAP",
+      "source": "if len(_rate_buckets) <= _RATE_BUCKET_SOFT_CAP:"
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 330,
+      "constant": "_MIN_WORDS_FOR_SIGNAL",
+      "source": "if len(_WORD.findall(text)) < _MIN_WORDS_FOR_SIGNAL:"
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 632,
+      "constant": "_MIN_WORDS_FOR_SIGNAL",
+      "source": "if len(_WORD.findall(text)) < _MIN_WORDS_FOR_SIGNAL:"
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 307,
+      "constant": "_MIN_WORDS_FOR_SIGNAL",
+      "source": "if len(_WORD_RE.findall(text)) < _MIN_WORDS_FOR_SIGNAL:"
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 426,
+      "constant": "_MIN_WORDS_FOR_A_BAND",
+      "source": "if _words < _MIN_WORDS_FOR_A_BAND:"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2768,
+      "constant": "_MIN_SPLIT_SIDE",
+      "source": "if len(first_words) < _MIN_SPLIT_SIDE:"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2757,
+      "constant": "_MIN_SPLIT_SIDE",
+      "source": "if _content_word_count(words[:best]) < _MIN_SPLIT_SIDE or len(words) - best < _MIN_SPLIT_SIDE:"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2757,
+      "constant": "_MIN_SPLIT_SIDE",
+      "source": "if _content_word_count(words[:best]) < _MIN_SPLIT_SIDE or len(words) - best < _MIN_SPLIT_SIDE:"
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 207,
+      "constant": "_SATURATED_MAX",
+      "source": "if a < _SATURATED_MAX or b < _SATURATED_MAX:"
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 207,
+      "constant": "_SATURATED_MAX",
+      "source": "if a < _SATURATED_MAX or b < _SATURATED_MAX:"
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1015,
+      "constant": "_MIN_VOICE_SAMPLE_WORDS",
+      "source": "if n_words < _MIN_VOICE_SAMPLE_WORDS:"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 732,
+      "constant": "_MIN_WORDS_FOR_A_VERDICT",
+      "source": "if words >= _MIN_WORDS_FOR_A_VERDICT:"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 705,
+      "constant": "_MIN_WORDS_FOR_A_VERDICT",
+      "source": "if words < _MIN_WORDS_FOR_A_VERDICT or words >= _ELEVATED_FPR_BANDS[-1][0]:"
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 163,
+      "constant": "_MIN_SENTENCES_FOR_SPREAD",
+      "source": "if len(scores) < _MIN_SENTENCES_FOR_SPREAD:"
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 165,
+      "constant": "_TARGETING_SPREAD_BAR",
+      "source": "return (max(scores) - min(scores)) < _TARGETING_SPREAD_BAR"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 723,
+      "constant": "_MIN_WORDS_FOR_REPETITION",
+      "source": "if len(words) < _MIN_WORDS_FOR_REPETITION:"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 853,
+      "constant": "_MIN_WORDS_FOR_REPETITION",
+      "source": "if len(words) < _MIN_WORDS_FOR_REPETITION:"
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 218,
+      "constant": "MIN_SAMPLE_WORDS",
+      "source": "if sample_words < MIN_SAMPLE_WORDS:"
+    }
+  ],
+  "unprotected": [
+    {
+      "file": "untell/api_server.py",
+      "line": 557,
+      "constant": "_RATE_BUCKET_SOFT_CAP",
+      "source": "if len(_rate_buckets) > _RATE_BUCKET_SOFT_CAP:"
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 1061,
+      "constant": "_HEALTH_TTL_S",
+      "source": "if _health_cache is not None and now - _health_cache[0] < _HEALTH_TTL_S:"
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 317,
+      "constant": "_TTR_FLOOR",
+      "source": "if ttr >= _TTR_FLOOR:"
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 474,
+      "constant": "_BURSTY_FLOOR",
+      "source": "if cv < _BURSTY_FLOOR:"
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 714,
+      "constant": "_BURSTY_IDEAL",
+      "source": "shape = \"uniform\" if cv < _BURSTY_IDEAL else \"erratic\""
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 390,
+      "constant": "_SENTENCE_ENTAILMENT_FLOOR",
+      "source": "return score is not None and score >= _SENTENCE_ENTAILMENT_FLOOR"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1267,
+      "constant": "_MIN_SPLIT_SIDE",
+      "source": "_content_word_count(words[:split_at]) < _MIN_SPLIT_SIDE"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1268,
+      "constant": "_MIN_SPLIT_SIDE",
+      "source": "or len(words) - split_at < _MIN_SPLIT_SIDE"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2739,
+      "constant": "_MIN_SPLIT_SIDE",
+      "source": "and _words_until_next_comma(words, pos + 1) >= _MIN_SPLIT_SIDE"
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 287,
+      "constant": "_SATURATED_MAX",
+      "source": "and pre_score[\"max\"] >= _SATURATED_MAX"
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 288,
+      "constant": "_SATURATED_MAX",
+      "source": "and post_score[\"max\"] >= _SATURATED_MAX"
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 903,
+      "constant": "_MODULE_DRIFT",
+      "source": "elif len(modules) - claimed > _MODULE_DRIFT:"
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 632,
+      "constant": "DEFAULT_CONTRADICTION_BAR",
+      "source": "preserved = con < DEFAULT_CONTRADICTION_BAR and ent >= DEFAULT_ENTAILMENT_FLOOR"
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 632,
+      "constant": "DEFAULT_ENTAILMENT_FLOOR",
+      "source": "preserved = con < DEFAULT_CONTRADICTION_BAR and ent >= DEFAULT_ENTAILMENT_FLOOR"
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 947,
+      "constant": "_MIN_WORD_CHAR_SHARE",
+      "source": "if _DEGENERATE_RUN_RE.search(text) or _word_char_share(text) < _MIN_WORD_CHAR_SHARE:"
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 329,
+      "constant": "_MIN_VOICE_SAMPLE_WORDS",
+      "source": "if len(_WORD.findall(voice_sample)) < _MIN_VOICE_SAMPLE_WORDS:"
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1467,
+      "constant": "_TELLS_EPS",
+      "source": "abs(polished_score[\"max\"] - best_score[\"max\"]) <= _TELLS_EPS"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1335,
+      "constant": "_LOCK_NOTE_PREFIX_CHARS",
+      "source": "if len(text) <= _LOCK_NOTE_PREFIX_CHARS:"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1343,
+      "constant": "_LOCK_NOTE_MARGIN",
+      "source": "if abs(estimate - _LOCKED_SHARE_BAR) > _LOCK_NOTE_MARGIN:"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1516,
+      "constant": "_MIN_BLOCKS_FOR_LONE_NOTE",
+      "source": "if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1519,
+      "constant": "_LONE_BLOCK_SHARE_BAR",
+      "source": "return _LINE_PER_SENTENCE_NOTE if lone / len(prose) > _LONE_BLOCK_SHARE_BAR else None"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1344,
+      "constant": "_LOCKED_SHARE_BAR",
+      "source": "return _MOSTLY_LOCKED_NOTE if estimate > _LOCKED_SHARE_BAR else None"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1348,
+      "constant": "_LOCKED_SHARE_BAR",
+      "source": "_MOSTLY_LOCKED_NOTE if share > _LOCKED_SHARE_BAR else None)"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1338,
+      "constant": "_LOCKED_SHARE_BAR",
+      "source": "_MOSTLY_LOCKED_NOTE if share > _LOCKED_SHARE_BAR else None)"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 799,
+      "constant": "CLOSER_REMAINDER_WORDS",
+      "source": "return len(remainder.split()) <= CLOSER_REMAINDER_WORDS"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1081,
+      "constant": "_LANG_MIN_WORDS",
+      "source": "if len(words) < _LANG_MIN_WORDS:"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1085,
+      "constant": "_OTHER_FUNCTION_WORD_FLOOR",
+      "source": "return other >= _OTHER_FUNCTION_WORD_FLOOR and other > english"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1409,
+      "constant": "_MIN_WORDS_FOR_A_RATE",
+      "source": "if result[\"words\"] < _MIN_WORDS_FOR_A_RATE and total > 0:"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1237,
+      "constant": "_COMMON_IN_HUMAN_WRITING",
+      "source": "((name, rates[name]) for name in by_category if rates.get(name, 0) >= _COMMON_IN_HUMAN_WRITING),"
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 185,
+      "constant": "MIN_SAMPLE_WORDS",
+      "source": "if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:"
+    }
+  ],
+  "unmeasured": [],
+  "protected_share": 37.5
+}

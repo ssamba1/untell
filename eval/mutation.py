@@ -93,8 +93,19 @@ UNCOLLECTABLE = frozenset({
 # guessing at it: of survivors re-run against 1,543 tests, 40% died.
 TESTS_PER_MODULE = 5
 
+# On top of the breadth-ranked selection: test files that name the module's own THRESHOLD constants
+# (those appearing in an ordering comparison), most specific first. Small, because its job is to
+# catch the dedicated boundary test rather than to widen the selection generally.
+#
+# ⚠️ It remains a heuristic. A module with several threshold constants gives a file that names one
+# of them a low rank, and `untell.scripts.score` needed five slots rather than three before the
+# dedicated boundary test made the cut. Five is a round number, not the number that made one file
+# pass; a module whose boundary test still falls outside it will under-report its own coverage, and
+# the register in `eval/boundaries.py` is where that shows up.
+CONSTANT_NAMING_TESTS = 5
 
-def test_index(root: Path = REPO) -> dict[str, list[str]]:
+
+def test_index(root: Path = REPO) -> dict[str, list[str]]:  # noqa: PT028
     """Module name -> the test files that import it, most focused on it first.
 
     "Most focused" is the test file importing the fewest `untell` modules overall. A test that
@@ -128,10 +139,72 @@ def test_index(root: Path = REPO) -> dict[str, list[str]]:
     for relative, touched in imports.items():
         for module in touched:
             index.setdefault(module, []).append(relative)
-    return {
-        module: sorted(files, key=lambda f: (breadth[f], f))[:TESTS_PER_MODULE]
-        for module, files in index.items()
+
+    # ⚠️ **Breadth ranking has a systematic blind spot, and it is aimed at the tests this repository
+    # has spent five rounds writing.** A boundary test imports the module's threshold constant AND
+    # the callers that compare against it, so it touches several `untell` modules and ranks LAST by
+    # breadth — then the cap drops it. MEASURED: after round ninety-eight verified seven off-by-ones
+    # as killed, a fresh sweep still reported all seven surviving, because
+    # `test_a_threshold_switches_exactly_where_it_says.py` imports five modules and was never
+    # selected for any of them.
+    #
+    # So a test naming one of the module's own constants is always included, whatever its breadth.
+    # That is a narrow rule with an exact target: a file that mentions `_MIN_WORDS_FOR_A_VERDICT` is
+    # about that threshold no matter what else it imports.
+    constants: dict[str, set[str]] = {}
+    for path in sorted(root.rglob("untell/**/*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError):
+            continue
+        module = str(path.relative_to(root))[:-3].replace("/", ".")
+        declared = set()
+        for node in tree.body:
+            targets = node.targets if isinstance(node, ast.Assign) else (
+                [node.target] if isinstance(node, ast.AnnAssign) else [])
+            for target in targets:
+                if isinstance(target, ast.Name) and target.id.isupper():
+                    declared.add(target.id)
+        # Only the constants that appear in an ORDERING comparison. Those are the module's
+        # thresholds, and naming one is what distinguishes a boundary test from a test that happens
+        # to import a size cap. Ranking on all constants put the dedicated boundary test outside the
+        # top three for three of the four modules it covers.
+        names = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Compare) and len(node.ops) == 1 and isinstance(
+                node.ops[0], (ast.Lt, ast.LtE, ast.Gt, ast.GtE)
+            ):
+                for side in (node.left, *node.comparators):
+                    if isinstance(side, ast.Name) and side.id in declared:
+                        names.add(side.id)
+        if names:
+            constants[module] = names
+
+    bodies = {
+        f"tests/{p.name}": p.read_text(encoding="utf-8")
+        for p in (root / "tests").glob("test_*.py")
+        if f"tests/{p.name}" not in UNCOLLECTABLE
     }
+
+    out: dict[str, list[str]] = {}
+    for module, files in index.items():
+        ranked = sorted(files, key=lambda f: (breadth[f], f))[:TESTS_PER_MODULE]
+        # Ranked by HOW MANY of the module's constants a file names, not merely whether it names
+        # one. A dedicated boundary test imports several — the threshold, the bar it is compared
+        # against, the band it indexes — while an incidental test mentions one in passing. Without
+        # the ranking, `untell.scripts.score` selected 35 test files and the sweep became unusable.
+        def specificity(name: str, module: str = module) -> tuple[int, str]:
+            body = bodies.get(name, "")
+            return (-sum(1 for c in constants.get(module, ()) if c in body), name)
+
+        named = sorted(
+            (f for f in files if f not in ranked and specificity(f)[0] < 0),
+            key=specificity,
+        )[:CONSTANT_NAMING_TESTS]
+        out[module] = ranked + named
+    return out
 
 
 def discovered_targets(root: Path = REPO) -> tuple[tuple[str, tuple[str, ...]], ...]:

@@ -81,6 +81,15 @@ if [ -n "$docs_changed" ] || printf '%s\n' "$changed" | grep -q '^eval/data/'; t
         || fail "a published headline figure no longer matches its artefact. Run \`python -m eval.claim_verification\`."
 fi
 
+# The boundary register is only as current as its sweep, and a stale one reports fixed boundaries as
+# broken — wrong in the direction that wastes the most work. This does not re-sweep (that is ~50
+# minutes); it fails when a test file is newer than the sweep, so the staleness is noticed at the
+# commit that causes it rather than months later.
+if printf '%s\n' "$changed" | grep -qE '^tests/'; then
+    python -c "import sys; from eval.boundaries import sweep_is_stale; sys.exit(1 if sweep_is_stale() else 0)" >/dev/null 2>&1 \
+        || echo "note: eval/data/mutation_boundary.json is older than a changed test; the boundary register will under-report until you re-run \`python -m eval.mutation --all --kinds boundary --workers 4 --json > eval/data/mutation_boundary.json\`"
+fi
+
 # A cache whose key omits something the value depends on returns a plausible wrong answer, and
 # plausible is the whole problem. Round 95 lost a mutation score to one; score.py already carried a
 # 56-failure scar from another. Fast, no corpus, no network.

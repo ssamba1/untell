@@ -5689,6 +5689,94 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred — boundary testing does not scale by hand, which is a different claim
+
+Round ninety-nine concluded that the n−1/n/n+1 discipline "cannot be applied 206 times". That is
+true of doing it by hand and false of the part that actually matters: **`x < THRESHOLD` has exactly
+one boundary and it is written in the source.** Finding them is mechanical; only writing the cases
+is not.
+
+`eval/boundaries.py` enumerates every comparison in `untell/` against a named numeric module
+constant and cross-references the boundary mutation sweep. Round ninety-eight found **8** thresholds
+by grepping for names I thought of. The register finds **48**.
+
+| | |
+|---|---|
+MEASURED, `python -m eval.boundaries`:
+
+| boundaries against a named threshold | 48 |
+|---|---|
+| off-by-one caught | 18 |
+| **off-by-one survives** | **30** |
+| protected share | **37.5%** |
+
+The unprotected are concentrated where the rewriter and the scoring path meet: `scripts/score.py`
+carries 7, `scripts/tells.py` 5, `rewriter/structural.py` 3.
+
+## ✗✗ The sweep was under-reporting the suite, and the cause is a heuristic aimed at exactly these tests
+
+The register's first run said **7 protected of 48**. Round ninety-eight had verified seven
+off-by-ones as killed only two rounds earlier, and every one of them came back "unprotected".
+
+`test_index` ranks a module's tests by **breadth** — how few `untell` modules a test file imports —
+on the reasoning that a test importing one module is about that module and one importing twelve is
+an integration test. **A boundary test breaks that reasoning.** It imports the threshold constant
+*and* the callers that compare against it, so it looks broad, ranks last, and the cap drops it.
+`test_a_threshold_switches_exactly_where_it_says.py` imports five modules and was selected for none
+of them.
+
+So the selection now always includes test files naming the module's **threshold** constants — those
+appearing in an ordering comparison, which is what distinguishes a boundary test from one that
+happens to import a size cap. MEASURED, same 339 mutants and the same tests, only the selection
+changed:
+
+| | boundary kills | score |
+|---|---|---|
+| breadth ranking alone | 64 | **18.9%** |
+| plus threshold-naming tests | 86 | **25.4%** |
+
+**Twenty-two kills recovered from tests that were already written.** Every mutation figure in rounds
+ninety-three to ninety-nine understated this suite, on top of the bytecode defect round ninety-five
+found — and both errors ran in the same direction, because a harness that fails to reach a test and
+a harness that fails to load a mutation both report a survivor.
+
+⚠️ **Two intermediate versions of the fix were wrong**, and the way they were wrong is worth keeping.
+Including any test that names any module constant took `untell.scripts.score` from 5 selected files
+to **35** (MEASURED), which would have made the sweep unusable. Ranking those by how many constants they name
+put the dedicated boundary test outside the top three for three of the four modules it covers,
+because a size cap counts the same as a threshold. Only restricting to constants that appear in an
+ordering comparison — the module's actual thresholds — put it inside for all five.
+
+It is still a heuristic and the docstring says so: `untell.scripts.score` needed five slots rather
+than three, and five is a round number rather than the number that made one file pass. A module
+whose boundary test falls outside it will under-report its own coverage, and this register is where
+that shows.
+
+## ✗ And a register is only as current as its sweep
+
+The first version read a sweep taken before round ninety-eight's tests existed. Every number it
+printed was wrong in the **alarming** direction, which is the one that wastes the most work — it
+would have sent someone to re-fix seven boundaries that were already fixed.
+
+`sweep_is_stale` compares modification times and the report leads with the warning rather than
+trusting whoever runs it to re-sweep first. Verified against a real file with a bumped mtime, not
+asserted.
+
+## What the arc from ninety-seven to one hundred establishes
+
+| round | claim |
+|---|---|
+| 97 | the suite catches inversions and misses off-by-ones, 55–0 |
+| 98 | so the thresholds are unprotected — 7 of 8, all now fixed |
+| 99 | property tests scale and are structurally boundary-blind |
+| **100** | **but finding the boundaries is mechanical — MEASURED, 48 of them, not 8, and 30 remain** |
+
+Round ninety-nine's rule stands with one word changed. *Write the property test for coverage, and
+add explicit n−1/n/n+1 cases at every threshold a person can meet* — and the list of thresholds is
+**generated, not remembered**.
+
+---
+
 # Round ninety-nine — the leverage, and the bias reproducing in tests written to avoid it
 
 Round ninety-eight closed eight named threshold sites by hand. The paired sweep found **206 sites

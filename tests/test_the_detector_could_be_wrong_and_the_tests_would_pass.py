@@ -187,14 +187,47 @@ def test_the_package_score_has_not_silently_collapsed():
 
 
 def test_the_test_index_prefers_tests_that_are_about_the_module():
-    """A module's budget must not be spent on integration tests that merely touch it."""
+    """A module's budget must not be spent on integration tests that merely touch it.
+
+    Round 100 widened the contract: breadth ranking alone systematically excluded boundary tests,
+    which import the threshold constant AND its callers and therefore look broad. The selection now
+    adds up to `CONSTANT_NAMING_TESTS` files that name the module's threshold constants, so the
+    bound is the sum. This test failed on the change and is updated rather than relaxed — the cap
+    still exists, it is just a different number.
+    """
     index = mutation.test_index()
     assert index, "no test imports any untell module — the index is broken"
+    ceiling = mutation.TESTS_PER_MODULE + mutation.CONSTANT_NAMING_TESTS
     for module, files in index.items():
-        assert len(files) <= mutation.TESTS_PER_MODULE, module
+        assert len(files) <= ceiling, f"{module}: {len(files)} selected, cap is {ceiling}"
+        assert len(files) == len(set(files)), f"{module} selects a file twice"
         assert not (set(files) & mutation.UNCOLLECTABLE), (
             f"{module} selects a test that cannot even be collected in this environment"
         )
+
+
+def test_a_boundary_test_is_selected_for_the_modules_it_covers():
+    """The round-100 defect, pinned. Without this the sweep silently under-reports the suite.
+
+    MEASURED: before the fix, `test_a_threshold_switches_exactly_where_it_says.py` imported five
+    modules, ranked last by breadth for every one, and was selected for none — so a fresh sweep
+    reported all seven off-by-ones round 98 had verified as killed still surviving. Same mutants,
+    same tests, selection alone: 18.9% -> 25.4%, 22 kills recovered.
+    """
+    index = mutation.test_index()
+    boundary_test = "tests/test_a_threshold_switches_exactly_where_it_says.py"
+    covered = [
+        "untell.scripts.score",
+        "untell.humanness",
+        "untell.scripts.tells",
+        "untell.detectors.perplexity_burstiness",
+        "untell.scripts.sentences",
+    ]
+    missing = [m for m in covered if boundary_test not in index.get(m, [])]
+    assert not missing, (
+        f"the dedicated boundary test is not selected for {missing}; their off-by-one mutants will "
+        f"be reported as surviving when they are not"
+    )
 
 
 def test_discovery_never_pairs_a_module_with_an_empty_selection():
