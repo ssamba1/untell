@@ -762,11 +762,25 @@ def fetch_m4(stems: tuple[str, ...], dest=None, timeout: int = 1800):
     return data
 
 
+def _m4_text(value) -> str:
+    """M4 stores some fields as a list of strings and others as one string.
+
+    `peerread_*` ships `prompt` as a list of alternative instructions; `arxiv_*` ships it as a
+    string. Assuming either shape crashes on the other, and coercing with `str()` would put a
+    Python list repr into the corpus.
+    """
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (list, tuple)):
+        return " ".join(str(v).strip() for v in value if isinstance(v, str)).strip()
+    return ""
+
+
 def _m4_pick(row: dict, keys: tuple[str, ...]) -> str:
     for k in keys:
-        v = row.get(k)
-        if isinstance(v, str) and v.strip():
-            return v.strip()
+        text = _m4_text(row.get(k))
+        if text:
+            return text
     return ""
 
 
@@ -801,7 +815,7 @@ def load_m4(stems: tuple[str, ...] = ("arxiv_chatGPT",), min_words: int = 60,
                     break
                 human = _m4_pick(r, _M4_HUMAN_KEYS)
                 machine = _m4_pick(r, _M4_MACHINE_KEYS)
-                prompt = (r.get("prompt") or "").strip()
+                prompt = _m4_text(r.get("prompt"))
                 # The arxiv_bloomz release puts the prompt in `machine_text`. Scoring instructions
                 # as a generation would corrupt the false-negative rate silently.
                 if machine and prompt and machine[:200] == prompt[:200]:

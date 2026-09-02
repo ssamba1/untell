@@ -1026,3 +1026,20 @@ class TestM4Loader:
         src = inspect.getsource(datasets.fetch_m4)
         assert "--filter=blob:none" in src and "sparse-checkout" in src
         assert 'f"/data/{s}.jsonl"' in src, "the fetch is not scoped to the requested stems"
+
+
+def test_m4_handles_both_shapes_of_its_own_prompt_field():
+    """M4 stores some fields as a list and others as a string, in the same corpus.
+
+    `peerread_*` ships `prompt` as a list of alternative instructions; `arxiv_*` ships a string.
+    Assuming either shape crashes on the other, and a bare `str()` would put a Python list repr
+    into the corpus, which would then be compared against the machine text by the
+    prompt-contamination guard and never match.
+    """
+    from eval.datasets import _m4_text
+
+    assert _m4_text("  a string  ") == "a string"
+    assert _m4_text(["first instruction", "second instruction"]) == (
+        "first instruction second instruction")
+    assert _m4_text(None) == "" and _m4_text(42) == ""
+    assert "[" not in _m4_text(["a", "b"]), "a list repr leaked into the text"
