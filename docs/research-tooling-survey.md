@@ -649,6 +649,33 @@ aggregation, per-domain calibration, multilingual benchmarks, human-AI collabora
 and essentially no one asks who the errors land on.** That is a claim about the question being
 asked, not about anyone's competence, and it is the only form of it this evidence supports.
 
+### Which blocked corpora have a GitHub route, tested rather than assumed
+
+`detector-fairness-measured.md` named RAID, MAGE and HC3 as the paired corpora it could not reach,
+all HuggingFace-hosted. §0 records that `huggingface.co` and `raid-bench.xyz` are denied by this
+environment's egress policy — verified through the proxy, not inferred. But a dataset's *host*
+being blocked says nothing about whether its authors also committed the data to git, and that
+question had never been asked.
+
+Tested 2026-09-02, by cloning each candidate blobless and listing its tree:
+
+| repository | data in the repo? | |
+|---|---|---|
+| **`mbzuai-nlp/M4`** | **yes — 959 MB, 39 files** | prompt + human answer + machine answer per record, 8 languages, 7 generators |
+| `liamdugan/raid` | no — leaderboard only | 46 detectors' calibration and per-example predictions; the corpus is at the blocked host |
+| `yafuly/MAGE` | no | code only |
+| `vivek3141/ghostbuster` | no | an 18 MB trigram model, no corpus |
+| `Hello-SimpleAI/chatgpt-comparison-detection` | no | HC3's indicating-word lists and a crawler |
+
+One of five, and it was the one that mattered: M4 is now `--corpus m4` and produced
+[Results 24](detector-fairness-measured.md) and the language gate that followed.
+
+**Three of those five were first recorded as "clone failed."** They were not; an earlier loop was
+timing out at 120 seconds while cloning four repositories in series. The lesson is the one this
+document keeps relearning — an access claim made from a failed command is only as good as the
+command. Every "unreachable" in this repository now names how it was tested: a proxy status line,
+an HTTP code, or a tree listing.
+
 ### Two defects the run exposed in the tooling
 
 Both are fixed and pinned by tests, and both were only visible because the run was big enough.
