@@ -5689,6 +5689,73 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-six — every other cache, checked for the same defect
+
+Round ninety-five lost a measurement to an incomplete cache key. The lesson generalises past the one
+that bit: **a key that omits something the value depends on returns a plausible wrong answer**, and
+plausible is the whole problem — the mutation score came out 3.7 points low and nothing about the
+output looked wrong.
+
+This repository already has a scar from the same shape in shipped code. `untell/scripts/score.py`
+carries a comment about a score cached under one torch mode being read by an env-pinned test under
+another: **56 assertions failed in one full-suite run** before the scoring mode went into the key.
+Two instances is a pattern. So `eval/cache_keys.py` checks all of them.
+
+## The audit
+
+MEASURED: **6 cached functions** across `untell/` and `eval/`. Five are pure over their arguments
+once one level of indirection is followed — `_pair_probs` reads nothing itself but calls `_load`,
+which returns a model loaded once per process and immutable thereafter.
+
+**One has a genuinely incomplete key.** `human_base_rates()` takes **no arguments at all** and reads
+`eval/data/tell_base_rates.json`. An empty key for a file-dependent value is the textbook case.
+
+It is **accepted rather than fixed**, and the reason is not the reasoning. The file is a committed
+artefact that changes only when the code reading it changes, so within a process there is nothing
+for a key to distinguish — but that argument would have been just as available for the bytecode
+cache, and it would have been wrong. What makes it safe is the second check.
+
+## The check the audit cannot replace
+
+`human_base_rates` is varied by exactly one test, which calls `cache_clear()` before the patch and
+again after. That works, and **nothing made it work.** A test that patches and forgets reads the
+previous value, and because an `lru_cache` outlives the test it poisons every later test in the
+process — which is precisely the 56-failure incident, one layer up.
+
+So `tests_that_patch_behind_a_cache` fails when a test patches a name a cached function reads and
+never mentions `cache_clear`. Verified against a probe test rather than asserted: the probe is
+flagged, and removing it returns the count to zero.
+
+## ✗ And the first version of that check was wrong on its only finding
+
+It flagged any patch of a *module* owning a cached function. Its one hit was
+`tests/test_detectors.py` patching `untell.scripts.tells.score_tells` — which `human_base_rates`
+does not read.
+
+I had written the coarse rule down as deliberate, with a justification: *"coarse is right here — the
+cost of a false alarm is one added line."* That reasoning is wrong, and it is wrong in a way this
+ledger has recorded three times now. **The line a false alarm prompts is a `cache_clear()` that
+clears nothing**, which is cargo cult, and the repository's own note on the subject is that false
+alarms are how a checker gets ignored. The rule now matches against the names a cached function
+actually references, directly or through a helper in the same module.
+
+Writing a justification for a design decision and having the justification be wrong is a different
+failure from not thinking about it. The comment made the rule look considered, which is worse than
+leaving it obviously provisional.
+
+## What the two checks are between them
+
+| | catches |
+|---|---|
+| key completeness | a cache that *can* return a stale value |
+| patched-without-clearing | a test that *makes* it |
+
+Neither is sufficient. The first would have accepted `human_base_rates` on its own reasoning; the
+second only fires once somebody writes the test that would break. Together they are a ratchet: the
+incomplete key is allowed, named, and guarded, and the guard fails before the poison spreads.
+
+---
+
 # Round ninety-five — acting on the survivor list, and proving each kill
 
 Round ninety-four ended by saying the number to act on is not the mutation score but the enumerated
