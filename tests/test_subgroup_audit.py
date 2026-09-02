@@ -1088,3 +1088,86 @@ class TestUnscoredIsNotAMiss:
         assert report.get("error"), (
             f"a corpus the detector cannot read produced a report instead of refusing: {report}"
         )
+
+
+class TestTheLanguageGate:
+    """The lite tier scores Latin-script non-English text at full confidence, and should not.
+
+    Its first channel is the fraction of tokens from a 120-word ENGLISH stoplist. Text in another
+    SCRIPT already opted out by accident — `_WORD` is `[A-Za-z']+`, so Arabic or Han yields no
+    tokens and the word-count floor fires. German and Indonesian tokenise perfectly well and fell
+    straight through, and MEASURED on M4 the detector then missed 82.8% and 74.8% of the machine
+    text in them, against 21.4% for English.
+    """
+
+    def test_the_cut_sits_below_real_english_and_above_the_rest(self):
+        """Measured on M4: English 1st percentile 0.1765, German median 0.0323, Indonesian 0.0000."""
+        from untell.detectors.perplexity_burstiness import _MIN_COMMON_RATIO_FOR_ENGLISH as cut
+
+        assert 0.05 < cut < 0.1765, (
+            f"the gate at {cut} is either above English's 1st percentile (abstaining on real "
+            f"English) or below German's median (letting it through)"
+        )
+
+    def test_english_prose_is_not_gated(self):
+        from untell.detectors.perplexity_burstiness import lite_score
+
+        english = (
+            "The committee met on Tuesday to consider whether the proposal should go forward, and "
+            "after a long discussion about the cost of the work and who would pay for it, they "
+            "decided that the question would have to wait until the next meeting in the spring. "
+            "Several members felt that this was the wrong decision and said so at the time."
+        )
+        assert lite_score(english) is not None, "the gate is abstaining on ordinary English prose"
+
+    def test_latin_script_non_english_abstains(self):
+        """German tokenises fine and is exactly the case the script check could never catch."""
+        from untell.detectors.perplexity_burstiness import lite_score
+
+        german = (
+            "Der Ausschuss trat am Dienstag zusammen, um zu beraten, ob der Vorschlag "
+            "weiterverfolgt werden sollte. Nach einer langen Diskussion über die Kosten der "
+            "Arbeiten und darüber, wer sie tragen würde, entschied man, dass die Frage bis zur "
+            "nächsten Sitzung im Frühjahr warten müsse. Mehrere Mitglieder hielten dies für falsch."
+        )
+        assert lite_score(german) is None, (
+            "German scored at full confidence; on M4 that path missed 82.8% of machine text"
+        )
+
+    def test_the_gate_keeps_a_signal_that_never_depended_on_english(self):
+        """Degenerate repetition is machine-like in any language, and the first gate discarded it.
+
+        `"test test test ..."` has no stoplist words and plenty of tokens, so the first version of
+        this gate returned None for it — throwing away a signal at full strength. Two existing
+        tests caught it. MEASURED 2026-09-02: that text scores 1.0000 on the repetition signal and
+        ordinary German and Indonesian prose score 0.0000, so the cases separate completely.
+        """
+        from untell.detectors.perplexity_burstiness import lite_score
+
+        score = lite_score("test " * 60)
+        assert score is not None, "the language gate swallowed degenerate repetition"
+        assert score > 0.9, score
+
+    def test_the_gate_does_not_fire_on_short_text(self):
+        """The ratio swings wildly below a few dozen words, which is why it is word-gated too."""
+        from untell.detectors.perplexity_burstiness import (
+            _MIN_WORDS_FOR_LANGUAGE_GATE,
+            _MIN_WORDS_FOR_SIGNAL,
+        )
+
+        assert _MIN_WORDS_FOR_LANGUAGE_GATE > _MIN_WORDS_FOR_SIGNAL
+        assert _MIN_WORDS_FOR_LANGUAGE_GATE >= 30
+
+    def test_the_published_english_corpora_are_untouched(self):
+        """A gate that moved a published figure would be a silent revision of the record.
+
+        MEASURED 2026-09-02: minimum common-word ratio is 0.2899 on ELLIPSE, 0.4207 on ASAP and
+        0.2743 on Liang — all far above the cut, so zero rows abstain and no result in
+        `detector-fairness-measured.md` changes.
+        """
+        from untell.detectors.perplexity_burstiness import _MIN_COMMON_RATIO_FOR_ENGLISH as cut
+
+        assert cut < 0.2743, (
+            f"the gate at {cut} would abstain on the least function-word-dense text in the "
+            f"published corpora (Liang, 0.2743) and silently move a published number"
+        )

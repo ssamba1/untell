@@ -150,6 +150,47 @@ def _common_ratio(text: str) -> float:
 _MIN_WORDS_FOR_SIGNAL = 5
 
 
+# Below this common-word ratio the text is not English, and this detector has no signal on it.
+#
+# The first channel here is the fraction of tokens drawn from a 120-word ENGLISH stoplist, so on
+# non-English prose the ratio collapses and the score sits near the floor — which reads as a
+# confident "human". That was already handled for text in another SCRIPT, but only by accident:
+# `_WORD` is `[A-Za-z']+`, so Arabic, Cyrillic or Han text yields no tokens and
+# `_MIN_WORDS_FOR_SIGNAL` opts out. Latin-script non-English tokenises perfectly well and fell
+# straight through.
+#
+# MEASURED 2026-09-02 on M4 (SemEval-2024 Task 8), 4,993 paired texts:
+#
+#   language   median ratio   detector's false-negative rate
+#   English         0.4099    21.4%
+#   German          0.0323    82.8%   <- scored at full confidence
+#   Indonesian      0.0000    74.8%   <- scored at full confidence
+#   Urdu            0.0000     -      (already opted out on token count)
+#
+# English's 1st percentile is 0.1765, so a cut at 0.15 sits below every realistic English document
+# while catching 100% of the German and Indonesian ones. Measured cost on English: 0.5%, and those
+# get an abstention — "no evidence" — rather than a wrong answer.
+#
+# The asymmetry is the argument. A wrong abstention says "I cannot tell", which is recoverable. A
+# missed non-English document says "0% AI-likelihood" at full confidence, and nothing about that
+# output invites doubt.
+_MIN_COMMON_RATIO_FOR_ENGLISH = 0.15
+# Short text swings this ratio wildly (see `_MIN_WORDS_FOR_SIGNAL`), so the gate only applies once
+# there are enough words for it to mean anything.
+_MIN_WORDS_FOR_LANGUAGE_GATE = 40
+# ...and the gate must not throw away a signal that never depended on English.
+#
+# `_repetition_signal` counts degenerate repetition, which is machine-like in any language. The
+# first version of this gate returned None whenever the English channel was blind, and so scored
+# "test test test ..." as no-signal — it has no stoplist words and plenty of tokens. Two tests
+# caught it, which is what they are for.
+#
+# MEASURED 2026-09-02: degenerate repetition scores 1.0000 on that signal and ordinary German and
+# Indonesian prose score 0.0000, so the two cases separate completely. When repetition has found
+# something the detector is not blind, and reports that term alone.
+_REPETITION_KEEPS_SIGNAL = 0.05
+
+
 # Tell density that reads as "clearly AI" for one sentence. AI sentences in the probe set carried
 # 1-3 tells in ~10-15 words (roughly 10-25 per 100 words); human ones carried none.
 _SENTENCE_TELL_SATURATION = 22.0
@@ -257,6 +298,11 @@ def lite_score(text: str) -> float | None:
     sents = _sentences(text)
     nonempty = [s for s in sents if _WORD.findall(s)]
     common = _common_ratio(text)          # ~0.3 (varied) .. ~0.6 (formulaic)
+    if (len(_WORD.findall(text)) >= _MIN_WORDS_FOR_LANGUAGE_GATE
+            and common < _MIN_COMMON_RATIO_FOR_ENGLISH):
+        # Not English: the stoplist channel is blind and a floor score would read as a confident
+        # "human". Repetition does not depend on the language, so keep it if it found anything.
+        return clamp01(rep) if rep > _REPETITION_KEEPS_SIGNAL else None
     # Map common-word ratio: above ~0.45 trends AI-formulaic.
     common_signal = clamp01((common - 0.30) / 0.30)
 
