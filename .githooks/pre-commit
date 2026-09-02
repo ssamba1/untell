@@ -90,6 +90,14 @@ if printf '%s\n' "$changed" | grep -qE '^tests/'; then
         || echo "note: eval/data/mutation_boundary.json is older than a changed test; the boundary register will under-report until you re-run \`python -m eval.mutation --all --kinds boundary --workers 4 --json > eval/data/mutation_boundary.json\`"
 fi
 
+# Reading a key a function never returns is silent: `.get` yields None and None becomes a plausible
+# number downstream. Six such reads happened in one session, in code written by someone who had read
+# the document warning about it. Fast, no corpus, no network.
+if printf '%s\n' "$changed" | grep -qE '^(untell|eval|tests)/|^docs/result-shapes\.md$'; then
+    python -m eval.result_keys >/dev/null 2>&1 \
+        || fail "a caller reads a key its function does not return. Run \`python -m eval.result_keys\`."
+fi
+
 # A cache whose key omits something the value depends on returns a plausible wrong answer, and
 # plausible is the whole problem. Round 95 lost a mutation score to one; score.py already carried a
 # 56-failure scar from another. Fast, no corpus, no network.

@@ -33,19 +33,27 @@ Generated from live calls, not from reading the source.
 score_text        agreement, ai_percent, detector_modes, detectors, flagged, max, mean,
                   threshold, tier, tier_requested, verdict_threshold, warning
                   + failed_detectors and detector_errors, only when a detector raised
+                  + scored, only when NOTHING could be scored (it is False; the CLI exits 2 on it)
+                  + out_of_range_detectors, only when a detector returned a value outside [0, 1]
 
 score_tells       burstiness_cv, by_category, by_evidence, language_supported,
                   low_burstiness, tells, tells_per_100w, words, warning (only when a caveat applies),
-                  human_base_rate_note (only when a fired tell is common in human writing)
+                  human_base_rate_note (only when a fired tell is common in human writing),
+                  matches (only when called with matches=True)
 
 score_sentences   flagged, note, sentences, threshold, tier,
                   unrankable (only when the per-sentence scores cannot be ranked),
-                  warning (only when a caveat applies)
+                  warning (only when a caveat applies),
+                  evidence_note (only when called with evidence=True)
 
 untell_text       adopted, changed, final, flagged, iterations, meaning_gate, post, pre,
                   quality_metric, rewriter, rewrites, seed, sim_bar, similarity, stopped,
                   tells_after, tells_before, tier, warning (only when a caveat applies),
-                  inspect (only when inspect=True / --inspect)
+                  inspect (only when inspect=True / --inspect),
+                  timings (only when timings=True / --timings),
+                  voice_warning (only when a voice sample was given and is thin),
+                  rewriter_warning (only when the requested rewriter was substituted),
+                  error (INSTEAD of a rewrite, when no rewriter is available; `final` is the input)
 
                   pre                 the score_text keys above, for the input
                   post                the score_text keys above, plus

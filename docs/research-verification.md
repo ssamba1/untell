@@ -5689,6 +5689,78 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and two — six wrong keys is a defect class, not six mistakes
+
+This session guessed a return shape wrong **six times**, in code written by someone who had read the
+document warning about it:
+
+| read | the key that exists | what it cost |
+|---|---|---|
+| `score_text(...)["score"]` | `max` | scored 0 of 6,842 documents after a twenty-minute run |
+| `humanness(...).get("score")` | it returns a float | a verification script died |
+| `score_sentences(...)["spread"]` | `unrankable` | a boundary test asserted nothing |
+| `humanize_diff(...)["removed"]` | `removed_lines` | three tests failed at once |
+| `score_tells(...).get("caveats")` | `warning` | a caveat test passed on an empty string |
+| a line number off by one | — | a mutant reported as surviving |
+
+Six is not carelessness six times. **`docs/result-shapes.md` opens by saying that guessing wrong
+"returns a plausible value rather than raising"**, and the trap is not ignorance of the document —
+it is reaching for the plausible key without opening the file, which no amount of documentation
+prevents.
+
+`tests/test_every_returned_key_is_documented.py` already checks one direction: every key these
+functions RETURN is documented. It cannot see a caller reading a key that never existed.
+`eval/result_keys.py` is the reverse: track `name = FUNC(...)`, then flag every `name["k"]` and
+`name.get("k")` whose key that function does not return.
+
+## ✅ Eight undocumented conditional keys
+
+MEASURED on the repository: **8 keys are returned and were not in the documented list** — `scored`,
+`out_of_range_detectors`, `timings`, `voice_warning`, `rewriter_warning`, `error`, `evidence_note`,
+`matches`.
+
+Every one appears **only under a non-default argument or a failure path**, which is precisely what
+the forward check's payloads never exercise: `scored` only when nothing could be scored at all,
+`error` instead of a rewrite when no rewriter is available, `timings` only with `--timings`. The two
+checks are blind in opposite directions, and neither substitutes for the other. All eight are now
+documented.
+
+## ✅ And a test assertion that could not fail
+
+```python
+assert result.get("detector_modes", {}) or True  # shape may vary; the warning is the contract
+```
+
+`X or True` is a tautology. The assertion has never been capable of failing, and it reads a key
+`score_sentences` does not return — which is how the checker found it. Its own comment says the
+warning is the contract, so that is what the test asserts now.
+
+## ✗✗✗ Three rounds of false positives in the checker, and the count is the point
+
+MEASURED at each stage, the first version reported **38 distinct (function, key) pairs**, most of
+them false. Three separate
+defects, each found by checking a finding instead of believing it:
+
+| version | distinct pairs | what was wrong |
+|---|---|---|
+| unordered `ast.walk`, no invalidation | 38 | a name reassigned from something else kept its old origin |
+| ordered, invalidate on `=` | 25 | `for r in rows:` rebinds and was not treated as an assignment |
+| plus loop/with/except rebinds | 16 | still descended into nested functions from the module scope |
+| plus scope pruning and parameters | **9** (MEASURED, all verified by hand) | — |
+
+Every one of the final nine was verified by hand against the source before being acted on. Eight
+were real; the ninth was the tautology.
+
+**A checker whose findings are mostly false is worse than no checker** — 38 reported against 8
+real — and this
+repository has now written that sentence about four separate checkers — the citation cross-check in
+round ninety-two, the claim-verification proximity rule in ninety-one, the cache-patch rule in
+ninety-six, and this one. The pattern is that the first version of a static rule is always too
+loose, and the only reliable way to find out is to read every finding it produces while the list is
+still short enough to read.
+
+---
+
 # Round one hundred and one — check the register before acting on it
 
 Round one hundred produced a register of **30 unprotected boundaries** and the obvious next move is

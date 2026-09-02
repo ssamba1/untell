@@ -43,7 +43,15 @@ def test_the_result_carries_the_caveat_on_the_stdlib_path(monkeypatch):
     from untell.scripts.sentences import score_sentences
 
     result = score_sentences(TEXT, tier="lite")
-    assert result.get("detector_modes", {}) or True  # shape may vary; the warning is the contract
+    # `assert result.get("detector_modes", {}) or True` stood here — a tautology, and one reading a
+    # key `score_sentences` does not return. Found by `eval/result_keys.py`, which flagged the read
+    # of a key that is not in the result; the `or True` meant it could never have failed even if
+    # the key had mattered. The warning IS the contract, as its own comment said, so that is what
+    # is asserted.
+    assert "detector_modes" not in result, (
+        "score_sentences does not expose per-detector modes; if it starts to, document it in "
+        "docs/result-shapes.md rather than probing for it here"
+    )
     assert result.get("warning") == UNINFORMATIVE_TARGETING_WARNING
 
 
