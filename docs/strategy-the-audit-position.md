@@ -283,6 +283,46 @@ on your corpus, with the mechanism visible and every rate carrying an interval"*
 to an institution banning a tool, one keeping it under constraints, and one defending either
 decision — and it is the same artifact in all three cases.
 
+### What the 2026-09 results changed about this argument
+
+Five results landed after this document was last revised, and three of them move it.
+
+**The strongest evidence here is now about other people's detectors, not ours.**
+[Results 21 and 23](detector-fairness-measured.md) read RAID's public leaderboard — 46 real
+detectors including GPTZero, RADAR, QuillBot and Binoculars — and found two things that fit
+together. Every submission must publish the threshold at which its false-positive rate on human
+text is 5%, **per text domain**, and the median detector needs those thresholds to span **0.610 of
+its entire score range** across eight domains. Then RAID's own evaluator explains why the
+leaderboard looks so good: `run_evaluation(..., per_domain_tuning=True)`. Every published accuracy
+figure is earned with a threshold fitted separately per domain, and **no deployed detector swaps
+thresholds by document type.** A student submits an essay and gets a score.
+
+So the field's headline numbers are an upper bound achievable only under a calibration step its
+users do not have, and the missing step is exactly the one whose absence the threshold spread
+measures. That is a stronger claim than anything this repository can make about its own tier, it
+concerns tools that actually accuse people, and it needs no API key, no GPU and no gated dataset —
+`untell-detector-calibration report` reproduces it in six seconds from a committed snapshot.
+
+**And one finding is directly actionable for an institution.**
+[Result 22](detector-fairness-measured.md) shows homoglyph substitution costs the median detector
+0.7% accuracy and destroys 14 of 43 — two fall below 5%, one to zero. The defence is Unicode
+normalisation before tokenisation, which is one line, and a third of the field has not written it.
+An institution evaluating a detector can ask that question directly.
+
+**The self-audit is the credential, and it cost us a result.** [Results 24 and 25](detector-fairness-measured.md)
+pointed this instrument at M4 and found *our own* detector scoring German at full confidence while
+missing 82.8% of the machine text in it — and the audit module itself reading an abstention as a
+wrong answer, which published a false figure for an hour. Both are fixed, both are documented with
+the wrong version kept visible, and the detector now abstains on six languages rather than
+answering. That is the argument this document has always made, applied inward first: **the useful
+thing is not a better score, it is knowing when there is no signal and saying so.**
+
+It also sharpens the pitch in §"Who this is actually for". Vanderbilt's stated complaint was *"no
+insight into how it works"*. What this repository can now put in front of an institution is not a
+rival score. It is: here is the threshold your candidate detector needs per document type, from its
+own authors' numbers; here is whether it survives a character swap; here is what it does to writing
+like your students'; and here is what it does when it has nothing to say.
+
 ### The one measurement with no better-resourced prior version
 
 Everything else in this document is a narrowing. BAID benchmarks detector bias across seven
