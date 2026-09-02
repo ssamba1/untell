@@ -787,6 +787,14 @@ def unsupported_figures(repo_root: Path, cache: Path) -> list[dict[str, str]]:
                 if "arXiv:" in claim or "arxiv.org" in claim:
                     continue  # an identifier mapping, not a measurement
                 stripped = re.sub(r"^\d+\.\s+", "", claim)
+                # A cross-reference to one of this repository's own rows is not a figure about the
+                # cited paper. "row 28 was blocked" produced a finding against a paper that has no
+                # 28 in it, which is true and meaningless.
+                stripped = re.sub(r"\b(?:row|round|result|section|table|figure)\s+\d+", "",
+                                  stripped, flags=re.I)
+                # Digits inside a word are part of an identifier, not a measurement: H2L, GPT4,
+                # M4GT. `_FIGURE` matched the 2 in H2L and reported it as an unsupported figure.
+                stripped = re.sub(r"[A-Za-z]\d+[A-Za-z]*|\d+[A-Za-z]{2,}", "", stripped)
                 for token in _FIGURE.findall(stripped):
                     if re.fullmatch(r"(19|20|21|25|26)\d\d", token.rstrip("%")):
                         continue  # a year
@@ -804,6 +812,37 @@ def verify_citations(repo_root: Path, cache: Path) -> dict:
     unresolved = {cid: where for cid, where in cited.items() if cid not in index}
     return {"cited": len(cited), "indexed": len(index),
             "unresolved": unresolved, "resolved": len(cited) - len(unresolved)}
+
+
+TRIAGE_PATH = Path(__file__).resolve().parent / "data" / "citation_triage.json"
+
+
+def _triage_key(finding: dict) -> str:
+    """A finding's identity, stable across edits that move it.
+
+    Deliberately not the line number. The whole point of this baseline is to survive documents
+    growing, and a line-keyed baseline goes stale the first time somebody inserts a paragraph.
+    """
+    return f"{finding['document']}|{finding['paper']}|{finding['figure']}"
+
+
+def untriaged(findings: list[dict], triage_path: Path = TRIAGE_PATH) -> list[dict]:
+    """Cross-check findings that nobody has read and cleared.
+
+    ⚠️ **This exists because a manual triage with no machine-readable record silently goes stale.**
+    An earlier round read all 25 findings this tool reported, established that none was a
+    misattribution, and wrote that conclusion in prose. The count then drifted to 35 as the
+    documents grew, and nothing could tell a new finding from one already cleared — so the honest
+    options were to re-read all 35 or to trust a sentence about a different 25.
+
+    With a baseline, reading a finding once is permanent and only new ones need attention. The
+    ratchet is what turns a review tool into a check that can gate a commit, which is what the
+    docstring above says this one deliberately is not.
+    """
+    if not triage_path.exists():
+        return list(findings)
+    cleared = {entry["key"] for entry in json.loads(triage_path.read_text())["cleared"]}
+    return [f for f in findings if _triage_key(f) not in cleared]
 
 
 def _render(result: dict[str, object]) -> str:
@@ -828,6 +867,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--topic", choices=sorted(TOPICS), help="list the papers behind one row")
     parser.add_argument("--verify-citations", action="store_true",
                         help="check every ACL id this repo cites against the cached corpus")
+    parser.add_argument("--untriaged", action="store_true",
+                        help="only cross-check findings nobody has read and cleared; this is the "
+                             "pass/fail form, and it exits non-zero when one appears")
     parser.add_argument("--cross-check", action="store_true",
                         help="list bolded figures that do not appear in the cited paper's abstract "
                              "(a review list, not a pass/fail check)")
@@ -878,8 +920,21 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  UNRESOLVED {cid} — cited in {', '.join(sorted(set(where)))}")
         return 1 if report["unresolved"] else 0
 
-    if args.cross_check:
+    if args.cross_check or args.untriaged:
         findings = unsupported_figures(args.repo_root, args.cache)
+        if args.untriaged:
+            new = untriaged(findings)
+            if args.as_json:
+                print(json.dumps(new, indent=2))
+            else:
+                print(f"{len(findings)} cross-check finding(s), {len(new)} not yet triaged.")
+                for f in new:
+                    print(f"  {f['document']} [{f['paper']}] {f['figure']!r} in: "
+                          f"{f['context'][:110]}")
+                if not new:
+                    print("Every finding has been read and recorded in "
+                          "eval/data/citation_triage.json.")
+            return 1 if new else 0
         if args.as_json:
             print(json.dumps(findings, indent=2))
         else:

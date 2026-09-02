@@ -5689,6 +5689,78 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-two — the same question, asked about other people's papers
+
+Rounds eighty-six to ninety-one audited this repository's claims about itself: its survey
+parameters, its constants, its headline figures against the tools that produce them. Its claims
+about **other people's work** had only ever had an advisory checker — `--cross-check`, described in
+its own docstring as "a REVIEW TOOL, not a pass/fail check".
+
+Round ninety-one's thesis applies directly and the stakes are higher. Getting our own number wrong
+is embarrassing. **Attributing a number to a paper that does not contain it is a claim about
+somebody else's work**, and it is the one class of error here that would damage a third party.
+
+## The triage
+
+MEASURED: 33 findings after two checker fixes, every one read. **None is a misattribution.** They
+fall into six groups, each legitimate for a different reason:
+
+| finding | why it is not a misattribution |
+|---|---|
+| `research-to-build.md` / ICNALE bias study, ×12 | our own `--by-length` measurements; the command that produced them is named two lines above |
+| `ROADMAP.md` / Beemo, ×6 | credited to a different author by name in the same sentence — "Karr et al. put light edits at 64–80% for Pangram" |
+| `ROADMAP.md` / Liang et al., ×6 | our own README figures with their Wilson intervals, in a row about our interval discipline |
+| `research-verification.md` / MASH, ×6 | the ledger entry that **describes an earlier defect of this very checker** and quotes its example figures |
+| `research-verification.md` / SenDetEX, ×2 | our own re-measured figures, in a parenthetical that says so |
+| `ROADMAP.md` / resume corpus, ×1 | marked "(derived, see note)" at the point of use, with the arithmetic shown below |
+
+The last of those is worth naming as good practice rather than as noise: a derived figure that says
+it is derived, beside the paper's own numbers it was derived from, is exactly what a citation should
+look like when it is not a direct quote.
+
+## ✗ The defect was not in any of them. It was that reading them did not stay read.
+
+An earlier round found this tool reporting 35 findings, fixed two checker defects to bring it to 25,
+**read all 25**, established that none was a misattribution, and recorded that conclusion in prose.
+
+It reports 35 today. The fixes held — the documents grew, including this round's predecessors. And
+because the triage lived in a sentence, **nothing could tell a new finding from one already
+cleared.** The honest options were to re-read all 35 or to trust a sentence about a different 25,
+and the count had drifted by ten without anyone noticing which ten.
+
+`eval/data/citation_triage.json` records a reason per finding, keyed on document, paper and figure
+rather than on a line number — a line-keyed baseline goes stale the first time a paragraph is
+inserted above it. `python -m eval.litreview --untriaged` reports only what is new and exits
+non-zero when there is any. Reading a finding once is now permanent, which is what turns a review
+tool into something that can gate a commit.
+
+**The entries are not a silencing mechanism and the format enforces it**: a test rejects any cleared
+finding whose reason is shorter than a sentence, and the file's own `how_to_add` field says never to
+add an entry for a finding you have not read.
+
+## ✅ And two checker fixes, worth 2 of the 35
+
+* **A cross-reference to one of our own rows is not a figure.** "row 28 was blocked" produced a
+  finding against a paper containing no 28 — true and meaningless.
+* **Digits inside an identifier are not a measurement.** The `2` in `H2L` was reported as an
+  unsupported figure.
+
+Both are the same shape as the two defects the earlier round fixed, and the same shape as round
+ninety-one's proximity failure: a checker that matches the wrong thing produces findings that are
+individually true and collectively useless. This repository's own note on it — *"a checker that
+cannot recognise the most common form of the thing it looks for produces false alarms, and false
+alarms are how a checker gets ignored"* — has now been cited in three consecutive rounds about three
+different checkers.
+
+## What the round is an instance of
+
+Round ninety-one made a manual verification durable by pinning figures to artefact keys. This one
+does the same for a manual *reading*. The pattern is identical and so is the failure it prevents:
+**work done once by a person, recorded in prose, and therefore not done at all the next time the
+documents change.**
+
+---
+
 # Round ninety-one — attribution is not agreement
 
 `untell-audit` enforces that every bolded figure in these documents carries a stated provenance.

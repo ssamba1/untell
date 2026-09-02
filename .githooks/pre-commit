@@ -81,6 +81,15 @@ if [ -n "$docs_changed" ] || printf '%s\n' "$changed" | grep -q '^eval/data/'; t
         || fail "a published headline figure no longer matches its artefact. Run \`python -m eval.claim_verification\`."
 fi
 
+# A figure attributed to somebody else's paper is the one error class here that would damage a third
+# party. `--untriaged` reports only cross-check findings absent from eval/data/citation_triage.json,
+# so it stays silent on the 33 already read and fires on anything new. It needs the 99 MB Anthology
+# cache, which a fresh clone does not have, so its absence skips rather than fails.
+if [ -n "$docs_changed" ] && [ -d .anthology-cache ]; then
+    python -m eval.litreview --untriaged >/dev/null 2>&1 \
+        || fail "a figure is attributed to a cited paper that does not contain it. Run \`python -m eval.litreview --untriaged\`, read each finding, then record it in eval/data/citation_triage.json."
+fi
+
 # The live documents are the ones `untell-audit` reads; nothing else triggers the slow check.
 if printf '%s\n' "$docs_changed" | grep -qE '^(README|ROADMAP|ai-writing-research)\.md$|^docs/'; then
     python -m untell.scripts.audit >/dev/null 2>&1 \

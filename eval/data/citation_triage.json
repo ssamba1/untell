@@ -1,0 +1,231 @@
+{
+ "what": "Cross-check findings that have been read and are NOT misattributions. `python -m eval.litreview --untriaged` reports only findings absent from this list.",
+ "why": "An earlier round read all 25 findings, concluded none was a misattribution, and recorded that in prose. The count drifted to 35 as the documents grew and nothing could tell a new finding from a cleared one. A reason recorded per finding makes the reading permanent.",
+ "how_to_add": "Read the document at the finding, establish that a reader cannot misattribute the figure to the cited paper, and add an entry with a reason saying why. Never add an entry to silence a finding you have not read.",
+ "cleared": [
+  {
+   "key": "ROADMAP.md|2026.lrec-1.581|49.3%",
+   "document": "ROADMAP.md",
+   "paper": "2026.lrec-1.581",
+   "figure": "49.3%",
+   "reason": "Explicitly marked derived at the point of use - '(derived, see note)' - with the note below showing the arithmetic from the paper's own 55.7% accuracy and 71/140 per-class counts. Exemplary rather than defective."
+  },
+  {
+   "key": "ROADMAP.md|2025.naacl-long.357|64",
+   "document": "ROADMAP.md",
+   "paper": "2025.naacl-long.357",
+   "figure": "64",
+   "reason": "Credited to a different author by name in the same sentence - 'Karr et al. put light edits at 64-80% for Pangram'. The Beemo citation in the row is for the claim beside it, and that claim (33 detector configurations) was read at source and matches."
+  },
+  {
+   "key": "ROADMAP.md|2025.naacl-long.357|80%",
+   "document": "ROADMAP.md",
+   "paper": "2025.naacl-long.357",
+   "figure": "80%",
+   "reason": "Credited to a different author by name in the same sentence - 'Karr et al. put light edits at 64-80% for Pangram'. The Beemo citation in the row is for the claim beside it, and that claim (33 detector configurations) was read at source and matches."
+  },
+  {
+   "key": "ROADMAP.md|2025.naacl-long.357|38",
+   "document": "ROADMAP.md",
+   "paper": "2025.naacl-long.357",
+   "figure": "38",
+   "reason": "Credited to a different author by name in the same sentence - 'Karr et al. put light edits at 64-80% for Pangram'. The Beemo citation in the row is for the claim beside it, and that claim (33 detector configurations) was read at source and matches."
+  },
+  {
+   "key": "ROADMAP.md|2025.naacl-long.357|49%",
+   "document": "ROADMAP.md",
+   "paper": "2025.naacl-long.357",
+   "figure": "49%",
+   "reason": "Credited to a different author by name in the same sentence - 'Karr et al. put light edits at 64-80% for Pangram'. The Beemo citation in the row is for the claim beside it, and that claim (33 detector configurations) was read at source and matches."
+  },
+  {
+   "key": "ROADMAP.md|2025.naacl-long.357|9",
+   "document": "ROADMAP.md",
+   "paper": "2025.naacl-long.357",
+   "figure": "9",
+   "reason": "Credited to a different author by name in the same sentence - 'Karr et al. put light edits at 64-80% for Pangram'. The Beemo citation in the row is for the claim beside it, and that claim (33 detector configurations) was read at source and matches."
+  },
+  {
+   "key": "ROADMAP.md|2025.naacl-long.357|15%",
+   "document": "ROADMAP.md",
+   "paper": "2025.naacl-long.357",
+   "figure": "15%",
+   "reason": "Credited to a different author by name in the same sentence - 'Karr et al. put light edits at 64-80% for Pangram'. The Beemo citation in the row is for the claim beside it, and that claim (33 detector configurations) was read at source and matches."
+  },
+  {
+   "key": "ROADMAP.md|2024.acl-long.674|5",
+   "document": "ROADMAP.md",
+   "paper": "2024.acl-long.674",
+   "figure": "5",
+   "reason": "Our own README headline figures with their Wilson intervals ('the 17% ensemble figure is 5 of 30'), in a row whose subject is our interval discipline rather than the cited paper."
+  },
+  {
+   "key": "ROADMAP.md|2024.acl-long.674|30",
+   "document": "ROADMAP.md",
+   "paper": "2024.acl-long.674",
+   "figure": "30",
+   "reason": "Our own README headline figures with their Wilson intervals ('the 17% ensemble figure is 5 of 30'), in a row whose subject is our interval discipline rather than the cited paper."
+  },
+  {
+   "key": "ROADMAP.md|2024.acl-long.674|7.3%",
+   "document": "ROADMAP.md",
+   "paper": "2024.acl-long.674",
+   "figure": "7.3%",
+   "reason": "Our own README headline figures with their Wilson intervals ('the 17% ensemble figure is 5 of 30'), in a row whose subject is our interval discipline rather than the cited paper."
+  },
+  {
+   "key": "ROADMAP.md|2024.acl-long.674|33.6%",
+   "document": "ROADMAP.md",
+   "paper": "2024.acl-long.674",
+   "figure": "33.6%",
+   "reason": "Our own README headline figures with their Wilson intervals ('the 17% ensemble figure is 5 of 30'), in a row whose subject is our interval discipline rather than the cited paper."
+  },
+  {
+   "key": "ROADMAP.md|2024.acl-long.674|40.9%",
+   "document": "ROADMAP.md",
+   "paper": "2024.acl-long.674",
+   "figure": "40.9%",
+   "reason": "Our own README headline figures with their Wilson intervals ('the 17% ensemble figure is 5 of 30'), in a row whose subject is our interval discipline rather than the cited paper."
+  },
+  {
+   "key": "ROADMAP.md|2024.acl-long.674|92.9%",
+   "document": "ROADMAP.md",
+   "paper": "2024.acl-long.674",
+   "figure": "92.9%",
+   "reason": "Our own README headline figures with their Wilson intervals ('the 17% ensemble figure is 5 of 30'), in a row whose subject is our interval discipline rather than the cited paper."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|30.0%",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "30.0%",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|50",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "50",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|22.5",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "22.5",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|38.7%",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "38.7%",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|18.5%",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "18.5%",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|100",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "100",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|200",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "200",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|13.3%",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "13.3%",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|15",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "15",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|61.3%",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "61.3%",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-to-build.md|2025.acl-long.1292|11.6%",
+   "document": "research-to-build.md",
+   "paper": "2025.acl-long.1292",
+   "figure": "11.6%",
+   "reason": "Our own measurement, not the paper's. The list item names the command that produced it (`python -m eval.pre_llm_fpr --by-length`) two lines above the figures, and the cited paper supplies the bias study the item goes on to discuss."
+  },
+  {
+   "key": "research-verification.md|2026.findings-acl.1487|87.88%",
+   "document": "research-verification.md",
+   "paper": "2026.findings-acl.1487",
+   "figure": "87.88%",
+   "reason": "Self-referential: this is the ledger entry that DESCRIBES an earlier defect of this very checker, and it quotes the four misattributed figures as its example. Flagging them again is the documented hazard of writing down what a checker warns about."
+  },
+  {
+   "key": "research-verification.md|2026.findings-acl.1487|97.6%",
+   "document": "research-verification.md",
+   "paper": "2026.findings-acl.1487",
+   "figure": "97.6%",
+   "reason": "Self-referential: this is the ledger entry that DESCRIBES an earlier defect of this very checker, and it quotes the four misattributed figures as its example. Flagging them again is the documented hazard of writing down what a checker warns about."
+  },
+  {
+   "key": "research-verification.md|2026.findings-acl.1487|70.3%",
+   "document": "research-verification.md",
+   "paper": "2026.findings-acl.1487",
+   "figure": "70.3%",
+   "reason": "Self-referential: this is the ledger entry that DESCRIBES an earlier defect of this very checker, and it quotes the four misattributed figures as its example. Flagging them again is the documented hazard of writing down what a checker warns about."
+  },
+  {
+   "key": "research-verification.md|2026.findings-acl.1487|4.6%",
+   "document": "research-verification.md",
+   "paper": "2026.findings-acl.1487",
+   "figure": "4.6%",
+   "reason": "Self-referential: this is the ledger entry that DESCRIBES an earlier defect of this very checker, and it quotes the four misattributed figures as its example. Flagging them again is the documented hazard of writing down what a checker warns about."
+  },
+  {
+   "key": "research-verification.md|2026.findings-acl.1487|35",
+   "document": "research-verification.md",
+   "paper": "2026.findings-acl.1487",
+   "figure": "35",
+   "reason": "Self-referential: this is the ledger entry that DESCRIBES an earlier defect of this very checker, and it quotes the four misattributed figures as its example. Flagging them again is the documented hazard of writing down what a checker warns about."
+  },
+  {
+   "key": "research-verification.md|2026.findings-acl.1487|25",
+   "document": "research-verification.md",
+   "paper": "2026.findings-acl.1487",
+   "figure": "25",
+   "reason": "Self-referential: this is the ledger entry that DESCRIBES an earlier defect of this very checker, and it quotes the four misattributed figures as its example. Flagging them again is the documented hazard of writing down what a checker warns about."
+  },
+  {
+   "key": "research-verification.md|2025.emnlp-main.268|30.0%",
+   "document": "research-verification.md",
+   "paper": "2025.emnlp-main.268",
+   "figure": "30.0%",
+   "reason": "Our own figures, in a parenthetical that says so - 'Round thirty-one re-measured them on the restored corpus as 30.0% and 21.7%'. The cited paper supplies the qualitative finding, which is quoted from its abstract verbatim."
+  },
+  {
+   "key": "research-verification.md|2025.emnlp-main.268|21.7%",
+   "document": "research-verification.md",
+   "paper": "2025.emnlp-main.268",
+   "figure": "21.7%",
+   "reason": "Our own figures, in a parenthetical that says so - 'Round thirty-one re-measured them on the restored corpus as 30.0% and 21.7%'. The cited paper supplies the qualitative finding, which is quoted from its abstract verbatim."
+  }
+ ]
+}
