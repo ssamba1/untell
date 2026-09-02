@@ -5689,6 +5689,73 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and three — how far to trust each checker, written down
+
+Round one hundred and two closed on a pattern with four instances and no owner: **the first version
+of a static rule here is always too loose.** Each instance was found by reading every finding while
+the list was short enough to read, and each was recorded in the round that made it — and nowhere
+afterwards. A reader looking at `eval/` sees eight checkers and no way to tell which gate a commit,
+which have had their findings verified, and which report a number nobody has ever read.
+
+`eval/checkers.py` is the register. Per checker: what it checks, whether it can fail a commit, and
+its **measured precision** — the share of its findings that were real when somebody last read them
+all.
+
+MEASURED across the eight:
+
+| checker | gates | precision | findings now |
+|---|---|---|---|
+| `claim_verification` | yes | 100% | 0 drifted of 19 |
+| `litreview --untriaged` | yes | 0% real | 0 untriaged of 33 |
+| `cache_keys` | yes | 1 of 6 | 0 unaccepted |
+| `result_keys` | yes | 89% | 0 |
+| `boundaries` | no | 90% | 30 unprotected of 48 |
+| `constant_census` | no | 11 of 12 | 41 undefended of 111 |
+| `constant_influence` | no | n/a — reports an absence | 0 live of 35 |
+| `mutation --all` | no | **UNMEASURED** | survivor lists |
+
+**Seven of eight shipped a first version that was too loose.** That is the finding the register
+exists to keep visible: not that any one checker was wrong, but that being wrong first is the normal
+case here, and the only thing that has ever caught it is reading every finding.
+
+## Measuring one of the two unmeasured checkers
+
+`constant_census` had no precision figure, so a seeded sample of 12 of its 41 findings was read
+against the source. **11 genuinely have no stated reason for their value**, including
+`DEFAULT_THRESHOLD`, `DEFAULT_BAR = 0.76`, `BERTSCORE_BAR = 0.88` and
+`_HUMAN_PARENTHESES_PER_100W = 0.80` — the last of which reads like a measured human rate and has
+nothing saying so. One, `_MANIFEST_VERSION`, is a schema version rather than a threshold and was
+never in scope.
+
+⚠️ **The sample also exposed an ambiguity in the check's own definition.** For 5 of the 11, a comment
+explains why the MECHANISM exists without saying why the number is that number:
+`_MAX_NAMED_SIGNALS = 5` is capped so "the prompt stays proportionate to the actual worst
+offenders", which is a reason for capping and not for five. Reading those as justified gives **6 of
+12** instead of 11. Both are recorded, because the check cannot tell them apart and neither can a
+single number.
+
+## ✗ And the register made a false claim on its first run
+
+It listed `constant_influence` as gating. That command always exits 0.
+
+Its own test caught it — `test_the_gating_flag_matches_what_the_command_does` reads each registered
+command's source for a non-zero return. **A false assurance is worse than an absent one**, because
+somebody relies on it: a register saying a checker gates is a reason not to check by hand.
+
+A second self-check earned itself immediately too. The render's closing line said the first version
+had been too loose "five times out of eight" while the computed value was **seven** — a hardcoded
+figure beside a computed one, in the round about checker reliability. It reads the computed value
+now, and a test asserts it.
+
+## What this is worth
+
+The register does not make any checker better. What it does is make the honest state readable in one
+place: four checkers can fail a commit, four cannot, one has never had its findings counted, and
+seven of eight were wrong the first time. **A checker with no precision figure is not a precise one,
+it is an unmeasured one** — round ninety's rule, turned on the instruments rather than the code.
+
+---
+
 # Round one hundred and two — six wrong keys is a defect class, not six mistakes
 
 This session guessed a return shape wrong **six times**, in code written by someone who had read the
