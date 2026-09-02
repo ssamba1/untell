@@ -5689,6 +5689,59 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and four — the harness measures itself, and it is the one with most to answer for
+
+Round one hundred and three's register left exactly one checker **UNMEASURED**: the mutation
+harness. That is also the checker with the most reason to be wrong, because **both of its known
+defects produced false survivors** — stale bytecode meant a mutation never loaded (round
+ninety-five), and a breadth-ranked test selection dropped the tests most likely to catch a boundary
+(round one hundred). Neither could ever have produced a false *kill*.
+
+A survivor is the harness's finding, so its precision is the share of reported survivors genuinely
+uncaught by any test. Round one hundred and one measured the boundary register this way; the method
+generalises to every operator.
+
+MEASURED: **24 survivors, stratified 3 per operator kind, each re-run against every test importing
+its module** rather than the capped selection the sweep uses.
+
+| | |
+|---|---|
+| genuinely uncaught | 21 |
+| killed by a test the sweep never ran | 3 |
+| **precision** | **87.5%**, Wilson 95% [69.0%, 95.7%] |
+
+That is consistent with the boundary register's **90%** (27 of 30) measured the same way — two
+independent samples of the same harness landing within each other's intervals, which is more
+reassuring than either figure alone.
+
+**The register is now complete: 8 of 8 checkers carry a precision figure and the method behind it.**
+
+## ⚠️ The per-kind cells are not a ranking, and saying so is the point
+
+The sample is 3 per kind. Boundary, extremum and identity each came out 2 of 3 and the rest 3 of 3,
+which looks like a finding and is not: **a 2-of-3 cell has a Wilson interval of [20.8%, 93.9%]** —
+the entire plausible range. Publishing that table without the caveat would invite exactly the
+operator-ranking claim round ninety-seven earned honestly with 355 mutants, on evidence that cannot
+support it.
+
+A test asserts the caveat is recorded, and says explicitly when it may be dropped: if the per-kind
+samples ever grow past about five, the cells can be compared.
+
+## What 87.5% licenses and what it does not
+
+It licenses acting on a survivor list without re-checking each entry: roughly one in eight is
+already covered, which is a tolerable rate for a backlog and an intolerable one for a gate — and the
+harness does not gate. It does **not** license quoting a mutation score as the suite's coverage. The
+two errors compound in the same direction: a false survivor understates the suite, and rounds
+ninety-five and one hundred each found a systematic source of them.
+
+The honest summary of every mutation figure in this repository is therefore: **a lower bound, on the
+operators implemented, against the test selection used, with about one in eight survivors already
+covered by a test the sweep did not run.** Every clause in that sentence was measured, and each one
+took a round.
+
+---
+
 # Round one hundred and three — how far to trust each checker, written down
 
 Round one hundred and two closed on a pattern with four instances and no owner: **the first version

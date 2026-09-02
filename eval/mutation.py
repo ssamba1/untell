@@ -554,6 +554,131 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
     }
 
 
+def _all_importers(root: Path) -> dict[str, list[str]]:
+    """Every test importing each module, uncapped — the opposite of `test_index`."""
+    found: dict[str, set[str]] = {}
+    for path in sorted((root / "tests").glob("test_*.py")):
+        relative = f"tests/{path.name}"
+        if relative in UNCOLLECTABLE:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module]
+            else:
+                continue
+            for name in names:
+                if name.startswith("untell"):
+                    found.setdefault(name, set()).add(relative)
+    return {module: sorted(files) for module, files in found.items()}
+
+
+def verify_survivors(survivors: list[dict], root: Path = REPO, sample: int = 24,
+                     seed: int = 0, timeout: int = 600) -> dict:
+    """How many reported survivors are genuinely uncaught by ANY test?
+
+    A survivor is this harness's finding, and `eval/checkers.py` records every other checker's
+    precision — the share of its findings that were real when somebody read them all. This one was
+    the last left UNMEASURED, and it is the checker with the most reason to be wrong: **both of its
+    known defects produced false survivors.** Stale bytecode meant a mutation never loaded (round
+    ninety-five); a breadth-ranked test selection dropped the tests most likely to catch a boundary
+    (round one hundred).
+
+    The method is round one hundred and one's, generalised from boundary mutants to every operator:
+    re-run each sampled survivor against **every test importing its module**, uncapped. Unaffordable
+    across thousands of mutants; affordable once, on a sample, to put a number on the harness.
+
+    Stratified by operator kind, because precision is not expected to be uniform — a boundary mutant
+    that survives a capped selection is a different proposition from a constant flip that survives.
+    """
+    import collections
+    import random
+    import shutil
+    import subprocess
+
+    by_kind: dict[str, list[dict]] = collections.defaultdict(list)
+    for entry in survivors:
+        by_kind[entry["kind"]].append(entry)
+
+    rng = random.Random(seed)
+    chosen: list[dict] = []
+    kinds = sorted(by_kind)
+    per_kind = max(1, sample // len(kinds)) if kinds else 0
+    for kind in kinds:
+        pool = sorted(by_kind[kind], key=lambda e: (e["file"], e["line"]))
+        chosen.extend(rng.sample(pool, min(per_kind, len(pool))))
+
+    importers = _all_importers(root)
+    results: list[dict] = []
+    scratch, tree = _worktree(root)
+    try:
+        baselines: dict[str, int] = {}
+        for entry in chosen:
+            module = entry["file"][:-3].replace("/", ".")
+            tests = tuple(importers.get(module, ()))
+            if not tests:
+                results.append({**entry, "verdict": "no test imports this module"})
+                continue
+            path = tree / entry["file"]
+            original = path.read_text()
+            before, after_token = entry["mutation"].split(" -> ")
+            mutated = apply_mutant(
+                original, Mutant(entry["file"], entry["line"], entry["kind"],
+                                 before, after_token))
+            if mutated is None:
+                results.append({**entry, "verdict": "token ambiguous on the line"})
+                continue
+            if module not in baselines:
+                baselines[module] = _failures(tree, tests, timeout)
+            baseline = baselines[module]
+            if baseline == UNUSABLE:
+                results.append({**entry, "verdict": "its module's tests cannot run here"})
+                continue
+            try:
+                path.write_text(mutated)
+                observed = _failures(tree, tests, timeout)
+            finally:
+                path.write_text(original)
+            killed = observed == UNUSABLE or observed > baseline
+            results.append({
+                **entry, "tests_run": len(tests),
+                "verdict": "killed by the wider suite" if killed else "genuinely uncaught",
+            })
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(tree)],
+                       cwd=root, capture_output=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+
+    scored = [r for r in results if r["verdict"] in
+              {"genuinely uncaught", "killed by the wider suite"}]
+    genuine = [r for r in scored if r["verdict"] == "genuinely uncaught"]
+    per_kind_precision: dict[str, dict] = {}
+    for kind in kinds:
+        rows = [r for r in scored if r["kind"] == kind]
+        if not rows:
+            continue
+        real = sum(1 for r in rows if r["verdict"] == "genuinely uncaught")
+        per_kind_precision[kind] = {
+            "sampled": len(rows), "genuine": real,
+            "precision": round(100.0 * real / len(rows), 1),
+        }
+    return {
+        "survivors_available": len(survivors),
+        "sampled": len(results),
+        "scored": len(scored),
+        "genuinely_uncaught": len(genuine),
+        "false_survivors": len(scored) - len(genuine),
+        "precision": round(100.0 * len(genuine) / len(scored), 1) if scored else 0.0,
+        "by_kind": per_kind_precision,
+        "results": results,
+    }
+
+
 def render(report: dict) -> str:
     lines = []
     for entry in report.get("unmeasurable", []):
@@ -588,6 +713,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--all", action="store_true",
                         help="mutate every module in untell/, pairing each with the tests most "
                              "about it, instead of the two hand-written targets")
+    parser.add_argument("--verify-survivors", type=Path, default=None, dest="verify",
+                        help="measure this harness's own precision: re-run a stratified sample of "
+                             "the survivors in this report against EVERY test importing their "
+                             "module, uncapped")
+    parser.add_argument("--sample", type=int, default=24)
     parser.add_argument("--kinds", type=str, default=None,
                         help="comma-separated operator kinds to run, e.g. comparison,boundary — "
                              "with no --limit this gives every site both of a pair, which is what "
@@ -599,6 +729,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
+    if args.verify:
+        prior = json.loads(args.verify.read_text())
+        checked = verify_survivors(prior["survivors"], sample=args.sample,
+                                   timeout=args.timeout)
+        print(json.dumps(checked, indent=2) if args.as_json else "\n".join(
+            [f"{checked['scored']} survivors re-checked against every importing test "
+             f"(of {checked['survivors_available']} available).",
+             f"  genuinely uncaught  {checked['genuinely_uncaught']}",
+             f"  false survivors     {checked['false_survivors']}",
+             f"  PRECISION           {checked['precision']}%", ""]
+            + [f"  {k:<12} {v['genuine']}/{v['sampled']} genuine ({v['precision']}%)"
+               for k, v in sorted(checked["by_kind"].items())]))
+        return 0
+
     targets = discovered_targets() if args.all else None
     runner = run_parallel if args.workers > 1 else run
     kinds = frozenset(args.kinds.split(",")) if args.kinds else None

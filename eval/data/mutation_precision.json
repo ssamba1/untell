@@ -1,0 +1,268 @@
+{
+  "survivors_available": 191,
+  "sampled": 24,
+  "scored": 24,
+  "genuinely_uncaught": 21,
+  "false_survivors": 3,
+  "precision": 87.5,
+  "by_kind": {
+    "arithmetic": {
+      "sampled": 3,
+      "genuine": 3,
+      "precision": 100.0
+    },
+    "boolean": {
+      "sampled": 3,
+      "genuine": 3,
+      "precision": 100.0
+    },
+    "boundary": {
+      "sampled": 3,
+      "genuine": 2,
+      "precision": 66.7
+    },
+    "comparison": {
+      "sampled": 3,
+      "genuine": 3,
+      "precision": 100.0
+    },
+    "constant": {
+      "sampled": 3,
+      "genuine": 3,
+      "precision": 100.0
+    },
+    "extremum": {
+      "sampled": 3,
+      "genuine": 2,
+      "precision": 66.7
+    },
+    "identity": {
+      "sampled": 3,
+      "genuine": 2,
+      "precision": 66.7
+    },
+    "membership": {
+      "sampled": 3,
+      "genuine": 3,
+      "precision": 100.0
+    }
+  },
+  "results": [
+    {
+      "file": "untell/rich_output.py",
+      "line": 527,
+      "kind": "arithmetic",
+      "mutation": "- -> +",
+      "killed": false,
+      "tests_run": 12,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 1063,
+      "kind": "arithmetic",
+      "mutation": "* -> /",
+      "killed": false,
+      "tests_run": 8,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/calibrate.py",
+      "line": 183,
+      "kind": "arithmetic",
+      "mutation": "/ -> *",
+      "killed": false,
+      "tests_run": 3,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/detectors/mage.py",
+      "line": 157,
+      "kind": "boolean",
+      "mutation": "or -> and",
+      "killed": false,
+      "tests_run": 6,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/base.py",
+      "line": 236,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false,
+      "tests_run": 4,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/base.py",
+      "line": 199,
+      "kind": "boolean",
+      "mutation": "and -> or",
+      "killed": false,
+      "tests_run": 4,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 567,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false,
+      "tests_run": 24,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 185,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false,
+      "tests_run": 13,
+      "verdict": "killed by the wider suite"
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 424,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false,
+      "tests_run": 37,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 104,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false,
+      "tests_run": 1,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 422,
+      "kind": "comparison",
+      "mutation": "< -> >=",
+      "killed": false,
+      "tests_run": 6,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/detectors/local_judge.py",
+      "line": 195,
+      "kind": "comparison",
+      "mutation": ">= -> <",
+      "killed": false,
+      "tests_run": 2,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/surgical.py",
+      "line": 96,
+      "kind": "constant",
+      "mutation": "True -> False",
+      "killed": false,
+      "tests_run": 2,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/detectors/mage.py",
+      "line": 102,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false,
+      "tests_run": 6,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 214,
+      "kind": "constant",
+      "mutation": "False -> True",
+      "killed": false,
+      "tests_run": 51,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/ensemble.py",
+      "line": 177,
+      "kind": "extremum",
+      "mutation": "min -> max",
+      "killed": false,
+      "tests_run": 3,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 243,
+      "kind": "extremum",
+      "mutation": "max -> min",
+      "killed": false,
+      "tests_run": 6,
+      "verdict": "killed by the wider suite"
+    },
+    {
+      "file": "untell/inspect_report.py",
+      "line": 95,
+      "kind": "extremum",
+      "mutation": "min -> max",
+      "killed": false,
+      "tests_run": 1,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 54,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false,
+      "tests_run": 1,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 256,
+      "kind": "identity",
+      "mutation": "is not -> is",
+      "killed": false,
+      "tests_run": 13,
+      "verdict": "killed by the wider suite"
+    },
+    {
+      "file": "untell/detectors/roberta_openai.py",
+      "line": 36,
+      "kind": "identity",
+      "mutation": "is -> is not",
+      "killed": false,
+      "tests_run": 2,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 20,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false,
+      "tests_run": 26,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 26,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false,
+      "tests_run": 22,
+      "verdict": "genuinely uncaught"
+    },
+    {
+      "file": "untell/rewriter/surgical.py",
+      "line": 64,
+      "kind": "membership",
+      "mutation": "in -> not in",
+      "killed": false,
+      "tests_run": 2,
+      "verdict": "genuinely uncaught"
+    }
+  ]
+}

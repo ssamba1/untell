@@ -169,8 +169,14 @@ REGISTER: tuple[Checker, ...] = (
         checks="single-token edits to shipped code that no test notices",
         gates=False,
         findings_now="survivor lists per operator; 25.4% of boundary mutants killed",
-        precision=None,
-        how_precision_was_measured=None,
+        precision="87.5%",
+        how_precision_was_measured=(
+            "a stratified sample of 24 survivors, 3 per operator kind, each re-run against EVERY "
+            "test importing its module rather than the capped selection the sweep uses: 21 "
+            "genuinely uncaught, 3 killed by a test the sweep never ran. Wilson 95% interval "
+            "[69.0%, 95.7%]. ⚠️ The per-kind cells are 3 samples each and are NOT a ranking — a "
+            "2-of-3 cell has an interval of [20.8%, 93.9%], which is the whole plausible range."
+        ),
         first_version_defect=(
             "two harness defects, both producing FALSE SURVIVORS: stale bytecode masking same-size "
             "mutations, and a test selection that ranked boundary tests last and dropped them"

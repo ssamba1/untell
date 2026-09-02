@@ -387,3 +387,69 @@ def test_the_unsampled_scores_are_the_ones_the_documents_quote():
         "the unsampled figures are the answer to 'how many comparison sites are protected'; the "
         "sampled ones weight every module equally regardless of size"
     )
+
+
+# ---------------------------------------------------------------------------
+# Round 104: the harness's own precision, which was the register's last gap.
+#
+# A survivor is this harness's finding. `eval/checkers.py` records every other checker's precision —
+# the share of its findings real when somebody read them all — and this was the one left UNMEASURED,
+# despite being the checker with the most reason to be wrong: BOTH its known defects produced false
+# survivors (stale bytecode in round 95, a test selection dropping boundary tests in round 100).
+#
+# MEASURED, 24 survivors stratified 3 per operator kind, each re-run against EVERY test importing
+# its module: 21 genuinely uncaught, 3 killed by a test the sweep never ran. 87.5%, Wilson 95%
+# [69.0%, 95.7%] — consistent with the boundary register's 90% (27/30) measured the same way.
+# ---------------------------------------------------------------------------
+
+PRECISION = json.loads((REPO / "eval" / "data" / "mutation_precision.json").read_text())
+
+
+def test_the_harness_precision_was_measured_on_a_real_sample():
+    assert PRECISION["scored"] >= 20, "too few re-checked for the figure to mean anything"
+    assert PRECISION["genuinely_uncaught"] + PRECISION["false_survivors"] == PRECISION["scored"]
+    assert 0 < PRECISION["precision"] <= 100
+
+
+def test_the_sample_is_stratified_across_operator_kinds():
+    """A sample drawn only from the easy operators would flatter the harness."""
+    assert len(PRECISION["by_kind"]) >= 6, (
+        "precision measured on one or two kinds is a statement about those kinds"
+    )
+    for kind, cell in PRECISION["by_kind"].items():
+        assert cell["sampled"] >= 2, kind
+
+
+def test_the_harness_reports_more_true_survivors_than_false_ones():
+    """The floor that makes the survivor lists worth acting on at all."""
+    assert PRECISION["precision"] >= 60.0, (
+        "if most reported survivors are already covered, the lists are noise and the mutation "
+        "scores understate the suite by more than they measure"
+    )
+
+
+def test_a_false_survivor_is_one_the_wider_suite_kills():
+    """The definition, pinned: false means covered elsewhere, not 'the harness crashed'."""
+    verdicts = {r["verdict"] for r in PRECISION["results"]}
+    assert verdicts <= {
+        "genuinely uncaught", "killed by the wider suite", "no test imports this module",
+        "token ambiguous on the line", "its module's tests cannot run here",
+    }, verdicts
+    assert "killed by the wider suite" in verdicts, (
+        "no false survivors at all would mean the capped selection loses nothing, which round 100 "
+        "measured as false: 22 kills were recovered by fixing the selection alone"
+    )
+
+
+def test_the_per_kind_cells_are_too_small_to_rank():
+    """Recorded so nobody quotes a 2-of-3 cell as an operator ranking.
+
+    A 2-of-3 cell has a Wilson interval of [20.8%, 93.9%] — the whole plausible range.
+    """
+    smallest = min(cell["sampled"] for cell in PRECISION["by_kind"].values())
+    assert smallest <= 5, (
+        "if the per-kind samples grow past ~5 this caveat can be dropped and the cells compared"
+    )
+    entry = next(c for c in __import__("eval.checkers", fromlist=["x"]).REGISTER
+                 if "mutation" in c.command)
+    assert "NOT a ranking" in (entry.how_precision_was_measured or "")
