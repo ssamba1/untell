@@ -5689,6 +5689,111 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round eighty-nine — how many numbers here did anybody actually choose?
+
+Rounds eighty-six and eighty-seven each found one unchosen parameter under a published claim, swept
+it, and reported what moved. Two instances is an anecdote. This round counts them, and then sweeps
+the ones that carry the most weight.
+
+## The census
+
+`eval/constant_census.py`, MEASURED across `untell/` and `eval/`: **111 module-level numeric
+constants, 49 of them — 44% — with nothing anywhere saying why they hold that value.** The bar is
+deliberately low: a comment near the number naming a measurement, a round, a paper, a standard, or a
+reason. Not that the reason is good — that somebody wrote one down.
+
+Among the undefended are `_NLL_MID`, `_NLL_SCALE`, `_SPREAD_MID`, `_SPREAD_SCALE`, `WINDOW_WORDS`
+and `DEFAULT_THRESHOLD`: the calibration of the detector every headline figure here comes from.
+
+## ✗ And the census's own blind spot was the sharpest thing it produced
+
+The five numbers that actually decide the stdlib score were **not constants at all.** They were
+literals written into an expression, where a scan of assignments cannot see them:
+
+    common_signal = clamp01((common - 0.30) / 0.30)
+    burst_signal  = clamp01((0.55 - burst) / 0.55)
+    return clamp01(max(rep, 0.6 * burst_signal + 0.4 * common_signal))
+
+The 30.4% false-positive rate, the AUROC inversion, round eighty-eight's register finding — all of
+them are that expression evaluated on a corpus. **The most load-bearing numbers in this repository
+were also the least examinable, and for the same reason: nothing could name them.** They are named
+constants now, and MEASURED, naming them changed nothing: 6,912 documents scored under both trees,
+**0 differ**. `humanness()`'s two burstiness cut-offs got the same treatment.
+
+## ✅ Then the sweep: is the inversion a calibration artefact?
+
+`eval/constant_sensitivity.py` varies each of the five over the same two arms that produced the
+published figure. It refuses to run unless `score_from(features(t), DEFAULTS)` equals `lite_score(t)`
+exactly — sweeping a reimplementation is the defect round eighty-four found and round eighty-eight
+repeated, and this one checks rather than promises.
+
+MEASURED over 30 settings of five parameters (n = 56 machine, 634 human):
+
+| parameter | AUROC range across its sweep | shipped |
+|---|---|---|
+| common_mid | 0.3522 – 0.4131 | 0.3538 |
+| common_scale | 0.3229 – 0.3854 | 0.3538 |
+| burst_mid | 0.3103 – 0.3593 | 0.3538 |
+| burst_scale | 0.3281 – 0.3633 | 0.3538 |
+| burst_weight | 0.3216 – 0.4127 | 0.3538 |
+
+**Not one setting of any of them brings the AUROC above 0.5.** The full range is 0.3103 to 0.4131,
+entirely below a coin flip. **The inversion on academic abstracts is not reachable from the
+detector's calibration** — it is not something a different choice of these numbers could have
+avoided, which is a considerably stronger statement than the inversion on its own.
+
+⚠️ **Which figure this is.** The sweep reports **0.3538** at the shipped values and the repository
+publishes **0.3529**. Both are right, and round eighty-four already established why: 0.3529 is
+`score_text`, the shipped detector; 0.3538 is `lite_score`, the function underneath whose constants
+are being swept. MEASURED on these same arms, the two differ by 9 parts in 10,000. Quote 0.3529 for
+the detector and 0.3538 only for this sweep.
+
+## ⚠️ And one result that is awkward for the shipped weights
+
+`_BURST_WEIGHT` at 1.0 — burstiness alone — gives AUROC 0.4127. At 0.0 — common-word signal alone —
+it gives 0.3457. **Further from 0.5 means better discrimination, so on this register the common-word
+signal is the stronger of the two and it carries the smaller weight.** That independently reproduces
+round seventy-nine's component AUROCs (burst 0.4122, common 0.3459), measured a different way.
+
+The source comment beside the weights says "burstiness weighted higher — it's the stronger of the
+two weak signals." On HC3, where it was fitted, that is presumably true. On academic abstracts it is
+backwards. The weights are **not** being changed: they were fitted on a corpus where the ordering is
+correct, and refitting them to the corpus that exposed the inversion would be fitting to the
+evidence. The comment now says both things.
+
+**A related inconsistency this surfaced.** The torch path sets `_PPL_WEIGHT = 0.55` and comments
+"perplexity carries most of the signal". The stdlib path weights *its* perplexity proxy — the
+common-word ratio, described in the source as "a heuristic stand-in for a real LM" — at 0.40. **The
+two scoring paths weight the same conceptual axis in opposite directions, and each asserts its own
+direction in a comment as though it were a fact about the world.**
+
+## ✗ Two defects in the census itself
+
+**A dead exemption with a comment that described it.** `inline_literals` skipped `ast.Compare` nodes
+"to exclude length guards". It excluded nothing: `ast.walk` yields the `Constant` inside a
+comparison as its own node, so the branch never fired. A dead branch is ordinary; a dead branch with
+a comment explaining its behaviour is worse than either, because it answers the question a reader
+would otherwise ask.
+
+**The two halves applied different bars.** Named constants were tested for a nearby justification and
+inline literals were not, so `humanness`'s neutral `50.0` — which has a reason written beside it —
+was reported alongside genuinely unexamined calibration. Where a number is written should not change
+what is asked of it.
+
+## What the count does when you are honest
+
+Surfacing `humanness`'s two burstiness cut-offs from inline literals into named constants took this
+repository's undefended count **from 47 to 49**. It got worse by its own metric, and that is the
+correct direction: a hidden number is worse than a visible one that admits it has no evidence behind
+it. A census that could only ever improve would be measuring effort rather than state.
+
+The transferable claim is narrow. Rounds eighty-six and eighty-seven showed two parameters were
+unchosen; this one shows that is the normal condition here — **44% of the constants, and until now
+100% of the ones that decide the published score.** The instrument that finds them is committed, so
+the number is checkable rather than a confession.
+
+---
+
 # Round eighty-eight — testing the explanation, on 6,841 documents and no machine text
 
 Rounds seventy-six to eighty-three are this repository's most consequential measurements, and they

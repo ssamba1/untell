@@ -58,7 +58,10 @@ _BURSTY_IDEAL = 0.70
 # vary their sentence length far more than paper abstracts — so a single replacement figure would
 # repeat the same error in a new place. The advice names the range and the register instead.
 _BURSTY_HUMAN_MEDIAN = {"forum prose": 0.49, "academic abstracts": 0.33}
-_MAX_BURSTY_PENALTY = 0.30  # Max penalty from low burstiness
+_MAX_BURSTY_PENALTY = 0.3
+# See the ⚠️ beside their use in `humanness`: undefended, and named so that they can be seen.
+_BURSTY_FLOOR = 0.35
+_BURSTY_RAMP = 0.150  # Max penalty from low burstiness
 
 # Below this word count none of the three signals carries information. Matches the detector's own
 # `_MIN_WORDS_FOR_SIGNAL` in detectors/perplexity_burstiness.py, which abstains on the same grounds.
@@ -412,6 +415,9 @@ def humanness(text: str, tier: str = "full", _caveats: list[str] | None = None) 
             _collect(_caveats, _warn_empty())
         else:
             _collect(_caveats, _warn_unsupported_language())
+        # 50.0 is the midpoint of the 0-100 band, i.e. "no evidence either way" — a sentinel rather
+        # than a calibrated value, which is why nothing sweeps it. The caveat above is what carries
+        # the information; the number exists so callers expecting a float get one.
         return 50.0
 
     # Long enough for the three signals to exist, short enough that they do not separate the
@@ -459,10 +465,16 @@ def humanness(text: str, tier: str = "full", _caveats: list[str] | None = None) 
     if cv is not None:
         # CV near 0.7 is ideal human prose; penalize both low (uniform) and
         # extremely high (erratic) burstiness, but low is the real tell.
-        if cv < 0.35:
+        #
+        # ⚠️ These two cut-offs are NOT defended by a measurement, and saying so is the point.
+        # Round eighty-nine surfaced them from inline literals into named constants; naming them
+        # RAISED this repository's own count of undefended constants, which is the correct
+        # direction — a hidden number is worse than a visible one that admits it has no evidence.
+        # `eval/constant_sensitivity.py` sweeps `lite_score`'s five; these have had no equivalent.
+        if cv < _BURSTY_FLOOR:
             bursty_penalty = _MAX_BURSTY_PENALTY  # uniform=AI tell
         elif cv < 0.50:
-            bursty_penalty = _MAX_BURSTY_PENALTY * (0.50 - cv) / 0.15
+            bursty_penalty = _MAX_BURSTY_PENALTY * (0.50 - cv) / _BURSTY_RAMP
         elif cv > 1.0:
             bursty_penalty = _MAX_BURSTY_PENALTY * 0.5  # erratic, but less penalized
 

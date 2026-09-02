@@ -1,0 +1,352 @@
+{
+  "named_constants": 111,
+  "named_undefended": 49,
+  "undefended_share": 44.1,
+  "inline_literals_in_scoring_functions": 0,
+  "undefended": [
+    {
+      "file": "untell/api_server.py",
+      "line": 530,
+      "name": "_RATE_WINDOW_SECONDS",
+      "value": 60,
+      "justified": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 531,
+      "name": "_DEFAULT_RATE_LIMIT",
+      "value": 60,
+      "justified": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 1044,
+      "name": "_HEALTH_TTL_S",
+      "value": 2.0,
+      "justified": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 1282,
+      "name": "_DEFAULT_PORT",
+      "value": 8000,
+      "justified": false
+    },
+    {
+      "file": "untell/attacks/unicode_tricks.py",
+      "line": 588,
+      "name": "_RESYNC_WINDOW",
+      "value": 64,
+      "justified": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 705,
+      "name": "_TELLS_EPS",
+      "value": 0.02,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/base.py",
+      "line": 169,
+      "name": "WINDOW_WORDS",
+      "value": 320,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 25,
+      "name": "_CAL_SCALE",
+      "value": 0.08,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/fast_detectgpt.py",
+      "line": 54,
+      "name": "_CAL_SCALE",
+      "value": 0.08,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 81,
+      "name": "_NLL_MID",
+      "value": 2.68,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 109,
+      "name": "_COMMON_SCALE",
+      "value": 0.3,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 287,
+      "name": "_TTR_WINDOW",
+      "value": 100,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 288,
+      "name": "_TTR_FLOOR",
+      "value": 0.25,
+      "justified": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 289,
+      "name": "_TTR_SATURATION",
+      "value": 0.1,
+      "justified": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 36,
+      "name": "_W_TELLS",
+      "value": 0.3,
+      "justified": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 61,
+      "name": "_MAX_BURSTY_PENALTY",
+      "value": 0.3,
+      "justified": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 63,
+      "name": "_BURSTY_FLOOR",
+      "value": 0.35,
+      "justified": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 64,
+      "name": "_BURSTY_RAMP",
+      "value": 0.15,
+      "justified": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 68,
+      "name": "_MIN_WORDS_FOR_SIGNAL",
+      "value": 5,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 20,
+      "name": "_INTENSITY_SPAN",
+      "value": 0.3,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/ensemble.py",
+      "line": 84,
+      "name": "_RANK_EPS",
+      "value": 0.02,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 88,
+      "name": "_SENTENCE_ENTAILMENT_FLOOR",
+      "value": 0.6,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/prompts.py",
+      "line": 199,
+      "name": "_MAX_NAMED_SIGNALS",
+      "value": 5,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 610,
+      "name": "_RESTATEMENT_COVERAGE",
+      "value": 0.7,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 699,
+      "name": "_OPENING_WORDS",
+      "value": 3,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 952,
+      "name": "_MIN_SPLIT_SIDE",
+      "value": 4,
+      "justified": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2174,
+      "name": "_HUMAN_PARENTHESES_PER_100W",
+      "value": 0.8,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 864,
+      "name": "_MODULE_DRIFT",
+      "value": 5,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 349,
+      "name": "RELAXED_SIM_BAR",
+      "value": 0.3,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 380,
+      "name": "_LENGTH_SLACK_SHARE",
+      "value": 0.1,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 888,
+      "name": "_MIN_WORD_CHAR_SHARE",
+      "value": 0.1,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 38,
+      "name": "DEFAULT_BAR",
+      "value": 0.76,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 39,
+      "name": "TOKEN_BAR",
+      "value": 0.5,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 40,
+      "name": "BERTSCORE_BAR",
+      "value": 0.88,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 199,
+      "name": "_SATURATED_MAX",
+      "value": 0.99,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 2346,
+      "name": "_MANIFEST_VERSION",
+      "value": 1,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 67,
+      "name": "DEFAULT_THRESHOLD",
+      "value": 0.3,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 74,
+      "name": "_MAX_INPUT_CHARS",
+      "value": 50000,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 586,
+      "name": "_MIN_WORDS_FOR_A_VERDICT",
+      "value": 40,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 883,
+      "name": "_SCORE_CACHE_MAX_CHARS",
+      "value": 10000,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 884,
+      "name": "_SCORE_CACHE_SIZE",
+      "value": 1024,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1310,
+      "name": "_LOCK_NOTE_MARGIN",
+      "value": 0.15,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1376,
+      "name": "_MIN_BLOCKS_FOR_LONE_NOTE",
+      "value": 3,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 148,
+      "name": "_MIN_SENTENCES_FOR_SPREAD",
+      "value": 3,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 665,
+      "name": "_MIN_WORDS_FOR_REPETITION",
+      "value": 60,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 986,
+      "name": "_MIN_WORDS_FOR_A_RATE",
+      "value": 14,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1030,
+      "name": "_OTHER_FUNCTION_WORD_FLOOR",
+      "value": 0.12,
+      "justified": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1216,
+      "name": "_COMMON_IN_HUMAN_WRITING",
+      "value": 0.05,
+      "justified": false
+    },
+    {
+      "file": "eval/detection_power.py",
+      "line": 45,
+      "name": "DEFAULT_THRESHOLD",
+      "value": 0.45,
+      "justified": false
+    }
+  ],
+  "inline": []
+}

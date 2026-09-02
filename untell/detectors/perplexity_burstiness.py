@@ -86,6 +86,30 @@ _SPREAD_SCALE = 0.250
 # blend keeps burstiness contributing: it is an independent axis, so a rewriter that lowers only
 # perplexity cannot walk the whole score down on its own.
 _PPL_WEIGHT = 0.55
+
+# The stdlib path's own five numbers. They were inline literals in `lite_score` until round
+# eighty-nine, which is why nothing had ever varied them: `eval/constant_census.py` scans
+# assignments, and a literal inside an expression is invisible to it. Every published figure in this
+# repository is this expression evaluated on a corpus, so they are the most load-bearing numbers
+# here and they were the least examined.
+#
+# MEASURED, `python -m eval.constant_sensitivity` — each swept one at a time over the machine and
+# human arms (n = 56 and 634), 30 settings in all: **no setting of any of them brings the AUROC
+# above 0.5.** Range 0.3103 to 0.4131 against 0.3538 shipped. The inversion on academic abstracts is
+# therefore not a calibration artefact; it is not reachable from these constants at all.
+#
+# ⚠️ Two of them are not defended by that, only bounded by it. `_BURST_WEIGHT` at 1.0 (burstiness
+# alone) scores 0.4127 and at 0.0 (common-word alone) 0.3457 — so on THIS register the common-word
+# signal discriminates better, backwards, than the burstiness signal the comment below prefers, and
+# the shipped 0.6 is neither end. That matches round seventy-nine's component AUROCs measured
+# independently (burst 0.4122, common 0.3459). The weights are kept because they were fitted on HC3
+# where the ordering is correct, and changing them to suit one register would be fitting to the
+# corpus that exposed the problem.
+_COMMON_MID = 0.30
+_COMMON_SCALE = 0.30
+_BURST_MID = 0.55
+_BURST_SCALE = 0.55
+_BURST_WEIGHT = 0.60
 # Held out from the fit: AUROC 0.999 over 200 unseen HC3 pairs, nothing saturated at 0.0 or 1.0.
 #
 # CAVEAT, and it is a real one: HC3's machine side is 2022-era ChatGPT, whose register is far more
@@ -310,7 +334,7 @@ def lite_score(text: str) -> float | None:
     nonempty = [s for s in sents if _WORD.findall(s)]
     common = _common_ratio(text)          # ~0.3 (varied) .. ~0.6 (formulaic)
     # Map common-word ratio: above ~0.45 trends AI-formulaic.
-    common_signal = clamp01((common - 0.30) / 0.30)
+    common_signal = clamp01((common - _COMMON_MID) / _COMMON_SCALE)
 
     # Burstiness needs >= 2 sentences to mean anything. On a single sentence/fragment it is
     # *undefined* (the CV of one length is 0), so treating that as low-burstiness wrongly scored
@@ -328,10 +352,11 @@ def lite_score(text: str) -> float | None:
     burst = _burstiness(sents)        # ~0.0 (uniform) .. ~0.8+ (varied human prose)
     # Map burstiness to an AI-likelihood contribution: low burstiness -> high P(AI).
     # CV around 0.5 is typical human prose; below ~0.25 reads as machine-uniform.
-    burst_signal = clamp01((0.55 - burst) / 0.55)
+    burst_signal = clamp01((_BURST_MID - burst) / _BURST_SCALE)
 
     # Blend (burstiness weighted higher — it's the stronger of the two weak signals).
-    return clamp01(max(rep, 0.6 * burst_signal + 0.4 * common_signal))
+    return clamp01(max(rep, _BURST_WEIGHT * burst_signal
+                       + (1.0 - _BURST_WEIGHT) * common_signal))
 
 
 def _per_sentence_means(

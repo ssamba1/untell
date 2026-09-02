@@ -1,0 +1,277 @@
+{
+  "n_machine": 56,
+  "n_human": 634,
+  "threshold": 0.45,
+  "base": {
+    "auroc": 0.3538,
+    "machine_flag_rate": 10.7,
+    "human_flag_rate": 30.4
+  },
+  "sweeps": {
+    "common_mid": [
+      {
+        "value": 0.1,
+        "shipped": false,
+        "auroc": 0.3613,
+        "machine_flag_rate": 75.0,
+        "human_flag_rate": 87.5
+      },
+      {
+        "value": 0.2,
+        "shipped": false,
+        "auroc": 0.3531,
+        "machine_flag_rate": 48.2,
+        "human_flag_rate": 64.5
+      },
+      {
+        "value": 0.25,
+        "shipped": false,
+        "auroc": 0.3522,
+        "machine_flag_rate": 26.8,
+        "human_flag_rate": 47.8
+      },
+      {
+        "value": 0.3,
+        "shipped": true,
+        "auroc": 0.3538,
+        "machine_flag_rate": 10.7,
+        "human_flag_rate": 30.4
+      },
+      {
+        "value": 0.35,
+        "shipped": false,
+        "auroc": 0.3787,
+        "machine_flag_rate": 8.9,
+        "human_flag_rate": 17.7
+      },
+      {
+        "value": 0.4,
+        "shipped": false,
+        "auroc": 0.4028,
+        "machine_flag_rate": 8.9,
+        "human_flag_rate": 12.1
+      },
+      {
+        "value": 0.5,
+        "shipped": false,
+        "auroc": 0.4131,
+        "machine_flag_rate": 8.9,
+        "human_flag_rate": 10.6
+      }
+    ],
+    "common_scale": [
+      {
+        "value": 0.1,
+        "shipped": false,
+        "auroc": 0.3229,
+        "machine_flag_rate": 32.1,
+        "human_flag_rate": 62.6
+      },
+      {
+        "value": 0.2,
+        "shipped": false,
+        "auroc": 0.3381,
+        "machine_flag_rate": 16.1,
+        "human_flag_rate": 41.3
+      },
+      {
+        "value": 0.3,
+        "shipped": true,
+        "auroc": 0.3538,
+        "machine_flag_rate": 10.7,
+        "human_flag_rate": 30.4
+      },
+      {
+        "value": 0.4,
+        "shipped": false,
+        "auroc": 0.3664,
+        "machine_flag_rate": 8.9,
+        "human_flag_rate": 24.3
+      },
+      {
+        "value": 0.5,
+        "shipped": false,
+        "auroc": 0.3749,
+        "machine_flag_rate": 8.9,
+        "human_flag_rate": 21.0
+      },
+      {
+        "value": 0.7,
+        "shipped": false,
+        "auroc": 0.3854,
+        "machine_flag_rate": 8.9,
+        "human_flag_rate": 17.2
+      }
+    ],
+    "burst_mid": [
+      {
+        "value": 0.35,
+        "shipped": false,
+        "auroc": 0.3593,
+        "machine_flag_rate": 1.8,
+        "human_flag_rate": 1.7
+      },
+      {
+        "value": 0.45,
+        "shipped": false,
+        "auroc": 0.3533,
+        "machine_flag_rate": 5.4,
+        "human_flag_rate": 10.7
+      },
+      {
+        "value": 0.55,
+        "shipped": true,
+        "auroc": 0.3538,
+        "machine_flag_rate": 10.7,
+        "human_flag_rate": 30.4
+      },
+      {
+        "value": 0.65,
+        "shipped": false,
+        "auroc": 0.3537,
+        "machine_flag_rate": 41.1,
+        "human_flag_rate": 59.5
+      },
+      {
+        "value": 0.75,
+        "shipped": false,
+        "auroc": 0.3446,
+        "machine_flag_rate": 64.3,
+        "human_flag_rate": 82.2
+      },
+      {
+        "value": 0.9,
+        "shipped": false,
+        "auroc": 0.3103,
+        "machine_flag_rate": 91.1,
+        "human_flag_rate": 97.6
+      }
+    ],
+    "burst_scale": [
+      {
+        "value": 0.25,
+        "shipped": false,
+        "auroc": 0.3281,
+        "machine_flag_rate": 64.3,
+        "human_flag_rate": 79.7
+      },
+      {
+        "value": 0.4,
+        "shipped": false,
+        "auroc": 0.3633,
+        "machine_flag_rate": 41.1,
+        "human_flag_rate": 58.4
+      },
+      {
+        "value": 0.55,
+        "shipped": true,
+        "auroc": 0.3538,
+        "machine_flag_rate": 10.7,
+        "human_flag_rate": 30.4
+      },
+      {
+        "value": 0.7,
+        "shipped": false,
+        "auroc": 0.3432,
+        "machine_flag_rate": 5.4,
+        "human_flag_rate": 12.0
+      },
+      {
+        "value": 0.9,
+        "shipped": false,
+        "auroc": 0.3339,
+        "machine_flag_rate": 1.8,
+        "human_flag_rate": 2.7
+      }
+    ],
+    "burst_weight": [
+      {
+        "value": 0.0,
+        "shipped": false,
+        "auroc": 0.3457,
+        "machine_flag_rate": 3.6,
+        "human_flag_rate": 6.3
+      },
+      {
+        "value": 0.2,
+        "shipped": false,
+        "auroc": 0.3216,
+        "machine_flag_rate": 3.6,
+        "human_flag_rate": 8.4
+      },
+      {
+        "value": 0.4,
+        "shipped": false,
+        "auroc": 0.3245,
+        "machine_flag_rate": 3.6,
+        "human_flag_rate": 15.9
+      },
+      {
+        "value": 0.6,
+        "shipped": true,
+        "auroc": 0.3538,
+        "machine_flag_rate": 10.7,
+        "human_flag_rate": 30.4
+      },
+      {
+        "value": 0.8,
+        "shipped": false,
+        "auroc": 0.3889,
+        "machine_flag_rate": 32.1,
+        "human_flag_rate": 46.1
+      },
+      {
+        "value": 1.0,
+        "shipped": false,
+        "auroc": 0.4127,
+        "machine_flag_rate": 46.4,
+        "human_flag_rate": 56.5
+      }
+    ]
+  },
+  "summary": [
+    {
+      "parameter": "common_mid",
+      "shipped_auroc": 0.3538,
+      "best_auroc": 0.4131,
+      "worst_auroc": 0.3522,
+      "any_above_half": false
+    },
+    {
+      "parameter": "common_scale",
+      "shipped_auroc": 0.3538,
+      "best_auroc": 0.3854,
+      "worst_auroc": 0.3229,
+      "any_above_half": false
+    },
+    {
+      "parameter": "burst_mid",
+      "shipped_auroc": 0.3538,
+      "best_auroc": 0.3593,
+      "worst_auroc": 0.3103,
+      "any_above_half": false
+    },
+    {
+      "parameter": "burst_scale",
+      "shipped_auroc": 0.3538,
+      "best_auroc": 0.3633,
+      "worst_auroc": 0.3281,
+      "any_above_half": false
+    },
+    {
+      "parameter": "burst_weight",
+      "shipped_auroc": 0.3538,
+      "best_auroc": 0.4127,
+      "worst_auroc": 0.3216,
+      "any_above_half": false
+    }
+  ],
+  "inversion_survives_every_setting": true,
+  "faithfulness": {
+    "checked": 690,
+    "mismatched": 0,
+    "worst_gap": 0.0,
+    "example": null,
+    "faithful": true
+  }
+}
