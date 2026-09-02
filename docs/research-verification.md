@@ -5689,6 +5689,86 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-three — if the detector were wrong, would anything fail?
+
+Rounds ninety-one and ninety-two found the same defect twice: a verification performed once by a
+person, recorded in prose, and therefore not performed again when the thing it covered changed. Both
+were fixed by making the verification executable.
+
+**A test that cannot fail is that same defect written in code.** It runs in CI, it is green, and it
+guards nothing — and green is the one property it shares with every test that works. This repository
+has more than ten thousand tests and exactly one family of them, the audit checks in
+`tests/test_every_audit_check_can_fail.py`, has ever been shown able to fail. Round sixty-two is the
+warning: a fix there recreated a documented vacuity, caught only because somebody re-ran the negative
+case by hand.
+
+So: break the detector on purpose. `eval/mutation.py` makes single-token edits to a shipped module —
+a comparison flipped, an operand swapped, `max` for `min` — and runs the tests named for it.
+
+## The score
+
+MEASURED over the two core scoring modules, both baselines clean (0 failures unmutated):
+
+| | |
+|---|---|
+| mutants introduced | 97 |
+| killed | 45 |
+| **survived** | **52** |
+| **mutation score** | **46.4%** |
+
+**More than half the single-token ways of breaking the detector go unnoticed by the tests named for
+it.** The survivors cluster in `_repetition_signal` and `_single_sentence_signal` — which
+independently corroborates round seventy-eight, where the `rep` component was found never to fire on
+the eval corpus at all. Two routes, one conclusion: that branch is the least exercised code in the
+detector.
+
+## ⚠️ That is against a named selection, and the whole suite does better
+
+A mutation score is a property of the test selection as much as of the code, so quoting 46.4% alone
+would overstate the case. A sample of 10 survivors re-run against a **1,543-test** selection:
+
+| | |
+|---|---|
+| killed by the wider suite | 4 |
+| **still surviving 1,543 tests** (MEASURED, n = 10) | **6** |
+| wider-suite kill rate among survivors | 40%, Wilson [17%, 69%] |
+
+So the suite as a whole catches meaningfully more than 46.4% — and six of ten sampled survivors are
+uncaught by 1,543 tests, which is the half of the result that is not reassuring. Both figures are
+published because either alone misleads, in opposite directions.
+
+## ✗✗ Two defects in my own harness, and the second nearly published a false result
+
+**Kill detection read an exit code.** An exit code answers "did anything fail", which is the wrong
+question wherever the baseline is already red — and it is red here, `torch` being absent and
+`huggingface.co` blocked at the egress proxy by organization policy, so a broad selection starts at
+7 failures. `_failures()` counts instead, and the baseline is reported rather than assumed. That
+guard earned itself immediately: the first run flagged `untell/humanness.py`'s selection as failing
+unmutated, so every mutant against it had been scored killed for the wrong reason.
+
+**The follow-up compared pytest's summary line, which contains the elapsed time.** So every mutant
+"differed from baseline" and the wider-suite check reported **10 of 10 killed**. MEASURED correctly,
+by counting failures instead, the answer is **4 of 10**. It was caught by reading the output rather than the conclusion — the rows showed
+`7 failed, 1543 passed` on both sides and differed only in `102.70s` against `107.37s`.
+
+That second one is worth dwelling on. It is the round-eighty-eight defect exactly — a comparison
+against the wrong field producing a plausible number — and it arrived **in the round whose entire
+subject is checks that cannot fail**, in code written to detect precisely that. A tool for finding
+vacuous verification is not itself immune to being vacuous, and nothing about having just written
+the docstring on the subject helped.
+
+## What the number is for
+
+46.4% is not a target to optimise. A mutation score can be driven to 100% by tests that pin
+arithmetic nobody cares about, which is how the measure becomes the goal. What the survivor list is
+for is naming **specific lines where the detector could be wrong today with every test green**, and
+those are now enumerated with file and line in `eval/data/mutation.json` rather than summarised.
+
+The ratchet is on the score not collapsing, not on it rising. A test that used to catch a broken
+detector and no longer does is a regression; a survivor nobody has got to yet is a backlog item.
+
+---
+
 # Round ninety-two — the same question, asked about other people's papers
 
 Rounds eighty-six to ninety-one audited this repository's claims about itself: its survey
