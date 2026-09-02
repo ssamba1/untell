@@ -5689,6 +5689,80 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-nine — the leverage, and the bias reproducing in tests written to avoid it
+
+Round ninety-eight closed eight named threshold sites by hand. The paired sweep found **206 sites
+where both mutants survived** — comparisons no test reaches at all — so hand-fixing is not the
+shape of the answer. This round looks for structure instead.
+
+## Where the 206 are
+
+They are not spread evenly:
+
+| file | untested comparison sites |
+|---|---|
+| `rewriter/structural.py` | 46 |
+| `scripts/run.py` | 22 |
+| `attacks/word_importance.py` | 20 |
+| `scripts/score.py` | 20 |
+| `scripts/tells.py` | 17 |
+
+And the single largest concentration in one function is **14 in
+`word_importance._tell_probe_words`** — a performance optimisation whose forty-line docstring
+argues one property:
+
+> *"It returns a SUPERSET of every word whose probe could report a positive gain, so skipping the
+> rest never changes a ranking decision."*
+
+**That claim is checkable and nothing checked it.** If the probe set ever omits a word whose
+substitution really does change the tells count, the ranking silently changes and the only symptom
+is a worse rewrite. So rather than fourteen branch tests, one property test: substitute every word's
+first occurrence, recount, and require any word that moved the count to be in the set.
+
+## ✗ The leverage is real and much smaller than hoped
+
+MEASURED, the new property test against every previously-surviving mutant in that function:
+**6 of 28 killed.** One test file for six mutants is better than six hand-written branch tests, and
+it stays true if the branches are rewritten — but twenty-two survive, because a property test over a
+realistic corpus exercises branches at *typical* values and most of these need a specific document
+shape to reach at all.
+
+One of the six needed the corpus extended: the trigram branch — which the docstring calls "the
+strongest signal in the catalogue" — requires a document of **at least 60 words with at least 5% of
+them inside a repeated trigram**, and the sample written for repeated phrasing was 53 words. It
+looked like it exercised the category and did not.
+
+## ✅ And the finding inside the six
+
+Of the six mutants killed, **five are inversions and one is an off-by-one.** Comparison mutants died
+at 5 of 14 sites; boundary mutants at 1 of 14.
+
+That is round ninety-seven's ordering reproducing **inside a test written two rounds later by an
+author who knew about it and was deliberately building a property rather than branch assertions.**
+The bias is not carelessness and cannot be fixed by intending to do better.
+
+The mechanism is now clear. A property test asserts something true of every input and is exercised
+on the inputs a corpus happens to contain — realistic documents, at typical lengths, away from every
+boundary. Catching an off-by-one requires a case constructed **at** the boundary, which is a
+different act of authorship, not a more careful version of the same one.
+
+## What the two techniques are for
+
+| | catches | scales to 206 sites |
+|---|---|---|
+| property test over a corpus | logic errors, inverted branches, contract violations | yes |
+| n−1 / n / n+1 at a named threshold | off-by-ones | no |
+
+**They are complementary and neither substitutes for the other.** Round ninety-eight's discipline is
+the only thing that caught the seven threshold off-by-ones, and it cannot be applied 206 times.
+Property tests scale and are structurally blind to boundaries.
+
+The practical rule this leaves: **write the property test for coverage, and add explicit n−1/n/n+1
+cases at every threshold a person can meet.** The second list is short — round ninety-eight found
+eight — and it is the list that would otherwise never be reached.
+
+---
+
 # Round ninety-eight — the prediction, and the seven thresholds it was right about
 
 Round ninety-seven ended with a measured property of this test suite rather than a score: over 339
