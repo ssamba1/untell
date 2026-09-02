@@ -1043,3 +1043,48 @@ def test_m4_handles_both_shapes_of_its_own_prompt_field():
         "first instruction second instruction")
     assert _m4_text(None) == "" and _m4_text(42) == ""
     assert "[" not in _m4_text(["a", "b"]), "a list repr leaked into the text"
+
+
+class TestUnscoredIsNotAMiss:
+    """An abstention is not a false negative, and reading `max` alone makes it one.
+
+    `score_text` returns `max: 0.0` with `scored: False` when every detector opts out — a float,
+    because its many consumers expect one, and `untell/scripts/verify.py` reads the flag and
+    reports `ai: None` instead of a clean pass. This module read the placeholder as a real score.
+
+    MEASURED 2026-09-02: it produced a wrong published result. On M4's Urdu split the lite tier's
+    word regex is `[A-Za-z']+`, Arabic script yields no tokens, the detector correctly opts out on
+    236 of 240 rows, and the audit counted every one as machine text it had MISSED — a 99.6%
+    false-negative rate that was almost entirely abstentions.
+    """
+
+    def test_an_unscored_result_is_not_a_score(self):
+        from eval.subgroup_audit import _usable_score
+
+        assert _usable_score({"max": 0.0, "scored": False}) is None
+        assert _usable_score({"max": 0.42, "scored": False}) is None, (
+            "the flag decides, not the value: a stale max with scored=False is still no evidence"
+        )
+        assert _usable_score({"max": 0.0}) == 0.0, "a real 0.0 must survive"
+        assert _usable_score({"max": 0.42}) == 0.42
+        assert _usable_score({}) is None
+
+    def test_abstentions_are_excluded_rather_than_counted_as_misses(self, monkeypatch):
+        """The end-to-end property: a corpus the detector cannot read yields no FNR, not a 100% one."""
+        import eval.subgroup_audit as sa
+
+        rows = ([{"text": "unreadable", "is_ai": True, "lang": "ur"} for _ in range(40)]
+                + [{"text": "unreadable", "is_ai": False, "lang": "ur"} for _ in range(40)])
+        monkeypatch.setattr(sa, "wilson", sa.wilson)
+
+        def fake_score(text, tier="lite", threshold=None):
+            return {"max": 0.0, "scored": False,
+                    "warning": "no detector produced a score", "detectors": {}}
+
+        import untell.scripts.score as sc
+
+        monkeypatch.setattr(sc, "score_text", fake_score)
+        report = sa.equalised_odds(rows, tier="lite", threshold=0.30, axes=("lang",))
+        assert report.get("error"), (
+            f"a corpus the detector cannot read produced a report instead of refusing: {report}"
+        )

@@ -90,6 +90,27 @@ CORPUS_AXES = {
 }
 
 
+def _usable_score(result: dict) -> float | None:
+    """The score, or None when nothing was actually measured.
+
+    `score_text` does NOT return `max: None` when every detector opts out. It returns **0.0** and
+    marks the result `scored: False` with a warning, because a float keeps its many consumers
+    working — `untell/scripts/verify.py` reads that flag and reports `ai: None` rather than a clean
+    pass. This module did not, and read the placeholder as a real score.
+
+    MEASURED 2026-09-02, and it produced a wrong published result. On M4's Urdu split the lite
+    tier's word regex is `[A-Za-z']+`, so Arabic-script text yields no tokens, the detector
+    correctly opts out on 236 of 240 rows — and this audit counted all of them as machine text the
+    detector had MISSED. Result 24 reported a 99.6% false-negative rate on Urdu that was almost
+    entirely abstentions. An instrument that turns "no evidence" into "wrong answer" is making
+    exactly the error the documents around it exist to catch.
+    """
+    if result.get("scored") is False:
+        return None
+    top = result.get("max")
+    return top if isinstance(top, (int, float)) else None
+
+
 def wilson(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
     """95% Wilson score interval for a proportion.
 
@@ -125,7 +146,7 @@ def audit(
     scored: list[dict] = []
     for i, row in enumerate(rows):
         result = score_text(row["text"], tier=tier, threshold=thr)
-        top = result.get("max")
+        top = _usable_score(result)
         if top is None:  # every detector opted out; not a false negative, just unscored
             continue
         scored.append({**row, "score": top, "flagged": bool(top >= thr)})
@@ -185,8 +206,9 @@ def sweep(rows: list[dict], tier: str, thresholds: tuple[float, ...],
     scored = []
     for row in rows:
         result = score_text(row["text"], tier=tier, threshold=thresholds[0])
-        if result.get("max") is not None:
-            scored.append({**row, "score": result["max"]})
+        top = _usable_score(result)
+        if top is not None:
+            scored.append({**row, "score": top})
     out = []
     for thr in thresholds:
         flagged = [dict(r, flagged=r["score"] >= thr) for r in scored]
@@ -291,7 +313,7 @@ def equalised_odds(rows: list[dict], tier: str = "lite", threshold: float | None
                 f"false-positive-only report."
             )
         result = score_text(row["text"], tier=tier, threshold=thr)
-        top = result.get("max")
+        top = _usable_score(result)
         if top is None:
             continue
         scored.append({**row, "score": top, "flagged": bool(top >= thr),
