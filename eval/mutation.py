@@ -75,6 +75,84 @@ TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
 )
 
+# Test modules that fail at COLLECTION in this environment, because `torch` is absent and
+# `huggingface.co` is blocked at the egress proxy by organization policy. A selection containing one
+# of these reports an error rather than a failure count, which would score every mutant against it
+# as killed.
+UNCOLLECTABLE = frozenset({
+    "tests/test_ai_index_uses_machine_label.py",
+    "tests/test_bertscore_uses_rescaled_baseline.py",
+    "tests/test_human_index_resolves_from_label_1.py",
+    "tests/test_mage_window_is_700_words.py",
+})
+
+# How many test files to run per module. A cap is unavoidable — `untell.scripts.score` is imported
+# by 96 test modules — and it makes the score PESSIMISTIC, since a mutant this selection misses may
+# well be caught by a test outside it. Round ninety-three measured that gap directly rather than
+# guessing at it: of survivors re-run against 1,543 tests, 40% died.
+TESTS_PER_MODULE = 5
+
+
+def test_index(root: Path = REPO) -> dict[str, list[str]]:
+    """Module name -> the test files that import it, most focused on it first.
+
+    "Most focused" is the test file importing the fewest `untell` modules overall. A test that
+    imports one module is about that module; a test that imports twelve is an integration test that
+    happens to touch it, and running the integration tests first would spend the whole budget
+    without ever exercising the code being mutated.
+    """
+    imports: dict[str, set[str]] = {}
+    for path in sorted((root / "tests").glob("test_*.py")):
+        relative = f"tests/{path.name}"
+        if relative in UNCOLLECTABLE:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        touched = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module]
+            else:
+                continue
+            touched.update(n for n in names if n.startswith("untell"))
+        if touched:
+            imports[relative] = touched
+
+    breadth = {name: len(mods) for name, mods in imports.items()}
+    index: dict[str, list[str]] = {}
+    for relative, touched in imports.items():
+        for module in touched:
+            index.setdefault(module, []).append(relative)
+    return {
+        module: sorted(files, key=lambda f: (breadth[f], f))[:TESTS_PER_MODULE]
+        for module, files in index.items()
+    }
+
+
+def discovered_targets(root: Path = REPO) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Every module in `untell/` paired with the tests most about it.
+
+    Replaces the hand-written pairing round ninety-three used for two modules. A hand-written map
+    does not reach 65 modules, and a mutation score that only covers the files somebody remembered
+    is the same selection bias this repository keeps finding elsewhere.
+    """
+    index = test_index(root)
+    out = []
+    for path in sorted((root / "untell").rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        relative = str(path.relative_to(root))
+        module = relative[:-3].replace("/", ".")
+        tests = tuple(index.get(module, ()))
+        if tests:
+            out.append((relative, tests))
+    return tuple(out)
+
+
 _COMPARISONS = {
     ast.Lt: ("<", ">="), ast.LtE: ("<=", ">"), ast.Gt: (">", "<="), ast.GtE: (">=", "<"),
 }
@@ -137,6 +215,18 @@ def _worktree(root: Path) -> tuple[Path, Path]:
 
 _SUMMARY = re.compile(r"(\d+) failed")
 
+# What `_failures` returns when a selection did not produce a failure count at all — it timed out,
+# or it died before any test ran (a collection error, a missing dependency).
+#
+# ⚠️ **This must not be a large number, and making it one was a real defect.** With a sentinel of
+# 10,000 as the baseline, no mutant can ever exceed it, so every mutant for that module is scored a
+# survivor — silently, and indistinguishably from a genuinely uncovered line. MEASURED on the first
+# full-package run: 3 of 58 modules timed out at baseline and contributed up to 9 spurious
+# survivors. That is round ninety's lesson exactly, committed in the harness written two rounds
+# after it: a zero meaning "could not test" and a zero meaning "does not matter" are the same number
+# and opposite facts. A module whose baseline is unusable is now SKIPPED and listed, not scored.
+UNUSABLE = -1
+
 
 def _failures(tree: Path, tests: tuple[str, ...], timeout: int) -> int:
     """How many tests in the selection fail. A timeout counts as a large number, i.e. a kill.
@@ -158,20 +248,22 @@ def _failures(tree: Path, tests: tuple[str, ...], timeout: int) -> int:
             cwd=tree, capture_output=True, text=True, timeout=timeout,
         )
     except subprocess.TimeoutExpired:
-        return 10_000
+        return UNUSABLE
     match = _SUMMARY.search(result.stdout)
     if match:
         return int(match.group(1))
     # No "N failed" in the summary: either everything passed, or the run died before reporting.
-    return 0 if result.returncode == 0 else 10_000
+    return 0 if result.returncode == 0 else UNUSABLE
 
 
-def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300) -> dict:
+def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300,
+        targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None) -> dict:
     """Introduce each mutant, run its module's tests, and record whether anything failed."""
     scratch, tree = _worktree(root)
     results: list[dict] = []
+    unmeasurable: list[dict] = []
     try:
-        for relative, tests in TARGETS:
+        for relative, tests in (targets or TARGETS):
             path = tree / relative
             original = path.read_text()
             candidates = mutants_for(original, relative)
@@ -182,13 +274,21 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
                 candidates = candidates[::step][:limit_per_file]
 
             baseline = _failures(tree, tests, timeout)
+            if baseline == UNUSABLE:
+                unmeasurable.append({"file": relative, "tests": list(tests),
+                                     "why": "its test selection times out or fails to collect, so "
+                                            "no mutant against it could be scored"})
+                continue
             for mutant in candidates:
                 mutated = apply_mutant(original, mutant)
                 if mutated is None:
                     continue
                 try:
                     path.write_text(mutated)
-                    killed = _failures(tree, tests, timeout) > baseline
+                    after = _failures(tree, tests, timeout)
+                    # UNUSABLE means the mutant broke the run outright — an import error or a
+                    # hang. That is the suite noticing in the loudest way available, so it counts.
+                    killed = after == UNUSABLE or after > baseline
                 finally:
                     path.write_text(original)
                 results.append({
@@ -208,6 +308,8 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
     baselines = {r["file"]: r["baseline_failures"] for r in results if r.get("baseline")}
     return {
         "baselines": baselines,
+        "unmeasurable": unmeasurable,
+        "red_baselines": {k: v for k, v in baselines.items() if v},
         "mutants": len(mutants),
         "killed": len(killed),
         "survived": len(survivors),
@@ -218,6 +320,8 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
 
 def render(report: dict) -> str:
     lines = []
+    for entry in report.get("unmeasurable", []):
+        lines.append(f"SKIPPED {entry['file']}: {entry['why']}")
     for name, failures in report["baselines"].items():
         if failures:
             lines.append(f"⚠️ {name}: its test selection already has {failures} failure(s) "
@@ -239,12 +343,16 @@ def render(report: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--all", action="store_true",
+                        help="mutate every module in untell/, pairing each with the tests most "
+                             "about it, instead of the two hand-written targets")
     parser.add_argument("--limit", type=int, default=None,
                         help="cap mutants per file, spaced evenly through it")
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
-    report = run(limit_per_file=args.limit, timeout=args.timeout)
+    report = run(limit_per_file=args.limit, timeout=args.timeout,
+                 targets=discovered_targets() if args.all else None)
     print(json.dumps(report, indent=2) if args.as_json else render(report))
     return 0
 

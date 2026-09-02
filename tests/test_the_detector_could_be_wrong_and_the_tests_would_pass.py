@@ -125,3 +125,79 @@ def test_mutation_runs_in_a_throwaway_worktree_not_the_working_tree():
     calls = {n.func.id for n in ast.walk(run)
              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     assert "_worktree" in calls, "run() must mutate a throwaway checkout, never the working tree"
+
+
+# ---------------------------------------------------------------------------
+# Round 94: the same question across the whole package rather than two modules.
+#
+# Round 93 paired two modules with test selections written by hand. A hand-written map does not
+# reach 65 modules, and a mutation score covering only the files somebody remembered is the
+# selection bias this repository keeps finding elsewhere. `discovered_targets()` derives the pairing
+# from what each test file imports, ranking a module's tests by how FEW untell modules they import —
+# a test importing one module is about that module; one importing twelve is an integration test that
+# happens to touch it.
+#
+# MEASURED across 56 measurable modules: 108 mutants, 59 killed, 49 survived — 54.6%.
+# ---------------------------------------------------------------------------
+
+PACKAGE = json.loads((REPO / "eval" / "data" / "mutation_package.json").read_text())
+
+
+def test_the_package_run_covers_far_more_than_two_modules():
+    """The point of round 94. A score over two files is a score over two files."""
+    assert len(PACKAGE["baselines"]) >= 40
+    assert PACKAGE["mutants"] >= 80
+
+
+def test_a_module_whose_baseline_is_unusable_is_skipped_not_scored():
+    """The defect this run was re-run to fix, pinned so it cannot return.
+
+    With a large sentinel for "the selection timed out", no mutant can ever exceed the baseline, so
+    every mutant for that module is silently scored a survivor — indistinguishable from a genuinely
+    uncovered line. That is round 90's lesson, committed in the harness written two rounds later.
+    """
+    assert mutation.UNUSABLE < 0, (
+        "the unusable sentinel must not be a large number: as a baseline it would make every "
+        "mutant for that module an automatic survivor"
+    )
+    for entry in PACKAGE["unmeasurable"]:
+        assert entry["why"]
+        assert entry["file"] not in {s["file"] for s in PACKAGE["survivors"]}, (
+            f"{entry['file']} was skipped as unmeasurable and still contributed survivors"
+        )
+
+
+def test_modules_with_a_red_but_usable_baseline_are_still_measured():
+    """A red baseline is a higher floor, not a reason to give up: kills compare against it."""
+    assert PACKAGE["red_baselines"], (
+        "this environment has absent optional dependencies, so some baselines must be red; "
+        "if none are, the baseline is not being measured"
+    )
+    for name, failures in PACKAGE["red_baselines"].items():
+        assert failures > 0
+        assert failures != mutation.UNUSABLE
+        assert name in PACKAGE["baselines"]
+
+
+def test_the_package_score_has_not_silently_collapsed():
+    assert PACKAGE["score"] >= 45.0, (
+        "the package-wide mutation score dropped below where round 94 measured it"
+    )
+
+
+def test_the_test_index_prefers_tests_that_are_about_the_module():
+    """A module's budget must not be spent on integration tests that merely touch it."""
+    index = mutation.test_index()
+    assert index, "no test imports any untell module — the index is broken"
+    for module, files in index.items():
+        assert len(files) <= mutation.TESTS_PER_MODULE, module
+        assert not (set(files) & mutation.UNCOLLECTABLE), (
+            f"{module} selects a test that cannot even be collected in this environment"
+        )
+
+
+def test_discovery_never_pairs_a_module_with_an_empty_selection():
+    """A module with no tests scores every mutant as surviving, silently."""
+    for relative, tests in mutation.discovered_targets():
+        assert tests, relative
+        assert (REPO / relative).exists()

@@ -5689,6 +5689,77 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round ninety-four — the same question, across the whole package
+
+Round ninety-three mutation-tested two modules against test selections written by hand. That is the
+reflex rounds eighty-nine and ninety already caught once: **pick the thing that looks important and
+measure it.** A hand-written map does not reach 65 modules, and a mutation score covering only the
+files somebody remembered is the selection bias this repository keeps finding in everything else it
+audits.
+
+`discovered_targets()` derives the pairing instead. A test file's imports say which modules it
+touches, and its **breadth** says how much it is about any one of them: a test importing one
+`untell` module is about that module, one importing twelve is an integration test that happens to
+touch it. So a module's tests are ranked by fewest imports first and capped, which spends a small
+budget on the tests most likely to notice.
+
+MEASURED across **56 measurable modules** — 58 paired automatically, 2 skipped:
+
+| | |
+|---|---|
+| mutants introduced | 108 |
+| killed | 59 |
+| **survived** | **49** |
+| **mutation score** | **54.6%** |
+
+Round ninety-three's two hand-picked modules scored 46.4% against hand-written selections. The
+package as a whole, against selections nobody chose, scores **54.6%** — close enough that the
+hand-picked pair was not unrepresentative, which is worth knowing since it was the evidence for the
+claim at the time.
+
+The survivors are spread rather than concentrated: `api_server.py`, `html_report.py`,
+`languages.py`, `rewriter/local_policy.py`, `rich_output.py` and `scripts/run.py` each carry three,
+and the list names file and line for every one.
+
+## ✗ And the first full-package run was wrong, in exactly the way round ninety warned about
+
+The first run reported **50.0%**. It was corrupted, and the mechanism is one this ledger has already
+written down.
+
+`_failures()` returned **10,000** when a test selection timed out or died before reporting. As a
+*baseline* that is catastrophic: no mutant can ever exceed 10,000, so **every mutant for that module
+is scored a survivor** — silently, and indistinguishably from a genuinely uncovered line. MEASURED:
+3 of 58 modules timed out at baseline and contributed up to 9 spurious survivors.
+
+This is round ninety's finding verbatim — *a zero meaning "could not test" and a zero meaning "does
+not matter" are the same number and opposite facts* — committed in a harness written **two rounds
+after** the round that established it, by the same author, in code whose subject is checks that
+cannot fail. Round ninety-three made the same class of error twice in one afternoon. Knowing the
+lesson is not the same as applying it, and this ledger now has three consecutive rounds of evidence
+for that.
+
+The sentinel is negative now, so a module whose baseline is unusable is **skipped and listed**
+rather than scored. With a longer timeout only two modules remain unmeasurable —
+`fast_detectgpt.py` and `hc3_roberta.py`, whose tests genuinely cannot run without `torch`, which is
+absent by organization policy — and the corrected score is 54.6%.
+
+## ⚠️ Nine modules have a red baseline and are still measured
+
+`back_translation.py` starts at 6 failures, `mage.py` at 6, `local_policy.py` at 2, and six others at
+1–2. A red baseline is a **higher floor, not a reason to stop**: a mutant counts as killed when it
+adds a failure to what was already failing. Distinguishing that case from the unusable one is the
+whole content of the fix — one is a floor, the other is an absence of information.
+
+## What is and is not claimed
+
+54.6% is measured against selections capped at five test files per module. It is therefore a
+**lower bound**: round ninety-three established, on a sample, that 40% [17%, 69%] of survivors die
+when re-run against a much wider selection. The number to act on is not the percentage but the
+enumerated list of file-and-line survivors in `eval/data/mutation_package.json`, each one a place
+this code could be wrong today with its tests green.
+
+---
+
 # Round ninety-three — if the detector were wrong, would anything fail?
 
 Rounds ninety-one and ninety-two found the same defect twice: a verification performed once by a
