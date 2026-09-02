@@ -1103,6 +1103,73 @@ against davinci's 13.7% — a **5.48x** gap surviving correction, and the same d
 [Result 22](#result-22--the-same-leaderboard-on-attacks-a-third-of-the-field-is-one-line-of-code-from-collapse)'s
 finding across 46 detectors that instruction tuning makes text more detectable.
 
+## Result 25 — after the gate: the domain gap is real within one language, and so is the generator gap
+
+[Result 24](#result-24--the-missing-half-measured-the-abstention-works-where-the-text-is-obviously-foreign-and-fails-where-it-is-not)
+measured the detector before it learned to abstain. This is the same corpus through the shipped
+one, and it is what the tool now actually does.
+
+**Abstention, 5,193 rows across seven languages:**
+
+| ar | bg | de | id | ru | ur | **en** |
+|---|---|---|---|---|---|---|
+| 100.0% | 98.2% | 99.8% | 99.7% | 99.2% | 99.7% | **0.1%** |
+
+Six languages are now **"not reported"** rather than carrying a wrong rate. That is the whole
+change: the instrument declines instead of answering. Four English rows of 2,799 abstain too, and
+those are the price.
+
+**English, 2,808 rows: false-positive rate 37.4%, false-negative rate 21.8%.** Every figure below
+is English-only, because that is the only language this detector still claims to speak.
+
+### The domain gap is not carried by the language mix
+
+| domain | FPR | FNR |
+|---|---|---|
+| arxiv abstracts | **62.5%** | 18.7% |
+| reddit | 30.5% | **1.5%** |
+| peerread reviews | 16.0% | **45.0%** |
+| wikipedia | 11.2% | 5.0% |
+
+FNR disparity **30.0x**, separated, entirely within English. Result 24's domain spread survives the
+removal of every non-English row, so it was never an artifact of the corpus's language mix — and
+62.5% of human scientific abstracts are still flagged.
+
+### Crossing domain with generator turns a disclaimed number into a real one
+
+Result 24 reported generator rates with a warning that the FPR column was confounded: each M4 file
+pairs one generator with one domain, so BLOOMZ and davinci both showed arxiv's false-positive rate.
+Crossing the two axes does better than warning — **it isolates the cases where the confound does
+not apply.**
+
+| cell | FPR | FNR |
+|---|---|---|
+| **arxiv** × GPT-3.5-turbo | 62.5% | **0.0%** |
+| **arxiv** × davinci | 62.5% | 13.6% |
+| **arxiv** × BLOOMZ | 62.5% | **42.5%** |
+| **peerread** × Cohere | 16.0% | 15.5% |
+| **peerread** × FLAN-T5 | 16.0% | **74.5%** |
+| wikipedia × GPT-3.5-turbo | 11.2% | 5.0% |
+| reddit × GPT-3.5-turbo | 30.5% | 1.5% |
+
+Read the first three rows together: **same domain, same human text, same 62.5% false-positive
+rate — and false negatives running from 0.0% to 42.5%.** The next two do it again on peerread,
+15.5% against 74.5%. Domain is held constant, so those are generator effects and nothing else.
+
+And the last three rows show the reverse, on the one generator that appears in more than one
+domain: GPT-3.5-turbo is missed 0.0% of the time on arxiv, 1.5% on reddit and 5.0% on wikipedia.
+Generator held constant, domain varying, and the effect is small.
+
+So the two factors are separable after all, and they are not the same size. **Which model wrote the
+text matters far more to this detector than what kind of text it is** — 0.0% to 74.5% across
+generators, against 0.0% to 5.0% across domains for a fixed generator. That is the opposite of
+what the uncrossed table suggested, where the domain column carried the larger visible spread
+purely because it was standing in for the generator behind it.
+
+The generators also rank the way [Result 22](#result-22--the-same-leaderboard-on-attacks-a-third-of-the-field-is-one-line-of-code-from-collapse)
+predicted across 46 other detectors: the instruction-tuned GPT-3.5-turbo is caught almost
+perfectly, and the older, weaker FLAN-T5 and BLOOMZ are the ones that get through.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
