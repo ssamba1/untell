@@ -5689,6 +5689,49 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and seven — landing the sweep, and a module that measuring made unmeasurable
+
+Rounds one hundred to one hundred and six all ran against a boundary sweep taken before round
+ninety-eight's tests existed, with the pre-commit hook noting the staleness on every commit. This
+lands a fresh one and reads what moved.
+
+MEASURED, the register rebuilt on current data:
+
+| | before | now |
+|---|---|---|
+| off-by-one caught | 18 | **21** |
+| off-by-one survives | 30 | **26** |
+| not measurable | 0 | **1** |
+| protected share | 37.5% | **44.7%** |
+
+All four thresholds round one hundred and one closed — `voice.py:185`, `tells.py:1081`,
+`tells.py:1409`, `run.py:329` — now read as protected, which is the register confirming work it
+could not see when it was stale.
+
+## ✗ And one module became unmeasurable, because of a fix
+
+`untell/scripts/audit.py` was measured in the previous sweep and is not in this one. The cause is
+round one hundred's selection widening — the fix that recovered 22 kills by including tests that
+name a module's threshold constants.
+
+`audit.py` has many constants, so it now selects `test_every_audit_check_can_fail.py`, which is
+**itself a mutation suite**: it mutates each audit check and re-runs the whole audit. MEASURED, one
+baseline pass over that selection takes **4m27s**. A per-mutant timeout large enough to accommodate
+it would put a single module's sweep into the hours.
+
+**This is not fixed by raising the timeout, and it is recorded rather than hidden.** Its one
+boundary, `_MODULE_DRIFT`, moves from *unprotected* to *unmeasured* — which is the honest
+classification and slightly flatters the protected share, since the denominator loses a known gap.
+Round ninety's rule again: a zero meaning "could not test" and a zero meaning "does not matter" are
+the same number and opposite facts.
+
+The general shape is worth naming. Round one hundred's fix bought **+22 kills** and cost **one
+module's measurability**, and neither number was visible at the time — the gain showed up two rounds
+later in a re-run, the cost three. A change to an instrument is not free just because its immediate
+effect is an improvement.
+
+---
+
 # Round one hundred and six — a bad plant is a false miss, and it looks exactly like a real one
 
 Round one hundred and five measured recall by planting defects and found a real blind spot. This

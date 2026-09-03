@@ -18,7 +18,6 @@
     "untell/humanness.py": 0,
     "untell/mcp_server.py": 0,
     "untell/rewriter/local_policy.py": 2,
-    "untell/scripts/audit.py": 0,
     "untell/scripts/explain.py": 0,
     "untell/scripts/numerals.py": 0,
     "untell/scripts/run.py": 0,
@@ -53,6 +52,17 @@
         "tests/test_detectors_full.py"
       ],
       "why": "its test selection times out or fails to collect, so no mutant against it could be scored"
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "tests": [
+        "tests/test_a_line_break_does_not_defeat_a_document_check.py",
+        "tests/test_bare_max_selection_is_audited.py",
+        "tests/test_every_audit_check_can_fail.py",
+        "tests/test_the_audit_reports_a_document_it_could_not_read.py",
+        "tests/test_the_audit_reports_a_file_it_could_not_parse.py"
+      ],
+      "why": "its test selection times out or fails to collect, so no mutant against it could be scored"
     }
   ],
   "red_baselines": {
@@ -68,15 +78,15 @@
   "by_kind": {
     "boundary": {
       "killed": 86,
-      "survived": 253,
-      "score": 25.4
+      "survived": 245,
+      "score": 26.0
     }
   },
   "workers": 4,
-  "mutants": 339,
+  "mutants": 331,
   "killed": 86,
-  "survived": 253,
-  "score": 25.4,
+  "survived": 245,
+  "score": 26.0,
   "survivors": [
     {
       "file": "untell/_retry.py",
@@ -1094,41 +1104,6 @@
       "killed": false
     },
     {
-      "file": "untell/scripts/audit.py",
-      "line": 402,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 411,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 805,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 903,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 1063,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
       "file": "untell/scripts/batch.py",
       "line": 343,
       "kind": "boundary",
@@ -1333,13 +1308,6 @@
     },
     {
       "file": "untell/scripts/run.py",
-      "line": 329,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/run.py",
       "line": 373,
       "kind": "boundary",
       "mutation": ">= -> >",
@@ -1385,6 +1353,13 @@
       "line": 664,
       "kind": "boundary",
       "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1015,
+      "kind": "boundary",
+      "mutation": "< -> <=",
       "killed": false
     },
     {
@@ -1732,13 +1707,6 @@
     },
     {
       "file": "untell/scripts/tells.py",
-      "line": 1081,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/tells.py",
       "line": 1085,
       "kind": "boundary",
       "mutation": ">= -> >",
@@ -1773,13 +1741,6 @@
       "killed": false
     },
     {
-      "file": "untell/scripts/tells.py",
-      "line": 1409,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
       "file": "untell/scripts/verify.py",
       "line": 124,
       "kind": "boundary",
@@ -1791,13 +1752,6 @@
       "line": 173,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/voice.py",
-      "line": 185,
-      "kind": "boundary",
-      "mutation": ">= -> >",
       "killed": false
     },
     {
@@ -3231,62 +3185,6 @@
       "killed": false
     },
     {
-      "file": "untell/scripts/audit.py",
-      "line": 402,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 411,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 599,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": true
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 805,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 899,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": true
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 903,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 1063,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 1268,
-      "kind": "boundary",
-      "mutation": "<= -> <",
-      "killed": true
-    },
-    {
       "file": "untell/scripts/batch.py",
       "line": 104,
       "kind": "boundary",
@@ -3550,7 +3448,7 @@
       "line": 329,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/run.py",
@@ -3613,7 +3511,7 @@
       "line": 1015,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": true
+      "killed": false
     },
     {
       "file": "untell/scripts/run.py",
@@ -4054,7 +3952,7 @@
       "line": 1081,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/tells.py",
@@ -4096,7 +3994,7 @@
       "line": 1409,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/tells.py",
@@ -4138,7 +4036,7 @@
       "line": 185,
       "kind": "boundary",
       "mutation": ">= -> >",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/voice.py",

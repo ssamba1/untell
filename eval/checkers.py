@@ -139,7 +139,7 @@ REGISTER: tuple[Checker, ...] = (
         command="python -m eval.boundaries",
         checks="comparisons against a named threshold whose off-by-one no test catches",
         gates=False,
-        findings_now="30 unprotected of 48",
+        findings_now="26 unprotected of 48, 1 unmeasurable",
         precision="90%",
         how_precision_was_measured=(
             "all 30 re-run against EVERY test importing their module, uncapped: 27 genuine gaps "
@@ -178,7 +178,7 @@ REGISTER: tuple[Checker, ...] = (
         command="python -m eval.mutation --all",
         checks="single-token edits to shipped code that no test notices",
         gates=False,
-        findings_now="survivor lists per operator; 25.4% of boundary mutants killed",
+        findings_now="survivor lists per operator; 26.0% of boundary mutants killed",
         precision="87.5%",
         how_precision_was_measured=(
             "a stratified sample of 24 survivors, 3 per operator kind, each re-run against EVERY "

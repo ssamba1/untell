@@ -80,6 +80,15 @@ TARGETS: tuple[tuple[str, tuple[str, ...]], ...] = (
 # `huggingface.co` is blocked at the egress proxy by organization policy. A selection containing one
 # of these reports an error rather than a failure count, which would score every mutant against it
 # as killed.
+# ⚠️ `untell/scripts/audit.py` is not here and is unmeasurable anyway, for a structural reason worth
+# writing down rather than fixing with a longer timeout. Its most specific test —
+# `test_every_audit_check_can_fail.py` — is itself a mutation suite: it mutates each audit check and
+# re-runs the whole audit. MEASURED, one baseline pass over its selection takes **4m27s**, so a
+# per-mutant timeout that accommodated it would put a single module's sweep in the hours.
+#
+# The cost is recorded rather than hidden: its one boundary, `_MODULE_DRIFT`, moved from
+# "unprotected" to "unmeasured" in the register, which is the honest classification — a zero meaning
+# "could not test" and a zero meaning "does not matter" are the same number and opposite facts.
 UNCOLLECTABLE = frozenset({
     "tests/test_ai_index_uses_machine_label.py",
     "tests/test_bertscore_uses_rescaled_baseline.py",

@@ -52,21 +52,21 @@
     },
     {
       "file": "untell/scripts/run.py",
-      "line": 207,
-      "constant": "_SATURATED_MAX",
-      "source": "if a < _SATURATED_MAX or b < _SATURATED_MAX:"
-    },
-    {
-      "file": "untell/scripts/run.py",
-      "line": 207,
-      "constant": "_SATURATED_MAX",
-      "source": "if a < _SATURATED_MAX or b < _SATURATED_MAX:"
-    },
-    {
-      "file": "untell/scripts/run.py",
-      "line": 1015,
+      "line": 329,
       "constant": "_MIN_VOICE_SAMPLE_WORDS",
-      "source": "if n_words < _MIN_VOICE_SAMPLE_WORDS:"
+      "source": "if len(_WORD.findall(voice_sample)) < _MIN_VOICE_SAMPLE_WORDS:"
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 207,
+      "constant": "_SATURATED_MAX",
+      "source": "if a < _SATURATED_MAX or b < _SATURATED_MAX:"
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 207,
+      "constant": "_SATURATED_MAX",
+      "source": "if a < _SATURATED_MAX or b < _SATURATED_MAX:"
     },
     {
       "file": "untell/scripts/score.py",
@@ -105,10 +105,28 @@
       "source": "if len(words) < _MIN_WORDS_FOR_REPETITION:"
     },
     {
+      "file": "untell/scripts/tells.py",
+      "line": 1081,
+      "constant": "_LANG_MIN_WORDS",
+      "source": "if len(words) < _LANG_MIN_WORDS:"
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1409,
+      "constant": "_MIN_WORDS_FOR_A_RATE",
+      "source": "if result[\"words\"] < _MIN_WORDS_FOR_A_RATE and total > 0:"
+    },
+    {
       "file": "untell/scripts/voice.py",
       "line": 218,
       "constant": "MIN_SAMPLE_WORDS",
       "source": "if sample_words < MIN_SAMPLE_WORDS:"
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 185,
+      "constant": "MIN_SAMPLE_WORDS",
+      "source": "if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:"
     }
   ],
   "unprotected": [
@@ -179,12 +197,6 @@
       "source": "and post_score[\"max\"] >= _SATURATED_MAX"
     },
     {
-      "file": "untell/scripts/audit.py",
-      "line": 903,
-      "constant": "_MODULE_DRIFT",
-      "source": "elif len(modules) - claimed > _MODULE_DRIFT:"
-    },
-    {
       "file": "untell/scripts/entailment.py",
       "line": 632,
       "constant": "DEFAULT_CONTRADICTION_BAR",
@@ -204,9 +216,9 @@
     },
     {
       "file": "untell/scripts/run.py",
-      "line": 329,
+      "line": 1015,
       "constant": "_MIN_VOICE_SAMPLE_WORDS",
-      "source": "if len(_WORD.findall(voice_sample)) < _MIN_VOICE_SAMPLE_WORDS:"
+      "source": "if n_words < _MIN_VOICE_SAMPLE_WORDS:"
     },
     {
       "file": "untell/scripts/run.py",
@@ -264,35 +276,24 @@
     },
     {
       "file": "untell/scripts/tells.py",
-      "line": 1081,
-      "constant": "_LANG_MIN_WORDS",
-      "source": "if len(words) < _LANG_MIN_WORDS:"
-    },
-    {
-      "file": "untell/scripts/tells.py",
       "line": 1085,
       "constant": "_OTHER_FUNCTION_WORD_FLOOR",
       "source": "return other >= _OTHER_FUNCTION_WORD_FLOOR and other > english"
     },
     {
       "file": "untell/scripts/tells.py",
-      "line": 1409,
-      "constant": "_MIN_WORDS_FOR_A_RATE",
-      "source": "if result[\"words\"] < _MIN_WORDS_FOR_A_RATE and total > 0:"
-    },
-    {
-      "file": "untell/scripts/tells.py",
       "line": 1237,
       "constant": "_COMMON_IN_HUMAN_WRITING",
       "source": "((name, rates[name]) for name in by_category if rates.get(name, 0) >= _COMMON_IN_HUMAN_WRITING),"
-    },
-    {
-      "file": "untell/scripts/voice.py",
-      "line": 185,
-      "constant": "MIN_SAMPLE_WORDS",
-      "source": "if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:"
     }
   ],
-  "unmeasured": [],
-  "protected_share": 37.5
+  "unmeasured": [
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 903,
+      "constant": "_MODULE_DRIFT",
+      "source": "elif len(modules) - claimed > _MODULE_DRIFT:"
+    }
+  ],
+  "protected_share": 44.7
 }
