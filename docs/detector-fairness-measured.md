@@ -1207,6 +1207,73 @@ false-positive rate. On this corpus 0.775 misses **99.9%** of machine-written te
 setting of one number that makes this detector both safe and useful, which is
 [Garland's structural argument](https://arxiv.org/abs/2603.20254) arriving as an empirical curve.
 
+## Result 27 — the same question, asked of ourselves: consistently calibrated, consistently wrong
+
+[Result 21](#result-21--46-real-detectors-and-their-own-calibration-data-says-one-threshold-cannot-work)
+measured 46 real detectors needing thresholds that span a median **0.610** of their score range to
+hold a 5% false-positive rate across text types, and used it to argue their published accuracy
+assumes a calibration nobody deploys. It is only fair to ask the same of this repository's own
+detector, on every human corpus it can reach.
+
+| corpus | threshold for 5% FPR | FPR at the shipped 0.30 |
+|---|---|---|
+| PELIC — adult ESL, Pittsburgh | 0.6866 | 85.5% |
+| ELLIPSE — ESL student essays | 0.6707 | **98.0%** |
+| ASAP — US school essays | 0.6549 | 89.0% |
+| Liang — TOEFL / 8th grade / CS224N | 0.6342 | 79.4% |
+| M4 — arxiv, wiki, reddit, peerread | **0.5126** | 37.1% |
+
+**Span 0.174**, against RAID's 0.610 median. On this axis the lite tier behaves well — nearer
+Binoculars' 0.030 than RADAR's 0.982 — and it does **not** have the defect Result 21 documents in
+two thirds of the field.
+
+**Read the comparison honestly, though.** RAID's eight domains include poetry, recipes and books;
+these five are all academic, student or web prose, four of them student writing. A narrower range
+of text produces a narrower range of thresholds, so this number flatters the lite tier and is not
+a like-for-like 0.174-against-0.610.
+
+**And the stability is around the wrong point.** Every corpus here wants a threshold between
+**0.51 and 0.69** for a 5% false-positive rate. The tool ships **0.30**. That is not a
+corpus-specific tuning problem — the four student corpora agree to within 0.05 — it is one number
+being roughly 0.3 too low everywhere at once.
+
+Which is a more useful statement of the threshold problem than
+[Result 11](#result-11--the-threshold-that-would-make-the-lite-tier-safe-on-student-writing) made
+from ELLIPSE alone: the fix is not *per corpus*, it is *global*, and it is large. It also does not
+rescue the detector, because [Result 26](#result-26--no-usable-operating-point-replicated-on-nine-times-the-data)
+prices the move — at 0.60 the false-negative rate is already 92.3%. The lite tier is consistently
+calibrated, and consistently calibrated to a point where it accuses most human writers; moving it
+to where it stops doing that is moving it to where it detects nothing.
+
+## Result 28 — length is not the hidden variable
+
+None of Results 1–27 control for document length, and the tool's own output warns that short text
+is unreliable. If false positives tracked length, and the corpora differ in length — they do, from
+Liang's ~300 words to ASAP's ~380 — then some of what this document calls a corpus or subgroup
+effect would be a length effect wearing a label.
+
+1,500 ASAP essays, lite tier at the shipped 0.30:
+
+| words | n | FPR | 95% CI |
+|---|---|---|---|
+| 0–200 | 151 | 89.4% | 83.5–93.4% |
+| 200–300 | 404 | 89.6% | 86.2–92.2% |
+| 300–400 | 374 | 88.5% | 84.9–91.4% |
+| 400–550 | 384 | 90.9% | 87.6–93.4% |
+| 550+ | 187 | 87.2% | 81.6–91.2% |
+
+Flat. Every interval overlaps every other, and the correlation between length and score is
+**r = −0.136** across 1,500 essays — weak, and in the direction that would *reduce* rather than
+create the reported effects.
+
+**This is a control that could have cost a lot and did not.** A strong length effect would have
+put every cross-corpus comparison in this document in question. It is reported because a null
+result from a test that could have gone the other way is evidence, and because the alternative —
+not running it — leaves the same doubt sitting silently under every table above.
+
+Within the range these corpora occupy, at least: 151 essays under 200 words is the thinnest band,
+and nothing here speaks to the very short text the tool already refuses to judge.
+
 ## What these results do not establish
 
 - **Nothing about a transformer *detector*.** Result 8 measures a transformer *language model*,
