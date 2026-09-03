@@ -43,6 +43,12 @@ class Checker:
     """Share of findings that were real when somebody last read all of them. None = never measured."""
     how_precision_was_measured: str | None
     first_version_defect: str | None
+    recall: str | None = None
+    """Share of PLANTED defects the checker catches. None = never measured.
+
+    Precision is about the findings; recall is about the defects. A checker reporting one finding
+    and being right is 100% precise and may be missing forty.
+    """
 
 
 REGISTER: tuple[Checker, ...] = (
@@ -111,6 +117,7 @@ REGISTER: tuple[Checker, ...] = (
             "unordered origin tracking with no invalidation: 38 distinct pairs against 8 real. "
             "Three fixes — source order, rebinding forms, scope pruning — took it to 9."
         ),
+        recall="8/8",
     ),
     Checker(
         command="python -m eval.constant_influence",
@@ -141,6 +148,7 @@ REGISTER: tuple[Checker, ...] = (
             "read a sweep taken before the tests it should have credited, so all seven boundaries "
             "fixed two rounds earlier came back unprotected — wrong in the alarming direction"
         ),
+        recall="8/8",
     ),
     Checker(
         command="python -m eval.constant_census",
@@ -163,6 +171,7 @@ REGISTER: tuple[Checker, ...] = (
             "stopped its upward walk at the first non-comment line, so a block comment heading a "
             "GROUP of constants justified only the first: 49 reported against 41 real"
         ),
+        recall="6/6",
     ),
     Checker(
         command="python -m eval.mutation --all",
@@ -193,6 +202,7 @@ def report() -> dict:
         "precision_measured": sum(1 for c in REGISTER if c.precision is not None),
         "first_version_was_too_loose": sum(
             1 for c in REGISTER if c.first_version_defect is not None),
+        "recall_measured": sum(1 for c in REGISTER if c.recall is not None),
         "rows": rows,
     }
 
@@ -201,14 +211,15 @@ def render(data: dict) -> str:
     lines = [
         f"{data['checkers']} checkers. {data['gating']} can fail a commit. "
         f"{data['precision_measured']} have had their findings read and counted.",
-        f"{data['first_version_was_too_loose']} shipped a first version that was too loose.",
+        f"{data['first_version_was_too_loose']} shipped a first version that was too loose. "
+        f"{data['recall_measured']} have had their recall measured by planting defects.",
         "",
-        f"  {'command':<44} {'gates':>5} {'precision':>12}  findings now",
+        f"  {'command':<44} {'gates':>5} {'precision':>10} {'recall':>7}  findings now",
     ]
     for row in data["rows"]:
         precision = row["precision"] or "UNMEASURED"
         lines.append(f"  {row['command']:<44} {'yes' if row['gates'] else 'no':>5} "
-                     f"{precision[:12]:>12}  {row['findings_now']}")
+                     f"{precision[:10]:>10} {(row['recall'] or '—'):>7}  {row['findings_now']}")
     lines += [
         "",
         "A checker with no precision figure is not a precise one, it is an unmeasured one.",

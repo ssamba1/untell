@@ -94,9 +94,15 @@ def reads(root: Path = REPO, shapes: dict[str, set[str]] | None = None) -> list[
             except SyntaxError:
                 continue
             relative = str(path.relative_to(root))
-            for scope in [tree, *[n for n in ast.walk(tree)
-                                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]]:
-                found.extend(_scan(scope, relative, shapes, known))
+            # Scopes are scanned outermost-first so a nested function can INHERIT the origins its
+            # enclosing scope established. Round 102 pruned nested bodies out of the module scan to
+            # kill false positives and, MEASURED by round 105's recall plants, created a blind spot:
+            # a closure reading the outer result was never checked at all. Inheritance restores it
+            # without the false positives, because a parameter or local assignment rebinds the name
+            # and clears what it inherited.
+            outer = _scan(tree, relative, shapes, known)
+            found.extend(outer["findings"])
+            _scan_nested(tree, relative, shapes, known, outer["origins"], found)
     return found
 
 
@@ -127,8 +133,22 @@ def _bound_names(target: ast.expr) -> list[str]:
     return []
 
 
+def _scan_nested(scope: ast.AST, relative: str, shapes: dict[str, set[str]], known: set[str],
+                 inherited: dict[str, str], found: list[dict]) -> None:
+    """Every function defined directly in `scope`, carrying its origins inward."""
+    for child in ast.iter_child_nodes(scope):
+        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            result = _scan(child, relative, shapes, known, inherited)
+            found.extend(result["findings"])
+            _scan_nested(child, relative, shapes, known, result["origins"], found)
+        elif isinstance(child, ast.ClassDef):
+            _scan_nested(child, relative, shapes, known, inherited, found)
+        else:
+            _scan_nested(child, relative, shapes, known, inherited, found)
+
+
 def _scan(scope: ast.AST, relative: str, shapes: dict[str, set[str]],
-          known: set[str]) -> list[dict]:
+          known: set[str], inherited: dict[str, str] | None = None) -> dict:
     """One scope, processed in SOURCE ORDER with reassignment invalidating the origin.
 
     ⚠️ **The first version tracked origins with an unordered `ast.walk` and never invalidated them.**
@@ -175,7 +195,7 @@ def _scan(scope: ast.AST, relative: str, shapes: dict[str, set[str]],
                 and isinstance(node.args[0].value, str):
             events.append((node.lineno, 1, "read", (node.func.value.id, node.args[0].value)))
 
-    origin: dict[str, str] = {}
+    origin: dict[str, str] = dict(inherited or {})
     seen: set[tuple[int, str, str]] = set()
 
     out: list[dict] = []
@@ -212,7 +232,7 @@ def _scan(scope: ast.AST, relative: str, shapes: dict[str, set[str]],
             "file": relative, "line": lineno, "variable": holder,
             "producer": producer, "key": key, "documented": sorted(shapes[producer]),
         })
-    return out
+    return {"findings": out, "origins": origin}
 
 
 def audit(root: Path = REPO) -> dict:

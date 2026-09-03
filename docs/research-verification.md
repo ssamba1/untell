@@ -5689,6 +5689,79 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and five — a blind spot produces no findings, so reading them cannot find it
+
+Round one hundred and four completed the precision column: all eight checkers carry a measured share
+of findings that were real when somebody read them all. **None had a measured recall.**
+
+The two are opposite questions. Precision is about the findings; recall is about the defects. A
+checker reporting one finding and being right is **100% precise and may be missing forty** — and
+every precision figure in the register was obtained by reading findings, which is a method that
+cannot see anything a checker never reports.
+
+So: plant a known instance of exactly what each checker claims to catch, run it, and see whether it
+fires. `eval/checker_recall.py` does that with **22 plants across three checkers**, each labelled
+easy or hard, because recall against easy cases is worth as little as a mutation positive control
+that barely moves the score.
+
+MEASURED: **21 of 22 on the first run.**
+
+| checker | recall | easy | hard |
+|---|---|---|---|
+| `boundaries` | 8/8 | 2/2 | 6/6 |
+| `constant_census` | 6/6 | 3/3 | 3/3 |
+| `result_keys` | **7/8** | 4/4 | **3/4** |
+
+## ✗ The miss was a gap that a precision fix had created
+
+`result_keys` missed a read **inside a closure over the result**:
+
+```python
+def outer():
+    result = score_text("hello")
+
+    def inner():
+        return result["whatever"]   # never checked
+    return inner
+```
+
+Round one hundred and two pruned nested function bodies out of the module scan, to kill six false
+positives from `eval/holdout.py`'s `render(result)`. That fix was correct and it silently blinded the
+checker to an entire form.
+
+**No amount of reading findings would have found this, because a blind spot produces no findings.**
+The precision measurement in round one hundred and three said 89% and was not wrong; it was
+answering a different question. Only planting the defect found it.
+
+The scan descends again and carries the enclosing scope's origins inward, while a parameter or local
+assignment rebinds the name and clears what it inherited — so the false positives stay dead.
+MEASURED in both directions after the fix: **22 of 22 plants caught, and still zero findings on
+the repository.**
+
+## ✗ And a test whose name asserted the opposite of the design
+
+`test_the_scan_does_not_descend_into_nested_functions` passed after the fix, because what it
+actually asserts is that a nested function *shadowing* the name is not flagged — which is still
+true. Its name states the opposite of how the scan now works.
+
+A passing test with a misleading name is a defect: the next reader trusts the name over the body.
+Renamed to `test_a_nested_function_shadowing_the_name_is_not_flagged`, with the closure case added
+beside it as `test_a_closure_reading_the_outer_result_IS_flagged`.
+
+## What the pair of numbers is for
+
+| | measured by | blind to |
+|---|---|---|
+| precision | reading every finding | anything never reported |
+| recall | planting known defects | forms nobody thought to plant |
+
+Neither substitutes for the other and both have a stated blind spot. Recall here is 22 of 22 against
+**the forms I thought to plant**, which is exactly the limitation precision has in reverse — and the
+reason the plants are committed rather than described, so the next form can be added to a list
+instead of remembered.
+
+---
+
 # Round one hundred and four — the harness measures itself, and it is the one with most to answer for
 
 Round one hundred and three's register left exactly one checker **UNMEASURED**: the mutation

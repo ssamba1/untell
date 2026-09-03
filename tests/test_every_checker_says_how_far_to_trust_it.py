@@ -53,6 +53,10 @@ def test_every_eval_checker_has_a_register_entry():
         if "def main(" in body and ("findings" in body or "--json" in body):
             candidates.add(f"eval.{path.stem}")
     known_not_checkers = {
+        # Measures the checkers rather than the codebase: it plants defects and counts detections,
+        # so it has no findings of its own to be precise about. Excluded with a reason rather than
+        # silently, because an exclusion list that grows without them is how this test stops working.
+        "eval.checker_recall",
         "eval.checkers", "eval.litreview", "eval.detection_power", "eval.mutation",
         "eval.register_conformity", "eval.constant_sensitivity", "eval.pre_llm_fpr",
         "eval.length_standardized", "eval.tells_auroc", "eval.holdout", "eval.arms",

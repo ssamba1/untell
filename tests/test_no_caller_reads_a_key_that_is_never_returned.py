@@ -120,8 +120,13 @@ def test_a_parameter_named_result_is_not_a_module_level_result(tmp_path):
     assert found == []
 
 
-def test_the_scan_does_not_descend_into_nested_functions(tmp_path):
-    """Each node is seen once, in the scope that owns it."""
+def test_a_nested_function_shadowing_the_name_is_not_flagged(tmp_path):
+    """`inner(result)` binds its own `result`; the outer one is a different variable.
+
+    Named for what it asserts. It was `test_the_scan_does_not_descend_into_nested_functions` until
+    round 105, when the scan started descending on purpose — a test whose name states the opposite
+    of the design is a defect even while it passes, because the next reader trusts the name.
+    """
     found = _scan('''
         def outer():
             result = score_text("hello")
@@ -131,6 +136,24 @@ def test_the_scan_does_not_descend_into_nested_functions(tmp_path):
             return inner
     ''', tmp_path)
     assert found == []
+
+
+def test_a_closure_reading_the_outer_result_IS_flagged(tmp_path):
+    """The gap round 105's recall plants found, and the reason the scan now descends.
+
+    Round 102 pruned nested bodies out of the module scan to kill false positives. That fix created
+    a blind spot nobody would have noticed from the findings, because a blind spot produces none:
+    a closure reading a key the outer result does not have was never checked at all.
+    """
+    found = _scan('''
+        def outer():
+            result = score_text("hello")
+
+            def inner():
+                return result["whatever"]
+            return inner
+    ''', tmp_path)
+    assert [f["key"] for f in found] == ["whatever"]
 
 
 def test_the_tautology_it_found_is_gone():
