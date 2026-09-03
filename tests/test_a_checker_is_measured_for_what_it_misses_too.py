@@ -114,3 +114,53 @@ def test_the_register_records_recall_beside_precision():
 def test_each_planted_checker_has_an_entry_in_the_register(checker):
     commands = " ".join(c.command for c in checkers.REGISTER)
     assert checker in commands, f"{checker} is measured for recall and absent from the register"
+
+
+# ---------------------------------------------------------------------------
+# Round 106: recall is deflated by a bad plant exactly as precision is inflated by a false finding.
+#
+# Three of six `cache_keys` plants named their mutable global `_STATE`. That is upper-case, which
+# this repository's convention and the checker's own docstring both take to mean immutable — so the
+# plants contained no defect, and the checker was reported at 50% recall while actually at 100%.
+#
+# The guard is a paired clean control per checker: a module with no defect of its kind, which must
+# produce nothing. A checker firing on one of those would score 100% recall for the wrong reason.
+# ---------------------------------------------------------------------------
+
+
+def test_no_checker_fires_on_a_module_containing_no_defect():
+    """Without this, a checker that reports everything scores perfect recall."""
+    with tempfile.TemporaryDirectory() as tmp:
+        fired = checker_recall.clean_fires(Path(tmp))
+    assert not [c for c, did in fired.items() if did], (
+        f"these fire on a clean module, so their recall figure means only that they fire: "
+        f"{[c for c, did in fired.items() if did]}"
+    )
+
+
+def test_every_planted_checker_has_a_clean_control():
+    """A recall figure with no paired control is half a measurement."""
+    planted = {p.checker for p in checker_recall.PLANTS}
+    missing = sorted(planted - set(checker_recall.CLEAN))
+    assert not missing, f"planted with no clean control: {missing}"
+
+
+def test_the_control_mechanism_can_itself_fire(tmp_path):
+    """Proves the controls are load-bearing: swap in a defect and the control must go off."""
+    defective = checker_recall.Plant(
+        "constant_census", "control probe", False, "_WIDGETS = 7\n")
+    root = tmp_path / "probe"
+    checker_recall._write_tree(root, defective)
+    assert checker_recall._detects(defective, root), (
+        "if a known defect does not fire, the clean controls prove nothing"
+    )
+
+
+def test_a_mutable_global_is_lower_case_by_this_repos_convention():
+    """The exact confusion that produced a false 50%, pinned as a fact about the convention."""
+    assert "_STATE".isupper(), "upper-case by str.isupper, hence immutable by convention"
+    assert not "_state".isupper()
+    sources = [p.source for p in checker_recall.PLANTS if p.checker == "cache_keys"]
+    assert not [s for s in sources if "_STATE" in s], (
+        "a cache_keys plant naming its mutable global in upper case contains no defect"
+    )

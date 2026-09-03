@@ -8,6 +8,14 @@ is right is 100% precise and may be missing forty.
 Precision was measured by reading what came out. Recall has to be measured by putting defects in:
 plant a known instance of exactly what a checker claims to catch, run it, and see whether it fires.
 
+⚠️ **A malformed plant scores the checker as missing a defect that is not there.** Recall is
+deflated by bad plants exactly as precision is inflated by false findings, and the fix is the same:
+verify each one. MEASURED in round one hundred and six, three of six `cache_keys` plants named their
+mutable global `_STATE` — upper-case, which this repository's convention and the checker's own
+docstring both take to mean immutable. The checker was reported at **50% recall** and is at 100%;
+the defect was in the plants. Every plant now has a paired negative case that must NOT fire, which
+is the only mechanical guard against a plant that contains nothing.
+
 ⚠️ **Recall against easy cases is worthless**, for the same reason the mutation harness needs a
 positive control that moves 99.6% of documents rather than one that barely moves any. Every checker
 here is planted with the forms a naive implementation gets right AND the forms it gets wrong —
@@ -85,10 +93,51 @@ PLANTS: tuple[Plant, ...] = (
     Plant("constant_census", "second in an undefended group", True, "_A = 1\n_B = 2\n"),
     Plant("constant_census", "after a comment that explains nothing", False,
           "# the widget count\n_WIDGETS = 7\n"),
+
+    # --- eval.cache_keys: a cached function reading state its key does not name -----------------
+    Plant("cache_keys", "reads a mutable module global", False,
+          "from functools import lru_cache\n\n_state = {'n': 1}\n\n"
+          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _state['n']\n"),
+    Plant("cache_keys", "reads the environment", True,
+          "import os\nfrom functools import lru_cache\n\n"
+          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + int(os.environ.get('N', '0'))\n"),
+    Plant("cache_keys", "reads the clock", True,
+          "import time\nfrom functools import lru_cache\n\n"
+          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + time.time()\n"),
+    Plant("cache_keys", "reads a file", True,
+          "from functools import lru_cache\nfrom pathlib import Path\n\n"
+          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + len(Path('a.txt').read_text())\n"),
+    Plant("cache_keys", "cache decorator written as functools.cache", True,
+          "import functools\n\n_state = {'n': 1}\n\n"
+          "@functools.cache\ndef f(x):\n    return x + _state['n']\n"),
+    Plant("cache_keys", "zero-argument cached function", False,
+          "from functools import lru_cache\n\n_state = {'n': 1}\n\n"
+          "@lru_cache(maxsize=1)\ndef f():\n    return _state['n']\n"),
 )
 
 
-def _write_tree(root: Path, plant: Plant) -> None:
+# For each checker, a module that contains NO defect of its kind. A checker firing on one of these
+# scores 100% recall for the wrong reason — it would fire on anything — and a plant that turns out
+# to contain nothing is scored as a miss it did not commit. Round one hundred and six needed both
+# halves: three `cache_keys` plants named a mutable global in upper case, which the checker's own
+# documented convention reads as immutable, and the checker was reported at 50% when it was at 100%.
+CLEAN: dict[str, str] = {
+    "result_keys": "def f():\n    r = score_text('x')\n    return r['max']\n",
+    "boundaries": (
+        "# MEASURED over 100 samples: twelve is where the rate stops moving.\n"
+        "_FLOOR = 12\n\n\ndef f(n):\n    return n + _FLOOR\n"
+    ),
+    "constant_census": (
+        "# MEASURED on 6,842 abstracts: this is where the curve flattens.\n_RATIO = 0.42\n"
+    ),
+    "cache_keys": (
+        "import re\nfrom functools import lru_cache\n\n_PATTERN = re.compile(r'x')\n\n"
+        "@lru_cache(maxsize=8)\ndef f(text):\n    return bool(_PATTERN.search(text))\n"
+    ),
+}
+
+
+def _write_tree(root: Path, plant: Plant) -> None:  # noqa: C901
     """A minimal repository containing exactly one planted defect."""
     (root / "untell").mkdir(parents=True, exist_ok=True)
     (root / "eval").mkdir(parents=True, exist_ok=True)
@@ -102,8 +151,13 @@ def _write_tree(root: Path, plant: Plant) -> None:
 
 
 def _detects(plant: Plant, root: Path) -> bool:
-    from eval import boundaries, constant_census, result_keys
+    from eval import boundaries, cache_keys, constant_census, result_keys
 
+    if plant.checker == "cache_keys":
+        # `findings`, not `cached` — read from the function rather than guessed. A first draft used
+        # `cached` and would have scored every cache_keys plant as MISSED, which is the same
+        # wrong-key failure `eval/result_keys.py` exists to catch, in the recall tool for it.
+        return bool(cache_keys.audit(root)["findings"])
     if plant.checker == "result_keys":
         return bool(result_keys.reads(root, {"score_text": {"max", "flagged"}}))
     if plant.checker == "boundaries":
@@ -112,6 +166,17 @@ def _detects(plant: Plant, root: Path) -> bool:
         found = constant_census.named_constants(root)
         return any(not entry["justified"] for entry in found)
     raise ValueError(plant.checker)
+
+
+def clean_fires(tmp_root: Path) -> dict[str, bool]:
+    """Does each checker fire on a module containing no defect of its kind? It must not."""
+    fired: dict[str, bool] = {}
+    for checker, source in CLEAN.items():
+        root = tmp_root / f"clean-{checker}"
+        probe = Plant(checker, "clean control", False, source)
+        _write_tree(root, probe)
+        fired[checker] = _detects(probe, root)
+    return fired
 
 
 def measure(tmp_root: Path) -> dict:
@@ -138,7 +203,9 @@ def measure(tmp_root: Path) -> dict:
             "hard": f"{sum(1 for r in hard if r['detected'])}/{len(hard)}",
             "missed": [r["name"] for r in rows if not r["detected"]],
         }
+    controls = clean_fires(tmp_root)
     return {
+        "clean_controls_fired": [c for c, fired in controls.items() if fired],
         "planted": len(results),
         "detected": sum(1 for r in results if r["detected"]),
         "recall": round(100.0 * sum(1 for r in results if r["detected"]) / len(results), 1),
@@ -148,7 +215,15 @@ def measure(tmp_root: Path) -> dict:
 
 
 def render(report: dict) -> str:
-    lines = [
+    lines = []
+    if report.get("clean_controls_fired"):
+        lines += [
+            "⚠️ REFUSING TO REPORT: these checkers fire on a module containing no defect of their "
+            "kind, so\n   a recall of 100% would mean only that they fire on anything: "
+            + ", ".join(report["clean_controls_fired"]),
+            "",
+        ]
+    lines += [
         f"{report['planted']} defects planted, {report['detected']} detected — "
         f"recall {report['recall']}%.",
         "",

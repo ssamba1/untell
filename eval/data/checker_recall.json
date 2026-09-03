@@ -1,6 +1,7 @@
 {
-  "planted": 22,
-  "detected": 22,
+  "clean_controls_fired": [],
+  "planted": 28,
+  "detected": 28,
   "recall": 100.0,
   "by_checker": {
     "boundaries": {
@@ -9,6 +10,14 @@
       "recall": 100.0,
       "easy": "2/2",
       "hard": "6/6",
+      "missed": []
+    },
+    "cache_keys": {
+      "planted": 6,
+      "detected": 6,
+      "recall": 100.0,
+      "easy": "2/2",
+      "hard": "4/4",
       "missed": []
     },
     "constant_census": {
@@ -158,6 +167,42 @@
     {
       "checker": "constant_census",
       "name": "after a comment that explains nothing",
+      "hard": false,
+      "detected": true
+    },
+    {
+      "checker": "cache_keys",
+      "name": "reads a mutable module global",
+      "hard": false,
+      "detected": true
+    },
+    {
+      "checker": "cache_keys",
+      "name": "reads the environment",
+      "hard": true,
+      "detected": true
+    },
+    {
+      "checker": "cache_keys",
+      "name": "reads the clock",
+      "hard": true,
+      "detected": true
+    },
+    {
+      "checker": "cache_keys",
+      "name": "reads a file",
+      "hard": true,
+      "detected": true
+    },
+    {
+      "checker": "cache_keys",
+      "name": "cache decorator written as functools.cache",
+      "hard": true,
+      "detected": true
+    },
+    {
+      "checker": "cache_keys",
+      "name": "zero-argument cached function",
       "hard": false,
       "detected": true
     }

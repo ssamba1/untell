@@ -5689,6 +5689,60 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and six — a bad plant is a false miss, and it looks exactly like a real one
+
+Round one hundred and five measured recall by planting defects and found a real blind spot. This
+round extended the plants to `cache_keys`, a **gating** checker, and got:
+
+    cache_keys   50.0%   easy 0/2   hard 3/4
+                 missed: reads a module global, functools.cache, zero-argument cached function
+
+A gating checker missing the most basic form of the thing it exists to catch. That is the kind of
+finding a round is built around — and it was wrong.
+
+## ✗ The plants were malformed, not the checker
+
+All three "misses" named their mutable global **`_STATE`**. In Python `"_STATE".isupper()` is
+**True**, and this checker's own docstring says upper-case names are treated as immutable, because
+that is the convention the repository enforces elsewhere. So the plants contained **no defect**: a
+cached function reading an immutable constant is exactly the case the checker documents as sound.
+
+Rewritten with `_state`, MEASURED: **6 of 6**, including all three "misses" and both the
+`functools.cache` and zero-argument forms.
+
+## What that says about the method
+
+Precision is **inflated** by a false finding. Recall is **deflated** by a false plant. They are the
+same error in mirror image, and both look like news:
+
+| | inflated by | deflated by | reads as |
+|---|---|---|---|
+| precision | a finding that is not a defect | — | the checker is better than it is |
+| recall | — | a plant that is not a defect | the checker is worse than it is |
+
+Round one hundred and two spent three iterations removing false findings from a checker. This round
+spent one removing false plants from a measurement of a checker. **The method needs the same
+discipline as the thing it measures**, and there is no reason it should have been exempt.
+
+## ✅ The guard: a clean control per checker
+
+Each checker now has a paired module containing **no** defect of its kind — a cached function over a
+compiled regex, a justified constant, a comparison-free module, a read of a documented key. If any
+fires, the tool **refuses to report**, because a checker that fires on anything scores 100% recall
+for the wrong reason.
+
+That is the same shape as the mutation harness's positive control, pointed the other way: the
+positive control proves the instrument can see, and the clean control proves it is not merely
+shouting. MEASURED: **28 plants, 28 detected, 0 clean controls fired.**
+
+⚠️ **Neither control proves the plants contain what they claim.** A clean control catches a checker
+that fires on everything; it cannot catch a plant that contains nothing, which is what happened
+here. The only thing that caught that was reading the checker's docstring after disbelieving the
+result — and the reason to disbelieve it was that a 50% recall on the easy cases of a gating checker
+is too big a defect to have gone unnoticed this long.
+
+---
+
 # Round one hundred and five — a blind spot produces no findings, so reading them cannot find it
 
 Round one hundred and four completed the precision column: all eight checkers carry a measured share

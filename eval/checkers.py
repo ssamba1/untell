@@ -102,6 +102,7 @@ REGISTER: tuple[Checker, ...] = (
             "flagged any patch of a MODULE owning a cached function; its one finding was false, and "
             "the coarse rule had been written down as deliberate"
         ),
+        recall="6/6",
     ),
     Checker(
         command="python -m eval.result_keys",
