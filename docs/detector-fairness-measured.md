@@ -57,8 +57,59 @@ CSV does not belong in a repository either.
 
 Liang's loader applies **no minimum-word floor**, unlike the other two. These are the essays the
 published bias figures were computed on, and quietly dropping some of them would make any
-comparison against those figures meaningless. It also carries the only *paired* contrast in this
-document: `toefl_gpt4_polished` is the same 91 essays as `toefl_nonnative`, run through GPT-4.
+comparison against those figures meaningless.
+
+Three more corpora arrived later and the table above predates them:
+
+| | PELIC | M4 (SemEval-2024 Task 8) | RAID leaderboard |
+|---|---|---|---|
+| what | adult ESL writing, Univ. of Pittsburgh | **paired** human + machine on the same prompt | 46 detectors' published calibration |
+| size used | 400–4,000 texts | 5,193 rows, 7 languages, 7 generators | 46 submissions × 10,749 rows |
+| labels | first language, proficiency level | language, generator, domain, is_ai | per-domain thresholds, accuracy by attack |
+| used by | [9](#result-9--a-third-corpus-a-new-axis-and-a-direction-reversal), [27](#result-27--the-same-question-asked-of-ourselves-consistently-calibrated-consistently-wrong) | [24](#result-24--the-missing-half-measured-the-abstention-works-where-the-text-is-obviously-foreign-and-fails-where-it-is-not)–[27](#result-27--the-same-question-asked-of-ourselves-consistently-calibrated-consistently-wrong) | [21](#result-21--46-real-detectors-and-their-own-calibration-data-says-one-threshold-cannot-work)–[23](#result-23--every-number-on-that-leaderboard-assumes-a-calibration-step-nobody-deploys) |
+| vendored? | no — fetched on demand | no — fetched on demand | extract committed, 3.4 GB clone not |
+
+**M4 supersedes Liang as the paired corpus.** Liang's `toefl_gpt4_polished` is 91 essays a model
+*edited*; M4 pairs a human answer and a machine answer to the same prompt, 4,993 times, across
+seven generators. Results 12 and 18 use the first; Results 24–26 use the second.
+
+---
+
+## The results, and where each one stands
+
+Twenty-eight results, four of them corrections to earlier ones in this document. A reader who wants
+the argument rather than the audit trail can read 26, 21 and 23 and stop.
+
+| # | claim | corpus | status |
+|---|---|---|---|
+| [1](#result-1--the-shipped-lite-threshold-flags-974-of-known-human-esl-writing) | the shipped 0.30 flags 97.4% of known-human ESL writing | ELLIPSE | holds |
+| [2](#result-2--false-positive-rate-rises-with-english-proficiency-replicated-held-out) | FPR rises with English proficiency | ELLIPSE | holds, held-out |
+| [3](#result-3--the-two-halves-of-the-detector-are-biased-against-opposite-groups) | the two channels are biased against opposite groups | ELLIPSE | holds |
+| [4](#result-4--the-bias-is-in-the-features-not-in-untells-calibration) | the bias is in the features, not the calibration | ELLIPSE | holds |
+| [5](#result-5--it-is-not-an-artifact-of-one-formula) | not an artifact of one burstiness formula | ELLIPSE | holds |
+| [6](#result-6--on-an-independent-corpus-non-native-writers-are-flagged-less) | on ASAP, non-native writers are flagged **less** | ASAP | holds — reverses the field's assumption |
+| [7](#result-7--untells-perplexity-channel-is-anti-correlated-with-real-perplexity) | the "perplexity" channel is anti-correlated with real perplexity | ELLIPSE + n-gram LM | holds |
+| [8](#result-8--a-real-transformer-shows-it-more-strongly-and-the-blocker-was-my-error) | a real transformer shows it more strongly | GPT-2 ONNX | holds |
+| [9](#result-9--a-third-corpus-a-new-axis-and-a-direction-reversal) | proficiency direction reverses on a third corpus | PELIC | holds; tool's own worst-vs-best retracted |
+| [10](#result-10--the-largest-disparity-here-is-not-demographic-it-is-professional-vs-student) | the largest gap is professional-vs-student, not demographic | 5 corpora | holds |
+| [11](#result-11--the-thresholds-that-reach-a-target-false-positive-rate-on-student-writing-recommendation-withdrawn) | thresholds reaching a target FPR | ELLIPSE | **recommendation withdrawn** by 15 |
+| [12](#result-12--liang-et-als-own-corpus-and-the-first-paired-contrast-in-this-document) | GPT-4 polishing makes essays look *more* human | Liang | **does not generalise** — see 18 |
+| [13](#result-13--raising-the-threshold-cuts-the-error-rate-and-widens-the-gap) | raising the threshold cuts errors and widens the gap | Liang | holds |
+| [14](#result-14--the-two-channels-rank-the-populations-in-nearly-opposite-orders-and-that-is-what-decides-the-direction-of-an-edit) | the channels rank populations oppositely; that decides direction | Liang | holds |
+| [15](#result-15--both-error-rates-and-why-result-11s-threshold-recommendation-was-wrong) | AUROC 0.8012; no usable operating point | Liang paired | holds — confirmed by 26 |
+| [16](#result-16--false-positive-parity-looked-acceptable-while-the-false-negative-gap-was-41x) | FPR parity hid a 4.1x FNR gap | Liang paired | holds |
+| [17](#result-17--the-cheapest-possible-evasion-multiplies-the-miss-rate-and-costs-nothing) | trivial evasion multiplies the miss rate | Liang paired | holds |
+| [18](#result-18--result-12-does-not-generalise-on-a-second-population-llm-editing-makes-it-worse) | on a second population, LLM editing makes it worse | Liang | holds — **limits 12** |
+| [19](#result-19--crossing-finds-less-not-more-the-headline-is-retracted) | crossing axes finds more | ASAP | **RETRACTED** by its own correction |
+| [20](#result-20--students-with-disabilities-are-flagged-more-and-it-cancels-the-ell-effect) | students with disabilities flagged more; cancels the ELL effect | ASAP | holds — no prior published rate |
+| [21](#result-21--46-real-detectors-and-their-own-calibration-data-says-one-threshold-cannot-work) | 46 real detectors need a 0.610-median threshold span | RAID | holds, both FPR targets |
+| [22](#result-22--the-same-leaderboard-on-attacks-a-third-of-the-field-is-one-line-of-code-from-collapse) | homoglyph attacks destroy 14 of 43 detectors | RAID | holds — mean corrected to bimodal |
+| [23](#result-23--every-number-on-that-leaderboard-assumes-a-calibration-step-nobody-deploys) | leaderboard numbers assume calibration nobody deploys | RAID source | holds |
+| [24](#result-24--the-missing-half-measured-the-abstention-works-where-the-text-is-obviously-foreign-and-fails-where-it-is-not) | the abstention is script-gated, not language-gated | M4 | **restated** — first version counted abstentions as misses |
+| [25](#result-25--after-the-gate-the-domain-gap-is-real-within-one-language-and-so-is-the-generator-gap) | generator matters more than domain | M4 post-gate | holds |
+| [26](#result-26--no-usable-operating-point-replicated-on-nine-times-the-data) | AUROC 0.7745; no usable operating point | M4, 3,493 pairs | holds — replicates 15 at 9x |
+| [27](#result-27--the-same-question-asked-of-ourselves-consistently-calibrated-consistently-wrong) | our own threshold span is 0.174, around the wrong point | 5 corpora | holds |
+| [28](#result-28--length-is-not-the-hidden-variable) | length does not drive the results | ASAP | **negative control** |
 
 ---
 
@@ -617,7 +668,7 @@ Measured on the raw channels, both treatments move *both* channels the same way:
 A *higher* common-word ratio reads as machine-like; a *lower* burstiness reads as machine-like. So
 in both cases the edit makes the essay look more human on vocabulary and more machine on
 burstiness — the two channels pull against each other exactly as
-[Result 14](#result-14--the-two-channels-rank-the-populations-in-nearly-opposite-orders-and-that-explains-result-12)
+[Result 14](#result-14--the-two-channels-rank-the-populations-in-nearly-opposite-orders-and-that-is-what-decides-the-direction-of-an-edit)
 describes, and **the net direction is decided by which movement is larger.** For TOEFL the
 vocabulary shift dominates (−0.120 against −0.075) and the score falls. For the 8th-graders the
 burstiness collapse dominates (−0.188 against −0.086) and the score rises.
@@ -915,7 +966,7 @@ same way: mistral 83.6% → mistral-chat 93.6%, mpt 83.3% → mpt-chat 90.0%, co
 cohere-chat 87.5%. And the strongest models are not the hardest to catch — GPT-4 is detected at
 89.9% while base Cohere sits at 80.4%. Whatever these detectors key on, RLHF adds it rather than
 removing it, which is consistent with
-[Result 14](#result-14--the-two-channels-rank-the-populations-in-nearly-opposite-orders-and-that-explains-result-12)
+[Result 14](#result-14--the-two-channels-rank-the-populations-in-nearly-opposite-orders-and-that-is-what-decides-the-direction-of-an-edit)
 finding this repository's own detector keyed to a register rather than to machine provenance.
 
 *Reproduce: `untell-detector-calibration report --fetch` pulls the same leaderboard; the attack
@@ -1172,7 +1223,7 @@ perfectly, and the older, weaker FLAN-T5 and BLOOMZ are the ones that get throug
 
 ## Result 26 — no usable operating point, replicated on nine times the data
 
-[Result 15](#result-15--the-shipped-lite-tier-is-a-ranking-signal-not-an-accusation-instrument)
+[Result 15](#result-15--both-error-rates-and-why-result-11s-threshold-recommendation-was-wrong)
 concluded from 391 paired Liang essays that the lite tier is a ranking signal and not an accusation
 instrument: AUROC 0.8012, and no threshold with tolerable error on both sides. M4 tests that on
 **3,493 paired English texts** — nine times the data, seven generators, four domains, and no
@@ -1201,7 +1252,7 @@ essays and one of abstracts, reviews, wiki articles and forum posts, from seven 
 than one, agreeing to within 0.03. The conclusion was not an artifact of the first corpus, and it
 was not an artifact of GPT-4-polished text.
 
-It also sets a ceiling on what any threshold change could achieve. [Result 11](#result-11--the-threshold-that-would-make-the-lite-tier-safe-on-student-writing)
+It also sets a ceiling on what any threshold change could achieve. [Result 11](#result-11--the-thresholds-that-reach-a-target-false-positive-rate-on-student-writing-recommendation-withdrawn)
 gives the threshold that would make the lite tier safe on student writing — 0.775 for a 1%
 false-positive rate. On this corpus 0.775 misses **99.9%** of machine-written text. There is no
 setting of one number that makes this detector both safe and useful, which is
@@ -1238,7 +1289,7 @@ corpus-specific tuning problem — the four student corpora agree to within 0.05
 being roughly 0.3 too low everywhere at once.
 
 Which is a more useful statement of the threshold problem than
-[Result 11](#result-11--the-threshold-that-would-make-the-lite-tier-safe-on-student-writing) made
+[Result 11](#result-11--the-thresholds-that-reach-a-target-false-positive-rate-on-student-writing-recommendation-withdrawn) made
 from ELLIPSE alone: the fix is not *per corpus*, it is *global*, and it is large. It also does not
 rescue the detector, because [Result 26](#result-26--no-usable-operating-point-replicated-on-nine-times-the-data)
 prices the move — at 0.60 the false-negative rate is already 92.3%. The lite tier is consistently

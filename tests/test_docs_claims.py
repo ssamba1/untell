@@ -486,3 +486,27 @@ class TestResult20IsNotQuotedFromASingleRun:
         assert row, "the raw-evasion row is gone"
         assert "n = 40" in row.group(0), f"sample size not stated: {row.group(0)}"
         assert "repeats" in row.group(0), f"repeat count not stated: {row.group(0)}"
+
+
+def test_every_result_cross_reference_resolves():
+    """Retitling a result must not leave dead links behind it.
+
+    MEASURED 2026-09-03: four were dead. Results 11, 14 and 15 were all retitled by later
+    corrections in the same document — 11's recommendation withdrawn, 14's mechanism restated,
+    15 rewritten around both error rates — and the cross-references kept pointing at the old
+    headings. A reader following "see Result 15" landed nowhere, which in a document whose
+    argument is built out of results correcting each other is the worst place to lose someone.
+    """
+    import re
+
+    doc = (REPO / "docs" / "detector-fairness-measured.md").read_text(encoding="utf-8")
+
+    def anchor(heading: str) -> str:
+        a = heading.lower().replace("—", "").replace("*", "").replace("`", "")
+        return "#" + re.sub(r"[^\w\s-]", "", a).replace(" ", "-")
+
+    headings = {anchor(h) for h in re.findall(r"^## (.+)$", doc, re.M)}
+    used = set(re.findall(r"\]\((#result-[a-z0-9-]+)\)", doc))
+    assert used, "no result cross-references found; has the link style changed?"
+    dead = sorted(used - headings)
+    assert not dead, "dead result links:\n  " + "\n  ".join(dead)
