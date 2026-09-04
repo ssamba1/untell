@@ -765,6 +765,17 @@ download** — the bundled deterministic rewriter (PWWS/TextFooler-style word-im
 stands in for the hosted LLM. Weaker than Claude-as-rewriter, but it's what makes the free measurement
 above reproducible. (In Claude Code, `/untell` uses Claude itself as the rewriter — also free.)
 
+⚠️ **On text carrying no catalogued tell, `surgical` does nothing at all** — it returns your input
+byte-identical, rather than rewriting it weakly. It ranks words by whether swapping one removes a
+tell from `references/ai-tells.md`, so a text with no tell gives it no word to try. MEASURED on 40
+committed machine-written abstracts (`eval/data/generated_abstracts.py`), lite tier: 36 have an
+empty ranking and 37 come back unchanged, against 18 of 20 changed for `structural` and 14 of 20 for
+`composite` on the same corpus. The tell catalogue reads academic-vs-chatbot **register**, so formal
+prose is the ordinary case for this, not an edge — and more `--best-of` draws cannot help, because
+the rewriter is deterministic. Use `composite` (the default) or `structural` on that text; the loop
+now says so in its `warning` when it happens, instead of reporting the run as drafts refused on
+score.
+
 Free rewriter backends, weakest → strongest (all no-key): **`surgical`** (word swaps, zero-dep) →
 **`structural`** (sentence-level transforms) → **`composite`** (structural + surgical, the default) →
 **`neural`** (T5 best-of-N paraphrase + composite; needs `.[full]`) → **`ensemble`** / **`max`** (runs

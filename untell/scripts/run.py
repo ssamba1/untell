@@ -424,7 +424,14 @@ def _inert_budget_warning(max_iters: int, best_of: int) -> str | None:
 
 
 def _nothing_adopted_warning(
-    rewrites: int, adopted: int, changed: bool, vetoed: int = 0, sentinel_failed: int = 0
+    rewrites: int,
+    adopted: int,
+    changed: bool,
+    vetoed: int = 0,
+    sentinel_failed: int = 0,
+    unchanged: int = 0,
+    deterministic: bool = False,
+    rewriter_name: str = "",
 ) -> str | None:
     """Say when the loop drew candidates and kept none of them.
 
@@ -445,6 +452,20 @@ def _nothing_adopted_warning(
     The loop optimises the detector score, so discarding a draft that raises it is correct. What was
     missing is any account of it: the user is handed their own text back with no indication that a
     better-by-tells version existed and was rejected on score.
+
+    FOUR CAUSES, FOUR REMEDIES, and the branches below exist to keep them apart. Three of them
+    never reach the scorer at all, so telling a user their drafts "scored worse" would describe a
+    comparison that did not happen — and would attach the wrong next step:
+
+        sentinel_failed   the draft broke a locked span; refused before scoring
+        vetoed            the draft changed the meaning; refused before scoring
+        unchanged         there was no draft — the rewriter returned its input byte-identical
+        (the rest)        drafts were written, scored, and lost
+
+    Only the last is helped by more draws. `unchanged` was the branch that took longest to appear,
+    because an identical candidate is invisible to every guard: it reproduces every locked span,
+    scores similarity 1.0, and ties on detector score, so it passes everything and is refused only
+    for tying. See the comment on that branch for the measurement that found it.
     """
     if changed or not rewrites or adopted:
         return None
@@ -489,11 +510,76 @@ def _nothing_adopted_warning(
             "said. Try a different --rewriter; more draws of the same one will keep failing here."
         )
     if vetoed:
+        # `unchanged` is disjoint from both rejection counters — an identical candidate reproduces
+        # every sentinel and scores similarity 1.0, so it cannot be vetoed or sentinel-refused — and
+        # it has to be subtracted here rather than folded into "scored worse" for the same reason
+        # the branches above exist.
+        scored = rewrites - vetoed - unchanged
+        identical = (
+            f"{unchanged} came back identical to your text, and " if unchanged else "and "
+        )
         return (
-            f"the rewriter produced {drafts} and adopted none: {vetoed} changed the meaning and "
-            f"{rewrites - vetoed} scored worse than your text, so it was returned unchanged. This "
-            "is the loop refusing both a worse score and a changed meaning, not a failure to run. "
-            "Try --best-of 3 for more draws, a different --rewriter, or --tier full."
+            f"the rewriter produced {drafts} and adopted none: {vetoed} changed the meaning, "
+            f"{identical}{scored} scored worse than your text, so it was returned unchanged. "
+            "This is the loop refusing both a worse score and a changed meaning, not a failure to "
+            "run. Try --best-of 3 for more draws, a different --rewriter, or --tier full."
+        )
+    # Drafts that were BYTE-IDENTICAL to the input. Same defect as the two branches above, one
+    # step earlier in the chain: "every draft scored worse" describes a comparison that did not
+    # happen, because there was no draft. An identical candidate ties on score by construction, so
+    # it reaches the adoption guard and is refused for tying — which is the loop working, and
+    # nothing at all to do with the score being worse.
+    #
+    # MEASURED on 40 machine-written abstracts, `surgical`, lite. `SurgicalRewriter` ranks words by
+    # whether swapping one removes a catalogued tell; 36 of the 40 carry no catalogued tell, so the
+    # ranking is EMPTY and the substitution loop never runs a single iteration. The rewriter
+    # returned its argument on 37 of 40, and the note said every draft scored worse than the text —
+    # of a rewriter that had not written one.
+    #
+    # The remedy is the reason this needs its own branch, and it is the opposite of the catch-all's.
+    # A rewriter that has no edit surface on this text has none on the next draw either, so more
+    # draws buy nothing; for a DETERMINISTIC one that is not a heuristic but a guarantee, and the
+    # loop already collapses `best_of` to a single draw for exactly that reason. `--tier full` does
+    # not help either: the empty edit surface is a property of the text and the rewriter, not of
+    # what is scoring them.
+    if unchanged >= rewrites:
+        # What "more draws won't help" rests on differs by rewriter, so do not assert the strong
+        # form for one that could have drawn differently. For a deterministic rewriter identical
+        # draws are a guarantee — the loop collapses `best_of` to a single draw for that reason.
+        # For a stochastic one all this run establishes is that the draws it DID make were
+        # identical, which is evidence and not proof.
+        why = (
+            "it is deterministic, so further draws are byte-identical by construction"
+            if deterministic
+            else f"all {rewrites} draws came back the same"
+        )
+        every = "it was" if rewrites == 1 else "every one was"
+        # Never suggest the rewriter that just failed. The first version of this note recommended
+        # `composite` unconditionally, which is the DEFAULT — so a user who had changed nothing was
+        # told to try what they were already running. Both alternatives rewrite sentence structure
+        # rather than substituting catalogued tells, but that contrast is only informative against
+        # `surgical`, whose edit surface IS the catalogue; asserting it after `composite` came back
+        # empty would be explaining a failure by a mechanism that was not the one that failed.
+        others = [r for r in ("composite", "structural", "targeted") if r != rewriter_name]
+        suggest = " or ".join(f"--rewriter {r}" for r in others[:2])
+        contrast = (
+            " — they rewrite sentence structure rather than swapping catalogued tells, which is "
+            "what `surgical` needs and this text does not have"
+            if rewriter_name == "surgical"
+            else ""
+        )
+        return (
+            f"the rewriter produced {drafts} and {every} identical to your text, so nothing "
+            f"was rewritten. It was not refused on score or meaning — there was no draft to "
+            f"refuse. This rewriter has no edit surface on this text ({why}). Try "
+            f"{suggest}{contrast}."
+        )
+    if unchanged:
+        return (
+            f"the rewriter produced {drafts} and adopted none: {unchanged} came back identical to "
+            f"your text and {rewrites - unchanged} scored worse. Only the second group was ever a "
+            "draft; an identical candidate ties on score and is refused for tying. Try a different "
+            "--rewriter, or --tier full, where the score has more to respond to."
         )
     return (
         f"the rewriter produced {drafts} and adopted "
@@ -1124,6 +1210,10 @@ def _untell_text(
     # nothing happened was `similarity: 1.0`, which reads as a *quality* number, not a no-op flag.
     # This is the same contradiction the `iters` comment below describes, one level up.
     adopted = 0
+    # Draws that came back BYTE-IDENTICAL to what was handed to the rewriter. A rewriter with an
+    # empty edit surface on this text returns its input, and every stage downstream then reads that
+    # as a candidate that merely tied — see the branch that increments this for the full chain.
+    unchanged = 0
     stopped = "max_iters"
     for i in range(1, max_iters + 1):
         if _passed(best_score) and similarity(masked, best_masked) >= sim_bar:
@@ -1289,9 +1379,28 @@ def _untell_text(
             # is not the argument, that the loop was RANKING on a quantity nobody is judged on is.
             with _timed(phase, "tells"):
                 cand_tells = score_tells(restore(candidate, mapping)).get("tells", 0)
+            # A rewriter with no edit surface on this text returns its input BYTE-IDENTICAL, and
+            # every stage downstream reads that as a candidate that narrowly tied: the sentinel
+            # multiset check passes trivially, the meaning gate sees similarity 1.0, `score()`
+            # returns the same number, and the adoption guard's `<=` holds. So the run in which
+            # NOTHING WAS ATTEMPTED was reported as the run whose drafts were all refused on score,
+            # and handed that other situation's remedy. MEASURED on 40 machine-written abstracts,
+            # `surgical`, lite: 36 carry no catalogued tell, so `_tell_ranks` is empty and the
+            # rewriter returns its argument on 37 of them — while the result said `rewrites: 1`,
+            # `stopped: stalled` and the note said "every draft scored worse".
+            #
+            # It still enters `valid`. Selection, stall detection and the score comparison below
+            # must behave exactly as before; only the ACCOUNT of the draw changes.
+            identical = candidate == best_masked
+            if identical:
+                unchanged += 1
             valid.append((candidate, cscore, cand_tells))
             if inspect_events is not None:
-                inspect_events.append({"type": "candidate_accepted", "iter": i, "draw": drew})
+                inspect_events.append({
+                    "type": "candidate_identical" if identical else "candidate_accepted",
+                    "iter": i,
+                    "draw": drew,
+                })
         _inspect_was_adopted = False  # track for inspect event below
         cand_best, cand_best_score = None, None
         if valid:
@@ -1388,8 +1497,13 @@ def _untell_text(
         if cand_best is not None and cand_best_score["max"] <= best_score["max"]:
             if cand_best != best_masked:
                 adopted += 1
+                # Inside the guard, not beside it. This flag used to be set whenever the winner
+                # tied, including when the winner WAS the current text — so on precisely the run
+                # where nothing happened, `inspect` reported an "adopted" event while the `adopted`
+                # counter stayed 0. The two accountings of the same decision disagreed, and the one
+                # a user opens to find out why nothing changed was the one that said it had.
+                _inspect_was_adopted = True
             best_masked, best_score = cand_best, cand_best_score
-            _inspect_was_adopted = True
         if inspect_events is not None:
             if _inspect_was_adopted:
                 inspect_events.append({"type": "adopted", "iter": i})
@@ -1590,14 +1704,16 @@ def _untell_text(
             language_warning, carried_payload, best_score.get("warning"),
             _saturated_max_caveat(pre, best_score), _unknown_style_warning(style),
             _nothing_adopted_warning(
-                rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed
+                rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed,
+                unchanged, getattr(rw, "deterministic", False), getattr(rw, "name", ""),
             ),
             _inert_budget_warning(max_iters, best_of),
         )}
            if (language_warning or carried_payload or best_score.get("warning")
                or _saturated_max_caveat(pre, best_score) or _unknown_style_warning(style)
                or _nothing_adopted_warning(
-                   rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed)
+                   rewrites, adopted, final.strip() != text.strip(), vetoed, sentinel_failed,
+                   unchanged, getattr(rw, "deterministic", False), getattr(rw, "name", ""))
                or _inert_budget_warning(max_iters, best_of))
            else {}),
         "sim_bar": sim_bar,

@@ -30,6 +30,22 @@ texts, stdlib, this took tells/100w from 0.307 to **0.179** with the detector sc
 ``composite`` (structural + surgical) still owes most of its strength to the *structural* half, and
 a benchmark row for "surgical" alone is measuring the detector's insensitivity as much as the
 rewriter.
+
+**On text carrying no catalogued tell this rewriter cannot act at all, and returns its input
+byte-identical.** That follows from the objective above: ``prefer_tells=True`` ranks words by
+tell removal, and a text with no tell has an empty ranking, so nothing is ever proposed. MEASURED
+on 40 machine-written abstracts, lite: 36 have an empty ranking and 37 come back unchanged, against
+18 of 20 changed for ``structural`` and 14 of 20 for ``composite`` on the same corpus. The tells
+catalogue reads academic-vs-chatbot REGISTER, so this is the ordinary case for formal prose rather
+than an edge — the corpus above is machine-written throughout.
+
+That was silent until it was measured. An identical candidate reproduces every locked span, scores
+similarity 1.0 and ties on detector score, so it passes every gate and even satisfies the adoption
+guard's ``<=`` on score — what stops it is the separate ``cand_best != best_masked`` check, which is
+about the TEXT and not about the comparison the user is then told about. So the loop reported
+``stopped: stalled`` and a note saying every draft scored worse than the text, of a rewriter that
+had written none. The loop now counts
+identical draws separately and names this cause; see ``run.py::_nothing_adopted_warning``.
 """
 
 from __future__ import annotations

@@ -15,11 +15,28 @@ Event schema (each item in the ``inspect`` list returned by ``untell_text``):
         iter  int
         draw  int
 
+    type ``"candidate_identical"``:
+        iter  int
+        draw  int
+        The rewriter returned its input BYTE-IDENTICAL — it wrote no draft. Distinct from
+        ``candidate_accepted`` because it passes every gate for a reason that is not a judgement:
+        an identical string reproduces every locked span, scores similarity 1.0, and ties on
+        detector score. Reporting it as an accepted candidate described a rewrite that never
+        happened, on precisely the run a reader opens ``--inspect`` to understand. It happens
+        whenever a rewriter has no edit surface on the text — ``surgical`` on prose carrying no
+        catalogued tell is the measured case; see ``rewriter/surgical.py``.
+
     type ``"adopted"``:
-        iter  int    — the candidate from this iteration's valid pool was adopted
+        iter  int    — the candidate from this iteration's valid pool was adopted, meaning the
+                       text actually CHANGED. Emitted in lockstep with the ``adopted`` counter in
+                       the result: a candidate that ties by being the incumbent itself is not an
+                       adoption and gets ``not_adopted``.
 
     type ``"not_adopted"``:
-        iter  int    — valid candidates existed but none beat the incumbent
+        iter  int    — valid candidates existed but none beat the incumbent. Also the correct
+                       event when every draw was ``candidate_identical``: nothing was adopted
+                       because there was nothing to adopt, which the renderer says in those words
+                       rather than as a contest the text narrowly won.
 
 When the valid pool was empty (all draws were rejected), no adopted/not_adopted event is emitted
 for that iteration — the rejections themselves are the record.
@@ -125,6 +142,14 @@ def render_inspect_report(
         for it in sorted(by_iter):
             lines.append(f"iter {it}:")
             draw_n = 0
+            # "none beat the incumbent" is true but unhelpful when the only candidate WAS the
+            # incumbent: it reads as a close contest the text lost. Distinguish the iteration in
+            # which the rewriter produced nothing to contest with.
+            drew = [e for e in by_iter[it]
+                    if e.get("type") in ("candidate_accepted", "candidate_identical")]
+            all_identical = bool(drew) and all(
+                e.get("type") == "candidate_identical" for e in drew
+            )
             for ev in by_iter[it]:
                 t = ev.get("type")
                 if t == "candidate_rejected":
@@ -141,10 +166,19 @@ def render_inspect_report(
                 elif t == "candidate_accepted":
                     draw_n += 1
                     lines.append(f"  draw {draw_n}: passed gates")
+                elif t == "candidate_identical":
+                    draw_n += 1
+                    lines.append(
+                        f"  draw {draw_n}: IDENTICAL to the input — the rewriter wrote nothing"
+                    )
                 elif t == "adopted":
                     lines.append("  -> adopted (score improved or tied)")
                 elif t == "not_adopted":
-                    lines.append("  -> valid candidates existed but none beat the incumbent")
+                    lines.append(
+                        "  -> nothing to adopt: every draw was the input itself"
+                        if all_identical
+                        else "  -> valid candidates existed but none beat the incumbent"
+                    )
 
     lines.append("=" * W)
     return "\n".join(lines)

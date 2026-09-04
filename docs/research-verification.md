@@ -5689,6 +5689,117 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and nine — the rewriter that wrote nothing, reported as a draft refused
+
+Asked of the tool rather than of its evidence: **run the humanizer on real machine text.** Not the
+built-in demo corpus (three hand-written paragraphs, 37 words), and not HC3, whose published failure
+is confounded — `hc3_roberta` is immobile on its own training corpus, so a null there measures the
+detector's home-field advantage rather than the rewriter. The neutral corpus is
+`eval/data/generated_abstracts.py`: 70 machine-written abstracts, already committed, in the academic
+register this repo targets.
+
+MEASURED, `tier=lite`, `max_iters=5`, 10 abstracts, the four no-key rewriters:
+
+| rewriter | changed | adopted | score |
+|---|---|---|---|
+| composite (the default) | 5/10 | 6 | 0.3025 → 0.2692 |
+| structural | 5/10 | 13 | 0.3025 → 0.2790 |
+| targeted | 5/10 | 6 | 0.3025 → 0.2692 |
+| **surgical** | **0/10** | **0** | **0.3025 → 0.3025** |
+
+The default path works. `surgical` does not move a single document, and `stopped` reads `stalled` on
+6 of 10.
+
+## The mechanism
+
+`SurgicalRewriter` passes `prefer_tells=True`, so `surgical_substitute` ranks words by `_tell_ranks`
+— does swapping this word remove a catalogued tell. That function returns only words with
+`gain > 0`. A text carrying no catalogued tell has `base = 0`, and a tell count cannot go below
+zero, **so the ranking is empty and the substitution loop never runs one iteration.** The rewriter
+returns its argument byte-identical.
+
+MEASURED on 40 of the abstracts: **36 have an empty ranking, and 37 come back unchanged.** This is
+not an edge case. Rounds eighty-one and eighty-two established that the tell catalogue separates
+academic-vs-chatbot **register** at 1.0000 and authorship at 0.2697 — so formal prose is exactly the
+text it has nothing to say about, and exactly the text this rewriter therefore cannot touch.
+
+## The part worth the round: nothing reported it
+
+An identical candidate passes every gate *by construction*. It reproduces every locked span, so the
+sentinel multiset check holds. The meaning gate sees similarity 1.0. `score()` returns the same
+number, so the adoption guard's `<=` on score holds. What stops it is the separate
+`cand_best != best_masked` check — a comparison of the TEXT, not of the score the user is then
+told about. Every surface then described a draft that was never written:
+
+| surface | said | truth |
+|---|---|---|
+| `result["adopted"]` | 0 | correct |
+| `result["inspect"]` | `candidate_accepted`, `adopted` | no draft was taken |
+| `result["warning"]` | "every draft scored worse than your text" | nothing was compared on score |
+| the remedy attached | "Try `--best-of 3` for more draws" | the rewriter is **deterministic** |
+
+Two accountings of one decision disagreed — `_inspect_was_adopted` was set beside the
+`cand_best != best_masked` guard rather than inside it — and **the one that lied is the one a user
+opens to find out why nothing changed.** The suggested remedy could not work: the loop already
+collapses `best_of` to a single draw for deterministic rewriters, so N draws are byte-identical by
+construction.
+
+## This is the fourth instance of one defect
+
+`_nothing_adopted_warning` already carries two branches whose stated reason is that "scored worse"
+would describe a comparison that did not happen — `vetoed` and `sentinel_failed` both `continue`
+*before* the scorer. **The identical draw is the same defect one step earlier in the chain, where
+there is no draft to compare at all,** and the branch structure built to catch it did not.
+
+Worse, the test that was supposed to hold the note to a real run
+(`test_a_run_that_adopted_nothing_says_so.py::test_it_reaches_a_real_run`) **stubbed the rewriter to
+return its input** — constructing precisely this case — and asserted the scored-worse wording off it.
+The test encoded the conflation it existed to prevent. Its assertion is corrected in place, with the
+reason kept visible.
+
+## The alternative fix, measured and rejected
+
+The tempting repair is to give the tells objective a score-ranked fallback, so tell-free text still
+has words to try. `surgical_substitute`'s docstring even claims the score rule is always available
+("this only ever ADDS adoptions the score-only rule refused"). Prototyped and MEASURED on the same
+40 abstracts:
+
+| ranking | zero-substitution runs |
+|---|---|
+| `prefer_tells=True` (shipped) | 37/40 |
+| `prefer_tells=False` (score-only) | **40/40** |
+
+The score-only rule is not a path this text has and the tells rule lacks — it is a **worse version
+of the same dead end**, for the reason that function's own candidate table already gives: the stdlib
+heuristic cannot see a synonym swap, so `score < cur_score` is unreachable either way. Restoring it
+would have bought nothing and cost the leave-one-out ranking pass.
+
+**So the fix is not to manufacture an edit surface. It is to say there isn't one, and name a
+rewriter that has one.** The loop now counts identical draws, `inspect` emits `candidate_identical`
+and no longer claims an adoption the counter denies, and the note names the cause and points at a
+rewriter that is not the one that just failed, instead of at more draws.
+
+## The fix had the same defect in miniature
+
+The first version of the note recommended `composite` unconditionally — and `composite` is the
+**default**. It fires there for real: 1 of 20 abstracts, 15 identical draws. So a user who had
+changed no setting was told to try what they were already running, by the note written to stop
+exactly that kind of unusable advice. Two more overreaches in the same sentence: it asserted "more
+draws will keep returning the same text" of a **stochastic** rewriter, where 15 identical draws are
+evidence and not the guarantee that holds for a deterministic one; and it explained the empty run by
+the tell catalogue, which is `surgical`'s edit surface and **not** `composite`'s — a mechanism that
+was not the one that failed. All three are now conditioned on which rewriter actually ran.
+
+## The shape
+
+Round ninety-three asked whether the detector could be wrong with every test still passing. This is
+that question asked of the *rewriter*: **it could do nothing at all, and every field the tool
+publishes would report a working loop that had made a judgement call.** The measurement that found
+it was not a new instrument — it was running the shipped tool on text of the kind it is for, which
+no measurement in this ledger had done for the rewriter.
+
+---
+
 # Round one hundred and eight — the mechanism round one hundred and six could not find
 
 Round one hundred and six ended with an admission rather than a fix. It had planted six defects for

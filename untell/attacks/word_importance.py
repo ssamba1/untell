@@ -988,6 +988,24 @@ def surgical_substitute(
     ranking is buying nothing there, while costing 2.3x the wall-clock (the leave-one-out pass it
     needs is exactly what the tells ranking skips).
 
+    AN EMPTY TELL RANKING MAKES THIS FUNCTION A GUARANTEED NO-OP, and that is the common case off
+    HC3. ``_tell_ranks`` returns only words with ``gain > 0``; a text carrying no catalogued tell
+    has ``base = 0`` and a tell count cannot go below zero, so the ranking is empty and the
+    substitution loop below never runs one iteration. MEASURED on 40 machine-written abstracts
+    (``eval/data/generated_abstracts.py``), lite: **36 of 40 have an empty ranking**, and the
+    function returns its argument byte-identical on 37 of 40. This is not a near miss that more
+    draws or a higher tier could turn into a substitution — with no ranked word there is no
+    candidate to score, so the outcome is fixed before any detector runs.
+
+    Restoring the score ranking as a fallback for those texts was tried and MEASURED, and it buys
+    nothing: on the same 40 abstracts ``prefer_tells=False`` gets **40 of 40** zero-substitution
+    runs, against 37 of 40 for the tells objective. The score-only rule is not a path this text has
+    and the tells rule lacks; it is a worse version of the same dead end, for the reason the
+    candidate table above gives — the stdlib heuristic cannot see a synonym swap, so
+    ``score < cur_score`` is unreachable either way. The remedy is a rewriter that does not need a
+    catalogued tell to act on (``structural``, ``composite``), and the loop now says so rather than
+    reporting the run as drafts refused on score — see ``run.py::_nothing_adopted_warning``.
+
     It is NOT the default, deliberately. ``eval/compare_humanizers.py`` uses this function as the
     ``synonym_swap`` baseline standing in for the QuillBot / TextFooler class of tool, and that row
     has to keep modelling *their* technique — score-driven word-importance substitution — rather

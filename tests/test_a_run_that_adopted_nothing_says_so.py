@@ -115,7 +115,23 @@ def test_the_singular_reads_properly() -> None:
 def test_it_reaches_a_real_run(monkeypatch) -> None:
     """Wired, not merely defined. The rewriter is stubbed to return the input so the loop draws and
     adopts nothing deterministically — the corpus document that produced this finding is 406 words
-    and slow, and its behaviour is a property of that text rather than of the code under test."""
+    and slow, and its behaviour is a property of that text rather than of the code under test.
+
+    SUPERSEDED ASSERTION, kept visible because the reason is the point. This test asserted
+    `MARK` ("adopted none"), the wording of the catch-all branch, while stubbing the rewriter to
+    RETURN ITS INPUT — which is not that branch's situation at all. An identical candidate is never
+    compared on score: it reproduces every locked span, the meaning gate sees similarity 1.0, and it
+    ties, so it is refused for tying rather than for being worse. The stub built the no-edit-surface
+    case and read the scored-worse message off it, which is the same conflation the branch structure
+    already refuses for `vetoed` and `sentinel_failed`.
+
+    That conflation was not hypothetical: `--rewriter surgical` hits this on real machine text,
+    because its edit surface is the tell catalogue and formal prose carries no catalogued tell (36
+    of 40 committed abstracts). See
+    `test_a_rewriter_that_wrote_nothing_does_not_report_a_refused_draft.py`. The assertion now
+    matches what the stub actually constructs; the catch-all branch's own wording is covered by the
+    unit tests above.
+    """
     import untell.rewriter.structural as structural
 
     monkeypatch.setattr(structural, "structural_rewrite", lambda text, *a, **k: text)
@@ -123,6 +139,8 @@ def test_it_reaches_a_real_run(monkeypatch) -> None:
         CLEAN, tier="lite", threshold=0.3, max_iters=1, rewriter="structural", best_of=1, seed=1
     )
     if result.get("rewrites") and not result.get("adopted"):
-        assert MARK in (result.get("warning") or "")
+        note = result.get("warning") or ""
+        assert "identical to your text" in note, note
+        assert "scored worse" not in note, note
     else:  # the loop declined to draw at all; a different state, covered above
         pytest.skip(f"no draw to refuse: rewrites={result.get('rewrites')}")
