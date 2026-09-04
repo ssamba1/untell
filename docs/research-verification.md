@@ -5689,6 +5689,67 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and eight — the mechanism round one hundred and six could not find
+
+Round one hundred and six ended with an admission rather than a fix. It had planted six defects for
+`cache_keys`, measured **50% recall with the easy cases missed**, and nearly published that a gating
+checker was blind to the most basic form of what it exists to catch. The plants were malformed —
+three named their mutable global `_STATE`, and `"_STATE".isupper()` is **True**, which the checker's
+own docstring reads as immutable — so they contained no defect and the checker was at 100%.
+
+What caught it was disbelieving the number and going to read the docstring. The round said so:
+
+> *That's a judgement, not a mechanism, and I haven't found a mechanism for it.*
+
+## ✅ The mechanism: every plant is a minimal edit of its own control
+
+A single source can only produce two outcomes — the checker fires or it does not — and "the plant is
+empty" is indistinguishable from "the checker is blind". A **pair** produces four, and they separate
+exactly the cases that were conflated:
+
+| checker fires on | outcome |
+|---|---|
+| defective only | **detected** |
+| neither | **the edit introduced no defect** — round 106's error |
+| both | **the clean side already had a defect** |
+| clean only | the checker is inverted |
+
+MEASURED, round one hundred and six's exact plant re-run as a pair: it classifies as **"the edit
+introduced no defect"**, not as a miss. The tool refuses to report a recall at all while any pair is
+broken, because a broken pair is scored as a miss the checker did not commit.
+
+## Why the pairing works rather than merely detecting
+
+The `cache_keys` pairs differ from their controls **only in the case of the global's name** —
+`_STATE` against `_state`, which is precisely the distinction that was got wrong. A test asserts it:
+`pair.clean.replace("_STATE", "_state") == pair.defective`.
+
+That is the part worth keeping. The mechanism does not just catch the error after the fact; **it
+makes writing it require saying out loud which side of the convention each half is on.** Round one
+hundred and six's plant cannot be expressed as a pair without noticing that both halves are the same
+module.
+
+A second constraint keeps the pairs honest: every edit must span **at most four lines**, asserted
+per pair. A "clean" and "defective" version differing everywhere isolates nothing, and its outcome
+could not be attributed to the defect it claims to test.
+
+MEASURED after the rewrite: **28 pairs, 28 detected, 0 broken.** The recall figures are unchanged —
+the checkers were always at 100% on these forms — and what changed is that the number now cannot be
+produced by a plant that contains nothing.
+
+## The general form
+
+| round | evidence | how it was inflated | fixed by |
+|---|---|---|---|
+| 102 | findings | a rule too loose to be true | reading every finding |
+| 106 | plants | a plant that was not a defect | **pairing each with its control** |
+
+Both are the same failure at one remove: the evidence for a measurement needs the same scrutiny as
+the measurement. Rounds ninety-one through one hundred and two established that for findings. This
+establishes it for plants, and mechanically rather than by care.
+
+---
+
 # Round one hundred and seven — landing the sweep, and a module that measuring made unmeasurable
 
 Rounds one hundred to one hundred and six all ran against a boundary sweep taken before round

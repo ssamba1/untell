@@ -1,32 +1,49 @@
 """Precision says how much of what a checker reports is real. Recall says how much it misses.
 
-`eval/checkers.py` records a measured precision for all eight checkers here, each obtained by
-reading every finding. **None of them has a measured recall**, and the two answer opposite questions:
-precision is about the findings, recall is about the defects. A checker that reports one finding and
-is right is 100% precise and may be missing forty.
+`eval/checkers.py` records a measured precision for every checker here, each obtained by reading
+every finding. Precision and recall answer opposite questions: precision is about the findings,
+recall is about the defects. A checker reporting one finding and being right is 100% precise and may
+be missing forty.
 
-Precision was measured by reading what came out. Recall has to be measured by putting defects in:
-plant a known instance of exactly what a checker claims to catch, run it, and see whether it fires.
+Precision is measured by reading what came out. Recall has to be measured by putting defects in.
 
-⚠️ **A malformed plant scores the checker as missing a defect that is not there.** Recall is
-deflated by bad plants exactly as precision is inflated by false findings, and the fix is the same:
-verify each one. MEASURED in round one hundred and six, three of six `cache_keys` plants named their
-mutable global `_STATE` — upper-case, which this repository's convention and the checker's own
-docstring both take to mean immutable. The checker was reported at **50% recall** and is at 100%;
-the defect was in the plants. Every plant now has a paired negative case that must NOT fire, which
-is the only mechanical guard against a plant that contains nothing.
+## Why every plant is a PAIR
+
+Round one hundred and six planted six defects for `cache_keys`, got **50% recall with the easy cases
+missed**, and nearly published it. A gating checker missing the most basic form of what it exists to
+catch is a headline. It was wrong: three plants named their mutable global `_STATE`, and
+`"_STATE".isupper()` is **True**, which this repository's convention and the checker's own docstring
+both take to mean *immutable*. **The plants contained no defect.** The checker was at 100%.
+
+Precision is inflated by a false finding; recall is deflated by a false plant. Same error mirrored.
+What caught it was disbelief and a docstring — a judgement, not a mechanism — and round one hundred
+and six said so and left the problem open.
+
+**This is the mechanism.** Every plant is a *minimal edit of its own control*: two sources differing
+only by the defect. That makes four outcomes distinguishable where before there were two:
+
+| checker fires on | means |
+|---|---|
+| defective only | correct — the edit is a real defect and the checker sees it |
+| neither | **the plant is empty** — the edit introduced nothing |
+| both | **the control is dirty** — the clean side already had a defect |
+| clean only | the checker is inverted |
+
+Round one hundred and six's error was the second row, and it was indistinguishable from a miss.
+Written as a pair it cannot be: the `cache_keys` plants below differ from their controls **only in
+the case of the global's name**, which is exactly the distinction that was got wrong, and writing
+the pair forces the author to say which side of the convention each is on.
 
 ⚠️ **Recall against easy cases is worthless**, for the same reason the mutation harness needs a
-positive control that moves 99.6% of documents rather than one that barely moves any. Every checker
-here is planted with the forms a naive implementation gets right AND the forms it gets wrong —
-nested scopes, comprehensions, ternaries, reversed operands, annotated assignments. The rate is
-reported per form, because a checker that catches 6 of 6 easy plants and 0 of 4 hard ones has a
-recall of 60% and a shape that matters more than the number.
+positive control that moves 99.6% of documents rather than one that barely moves any. Each pair is
+labelled easy or hard and the split is reported: a checker catching every easy plant and no hard one
+has a recall of 60% and a shape that matters more than the number.
 """
 
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import textwrap
 from dataclasses import dataclass
@@ -36,206 +53,244 @@ REPO = Path(__file__).resolve().parent.parent
 
 
 @dataclass(frozen=True)
-class Plant:
-    """One synthetic defect, and how hard it is to see."""
+class Pair:
+    """A defect and the clean source it is a minimal edit of."""
 
     checker: str
     name: str
     hard: bool
-    source: str
-    """A module body written into the synthetic tree."""
+    clean: str
+    defective: str
+
+    def edit_lines(self) -> int:
+        """How many lines differ. A pair differing everywhere isolates nothing."""
+        a = textwrap.dedent(self.clean).splitlines()
+        b = textwrap.dedent(self.defective).splitlines()
+        return sum(1 for line in difflib.ndiff(a, b) if line[:1] in {"+", "-"})
 
 
-PLANTS: tuple[Plant, ...] = (
-    # --- eval.result_keys: a caller reading a key its function never returns -------------------
-    Plant("result_keys", "subscript", False,
-          "def f():\n    r = score_text('x')\n    return r['nope']\n"),
-    Plant("result_keys", "get", False,
-          "def f():\n    r = score_text('x')\n    return r.get('nope')\n"),
-    Plant("result_keys", "inside a branch", False,
-          "def f(flag):\n    r = score_text('x')\n    if flag:\n        return r['nope']\n"),
-    Plant("result_keys", "after an unrelated call", True,
-          "def f():\n    r = score_text('x')\n    print(len('abc'))\n    return r['nope']\n"),
-    Plant("result_keys", "inside a nested function that closes over it", True,
-          "def outer():\n    r = score_text('x')\n\n    def inner():\n"
-          "        return r['nope']\n    return inner\n"),
-    Plant("result_keys", "inside a comprehension", True,
-          "def f(items):\n    r = score_text('x')\n    return [r['nope'] for _ in items]\n"),
-    Plant("result_keys", "in a loop body", False,
-          "def f(items):\n    r = score_text('x')\n    for _ in items:\n        print(r['nope'])\n"),
-    Plant("result_keys", "reassigned back to the producer", True,
-          "def f():\n    r = {'a': 1}\n    r = score_text('x')\n    return r['nope']\n"),
+PAIRS: tuple[Pair, ...] = (
+    # --- eval.result_keys — the edit is the key name, documented vs not --------------------------
+    Pair("result_keys", "subscript", False,
+         "def f():\n    r = score_text('x')\n    return r['max']\n",
+         "def f():\n    r = score_text('x')\n    return r['nope']\n"),
+    Pair("result_keys", "get", False,
+         "def f():\n    r = score_text('x')\n    return r.get('max')\n",
+         "def f():\n    r = score_text('x')\n    return r.get('nope')\n"),
+    Pair("result_keys", "inside a branch", False,
+         "def f(flag):\n    r = score_text('x')\n    if flag:\n        return r['max']\n",
+         "def f(flag):\n    r = score_text('x')\n    if flag:\n        return r['nope']\n"),
+    Pair("result_keys", "in a loop body", False,
+         "def f(items):\n    r = score_text('x')\n    for _ in items:\n        print(r['max'])\n",
+         "def f(items):\n    r = score_text('x')\n    for _ in items:\n        print(r['nope'])\n"),
+    Pair("result_keys", "after an unrelated call", True,
+         "def f():\n    r = score_text('x')\n    print(len('abc'))\n    return r['max']\n",
+         "def f():\n    r = score_text('x')\n    print(len('abc'))\n    return r['nope']\n"),
+    Pair("result_keys", "inside a closure over the result", True,
+         "def outer():\n    r = score_text('x')\n\n    def inner():\n"
+         "        return r['max']\n    return inner\n",
+         "def outer():\n    r = score_text('x')\n\n    def inner():\n"
+         "        return r['nope']\n    return inner\n"),
+    Pair("result_keys", "inside a comprehension", True,
+         "def f(items):\n    r = score_text('x')\n    return [r['max'] for _ in items]\n",
+         "def f(items):\n    r = score_text('x')\n    return [r['nope'] for _ in items]\n"),
+    Pair("result_keys", "reassigned back to the producer", True,
+         "def f():\n    r = {'a': 1}\n    r = score_text('x')\n    return r['max']\n",
+         "def f():\n    r = {'a': 1}\n    r = score_text('x')\n    return r['nope']\n"),
 
-    # --- eval.boundaries: a comparison against a named threshold -------------------------------
-    Plant("boundaries", "constant on the right", False,
-          "_FLOOR = 12\n\ndef f(n):\n    return n < _FLOOR\n"),
-    Plant("boundaries", "constant on the left", True,
-          "_FLOOR = 12\n\ndef f(n):\n    return _FLOOR > n\n"),
-    Plant("boundaries", "inside a ternary", True,
-          "_FLOOR = 12\n\ndef f(n):\n    return 'a' if n >= _FLOOR else 'b'\n"),
-    Plant("boundaries", "inside a while", True,
-          "_FLOOR = 12\n\ndef f(n):\n    while n < _FLOOR:\n        n += 1\n    return n\n"),
-    Plant("boundaries", "inside a comprehension", True,
-          "_FLOOR = 12\n\ndef f(xs):\n    return [x for x in xs if x <= _FLOOR]\n"),
-    Plant("boundaries", "annotated constant", True,
-          "_FLOOR: int = 12\n\ndef f(n):\n    return n < _FLOOR\n"),
-    Plant("boundaries", "float threshold", False,
-          "_BAR = 0.75\n\ndef f(p):\n    return p >= _BAR\n"),
-    Plant("boundaries", "inside a nested function", True,
-          "_FLOOR = 12\n\ndef outer():\n    def inner(n):\n        return n < _FLOOR\n"
-          "    return inner\n"),
+    # --- eval.boundaries — the edit turns arithmetic into an ordering comparison -----------------
+    Pair("boundaries", "constant on the right", False,
+         "_FLOOR = 12\n\n\ndef f(n):\n    return n + _FLOOR\n",
+         "_FLOOR = 12\n\n\ndef f(n):\n    return n < _FLOOR\n"),
+    Pair("boundaries", "constant on the left", True,
+         "_FLOOR = 12\n\n\ndef f(n):\n    return _FLOOR + n\n",
+         "_FLOOR = 12\n\n\ndef f(n):\n    return _FLOOR > n\n"),
+    Pair("boundaries", "inside a ternary", True,
+         "_FLOOR = 12\n\n\ndef f(n):\n    return 'a' if n == _FLOOR else 'b'\n",
+         "_FLOOR = 12\n\n\ndef f(n):\n    return 'a' if n >= _FLOOR else 'b'\n"),
+    Pair("boundaries", "inside a while", True,
+         "_FLOOR = 12\n\n\ndef f(n):\n    while n != _FLOOR:\n        n += 1\n    return n\n",
+         "_FLOOR = 12\n\n\ndef f(n):\n    while n < _FLOOR:\n        n += 1\n    return n\n"),
+    Pair("boundaries", "inside a comprehension", True,
+         "_FLOOR = 12\n\n\ndef f(xs):\n    return [x for x in xs if x == _FLOOR]\n",
+         "_FLOOR = 12\n\n\ndef f(xs):\n    return [x for x in xs if x <= _FLOOR]\n"),
+    Pair("boundaries", "annotated constant", True,
+         "_FLOOR: int = 12\n\n\ndef f(n):\n    return n + _FLOOR\n",
+         "_FLOOR: int = 12\n\n\ndef f(n):\n    return n < _FLOOR\n"),
+    Pair("boundaries", "float threshold", False,
+         "_BAR = 0.75\n\n\ndef f(p):\n    return p + _BAR\n",
+         "_BAR = 0.75\n\n\ndef f(p):\n    return p >= _BAR\n"),
+    Pair("boundaries", "inside a nested function", True,
+         "_FLOOR = 12\n\n\ndef outer():\n    def inner(n):\n        return n + _FLOOR\n"
+         "    return inner\n",
+         "_FLOOR = 12\n\n\ndef outer():\n    def inner(n):\n        return n < _FLOOR\n"
+         "    return inner\n"),
 
-    # --- eval.constant_census: a numeric constant with no stated reason ------------------------
-    Plant("constant_census", "plain int", False, "_WIDGETS = 7\n"),
-    Plant("constant_census", "plain float", False, "_RATIO = 0.42\n"),
-    Plant("constant_census", "negative", True, "_OFFSET = -3\n"),
-    Plant("constant_census", "annotated", True, "_LIMIT: int = 9\n"),
-    Plant("constant_census", "second in an undefended group", True, "_A = 1\n_B = 2\n"),
-    Plant("constant_census", "after a comment that explains nothing", False,
-          "# the widget count\n_WIDGETS = 7\n"),
+    # --- eval.constant_census — the edit removes the stated reason -------------------------------
+    Pair("constant_census", "plain int", False,
+         "# MEASURED on 400 samples: seven is where the curve flattens.\n_WIDGETS = 7\n",
+         "_WIDGETS = 7\n"),
+    Pair("constant_census", "plain float", False,
+         "# MEASURED on 6,842 abstracts: 0.42 is the median.\n_RATIO = 0.42\n",
+         "_RATIO = 0.42\n"),
+    Pair("constant_census", "after a comment that explains nothing", False,
+         "# MEASURED: three is the smallest count the estimator accepts.\n_WIDGETS = 7\n",
+         "# the widget count\n_WIDGETS = 7\n"),
+    Pair("constant_census", "negative", True,
+         "# MEASURED: the offset the corpus needs.\n_OFFSET = -3\n",
+         "_OFFSET = -3\n"),
+    Pair("constant_census", "annotated", True,
+         "# MEASURED over 100 runs: nine is the ceiling.\n_LIMIT: int = 9\n",
+         "_LIMIT: int = 9\n"),
+    Pair("constant_census", "second in an undefended group", True,
+         "# MEASURED: both values come from the same fit.\n_A = 1\n_B = 2\n",
+         "_A = 1\n_B = 2\n"),
 
-    # --- eval.cache_keys: a cached function reading state its key does not name -----------------
-    Plant("cache_keys", "reads a mutable module global", False,
-          "from functools import lru_cache\n\n_state = {'n': 1}\n\n"
-          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _state['n']\n"),
-    Plant("cache_keys", "reads the environment", True,
-          "import os\nfrom functools import lru_cache\n\n"
-          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + int(os.environ.get('N', '0'))\n"),
-    Plant("cache_keys", "reads the clock", True,
-          "import time\nfrom functools import lru_cache\n\n"
-          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + time.time()\n"),
-    Plant("cache_keys", "reads a file", True,
-          "from functools import lru_cache\nfrom pathlib import Path\n\n"
-          "@lru_cache(maxsize=8)\ndef f(x):\n    return x + len(Path('a.txt').read_text())\n"),
-    Plant("cache_keys", "cache decorator written as functools.cache", True,
-          "import functools\n\n_state = {'n': 1}\n\n"
-          "@functools.cache\ndef f(x):\n    return x + _state['n']\n"),
-    Plant("cache_keys", "zero-argument cached function", False,
-          "from functools import lru_cache\n\n_state = {'n': 1}\n\n"
-          "@lru_cache(maxsize=1)\ndef f():\n    return _state['n']\n"),
+    # --- eval.cache_keys — THE EDIT IS THE CASE OF THE NAME --------------------------------------
+    # Upper-case means immutable by this repository's convention and by the checker's own docstring,
+    # so the case IS the defect. Round 106 wrote only the defective side, wrote it upper-case, and
+    # measured the checker as missing something that was not there. As a pair it is unwritable.
+    Pair("cache_keys", "reads a mutable module global", False,
+         "from functools import lru_cache\n\n_STATE = {'n': 1}\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _STATE['n']\n",
+         "from functools import lru_cache\n\n_state = {'n': 1}\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _state['n']\n"),
+    Pair("cache_keys", "zero-argument cached function", False,
+         "from functools import lru_cache\n\n_STATE = {'n': 1}\n\n\n"
+         "@lru_cache(maxsize=1)\ndef f():\n    return _STATE['n']\n",
+         "from functools import lru_cache\n\n_state = {'n': 1}\n\n\n"
+         "@lru_cache(maxsize=1)\ndef f():\n    return _state['n']\n"),
+    Pair("cache_keys", "cache decorator written as functools.cache", True,
+         "import functools\n\n_STATE = {'n': 1}\n\n\n"
+         "@functools.cache\ndef f(x):\n    return x + _STATE['n']\n",
+         "import functools\n\n_state = {'n': 1}\n\n\n"
+         "@functools.cache\ndef f(x):\n    return x + _state['n']\n"),
+    # These three edit the READ rather than the name: an impure source replaces a pure one.
+    Pair("cache_keys", "reads the environment", True,
+         "import os\nfrom functools import lru_cache\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + len(os.sep)\n",
+         "import os\nfrom functools import lru_cache\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + int(os.environ.get('N', '0'))\n"),
+    Pair("cache_keys", "reads the clock", True,
+         "import time\nfrom functools import lru_cache\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + len(time.__name__)\n",
+         "import time\nfrom functools import lru_cache\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + time.time()\n"),
+    Pair("cache_keys", "reads a file", True,
+         "from functools import lru_cache\nfrom pathlib import Path\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + len(Path('a.txt').name)\n",
+         "from functools import lru_cache\nfrom pathlib import Path\n\n\n"
+         "@lru_cache(maxsize=8)\ndef f(x):\n    return x + len(Path('a.txt').read_text())\n"),
 )
 
 
-# For each checker, a module that contains NO defect of its kind. A checker firing on one of these
-# scores 100% recall for the wrong reason — it would fire on anything — and a plant that turns out
-# to contain nothing is scored as a miss it did not commit. Round one hundred and six needed both
-# halves: three `cache_keys` plants named a mutable global in upper case, which the checker's own
-# documented convention reads as immutable, and the checker was reported at 50% when it was at 100%.
-CLEAN: dict[str, str] = {
-    "result_keys": "def f():\n    r = score_text('x')\n    return r['max']\n",
-    "boundaries": (
-        "# MEASURED over 100 samples: twelve is where the rate stops moving.\n"
-        "_FLOOR = 12\n\n\ndef f(n):\n    return n + _FLOOR\n"
-    ),
-    "constant_census": (
-        "# MEASURED on 6,842 abstracts: this is where the curve flattens.\n_RATIO = 0.42\n"
-    ),
-    "cache_keys": (
-        "import re\nfrom functools import lru_cache\n\n_PATTERN = re.compile(r'x')\n\n"
-        "@lru_cache(maxsize=8)\ndef f(text):\n    return bool(_PATTERN.search(text))\n"
-    ),
-}
-
-
-def _write_tree(root: Path, plant: Plant) -> None:  # noqa: C901
-    """A minimal repository containing exactly one planted defect."""
-    (root / "untell").mkdir(parents=True, exist_ok=True)
-    (root / "eval").mkdir(parents=True, exist_ok=True)
-    (root / "tests").mkdir(parents=True, exist_ok=True)
-    (root / "docs").mkdir(parents=True, exist_ok=True)
-    body = textwrap.dedent(plant.source)
-    if plant.checker == "result_keys":
+def _write_tree(root: Path, checker: str, source: str) -> None:
+    """A minimal repository containing exactly one module."""
+    for part in ("untell", "eval", "tests", "docs"):
+        (root / part).mkdir(parents=True, exist_ok=True)
+    body = textwrap.dedent(source)
+    if checker == "result_keys":
         (root / "tests" / "test_planted.py").write_text(body)
     else:
         (root / "untell" / "planted.py").write_text(body)
 
 
-def _detects(plant: Plant, root: Path) -> bool:
+def _fires(checker: str, root: Path) -> bool:
     from eval import boundaries, cache_keys, constant_census, result_keys
 
-    if plant.checker == "cache_keys":
-        # `findings`, not `cached` — read from the function rather than guessed. A first draft used
-        # `cached` and would have scored every cache_keys plant as MISSED, which is the same
-        # wrong-key failure `eval/result_keys.py` exists to catch, in the recall tool for it.
-        return bool(cache_keys.audit(root)["findings"])
-    if plant.checker == "result_keys":
+    if checker == "result_keys":
         return bool(result_keys.reads(root, {"score_text": {"max", "flagged"}}))
-    if plant.checker == "boundaries":
+    if checker == "boundaries":
         return bool(boundaries.boundaries(root))
-    if plant.checker == "constant_census":
-        found = constant_census.named_constants(root)
-        return any(not entry["justified"] for entry in found)
-    raise ValueError(plant.checker)
+    if checker == "constant_census":
+        return any(not e["justified"] for e in constant_census.named_constants(root))
+    if checker == "cache_keys":
+        # `findings`, not `cached` — read from the function rather than guessed.
+        return bool(cache_keys.audit(root)["findings"])
+    raise ValueError(checker)
 
 
-def clean_fires(tmp_root: Path) -> dict[str, bool]:
-    """Does each checker fire on a module containing no defect of its kind? It must not."""
-    fired: dict[str, bool] = {}
-    for checker, source in CLEAN.items():
-        root = tmp_root / f"clean-{checker}"
-        probe = Plant(checker, "clean control", False, source)
-        _write_tree(root, probe)
-        fired[checker] = _detects(probe, root)
-    return fired
+# The four outcomes of a paired plant. Only the first is a pass; the other three each name a
+# different thing that is wrong, and round 106 could not tell them apart.
+DETECTED = "detected"
+EMPTY_PLANT = "the edit introduced no defect"
+DIRTY_CONTROL = "the clean side already had a defect"
+INVERTED = "the checker fires on the clean side only"
+
+
+def classify(pair: Pair, tmp_root: Path, index: int) -> str:
+    clean_root = tmp_root / f"clean{index}"
+    dirty_root = tmp_root / f"dirty{index}"
+    _write_tree(clean_root, pair.checker, pair.clean)
+    _write_tree(dirty_root, pair.checker, pair.defective)
+    on_clean = _fires(pair.checker, clean_root)
+    on_dirty = _fires(pair.checker, dirty_root)
+    if on_dirty and not on_clean:
+        return DETECTED
+    if not on_dirty and not on_clean:
+        return EMPTY_PLANT
+    if on_dirty and on_clean:
+        return DIRTY_CONTROL
+    return INVERTED
 
 
 def measure(tmp_root: Path) -> dict:
-    """Plant each defect in its own tree and record whether the checker fires."""
-    results: list[dict] = []
-    for index, plant in enumerate(PLANTS):
-        root = tmp_root / f"plant{index}"
-        _write_tree(root, plant)
-        results.append({
-            "checker": plant.checker, "name": plant.name, "hard": plant.hard,
-            "detected": _detects(plant, root),
-        })
+    """Classify every pair, and refuse to report a recall if any pair is itself broken."""
+    results = [
+        {"checker": p.checker, "name": p.name, "hard": p.hard,
+         "edit_lines": p.edit_lines(), "outcome": classify(p, tmp_root, i)}
+        for i, p in enumerate(PAIRS)
+    ]
+    broken = [r for r in results if r["outcome"] in {EMPTY_PLANT, DIRTY_CONTROL, INVERTED}]
 
     by_checker: dict[str, dict] = {}
     for checker in sorted({r["checker"] for r in results}):
         rows = [r for r in results if r["checker"] == checker]
         easy = [r for r in rows if not r["hard"]]
         hard = [r for r in rows if r["hard"]]
+        hit = sum(1 for r in rows if r["outcome"] == DETECTED)
         by_checker[checker] = {
-            "planted": len(rows),
-            "detected": sum(1 for r in rows if r["detected"]),
-            "recall": round(100.0 * sum(1 for r in rows if r["detected"]) / len(rows), 1),
-            "easy": f"{sum(1 for r in easy if r['detected'])}/{len(easy)}",
-            "hard": f"{sum(1 for r in hard if r['detected'])}/{len(hard)}",
-            "missed": [r["name"] for r in rows if not r["detected"]],
+            "planted": len(rows), "detected": hit,
+            "recall": round(100.0 * hit / len(rows), 1),
+            "easy": f"{sum(1 for r in easy if r['outcome'] == DETECTED)}/{len(easy)}",
+            "hard": f"{sum(1 for r in hard if r['outcome'] == DETECTED)}/{len(hard)}",
+            "missed": [r["name"] for r in rows if r["outcome"] != DETECTED],
         }
-    controls = clean_fires(tmp_root)
+
+    detected = sum(1 for r in results if r["outcome"] == DETECTED)
     return {
-        "clean_controls_fired": [c for c, fired in controls.items() if fired],
-        "planted": len(results),
-        "detected": sum(1 for r in results if r["detected"]),
-        "recall": round(100.0 * sum(1 for r in results if r["detected"]) / len(results), 1),
+        "pairs": len(results),
+        "detected": detected,
+        "recall": round(100.0 * detected / len(results), 1) if results else 0.0,
+        "broken_pairs": broken,
         "by_checker": by_checker,
         "results": results,
     }
 
 
 def render(report: dict) -> str:
-    lines = []
-    if report.get("clean_controls_fired"):
+    lines: list[str] = []
+    if report["broken_pairs"]:
         lines += [
-            "⚠️ REFUSING TO REPORT: these checkers fire on a module containing no defect of their "
-            "kind, so\n   a recall of 100% would mean only that they fire on anything: "
-            + ", ".join(report["clean_controls_fired"]),
+            "⚠️ REFUSING TO REPORT A RECALL: these pairs are broken, and a broken pair is scored as",
+            "   a miss the checker did not commit — which is exactly how round 106 published 50%:",
+            *(f"     {b['checker']}/{b['name']}: {b['outcome']}" for b in report["broken_pairs"]),
             "",
         ]
     lines += [
-        f"{report['planted']} defects planted, {report['detected']} detected — "
+        f"{report['pairs']} paired plants, {report['detected']} detected — "
         f"recall {report['recall']}%.",
         "",
-        f"  {'checker':<20} {'recall':>7} {'easy':>7} {'hard':>7}  missed",
+        f"  {'checker':<20} {'recall':>7} {'easy':>7} {'hard':>7}  not detected",
     ]
     for checker, row in report["by_checker"].items():
         lines.append(f"  {checker:<20} {row['recall']:>6.1f}% {row['easy']:>7} {row['hard']:>7}  "
                      f"{', '.join(row['missed']) or '—'}")
     lines += [
         "",
-        "Recall against easy cases only is worthless, which is why the split is reported. A checker",
-        "catching every easy plant and no hard one has a shape that matters more than its rate.",
+        "Every plant is a minimal edit of its own control, so a plant containing no defect shows up",
+        "as its own outcome rather than as a miss. Round 106 had only the defective half and",
+        "reported a checker at 50% that was at 100%.",
     ]
     return "\n".join(lines)
 
@@ -249,7 +304,7 @@ def main(argv: list[str] | None = None) -> int:
     with tempfile.TemporaryDirectory() as tmp:
         report = measure(Path(tmp))
     print(json.dumps(report, indent=2) if args.as_json else render(report))
-    return 0
+    return 1 if report["broken_pairs"] else 0
 
 
 if __name__ == "__main__":  # pragma: no cover

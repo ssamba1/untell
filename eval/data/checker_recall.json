@@ -1,8 +1,8 @@
 {
-  "clean_controls_fired": [],
-  "planted": 28,
+  "pairs": 28,
   "detected": 28,
   "recall": 100.0,
+  "broken_pairs": [],
   "by_checker": {
     "boundaries": {
       "planted": 8,
@@ -42,169 +42,197 @@
       "checker": "result_keys",
       "name": "subscript",
       "hard": false,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "result_keys",
       "name": "get",
       "hard": false,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "result_keys",
       "name": "inside a branch",
       "hard": false,
-      "detected": true
-    },
-    {
-      "checker": "result_keys",
-      "name": "after an unrelated call",
-      "hard": true,
-      "detected": true
-    },
-    {
-      "checker": "result_keys",
-      "name": "inside a nested function that closes over it",
-      "hard": true,
-      "detected": true
-    },
-    {
-      "checker": "result_keys",
-      "name": "inside a comprehension",
-      "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "result_keys",
       "name": "in a loop body",
       "hard": false,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
+    },
+    {
+      "checker": "result_keys",
+      "name": "after an unrelated call",
+      "hard": true,
+      "edit_lines": 2,
+      "outcome": "detected"
+    },
+    {
+      "checker": "result_keys",
+      "name": "inside a closure over the result",
+      "hard": true,
+      "edit_lines": 2,
+      "outcome": "detected"
+    },
+    {
+      "checker": "result_keys",
+      "name": "inside a comprehension",
+      "hard": true,
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "result_keys",
       "name": "reassigned back to the producer",
       "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "constant on the right",
       "hard": false,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "constant on the left",
       "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "inside a ternary",
       "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "inside a while",
       "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "inside a comprehension",
       "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "annotated constant",
       "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "float threshold",
       "hard": false,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "boundaries",
       "name": "inside a nested function",
       "hard": true,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
     },
     {
       "checker": "constant_census",
       "name": "plain int",
       "hard": false,
-      "detected": true
+      "edit_lines": 1,
+      "outcome": "detected"
     },
     {
       "checker": "constant_census",
       "name": "plain float",
       "hard": false,
-      "detected": true
-    },
-    {
-      "checker": "constant_census",
-      "name": "negative",
-      "hard": true,
-      "detected": true
-    },
-    {
-      "checker": "constant_census",
-      "name": "annotated",
-      "hard": true,
-      "detected": true
-    },
-    {
-      "checker": "constant_census",
-      "name": "second in an undefended group",
-      "hard": true,
-      "detected": true
+      "edit_lines": 1,
+      "outcome": "detected"
     },
     {
       "checker": "constant_census",
       "name": "after a comment that explains nothing",
       "hard": false,
-      "detected": true
+      "edit_lines": 2,
+      "outcome": "detected"
+    },
+    {
+      "checker": "constant_census",
+      "name": "negative",
+      "hard": true,
+      "edit_lines": 1,
+      "outcome": "detected"
+    },
+    {
+      "checker": "constant_census",
+      "name": "annotated",
+      "hard": true,
+      "edit_lines": 1,
+      "outcome": "detected"
+    },
+    {
+      "checker": "constant_census",
+      "name": "second in an undefended group",
+      "hard": true,
+      "edit_lines": 1,
+      "outcome": "detected"
     },
     {
       "checker": "cache_keys",
       "name": "reads a mutable module global",
       "hard": false,
-      "detected": true
-    },
-    {
-      "checker": "cache_keys",
-      "name": "reads the environment",
-      "hard": true,
-      "detected": true
-    },
-    {
-      "checker": "cache_keys",
-      "name": "reads the clock",
-      "hard": true,
-      "detected": true
-    },
-    {
-      "checker": "cache_keys",
-      "name": "reads a file",
-      "hard": true,
-      "detected": true
-    },
-    {
-      "checker": "cache_keys",
-      "name": "cache decorator written as functools.cache",
-      "hard": true,
-      "detected": true
+      "edit_lines": 4,
+      "outcome": "detected"
     },
     {
       "checker": "cache_keys",
       "name": "zero-argument cached function",
       "hard": false,
-      "detected": true
+      "edit_lines": 4,
+      "outcome": "detected"
+    },
+    {
+      "checker": "cache_keys",
+      "name": "cache decorator written as functools.cache",
+      "hard": true,
+      "edit_lines": 4,
+      "outcome": "detected"
+    },
+    {
+      "checker": "cache_keys",
+      "name": "reads the environment",
+      "hard": true,
+      "edit_lines": 2,
+      "outcome": "detected"
+    },
+    {
+      "checker": "cache_keys",
+      "name": "reads the clock",
+      "hard": true,
+      "edit_lines": 2,
+      "outcome": "detected"
+    },
+    {
+      "checker": "cache_keys",
+      "name": "reads a file",
+      "hard": true,
+      "edit_lines": 2,
+      "outcome": "detected"
     }
   ]
 }

@@ -1,29 +1,34 @@
-"""Precision is about the findings. Recall is about the defects. They are opposite questions.
+"""Precision is about the findings. Recall is about the defects. Both are inflated by bad evidence.
 
-Round one hundred and four completed the precision column: all eight checkers here carry a measured
-share of findings that were real when somebody read them all. **None had a measured recall**, and a
-checker reporting one finding and being right is 100% precise while missing forty.
+`eval/checkers.py` records a measured precision for every checker here, each obtained by reading
+every finding. Precision and recall answer opposite questions — a checker reporting one finding and
+being right is 100% precise and may be missing forty — so recall is measured by putting defects in
+rather than reading what comes out.
 
-Precision was measured by reading what came out. Recall has to be measured by putting defects in:
-plant a known instance of exactly what a checker claims to catch, run it, and see whether it fires.
+## Why every plant is a pair
 
-⚠️ **Recall against easy cases is worthless**, for the same reason the mutation harness needs a
-positive control that moves 99.6% of documents rather than one that barely moves any. Every plant is
-labelled easy or hard, and the split is reported: a checker catching 6 of 6 easy plants and 0 of 4
-hard ones has a recall of 60% and a shape that matters more than the number.
+Round one hundred and six planted six defects for `cache_keys`, got **50% recall with the easy cases
+missed**, and nearly published it. Three plants named their mutable global `_STATE`, and
+`"_STATE".isupper()` is **True**, which this repository's convention and the checker's own docstring
+both read as *immutable*. The plants contained no defect; the checker was at 100%.
 
-MEASURED across 22 plants: **21 of 22 on the first run, 22 of 22 after one fix.**
+Precision is inflated by a false finding; recall is **deflated** by a false plant. What caught it
+was disbelief and a docstring — a judgement, not a mechanism — and round one hundred and six left
+the problem open.
 
-## ✗ And the miss was a gap that a precision fix had created
+Every plant is now a **minimal edit of its own control**, which makes four outcomes distinguishable
+where there were two:
 
-`result_keys` missed a read **inside a closure over the result**. Round one hundred and two pruned
-nested function bodies out of the module scan to kill false positives — `render(result)` was
-contributing six — and that fix silently blinded the checker to a whole form. **No amount of reading
-findings would have found it, because a blind spot produces no findings.** Only planting one did.
+| fires on | outcome |
+|---|---|
+| defective only | detected |
+| neither | **the plant is empty** — round 106's error |
+| both | **the control is dirty** |
+| clean only | the checker is inverted |
 
-The scan now descends and carries the enclosing scope's origins inward; a parameter or local
-assignment rebinds the name and clears what it inherited, so the false positives stay dead. Both
-directions verified: 22 of 22 plants caught, and still zero findings on the repository.
+The `cache_keys` pairs differ from their controls **only in the case of the global's name** — the
+exact distinction that was got wrong — so writing the pair forces the author to say which side of
+the convention each is on. MEASURED: 28 pairs, 28 detected, 0 broken.
 """
 
 from __future__ import annotations
@@ -40,127 +45,108 @@ REPO = Path(__file__).resolve().parent.parent
 RECALL = json.loads((REPO / "eval" / "data" / "checker_recall.json").read_text())
 
 
-def test_every_planted_defect_is_detected():
-    """The measurement itself, re-run rather than read from the artefact."""
+def test_every_pair_is_detected_and_none_is_broken():
+    """Re-run rather than read from the artefact."""
     with tempfile.TemporaryDirectory() as tmp:
         fresh = checker_recall.measure(Path(tmp))
-    missed = [r["name"] for r in fresh["results"] if not r["detected"]]
+    assert not fresh["broken_pairs"], [
+        f"{b['checker']}/{b['name']}: {b['outcome']}" for b in fresh["broken_pairs"]
+    ]
+    missed = [r["name"] for r in fresh["results"] if r["outcome"] != checker_recall.DETECTED]
     assert not missed, f"planted defects nothing caught: {missed}"
-    assert fresh["planted"] == RECALL["planted"], "the artefact is stale"
+
+
+def test_round_106s_malformed_plant_is_classified_as_empty_not_as_a_miss(tmp_path):
+    """The mechanism, on the exact case that motivated it.
+
+    Both sides name the global in UPPER case, so neither contains a defect. Round 106 had only the
+    defective half and scored it as the checker missing something.
+    """
+    pair = checker_recall.Pair(
+        "cache_keys", "round 106", False,
+        "from functools import lru_cache\n\n_STATE = {'n': 1}\n\n\n"
+        "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _STATE['n']\n",
+        "from functools import lru_cache\n\n_STATE = {'n': 1}\n\n\n"
+        "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _STATE['n'] + 1\n",
+    )
+    assert checker_recall.classify(pair, tmp_path, 0) == checker_recall.EMPTY_PLANT
+
+
+def test_a_dirty_control_is_classified_as_such(tmp_path):
+    """The other way a pair can be broken: the clean side already carries the defect."""
+    pair = checker_recall.Pair(
+        "cache_keys", "dirty control", False,
+        "from functools import lru_cache\n\n_state = {'n': 1}\n\n\n"
+        "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _state['n']\n",
+        "from functools import lru_cache\n\n_state = {'n': 1}\n\n\n"
+        "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _state['n'] + 1\n",
+    )
+    assert checker_recall.classify(pair, tmp_path, 1) == checker_recall.DIRTY_CONTROL
+
+
+def test_a_well_formed_pair_is_detected(tmp_path):
+    """The corrected version of the same plant, so the three outcomes are shown side by side."""
+    pair = checker_recall.Pair(
+        "cache_keys", "corrected", False,
+        "from functools import lru_cache\n\n_STATE = {'n': 1}\n\n\n"
+        "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _STATE['n']\n",
+        "from functools import lru_cache\n\n_state = {'n': 1}\n\n\n"
+        "@lru_cache(maxsize=8)\ndef f(x):\n    return x + _state['n']\n",
+    )
+    assert checker_recall.classify(pair, tmp_path, 2) == checker_recall.DETECTED
+
+
+def test_the_tool_refuses_to_report_a_recall_when_a_pair_is_broken():
+    """A broken pair scores as a miss it did not commit, which is how 50% got published."""
+    rendered = checker_recall.render({
+        "pairs": 1, "detected": 0, "recall": 0.0,
+        "broken_pairs": [{"checker": "x", "name": "y", "outcome": checker_recall.EMPTY_PLANT}],
+        "by_checker": {}, "results": [],
+    })
+    assert "REFUSING TO REPORT" in rendered
+
+
+def test_each_edit_is_small_enough_to_isolate_the_defect():
+    """A pair differing everywhere isolates nothing, and its outcome means nothing."""
+    for pair in checker_recall.PAIRS:
+        assert pair.edit_lines() <= 4, (
+            f"{pair.checker}/{pair.name} differs by {pair.edit_lines()} lines; the defect is not "
+            f"isolated and a failure could not be attributed to it"
+        )
+        assert pair.clean != pair.defective, f"{pair.checker}/{pair.name} has an empty edit"
 
 
 def test_the_plants_include_forms_a_naive_checker_gets_wrong():
     """Recall over easy cases only measures nothing worth knowing."""
     for checker, row in RECALL["by_checker"].items():
-        hard_total = int(row["hard"].split("/")[1])
-        assert hard_total >= 3, f"{checker} has only {hard_total} hard plants"
-    hard = [p for p in checker_recall.PLANTS if p.hard]
-    assert len(hard) >= 10
-    names = {p.name for p in hard}
-    assert "inside a nested function that closes over it" in names, (
-        "the plant that found a real blind spot must stay in the set"
+        assert int(row["hard"].split("/")[1]) >= 3, f"{checker} has too few hard plants"
+    names = {p.name for p in checker_recall.PAIRS if p.hard}
+    assert "inside a closure over the result" in names, (
+        "the plant that found a real blind spot in round 105 must stay in the set"
     )
 
 
-def test_the_closure_plant_is_the_one_that_found_a_real_gap():
-    """Pinned because it is the evidence that planting beats reading for this class of defect."""
-    plant = next(p for p in checker_recall.PLANTS
-                 if p.name == "inside a nested function that closes over it")
-    assert plant.checker == "result_keys"
-    assert plant.hard is True
-    with tempfile.TemporaryDirectory() as tmp:
-        root = Path(tmp) / "one"
-        checker_recall._write_tree(root, plant)
-        assert checker_recall._detects(plant, root), (
-            "the closure form must stay caught; round 102's scope pruning had blinded it"
+def test_the_cache_keys_pairs_differ_only_in_the_case_of_the_name():
+    """The pairing that makes round 106's error unwritable, asserted directly."""
+    case_pairs = [p for p in checker_recall.PAIRS
+                  if p.checker == "cache_keys" and "_STATE" in p.clean]
+    assert len(case_pairs) >= 3
+    for pair in case_pairs:
+        assert "_state" in pair.defective, f"{pair.name}: the defective side must be mutable"
+        assert pair.clean.replace("_STATE", "_state") == pair.defective, (
+            f"{pair.name}: the edit must be the case alone, or it is testing something else too"
         )
-
-
-def test_a_plant_that_should_not_fire_does_not(tmp_path):
-    """Guards the measurement: a checker firing on everything would score 100% recall.
-
-    A clean module with no defect must produce nothing, or the recall figure above is just the
-    checker's willingness to report.
-    """
-    from eval import boundaries, constant_census, result_keys
-
-    root = tmp_path / "clean"
-    (root / "untell").mkdir(parents=True)
-    (root / "tests").mkdir()
-    (root / "untell" / "fine.py").write_text(
-        "# MEASURED over 100 samples: twelve is where the rate stops moving.\n"
-        "_FLOOR = 12\n\n\ndef f(n):\n    return n + 1\n"
-    )
-    (root / "tests" / "test_fine.py").write_text(
-        "def test_x():\n    r = score_text('x')\n    return r['max']\n"
-    )
-    assert result_keys.reads(root, {"score_text": {"max"}}) == []
-    assert boundaries.boundaries(root) == [], "no comparison, so no boundary"
-    assert not [c for c in constant_census.named_constants(root) if not c["justified"]]
 
 
 def test_the_register_records_recall_beside_precision():
-    """Two numbers answering opposite questions; one alone is a half-measurement."""
     measured = [c for c in checkers.REGISTER if c.recall is not None]
-    assert len(measured) >= 3
+    assert len(measured) >= 4
     for entry in measured:
-        assert entry.precision is not None, (
-            f"{entry.command} has recall and no precision — the pair is the point"
-        )
+        assert entry.precision is not None, f"{entry.command} has recall and no precision"
         assert "/" in entry.recall, f"{entry.command}: recall must be a count, not a claim"
 
 
-@pytest.mark.parametrize("checker", sorted({p.checker for p in checker_recall.PLANTS}))
+@pytest.mark.parametrize("checker", sorted({p.checker for p in checker_recall.PAIRS}))
 def test_each_planted_checker_has_an_entry_in_the_register(checker):
     commands = " ".join(c.command for c in checkers.REGISTER)
     assert checker in commands, f"{checker} is measured for recall and absent from the register"
-
-
-# ---------------------------------------------------------------------------
-# Round 106: recall is deflated by a bad plant exactly as precision is inflated by a false finding.
-#
-# Three of six `cache_keys` plants named their mutable global `_STATE`. That is upper-case, which
-# this repository's convention and the checker's own docstring both take to mean immutable — so the
-# plants contained no defect, and the checker was reported at 50% recall while actually at 100%.
-#
-# The guard is a paired clean control per checker: a module with no defect of its kind, which must
-# produce nothing. A checker firing on one of those would score 100% recall for the wrong reason.
-# ---------------------------------------------------------------------------
-
-
-def test_no_checker_fires_on_a_module_containing_no_defect():
-    """Without this, a checker that reports everything scores perfect recall."""
-    with tempfile.TemporaryDirectory() as tmp:
-        fired = checker_recall.clean_fires(Path(tmp))
-    assert not [c for c, did in fired.items() if did], (
-        f"these fire on a clean module, so their recall figure means only that they fire: "
-        f"{[c for c, did in fired.items() if did]}"
-    )
-
-
-def test_every_planted_checker_has_a_clean_control():
-    """A recall figure with no paired control is half a measurement."""
-    planted = {p.checker for p in checker_recall.PLANTS}
-    missing = sorted(planted - set(checker_recall.CLEAN))
-    assert not missing, f"planted with no clean control: {missing}"
-
-
-def test_the_control_mechanism_can_itself_fire(tmp_path):
-    """Proves the controls are load-bearing: swap in a defect and the control must go off."""
-    defective = checker_recall.Plant(
-        "constant_census", "control probe", False, "_WIDGETS = 7\n")
-    root = tmp_path / "probe"
-    checker_recall._write_tree(root, defective)
-    assert checker_recall._detects(defective, root), (
-        "if a known defect does not fire, the clean controls prove nothing"
-    )
-
-
-def test_a_mutable_global_is_lower_case_by_this_repos_convention():
-    """The exact confusion that produced a false 50%, pinned as a fact about the convention."""
-    assert "_STATE".isupper(), "upper-case by str.isupper, hence immutable by convention"
-    assert not "_state".isupper()
-    sources = [p.source for p in checker_recall.PLANTS if p.checker == "cache_keys"]
-    assert not [s for s in sources if "_STATE" in s], (
-        "a cache_keys plant naming its mutable global in upper case contains no defect"
-    )
