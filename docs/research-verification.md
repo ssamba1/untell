@@ -5689,6 +5689,74 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and ten — the share fell without a single boundary losing protection
+
+The pre-commit hook had flagged the boundary sweep stale since round 108. Landed:
+
+|  | old sweep | new sweep |
+|---|---|---|
+| mutants | 331 | **340** |
+| killed | 86 | **88** |
+| survived | 245 | 252 |
+| score | 26.0% | 25.9% |
+| unmeasurable modules | 2 | **1** |
+
+| register |  |  |
+|---|---|---|
+| boundaries | 48 | 48 |
+| protected | 21 | 21 |
+| unprotected | 26 | **27** |
+| unmeasured | 1 | **0** |
+| protected share | 44.7% | **43.8%** |
+
+**The share fell and nothing lost protection.** Exactly one boundary moved, and it moved out of
+`unmeasured` into `unprotected`: `untell/scripts/audit.py:903`, the `_MODULE_DRIFT` comparison.
+Round ninety's rule is that a zero meaning "could not test" and a zero meaning "does not matter"
+are the same number and opposite facts. This is that rule paying out in the direction nobody
+budgets for — **the placeholder was flattering, and measuring it made the number worse.** A reader
+comparing 44.7% to 43.8% would see a regression; the truth is one fewer thing this repo cannot see.
+
+## Why the module became measurable is not a change anybody made
+
+Round one hundred and seven recorded `audit.py` as unmeasurable because its test selection — which
+includes `test_every_audit_check_can_fail.py`, itself a mutation suite — takes about 4m27s, against
+the harness's 300s timeout. Checked, both unchanged since: the selection is the same five files and
+still includes the mutation suite, and `--timeout` still defaults to 300. **Same selection, same
+timeout, opposite classification.** So the baseline pass sits close enough to the cut that two runs
+of the same command disagree, and `audit.py` will keep flipping between `unmeasured` and
+`unprotected` on machine load alone.
+
+That makes 43.8% a number with a coin-flip in it. It is recorded as measured, because it is, and
+recorded as unstable, because a share whose denominator depends on how busy the machine was is not
+a quantity anybody should compare across rounds without knowing that. Its 8 mutants — 2 killed, 6
+survived, baseline clean — are real measurements either way.
+
+## The new mutant this round added is my own, and it survived
+
+Round one hundred and nine added one boundary-shaped comparison, `run.py:545`
+`if unchanged >= rewrites:`. It accounts for the +1 mutant that is not `audit.py`'s +8, and the
+sweep reports it **survived** — an off-by-one in code written last round, with tests written last
+round for exactly it.
+
+It is a **selection artefact, not a gap.** Applied by hand and run:
+
+    tests/test_a_rewriter_that_wrote_nothing_does_not_report_a_refused_draft.py   5 failures
+    tests/test_a_run_that_adopted_nothing_says_so.py                              1 failure
+
+**Killed six ways.** Neither file is in `run.py`'s ten-test selection, which is ranked by breadth —
+and a test written for one specific branch of one function is the least broad thing in the
+repository, so the ranking puts it last precisely when it is the only test that matters. Round
+ninety-nine found the same shape from the other side, where a breadth ranking dropped the boundary
+tests and cost 22 kills.
+
+This is not an argument for widening the selection: running ten thousand tests per mutant is what
+the per-module selection exists to avoid, and the cost was argued when it was chosen. It is an
+argument for reading a survivor as **"the selected tests do not kill this"** and never as "nothing
+does" — which is what `eval/boundaries.py --verify` exists for, and what the sweep's own survivor
+list does not say on its face.
+
+---
+
 # Round one hundred and nine — the rewriter that wrote nothing, reported as a draft refused
 
 Asked of the tool rather than of its evidence: **run the humanizer on real machine text.** Not the

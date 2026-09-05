@@ -197,6 +197,12 @@
       "source": "and post_score[\"max\"] >= _SATURATED_MAX"
     },
     {
+      "file": "untell/scripts/audit.py",
+      "line": 903,
+      "constant": "_MODULE_DRIFT",
+      "source": "elif len(modules) - claimed > _MODULE_DRIFT:"
+    },
+    {
       "file": "untell/scripts/entailment.py",
       "line": 632,
       "constant": "DEFAULT_CONTRADICTION_BAR",
@@ -216,13 +222,13 @@
     },
     {
       "file": "untell/scripts/run.py",
-      "line": 1015,
+      "line": 1101,
       "constant": "_MIN_VOICE_SAMPLE_WORDS",
       "source": "if n_words < _MIN_VOICE_SAMPLE_WORDS:"
     },
     {
       "file": "untell/scripts/run.py",
-      "line": 1467,
+      "line": 1581,
       "constant": "_TELLS_EPS",
       "source": "abs(polished_score[\"max\"] - best_score[\"max\"]) <= _TELLS_EPS"
     },
@@ -287,13 +293,6 @@
       "source": "((name, rates[name]) for name in by_category if rates.get(name, 0) >= _COMMON_IN_HUMAN_WRITING),"
     }
   ],
-  "unmeasured": [
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 903,
-      "constant": "_MODULE_DRIFT",
-      "source": "elif len(modules) - claimed > _MODULE_DRIFT:"
-    }
-  ],
-  "protected_share": 44.7
+  "unmeasured": [],
+  "protected_share": 43.8
 }
