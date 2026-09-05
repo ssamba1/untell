@@ -5689,6 +5689,63 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and eleven — the flag that meant something different at one worker
+
+Round one hundred and ten predicted that `--workers 1` would classify `audit.py` measurable every
+time, contention being the variable. Running that prediction:
+
+    python -m eval.mutation --all --kinds boundary --workers 1 --json
+    03:58:35 -> 10:58:43    killed at a 7-hour timeout, no output at all
+
+The four-worker boundary sweep of the same tree takes about fifty minutes. **The serial run was not
+four times slower; it was a different job.** The CLI dispatches on worker count:
+
+    runner = run_parallel if args.workers > 1 else run
+    kwargs = {"workers": args.workers, "kinds": kinds} if args.workers > 1 else {}
+
+`kinds` rode along inside the parallel-only branch, and `run` had no such parameter to receive it.
+So `--kinds boundary --workers 1` **accepted the flag, ignored it, and swept every operator** — the
+1,397-candidate run `run_parallel`'s own docstring puts at about four hours, started by someone who
+asked for the 340-mutant one.
+
+**Nothing warned.** Had it finished, the only evidence would have been a `by_kind` map carrying more
+keys than the flag named, and nobody reads that to check a filter they passed. The defect is a flag
+whose meaning depends on an unrelated flag's value, and the two functions had drifted because a
+parameter was added to one of them.
+
+Two smaller divergences came from the same drift. `_worker` skips a module the filter emptied;
+`run` did not, and paid a full baseline pass — up to the entire timeout — for each one. And the
+filter has to run BEFORE the `limit` spacing, because spacing a sample and then filtering it selects
+different mutants from filtering and then spacing, so a capped run would have measured different
+things on the two paths.
+
+## The experiment is untested, and the ledger says so
+
+Round one hundred and ten's contention claim is **neither confirmed nor refuted**. The run that was
+supposed to test it never ran the comparison. That claim stands as written — measured cause,
+untested prediction — and the re-run is now possible because the flag works.
+
+⚠️ One alternative the serial run would not separate even when it completes: the 206.46s timing was
+taken in the **warm working tree**, while every sweep baseline runs in a **fresh worktree with no
+`__pycache__`**. Cold-start compilation is real overhead that figure excludes, and it would push the
+baseline toward 300s independently of contention. A single-worker run removes contention only. If
+`audit.py` still comes back unmeasurable at one worker, cold cache is the leading candidate.
+
+## The test written for this was vacuous, and running it is what said so
+
+The first version of `test_both_runners_narrow_the_same_way_in_the_same_order` reproduced each
+runner's narrowing **inside the test** and asserted the two reproductions agreed. It passed against
+the unfixed tree — because it never touched the code. It proved that filter-then-cap differs from
+cap-then-filter, which is a fact about lists rather than about `eval/mutation.py`.
+
+**That is precisely the vacuity this module exists to hunt, written by hand into its own test
+file.** It was caught by running the new tests against a pre-fix worktree, not by reading them —
+which is the same method round sixty-two's warning is about, and the reason a positive control is
+worth the two minutes. Rewritten to read the real function bodies, all four now fail pre-fix and
+pass post-fix.
+
+---
+
 # Round one hundred and ten — the share fell without a single boundary losing protection
 
 The pre-commit hook had flagged the boundary sweep stale since round 108. Landed:

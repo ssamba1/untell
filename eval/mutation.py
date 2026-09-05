@@ -494,8 +494,22 @@ def run_parallel(root: Path = REPO, limit_per_file: int | None = None, timeout: 
 
 
 def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300,
-        targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None) -> dict:
-    """Introduce each mutant, run its module's tests, and record whether anything failed."""
+        targets: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
+        kinds: frozenset[str] | None = None) -> dict:
+    """Introduce each mutant, run its module's tests, and record whether anything failed.
+
+    ``kinds`` restricts the operators, exactly as it does in ``_worker``. It was missing here, and
+    the CLI dispatches to this function whenever ``--workers`` is 1 — while passing ``kinds`` only
+    on the parallel path. So ``--kinds boundary --workers 1`` accepted the flag, ignored it, and
+    swept EVERY operator: the 1,397-candidate run this module's own docstring puts at about four
+    hours, started by someone who asked for the 340-mutant one. MEASURED: killed at a 7-hour
+    timeout with no output. Nothing warned, and the only evidence in a completed run would have
+    been a `by_kind` map with more keys than the flag named.
+
+    The filter runs BEFORE ``limit_per_file``, as it does in ``_worker``. The order is not cosmetic:
+    spacing a sample and then filtering it gives a different set of mutants from filtering and then
+    spacing, so the two runners would disagree about what a capped run measures.
+    """
     scratch, tree = _worktree(root)
     results: list[dict] = []
     unmeasurable: list[dict] = []
@@ -504,11 +518,18 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
             path = tree / relative
             original = path.read_text()
             candidates = mutants_for(original, relative)
+            if kinds:
+                candidates = [c for c in candidates if c.kind in kinds]
             if limit_per_file:
                 # Evenly spaced rather than the first N, so a capped run does not measure only the
                 # top of one file.
                 step = max(1, len(candidates) // limit_per_file)
                 candidates = candidates[::step][:limit_per_file]
+            # A module the filter emptied has nothing to score, and its baseline pass is the
+            # expensive part — up to the full timeout for one answer nothing reads. `_worker`
+            # already skipped these; this path paid for every one of them.
+            if not candidates:
+                continue
 
             baseline = _failures(tree, tests, timeout)
             if baseline == UNUSABLE:
@@ -755,7 +776,11 @@ def main(argv: list[str] | None = None) -> int:
     targets = discovered_targets() if args.all else None
     runner = run_parallel if args.workers > 1 else run
     kinds = frozenset(args.kinds.split(",")) if args.kinds else None
-    kwargs = {"workers": args.workers, "kinds": kinds} if args.workers > 1 else {}
+    # `kinds` goes to BOTH runners. It used to ride along with `workers` in the parallel-only
+    # branch, so the serial path silently swept every operator — see `run`'s docstring.
+    kwargs = {"kinds": kinds}
+    if args.workers > 1:
+        kwargs["workers"] = args.workers
     report = runner(limit_per_file=args.limit, timeout=args.timeout, targets=targets, **kwargs)
     print(json.dumps(report, indent=2) if args.as_json else render(report))
     return 0
