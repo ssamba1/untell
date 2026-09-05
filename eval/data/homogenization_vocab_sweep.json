@@ -1,4 +1,23 @@
 {
+  "30": {
+    "trend_stratified": {
+      "z": 3.9134,
+      "p": 0.0001,
+      "strata_used": 3,
+      "direction": "rises with distance"
+    },
+    "trend_crude": {
+      "z": 5.0203,
+      "p": 0.0,
+      "direction": "rises with distance"
+    },
+    "nearest_standardized": 0.181,
+    "farthest_standardized": 0.2332,
+    "drop": -0.0522,
+    "nearest_crude": 0.1755,
+    "farthest_crude": 0.2423,
+    "n": 6810
+  },
   "50": {
     "trend_stratified": {
       "z": 3.7025,
@@ -16,6 +35,25 @@
     "drop": -0.0424,
     "nearest_crude": 0.1725,
     "farthest_crude": 0.2357,
+    "n": 6810
+  },
+  "75": {
+    "trend_stratified": {
+      "z": 2.0292,
+      "p": 0.0424,
+      "strata_used": 3,
+      "direction": "rises with distance"
+    },
+    "trend_crude": {
+      "z": 3.0944,
+      "p": 0.002,
+      "direction": "rises with distance"
+    },
+    "nearest_standardized": 0.1887,
+    "farthest_standardized": 0.2133,
+    "drop": -0.0246,
+    "nearest_crude": 0.1799,
+    "farthest_crude": 0.2217,
     "n": 6810
   },
   "100": {
@@ -56,6 +94,25 @@
     "farthest_crude": 0.2056,
     "n": 6810
   },
+  "200": {
+    "trend_stratified": {
+      "z": -2.4922,
+      "p": 0.0127,
+      "strata_used": 3,
+      "direction": "falls with distance"
+    },
+    "trend_crude": {
+      "z": -1.2118,
+      "p": 0.2256,
+      "direction": "falls with distance"
+    },
+    "nearest_standardized": 0.2147,
+    "farthest_standardized": 0.1673,
+    "drop": 0.0474,
+    "nearest_crude": 0.207,
+    "farthest_crude": 0.1769,
+    "n": 6810
+  },
   "300": {
     "trend_stratified": {
       "z": -3.6961,
@@ -73,6 +130,44 @@
     "drop": 0.0429,
     "nearest_crude": 0.2085,
     "farthest_crude": 0.1799,
+    "n": 6810
+  },
+  "500": {
+    "trend_stratified": {
+      "z": -5.0161,
+      "p": 0.0,
+      "strata_used": 3,
+      "direction": "falls with distance"
+    },
+    "trend_crude": {
+      "z": -4.2629,
+      "p": 0.0,
+      "direction": "falls with distance"
+    },
+    "nearest_standardized": 0.2355,
+    "farthest_standardized": 0.159,
+    "drop": 0.0765,
+    "nearest_crude": 0.232,
+    "farthest_crude": 0.163,
+    "n": 6810
+  },
+  "800": {
+    "trend_stratified": {
+      "z": -4.2958,
+      "p": 0.0,
+      "strata_used": 3,
+      "direction": "falls with distance"
+    },
+    "trend_crude": {
+      "z": -3.5921,
+      "p": 0.0003,
+      "direction": "falls with distance"
+    },
+    "nearest_standardized": 0.2309,
+    "farthest_standardized": 0.1736,
+    "drop": 0.0573,
+    "nearest_crude": 0.2269,
+    "farthest_crude": 0.1784,
     "n": 6810
   }
 }

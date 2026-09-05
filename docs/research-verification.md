@@ -5689,7 +5689,7 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
-# Round one hundred and fourteen — the study we said nobody had done, and the answer is no
+# Round one hundred and fourteen — the study we said nobody had done, and the constant that decided it
 
 `ai-writing-research.md`'s *Gaps worth noting* #5 has stood since that document was written:
 homogenization and detection are never studied together despite being two views of one phenomenon,
@@ -5700,7 +5700,7 @@ already in this repository, so it was built: 6,810 ACL abstracts from volumes th
 built from the committed machine-written abstracts, with Burrows's Delta as the distance because it
 already *is* a distance-from-a-centre-of-mass measure.
 
-## The prediction is refuted
+## The prediction looked refuted, at one vocabulary size
 
 | quintile | n | mean words | crude FPR | 95% CI | standardized |
 |---|---|---|---|---|---|
@@ -5712,8 +5712,51 @@ already *is* a distance-from-a-centre-of-mass measure.
 
 **Flat.** Every interval overlaps every other, and a length-stratified Cochran-Armitage trend test
 gives **z=0.08, p=0.93** (MEASURED, `eval/data/homogenization.json`) — about as null as a number
-gets. On this corpus and this detector,
-homogenization and detection are not two views of one phenomenon.
+gets.
+
+⚠️⚠️ **THAT NULL WAS PUBLISHED, AND IT WAS AN ARTEFACT OF ONE CONSTANT.** The paragraph above
+originally continued "on this corpus and this detector, homogenization and detection are not two
+views of one phenomenon". The whole table and test are computed at **vocabulary size 150**, and the
+finding does not survive varying it. Nine sizes, same 6,810 documents, same stratified test
+(MEASURED, `eval/data/homogenization_vocab_sweep.json`):
+
+|  30 |  50 |  75 | 100 | 150 | 200 | 300 | 500 | 800 |
+|---|---|---|---|---|---|---|---|---|
+| +3.91 | +3.70 | +2.03 | +0.50 | −0.41 | −2.49 | −3.70 | −5.02 | −4.30 |
+
+**Smooth, monotone, significant at both ends in opposite directions.** 150 is where the curve
+crosses zero — a null that reads as "no effect" and means "the sign changes here". This is rounds
+eighty-six and eighty-nine again, a constant nobody chose deciding a published figure, committed by
+the round that cites those rounds as its guard. The sweep *was* run at n=600, the flip *was* seen,
+and the full-corpus headline was taken from a single size anyway.
+
+## What the crossover establishes, which is a mechanism and not a null
+
+`vocabulary()` returns the most frequent *n* words, so the constant is not a precision knob — it
+changes what is being measured. Small *n* is almost purely function words, the classic stylometric
+signal; large *n* has absorbed content words. **Two constructs sharing a name**, and the reversal is
+the evidence that they are two:
+
+* **In function-word space — the stylistic reading, and the one the gap actually names —
+  false-positive rate RISES with distance from the machine centre.** Being stylistically unusual
+  makes a human document *more* likely to be falsely flagged, not less. z=+3.91 at 30 words,
+  p=0.0001.
+* **In a content-inclusive space it FALLS.** z=−5.02 at 500, p<0.0001. That axis is substantially
+  topic, and "distant in topic from a corpus of machine-written NLP abstracts" is not what anyone
+  means by a stylistic centre of mass.
+
+The gap asked for a study connecting homogenization to detection "mechanistically rather than by
+correlation". There is a mechanism and it runs the other way: **detectors do not flag a writer for
+resembling the model, they flag a writer for departing from the reference human distribution** — and
+because the model also sits near that distribution's centre, the correlation the literature reports
+looks like the first story while being produced by the second.
+
+⚠️ **An interpretation this data does NOT test.** It is tempting to close the loop on §4 by saying
+non-native writers sit far from the centre in function-word space — article and preposition use is
+exactly a function-word signal — which would make the L2 false-positive result an instance of the
+effect above. That is a hypothesis, not a result: **there is no non-native corpus here**, every
+document is an ACL abstract, and nothing in this study measures a writer's background. It is
+recorded as the next experiment, not as a conclusion.
 
 ## The naive version of the same study returns a significant result in the opposite direction
 

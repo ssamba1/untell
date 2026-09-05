@@ -368,13 +368,28 @@ def curve(rows: list[dict], bins: int = N_BINS) -> dict:
 
 
 def vocab_sensitivity(human: list[str], machine: list[str], rows_tier: str = "lite",
-                      sizes: tuple[int, ...] = (50, 100, 150, 300)) -> dict:
+                      sizes: tuple[int, ...] = (30, 50, 75, 100, 150, 200, 300, 500, 800)) -> dict:
     """The headline at four vocabulary sizes, because 150 was a choice and choices get swept.
 
     Rounds eighty-six and eighty-nine of the ledger are both about a constant nobody picked
-    deciding a published figure. Delta's vocabulary size is exactly such a constant. What is
-    reported is the SPREAD of the effect across sizes: if the direction survives 50 through 300,
-    the finding is about style rather than about 150.
+    deciding a published figure. Delta's vocabulary size is exactly such a constant.
+
+    ⚠️ **It decides this one, and four sizes were not enough to see it.** MEASURED on all 6,810
+    documents, length-stratified Cochran-Armitage z at nine sizes:
+
+        30    50    75   100   150   200   300   500   800
+      +3.91 +3.70 +2.03 +0.50 -0.41 -2.49 -3.70 -5.02 -4.30
+
+    A smooth monotone crossover, significant at BOTH ends in OPPOSITE directions — not noise, and
+    not a knob that merely adds precision. `vocabulary()` returns the most frequent *n* words, so
+    small *n* is almost purely function words (the classic stylometric signal) and large *n* has
+    absorbed content words. **The two ends measure different constructs**, and the published
+    headline for this study was first taken at 150, which is where the curve crosses zero: a null
+    that reads as "no effect" and means "the sign changes here".
+
+    The default is therefore nine sizes spanning 30 to 800, not four spanning 50 to 300. Four
+    points bracketed the crossover without showing it was a crossover, which is how a systematic
+    reversal passes for two disagreeing numbers.
     """
     # Score ONCE. The detector's verdict on a document does not depend on the vocabulary size —
     # that constant only decides the feature space the distance is computed in — so re-scoring per

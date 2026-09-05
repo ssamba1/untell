@@ -220,3 +220,29 @@ def test_stratifying_keeps_a_trend_that_survives_the_control() -> None:
     stratified = H.stratified_trend_test(rows)
     assert stratified["p"] is not None and stratified["p"] < 0.01, stratified
     assert stratified["direction"] == "falls with distance", stratified
+
+
+def test_the_vocabulary_sweep_spans_both_sides_of_the_crossover() -> None:
+    """Four points bracketed the sign change without revealing it was one.
+
+    MEASURED on all 6,810 documents, length-stratified Cochran-Armitage z at nine vocabulary sizes:
+
+        30    50    75   100   150   200   300   500   800
+      +3.91 +3.70 +2.03 +0.50 -0.41 -2.49 -3.70 -5.02 -4.30
+
+    A smooth monotone crossover, significant at both ends in opposite directions. The original
+    four-point sweep (50/100/150/300) showed +3.70 and -3.70 and read as two disagreeing numbers;
+    nine points show a systematic reversal. The default has to keep enough resolution to tell those
+    apart, because the difference decides whether this study reports a null or a mechanism.
+    """
+    import inspect
+
+    default = inspect.signature(H.vocab_sensitivity).parameters["sizes"].default
+    assert min(default) <= 50, f"sweep must reach the function-word end: {default}"
+    assert max(default) >= 500, f"sweep must reach the content-word end: {default}"
+    assert len(default) >= 7, (
+        f"too few points to distinguish a crossover from two disagreeing numbers: {default}"
+    )
+    # The crossover sits between 100 and 200; the sweep must sample inside that interval rather
+    # than step over it.
+    assert any(100 <= size <= 200 for size in default), default

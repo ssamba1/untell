@@ -324,15 +324,31 @@ Things repeatedly gestured at but not, as far as this search found, actually don
    published before ChatGPT, so every flag is a false positive by construction — using Burrows's
    Delta to a centroid built from machine-written abstracts.
 
-   **The answer depends entirely on the feature space, and that is the result.** Stratified by word
-   count, a Cochran-Armitage trend test over the same 6,810 documents gives **z=+3.70, p=0.0002**
-   (false positives RISE with distance) at a 50-word vocabulary and **z=−3.70, p=0.0002** (they
-   FALL — the prediction) at 300, with 100 and 150 null in between. Both ends significant, opposite
-   directions, identical data. `vocabulary()` takes the most frequent *n* words, so this constant is
-   not a precision knob: at 50 the features are almost purely function words — the classic
-   stylometric signal — and at 300 the list has absorbed enough content words that distance is
-   partly topical. **Two constructs sharing a name.** No directional claim about "the stylistic
-   centre of mass" holds until they are separated.
+   **The answer depends on the feature space, and that dependence is the result.** Length-stratified
+   Cochran-Armitage z over the same 6,810 documents, at nine vocabulary sizes:
+
+   |  30 |  50 |  75 | 100 | 150 | 200 | 300 | 500 | 800 |
+   |---|---|---|---|---|---|---|---|---|
+   | +3.91 | +3.70 | +2.03 | +0.50 | −0.41 | −2.49 | −3.70 | −5.02 | −4.30 |
+
+   Smooth, monotone, significant at both ends in opposite directions. `vocabulary()` takes the most
+   frequent *n* words, so this is not a precision knob: small *n* is almost purely function words —
+   the classic stylometric signal — and large *n* has absorbed content words. **Two constructs
+   sharing a name**, and the reversal is what shows they are two.
+
+   **On the stylistic axis the gap actually names, the prediction is backwards.** In function-word
+   space false-positive rate **RISES** with distance from the machine centre (z=+3.91, p=0.0001):
+   being stylistically unusual makes a human document *more* likely to be falsely flagged, not less.
+   It falls only in the content-inclusive space (z=−5.02, p<0.0001), which is substantially topic.
+   So there is a mechanism, and it runs the other way — detectors flag a writer for departing from
+   the reference human distribution rather than for resembling the model, and because the model also
+   sits near that distribution's centre the correlation in the literature looks like the first story
+   while being produced by the second.
+
+   ⚠️ Tempting and **not tested here**: that non-native writers sit far out in function-word space
+   (article and preposition use being exactly that signal), making the L2 result an instance of this.
+   There is no non-native corpus in this study — every document is an ACL abstract — so that is the
+   next experiment, not a conclusion.
 
    ⚠️ **And the naive version of this study returns a significant result in the opposite direction.**
    Unstratified, the same data gives **z=2.16, p=0.031** (MEASURED, `eval/data/homogenization.json`)
