@@ -576,11 +576,21 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
         "unmeasurable": unmeasurable,
         "red_baselines": {k: v for k, v in baselines.items() if v},
         "by_kind": by_kind,
+        # `workers` and `outcomes` are not decoration; they were MISSING here, which is the same
+        # defect as the dropped `kinds` filter one level down — the path a caller took silently
+        # changed what they got back. `outcomes` is the one that costs something: `run_parallel`'s
+        # own comment says the paired analysis (inversion against off-by-one at one comparison
+        # site) needs to know the partner RAN, and a survivor list cannot tell "the partner was
+        # killed" from "the partner never ran". A serial-produced artefact simply had no answer,
+        # and nothing would have reported the gap — no consumer reads the key today, so it would
+        # have surfaced as a paired analysis quietly measuring fewer sites.
+        "workers": 1,
         "mutants": len(mutants),
         "killed": len(killed),
         "survived": len(survivors),
         "score": round(100.0 * len(killed) / len(mutants), 1) if mutants else 0.0,
-        "survivors": survivors,
+        "survivors": sorted(survivors, key=lambda r: (r["file"], r["line"])),
+        "outcomes": sorted(mutants, key=lambda r: (r["file"], r["line"], r["kind"])),
     }
 
 

@@ -89,3 +89,34 @@ def test_a_module_the_filter_empties_is_skipped_not_baselined() -> None:
     assert body.index("if not candidates:") < body.index("baseline = _failures("), (
         "the empty-candidate skip must come before the baseline pass, or it saves nothing"
     )
+
+
+def test_both_runners_return_the_same_report_shape() -> None:
+    """The same defect one level up: the runner you picked changed the SHAPE of what came back.
+
+    `run` omitted `outcomes` and `workers`. Nothing reads `outcomes` outside this module today, so
+    the gap was latent — it would have surfaced as round 97's paired analysis (inversion against
+    off-by-one at one comparison site) quietly measuring fewer sites, because a survivor list
+    cannot distinguish "the partner was killed" from "the partner never ran". `run_parallel`'s own
+    comment says exactly that about the key it alone returned.
+
+    Compared as key sets rather than by listing them, so a key added to either runner has to be
+    added to both or this fails.
+    """
+    import json
+    import subprocess
+    import sys
+
+    def keys_for(workers: int) -> set[str]:
+        out = subprocess.run(
+            [sys.executable, "-m", "eval.mutation", "--kinds", "boundary",
+             "--workers", str(workers), "--limit", "1", "--json"],
+            capture_output=True, text=True, cwd=mutation.REPO, timeout=900,
+        )
+        assert out.returncode == 0, out.stderr[-2000:]
+        return set(json.loads(out.stdout))
+
+    serial, parallel = keys_for(1), keys_for(2)
+    assert serial == parallel, (
+        f"only in serial: {sorted(serial - parallel)}; only in parallel: {sorted(parallel - serial)}"
+    )
