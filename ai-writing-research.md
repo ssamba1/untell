@@ -316,10 +316,29 @@ Things repeatedly gestured at but not, as far as this search found, actually don
    work is new and thin.
 4. **The performance-vs-resilience dichotomy has no standard reporting format** — which is squarely what
    untell's harness produces, and a reason its measurements are worth publishing in that vocabulary.
-5. **Homogenization and detection are not studied together**, despite being two views of one phenomenon.
-   A study measuring FPR as a function of a writer's distance from the model's stylistic centre of mass
-   would connect §2 and §4 directly, and would explain the L2 result mechanistically rather than by
-   correlation.
+5. ~~**Homogenization and detection are not studied together**, despite being two views of one
+   phenomenon. A study measuring FPR as a function of a writer's distance from the model's stylistic
+   centre of mass would connect §2 and §4 directly, and would explain the L2 result mechanistically
+   rather than by correlation.~~ **DONE, and the prediction is refuted.** `eval/homogenization.py`
+   ran it on **6,810** ACL abstracts from volumes through 2021 — published before ChatGPT, so every
+   flag is a false positive by construction — measuring Burrows's Delta to a centroid built from
+   machine-written abstracts. False-positive rate is **flat across all five distance quintiles**,
+   19.8% / 17.1% / 18.2% / 20.6% / 21.7% crude with overlapping 95% intervals at n=1,362 each, and a
+   length-stratified Cochran-Armitage trend test gives **z=0.08, p=0.93**. Homogenization and
+   detection are not two views of one phenomenon on this corpus and this detector.
+
+   ⚠️ **And the naive version of this study returns a significant result in the opposite direction.**
+   Unstratified, the same data gives **z=2.16, p=0.031** for false positives *rising* with distance —
+   which would read as "being stylistically unusual protects you". It is the length confound with a
+   p-value attached: the farthest quintile averages 130 words against the nearest's 172, because a
+   short document estimates its own word frequencies badly and lands further from any centroid by
+   noise alone, and this corpus flags 28.69% of 60-100 word documents against 12.77% above 200.
+   Anyone filling this gap without stratifying by length publishes the reverse of the finding.
+
+   Scope, because a null needs it more than a positive does: one detector (the stdlib lite path —
+   a weak instrument, and a null from a weak instrument is weak evidence), one corpus in one
+   register, one distance measure, human documents only. What is refuted is the mechanical claim on
+   this setup, not the correlational finding in the fairness literature.
 
 ## Verification status
 

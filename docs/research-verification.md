@@ -5689,6 +5689,88 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and fourteen — the study we said nobody had done, and the answer is no
+
+`ai-writing-research.md`'s *Gaps worth noting* #5 has stood since that document was written:
+homogenization and detection are never studied together despite being two views of one phenomenon,
+and measuring false-positive rate against a writer's distance from the model's stylistic centre of
+mass would connect them mechanically instead of by correlation. Everything the study needs was
+already in this repository, so it was built: 6,810 ACL abstracts from volumes through 2021 —
+**published before ChatGPT, so every flag is a false positive by construction** — against a centroid
+built from the committed machine-written abstracts, with Burrows's Delta as the distance because it
+already *is* a distance-from-a-centre-of-mass measure.
+
+## The prediction is refuted
+
+| quintile | n | mean words | crude FPR | 95% CI | standardized |
+|---|---|---|---|---|---|
+| 0 (nearest the machine centre) | 1,362 | 172 | 19.8% | [17.7, 21.9] | 21.3% |
+| 1 | 1,362 | 162 | 17.1% | [15.2, 19.2] | 17.4% |
+| 2 | 1,362 | 154 | 18.2% | [16.2, 20.3] | 18.4% |
+| 3 | 1,362 | 144 | 20.6% | [18.6, 22.9] | 19.9% |
+| 4 (farthest) | 1,362 | 130 | 21.7% | [19.6, 23.9] | 19.8% |
+
+**Flat.** Every interval overlaps every other, and a length-stratified Cochran-Armitage trend test
+gives **z=0.08, p=0.93** (MEASURED, `eval/data/homogenization.json`) — about as null as a number
+gets. On this corpus and this detector,
+homogenization and detection are not two views of one phenomenon.
+
+## The naive version of the same study returns a significant result in the opposite direction
+
+Unstratified, the identical data gives **z=2.16, p=0.031** for false positives *rising* with
+distance (MEASURED, same artefact, `trend_crude`). Published, that reads as *being stylistically unusual protects you from detectors* — a
+tidy, quotable, wrong finding, with a p-value.
+
+It is the length confound wearing the result's clothes. The farthest quintile averages **130 words
+against the nearest's 172**, because a short document estimates its own word frequencies badly and
+lands further from any centroid by estimation noise alone; and this corpus separately flags
+**28.69%** of 60-100 word documents against **12.77%** above 200. The whole effect is length, and
+the distance axis is where it happened to be standing.
+
+**Anyone filling this gap without stratifying by length publishes the reverse of the finding.** That
+is the more useful half of this round: the gap is not merely unfilled, it is booby-trapped.
+
+## What it means for the removal half, which is worse news
+
+If distance had predicted false positives, "remove the AI tells" would finally have had a mechanical
+definition — increase the distance — that did not route through the tell catalogue rounds eighty-one
+and eighty-two measured as a register detector (AUROC 1.0000) rather than an authorship one (0.2697).
+It does not, so that definition is not available.
+
+The displacement arm makes it concrete. MEASURED with an exact sign test, ties excluded:
+
+| rewriter | machine text (the actual job) | human text (the control) |
+|---|---|---|
+| composite | p=0.29 — no displacement | **p=0.0005, toward the machine centre** |
+| structural | p=0.73 — no displacement | **p<0.0001, toward the machine centre** |
+| targeted | p=0.29 — no displacement | **p=0.0066, toward the machine centre** |
+| surgical | p=1.00, 39 of 40 unmoved | p=0.125 — no displacement |
+
+**On machine text no rewriter moves the document off the machine centroid in either direction**,
+while the detector score falls 0.3049 → 0.2684. On *human* text the same rewriters significantly drag
+prose *toward* the machine centre — they homogenize the one population where that is unambiguously
+the wrong direction.
+
+So the loop's gains are **detector-specific, not stylometric**. That is the in-loop-versus-held-out
+gap the free-ceiling report names as the central unknown, measured with a mechanism rather than
+inferred from the literature.
+
+## Scope, because a null needs it more than a positive does
+
+One detector — the stdlib lite path, `torch` absent by organization policy, and this repo has
+separately measured that path as near-chance on per-sentence targeting. **A null from a weak
+instrument is weak evidence.** One corpus, one register, one distance measure, human documents only.
+What is refuted is the mechanical claim on this setup, not the correlational finding in the fairness
+literature that motivated it.
+
+⚠️ Two things this round nearly got wrong, both caught by its own controls. The headline was first
+computed at n=150 and showed a 12.6-point drop in the predicted direction — noise, and the full
+corpus erased it. And the vocabulary sweep at n=600 **flipped sign across the constant** (−0.053 at
+50 words, +0.114 at 300), which is why nothing was published until the full corpus and the full sweep
+had both run.
+
+---
+
 # Round one hundred and thirteen — the answer was a retry, and the sentinel that hid it
 
 The cold-worktree probe round one hundred and twelve was waiting on came back, and it eliminated the

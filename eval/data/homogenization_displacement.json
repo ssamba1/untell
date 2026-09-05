@@ -1,0 +1,94 @@
+{
+  "machine_subjects": {
+    "composite": {
+      "n": 40,
+      "changed": 23,
+      "mean_displacement": -0.0026,
+      "moved_away": 8,
+      "moved_closer": 14,
+      "unmoved": 18,
+      "p_sign_test": 0.2863,
+      "mean_score_before": 0.3049,
+      "mean_score_after": 0.2684
+    },
+    "structural": {
+      "n": 40,
+      "changed": 38,
+      "mean_displacement": -0.0008,
+      "moved_away": 15,
+      "moved_closer": 18,
+      "unmoved": 7,
+      "p_sign_test": 0.7283,
+      "mean_score_before": 0.3049,
+      "mean_score_after": 0.3025
+    },
+    "surgical": {
+      "n": 40,
+      "changed": 3,
+      "mean_displacement": 0.0002,
+      "moved_away": 1,
+      "moved_closer": 0,
+      "unmoved": 39,
+      "p_sign_test": 1.0,
+      "mean_score_before": 0.3049,
+      "mean_score_after": 0.3049
+    },
+    "targeted": {
+      "n": 40,
+      "changed": 25,
+      "mean_displacement": -0.0029,
+      "moved_away": 8,
+      "moved_closer": 14,
+      "unmoved": 18,
+      "p_sign_test": 0.2863,
+      "mean_score_before": 0.3049,
+      "mean_score_after": 0.27
+    }
+  },
+  "human_subjects": {
+    "composite": {
+      "n": 40,
+      "changed": 26,
+      "mean_displacement": -0.0189,
+      "moved_away": 4,
+      "moved_closer": 22,
+      "unmoved": 14,
+      "p_sign_test": 0.0005,
+      "mean_score_before": 0.3238,
+      "mean_score_after": 0.2692
+    },
+    "structural": {
+      "n": 40,
+      "changed": 40,
+      "mean_displacement": -0.0312,
+      "moved_away": 4,
+      "moved_closer": 36,
+      "unmoved": 0,
+      "p_sign_test": 0.0,
+      "mean_score_before": 0.3238,
+      "mean_score_after": 0.3201
+    },
+    "surgical": {
+      "n": 40,
+      "changed": 10,
+      "mean_displacement": -0.0011,
+      "moved_away": 1,
+      "moved_closer": 6,
+      "unmoved": 33,
+      "p_sign_test": 0.125,
+      "mean_score_before": 0.3238,
+      "mean_score_after": 0.3221
+    },
+    "targeted": {
+      "n": 40,
+      "changed": 24,
+      "mean_displacement": -0.0129,
+      "moved_away": 5,
+      "moved_closer": 19,
+      "unmoved": 16,
+      "p_sign_test": 0.0066,
+      "mean_score_before": 0.3238,
+      "mean_score_after": 0.281
+    }
+  }
+}

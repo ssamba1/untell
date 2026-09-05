@@ -146,3 +146,77 @@ def test_ties_are_excluded_from_the_sign_test_rather_than_split() -> None:
     assert H.sign_test(1, 0) == H.sign_test(1, 0)
     few = H.sign_test(1, 0)
     assert few == 1.0, "one moved document must not be significant at any tie count"
+
+
+def test_the_trend_test_finds_a_trend_that_is_really_there() -> None:
+    """Floor check: an instrument that cannot detect a planted effect cannot report a null."""
+    strong = H.trend_test([10, 30, 50, 70, 90], [100] * 5)
+    assert strong["p"] < 0.001 and strong["direction"] == "rises with distance"
+    falling = H.trend_test([90, 70, 50, 30, 10], [100] * 5)
+    assert falling["p"] < 0.001 and falling["direction"] == "falls with distance"
+
+
+def test_the_trend_test_reports_a_null_when_there_is_no_trend() -> None:
+    flat = H.trend_test([50, 50, 50, 50, 50], [100] * 5)
+    assert flat["p"] > 0.5, flat
+
+
+def test_a_degenerate_split_is_reported_as_degenerate_not_as_a_null() -> None:
+    """No contrast is not the same fact as no effect, and both would otherwise print as a number."""
+    assert H.trend_test([0, 0, 0], [10, 10, 10])["p"] is None
+    assert H.trend_test([10, 10, 10], [10, 10, 10])["p"] is None
+    assert "degenerate" in H.trend_test([0, 0, 0], [10, 10, 10])["note"]
+
+
+def test_stratifying_removes_a_trend_that_is_purely_length() -> None:
+    """The scenario the real corpus presents, planted so the right answer is known.
+
+    MEASURED on the 6,810-document corpus, the CRUDE test reports a significant trend — p=0.0305 —
+    in the direction OPPOSITE the prediction, because distant documents are shorter (mean 130 words
+    in the farthest quintile against 172 in the nearest) and this corpus flags 28.69% of 60-100
+    word documents against 12.77% above 200. A reader handed only that test would conclude
+    stylistic distance PROTECTS a writer, from an artefact of estimation noise in short text.
+
+    Here flagging depends on length and nothing else, and distance is arranged to track it. The
+    crude test must find a trend; the stratified test must not.
+    """
+    rows = []
+    for i in range(1000):
+        bin_index = i // 200
+        # Short documents grow more common with distance, and only short documents get flagged.
+        short = (i % 10) < (1 + 2 * bin_index)
+        rows.append({
+            "bin": bin_index,
+            "band": "50-100" if short else "200+",
+            "flagged": int(short),
+            "words": 70 if short else 250,
+        })
+    crude = H.trend_test(
+        [sum(r["flagged"] for r in rows if r["bin"] == b) for b in range(5)],
+        [sum(1 for r in rows if r["bin"] == b) for b in range(5)],
+    )
+    stratified = H.stratified_trend_test(rows)
+    assert crude["p"] < 0.001, f"the confound is not in the data: {crude}"
+    assert stratified["p"] is None or stratified["p"] > 0.05, (
+        f"stratifying failed to remove a pure length effect: {stratified}"
+    )
+
+
+def test_stratifying_keeps_a_trend_that_survives_the_control() -> None:
+    """The other direction: a real within-band effect must not be standardized away, or the control
+    would be buying its null by destroying signal."""
+    rows = []
+    for i in range(1000):
+        bin_index = i // 200
+        short = (i % 2) == 0          # length independent of distance
+        # A real effect: flag rate falls with distance INSIDE both bands.
+        flagged = int((i % 100) < (40 - 8 * bin_index))
+        rows.append({
+            "bin": bin_index,
+            "band": "50-100" if short else "200+",
+            "flagged": flagged,
+            "words": 70 if short else 250,
+        })
+    stratified = H.stratified_trend_test(rows)
+    assert stratified["p"] is not None and stratified["p"] < 0.01, stratified
+    assert stratified["direction"] == "falls with distance", stratified

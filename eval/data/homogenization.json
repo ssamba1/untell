@@ -1,0 +1,150 @@
+{
+  "n": 6810,
+  "bins": [
+    {
+      "bin": 0,
+      "n": 1362,
+      "delta_range": [
+        0.4457,
+        0.5887
+      ],
+      "mean_words": 171.9,
+      "flagged": 269,
+      "fpr_crude": 0.1975,
+      "ci95": [
+        0.1772,
+        0.2195
+      ],
+      "fpr_standardized": 0.2132,
+      "standardization": null,
+      "bands": [
+        "100-200",
+        "200+",
+        "50-100"
+      ],
+      "weight_covered": 1.0,
+      "mean_max": 0.3368
+    },
+    {
+      "bin": 1,
+      "n": 1362,
+      "delta_range": [
+        0.5887,
+        0.6283
+      ],
+      "mean_words": 161.5,
+      "flagged": 233,
+      "fpr_crude": 0.1711,
+      "ci95": [
+        0.152,
+        0.192
+      ],
+      "fpr_standardized": 0.1744,
+      "standardization": null,
+      "bands": [
+        "100-200",
+        "200+",
+        "50-100"
+      ],
+      "weight_covered": 1.0,
+      "mean_max": 0.3249
+    },
+    {
+      "bin": 2,
+      "n": 1362,
+      "delta_range": [
+        0.6283,
+        0.6665
+      ],
+      "mean_words": 153.5,
+      "flagged": 248,
+      "fpr_crude": 0.1821,
+      "ci95": [
+        0.1625,
+        0.2035
+      ],
+      "fpr_standardized": 0.1836,
+      "standardization": null,
+      "bands": [
+        "100-200",
+        "200+",
+        "50-100"
+      ],
+      "weight_covered": 1.0,
+      "mean_max": 0.337
+    },
+    {
+      "bin": 3,
+      "n": 1362,
+      "delta_range": [
+        0.6665,
+        0.7101
+      ],
+      "mean_words": 144.4,
+      "flagged": 281,
+      "fpr_crude": 0.2063,
+      "ci95": [
+        0.1857,
+        0.2286
+      ],
+      "fpr_standardized": 0.1993,
+      "standardization": null,
+      "bands": [
+        "100-200",
+        "200+",
+        "50-100"
+      ],
+      "weight_covered": 1.0,
+      "mean_max": 0.3395
+    },
+    {
+      "bin": 4,
+      "n": 1362,
+      "delta_range": [
+        0.7103,
+        0.9444
+      ],
+      "mean_words": 130.4,
+      "flagged": 295,
+      "fpr_crude": 0.2166,
+      "ci95": [
+        0.1955,
+        0.2393
+      ],
+      "fpr_standardized": 0.1977,
+      "standardization": null,
+      "bands": [
+        "100-200",
+        "200+",
+        "50-100"
+      ],
+      "weight_covered": 1.0,
+      "mean_max": 0.3447
+    }
+  ],
+  "trend_crude": {
+    "z": 2.1639,
+    "p": 0.0305,
+    "direction": "rises with distance"
+  },
+  "trend": {
+    "z": 0.0834,
+    "p": 0.9335,
+    "strata_used": 3,
+    "direction": "rises with distance"
+  },
+  "delta_edges": [
+    0.5887,
+    0.6283,
+    0.6665,
+    0.7103
+  ],
+  "band_share": {
+    "100-200": 0.8272,
+    "200+": 0.1004,
+    "50-100": 0.0724
+  },
+  "tier": "lite",
+  "vocab": 150,
+  "machine_docs": 70
+}

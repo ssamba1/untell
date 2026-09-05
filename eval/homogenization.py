@@ -164,6 +164,9 @@ def scored_rows(texts: list[str], deltas: list[float], tier: str = "lite") -> li
     """
     from untell.scripts.score import score_text
 
+    # `deltas` may be a placeholder when the caller intends to attach real distances afterwards —
+    # `vocab_sensitivity` does exactly that, so the detector runs once for a sweep of four feature
+    # spaces. Nothing here reads the value; it is carried through to the row.
     rows: list[dict] = []
     for text, distance in zip(texts, deltas):
         result = score_text(text, tier=tier)
@@ -195,6 +198,85 @@ def sign_test(away: int, closer: int) -> float:
     fewer = min(away, closer)
     tail = sum(math.comb(moved, k) for k in range(fewer + 1)) / (2 ** moved)
     return min(1.0, 2 * tail)
+
+
+def trend_test(flagged: list[int], totals: list[int]) -> dict:
+    """Cochran-Armitage test for a linear trend in proportions across ordered bins.
+
+    Eyeballing five rates and calling them flat is the same error as eyeballing nine-against-
+    seventeen and calling it a bias — which is why `sign_test` exists one function down. The
+    prediction under test is directional (false positives should FALL as distance grows), so the
+    right instrument is a trend test across the ordered bins rather than a comparison of the two
+    ends, which throws away the middle three and the ordering itself.
+
+    Scores are the bin indices, which is the conventional equally-spaced choice and is honest here
+    because the bins are equal-count quantiles: adjacent bins hold the same number of documents, so
+    treating them as equally spaced weights each by the same n rather than by an arbitrary width.
+
+    Returns the z statistic and a two-sided p-value. A null result is reported as a null result —
+    this repo has an explicit rule that a number meaning "no effect found" must not be presented as
+    a number meaning "effect measured to be zero", and the two are told apart by the interval, not
+    by the point estimate.
+    """
+    n_total = sum(totals)
+    cases = sum(flagged)
+    if not n_total or not cases or cases == n_total:
+        return {"z": None, "p": None, "note": "degenerate: no contrast to test"}
+    scores = list(range(len(totals)))
+    p_bar = cases / n_total
+    s_bar = sum(s * n for s, n in zip(scores, totals)) / n_total
+    numerator = sum(s * f for s, f in zip(scores, flagged)) - cases * s_bar
+    variance = p_bar * (1 - p_bar) * sum(n * (s - s_bar) ** 2 for s, n in zip(scores, totals))
+    if variance <= 0:
+        return {"z": None, "p": None, "note": "degenerate: zero variance in the scores"}
+    z = numerator / math.sqrt(variance)
+    p = math.erfc(abs(z) / math.sqrt(2))
+    return {"z": round(z, 4), "p": round(p, 4),
+            "direction": "rises with distance" if z > 0 else "falls with distance"}
+
+
+def stratified_trend_test(rows: list[dict]) -> dict:
+    """Cochran-Armitage for trend, stratified by word-count band.
+
+    ⚠️ **The unstratified test on this corpus answers a question nobody asked.** Run on the raw
+    counts it reports a SIGNIFICANT trend, p=0.0305, in the direction OPPOSITE the prediction —
+    false positives rising as a document moves away from the machine centroid. That is the length
+    confound with a p-value attached: distant documents are shorter (mean 130 words in the farthest
+    quintile against 172 in the nearest) and this corpus flags 28.69% of 60-100 word documents
+    against 12.77% above 200. A reader handed the crude test would conclude homogenization protects
+    a writer, from an artefact of estimation noise in short documents.
+
+    Stratifying is the fix that matches the standardized rates already reported: accumulate the
+    Cochran-Armitage numerator and variance WITHIN each length band and sum across bands, so the
+    trend is only ever measured between documents of comparable length.
+    """
+    strata: dict[str, dict[int, list[int]]] = {}
+    for row in rows:
+        cell = strata.setdefault(row["band"], {}).setdefault(row["bin"], [0, 0])
+        cell[0] += row["flagged"]
+        cell[1] += 1
+    numerator, variance, used = 0.0, 0.0, 0
+    for bins in strata.values():
+        if len(bins) < 2:
+            continue  # a band present in one distance bin carries no within-band contrast
+        scores = sorted(bins)
+        flagged = [bins[b][0] for b in scores]
+        totals = [bins[b][1] for b in scores]
+        n_total, cases = sum(totals), sum(flagged)
+        if not n_total or not cases or cases == n_total:
+            continue
+        p_bar = cases / n_total
+        s_bar = sum(s * n for s, n in zip(scores, totals)) / n_total
+        numerator += sum(s * f for s, f in zip(scores, flagged)) - cases * s_bar
+        variance += p_bar * (1 - p_bar) * sum(n * (s - s_bar) ** 2
+                                              for s, n in zip(scores, totals))
+        used += 1
+    if variance <= 0 or used == 0:
+        return {"z": None, "p": None, "note": "no stratum had a within-band contrast to test"}
+    z = numerator / math.sqrt(variance)
+    return {"z": round(z, 4), "p": round(math.erfc(abs(z) / math.sqrt(2)), 4),
+            "strata_used": used,
+            "direction": "rises with distance" if z > 0 else "falls with distance"}
 
 
 def _wilson(successes: int, total: int, z: float = 1.96) -> tuple[float, float]:
@@ -274,6 +356,12 @@ def curve(rows: list[dict], bins: int = N_BINS) -> dict:
     return {
         "n": total_rows,
         "bins": out_bins,
+        # The prediction is directional, so it gets a directional test rather than a glance at the
+        # two end bins. BOTH are reported: the crude test is the one a reader would run by default
+        # and it is significant in the wrong direction, so showing it beside the stratified test is
+        # the clearest statement of what the length control is worth.
+        "trend_crude": trend_test([b["flagged"] for b in out_bins], [b["n"] for b in out_bins]),
+        "trend": stratified_trend_test(rows),
         "delta_edges": [round(e, 4) for e in edges],
         "band_share": {k: round(v / total_rows, 4) for k, v in sorted(band_share.items())},
     }
@@ -288,21 +376,38 @@ def vocab_sensitivity(human: list[str], machine: list[str], rows_tier: str = "li
     reported is the SPREAD of the effect across sizes: if the direction survives 50 through 300,
     the finding is about style rather than about 150.
     """
+    # Score ONCE. The detector's verdict on a document does not depend on the vocabulary size —
+    # that constant only decides the feature space the distance is computed in — so re-scoring per
+    # size ran the whole corpus through the detector four times for four identical sets of answers.
+    # On the full 6,811 documents that is the difference between one pass and four, which is what
+    # made a full-corpus sweep unaffordable and left the robustness check running at n=600, where
+    # the effect flips sign.
+    base = scored_rows(human, [0.0] * len(human), rows_tier)
     out = {}
     for size in sizes:
         deltas = distances(human, machine, size)
-        rows = scored_rows(human, deltas, rows_tier)
+        rows = [{**row, "delta": d} for row, d in zip(base, deltas)]
         result = curve(rows)
         bins = result.get("bins") or []
         if len(bins) < 2:
             out[size] = {"error": "too few bins"}
             continue
+        near, far = bins[0]["fpr_standardized"], bins[-1]["fpr_standardized"]
         out[size] = {
-            "nearest_standardized": bins[0]["fpr_standardized"],
-            "farthest_standardized": bins[-1]["fpr_standardized"],
-            "drop": round((bins[0]["fpr_standardized"] or 0) - (bins[-1]["fpr_standardized"] or 0), 4),
+            # The headline statistic, not the end-bin difference: the null this study reports is a
+            # null in the TREND, and a sweep that varied a constant while reporting a different
+            # quantity than the finding would not be checking the finding.
+            "trend_stratified": result.get("trend"),
+            "trend_crude": result.get("trend_crude"),
+            "nearest_standardized": near,
+            "farthest_standardized": far,
+            # None, not 0, when either end could not be standardized: `or 0` would turn "could not
+            # measure" into a drop the size of the other end, which is the exact substitution the
+            # standardization guard above exists to refuse.
+            "drop": round(near - far, 4) if near is not None and far is not None else None,
             "nearest_crude": bins[0]["fpr_crude"],
             "farthest_crude": bins[-1]["fpr_crude"],
+            "n": result["n"],
         }
     return out
 
@@ -398,6 +503,16 @@ def _render(report: dict) -> str:
             f"{row['mean_words']:>6.0f}  {row['fpr_crude']:>7.1%}  "
             f"[{low:>6.1%},{high:>6.1%}]  {std_text}"
         )
+    trend, crude = report.get("trend") or {}, report.get("trend_crude") or {}
+    if crude.get("p") is not None:
+        lines += ["", f"Cochran-Armitage, crude:      z={crude['z']:>7}, p={crude['p']:<7} "
+                      f"({crude.get('direction')})"]
+    if trend.get("p") is not None:
+        verdict = ("a trend survives the length control" if trend["p"] < 0.05 else
+                   "NO trend survives the length control")
+        lines += [f"Cochran-Armitage, stratified: z={trend['z']:>7}, p={trend['p']:<7} "
+                  f"({trend.get('direction')})",
+                  f"  -> {verdict}"]
     near, far = bins[0], bins[-1]
     if near["fpr_standardized"] is None or far["fpr_standardized"] is None:
         lines += ["", "standardized comparison unavailable: " +
