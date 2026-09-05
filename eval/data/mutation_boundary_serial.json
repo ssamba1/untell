@@ -1,0 +1,1845 @@
+{
+  "baselines": {
+    "untell/_retry.py": 0,
+    "untell/api_server.py": 27,
+    "untell/attacks/back_translation.py": 6,
+    "untell/attacks/unicode_tricks.py": 0,
+    "untell/attacks/word_importance.py": 0,
+    "untell/browser_check.py": 0,
+    "untell/calibrate.py": 0,
+    "untell/detectors/base.py": 1,
+    "untell/detectors/binoculars.py": 0,
+    "untell/detectors/commercial.py": 0,
+    "untell/detectors/llm_judge.py": 0,
+    "untell/detectors/local_judge.py": 1,
+    "untell/detectors/perplexity_burstiness.py": 0,
+    "untell/html_report.py": 0,
+    "untell/humanness.py": 0,
+    "untell/inspect_report.py": 0,
+    "untell/layout.py": 0,
+    "untell/mcp_server.py": 0,
+    "untell/rewriter/composite.py": 0,
+    "untell/rewriter/ensemble.py": 0,
+    "untell/rewriter/local_policy.py": 2,
+    "untell/rewriter/prompts.py": 0,
+    "untell/rewriter/structural.py": 0,
+    "untell/rewriter/targeted.py": 0,
+    "untell/rich_output.py": 0,
+    "untell/scripts/audit.py": 0,
+    "untell/scripts/batch.py": 0,
+    "untell/scripts/entailment.py": 2,
+    "untell/scripts/explain.py": 0,
+    "untell/scripts/hedges.py": 0,
+    "untell/scripts/io_utils.py": 1,
+    "untell/scripts/latex.py": 0,
+    "untell/scripts/numerals.py": 0,
+    "untell/scripts/preserve.py": 0,
+    "untell/scripts/quality.py": 0,
+    "untell/scripts/roles.py": 2,
+    "untell/scripts/run.py": 0,
+    "untell/scripts/score.py": 0,
+    "untell/scripts/sentences.py": 0,
+    "untell/scripts/tells.py": 0,
+    "untell/scripts/verify.py": 0,
+    "untell/scripts/voice.py": 0,
+    "untell/scripts/watch.py": 0,
+    "untell/text_split.py": 0
+  },
+  "unmeasurable": [
+    {
+      "file": "untell/detectors/fast_detectgpt.py",
+      "tests": [
+        "tests/test_batched_detector_identity.py",
+        "tests/test_detectors_full.py"
+      ],
+      "why": "its test selection times out or fails to collect, so no mutant against it could be scored"
+    }
+  ],
+  "red_baselines": {
+    "untell/api_server.py": 27,
+    "untell/attacks/back_translation.py": 6,
+    "untell/detectors/base.py": 1,
+    "untell/detectors/local_judge.py": 1,
+    "untell/rewriter/local_policy.py": 2,
+    "untell/scripts/entailment.py": 2,
+    "untell/scripts/io_utils.py": 1,
+    "untell/scripts/roles.py": 2
+  },
+  "by_kind": {
+    "boundary": {
+      "killed": 88,
+      "survived": 252,
+      "score": 25.9
+    }
+  },
+  "mutants": 340,
+  "killed": 88,
+  "survived": 252,
+  "score": 25.9,
+  "survivors": [
+    {
+      "file": "untell/_retry.py",
+      "line": 128,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 557,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 591,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 1061,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/api_server.py",
+      "line": 551,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/back_translation.py",
+      "line": 104,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 695,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 800,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 831,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 843,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 930,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 1062,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 805,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 826,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 870,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 872,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 1060,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 1060,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 791,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 791,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 801,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 812,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 812,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 833,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 848,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 859,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 859,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 1074,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 793,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/attacks/word_importance.py",
+      "line": 1101,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/browser_check.py",
+      "line": 118,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/browser_check.py",
+      "line": 129,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/browser_check.py",
+      "line": 165,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/calibrate.py",
+      "line": 89,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/base.py",
+      "line": 41,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/base.py",
+      "line": 41,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/binoculars.py",
+      "line": 104,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/commercial.py",
+      "line": 233,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/local_judge.py",
+      "line": 195,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 151,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 202,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 314,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 317,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 349,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 497,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 504,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 558,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 150,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 201,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 516,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 520,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/html_report.py",
+      "line": 99,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/html_report.py",
+      "line": 91,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 723,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 474,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 705,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 713,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 737,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 476,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 707,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 733,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 709,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/humanness.py",
+      "line": 714,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/inspect_report.py",
+      "line": 189,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/inspect_report.py",
+      "line": 161,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/inspect_report.py",
+      "line": 99,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/layout.py",
+      "line": 225,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/mcp_server.py",
+      "line": 133,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 54,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 66,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 43,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 287,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 60,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 71,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 230,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 83,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/composite.py",
+      "line": 90,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 244,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 209,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 215,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 390,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 422,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/local_policy.py",
+      "line": 428,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/prompts.py",
+      "line": 227,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 665,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 679,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1170,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1427,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2097,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2105,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2355,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2361,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2539,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2650,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2687,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2989,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2992,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 3236,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 112,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 134,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 559,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 689,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1501,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2368,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2796,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2839,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2846,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1073,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1203,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1203,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1368,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1428,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1578,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1620,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2116,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2326,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2832,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2832,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2848,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1260,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1267,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1268,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1437,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1437,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 1712,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2091,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2113,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2113,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2853,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2739,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/structural.py",
+      "line": 2560,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rewriter/targeted.py",
+      "line": 118,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 528,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 287,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 288,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 361,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 362,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 530,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 214,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 362,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 389,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 430,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 450,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 451,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/rich_output.py",
+      "line": 455,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 402,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 411,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 805,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 899,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 1063,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/audit.py",
+      "line": 903,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/batch.py",
+      "line": 343,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 563,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 579,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 581,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 583,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 619,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 324,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 514,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 519,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 567,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 575,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 632,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/entailment.py",
+      "line": 632,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/explain.py",
+      "line": 227,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/hedges.py",
+      "line": 331,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/io_utils.py",
+      "line": 50,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/numerals.py",
+      "line": 437,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 903,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 1001,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 947,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 1087,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/preserve.py",
+      "line": 1179,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 121,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 296,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 221,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/quality.py",
+      "line": 220,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/roles.py",
+      "line": 147,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/roles.py",
+      "line": 291,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 115,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 484,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 501,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 545,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 413,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 418,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1101,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1549,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 2666,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 373,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 744,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 750,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1108,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1219,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1497,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1553,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1576,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1354,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1581,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1582,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1592,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1172,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1416,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/run.py",
+      "line": 1455,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 141,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 164,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 702,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 806,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 839,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1335,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1343,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1498,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1500,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1516,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 711,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1005,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1519,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 867,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 973,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1082,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1091,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1344,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1348,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 707,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 746,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 973,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1338,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 263,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/sentences.py",
+      "line": 271,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 799,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 957,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1130,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 654,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 727,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 859,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 866,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 922,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 942,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1085,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1184,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 925,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1347,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 726,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/tells.py",
+      "line": 1237,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 124,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/verify.py",
+      "line": 173,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/voice.py",
+      "line": 238,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/watch.py",
+      "line": 76,
+      "kind": "boundary",
+      "mutation": "< -> <=",
+      "killed": false
+    },
+    {
+      "file": "untell/scripts/watch.py",
+      "line": 247,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 234,
+      "kind": "boundary",
+      "mutation": "<= -> <",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 442,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 424,
+      "kind": "boundary",
+      "mutation": ">= -> >",
+      "killed": false
+    },
+    {
+      "file": "untell/text_split.py",
+      "line": 479,
+      "kind": "boundary",
+      "mutation": "> -> >=",
+      "killed": false
+    }
+  ]
+}

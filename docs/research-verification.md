@@ -5689,6 +5689,85 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and twelve — three sweeps, one answer, and the prediction still untested
+
+With `--kinds` fixed, the experiment round one hundred and eleven could not run was run. Three
+sweeps of the same tree, two worker counts:
+
+| run | mutants | killed | survivors | identical survivors | `audit.py` measured |
+|---|---|---|---|---|---|
+| committed, 4 workers | 340 | 88 | 252 | — | yes |
+| **serial, 1 worker** | 340 | 88 | 252 | **yes** | yes |
+| fresh, 4 workers | 340 | 88 | 252 | **byte-identical file** | yes |
+
+**The sweep is deterministic across runs and invariant to worker count.** Every kill/survive
+verdict, every one of the 44 module baselines, and every baseline failure count agree. The fresh
+four-worker run reproduced the committed artefact to the byte — same 93,123 bytes — so
+`mutation_boundary.json` and `boundary_register.json` needed no change at all.
+
+Worth stating because the staleness hook had been firing since round one hundred and eight: it
+compares **mtimes**, and the content had not moved. The warning was right in principle — tests did
+change — and the under-reporting it warns about was **exactly zero** this time. That is not an
+argument for removing it; a sweep that happens to be unchanged is only knowable by re-running it.
+It is an argument for reading "stale" as "unverified", not as "wrong".
+
+## The prediction is still untested, and three runs is why
+
+Round one hundred and ten predicted `--workers 1` would classify `audit.py` measurable. It did.
+**So did both four-worker runs.** Round one hundred and seven's `unmeasurable` outcome has now
+failed to reproduce three times.
+
+**When the control arm never exhibits the condition, the comparison establishes nothing about its
+cause.** Round one hundred and eight named this exactly — a plant whose control is dirty gives an
+outcome that looks like a result and is not one — and the same discipline applies to a prediction
+whose contrast case refuses to appear. Calling this confirmation would be the error that round
+exists to prevent. The claim stands where round one hundred and eleven left it: **measured cause,
+untested prediction.**
+
+What the three runs did buy is the elimination of a rival explanation. Had the sweep been
+non-deterministic in its *verdicts*, `audit.py`'s classification would be one symptom of a broader
+instability. It is not: the only thing that varies between runs is whether a module is measured at
+all, which is the timeout and nothing else.
+
+## Then the contention claim was tested directly, and it is REFUTED
+
+Waiting for a fifty-minute sweep to flake is a bad way to test a claim about a three-minute test
+selection. The direct probe: run four copies of `audit.py`'s selection **concurrently** — the
+sweep's own worker count, on four cores — and time each.
+
+    copy 1  177s      copy 3  179s
+    copy 4  178s      copy 2  180s          all four, wall clock 12:51:10 -> 12:54:10
+
+**Every one finished faster than the 206.46s solo measurement**, against a 300s cut. Four-way
+contention does not push this selection past the timeout; it does not push it past its own solo
+time. Round one hundred and ten's explanation — recorded there as measured cause — **is wrong**, and
+the 206.46s figure it rested on was itself the slow observation, not the fast one. It was taken
+while other work was running on this machine, which the round did not record and should have.
+
+So the honest state of the question is now worse than "untested": the leading hypothesis is
+eliminated, and round one hundred and seven's timeout has no explanation. Two candidates remain,
+and only one of them is a property of the harness:
+
+* **cold `__pycache__`.** Every timing in rounds one hundred and ten and here was taken in the
+  **warm working tree**. The sweep runs each baseline in a **fresh worktree** with no compiled
+  cache, which is a cost none of these measurements include. Being probed.
+* **machine state at round one hundred and seven**, which is not recoverable and not a finding.
+
+The general lesson is the one this ledger keeps relearning: **a mechanism that explains the
+observation is not thereby the mechanism**, and the cheap direct test — three minutes here — was
+available the whole time while two multi-hour sweeps were spent circling it.
+
+## An artefact for the claim, and its one defect
+
+`eval/data/mutation_boundary_serial.json` is committed so the invariance above is checkable rather
+than asserted. ⚠️ It was produced **before** the report-shape fix in the same round, so it carries
+no `outcomes` key. The claim does not depend on one — identical survivor sets plus identical totals
+over a deterministic candidate set pins the killed sets too — but the two artefacts are **not
+shape-matched**, and anyone diffing them will find the key missing. Recorded rather than quietly
+regenerated, because the missing key is itself the defect that round documented.
+
+---
+
 # Round one hundred and eleven — the flag that meant something different at one worker
 
 Round one hundred and ten predicted that `--workers 1` would classify `audit.py` measurable every
