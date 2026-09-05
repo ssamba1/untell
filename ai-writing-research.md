@@ -345,10 +345,17 @@ Things repeatedly gestured at but not, as far as this search found, actually don
    sits near that distribution's centre the correlation in the literature looks like the first story
    while being produced by the second.
 
-   ⚠️ Tempting and **not tested here**: that non-native writers sit far out in function-word space
-   (article and preposition use being exactly that signal), making the L2 result an instance of this.
-   There is no non-native corpus in this study — every document is an ACL abstract — so that is the
-   next experiment, not a conclusion.
+   **A second instrument now agrees.** `eval/outlier_fairness.py --trend` asks the same question
+   against a different centre — distance from the *corpus norm* rather than the machine centroid —
+   on the same 6,810 documents, and separates decisively: **z=+6.55, p≈0**, rising with distance,
+   across all four word-count strata. Two centres, two feature sets, one direction: **detectors flag
+   departure from the human norm.**
+
+   ⚠️ Tempting and **still not tested here**: that non-native writers sit far out in function-word
+   space (article and preposition use being exactly that signal), making the L2 result an instance
+   of this. There is no non-native corpus in this study — every document is an ACL abstract, and
+   outlier status is not a protected characteristic. What is established is that false accusations
+   concentrate on the margins; which margin is the next experiment.
 
    ⚠️ **And the naive version of this study returns a significant result in the opposite direction.**
    Unstratified, the same data gives **z=2.16, p=0.031** (MEASURED, `eval/data/homogenization.json`)

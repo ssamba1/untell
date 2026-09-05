@@ -94,11 +94,21 @@ and varying authorship at matched length, it separates them at **0.2697** — wo
 (rounds 81–82 of the verification ledger). Removing catalogued tells makes text less *chatbot-register*,
 which is not the same as less *machine-written*.
 
-**And distance from the machine centre does not predict false positives the way the field assumes.**
-`eval/homogenization.py` measures this on 6,810 pre-ChatGPT abstracts. In function-word space —
-the stylistic reading — false-positive rate **rises** with distance from the machine centroid
-(z=+3.91, p=0.0001): being stylistically unusual makes a human document *more* likely to be flagged.
-So "move away from how machines write" is not a strategy the data supports on the axis that names it.
+**And distance from a norm does not predict false positives the way the field assumes — it predicts
+them the other way round.** Two instruments, two different centres, both on the 6,810 pre-ChatGPT
+abstracts where every flag is a false accusation by construction:
+
+| instrument | centre | statistic | result |
+|---|---|---|---|
+| `eval/homogenization.py` | the machine centroid | trend across 5 quintiles, function-word space | **z=+3.91, p=0.0001** |
+| `eval/outlier_fairness.py --trend` | the corpus norm | trend across 5 quintiles, stylometric features | **z=+6.55, p≈0** |
+
+Both rise. **Being stylistically unusual makes a human document *more* likely to be falsely flagged,
+not less** — so "move away from how machines write" is not a strategy the data supports, and the
+writers who already sit furthest from the norm are the ones absorbing the false accusations.
+
+⚠️ Outlier status is not a protected characteristic. This establishes that a detector's false
+accusations concentrate on the margins; it does not establish which margin.
 
 ## What would actually raise the ceiling
 

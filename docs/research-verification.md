@@ -5744,6 +5744,43 @@ Row 28 is recorded as run rather than as answered. The arm exists, it is honest 
 result, and the useful next step is written down: give it the trend statistic rather than the
 quantile split.
 
+## Done, and the null was a power artefact: there IS a disparity
+
+The next step above was built rather than left as a note. `probe_trend` asks the same question as a
+Cochran-Armitage trend across five equal-count distance bins, accumulated inside each word-count
+band. MEASURED on all 6,810 documents (`eval/data/outlier_fairness_trend.json`):
+
+    z = 6.552     p ≈ 0     rising with distance     4 of 4 strata used
+
+**Decisive.** Text furthest from the corpus norm is falsely flagged significantly more often, and it
+survives the length control that broke the quantile split. Every one of those flags is a false
+accusation by construction, because the corpus predates ChatGPT.
+
+So the earlier null was **not a finding about detectors**. On identical data the top-20% split gives
+p=0.092 and the trend test gives p≈0 — the same direction, and the difference is entirely the
+statistic. A binary split discards the ordering and collapses four fifths of the corpus into one
+reference cell; that cost is a factor this repo can now put a number on rather than describe.
+
+One design point that decides the result, and is easy to get backwards: **distances are recomputed
+inside each band**, not ranked once over the corpus and split afterwards. The stylometric margin
+skews short, so a global ranking loads the far bins with short documents and stratifying the
+OUTCOME afterwards does not undo a PREDICTOR that was already contaminated. A test asserts the
+ranking call sits inside the band loop.
+
+## Two instruments, two centres, one direction — and now both separate
+
+Round one hundred and fourteen: distance from the **machine centroid**, function-word space,
+z=+3.91, p=0.0001. This round: distance from the **corpus norm**, stylometric features, z=+6.55,
+p≈0. Different centres, different feature sets, different corpora slices, same answer — **detectors
+flag departure from the human norm.** Round one hundred and fourteen could say that only about the
+machine centroid; it now holds for the norm a writer is actually judged against.
+
+⚠️ **What this is not.** Outlier status is not a protected characteristic. This is a measured
+disparity against **atypical writers** — a population that collects non-native speakers, disabled
+and neurodivergent writers, unusual subject matter and anyone with a strong idiolect, without
+identifying any of them. That is the point of the method and also its limit: it establishes that the
+detector's false accusations concentrate on the margins, and it does not establish which margin.
+
 ---
 
 # Round one hundred and seventeen — a stale number in a document disabled a test on the code

@@ -274,6 +274,68 @@ def _render_sweep(report: dict) -> str:
 STRATA: tuple[tuple[int, int], ...] = ((60, 100), (100, 150), (150, 220), (220, 10**9))
 
 
+def probe_trend(texts: list[str], tier: str = "lite", bins: int = 5) -> dict:
+    """The margin question asked as a TREND across ordered distance bins, stratified by length.
+
+    ⚠️ **The quantile split this module was built on is under-powered, and its null was a fact about
+    the statistic rather than about detectors.** MEASURED on all 6,810 pre-ChatGPT documents,
+    `probe_stratified` at the default top-20% cut: 0 of 4 bands separate their intervals and the
+    sign reverses in one, which reads as "no disparity against stylometric outliers". Pooled, the
+    same data gives margin 21.0% against centre 19.0%, z=1.69, **p=0.092** — the right direction and
+    not enough evidence.
+
+    A binary split throws away two things a trend test keeps: the ORDERING of the distances, and the
+    resolution inside the reference group, which the split collapses into one cell holding four
+    fifths of the corpus. Round one hundred and fourteen measured the same underlying question as a
+    trend across five equal-count quintiles and separated decisively, z=+3.91, **p=0.0001**.
+
+    So this asks the fairness question with the instrument that can answer it: Cochran-Armitage for
+    trend across `bins` equal-count distance quintiles, accumulated WITHIN each word-count band and
+    summed across bands, so distance is never compared between documents of different length. The
+    length control is the same one `probe_stratified` applies and for the same reason — the
+    stylometric margin skews short, and short text is flagged more often.
+    """
+    from eval.homogenization import stratified_trend_test
+
+    _distances, flags, detectors, kept = _score_all(texts, tier)
+    scored = [(text, len(text.split()), flag) for text, flag in zip(kept, flags)]
+
+    rows: list[dict] = []
+    per_band = []
+    for low, high in STRATA:
+        name = f"{low}-{'+' if high > 10 ** 8 else high}"
+        group = [(t, f) for t, w, f in scored if low <= w < high]
+        if len(group) < 40:
+            per_band.append({"band": name, "n": len(group),
+                             "skipped": "fewer than 40 documents"})
+            continue
+        # Distances are recomputed INSIDE the band, so a document is ranked against others of its
+        # own length rather than against the whole corpus. Ranking globally and then splitting by
+        # length would let the length skew back in through the ranking.
+        dist = outlier_scores([t for t, _ in group])
+        edges = sorted(dist)
+        cuts = [edges[len(edges) * i // bins] for i in range(1, bins)]
+        for (text, flag), d in zip(group, dist):
+            index = sum(1 for cut in cuts if d >= cut)
+            rows.append({"bin": index, "band": name, "flagged": flag,
+                         "words": len(text.split())})
+        per_band.append({"band": name, "n": len(group), "bins": bins})
+
+    trend = stratified_trend_test(rows) if rows else {"z": None, "p": None}
+    return {
+        "tier": tier,
+        "n_scored": len(kept),
+        "detectors_scoring": len(detectors),
+        "bins": bins,
+        "bands": per_band,
+        "trend": trend,
+        "note":
+            "Cochran-Armitage for trend across equal-count distance bins, accumulated within "
+            "word-count bands. The quantile split this module also offers is under-powered: on the "
+            "same corpus it reports no separating gap while pointing the same way (p=0.092).",
+    }
+
+
 def probe_stratified(texts: list[str], tier: str = "lite", quantile: float = 0.2) -> dict:
     """The margin-versus-centre comparison run separately inside each word-count band.
 
@@ -393,6 +455,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--by-length", action="store_true",
                         help="run the comparison inside word-count bands — the control for the "
                              "length confound, and the one that decides whether a gap is real")
+    parser.add_argument("--trend", action="store_true",
+                        help="ask the margin question as a TREND across ordered distance bins, "
+                             "stratified by length — the statistic with the power the top-quantile "
+                             "split lacks")
     parser.add_argument("--sweep", action="store_true",
                         help="report the gap at every margin cut-off instead of one")
     parser.add_argument("--json", action="store_true", dest="as_json")
@@ -403,6 +469,22 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no pre-LLM abstracts in {args.cache} — run "
               f"`python -m eval.litreview --download` first", file=sys.stderr)
         return 1
+    if args.trend:
+        report = probe_trend(texts, tier=args.tier)
+        if args.as_json:
+            print(json.dumps(report, indent=2))
+        else:
+            t = report["trend"]
+            verdict = ("a disparity survives the length control" if (t.get("p") or 1) < 0.05
+                       else "no disparity survives the length control")
+            print(f"Margin as a TREND across {report['bins']} distance bins, stratified by word "
+                  f"count (tier={report['tier']}, n={report['n_scored']}).")
+            print(f"  Cochran-Armitage: z={t.get('z')}, p={t.get('p')} "
+                  f"({t.get('direction', 'n/a')})")
+            print(f"  -> {verdict}")
+            print()
+            print(report["note"])
+        return 0
     if args.by_length:
         report = probe_stratified(texts, tier=args.tier, quantile=args.quantile)
         print(json.dumps(report, indent=2) if args.as_json else _render_stratified(report))

@@ -246,3 +246,38 @@ def test_the_vocabulary_sweep_spans_both_sides_of_the_crossover() -> None:
     # The crossover sits between 100 and 200; the sweep must sample inside that interval rather
     # than step over it.
     assert any(100 <= size <= 200 for size in default), default
+
+
+def test_the_fairness_arm_ranks_distance_inside_each_length_band() -> None:
+    """The subtle half of the length control, and the one it would be easy to get wrong.
+
+    `probe_trend` recomputes outlier distances INSIDE each word-count band rather than ranking the
+    whole corpus once and then splitting. Ranking globally and stratifying afterwards lets the
+    length skew back in through the ranking: the stylometric margin skews short, so a global ranking
+    puts short documents in the far bins, and stratifying the OUTCOME afterwards does not undo a
+    predictor that was already contaminated.
+    """
+    import inspect
+
+    from eval import outlier_fairness
+
+    body = inspect.getsource(outlier_fairness.probe_trend)
+    # The distance call must sit inside the per-band loop, after the band's group is selected.
+    group_at = body.index("group = [(t, f) for t, w, f in scored")
+    dist_at = body.index("dist = outlier_scores(")
+    assert group_at < dist_at, (
+        "distances are computed before the band is selected, so they rank the whole corpus"
+    )
+
+
+def test_the_fairness_arm_uses_the_same_stratified_test_as_the_distance_study() -> None:
+    """Two arms asking one question should not answer it with two implementations of the same
+    statistic — that is how the ledger's round 85 defect (one instrument, four inline copies,
+    disagreeing in two) gets recreated."""
+    import inspect
+
+    from eval import outlier_fairness
+
+    assert "from eval.homogenization import stratified_trend_test" in inspect.getsource(
+        outlier_fairness.probe_trend
+    ), "the fairness arm must reuse the trend test, not reimplement it"

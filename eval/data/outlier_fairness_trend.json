@@ -1,0 +1,35 @@
+{
+  "tier": "lite",
+  "n_scored": 6810,
+  "detectors_scoring": 1,
+  "bins": 5,
+  "bands": [
+    {
+      "band": "60-100",
+      "n": 603,
+      "bins": 5
+    },
+    {
+      "band": "100-150",
+      "n": 3032,
+      "bins": 5
+    },
+    {
+      "band": "150-220",
+      "n": 3026,
+      "bins": 5
+    },
+    {
+      "band": "220-+",
+      "n": 149,
+      "bins": 5
+    }
+  ],
+  "trend": {
+    "z": 6.552,
+    "p": 0.0,
+    "strata_used": 4,
+    "direction": "rises with distance"
+  },
+  "note": "Cochran-Armitage for trend across equal-count distance bins, accumulated within word-count bands. The quantile split this module also offers is under-powered: on the same corpus it reports no separating gap while pointing the same way (p=0.092)."
+}
