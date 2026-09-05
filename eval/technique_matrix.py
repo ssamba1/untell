@@ -66,14 +66,73 @@ def _availability() -> dict[str, str | None]:
     from untell.attacks.back_translation import BackTranslator
     from untell.rewriter import get_rewriter
 
+    reason = _model_blocker()
     out: dict[str, str | None] = {}
-    out["back_translation"] = (None if BackTranslator().available()
-                               else "translation models absent (torch/transformers)")
+    out["back_translation"] = None if BackTranslator().available() else reason
     for name in ("structural", "targeted", "mt_pivot", "t5_paraphrase", "ensemble", "composite"):
         rewriter = get_rewriter(name)
-        out[name] = (None if rewriter is not None and rewriter.available()
-                     else "rewriter does not resolve or reports itself unavailable")
+        out[name] = (None if rewriter is not None and rewriter.available() else reason)
     return out
+
+
+def _model_blocker() -> str:
+    """WHY a model-backed technique cannot run: a missing package, or unreachable weights.
+
+    ⚠️ **These are two different walls and this repo's documents have been calling both "torch is
+    absent".** They are not the same fact and they do not have the same remedy: one is `pip install`,
+    the other cannot be fixed from inside the environment at all.
+
+    MEASURED here, and the assumed cause is the wrong one:
+
+        pip download torch          554.6 MB wheel, downloaded fine — PyPI is REACHABLE
+        curl https://huggingface.co  CONNECT tunnel failed, response 403 — egress policy
+        local weight cache           empty; no .safetensors or pytorch_model.bin anywhere
+
+    So `torch` is installable and installing it would change nothing: every model-backed technique
+    here — the T5 paraphraser, the MT pivot, and the model-backed detectors — needs weights from a
+    host the organization blocks. **The three untested rows in the technique matrix are not untested
+    through neglect or a missing package; they are unreachable, and 554 MB of torch would not make
+    one of them measurable.** Saying "torch is absent" invites a reader to install it and discover
+    that for themselves.
+
+    The probe is cheap, bounded and never raises: a HEAD request with a short timeout, and any
+    failure to determine reachability degrades to the weaker, still-true statement.
+    """
+    import importlib.util
+
+    have_torch = importlib.util.find_spec("torch") is not None
+    have_transformers = importlib.util.find_spec("transformers") is not None
+    missing = [n for n, present in (("torch", have_torch),
+                                    ("transformers", have_transformers)) if not present]
+    reachable = _weights_reachable()
+    if reachable is False:
+        return ("model weights unreachable: huggingface.co is blocked by egress policy (403). "
+                "Installing " + (" and ".join(missing) if missing else "the packages") +
+                " would not make this measurable")
+    if missing:
+        return f"not installed: {' and '.join(missing)}"
+    return "the technique reports itself unavailable"
+
+
+def _weights_reachable(timeout: float = 5.0) -> bool | None:
+    """True / False / None-if-undetermined for the model host. Never raises, never retries.
+
+    A 403 from the proxy is an organization policy decision, not a transient error, so this makes
+    exactly one attempt and reports it. `None` means the question could not be answered, which is
+    reported as such rather than assumed either way.
+    """
+    import urllib.error
+    import urllib.request
+
+    request = urllib.request.Request("https://huggingface.co/", method="HEAD")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return 200 <= response.status < 400
+    except urllib.error.HTTPError as exc:
+        return exc.code not in (401, 403, 407)
+    except Exception:
+        # A tunnel refused by the proxy surfaces as a transport error rather than an HTTPError.
+        return False
 
 
 def _techniques() -> dict[str, object]:

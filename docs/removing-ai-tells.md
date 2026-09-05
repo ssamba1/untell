@@ -110,7 +110,13 @@ Ranked by measured or published magnitude, not by appeal:
 2. **A real detector in the loop.** 49 of 435 repos manage it; the free web UIs are the only
    commercial-adjacent signal available at $0, and they are slow and bot-gated.
 3. **A paraphrase model.** DIPPER-class rewriting is the strongest published training-free lever, and
-   three rows above are *not tested* here purely because torch is absent.
+   three rows above are *not tested* here. ⚠️ **Not because torch is missing.** MEASURED:
+   `pip download torch` fetches a 554.6 MB wheel without trouble — PyPI is reachable — while
+   `https://huggingface.co/` returns **403, CONNECT tunnel failed**, and there is no weight cache
+   anywhere on the machine. The blocker is an organization egress policy on the model host, so
+   installing 554 MB of torch would not make one of those rows measurable. Saying "torch is absent"
+   invites a reader to install it and find that out for themselves; `eval/technique_matrix.py`
+   probes and reports which of the two walls it hit.
 4. **Not unicode trickery, and not word substitution alone** — measured above at zero and zero.
 
 ## Reproducing every number on this page

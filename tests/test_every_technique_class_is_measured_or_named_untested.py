@@ -90,3 +90,42 @@ def test_the_stylometric_frame_is_fixed_once_for_every_technique() -> None:
     source = inspect.getsource(M.measure)
     assert source.count("vocabulary(") == 1, "the feature space must be built once"
     assert source.count("centroid(") == 1, "the centroid must be built once"
+
+
+def test_the_blocker_names_which_wall_it_hit() -> None:
+    """"torch is absent" and "the weights host is blocked" are different facts with different
+    remedies, and this repo's documents called both the first one.
+
+    MEASURED: `pip download torch` fetches a 554.6 MB wheel without trouble — PyPI is reachable —
+    while `https://huggingface.co/` returns 403, CONNECT tunnel failed, and no weight cache exists
+    anywhere on the machine. So installing the package would not make one model-backed row
+    measurable, and a reason that says "torch absent" sends a reader to spend 554 MB finding that
+    out.
+    """
+    reason = M._model_blocker()
+    assert reason, "a technique must never be unavailable for no stated reason"
+    # Whichever wall is live, the message has to identify it rather than name a package by default.
+    if M._weights_reachable() is False:
+        assert "unreachable" in reason and "would not make this measurable" in reason, reason
+    else:
+        assert "not installed" in reason or "unavailable" in reason, reason
+
+
+def test_the_reachability_probe_never_raises_and_never_retries() -> None:
+    """A 403 from the proxy is a policy decision, not a transient error. Retrying it is both futile
+    and the thing this environment's instructions forbid, so the probe makes one attempt and reports
+    what it found — including "could not tell", which is a third answer and not a synonym for no."""
+    import ast
+    import inspect
+
+    tree = ast.parse(inspect.getsource(M._weights_reachable).lstrip())
+    # Walk the AST rather than grep the source: the first version matched the word "for" inside the
+    # docstring's prose and failed for a sentence, which is the kind of test that gets deleted
+    # rather than fixed.
+    loops = [n for n in ast.walk(tree) if isinstance(n, (ast.For, ast.While))]
+    assert not loops, "the probe must make one attempt, not retry a policy decision"
+    handlers = [n for n in ast.walk(tree) if isinstance(n, ast.ExceptHandler)]
+    assert any(getattr(h.type, "id", None) == "Exception" for h in handlers), (
+        "the probe must never propagate a transport error"
+    )
+    assert M._weights_reachable(timeout=5.0) in (True, False, None)

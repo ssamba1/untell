@@ -5800,7 +5800,9 @@ inferred from the literature.
 
 ## Scope, because a null needs it more than a positive does
 
-One detector — the stdlib lite path, `torch` absent by organization policy, and this repo has
+One detector — the stdlib lite path. (`torch` itself is installable here; what the organization
+blocks is `huggingface.co`, so the model weights are unreachable and installing the package would
+change nothing. Round one hundred and fifteen measures both.) And this repo has
 separately measured that path as near-chance on per-sentence targeting. **A null from a weak
 instrument is weak evidence.** One corpus, one register, one distance measure, human documents only.
 What is refuted is the mechanical claim on this setup, not the correlational finding in the fairness
