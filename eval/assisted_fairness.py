@@ -50,6 +50,7 @@ import json
 import statistics
 import sys
 import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 
 from eval.pre_llm_fpr import wilson_interval
@@ -89,8 +90,84 @@ def fetch(cache: Path) -> Path:
     return target
 
 
+@dataclass(frozen=True)
+class CorpusSpec:
+    """How one corpus's columns map onto the arm's row shape.
+
+    Status row 19 asks for loaders for Beemo, ARB and the LREC resume corpus. **The blocker is not
+    the loaders — it is that this module could only ever read ONE schema.** `load_rows` hard-coded
+    the Pratama corpus's `Status` and `Abstract` column names and `ARMS` hard-coded its five arm
+    columns, so a second corpus could not be loaded at all without editing the module. A spec makes
+    adding one a declaration.
+
+    It deliberately does NOT ship guessed schemas for the three named corpora. Their files cannot be
+    fetched here — `huggingface.co` returns 403 — and a loader written against a schema nobody has
+    inspected is the confident-and-wrong failure this repository exists to catch: it would crash on
+    the real file, or worse, quietly select nothing and report a clean arm. `validate` exists so
+    that whoever has the file learns which declared column is missing BEFORE anything is scored.
+    """
+
+    name: str
+    status_column: str
+    # column in the file -> arm name in the report
+    arms: dict[str, str]
+    # arms where a flag is a false accusation of a human author
+    human_arms: tuple[str, ...] = ()
+
+
+PRATAMA = CorpusSpec(
+    name="pratama",
+    status_column="Status",
+    arms=dict(ARMS),
+    human_arms=("human",),
+)
+
+
+def validate(path: Path, spec: CorpusSpec) -> list[str]:
+    """Declared columns the file does not have. Empty means the spec fits.
+
+    Checked before scoring, because the failure it prevents is silent: a mistyped arm column yields
+    no rows for that arm, and an arm with no rows is reported as an arm with nothing to say rather
+    than as a spec that does not match the file.
+    """
+    with path.open(encoding="utf-8", newline="") as handle:
+        header = next(csv.reader(handle), [])
+    present = set(header)
+    missing = [c for c in (spec.status_column, *spec.arms) if c not in present]
+    return missing
+
+
+def load_mapped(path: Path, spec: CorpusSpec) -> list[dict[str, str]]:
+    """Rows in the arm's shape, from any corpus whose columns a spec declares.
+
+    Returns rows keyed by the SPEC's own column names, so `evaluate` reads them through the spec
+    rather than through module-level constants.
+    """
+    missing = validate(path, spec)
+    if missing:
+        raise ValueError(
+            f"{spec.name}: the file has no column(s) {missing}. A spec that does not match its file "
+            "selects nothing and reports an empty arm, which reads as a measurement."
+        )
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    kept = []
+    for row in rows:
+        if not (row.get(spec.status_column) or "").strip():
+            continue
+        if not any((row.get(column) or "").strip() for column in spec.arms):
+            continue
+        kept.append(row)
+    return kept
+
+
 def load_rows(path: Path) -> list[dict[str, str]]:
-    """Rows that carry an author status and a usable original abstract."""
+    """Rows that carry an author status and a usable original abstract.
+
+    Kept as the Pratama-shaped entry point every existing caller uses. `test_assisted_fairness`
+    asserts it agrees with `load_mapped(path, PRATAMA)` on the real file, so the generic path is
+    checked against the specific one rather than trusted.
+    """
     with path.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     return [r for r in rows if (r.get("Status") or "").strip() and (r.get("Abstract") or "").strip()]
