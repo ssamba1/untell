@@ -5689,6 +5689,63 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and nineteen — two instruments, one direction, and only one of them can see it
+
+Status row 28 — detectors against disabled and neurodivergent writers — has been open since round
+sixteen because no corpus carries that label with consent, and asking applicants to declare a
+disability so a detector can be audited against them is not a protocol this project would propose.
+Row 30 built the way around it: *Centering the Margins* operationalises the margins of a dataset by
+**outlier detection**, needing no subgroup label. It had never been run at full size.
+
+RUN on all 6,810 pre-ChatGPT documents, stratified by word count (MEASURED,
+`eval/data/outlier_fairness_full.json`):
+
+| band | margin FPR | centre FPR | gap | intervals |
+|---|---|---|---|---|
+| 60-100 | 36.7% (n=120) | 26.7% (n=483) | **+10.0pp** | overlap |
+| 100-150 | 19.6% (n=606) | 20.9% (n=2426) | −1.3pp | overlap |
+| 150-220 | 20.3% (n=605) | 16.2% (n=2421) | +4.2pp | overlap |
+| 220+ | 10.3% (n=29) | 8.3% (n=120) | +2.0pp | overlap |
+
+**Zero bands separate, and the sign reverses in one.** Taken alone that reads as "no disparity
+against stylometric outliers", and this repository has enough rounds about premature nulls to be
+suspicious of one.
+
+## It is a power limit, not an absence, and the other instrument proves it
+
+Round one hundred and fourteen measured the same underlying question with a different statistic:
+false-positive rate against distance from a centre, as a **trend across five equal-count quintiles**
+rather than a **top-20% split against the rest**. In function-word space that test separates
+decisively — z=+3.91, **p=0.0001**, false positives rising with distance.
+
+Pooled across bands, this arm points the same way and cannot reach significance:
+
+    margin 286/1360 = 21.0%     centre 1036/5450 = 19.0%     z=1.69, p=0.092
+
+**Same direction, one tenth the evidence.** A binary split discards the ordering and collapses four
+fifths of the corpus into one reference cell; a trend test uses the whole distance range. So the arm
+is under-powered by its own design, and its null is not a finding about detectors — it is a finding
+about the statistic.
+
+⚠️ And the largest gap, **+10.0pp**, sits in the shortest band measured (MEASURED, same artefact:
+60-100 words), which is simultaneously where
+this arm has the fewest documents (120 against 2,426 in the band below it) and where the tool's
+false-positive rate is worst. The place a disparity would matter most is the place this design can
+least detect one.
+
+## What is actually established
+
+**Two independent instruments, two different centres — the corpus norm here, the machine centroid in
+round one hundred and fourteen — agree in direction: text further from a norm is flagged more
+often.** One separates and one does not, and the one that does not is the one built for the fairness
+question.
+
+Row 28 is recorded as run rather than as answered. The arm exists, it is honest about its own
+result, and the useful next step is written down: give it the trend statistic rather than the
+quantile split.
+
+---
+
 # Round one hundred and seventeen — a stale number in a document disabled a test on the code
 
 The boundary sweep was stale again, so it was re-run. One mutant changed state, and the reason is

@@ -1,0 +1,103 @@
+{
+  "tier": "lite",
+  "quantile": 0.2,
+  "n_scored": 6810,
+  "detectors_scoring": 1,
+  "bands": [
+    {
+      "band": "60-100",
+      "margin": {
+        "n": 120,
+        "flagged": 44,
+        "fpr": 0.3667,
+        "ci95": [
+          0.2858,
+          0.4558
+        ]
+      },
+      "centre": {
+        "n": 483,
+        "flagged": 129,
+        "fpr": 0.2671,
+        "ci95": [
+          0.2296,
+          0.3083
+        ]
+      },
+      "gap": 0.0996,
+      "intervals_overlap": true
+    },
+    {
+      "band": "100-150",
+      "margin": {
+        "n": 606,
+        "flagged": 119,
+        "fpr": 0.1964,
+        "ci95": [
+          0.1667,
+          0.2299
+        ]
+      },
+      "centre": {
+        "n": 2426,
+        "flagged": 507,
+        "fpr": 0.209,
+        "ci95": [
+          0.1933,
+          0.2256
+        ]
+      },
+      "gap": -0.0126,
+      "intervals_overlap": true
+    },
+    {
+      "band": "150-220",
+      "margin": {
+        "n": 605,
+        "flagged": 123,
+        "fpr": 0.2033,
+        "ci95": [
+          0.1732,
+          0.2372
+        ]
+      },
+      "centre": {
+        "n": 2421,
+        "flagged": 391,
+        "fpr": 0.1615,
+        "ci95": [
+          0.1474,
+          0.1767
+        ]
+      },
+      "gap": 0.0418,
+      "intervals_overlap": true
+    },
+    {
+      "band": "220-+",
+      "margin": {
+        "n": 29,
+        "flagged": 3,
+        "fpr": 0.1034,
+        "ci95": [
+          0.0358,
+          0.2639
+        ]
+      },
+      "centre": {
+        "n": 120,
+        "flagged": 10,
+        "fpr": 0.0833,
+        "ci95": [
+          0.0459,
+          0.1466
+        ]
+      },
+      "gap": 0.0201,
+      "intervals_overlap": true
+    }
+  ],
+  "gap_sign_is_consistent": false,
+  "bands_separating": 0,
+  "note": "Within-band comparison. An unstratified margin gap is confounded with document length, because the stylometric margin skews short and short text is flagged more often. If the gap does not survive here, the unstratified figure was measuring length."
+}
