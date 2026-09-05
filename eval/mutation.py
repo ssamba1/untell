@@ -344,6 +344,32 @@ _SUMMARY = re.compile(r"(\d+) failed")
 # after it: a zero meaning "could not test" and a zero meaning "does not matter" are the same number
 # and opposite facts. A module whose baseline is unusable is now SKIPPED and listed, not scored.
 UNUSABLE = -1
+# A timeout, told apart from a run that died before reporting. Both made a baseline unusable and
+# both were UNUSABLE, so the `unmeasurable` record could only say "times out OR fails to collect"
+# — two causes with opposite remedies reported as one, which is the defect this module keeps
+# finding elsewhere.
+#
+# The difference matters because a timeout is TRANSIENT and a collect failure is not. MEASURED on
+# `untell/scripts/audit.py`, the module round one hundred and seven recorded as unmeasurable,
+# across every condition the sweep can present:
+#
+#     cold fresh worktree, no __pycache__      113s     <- what the sweep actually does
+#     four concurrent copies, four cores       177-180s <- the sweep's own worker count
+#     solo, warm working tree, under load      206s
+#     round 107's recorded figure              267s
+#     the cut                                  300s
+#
+# Not one condition reaches the timeout, yet a timeout was once observed. So the distribution has a
+# tail that crosses 300s occasionally, and a single crossing PERMANENTLY mislabels the module in a
+# committed artefact: round 110 moved the register's protected share 44.7% -> 43.8% on exactly one
+# such flip, and rounds 110-112 spent two multi-hour sweeps chasing it.
+#
+# A timed-out baseline is therefore retried once before the module is written off. A collect
+# failure is not retried — it is deterministic, and re-running it buys a second identical answer
+# at the cost of another full timeout.
+TIMED_OUT = -2
+# Both mean "no usable number came back", which is what every caller checking for one should ask.
+UNUSABLE_BASELINES = (UNUSABLE, TIMED_OUT)
 
 
 def _failures(tree: Path, tests: tuple[str, ...], timeout: int) -> int:
@@ -378,12 +404,47 @@ def _failures(tree: Path, tests: tuple[str, ...], timeout: int) -> int:
             cwd=tree, capture_output=True, text=True, timeout=timeout, env=environment,
         )
     except subprocess.TimeoutExpired:
-        return UNUSABLE
+        return TIMED_OUT
     match = _SUMMARY.search(result.stdout)
     if match:
         return int(match.group(1))
     # No "N failed" in the summary: either everything passed, or the run died before reporting.
     return 0 if result.returncode == 0 else UNUSABLE
+
+
+def _usable_baseline(tree: Path, tests: tuple[str, ...], timeout: int,
+                     relative: str) -> tuple[int, dict | None]:
+    """The module's baseline, retrying ONCE if it timed out. Returns (baseline, unmeasurable_row).
+
+    A timeout is transient and a collect failure is not, so only the first is worth a second run —
+    see `TIMED_OUT` for the six timings that establish it. One retry, not a loop: the point is to
+    survive a single unlucky crossing, and a selection that times out twice in a row is not a
+    module this sweep can measure today whatever the reason.
+
+    The returned row says WHICH cause fired, so a reader can tell a module that needs a longer
+    budget from one that needs a dependency installed. It used to say "times out or fails to
+    collect" because the caller genuinely could not tell.
+    """
+    baseline = _failures(tree, tests, timeout)
+    retried = False
+    if baseline == TIMED_OUT:
+        retried = True
+        baseline = _failures(tree, tests, timeout)
+    if baseline not in UNUSABLE_BASELINES:
+        return baseline, None
+    why = (
+        f"its test selection timed out twice at {timeout}s, so no mutant against it could be scored"
+        if baseline == TIMED_OUT
+        # Stated as the OBSERVABLE, not as a disjunction of guesses. A collect error and a crash
+        # are indistinguishable here — both are "non-zero exit, no summary line" — and they share
+        # a remedy, so naming both would repeat the "times out or fails to collect" fudge this
+        # split exists to remove.
+        else "its test selection exits without reporting a result, so no mutant against it could "
+             "be scored"
+    )
+    return baseline, {"file": relative, "tests": list(tests), "why": why,
+                      "cause": "timeout" if baseline == TIMED_OUT else "collect_error",
+                      "retried": retried}
 
 
 def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | None,
@@ -407,11 +468,9 @@ def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | N
             if not candidates:
                 continue
 
-            baseline = _failures(tree, tests, timeout)
-            if baseline == UNUSABLE:
-                unmeasurable.append({"file": relative, "tests": list(tests),
-                                     "why": "its test selection times out or fails to collect, so "
-                                            "no mutant against it could be scored"})
+            baseline, unusable_row = _usable_baseline(tree, tests, timeout, relative)
+            if unusable_row is not None:
+                unmeasurable.append(unusable_row)
                 continue
             baselines[relative] = baseline
             for mutant in candidates:
@@ -421,7 +480,7 @@ def _worker(root: Path, queue: list[tuple[str, tuple[str, ...]]], limit: int | N
                 try:
                     path.write_text(mutated)
                     after = _failures(tree, tests, timeout)
-                    killed = after == UNUSABLE or after > baseline
+                    killed = after in UNUSABLE_BASELINES or after > baseline
                 finally:
                     path.write_text(original)
                 results.append({"file": mutant.path, "line": mutant.line, "kind": mutant.kind,
@@ -531,11 +590,9 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
             if not candidates:
                 continue
 
-            baseline = _failures(tree, tests, timeout)
-            if baseline == UNUSABLE:
-                unmeasurable.append({"file": relative, "tests": list(tests),
-                                     "why": "its test selection times out or fails to collect, so "
-                                            "no mutant against it could be scored"})
+            baseline, unusable_row = _usable_baseline(tree, tests, timeout, relative)
+            if unusable_row is not None:
+                unmeasurable.append(unusable_row)
                 continue
             for mutant in candidates:
                 mutated = apply_mutant(original, mutant)
@@ -546,7 +603,7 @@ def run(root: Path = REPO, limit_per_file: int | None = None, timeout: int = 300
                     after = _failures(tree, tests, timeout)
                     # UNUSABLE means the mutant broke the run outright — an import error or a
                     # hang. That is the suite noticing in the loudest way available, so it counts.
-                    killed = after == UNUSABLE or after > baseline
+                    killed = after in UNUSABLE_BASELINES or after > baseline
                 finally:
                     path.write_text(original)
                 results.append({
@@ -674,9 +731,17 @@ def verify_survivors(survivors: list[dict], root: Path = REPO, sample: int = 24,
                 results.append({**entry, "verdict": "token ambiguous on the line"})
                 continue
             if module not in baselines:
-                baselines[module] = _failures(tree, tests, timeout)
+                # Same retry-once-on-timeout rule as the sweep, so a survivor is not written off as
+                # unverifiable by one unlucky crossing of the cut.
+                baselines[module], _ = _usable_baseline(tree, tests, timeout, entry["file"])
             baseline = baselines[module]
-            if baseline == UNUSABLE:
+            # `in UNUSABLE_BASELINES`, not `== UNUSABLE`. Splitting the timeout sentinel off made
+            # this equality check miss TIMED_OUT, and the consequence is not a missed skip: a
+            # baseline of -2 is a NUMBER, so `observed > baseline` holds for essentially any run and
+            # every survivor of that module would have been reported "killed by the wider suite".
+            # A false-survivor rate reported as better than it is, from a sentinel change two
+            # hundred lines away.
+            if baseline in UNUSABLE_BASELINES:
                 results.append({**entry, "verdict": "its module's tests cannot run here"})
                 continue
             try:
@@ -684,7 +749,7 @@ def verify_survivors(survivors: list[dict], root: Path = REPO, sample: int = 24,
                 observed = _failures(tree, tests, timeout)
             finally:
                 path.write_text(original)
-            killed = observed == UNUSABLE or observed > baseline
+            killed = observed in UNUSABLE_BASELINES or observed > baseline
             results.append({
                 **entry, "tests_run": len(tests),
                 "verdict": "killed by the wider suite" if killed else "genuinely uncaught",

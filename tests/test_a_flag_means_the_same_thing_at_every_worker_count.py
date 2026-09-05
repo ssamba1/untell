@@ -86,7 +86,15 @@ def test_a_module_the_filter_empties_is_skipped_not_baselined() -> None:
     assert "if not candidates:" in body, (
         "run() has no empty-candidate skip, so a module the filter emptied still pays a baseline"
     )
-    assert body.index("if not candidates:") < body.index("baseline = _failures("), (
+    # Matched on the ASSIGNMENT, not on the callee's name. The first version pinned
+    # `baseline = _failures(`, and a later round routed both sweep sites through
+    # `_usable_baseline` (retry-once-on-timeout) — so the test failed for a rename while the
+    # property it guards was untouched. A test that breaks on refactors it does not care about
+    # gets weakened or deleted by whoever is mid-refactor, which is how a guard dies.
+    calls = [i for i in (body.find("baseline, unusable_row ="), body.find("baseline = _failures("))
+             if i != -1]
+    assert calls, "run() no longer takes a baseline in any recognised form"
+    assert body.index("if not candidates:") < min(calls), (
         "the empty-candidate skip must come before the baseline pass, or it saves nothing"
     )
 

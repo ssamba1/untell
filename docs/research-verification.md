@@ -5689,6 +5689,70 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and thirteen — the answer was a retry, and the sentinel that hid it
+
+The cold-worktree probe round one hundred and twelve was waiting on came back, and it eliminated the
+last candidate. MEASURED, every condition the sweep can present to `untell/scripts/audit.py`'s
+selection — its five named test files, timed end to end on this machine:
+
+| condition | time |
+|---|---|
+| **cold fresh worktree, no `__pycache__`** — what the sweep actually does | **113s** |
+| four concurrent copies, four cores — the sweep's own worker count | 177–180s |
+| solo, warm working tree, under unrecorded load | 206s |
+| round one hundred and seven's recorded figure | 267s |
+| the cut | 300s |
+
+**The sweep's real environment is the fastest of them all.** Cold cache was the leading hypothesis
+after contention was refuted, and it is refuted harder — a fresh worktree runs the selection in
+just over half the time the warm tree did. Every explanation offered for round one hundred and
+seven's timeout is now eliminated, and the honest reading is that the selection's runtime has a
+tail that crosses 300s rarely, for reasons this machine does not preserve.
+
+## Which turns the question from "why" into "so what", and there the harness is at fault
+
+A transient crossing was enough to write the module off **permanently in a committed artefact**.
+Round one hundred and ten moved the register's protected share 44.7% → 43.8% on exactly one such
+flip; rounds one hundred and ten through one hundred and twelve spent two multi-hour sweeps and
+three test rounds chasing it. Nothing retried, and nothing could have known to: `_failures`
+returned the **same `UNUSABLE`** for a timeout and for a run that died before reporting, so the
+`unmeasurable` record could only say *"its test selection times out **or** fails to collect"*.
+
+**Two causes with opposite remedies, reported as one.** A timeout wants another try or a bigger
+budget; a collect failure wants a dependency installed and will give the identical answer forever.
+This is the defect this module was built to find in other code, sitting in its own error path.
+
+Split into `UNUSABLE` and `TIMED_OUT`, with a retry on the timeout only, and the cause recorded.
+The first sweep under the fix says so:
+
+    unmeasurable: untell/detectors/fast_detectgpt.py | cause: collect_error | retried: False
+
+`fast_detectgpt` **never timed out** — `torch` is absent, so it fails to collect — and every
+artefact in this repository has been describing it with a disjunction that was half wrong.
+
+## The split nearly introduced a worse bug than it fixed
+
+`verify_survivors` tested `baseline == UNUSABLE`. After the split that misses `TIMED_OUT`, and the
+consequence is not a skipped module: **the sentinel is itself a number**, so `observed > baseline`
+holds for essentially any run, and every survivor of that module would have been reported *"killed by the
+wider suite"*. The false-survivor rate — the precision figure round one hundred and three records
+for this checker — would have come out **better than the truth**, from a sentinel change two
+hundred lines away.
+
+Caught by the failure-set diff against HEAD rather than by reading, which is the same method that
+caught the vacuous test two rounds ago. The guard against it is general: a test now fails on any
+bare `== UNUSABLE` anywhere in the module.
+
+## And one of my own guards broke on a rename
+
+The same diff showed `test_a_module_the_filter_empties_is_skipped_not_baselined` failing — it
+pinned the literal `baseline = _failures(`, which the retry refactor renamed to `_usable_baseline`.
+The property it guards was untouched. **A test that breaks on a refactor it does not care about is
+a test that gets weakened or deleted by whoever is mid-refactor**, which is how a guard dies
+quietly. Rewritten to match the assignment rather than the callee.
+
+---
+
 # Round one hundred and twelve — three sweeps, one answer, and the prediction still untested
 
 With `--kinds` fixed, the experiment round one hundred and eleven could not run was run. Three
