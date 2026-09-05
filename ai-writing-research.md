@@ -319,16 +319,24 @@ Things repeatedly gestured at but not, as far as this search found, actually don
 5. ~~**Homogenization and detection are not studied together**, despite being two views of one
    phenomenon. A study measuring FPR as a function of a writer's distance from the model's stylistic
    centre of mass would connect §2 and §4 directly, and would explain the L2 result mechanistically
-   rather than by correlation.~~ **DONE, and the prediction is refuted.** `eval/homogenization.py`
-   ran it on **6,810** ACL abstracts from volumes through 2021 — published before ChatGPT, so every
-   flag is a false positive by construction — measuring Burrows's Delta to a centroid built from
-   machine-written abstracts. False-positive rate is **flat across all five distance quintiles**,
-   19.8% / 17.1% / 18.2% / 20.6% / 21.7% crude with overlapping 95% intervals at n=1,362 each, and a
-   length-stratified Cochran-Armitage trend test gives **z=0.08, p=0.93**. Homogenization and
-   detection are not two views of one phenomenon on this corpus and this detector.
+   rather than by correlation.~~ **DONE — and the answer is that the question is under-specified.**
+   MEASURED by `eval/homogenization.py` on **6,810** ACL abstracts from volumes through 2021 —
+   published before ChatGPT, so every flag is a false positive by construction — using Burrows's
+   Delta to a centroid built from machine-written abstracts.
+
+   **The answer depends entirely on the feature space, and that is the result.** Stratified by word
+   count, a Cochran-Armitage trend test over the same 6,810 documents gives **z=+3.70, p=0.0002**
+   (false positives RISE with distance) at a 50-word vocabulary and **z=−3.70, p=0.0002** (they
+   FALL — the prediction) at 300, with 100 and 150 null in between. Both ends significant, opposite
+   directions, identical data. `vocabulary()` takes the most frequent *n* words, so this constant is
+   not a precision knob: at 50 the features are almost purely function words — the classic
+   stylometric signal — and at 300 the list has absorbed enough content words that distance is
+   partly topical. **Two constructs sharing a name.** No directional claim about "the stylistic
+   centre of mass" holds until they are separated.
 
    ⚠️ **And the naive version of this study returns a significant result in the opposite direction.**
-   Unstratified, the same data gives **z=2.16, p=0.031** for false positives *rising* with distance —
+   Unstratified, the same data gives **z=2.16, p=0.031** (MEASURED, `eval/data/homogenization.json`)
+   for false positives *rising* with distance —
    which would read as "being stylistically unusual protects you". It is the length confound with a
    p-value attached: the farthest quintile averages 130 words against the nearest's 172, because a
    short document estimates its own word frequencies badly and lands further from any centroid by

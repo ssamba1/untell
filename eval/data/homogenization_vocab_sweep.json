@@ -1,0 +1,78 @@
+{
+  "50": {
+    "trend_stratified": {
+      "z": 3.7025,
+      "p": 0.0002,
+      "strata_used": 3,
+      "direction": "rises with distance"
+    },
+    "trend_crude": {
+      "z": 4.8039,
+      "p": 0.0,
+      "direction": "rises with distance"
+    },
+    "nearest_standardized": 0.1806,
+    "farthest_standardized": 0.223,
+    "drop": -0.0424,
+    "nearest_crude": 0.1725,
+    "farthest_crude": 0.2357,
+    "n": 6810
+  },
+  "100": {
+    "trend_stratified": {
+      "z": 0.4951,
+      "p": 0.6205,
+      "strata_used": 3,
+      "direction": "rises with distance"
+    },
+    "trend_crude": {
+      "z": 1.7095,
+      "p": 0.0874,
+      "direction": "rises with distance"
+    },
+    "nearest_standardized": 0.1925,
+    "farthest_standardized": 0.2062,
+    "drop": -0.0137,
+    "nearest_crude": 0.185,
+    "farthest_crude": 0.2159,
+    "n": 6810
+  },
+  "150": {
+    "trend_stratified": {
+      "z": -0.4065,
+      "p": 0.6843,
+      "strata_used": 3,
+      "direction": "falls with distance"
+    },
+    "trend_crude": {
+      "z": 0.8439,
+      "p": 0.3987,
+      "direction": "rises with distance"
+    },
+    "nearest_standardized": 0.2037,
+    "farthest_standardized": 0.1952,
+    "drop": 0.0085,
+    "nearest_crude": 0.1953,
+    "farthest_crude": 0.2056,
+    "n": 6810
+  },
+  "300": {
+    "trend_stratified": {
+      "z": -3.6961,
+      "p": 0.0002,
+      "strata_used": 3,
+      "direction": "falls with distance"
+    },
+    "trend_crude": {
+      "z": -2.6183,
+      "p": 0.0088,
+      "direction": "falls with distance"
+    },
+    "nearest_standardized": 0.2141,
+    "farthest_standardized": 0.1712,
+    "drop": 0.0429,
+    "nearest_crude": 0.2085,
+    "farthest_crude": 0.1799,
+    "n": 6810
+  }
+}

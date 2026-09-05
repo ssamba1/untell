@@ -5763,11 +5763,16 @@ instrument is weak evidence.** One corpus, one register, one distance measure, h
 What is refuted is the mechanical claim on this setup, not the correlational finding in the fairness
 literature that motivated it.
 
-⚠️ Two things this round nearly got wrong, both caught by its own controls. The headline was first
+⚠️ Two things this round nearly got wrong and one it got wrong outright. The headline was first
 computed at n=150 and showed a 12.6-point drop in the predicted direction — noise, and the full
-corpus erased it. And the vocabulary sweep at n=600 **flipped sign across the constant** (−0.053 at
-50 words, +0.114 at 300), which is why nothing was published until the full corpus and the full sweep
-had both run.
+corpus erased it. The vocabulary sweep at n=600 **flipped sign across the constant** (−0.053 at 50
+words, +0.114 at 300).
+
+**And then the headline was published from a single vocabulary size anyway, before the full-corpus
+sweep had returned.** The commit message says the n=600 flip "is why nothing was published until the
+full corpus had run" — the full corpus *curve*, not the full corpus *sweep*, and the difference is
+the entire finding. Seeing a constant flip an effect's sign and then quoting one setting of it is a
+worse error than never having swept, because the sweep is what made the flip known.
 
 ---
 
