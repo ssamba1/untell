@@ -1,0 +1,136 @@
+{
+  "tier": "lite",
+  "n": 25,
+  "rows": [
+    {
+      "technique": "none (control)",
+      "category": "\u2014",
+      "changed": 0,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.3084,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.324,
+      "delta_displacement": 0.0,
+      "hidden_chars_added": 0,
+      "foreign_letters_added": 0,
+      "survives_nfkc": "25/25"
+    },
+    {
+      "technique": "homoglyph_substitute",
+      "category": "unicode-trickery",
+      "changed": 25,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.3084,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.324,
+      "delta_displacement": -0.122,
+      "hidden_chars_added": 641,
+      "foreign_letters_added": 641,
+      "survives_nfkc": "25/25"
+    },
+    {
+      "technique": "synonym_swap",
+      "category": "adversarial-perturbation",
+      "changed": 0,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.3084,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.324,
+      "delta_displacement": 0.0,
+      "hidden_chars_added": 0,
+      "foreign_letters_added": 0,
+      "survives_nfkc": "25/25"
+    },
+    {
+      "technique": "back_translation",
+      "category": "back-translation",
+      "unavailable": "translation models absent (torch/transformers)",
+      "note": "NOT TESTED \u2014 absent, not ineffective"
+    },
+    {
+      "technique": "structural",
+      "category": "rule-based-rewriter",
+      "changed": 22,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.2982,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.093,
+      "delta_displacement": -0.0143,
+      "hidden_chars_added": 0,
+      "foreign_letters_added": 0,
+      "survives_nfkc": "25/25"
+    },
+    {
+      "technique": "targeted",
+      "category": "rule-based-rewriter",
+      "changed": 17,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.2828,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.093,
+      "delta_displacement": -0.0097,
+      "hidden_chars_added": 0,
+      "foreign_letters_added": 0,
+      "survives_nfkc": "25/25"
+    },
+    {
+      "technique": "mt_pivot",
+      "category": "back-translation",
+      "unavailable": "rewriter does not resolve or reports itself unavailable",
+      "note": "NOT TESTED \u2014 absent, not ineffective"
+    },
+    {
+      "technique": "t5_paraphrase",
+      "category": "paraphrase-model",
+      "unavailable": "rewriter does not resolve or reports itself unavailable",
+      "note": "NOT TESTED \u2014 absent, not ineffective"
+    },
+    {
+      "technique": "ensemble",
+      "category": "research-code",
+      "changed": 16,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.2771,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.231,
+      "delta_displacement": -0.0102,
+      "hidden_chars_added": 0,
+      "foreign_letters_added": 0,
+      "survives_nfkc": "25/25"
+    },
+    {
+      "technique": "composite (our default)",
+      "category": "rule-based-rewriter",
+      "changed": 16,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.2662,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.231,
+      "delta_displacement": -0.0101,
+      "hidden_chars_added": 0,
+      "foreign_letters_added": 0,
+      "survives_nfkc": "25/25"
+    },
+    {
+      "technique": "our closed loop",
+      "category": "detector-in-loop",
+      "changed": 15,
+      "n": 25,
+      "score_before": 0.3084,
+      "score_after": 0.2652,
+      "tells_per_100w_before": 0.324,
+      "tells_per_100w_after": 0.093,
+      "delta_displacement": -0.0125,
+      "hidden_chars_added": 0,
+      "foreign_letters_added": 0,
+      "survives_nfkc": "25/25"
+    }
+  ]
+}

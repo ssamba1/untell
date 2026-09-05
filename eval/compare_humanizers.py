@@ -80,7 +80,30 @@ def _techniques(tier: str, threshold: float):
 
     def back_translation(t: str) -> str:
         from untell.attacks import back_translate
+        from untell.attacks.back_translation import BackTranslator
 
+        # Probe availability directly instead of leaving it to be inferred downstream.
+        #
+        # This is NOT an unguarded hazard: `compare` below already catches it, by treating a
+        # technique that changed no sample at all as unavailable rather than recording the
+        # raw-AI baseline as its measurement. That guard is correct and stays.
+        #
+        # What it cannot do is tell "absent" from "ran on every sample and changed none of them",
+        # because it only ever sees the outputs. Those are different facts with different
+        # remedies — install a dependency, versus the technique genuinely does nothing on this
+        # corpus — and this repo has one measured instance of the SECOND: `surgical` returns its
+        # input on text carrying no catalogued tell (round 109). A rule that maps both to
+        # "unavailable" would file that real finding as a missing package.
+        #
+        # MEASURED on this machine: `BackTranslator().available()` is False and every sample comes
+        # back byte-identical, so this row was reaching the no-change guard by luck rather than by
+        # diagnosis.
+        if not BackTranslator().available():
+            raise RuntimeError(
+                "back-translation models are not installed here (torch/transformers), so this row "
+                "would report an untested technique as an ineffective one — install .[full] to "
+                "measure it"
+            )
         return back_translate(t)
 
     def _ours(prefer: str, best_of: int):

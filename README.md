@@ -649,6 +649,15 @@ did. Their "99% bypass" claims don't survive independent testing (Originality fl
 tool at **100% AI**). The reproducible head-to-head, the catalog, and the honest verdict:
 **[docs/humanizer-comparison.md](docs/humanizer-comparison.md)**.
 
+**[docs/removing-ai-tells.md](docs/removing-ai-tells.md)** is the one-page answer to the question
+underneath all of this: every technique class the 435-repo census identifies, measured on one corpus
+against four axes — detector score, catalogued tells, stylometric displacement, and whether the
+output is still text a human can use. Three results a single-axis table cannot show: unicode
+trickery changes every document and moves the detector score by **nothing** while planting 641
+invisible or counterfeit characters; word substitution is **inert** on prose carrying no catalogued
+tell; and **no technique moves a document away from how machines write** — every one that works
+moves it closer while lowering the score.
+
 ---
 
 ## Tiers

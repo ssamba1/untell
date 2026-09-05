@@ -75,6 +75,8 @@ other.
 - **[What each function returns](result-shapes.md)** — the key that carries the answer, per entry point. They differ, and guessing wrong returns a plausible value rather than raising.
 - **[Measured: the free evasion ceiling](free-ceiling-measured.md)** — the full log, 229 results
 - **[Summary: the free-ceiling report](free-ceiling-report.md)** — the short version
+- **[Removing AI tells](removing-ai-tells.md)** — every technique class the 435-repo census names,
+  measured on one corpus against four axes, and why "remove all AI tells" is the wrong target
 - **[Humanizer comparison](humanizer-comparison.md)** — untell vs every free technique
 - **[The 435-repo census](humanizer-census.md)** — what this field is actually made of
 - **[Why this is the most rigorous open detector audit](why-best-open-repo.md)** — the argument, with its corrections
