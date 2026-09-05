@@ -5722,14 +5722,24 @@ Round one hundred and seven recorded `audit.py` as unmeasurable because its test
 includes `test_every_audit_check_can_fail.py`, itself a mutation suite — takes about 4m27s, against
 the harness's 300s timeout. Checked, both unchanged since: the selection is the same five files and
 still includes the mutation suite, and `--timeout` still defaults to 300. **Same selection, same
-timeout, opposite classification.** So the baseline pass sits close enough to the cut that two runs
-of the same command disagree, and `audit.py` will keep flipping between `unmeasured` and
-`unprotected` on machine load alone.
+timeout, opposite classification.**
 
-That makes 43.8% a number with a coin-flip in it. It is recorded as measured, because it is, and
-recorded as unstable, because a share whose denominator depends on how busy the machine was is not
-a quantity anybody should compare across rounds without knowing that. Its 8 mutants — 2 killed, 6
-survived, baseline clean — are real measurements either way.
+⚠️ **This first said the baseline "sits close enough to the cut that two runs disagree", which was a
+guess standing in for a measurement.** Timed since, alone on the machine: **206.46s**, against round
+one hundred and seven's recorded 4m27s (267s) and the 300s timeout. Solo it is not marginal at all —
+a 31% margin. What makes it marginal is that **the sweep runs four workers in parallel**, so no
+mutant baseline is ever measured in isolation, and 206s of work contends with three siblings for
+four cores. The variable is contention, not the module.
+
+That distinction changes what to do about it. "Inherently borderline" argues for raising the
+timeout; contention argues that the same sweep at `--workers 1` would classify `audit.py` measurable
+every time, and that the 300s cut is being applied to a number the harness never observes on its
+own. Neither is acted on here — what is recorded is that the cause is now measured rather than
+assumed.
+
+So 43.8% is a number whose denominator depends on how busy the machine was. It is recorded as
+measured, because it is, and as unstable across rounds, because that dependency is real. Its 8
+mutants — 2 killed, 6 survived, baseline clean — are real measurements either way.
 
 ## The new mutant this round added is my own, and it survived
 
