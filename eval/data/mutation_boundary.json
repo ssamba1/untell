@@ -1118,7 +1118,7 @@
     },
     {
       "file": "untell/scripts/audit.py",
-      "line": 899,
+      "line": 903,
       "kind": "boundary",
       "mutation": "> -> >=",
       "killed": false
@@ -3251,14 +3251,14 @@
       "line": 899,
       "kind": "boundary",
       "mutation": "> -> >=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/audit.py",
       "line": 903,
       "kind": "boundary",
       "mutation": "> -> >=",
-      "killed": true
+      "killed": false
     },
     {
       "file": "untell/scripts/audit.py",

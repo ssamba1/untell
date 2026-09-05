@@ -51,12 +51,6 @@
       "source": "if _content_word_count(words[:best]) < _MIN_SPLIT_SIDE or len(words) - best < _MIN_SPLIT_SIDE:"
     },
     {
-      "file": "untell/scripts/audit.py",
-      "line": 903,
-      "constant": "_MODULE_DRIFT",
-      "source": "elif len(modules) - claimed > _MODULE_DRIFT:"
-    },
-    {
       "file": "untell/scripts/run.py",
       "line": 329,
       "constant": "_MIN_VOICE_SAMPLE_WORDS",
@@ -203,6 +197,12 @@
       "source": "and post_score[\"max\"] >= _SATURATED_MAX"
     },
     {
+      "file": "untell/scripts/audit.py",
+      "line": 903,
+      "constant": "_MODULE_DRIFT",
+      "source": "elif len(modules) - claimed > _MODULE_DRIFT:"
+    },
+    {
       "file": "untell/scripts/entailment.py",
       "line": 632,
       "constant": "DEFAULT_CONTRADICTION_BAR",
@@ -294,5 +294,5 @@
     }
   ],
   "unmeasured": [],
-  "protected_share": 45.8
+  "protected_share": 43.8
 }

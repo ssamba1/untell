@@ -5808,7 +5808,31 @@ aborted at line 206, and **it never reached the boundary it exists to guard.** T
 audit.py:903 survived because the test covering it could not start.
 
 Repairing the count with the repo's own `untell-audit --fix-counts` restored the precondition, the
-test ran its planted mutation, and the boundary is killed.
+test ran, and a boundary that had been surviving is killed.
+
+⚠️ **CORRECTED — the mechanism stands, the line was wrong, and the reason is this round's own
+conclusion.** The boundary the repair protects is **`audit.py:899`** (`if claimed > len(modules)`),
+not 903. VERIFIED by applying each mutant by hand and running the test:
+
+    mutant at 899   `>` -> `>=`   test FAILS   killed
+    mutant at 903   `>` -> `>=`   test PASSES  survives
+
+The arithmetic says why, and it is not subtle once the counts are exact. At 899 the check reads
+`claimed > len(modules)`; with claimed equal to actual, `>=` fires on a *correct* document, the
+check reports an overstatement that does not exist, and `assert_passes` catches it. At 903 the test
+plants a claim of three against 665, so the comparison is `662 > 5` against `662 >= 5` — both true,
+the mutation is invisible, and it survives. **903 is genuinely unprotected**, which is what round one
+hundred and ten said about it.
+
+So why did the sweep report 903? Because `--fix-counts` was run **at 21:19, while that sweep was
+running from 21:14 to 22:09.** The worker worktrees are created at staggered times, so some saw the
+drifted documents and some saw the repaired ones, and the run measured a tree that changed underneath
+it. Re-run on a stable tree, the totals are identical (340 mutants, 89 killed, 26.2%) and the
+identity swaps: 899 killed, 903 surviving.
+
+**This round ended by concluding that "a mutation sweep is only valid on a tree whose own guards
+pass", and produced that conclusion from a run in which the tree changed mid-sweep.** The rule was
+right and the run that found it broke it.
 
 | | before | after |
 |---|---|---|
