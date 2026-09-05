@@ -5689,6 +5689,70 @@ it is recorded here so nobody repeats the investigation.
 
 ---
 
+# Round one hundred and seventeen — a stale number in a document disabled a test on the code
+
+The boundary sweep was stale again, so it was re-run. One mutant changed state, and the reason is
+worth more than the number:
+
+    untell/scripts/audit.py:903   `> -> >=`   survived  ->  KILLED
+
+That is `_MODULE_DRIFT`, the exact boundary round one hundred and ten watched move from
+`unmeasured` into `unprotected` and spent three rounds explaining. It is now protected, and nothing
+about the test suite changed to protect it. **What changed is a number in three Markdown files.**
+
+## The mechanism
+
+`tests/test_every_audit_check_can_fail.py::test_test_inventory` opens with a precondition:
+
+    assert_passes("check_test_inventory")     # line 206
+    ... plant a mutation, assert the check now drifts
+
+This session added six test files, so `tests/` held 665 modules while `ROADMAP.md`,
+`docs/why-best-open-repo.md` and `docs/humanizer-census.md` still said 659 — a drift of 6 against a
+tolerance of 5. The precondition failed with *"already drifting before the mutation"*, the test
+aborted at line 206, and **it never reached the boundary it exists to guard.** The mutant at
+audit.py:903 survived because the test covering it could not start.
+
+Repairing the count with the repo's own `untell-audit --fix-counts` restored the precondition, the
+test ran its planted mutation, and the boundary is killed.
+
+| | before | after |
+|---|---|---|
+| mutants | 340 | 340 |
+| killed | 88 | **89** |
+| score | 25.9% | 26.2% |
+| register protected | 21 | **22** |
+| protected share | 43.8% | **45.8%** |
+
+## Why this is the worst version of the defect this repo hunts
+
+A vacuous test is one that cannot fail. Every previous instance in this ledger was vacuous by
+construction — a bad plant, a stub that returned its input, an assertion on the wrong quantity. This
+one was **written correctly and made vacuous by a number in a document**, at a distance, by an edit
+that touched no test and no shipped code. Nothing in the mutation report distinguished it from a
+genuinely uncovered line; it appeared in the survivor list as an ordinary gap, and round one hundred
+and ten built three rounds of explanation on top of it.
+
+**The exposure is not one test.** `assert_passes(` appears **20 times** in that file (MEASURED,
+`grep -c "assert_passes(" tests/test_every_audit_check_can_fail.py`), each the same
+shape: a precondition that aborts its test when the repository has drifted in the corresponding way.
+Any of those twenty mutation guards goes silently vacuous the moment its check starts failing for an
+unrelated reason.
+
+The pre-commit hook is the reason this was caught at all — it runs that suite whenever a document
+changes, and it refused the commit. So the guard exists and works. What did not exist is any signal
+that a sweep taken while the tree was dirty reports **false survivors**, which is the same
+one-directional bias round ninety-five recorded for bytecode caching: never too few, always too
+many.
+
+⚠️ **Consequence for every mutation figure in this ledger: a sweep is only valid on a tree whose
+own guards pass.** The sweeps in rounds 110 through 113 were all taken while this drift was live,
+which is why `audit.py:903` reads as unprotected throughout them. Those entries are not withdrawn —
+their numbers are what the instrument reported — but the survivor at audit.py:903 in each of them
+is now known to be an artefact of a stale document rather than an uncovered line.
+
+---
+
 # Round one hundred and fourteen — the study we said nobody had done, and the constant that decided it
 
 `ai-writing-research.md`'s *Gaps worth noting* #5 has stood since that document was written:

@@ -52,7 +52,9 @@
         "tests/test_batched_detector_identity.py",
         "tests/test_detectors_full.py"
       ],
-      "why": "its test selection times out or fails to collect, so no mutant against it could be scored"
+      "why": "its test selection exits without reporting a result, so no mutant against it could be scored",
+      "cause": "collect_error",
+      "retried": false
     }
   ],
   "red_baselines": {
@@ -67,16 +69,16 @@
   },
   "by_kind": {
     "boundary": {
-      "killed": 88,
-      "survived": 252,
-      "score": 25.9
+      "killed": 89,
+      "survived": 251,
+      "score": 26.2
     }
   },
   "workers": 4,
   "mutants": 340,
-  "killed": 88,
-  "survived": 252,
-  "score": 25.9,
+  "killed": 89,
+  "survived": 251,
+  "score": 26.2,
   "survivors": [
     {
       "file": "untell/_retry.py",
@@ -1117,13 +1119,6 @@
     {
       "file": "untell/scripts/audit.py",
       "line": 899,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/audit.py",
-      "line": 903,
       "kind": "boundary",
       "mutation": "> -> >=",
       "killed": false
@@ -3263,7 +3258,7 @@
       "line": 903,
       "kind": "boundary",
       "mutation": "> -> >=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/audit.py",
