@@ -188,3 +188,62 @@ class TestRegistryHygiene:
             "a new catalogue must arrive with its own measured precision figures; see the header "
             "of untell/scripts/tells.py for what that means"
         )
+
+
+class TestACatalogueMustCarryItsEvidence:
+    """CONTRIBUTING has always said a catalogue needs "a measurement, not a word list", and until
+    now nothing enforced it — the requirement was prose, and a word list assembled by intuition
+    could register and report tells per hundred words with the same authority as English, whose
+    every category carries a precision figure against a paired corpus.
+
+    That asymmetry matters most exactly where it cannot be checked. Several English patterns that
+    sounded obviously right pointed the wrong way — `em_dash`, the single most-cited AI tell in
+    public discourse, fires on 0 of 400 AI documents across two corpora. A catalogue in a language
+    nobody here reads has no such correction available, so an unmeasured one is not a small gap.
+    """
+
+    def test_english_states_how_its_precision_was_measured(self) -> None:
+        from untell import languages
+
+        english = languages.registered()["en"]
+        assert english.evidence, "the one shipped catalogue must name its own measurement"
+        assert "precision" in english.evidence
+
+    def test_an_unmeasured_catalogue_is_listed_rather_than_refused(self) -> None:
+        """Refusing to register one would push a contributor to invent a justification rather than
+        state none. An honest "not measured yet", surfaced, beats an argument nobody checked."""
+        from untell import languages
+
+        try:
+            languages.register("xx", lambda t, **kw: {
+                "words": 1, "tells": 0, "tells_per_100w": 0.0, "by_category": {}})
+            assert "xx" in languages.unmeasured()
+            assert "en" not in languages.unmeasured()
+        finally:
+            languages.registered().pop("xx", None)
+            languages._REGISTRY.pop("xx", None)
+
+    def test_conformance_is_checked_by_calling_not_by_inspecting(self) -> None:
+        """The shape is a property of what a scorer RETURNS. A missing key does not fail loudly —
+        callers use `.get`, so it yields None, and None formats into a report as a blank where a
+        rate belongs."""
+        from untell import languages
+        from untell.scripts.tells import score_tells
+
+        assert languages.conforms(score_tells) == []
+        missing = languages.conforms(lambda t, **kw: {"tells": 3})
+        assert set(missing) == {"words", "tells_per_100w", "by_category"}
+
+    def test_a_scorer_that_cannot_run_is_reported_not_raised(self) -> None:
+        """A catalogue that throws on trivial input is not registrable, and the caller should learn
+        that from a return value rather than from a traceback out of a conformance check."""
+        from untell import languages
+
+        problem = languages.conforms(lambda t, **kw: 1 / 0)
+        assert problem and "ZeroDivisionError" in problem[0]
+
+    def test_a_non_callable_catalogue_is_refused_at_registration(self) -> None:
+        from untell import languages
+
+        with pytest.raises(TypeError):
+            languages.register("yy", "not a function")  # type: ignore[arg-type]

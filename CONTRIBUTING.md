@@ -163,13 +163,21 @@ Adding one touches no existing file:
 
 ```python
 # untell/tells_zh.py
-from untell.languages import register
+from untell.languages import conforms, register
 
 def score_zh(text: str, *, include_matches: bool = False) -> dict:
     ...  # same shape as score_tells: words, tells, tells_per_100w, by_category
 
-register("zh", score_zh, script="Han", label="Chinese")
+assert conforms(score_zh) == []        # the shape, checked by calling it
+register(
+    "zh", score_zh, script="Han", label="Chinese",
+    evidence="per-category precision against <your paired corpus>",
+)
 ```
+
+`conforms()` returns the required keys a scorer does not return, so the shape requirement above is
+checkable rather than advisory — a scorer missing `tells_per_100w` does not fail loudly, because
+callers use `.get` and None formats into a report as a blank where a rate belongs.
 
 `catalogue_for(text)` then routes Han-script text to it. Until a language is registered, text in
 that script returns **None** rather than falling back to English — running an English catalogue
@@ -183,6 +191,12 @@ in public discourse, has fired on **0 AI documents out of 400** across two corpo
 catalogue needs the equivalent: paired Chinese text, per-category precision, and the categories that
 fail reported next to the ones that work. `tests/test_languages.py` deliberately asserts that only
 English ships, so adding one is a conscious act with that expectation attached.
+
+The `evidence=` argument records how that measurement was done. It is **not mandatory**, because
+refusing to register an unmeasured catalogue would push a contributor to invent a justification
+rather than state none — an honest "not measured yet" is more useful than an argument nobody
+checked. What happens instead is that `untell.languages.unmeasured()` lists it, so a report can say
+so before quoting a tells rate in that language as though it meant what the English one means.
 
 ## Commit / PR style
 

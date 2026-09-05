@@ -51,6 +51,10 @@ class Catalogue:
     label: str
     scorer: Scorer
     script: str | None  # a Unicode script name, or None for Latin-script languages
+    # How this catalogue's precision was measured, or None for "not measured yet". Defaulted so
+    # `register` stays backward compatible for any caller that predates the field; `unmeasured()`
+    # is what reads it. See `register` for why this is recorded rather than required.
+    evidence: str | None = None
 
 
 _REGISTRY: dict[str, Catalogue] = {}
@@ -75,19 +79,70 @@ _SCRIPT_RANGES: tuple[tuple[str, int, int], ...] = (
 _LATIN = re.compile(r"[A-Za-z]")
 
 
+# The keys `score_tells` returns that a catalogue for another language must also return. Not the
+# whole shape — `burstiness_cv` and the English-specific notes are not required of a Chinese
+# catalogue — but the four every caller reads, so a registered scorer cannot silently omit the
+# number its callers index by.
+REQUIRED_KEYS = ("words", "tells", "tells_per_100w", "by_category")
+
+
 def register(
     code: str,
     scorer: Callable[..., dict],
     *,
     script: str | None = None,
     label: str | None = None,
+    evidence: str | None = None,
 ) -> None:
-    """Add a language's catalogue. Re-registering a code replaces it."""
+    """Add a language's catalogue. Re-registering a code replaces it.
+
+    ``evidence`` is how this catalogue's precision was measured — a corpus, a command, a document.
+    **CONTRIBUTING.md has always required it** ("what a catalogue needs before it ships is a
+    measurement, not a word list") and nothing enforced it, so the requirement was prose: a word
+    list assembled by intuition could be registered and would report tells per hundred words with
+    the same authority as English, whose every category carries a precision figure against a paired
+    corpus. Several English patterns that *sounded* obviously right pointed the wrong way —
+    `em_dash`, the single most-cited AI tell in public discourse, fires on 0 of 400 AI documents
+    across two corpora. A catalogue in a language nobody here reads has no such correction available.
+
+    It is not made mandatory, because refusing to register an unmeasured catalogue would push
+    contributors to write a fake justification rather than none. Instead ``None`` is recorded and
+    surfaced: `unmeasured()` lists them, and `catalogue_for` callers can warn. An honest "not
+    measured yet" is more useful than an argument nobody checked.
+    """
     if not code or not code.strip():
         raise ValueError("a language needs a code")
+    if not callable(scorer):
+        raise TypeError(f"catalogue for {code!r} is not callable")
     _REGISTRY[code] = Catalogue(
-        code=code, label=label or code, scorer=scorer, script=script
+        code=code, label=label or code, scorer=scorer, script=script, evidence=evidence
     )
+
+
+def conforms(scorer: Callable[..., dict], probe: str = "one two three four five") -> list[str]:
+    """Keys `REQUIRED_KEYS` names that this scorer does not return. Empty means it conforms.
+
+    CONTRIBUTING says a catalogue has "the same shape as score_tells" and nothing checked it. A
+    scorer missing `tells_per_100w` does not fail loudly — callers use `.get`, so it reports None,
+    and None formats into a report as a blank where a rate belongs. Checked by calling the scorer
+    rather than by inspecting it, because the shape is a property of what it returns.
+    """
+    try:
+        result = scorer(probe)
+    except Exception as exc:  # a scorer that cannot run on trivial input is not registrable
+        return [f"raised {type(exc).__name__}: {str(exc)[:80]}"]
+    if not isinstance(result, dict):
+        return [f"returned {type(result).__name__}, not a dict"]
+    return [key for key in REQUIRED_KEYS if key not in result]
+
+
+def unmeasured() -> dict[str, Catalogue]:
+    """Registered catalogues with no stated precision measurement.
+
+    The list a report should consult before quoting a tells rate in that language as if it meant
+    what the English one means.
+    """
+    return {code: cat for code, cat in _REGISTRY.items() if not cat.evidence}
 
 
 def registered() -> dict[str, Catalogue]:
@@ -148,7 +203,14 @@ def _register_english() -> None:
     about the registry and this one stays deletable."""
     from untell.scripts.tells import score_tells
 
-    register("en", score_tells, script=None, label="English")
+    register(
+        "en", score_tells, script=None, label="English",
+        # The measurement, named rather than assumed. Every category in `tells.py` carries a
+        # precision figure against a paired human/AI corpus, and `eval/data/tell_base_rates.json`
+        # holds the human-side rates the caveats are computed from.
+        evidence="per-category precision against paired HC3/RAID corpora; "
+                 "base rates in eval/data/tell_base_rates.json",
+    )
 
 
 _register_english()
