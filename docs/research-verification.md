@@ -5830,6 +5830,28 @@ they meet.
 the tree they were taken on. What the register cannot currently express is that the answer has a
 precondition, and that is recorded here rather than resolved by picking the flattering run.
 
+## The mechanism was then tested by prediction, and it held
+
+Stating a mechanism is cheap; this one was put at risk. With the corrected counts **committed**, the
+account above predicts a specific number before the run: **89 killed, `audit.py:899` dead.**
+MEASURED (`eval/data/mutation_boundary.json`):
+
+    mutants 340    killed 89    survived 251    score 26.2%    899 survives: False
+
+Exactly as predicted. The oscillation is closed as understood rather than as tolerated.
+
+⚠️ **And it took three attempts to run the test correctly, each failing the same way in a new
+place.** Round one hundred and seventeen changed the tree *during* a sweep. Round one hundred and
+twenty-two diagnosed that and re-ran cleanly. Then this round ran `--fix-counts`, left it
+**uncommitted**, and launched a sweep — which builds its worktrees from **HEAD**, so it measured the
+old documents and returned 88 again, and the working tree that "had exact counts" was never the tree
+under measurement. The commit landed 01:09:38; the sweep had started 01:05:15.
+
+Three variants of one error: *the tree you measured is not the tree you think*. Changed underneath
+the run, changed after it, and changed somewhere the run does not read. The rule that survives all
+three is narrower than round one hundred and twenty-two's: **a sweep measures the committed tree at
+the moment its worktrees are created, and nothing else.**
+
 ---
 
 # Round one hundred and seventeen — a stale number in a document disabled a test on the code
