@@ -5783,6 +5783,55 @@ detector's false accusations concentrate on the margins, and it does not establi
 
 ---
 
+# Round one hundred and twenty-six — the oscillation was never flakiness
+
+`untell/scripts/audit.py:899` has changed status three times in this ledger. Round one hundred and
+seventeen recorded it killed, round one hundred and twenty-two recorded it killed after correcting
+which line, and the sweep this round reports it **surviving** again — 88 killed against 89, on a
+tree whose guards all pass.
+
+It is not flaky. It is a deterministic function of one number nobody thinks of as a test input.
+
+## The mechanism
+
+The mutant is `if claimed > len(modules)` → `>=`, in the check that catches a document overstating
+the test count. `test_test_inventory` opens by asserting the unmutated check passes. So:
+
+* **counts EXACTLY equal** — `666 >= 666` fires, the check reports an overstatement that does not
+  exist, `assert_passes` catches it, **mutant killed**;
+* **counts off by one** — `665 >= 666` is false, the mutation changes nothing observable,
+  **mutant survives**.
+
+VERIFIED by applying the mutant by hand under both conditions: exact counts fail the test, a drift
+of one passes it.
+
+And a drift of one is **deliberately allowed**. `_MODULE_DRIFT = 5`, with a comment explaining
+exactly why — "understating by a little is what happens whenever a module lands between one session
+reading the count and writing it … MEASURED, this check fired ten times in one session, every time
+one behind". The tolerance is right. Round one hundred and twenty-four added test files, the
+documents fell one behind, nothing failed because nothing should have, and the boundary quietly
+stopped being pinned.
+
+## What this refines
+
+Round one hundred and twenty-two concluded that **a mutation sweep is only valid on a tree whose own
+guards pass**. That rule is necessary and it is not sufficient. Every guard passed here. The sweep
+was valid by that rule and still returned a different number, because a mutation score is a function
+of the tree's **incidental state** — not only of its tests, and not only of whether its checks are
+green.
+
+The specific corollary is uncomfortable and worth stating plainly: **`audit.py:899` is pinned only
+while the documented test count is exactly right.** Any round that adds a test file unpins it until
+someone runs `--fix-counts`, and the audit will not complain, because a drift of one is inside a
+tolerance that exists for a good reason. Two mechanisms, each correct alone, leaving a hole where
+they meet.
+
+⚠️ **This does not make the boundary "really" protected or "really" not.** Both readings are true of
+the tree they were taken on. What the register cannot currently express is that the answer has a
+precondition, and that is recorded here rather than resolved by picking the flattering run.
+
+---
+
 # Round one hundred and seventeen — a stale number in a document disabled a test on the code
 
 The boundary sweep was stale again, so it was re-run. One mutant changed state, and the reason is
