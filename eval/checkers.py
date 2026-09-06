@@ -268,6 +268,24 @@ REGISTER: tuple[Checker, ...] = (
         first_version_defect=None,
         precision_not_applicable=True,
     ),
+    Checker(
+        command="python -m eval.native_distance",
+        checks="NOT a checker — tests whether non-native authors sit further from a corpus's "
+               "function-word centre, the mechanism rounds 114 and 120 declined to assert",
+        gates=False,
+        findings_now="+0.0394 further out, p=0.098 (p=0.066 length-matched) — directional, not "
+                     "significant",
+        precision=None,
+        how_precision_was_measured=(
+            "not applicable: it emits a hypothesis test rather than findings. Its guards are a "
+            "permutation test that assumes nothing about the distribution's shape, a length-matched "
+            "arm because length reversed the sign of this study once already, and a power figure "
+            "that turns the null into a specification (~79-104 per group, against 36 available) "
+            "rather than leaving 'under-powered' as a word."
+        ),
+        first_version_defect=None,
+        precision_not_applicable=True,
+    ),
 )
 
 

@@ -1,0 +1,64 @@
+{
+  "vocab": 50,
+  "tier": "lite",
+  "n": 72,
+  "hypothesis": "non-native authors sit further from the corpus's function-word centre",
+  "all": {
+    "arm": "all documents",
+    "Non-Native": {
+      "n": 36,
+      "mean_delta": 0.7749,
+      "median_words": 176.0,
+      "flagged": 2,
+      "n_scored": 36,
+      "fpr": 0.0556
+    },
+    "Native": {
+      "n": 36,
+      "mean_delta": 0.7355,
+      "median_words": 179.5,
+      "flagged": 5,
+      "n_scored": 36,
+      "fpr": 0.1389
+    },
+    "test": {
+      "observed": 0.0394,
+      "p": 0.09815,
+      "permutations": 20000
+    },
+    "power": {
+      "cohens_d": 0.3899,
+      "n_per_group": 104,
+      "power": 0.8
+    }
+  },
+  "length_matched": {
+    "arm": "length-matched pairs",
+    "Non-Native": {
+      "n": 35,
+      "mean_delta": 0.7809,
+      "median_words": 175,
+      "flagged": 2,
+      "n_scored": 35,
+      "fpr": 0.0571
+    },
+    "Native": {
+      "n": 35,
+      "mean_delta": 0.7369,
+      "median_words": 179,
+      "flagged": 5,
+      "n_scored": 35,
+      "fpr": 0.1429
+    },
+    "test": {
+      "observed": 0.0441,
+      "p": 0.06565,
+      "permutations": 20000
+    },
+    "power": {
+      "cohens_d": 0.4458,
+      "n_per_group": 79,
+      "power": 0.8
+    }
+  }
+}

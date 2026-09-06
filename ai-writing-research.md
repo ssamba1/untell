@@ -351,11 +351,21 @@ Things repeatedly gestured at but not, as far as this search found, actually don
    across all four word-count strata. Two centres, two feature sets, one direction: **detectors flag
    departure from the human norm.**
 
-   ⚠️ Tempting and **still not tested here**: that non-native writers sit far out in function-word
-   space (article and preposition use being exactly that signal), making the L2 result an instance
-   of this. There is no non-native corpus in this study — every document is an ACL abstract, and
-   outlier status is not a protected characteristic. What is established is that false accusations
-   concentrate on the margins; which margin is the next experiment.
+   **That hypothesis is now tested, and it is directionally right and not significant.**
+   `eval/native_distance.py` uses the one reachable corpus carrying self-declared author status —
+   36 Native and 36 Non-Native abstracts, balanced, mean 183 words. Function-word distance from the
+   corpus centre, permutation test (MEASURED, `eval/data/native_distance.json`): non-native writers
+   sit **+0.0394** further out (p=0.098), and
+   **+0.0441** on a length-matched subsample (p=0.066). Both arms point the way the hypothesis
+   predicts; neither clears 0.05. The effect size implies **~79–104 documents per group** to settle
+   it, against 36 available.
+
+   Length is **not** the confound here — median 176 words against 180 — which is worth stating
+   because length faked this exact study once already, reversing the sign of the main curve.
+
+   ⚠️ In this corpus the *native* writers were flagged more often (13.9% vs 5.6%), the opposite of
+   the L2 literature. That is **7 flags in total** and means nothing on its own; it is reported
+   because omitting an inconvenient direction is how a null becomes a claim.
 
    ⚠️ **And the naive version of this study returns a significant result in the opposite direction.**
    Unstratified, the same data gives **z=2.16, p=0.031** (MEASURED, `eval/data/homogenization.json`)
