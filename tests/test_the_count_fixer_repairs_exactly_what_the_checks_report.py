@@ -25,6 +25,7 @@ from untell.scripts import audit
 from untell.scripts.audit import (
     _MODULE_CLAIM,
     _TEST_CLAIM,
+    HISTORICAL_DOCS,
     LEDGER,
     counted_docs,
     substitute_outside_code_spans,
@@ -86,7 +87,30 @@ def test_the_ledger_is_outside_both_the_counting_checks_and_the_repair():
     assert LEDGER not in counted_docs()
     assert LEDGER in audit.COMPARATIVE_DOCS, (
         "the ledger stays a live document for every other check — only counting stops at it")
-    assert len(counted_docs()) == len(audit.COMPARATIVE_DOCS) - 1
+
+
+def test_the_roadmap_is_a_dated_record_too_and_the_fixer_stops_at_it():
+    """Excluding only the file named "the ledger" left the other dated record exposed.
+
+    MEASURED: with `tests/` at 668 and the docs claiming 666 — a drift of 2, inside the tolerance
+    the check deliberately allows, so nothing was reported wrong — `--fix-counts` rewrote roadmap
+    row 75's "108 mutants across 666 modules" to "across 668 modules". That row records a run that
+    really did enumerate 666 modules, so the repair made a true sentence false. Same class as the
+    ledger corruption in this file's docstring, in a file the fix for that one did not cover.
+    """
+    assert "ROADMAP.md" in HISTORICAL_DOCS
+    assert "ROADMAP.md" not in counted_docs()
+    assert "ROADMAP.md" in audit.COMPARATIVE_DOCS, (
+        "the roadmap stays live for every other check — only counting stops at it")
+
+
+def test_every_dated_record_is_excluded_from_counting_and_nothing_else_is():
+    """The arithmetic that used to be spelled `- 1`. Written as a set difference so that adding a
+    third dated record cannot silently leave the count assertion passing against the wrong number.
+    """
+    assert set(audit.COMPARATIVE_DOCS) - set(counted_docs()) == set(HISTORICAL_DOCS)
+    assert all(d in audit.COMPARATIVE_DOCS for d in HISTORICAL_DOCS), (
+        "a name in HISTORICAL_DOCS that no live-doc list carries excludes nothing")
 
 
 def test_the_doc_list_is_derived_live_so_patching_the_public_name_still_works(monkeypatch):
@@ -111,3 +135,40 @@ def test_the_substitution_preserves_everything_it_does_not_replace():
 def test_the_substitution_is_a_no_op_when_nothing_matches():
     for text in ("", "no counts here", "`620 modules`"):
         assert _fix_modules(text, 624) == text
+
+
+def test_fix_counts_leaves_a_dated_record_byte_for_byte_alone(tmp_path, monkeypatch):
+    """The behavioural half. The two tests above pin a tuple; this one runs the writer.
+
+    A constant can be right while the code that consumes it reads something else — which is exactly
+    how the original ledger corruption happened, with the checks and the fixer disagreeing about
+    what a claim was. So this drives `fix_counts()` against a scratch tree and asserts the roadmap
+    comes back unmodified while the live document beside it is repaired.
+    """
+    (tmp_path / "docs").mkdir()
+    # Real files, because the count is `glob("test_*.py")`. Stubbing the counter instead would let
+    # this pass against whatever the live suite happens to hold.
+    (tmp_path / "tests").mkdir()
+    for i in range(5):
+        (tmp_path / "tests" / f"test_{i}.py").write_text("", encoding="utf-8")
+
+    roadmap = tmp_path / "ROADMAP.md"
+    live = tmp_path / "docs" / "why-best-open-repo.md"
+    # Row 75's shape, which is what `--fix-counts` actually rewrote. The claim sits 2 below the 5
+    # files on disk: a drift inside the tolerance, so no check reported anything wrong first.
+    historical = "| 75 | ... | **108 mutants across 3 modules, 59 killed: 54.6%** |\n"
+    roadmap.write_text(historical, encoding="utf-8")
+    live.write_text("Automated tests: 3 modules\n", encoding="utf-8")
+
+    monkeypatch.setattr(audit, "REPO", tmp_path)
+    monkeypatch.setattr(audit, "COMPARATIVE_DOCS", ("ROADMAP.md", "docs/why-best-open-repo.md"))
+    monkeypatch.setattr(audit, "_collected_test_count", lambda: None)
+
+    edits = audit.fix_counts()
+
+    assert roadmap.read_text(encoding="utf-8") == historical, (
+        "the roadmap records what a numbered round measured; rewriting its count makes a true "
+        "sentence about a real run false")
+    assert "5 modules" in live.read_text(encoding="utf-8"), (
+        "excluding the roadmap must not also stop the repair the fixer exists to perform")
+    assert not any("ROADMAP.md" in e for e in edits)

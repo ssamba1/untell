@@ -185,16 +185,30 @@ COMPARATIVE_DOCS = LIVE_DOCS + ("docs/humanizer-census.md",)
 # counting checks and the repair that services them both stop at this file.
 LEDGER = "docs/research-verification.md"
 
+# ROADMAP.md is the same kind of document under a different name, and excluding only the file called
+# "the ledger" missed it. Each row records what one numbered round measured, so a count in it is
+# dated evidence rather than a description of the suite today.
+#
+# MEASURED, twice over: `--fix-counts` rewrote row 75's "108 mutants across 666 modules" to "across
+# 668 modules" — a sentence about a run that really did enumerate 666, made false by a repair whose
+# whole purpose is keeping documents true. The drift that triggered it was 2, inside the tolerance
+# the check deliberately allows, so nothing was even reported as wrong.
+#
+# Exclusion is per-file, matching the ledger's treatment, because the distinction that matters is
+# "is this document a dated record" — a property of the document, not of the sentence. Both stay
+# live for every other check; only counting stops at them.
+HISTORICAL_DOCS = (LEDGER, "ROADMAP.md")
+
 
 def counted_docs() -> tuple[str, ...]:
-    """`COMPARATIVE_DOCS` minus the ledger — a function, deliberately, not a derived constant.
+    """`COMPARATIVE_DOCS` minus the dated records — a function, deliberately, not a constant.
 
     A constant computed at import time silently ignores a test that patches `COMPARATIVE_DOCS`, and
     three tests in this suite do exactly that. One of them carries a comment recording the round
     where patching the wrong name made five cases pass vacuously; deriving this once at import would
     have recreated that defect in the same file that documents it.
     """
-    return tuple(d for d in COMPARATIVE_DOCS if d != LEDGER)
+    return tuple(d for d in COMPARATIVE_DOCS if d not in HISTORICAL_DOCS)
 
 
 @dataclass
@@ -1862,8 +1876,9 @@ def fix_counts() -> list[str]:
     in a comparison table can track. The check catches it every time and the repair was four
     identical manual edits.
 
-    Only the counts are touched, and only in `counted_docs()` — never the ledger, whose figures are
-    historical, and never inside a code span, which is a quotation rather than a claim. The module
+    Only the counts are touched, and only in `counted_docs()` — never a dated record (the
+    verification ledger or the roadmap), whose figures describe the round that wrote them, and never
+    inside a code span, which is a quotation rather than a claim. The module
     count is exact. The test
     count is taken from a LITE collection — `UNTELL_LITE_NO_TORCH=1` — because that is the smaller
     of the two and the number `test_why_best_test_count_is_not_stale` compares against; a figure
