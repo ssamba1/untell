@@ -31,7 +31,7 @@ Generated from live calls, not from reading the source.
 
 ```
 score_text        agreement, ai_percent, detector_modes, detectors, flagged, max, mean,
-                  threshold, tier, tier_requested, verdict_threshold, warning
+                  threshold, tier, tier_requested, verdict_supported, verdict_threshold, warning
                   + failed_detectors and detector_errors, only when a detector raised
                   + scored, only when NOTHING could be scored (it is False; the CLI exits 2 on it)
                   + out_of_range_detectors, only when a detector returned a value outside [0, 1]
@@ -84,6 +84,28 @@ verify            configured, n_configured, n_passing, passes_all, results, thre
   the lite tier flag 60% of genuinely human text.
 - **`language_supported: false` means the counts are not evidence.** The catalogue is English-only,
   so on mostly-non-Latin text `tells: 0` means nothing was looked for, not that nothing was found.
+
+### `verdict_supported` (always present on `score_text`)
+
+`false` when every live detector ran on a scoring path measured as unable to support a verdict at
+any threshold — currently the stdlib sub-path of `perplexity_burstiness`, which runs whenever
+`torch` is absent.
+
+It is not a quality hint. `eval/calibrated_thresholds` calibrated that path per length band on 6,810
+pre-ChatGPT documents and found the false-positive rate fixable — **29.1% → 3.6%** on 60-100 word
+text — only by taking sensitivity from **9.3% to 2.3%**, and from **9.1% to 0.0%** on the band
+above. A bar that catches almost nothing is not a better verdict; it is the same non-verdict with a
+nicer error rate.
+
+`flagged` and `ai_percent` are unchanged and still mean what they always meant. This field exists
+because they *assert an answer*, and a caveat in `warning` competes with a percentage and loses —
+Du et al. (Front. Psychol., [DOI](https://doi.org/10.3389/fpsyg.2026.1889402)) gave 214 teachers the
+same paper with a report varying only 7% against 87% and the reported rate moved their judgements of
+writing that had not changed. A caller that should not act on a number now has a boolean to check
+rather than English to parse.
+
+`true` when **any** live detector ran on a supported path: one usable detector is enough for the
+result to mean something, and `agreement.detectors_scoring` says how many were live.
 
 ## Why these are not simply renamed
 

@@ -732,6 +732,16 @@ _SCORE_RESPONSES = _obj(
             **_NUM,
             "description": "the calibrated bar `flagged` is decided on; not always `threshold`",
         },
+        "verdict_supported": {
+            **_BOOL,
+            "description": "false when every live detector ran on a path measured as unable to "
+                           "support a verdict at ANY threshold — currently the stdlib sub-path, "
+                           "which runs whenever torch is absent. Calibrating that path on 6,810 "
+                           "pre-ChatGPT documents fixes its false-positive rate (29.1% -> 3.6% at "
+                           "60-100 words) only by taking sensitivity from 9.3% to 2.3%. `flagged` "
+                           "and `ai_percent` still carry their usual meanings; this says whether "
+                           "they should be acted on.",
+        },
         "flagged": _BOOL,
         # The aggregation spread behind `flagged`. `flagged` is the union rule — any detector over
         # the bar — and the literature this repo argues from measures union at 44.44% against

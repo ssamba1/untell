@@ -5985,6 +5985,24 @@ It converts three standing choices from taste into measured requirements:
 * reporting sensitivity beside any threshold that lowers false positives, because an FPR-only table
   is exactly the "7% versus 87%" stimulus that moved 214 teachers.
 
+⚠️ **CORRECTED: the second of those three was not a standing choice. It was an overclaim, and this
+round credited the repository with work it had not done.** Checked by running the tool rather than by
+reading the ledger:
+
+    (a) false-positive rate named beside the flag    TRUE — it is in `warning`
+    (b) verdict withheld where unsupported           FALSE — `flagged: True`, `ai_percent: 46.1`
+    (c) sensitivity beside a calibrated threshold    TRUE — `eval/calibrated_thresholds`
+
+Round one hundred and sixteen *concluded* the tier supports no verdict and *changed nothing about
+what the tier returns*, saying so explicitly: "the measurement says what the tier can support;
+changing a user-facing verdict threshold on one corpus's calibration is a separate decision". That
+was a defensible refusal to break a public field. It was not the same thing as having made the
+choice, and one round later that distinction had been lost.
+
+Fixed additively in round one hundred and thirty-one — `verdict_supported`, a boolean a caller can
+act on — because the two options are not "assert a verdict" and "break the API". `flagged` and
+`ai_percent` keep their meanings and every existing consumer keeps working.
+
 ⚠️ **What this round is not.** It is two papers, found by re-running one search on one database.
 PubMed indexes biomedical and life-science literature and not computer science, so it can only ever
 be a partial view of a field whose primary venues are ACL and arXiv — both egress-blocked here. The

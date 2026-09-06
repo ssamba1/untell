@@ -328,6 +328,24 @@ def modes_of(live) -> dict:
     return modes
 
 
+def _verdict_supported(modes: dict[str, str]) -> bool:
+    """False when every live detector ran on a path measured as unable to support a verdict.
+
+    Currently that is the stdlib sub-path of `perplexity_burstiness`, and the reason is a
+    measurement rather than a judgement: calibrating it per length band on 6,810 pre-ChatGPT
+    documents drops the false-positive rate from 29.1% to 3.6% at 60-100 words and takes sensitivity
+    from 9.3% to 2.3% with it — 9.1% to 0.0% on the band above. There is no threshold at which this
+    path both catches AI text and leaves human text alone.
+
+    True when ANY live detector ran on a supported path: one usable detector is enough for the
+    result to mean something, and the `agreement` block already reports how many were live. False
+    is therefore a statement about the whole ensemble that ran, not about the weakest member.
+    """
+    if not modes:
+        return False
+    return not all(mode == "stdlib" for mode in modes.values())
+
+
 def _verdict_threshold(threshold: float, scores: dict, modes: dict) -> float:
     """The cut point for the reported verdict, which is not always the loop's target.
 
@@ -1003,6 +1021,26 @@ def _score_with_detectors_uncached(
     verdict_threshold = _verdict_threshold(threshold, scores, modes_of(live))
     result["verdict_threshold"] = verdict_threshold
     result["flagged"] = bool(numeric) and mx >= verdict_threshold
+    # WHETHER THE PATH THAT RAN CAN SUPPORT A VERDICT AT ALL, as a field rather than as prose.
+    #
+    # `flagged` and `ai_percent` assert an answer. On the stdlib sub-path they assert one the
+    # measurements say is not available at ANY threshold: `eval/calibrated_thresholds` calibrated
+    # this path per length band on 6,810 documents that cannot be AI-generated and found the
+    # false-positive rate fixable — 29.1% -> 3.6% on 60-100 word text — only by moving sensitivity
+    # from 9.3% to 2.3%, and from 9.1% to 0.0% on the band above. A bar that catches almost nothing
+    # is not a better verdict; it is the same non-verdict with a nicer error rate.
+    #
+    # That has been said in `warning` for several rounds, and prose is the wrong carrier. Du et al.
+    # (Front. Psychol., doi:10.3389/fpsyg.2026.1889402) gave 214 teachers the SAME paper with a
+    # detection report varying only 7% against 87%, and the reported rate lowered their judgements
+    # of originality, language and structure on writing that had not changed — evidence that a
+    # number is read as an answer whatever sits beside it. A caveat competing with a percentage
+    # loses.
+    #
+    # ADDITIVE, deliberately. `flagged` and `ai_percent` keep their meanings and every existing
+    # consumer keeps working; what is new is a field that says whether the number should be treated
+    # as a verdict, so a caller can act on it instead of parsing English.
+    result["verdict_supported"] = _verdict_supported(modes_of(live))
     # `flagged` is the union rule. Publish the other two aggregations beside it, because the rule
     # moves the false-positive rate further than the detector choice does — see `agreement`.
     spread = agreement(scores, verdict_threshold)
