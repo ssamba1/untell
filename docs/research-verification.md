@@ -5942,6 +5942,58 @@ is now known to be an artefact of a stale document rather than an uncovered line
 
 ---
 
+# Round one hundred and thirty — the PubMed pass, re-run, and what it says about our own reporting
+
+Round four searched PubMed for false-positive rates on genuine human writing and assembled the 47x
+range that is this repository's central argument. That was a snapshot. Re-running it finds two
+papers published since, both retrieved from PubMed, and neither was cited here.
+
+## One resolves an apparent contradiction using this repo's own axis
+
+Villa et al. benchmark six detectors on **120 full-length dentistry manuscripts** and report **no
+false positives among the 30 human texts** at a 60% threshold
+([DOI](https://doi.org/10.1186/s41073-026-00228-9)). A 0% false-positive rate sits oddly beside the
+**61.3%** this map already records for TOEFL essays by non-native writers — a 61-point spread in the
+same table.
+
+It is not a contradiction, and the reconciling variable is one measured here rather than borrowed:
+**length**. `eval/pre_llm_fpr` finds **28.69%** of 60-100 word documents flagged against **12.77%**
+above 200 words, on text that cannot be AI-generated. Full manuscripts are the far end of that
+curve and student essays the near end. Two correct studies, opposite ends of one axis — which is
+precisely what round four concluded about the 47x range, now with an external data point at the
+extreme it did not have.
+
+## The other one lands on us
+
+Du et al. gave **214 university teachers** the *same* medium-quality paper with a fictitious
+AI-detection report attached, varying only the reported rate (7% against 87%) and whether red
+risk-highlighting was present ([DOI](https://doi.org/10.3389/fpsyg.2026.1889402)). The high rate
+lowered their judgements of **originality, language expression and logical structure** — of writing
+that had not changed a word. Red highlighting independently moved language-expression judgements and
+intervention tendency.
+
+**This is the first external evidence that a detector's presentation changes the verdict a human
+reaches on unchanged text**, and it is about report design rather than detector accuracy, which is
+the half of the problem this repository spends most of its effort on and had no citation for.
+
+It converts three standing choices from taste into measured requirements:
+
+* naming the false-positive rate beside every flag, rather than after it;
+* refusing to print a verdict a tier cannot support — round one hundred and sixteen measured
+  sensitivity at 9% before calibration and 0-2% after, and concluded the free tier supports no
+  verdict at any threshold;
+* reporting sensitivity beside any threshold that lowers false positives, because an FPR-only table
+  is exactly the "7% versus 87%" stimulus that moved 214 teachers.
+
+⚠️ **What this round is not.** It is two papers, found by re-running one search on one database.
+PubMed indexes biomedical and life-science literature and not computer science, so it can only ever
+be a partial view of a field whose primary venues are ACL and arXiv — both egress-blocked here. The
+claim is "two relevant papers published since round four and now cited", not "the survey is current".
+
+*Both records retrieved from PubMed.*
+
+---
+
 # Round one hundred and fourteen — the study we said nobody had done, and the constant that decided it
 
 `ai-writing-research.md`'s *Gaps worth noting* #5 has stood since that document was written:

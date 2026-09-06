@@ -212,6 +212,32 @@ published FPR figures: the full local ensemble flags 17% of genuine human HC3 an
 thresholds, one bundled detector flags 6 of 8 human documents, and another flagged 89% before it was
 demoted.
 
+**And the 47x range has a lower end that this repo's own length curve predicts.** Retrieved from
+PubMed, and published after this map's PubMed pass: Villa et al. benchmark six detectors on **120
+full-length dentistry manuscripts** and observe **no false positives among the 30 human texts** at a
+60% threshold ([DOI](https://doi.org/10.1186/s41073-026-00228-9)). A 0% FPR looks like it contradicts
+the 61.3% TOEFL row above; it does not, and the reconciling variable is one this repo measures
+directly. **Full manuscripts are the long end of the length axis**, and `eval/pre_llm_fpr` finds
+28.69% of 60-100 word documents flagged against 12.77% above 200 words, on text that cannot be
+AI-generated. A study that scores whole manuscripts and a study that scores student essays are
+sampling opposite ends of the same curve. Neither number transfers, which is the point §4 has been
+making since it was written.
+
+**A finding this repo should apply to itself.** Du et al. gave **214 university teachers** the *same*
+medium-quality paper with a fictitious AI-detection report attached, varying only the reported rate
+(7% vs 87%) and whether red risk-highlighting was present
+([DOI](https://doi.org/10.3389/fpsyg.2026.1889402)). The high rate lowered their judgements of
+**originality, language expression and logical structure** — of writing that had not changed. Red
+highlighting independently moved language-expression judgements and self-reported intervention
+tendency.
+
+That is empirical evidence that a detector's *presentation* changes the verdict a human reaches on
+unchanged text, and it lands on every reporting decision in this repository rather than on someone
+else's tool. It is the strongest external argument for the things this project already does — naming
+the false-positive rate beside every flag, refusing to print a verdict the tier cannot support, and
+reporting sensitivity beside any threshold that lowers false positives — and it turns them from taste
+into a measured requirement. *(Retrieved from PubMed.)*
+
 ## 5. Attacks and watermarking
 
 **Attacks.** Nothing published since untell's earlier survey overturns its conclusion; the 2026 additions
