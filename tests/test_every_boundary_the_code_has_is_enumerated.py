@@ -119,19 +119,35 @@ def test_a_missing_sweep_is_stale_rather_than_clean(tmp_path):
 
 
 def test_the_thresholds_round_98_fixed_are_recorded_as_protected():
-    """The seven off-by-ones verified killed in round 98 must show as protected here.
+    """The off-by-ones verified killed in round 98 must show as protected here.
 
     This is the register's own calibration: if boundaries known to be tested come back unprotected,
     the cross-reference is wrong and every other row is suspect.
+
+    Keyed by (file, constant) and a site count, NOT by line. The first version pinned line numbers,
+    and round 132 broke it by adding a comment block a few hundred lines above one of them: the two
+    `_MIN_WORDS_FOR_A_VERDICT` sites slid 705/732 -> 723/750, still protected, and the calibration
+    reported the register wrong. A test that fails when unrelated code moves is a test that gets
+    edited to match rather than read — and the alarm it raises here ("the sweep is stale or the
+    cross-reference is broken") is one that costs an hour to chase down.
     """
-    protected = {(e["file"], e["line"]) for e in REGISTER["protected"]}
+    protected: dict[tuple[str, str], int] = {}
+    for entry in REGISTER["protected"]:
+        protected[(entry["file"], entry["constant"])] = (
+            protected.get((entry["file"], entry["constant"]), 0) + 1)
+    # Site counts, so losing one of a constant's two guarded comparisons still fails. That is the
+    # resolution the line-keyed version had, and the reason this is not just a set of names.
     known_fixed = {
-        ("untell/scripts/score.py", 732),
-        ("untell/scripts/tells.py", 723),
-        ("untell/scripts/tells.py", 853),
-        ("untell/humanness.py", 426),
+        ("untell/scripts/score.py", "_MIN_WORDS_FOR_A_VERDICT"): 2,
+        ("untell/scripts/tells.py", "_MIN_WORDS_FOR_REPETITION"): 2,
+        ("untell/humanness.py", "_MIN_WORDS_FOR_A_BAND"): 1,
     }
-    missing = sorted(known_fixed - protected)
+    missing = sorted(
+        (f"{file}:{const}", f"expected {n} protected site(s), register has {protected.get(k, 0)}")
+        for k, n in known_fixed.items()
+        for file, const in [k]
+        if protected.get(k, 0) < n
+    )
     assert not missing, (
         f"round 98 verified these off-by-ones as killed and the register disagrees: {missing}. "
         f"Either the sweep is stale or the cross-reference is broken."
