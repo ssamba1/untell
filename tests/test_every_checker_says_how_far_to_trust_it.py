@@ -74,6 +74,28 @@ def test_every_eval_checker_has_a_register_entry():
 def test_a_precision_figure_is_never_stated_without_its_method():
     """A number with no method behind it is the thing this repository keeps refusing to publish."""
     for entry in checkers.REGISTER:
+        if entry.precision_not_applicable:
+            # A third case the first version of this guard could not express. An INSTRUMENT emits a
+            # number rather than findings, so precision has no referent — and `precision=None` alone
+            # would say "never measured", which is a different fact. A blank meaning "not measured"
+            # and a blank meaning "cannot apply" are the same value and opposite facts, which is the
+            # distinction rounds 90, 113 and 115 each had to re-draw somewhere else.
+            assert entry.precision is None, (
+                f"{entry.command} says precision does not apply and states one anyway"
+            )
+            assert entry.how_precision_was_measured, (
+                f"{entry.command} says precision does not apply without saying why, or what guard "
+                "stands in its place"
+            )
+            assert entry.how_precision_was_measured.startswith("not applicable"), (
+                f"{entry.command} must say plainly that precision does not apply, so the entry "
+                "cannot be skim-read as a measured one"
+            )
+            assert not entry.gates, (
+                f"{entry.command} is registered as an instrument but gates commits — a thing that "
+                "can fail a commit is reporting findings, and its precision is measurable"
+            )
+            continue
         if entry.precision is None:
             assert entry.how_precision_was_measured is None, (
                 f"{entry.command} has a method and no figure — record the figure"

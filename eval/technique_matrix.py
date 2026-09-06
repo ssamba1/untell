@@ -233,8 +233,24 @@ def measure(texts: list[str], tier: str = "lite", n: int = DEFAULT_N) -> dict:
     def _delta(text: str) -> float:
         return delta(profile(text, vocab), machine_centre, means, stdevs)
 
+    def _max(text: str) -> float | None:
+        """The detector max, or None when nothing scored.
+
+        ⚠️ `score_text` returns `max: 0.0` with `scored: False` when no detector produced a number,
+        and 0.0 is the most flattering figure this tool can print: averaged into a column it reads
+        as P(AI) 0.000 — a perfect result for a technique nothing measured. `tests/
+        test_unscored_placeholder.py` exists because that trap has been found at seven separate
+        sites; this module was the eighth, and it is a comparison table, so the flattery would have
+        landed on whichever technique happened to run when the stack was dead.
+        """
+        result = score_text(text, tier=tier)
+        if result.get("scored") is False:
+            return None
+        values = [v for v in result["detectors"].values() if isinstance(v, (int, float))]
+        return max(values) if values else None
+
     baseline = [{
-        "score": score_text(t, tier=tier)["max"],
+        "score": _max(t),
         "tells": score_tells(t).get("tells", 0),
         "words": len(t.split()),
         "delta": _delta(t),
@@ -251,12 +267,16 @@ def measure(texts: list[str], tier: str = "lite", n: int = DEFAULT_N) -> dict:
                          "unavailable": absent[key], "note": "NOT TESTED — absent, not ineffective"})
             continue
         scores, tells, deltas, changed = [], [], [], 0
-        hidden, foreign, nfkc_safe = 0, 0, 0
+        hidden, foreign, nfkc_safe, unscored = 0, 0, 0, 0
         try:
             for text, base in zip(texts, baseline):
                 out = fn(text)
                 changed += int(out != text)
-                scores.append(score_text(out, tier=tier)["max"])
+                after = _max(out)
+                if after is None or base["score"] is None:
+                    unscored += 1
+                else:
+                    scores.append(after)
                 tells.append(score_tells(out).get("tells", 0))
                 deltas.append(_delta(out) - base["delta"])
                 marks = integrity(text, out)
@@ -269,13 +289,17 @@ def measure(texts: list[str], tier: str = "lite", n: int = DEFAULT_N) -> dict:
             continue
         total_words = sum(b["words"] for b in baseline) or 1
         base_tells = sum(b["tells"] for b in baseline)
+        before = [b["score"] for b in baseline if b["score"] is not None]
         rows.append({
             "technique": name,
             "category": category,
             "changed": changed,
             "n": len(texts),
-            "score_before": round(statistics.fmean(b["score"] for b in baseline), 4),
-            "score_after": round(statistics.fmean(scores), 4),
+            # None, never 0.0, when nothing scored. A blank cell says "not measured"; a zero says
+            # "measured, and perfect", and only one of those is true.
+            "unscored": unscored,
+            "score_before": round(statistics.fmean(before), 4) if before else None,
+            "score_after": round(statistics.fmean(scores), 4) if scores else None,
             "tells_per_100w_before": round(100 * base_tells / total_words, 3),
             "tells_per_100w_after": round(100 * sum(tells) / total_words, 3),
             # Positive means the technique moved the document AWAY from the machine centroid, which
@@ -301,6 +325,11 @@ def _render(report: dict) -> str:
         if "unavailable" in row:
             lines.append(f"{row['technique']:<26}{row['category']:<26}"
                          f"  NOT TESTED — {row['unavailable']}")
+            continue
+        if row["score_before"] is None or row["score_after"] is None:
+            lines.append(f"{row['technique']:<26}{row['category']:<26}{row['changed']:>4}"
+                         f"   NOT SCORED — no detector produced a number "
+                         f"({row['unscored']}/{row['n']} documents)")
             continue
         lines.append(
             f"{row['technique']:<26}{row['category']:<26}{row['changed']:>4}"

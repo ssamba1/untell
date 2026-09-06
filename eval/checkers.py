@@ -49,6 +49,21 @@ class Checker:
     Precision is about the findings; recall is about the defects. A checker reporting one finding
     and being right is 100% precise and may be missing forty.
     """
+    precision_not_applicable: bool = False
+    """True when this entry is a measurement INSTRUMENT rather than a defect finder.
+
+    Precision is the share of a checker's findings that were real. An instrument emits a number, not
+    findings, so there is no set of reported items whose share could be right — and `precision=None`
+    would say "never measured", which is a different fact and the wrong one. **A blank meaning "not
+    measured" and a blank meaning "cannot apply" are the same value and opposite facts**, which is
+    the distinction this repository keeps having to re-draw: round ninety's unmeasurable mutation
+    baselines, round one hundred and thirteen's timeout-versus-collect-failure, round one hundred and
+    fifteen's untested-versus-ineffective technique row.
+
+    Set it, and `how_precision_was_measured` becomes the place to say WHY it cannot apply and what
+    guard stands in its place — which for every instrument here is a real one: a constant sweep, an
+    untested-not-zero rule, a sensitivity column beside every false-positive figure.
+    """
 
 
 REGISTER: tuple[Checker, ...] = (
@@ -191,6 +206,67 @@ REGISTER: tuple[Checker, ...] = (
             "two harness defects, both producing FALSE SURVIVORS: stale bytecode masking same-size "
             "mutations, and a test selection that ranked boundary tests last and dropped them"
         ),
+    ),
+    # ---- measurement instruments, not defect finders ---------------------------------------
+    # These three report a NUMBER, not a list of things that are wrong, and the distinction decides
+    # what "precision" can even mean for them. A checker's precision is the share of its findings
+    # that were real; an instrument has no findings to be right or wrong about, so the field is
+    # None and the reason is stated rather than left blank. They are registered because
+    # `test_every_eval_checker_has_a_register_entry` is right that anything shaped like a checker
+    # must declare what it is — including declaring that it is not one.
+    Checker(
+        command="python -m eval.homogenization --all --sweep",
+        checks="NOT a checker — measures false-positive rate against stylistic distance from a "
+               "machine centroid, on text that cannot be AI-generated",
+        gates=False,
+        findings_now="reports a trend statistic, not findings",
+        precision=None,
+        how_precision_was_measured=(
+            "not applicable: it emits a measurement rather than findings, so there is no set of "
+            "reported items whose share could be real. What it carries instead is a SWEEP — the "
+            "headline reverses sign across the vocabulary constant (z=+3.91 at 30 words, -5.02 at "
+            "500), which is the honesty check an instrument can have and a precision figure cannot."
+        ),
+        first_version_defect=(
+            "published a null from ONE vocabulary size, 150, which is exactly where the curve "
+            "crosses zero — a null that reads as 'no effect' and means 'the sign changes here'. "
+            "Retracted within the hour by its own sweep."
+        ),
+        precision_not_applicable=True,
+    ),
+    Checker(
+        command="python -m eval.technique_matrix --n 25",
+        checks="NOT a checker — measures every technique class the census names, on four axes",
+        gates=False,
+        findings_now="11 technique rows, 8 measurable here, 3 named untested",
+        precision=None,
+        how_precision_was_measured=(
+            "not applicable: it emits a table rather than findings. Its equivalent guard is that an "
+            "unavailable technique is reported as UNTESTED with no numbers attached, rather than as "
+            "one that measured zero."
+        ),
+        first_version_defect=(
+            "reported back-translation as ineffective when its models were absent — an untested "
+            "technique scored as a failed one, in a table that ranks this repo against other "
+            "people's work, erring in the flattering direction. Availability is now probed."
+        ),
+        precision_not_applicable=True,
+    ),
+    Checker(
+        command="python -m eval.calibrated_thresholds --all",
+        checks="NOT a checker — calibrates a per-length verdict threshold on text that cannot be "
+               "AI-generated, and reports the sensitivity it costs",
+        gates=False,
+        findings_now="per-band thresholds and the true-positive rate each one leaves",
+        precision=None,
+        how_precision_was_measured=(
+            "not applicable: it emits thresholds rather than findings. The guard that matters is "
+            "that every false-positive figure is reported beside the true-positive rate at the same "
+            "bar — any threshold can be raised until nothing is flagged, and an FPR-only table "
+            "would show a triumphant 29.1% -> 3.6% while sensitivity fell from 9% to 0%."
+        ),
+        first_version_defect=None,
+        precision_not_applicable=True,
     ),
 )
 
