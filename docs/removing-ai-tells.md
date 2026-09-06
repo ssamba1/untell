@@ -110,6 +110,42 @@ writers who already sit furthest from the norm are the ones absorbing the false 
 ⚠️ Outlier status is not a protected characteristic. This establishes that a detector's false
 accusations concentrate on the margins; it does not establish which margin.
 
+## Who gets falsely accused, and whether a verdict is supportable at all
+
+Removal and false accusation are the same question from two ends, and the tools for the second half
+live here too. All three run on the pre-ChatGPT corpus, where **every flag is a false positive by
+construction** because the text predates the model.
+
+**Being unusual costs you.** Two instruments, two different centres, agreeing:
+
+| instrument | centre | result |
+|---|---|---|
+| `python -m eval.homogenization --all --sweep` | machine centroid, function words | **z=+3.91, p=0.0001** |
+| `python -m eval.outlier_fairness --trend` | corpus norm, stylometric features | **z=+6.55, p≈0** |
+
+False-positive rate **rises** with distance from a norm. Detectors do not flag a writer for
+resembling the model; they flag a writer for departing from the reference human distribution.
+
+**Whether that explains the L2 finding is measured and unsettled.** `python -m eval.native_distance`
+uses the one reachable corpus with self-declared author status (36 Native, 36 Non-Native): non-native
+authors sit **+0.0394** further from the function-word centre, p=0.098, and **+0.0441**
+length-matched, p=0.066. The right direction in both arms, neither significant, and the effect size
+implies **~79–104 per group** to settle it. Reported alongside: in that corpus the *native* writers
+were flagged more often (13.9% vs 5.6%), on 7 flags total.
+
+**And on the free tier, no threshold supports a verdict.** `python -m eval.calibrated_thresholds`
+fixes the bar per length band by split conformal prediction. It works — 60–100 word documents go from
+**29.1% to 3.6%** false positives — and the sensitivity column is why that is not a win:
+
+| band | FPR at 0.45 | FPR calibrated | TPR at 0.45 | TPR calibrated |
+|---|---|---|---|---|
+| 50–100 | 29.1% | **3.6%** | 9.3% | 2.3% |
+| 100–200 | 15.8% | **4.8%** | 9.1% | 0.0% |
+
+Sensitivity is 9% before calibration and 0–2% after. **This tier cannot support a verdict at any
+threshold** — a stronger conclusion than "better thresholds", and visible only because both columns
+are reported.
+
 ## What would actually raise the ceiling
 
 Ranked by measured or published magnitude, not by appeal:
@@ -133,7 +169,10 @@ Ranked by measured or published magnitude, not by appeal:
 
 ```
 python -m eval.technique_matrix --n 25          # the table
-python -m eval.homogenization --all --sweep     # the distance study
+python -m eval.homogenization --all --sweep     # distance vs false positives, machine centroid
+python -m eval.outlier_fairness --trend         # the same, against the corpus norm
+python -m eval.native_distance                  # do non-native authors sit further out?
+python -m eval.calibrated_thresholds --all      # per-length thresholds, and what they cost
 python -m eval.compare_humanizers               # the head-to-head, full tier
 python -m untell.scripts.audit                  # every figure here has a stated source
 ```
