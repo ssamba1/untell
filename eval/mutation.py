@@ -106,12 +106,26 @@ TESTS_PER_MODULE = 5
 # (those appearing in an ordering comparison), most specific first. Small, because its job is to
 # catch the dedicated boundary test rather than to widen the selection generally.
 #
-# ⚠️ It remains a heuristic. A module with several threshold constants gives a file that names one
-# of them a low rank, and `untell.scripts.score` needed five slots rather than three before the
-# dedicated boundary test made the cut. Five is a round number, not the number that made one file
-# pass; a module whose boundary test still falls outside it will under-report its own coverage, and
-# the register in `eval/boundaries.py` is where that shows up.
-CONSTANT_NAMING_TESTS = 5
+# ⚠️ It remains a heuristic, and it has now under-reported twice. A module with several threshold
+# constants gives a file that names one of them a low rank: `untell.scripts.score` needed five slots
+# rather than three before its dedicated boundary test made the cut, and then needed six.
+#
+# The second time is the instructive one, because NOTHING REGRESSED. Round 136 added a boundary test
+# naming five of score.py's nine threshold constants. It entered the ranking at position 1 and
+# pushed `test_a_threshold_switches_exactly_where_it_says.py` — which names one — from 5 to 6, past
+# the cap. The register then reported score.py:723 and :750 as unprotected, though the round-98 test
+# still kills both mutants outright (verified by re-applying them against that file alone). So
+# ADDING TESTS LOWERED MEASURED PROTECTION. The measurement is not monotone in coverage, which is
+# worth knowing before anyone reads a fall in `protected_share` as a regression.
+#
+# Eight, measured rather than tuned to make one file pass: six is what score.py needs today, and the
+# two spare slots are headroom for the next dedicated boundary test on a constant-dense module.
+# MEASURED cost of 5 -> 8: 300 -> 309 test-file selections across all modules, about 3% of a sweep.
+#
+# The cap still makes the register PESSIMISTIC by design, and `python -m eval.boundaries --verify`
+# is the escalation: it re-runs each unprotected row against EVERY test importing the module, which
+# is how these two were shown to be covered.
+CONSTANT_NAMING_TESTS = 8
 
 
 def test_index(root: Path = REPO) -> dict[str, list[str]]:  # noqa: PT028
