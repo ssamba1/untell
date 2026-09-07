@@ -136,15 +136,39 @@
     },
     {
       "file": "untell/scripts/run.py",
+      "line": 1101,
+      "constant": "_MIN_VOICE_SAMPLE_WORDS",
+      "source": "if n_words < _MIN_VOICE_SAMPLE_WORDS:"
+    },
+    {
+      "file": "untell/scripts/run.py",
       "line": 1581,
       "constant": "_TELLS_EPS",
       "source": "abs(polished_score[\"max\"] - best_score[\"max\"]) <= _TELLS_EPS"
     },
     {
       "file": "untell/scripts/score.py",
+      "line": 750,
+      "constant": "_MIN_WORDS_FOR_A_VERDICT",
+      "source": "if words >= _MIN_WORDS_FOR_A_VERDICT:"
+    },
+    {
+      "file": "untell/scripts/score.py",
       "line": 1373,
       "constant": "_LOCK_NOTE_PREFIX_CHARS",
       "source": "if len(text) <= _LOCK_NOTE_PREFIX_CHARS:"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 1554,
+      "constant": "_MIN_BLOCKS_FOR_LONE_NOTE",
+      "source": "if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:"
+    },
+    {
+      "file": "untell/scripts/score.py",
+      "line": 723,
+      "constant": "_MIN_WORDS_FOR_A_VERDICT",
+      "source": "if words < _MIN_WORDS_FOR_A_VERDICT or words >= _ELEVATED_FPR_BANDS[-1][0]:"
     },
     {
       "file": "untell/scripts/score.py",
@@ -251,34 +275,10 @@
       "source": "shape = \"uniform\" if cv < _BURSTY_IDEAL else \"erratic\""
     },
     {
-      "file": "untell/scripts/run.py",
-      "line": 1101,
-      "constant": "_MIN_VOICE_SAMPLE_WORDS",
-      "source": "if n_words < _MIN_VOICE_SAMPLE_WORDS:"
-    },
-    {
-      "file": "untell/scripts/score.py",
-      "line": 750,
-      "constant": "_MIN_WORDS_FOR_A_VERDICT",
-      "source": "if words >= _MIN_WORDS_FOR_A_VERDICT:"
-    },
-    {
       "file": "untell/scripts/score.py",
       "line": 1381,
       "constant": "_LOCK_NOTE_MARGIN",
       "source": "if abs(estimate - _LOCKED_SHARE_BAR) > _LOCK_NOTE_MARGIN:"
-    },
-    {
-      "file": "untell/scripts/score.py",
-      "line": 1554,
-      "constant": "_MIN_BLOCKS_FOR_LONE_NOTE",
-      "source": "if len(prose) < _MIN_BLOCKS_FOR_LONE_NOTE:"
-    },
-    {
-      "file": "untell/scripts/score.py",
-      "line": 723,
-      "constant": "_MIN_WORDS_FOR_A_VERDICT",
-      "source": "if words < _MIN_WORDS_FOR_A_VERDICT or words >= _ELEVATED_FPR_BANDS[-1][0]:"
     },
     {
       "file": "untell/scripts/score.py",
@@ -294,5 +294,5 @@
     }
   ],
   "unmeasured": [],
-  "protected_share": 77.1
+  "protected_share": 85.4
 }
