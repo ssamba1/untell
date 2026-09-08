@@ -81,6 +81,23 @@ def test_a_ratio_below_the_floor_falls_through_and_clamps(clamp_spy):
     assert signal > 0.0
 
 
+def test_forty_words_is_exactly_the_short_text_guard_and_is_measured(clamp_spy):
+    """The fixtures above are 40 words, which sits ON a second boundary: `if len(words) < 40`.
+
+    That was luck, not design — the sweep reported this line newly killed and it was not in the
+    prediction. Pinning it deliberately: 40 words is long enough to measure, 39 is not, and the
+    guard says so rather than guessing from a ratio it does not trust.
+    """
+    assert pb._repetition_signal(_text_with_ttr(unique=8, total=40)) > 0.0
+    assert clamp_spy, "40 words must reach the ratio; the guard admits it"
+
+    clamp_spy.clear()
+    assert pb._repetition_signal(_text_with_ttr(unique=8, total=39)) == 0.0
+    assert clamp_spy == [], (
+        "39 words is under the guard: too short for the ratio to be stable, so it says nothing "
+        "rather than computing a signal it cannot support")
+
+
 def test_the_floor_and_saturation_still_bracket_the_ramp():
     """Guard on both cases: a zero or inverted denominator would change what either one proves."""
     assert _TTR_SATURATION < _TTR_FLOOR

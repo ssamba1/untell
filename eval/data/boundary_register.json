@@ -10,9 +10,21 @@
     },
     {
       "file": "untell/api_server.py",
+      "line": 557,
+      "constant": "_RATE_BUCKET_SOFT_CAP",
+      "source": "if len(_rate_buckets) > _RATE_BUCKET_SOFT_CAP:"
+    },
+    {
+      "file": "untell/api_server.py",
       "line": 1071,
       "constant": "_HEALTH_TTL_S",
       "source": "if _health_cache is not None and now - _health_cache[0] < _HEALTH_TTL_S:"
+    },
+    {
+      "file": "untell/detectors/perplexity_burstiness.py",
+      "line": 317,
+      "constant": "_TTR_FLOOR",
+      "source": "if ttr >= _TTR_FLOOR:"
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
@@ -183,6 +195,12 @@
       "source": "_MOSTLY_LOCKED_NOTE if share > _LOCKED_SHARE_BAR else None)"
     },
     {
+      "file": "untell/scripts/score.py",
+      "line": 1376,
+      "constant": "_LOCKED_SHARE_BAR",
+      "source": "_MOSTLY_LOCKED_NOTE if share > _LOCKED_SHARE_BAR else None)"
+    },
+    {
       "file": "untell/scripts/sentences.py",
       "line": 163,
       "constant": "_MIN_SENTENCES_FOR_SPREAD",
@@ -249,50 +267,37 @@
       "source": "if _WARNED_THIN_SAMPLE or len(_WORD.findall(sample)) >= MIN_SAMPLE_WORDS:"
     }
   ],
-  "unprotected": [
-    {
-      "file": "untell/api_server.py",
-      "line": 557,
-      "constant": "_RATE_BUCKET_SOFT_CAP",
-      "source": "if len(_rate_buckets) > _RATE_BUCKET_SOFT_CAP:"
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 317,
-      "constant": "_TTR_FLOOR",
-      "source": "if ttr >= _TTR_FLOOR:"
-    },
+  "unprotected": [],
+  "unmeasured": [],
+  "equivalent": [
     {
       "file": "untell/humanness.py",
       "line": 474,
       "constant": "_BURSTY_FLOOR",
-      "source": "if cv < _BURSTY_FLOOR:"
+      "source": "if cv < _BURSTY_FLOOR:",
+      "why_equivalent": "The ramp in the next branch is CONSTRUCTED to meet the flat penalty at the floor: MAX * (0.50 - 0.35) / 0.15 == MAX * 1. The piecewise function is continuous there, so both branches compute the same penalty. IEEE arithmetic separates them by 5.55e-17 and `humanness` returns round(score * 100.0, 1), which erases it \u2014 MEASURED 69.0 either way."
     },
     {
       "file": "untell/humanness.py",
       "line": 714,
       "constant": "_BURSTY_IDEAL",
-      "source": "shape = \"uniform\" if cv < _BURSTY_IDEAL else \"erratic\""
+      "source": "shape = \"uniform\" if cv < _BURSTY_IDEAL else \"erratic\"",
+      "why_equivalent": "Reached only when penalty > 0, which requires cv < 0.50 or cv > 1.0. cv == _BURSTY_IDEAL (0.70) satisfies neither, so the equality case cannot occur."
     },
     {
       "file": "untell/scripts/score.py",
       "line": 1381,
       "constant": "_LOCK_NOTE_MARGIN",
-      "source": "if abs(estimate - _LOCKED_SHARE_BAR) > _LOCK_NOTE_MARGIN:"
+      "source": "if abs(estimate - _LOCKED_SHARE_BAR) > _LOCK_NOTE_MARGIN:",
+      "why_equivalent": "Flips only when abs(estimate - 0.50) == 0.15 exactly, and no IEEE double does: a difference in [0.5, 1) lands on a 2^-53 grid while 0.15 needs the finer grid of [0.125, 0.25), so the subtraction cannot produce it."
     },
     {
       "file": "untell/scripts/score.py",
       "line": 1382,
       "constant": "_LOCKED_SHARE_BAR",
-      "source": "return _MOSTLY_LOCKED_NOTE if estimate > _LOCKED_SHARE_BAR else None"
-    },
-    {
-      "file": "untell/scripts/score.py",
-      "line": 1376,
-      "constant": "_LOCKED_SHARE_BAR",
-      "source": "_MOSTLY_LOCKED_NOTE if share > _LOCKED_SHARE_BAR else None)"
+      "source": "return _MOSTLY_LOCKED_NOTE if estimate > _LOCKED_SHARE_BAR else None",
+      "why_equivalent": "Reached only when the guard above passed, which excludes estimate == _LOCKED_SHARE_BAR by construction."
     }
   ],
-  "unmeasured": [],
-  "protected_share": 85.4
+  "protected_share": 100.0
 }

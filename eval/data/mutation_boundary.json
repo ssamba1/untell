@@ -69,16 +69,16 @@
   },
   "by_kind": {
     "boundary": {
-      "killed": 110,
-      "survived": 230,
-      "score": 32.4
+      "killed": 114,
+      "survived": 226,
+      "score": 33.5
     }
   },
   "workers": 4,
   "mutants": 340,
-  "killed": 110,
-  "survived": 230,
-  "score": 32.4,
+  "killed": 114,
+  "survived": 226,
+  "score": 33.5,
   "survivors": [
     {
       "file": "untell/_retry.py",
@@ -92,13 +92,6 @@
       "line": 551,
       "kind": "boundary",
       "mutation": ">= -> >",
-      "killed": false
-    },
-    {
-      "file": "untell/api_server.py",
-      "line": 557,
-      "kind": "boundary",
-      "mutation": "> -> >=",
       "killed": false
     },
     {
@@ -372,20 +365,6 @@
       "line": 202,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 314,
-      "kind": "boundary",
-      "mutation": "< -> <=",
-      "killed": false
-    },
-    {
-      "file": "untell/detectors/perplexity_burstiness.py",
-      "line": 317,
-      "kind": "boundary",
-      "mutation": ">= -> >",
       "killed": false
     },
     {
@@ -1496,13 +1475,6 @@
     },
     {
       "file": "untell/scripts/score.py",
-      "line": 1376,
-      "kind": "boundary",
-      "mutation": "> -> >=",
-      "killed": false
-    },
-    {
-      "file": "untell/scripts/score.py",
       "line": 1381,
       "kind": "boundary",
       "mutation": "> -> >=",
@@ -1725,7 +1697,7 @@
       "line": 557,
       "kind": "boundary",
       "mutation": "> -> >=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/api_server.py",
@@ -2124,14 +2096,14 @@
       "line": 314,
       "kind": "boundary",
       "mutation": "< -> <=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
       "line": 317,
       "kind": "boundary",
       "mutation": ">= -> >",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/detectors/perplexity_burstiness.py",
@@ -3720,7 +3692,7 @@
       "line": 1376,
       "kind": "boundary",
       "mutation": "> -> >=",
-      "killed": false
+      "killed": true
     },
     {
       "file": "untell/scripts/score.py",
