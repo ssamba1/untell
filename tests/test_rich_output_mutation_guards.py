@@ -17,7 +17,16 @@ from __future__ import annotations
 import contextlib
 import io
 
+import pytest
+
 from untell import rich_output as RO
+
+# These force `rich_output._RICH = True` to exercise the rich-only rendering path. Without rich
+# installed the module-level `from rich... import ... as _Text` never ran, so flipping the flag
+# reaches an unbound name and the test fails with `NameError: name '_Text' is not defined`
+# rather than skipping. The product is innocent: every public function here guards on `_RICH`
+# and falls back to plain output; only a test that overrides the flag can get there.
+pytest.importorskip("rich")
 
 
 def _capture(fn) -> str:
