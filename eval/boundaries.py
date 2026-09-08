@@ -124,6 +124,56 @@ def sweep_is_stale(root: Path = REPO) -> list[str]:
     )
 
 
+# Boundaries where the two operators CANNOT differ on any input the code can reach. These are
+# equivalent mutants: they survive every sweep, and no test will ever kill them, because there is
+# no behaviour to catch. Reporting them as "unprotected" invites writing a test that pretends to
+# cover one, and a list that is mostly noise is a list nobody reads.
+#
+# ⚠️ Two entries were removed from this table after being added to it, and the reason both were
+# wrong is the same: the argument compared what the operators RETURN and never asked what they DO.
+# `api_server.py` at the bucket cap deletes nothing either way — but `>=` first SORTS four thousand
+# entries to build the empty slice. `perplexity_burstiness` at the TTR floor returns 0.0 either way
+# — but `>` gets there through a division and a `clamp01` call the early exit skips. Both were then
+# killed by a test that watched the side effect. **An equivalence argument must cover side effects,
+# or it is not an equivalence argument**, and "same value" is not "same behaviour".
+#
+# Keyed by the stripped SOURCE LINE, not the line number: numbers drift on every edit above them
+# (round 133 lost a calibration test to exactly that), and `_LOCKED_SHARE_BAR` is compared at three
+# sites of which only one is equivalent, so the constant alone cannot identify a row either.
+EQUIVALENT: dict[tuple[str, str], str] = {
+    ("untell/humanness.py", "if cv < _BURSTY_FLOOR:"):
+        "The ramp in the next branch is CONSTRUCTED to meet the flat penalty at the floor: "
+        "MAX * (0.50 - 0.35) / 0.15 == MAX * 1. The piecewise function is continuous there, so "
+        "both branches compute the same penalty. IEEE arithmetic separates them by 5.55e-17 and "
+        "`humanness` returns round(score * 100.0, 1), which erases it — MEASURED 69.0 either way.",
+    ("untell/humanness.py", 'shape = "uniform" if cv < _BURSTY_IDEAL else "erratic"'):
+        "Reached only when penalty > 0, which requires cv < 0.50 or cv > 1.0. cv == _BURSTY_IDEAL "
+        "(0.70) satisfies neither, so the equality case cannot occur.",
+    ("untell/scripts/score.py", "if abs(estimate - _LOCKED_SHARE_BAR) > _LOCK_NOTE_MARGIN:"):
+        "Flips only when abs(estimate - 0.50) == 0.15 exactly, and no IEEE double does: a "
+        "difference in [0.5, 1) lands on a 2^-53 grid while 0.15 needs the finer grid of "
+        "[0.125, 0.25), so the subtraction cannot produce it.",
+    ("untell/scripts/score.py",
+     "return _MOSTLY_LOCKED_NOTE if estimate > _LOCKED_SHARE_BAR else None"):
+        "Reached only when the guard above passed, which excludes estimate == _LOCKED_SHARE_BAR "
+        "by construction.",
+}
+
+
+def _equivalence(root: Path, entry: dict) -> str | None:
+    """The recorded reason this boundary cannot be killed, or None if it is a real one.
+
+    Re-reads the line from disk and matches on its text, so a row whose code has been rewritten
+    stops matching and the boundary returns to the unprotected list rather than staying excused by
+    a stale table entry.
+    """
+    try:
+        line = (root / entry["file"]).read_text(encoding="utf-8").splitlines()[entry["line"] - 1]
+    except (OSError, IndexError):
+        return None
+    return EQUIVALENT.get((entry["file"], line.strip()))
+
+
 def register(root: Path = REPO) -> dict:
     """Boundaries, split by whether the sweep shows the off-by-one is caught."""
     sweep = json.loads((root / "eval" / "data" / "mutation_boundary.json").read_text())
@@ -132,22 +182,30 @@ def register(root: Path = REPO) -> dict:
     }
     measured = set(sweep["baselines"])
 
-    protected, unprotected, unmeasured = [], [], []
+    protected, unprotected, unmeasured, equivalent = [], [], [], []
     for entry in boundaries(root):
         if entry["file"] not in measured:
             unmeasured.append(entry)
         elif (entry["file"], entry["line"]) in survived:
-            unprotected.append(entry)
+            # A recorded equivalence only applies to a SURVIVOR. If one of these is ever reported
+            # killed, the argument was wrong and the row belongs back in the measured population.
+            reason = _equivalence(root, entry)
+            (equivalent if reason else unprotected).append(
+                {**entry, "why_equivalent": reason} if reason else entry)
         else:
             protected.append(entry)
 
+    # Equivalent mutants are out of the denominator, not counted as protected. They cannot be
+    # caught, so including them would cap the share below 100% forever; counting them as caught
+    # would claim a test that does not exist.
     total = len(protected) + len(unprotected)
     return {
         "stale_since_sweep": sweep_is_stale(root),
-        "boundaries": len(protected) + len(unprotected) + len(unmeasured),
+        "boundaries": len(protected) + len(unprotected) + len(unmeasured) + len(equivalent),
         "protected": protected,
         "unprotected": unprotected,
         "unmeasured": unmeasured,
+        "equivalent": equivalent,
         "protected_share": round(100.0 * len(protected) / total, 1) if total else 0.0,
     }
 
@@ -265,6 +323,8 @@ def render(report: dict) -> str:
         f"{report['boundaries']} comparison(s) against a named threshold in untell/.",
         f"  off-by-one caught     {len(report['protected'])}",
         f"  off-by-one SURVIVES   {len(report['unprotected'])}",
+        f"  equivalent mutants    {len(report.get('equivalent', []))}  (cannot be killed; excluded "
+        f"from the share)",
         f"  not measurable here   {len(report['unmeasured'])}",
         f"  protected share       {report['protected_share']}%",
         "",
@@ -274,6 +334,9 @@ def render(report: dict) -> str:
         for entry in report["unprotected"]:
             lines.append(f"  {entry['file']}:{entry['line']}  {entry['constant']}")
             lines.append(f"      {entry['source']}")
+    for entry in report.get("equivalent", []):
+        lines.append(f"  EQUIVALENT {entry['file']}:{entry['line']} {entry['constant']}")
+        lines.append(f"      {entry['why_equivalent']}")
     for entry in report["unmeasured"]:
         lines.append(f"  UNMEASURED {entry['file']}:{entry['line']} {entry['constant']} — its "
                      f"module's tests could not run here")

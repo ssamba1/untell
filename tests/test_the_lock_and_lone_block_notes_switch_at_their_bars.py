@@ -85,6 +85,31 @@ def test_a_hair_over_the_locked_bar_does_warn(monkeypatch):
     assert _mostly_locked_warning("x" * (_LOCK_NOTE_PREFIX_CHARS + 1)) is not None
 
 
+def test_a_short_document_exactly_on_the_locked_bar_is_not_mostly_locked(monkeypatch):
+    """The EXACT-measure path — `len(text) <= _LOCK_NOTE_PREFIX_CHARS` — has its own bar test.
+
+    `--verify` showed this one already dies against the full importer set, so it was never a hole in
+    the coverage; the sweep's per-module selection simply did not include the test that kills it,
+    and the register reported it unprotected. A boundary test living in the file the ranking already
+    puts first for this module closes that gap where the sweep can see it.
+
+    Half-locked is not "mostly locked". Under `>=` a short document with exactly half its characters
+    held is told the rewriter cannot touch most of it.
+    """
+    shares = _Shares(_LOCKED_SHARE_BAR)
+    monkeypatch.setattr(score, "_locked_share", shares)
+    assert _mostly_locked_warning("x" * (_LOCK_NOTE_PREFIX_CHARS - 1)) is None
+    assert len(shares.calls) == 1, "the exact-measure path reads the document once"
+
+
+def test_a_short_document_a_hair_over_the_locked_bar_does_warn(monkeypatch):
+    """The neighbour on the exact-measure path."""
+    over = math.nextafter(_LOCKED_SHARE_BAR, 1.0)
+    shares = _Shares(over)
+    monkeypatch.setattr(score, "_locked_share", shares)
+    assert _mostly_locked_warning("x" * (_LOCK_NOTE_PREFIX_CHARS - 1)) is not None
+
+
 def _blocks(lone: int, multi: int) -> str:
     """``lone`` one-sentence paragraphs and ``multi`` two-sentence ones."""
     return "\n\n".join(

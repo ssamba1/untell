@@ -152,3 +152,70 @@ def test_the_thresholds_round_98_fixed_are_recorded_as_protected():
         f"round 98 verified these off-by-ones as killed and the register disagrees: {missing}. "
         f"Either the sweep is stale or the cross-reference is broken."
     )
+
+
+def test_every_recorded_equivalence_still_matches_a_line_that_is_there():
+    """A table keyed by source text goes stale silently: the code is rewritten, the key stops
+    matching, and the row quietly returns to the unprotected list — which is the SAFE direction, but
+    only if nobody assumes the table is still describing the code.
+
+    This asserts the other half: every key must still find its line. An entry that matches nothing
+    is an argument about code that no longer exists, and it is excusing nothing.
+    """
+    stale = []
+    for (rel, text), reason in boundaries.EQUIVALENT.items():
+        body = (REPO / rel).read_text(encoding="utf-8")
+        if not any(line.strip() == text for line in body.splitlines()):
+            stale.append(f"{rel}: {text!r}")
+        assert reason.strip(), f"{rel}: {text!r} is excused with an empty reason"
+    assert not stale, (
+        f"these equivalence entries no longer match any line, so they describe code that has "
+        f"changed and must be re-argued or removed: {stale}")
+
+
+def test_an_equivalence_stops_applying_once_the_line_is_rewritten(tmp_path):
+    """The mechanism that makes the table fail safe, exercised rather than asserted."""
+    (tmp_path / "untell").mkdir(parents=True)
+    src = tmp_path / "untell" / "m.py"
+    src.write_text("_FLOOR = 12\n\ndef f(n):\n    if n < _FLOOR:\n        return 0\n    return 1\n")
+    entry = {"file": "untell/m.py", "line": 4, "constant": "_FLOOR"}
+
+    assert boundaries._equivalence(tmp_path, entry) is None, "nothing is excused by default"
+
+    boundaries.EQUIVALENT[("untell/m.py", "if n < _FLOOR:")] = "a reason"
+    try:
+        assert boundaries._equivalence(tmp_path, entry) == "a reason"
+        src.write_text("_FLOOR = 12\n\ndef f(n):\n    if n <= _FLOOR:\n        return 0\n    return 1\n")
+        assert boundaries._equivalence(tmp_path, entry) is None, (
+            "the comparison was rewritten, so the recorded argument no longer applies to it")
+    finally:
+        del boundaries.EQUIVALENT[("untell/m.py", "if n < _FLOOR:")]
+
+
+def test_equivalent_mutants_are_out_of_the_share_and_not_counted_as_caught():
+    """Two wrong ways to handle an unkillable row, both excluded by arithmetic.
+
+    Counting them as protected claims a test that does not exist. Leaving them in the denominator
+    caps the share below 100% forever, which makes the number useless as a target.
+    """
+    equivalent = REGISTER.get("equivalent", [])
+    protected = {(e["file"], e["line"]) for e in REGISTER["protected"]}
+    for entry in equivalent:
+        assert (entry["file"], entry["line"]) not in protected, (
+            "an equivalent mutant must not also be reported as caught")
+        assert entry.get("why_equivalent"), "every excused row states why"
+    denominator = len(REGISTER["protected"]) + len(REGISTER["unprotected"])
+    assert REGISTER["protected_share"] == (
+        round(100.0 * len(REGISTER["protected"]) / denominator, 1) if denominator else 0.0)
+
+
+def test_the_equivalence_table_is_short_enough_to_read():
+    """The failure mode this whole category invites is excusing a boundary that is merely hard.
+
+    A table that grows without bound is how "cannot be killed" becomes "nobody tried". Two entries
+    were already removed from it after their arguments turned out to compare return values while
+    ignoring side effects, which is the mistake this bound exists to keep visible.
+    """
+    assert len(boundaries.EQUIVALENT) < 10, (
+        "more than a handful of unkillable boundaries means the code has a shape problem, not that "
+        "the tests have a gap — re-read the arguments before adding another")
