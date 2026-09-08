@@ -77,7 +77,13 @@ docs = [
 # The MCP SDK requires Python >=3.10, but the base package supports 3.9 — gate the extra with an
 # environment marker so `.[mcp]` installs nothing (instead of failing to resolve) on 3.9.
 mcp = [
-    "mcp>=1.0; python_version >= '3.10'",
+    # Upper bound is load-bearing. `mcp` 2.x renamed `mcp.server.fastmcp.FastMCP` to
+    # `mcp.server.mcpserver.MCPServer`, so an unbounded `mcp>=1.0` resolved to 2.x and
+    # `untell/mcp_server.py:170` raised ModuleNotFoundError at import -- 78 test failures in the
+    # lite CI job, the single largest cluster in it, and the library's own error message names
+    # this pin as the fix for keeping v1 code running. Migrating to the 2.x API is a real change
+    # with a different surface, not a build fix, so it is deliberately not done here.
+    "mcp>=1.0,<2; python_version >= '3.10'",
 ]
 # Production REST API server (FastAPI).
 server = [
