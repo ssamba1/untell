@@ -10,7 +10,20 @@ from __future__ import annotations
 import pathlib
 import re
 
-import tomllib
+import pytest
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python 3.9 / 3.10
+    # `tomllib` is 3.11+. `requires-python` is ">=3.9" and the CI matrix runs 3.9, where a bare
+    # `import tomllib` at module scope is a COLLECTION error -- which aborts the entire run rather
+    # than skipping this file, so one docs assertion took the whole 3.9 suite down with it.
+    tomllib = None  # type: ignore[assignment]
+
+pytestmark = pytest.mark.skipif(
+    tomllib is None,
+    reason="tomllib is 3.11+; this docs check still runs on the 3.11 and 3.12 jobs",
+)
 
 
 def _scripts() -> set[str]:

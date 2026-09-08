@@ -71,7 +71,8 @@ else
     # confusing: the SAME test ids are reported as "no longer failing" AND as "not in the baseline"
     # in one run, because every baseline entry looks fixed and every failure looks new. MEASURED
     # after a CRLF-writing edit: 17 of 17 entries in both lists at once.
-    tr -d '' < "$BASELINE" | sed '/^[[:space:]]*$/d' | sort -u > "$WT/.gate.baseline"
+    tr -d '
+' < "$BASELINE" | sed '/^[[:space:]]*$/d' | sort -u > "$WT/.gate.baseline"
     new_failures=$(comm -23 "$WT/.gate.failed" "$WT/.gate.baseline")
     fixed=$(comm -13 "$WT/.gate.failed" "$WT/.gate.baseline")
     [ -n "$fixed" ] && { echo "no longer failing (shrink the baseline):"; echo "$fixed" | sed 's/^/  /'; }

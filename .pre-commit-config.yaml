@@ -1,7 +1,10 @@
 # See https://pre-commit.com for docs
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.0
+    # Must match the ruff CI job, which installs the current release. Pinned at v0.9.0 the
+    # formatter produced DIFFERENT output from the one the tree is formatted with, so this hook
+    # failed on files ruff itself reported as already formatted.
+    rev: v0.16.6
     hooks:
       - id: ruff
         args: [--fix]
@@ -14,7 +17,16 @@ repos:
       - id: end-of-file-fixer
       - id: check-json
       - id: check-yaml
+        # mkdocs.yml carries `!!python/object/apply:pymdownx.slugs.slugify`, which is a valid
+        # mkdocs construct and not something safe_load can build a constructor for. Without
+        # --unsafe this hook could never pass on this repo.
+        args: [--unsafe]
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
+        # `.gitattributes` declares `*.ps1 text eol=crlf` -- PowerShell files are deliberately
+        # CRLF. Forcing them to LF here made the hook fight the repo's own line-ending policy,
+        # so it rewrote three files on every run and failed every time. The `.sh` rules in
+        # `.gitattributes` say LF, which is what this hook enforces for everything else.
+        exclude: \.ps1$
